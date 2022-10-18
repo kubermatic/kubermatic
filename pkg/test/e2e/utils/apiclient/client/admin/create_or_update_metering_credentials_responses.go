@@ -58,14 +58,44 @@ func NewCreateOrUpdateMeteringCredentialsOK() *CreateOrUpdateMeteringCredentials
 	return &CreateOrUpdateMeteringCredentialsOK{}
 }
 
-/* CreateOrUpdateMeteringCredentialsOK describes a response with status code 200, with default header values.
+/*
+CreateOrUpdateMeteringCredentialsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateOrUpdateMeteringCredentialsOK struct {
 }
 
+// IsSuccess returns true when this create or update metering credentials o k response has a 2xx status code
+func (o *CreateOrUpdateMeteringCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create or update metering credentials o k response has a 3xx status code
+func (o *CreateOrUpdateMeteringCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update metering credentials o k response has a 4xx status code
+func (o *CreateOrUpdateMeteringCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create or update metering credentials o k response has a 5xx status code
+func (o *CreateOrUpdateMeteringCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update metering credentials o k response a status code equal to that given
+func (o *CreateOrUpdateMeteringCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *CreateOrUpdateMeteringCredentialsOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsOK ", 200)
+}
+
+func (o *CreateOrUpdateMeteringCredentialsOK) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewCreateOrUpdateMeteringCredentialsUnauthorized() *CreateOrUpdateMeteringC
 	return &CreateOrUpdateMeteringCredentialsUnauthorized{}
 }
 
-/* CreateOrUpdateMeteringCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateOrUpdateMeteringCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateOrUpdateMeteringCredentialsUnauthorized struct {
 }
 
+// IsSuccess returns true when this create or update metering credentials unauthorized response has a 2xx status code
+func (o *CreateOrUpdateMeteringCredentialsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create or update metering credentials unauthorized response has a 3xx status code
+func (o *CreateOrUpdateMeteringCredentialsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update metering credentials unauthorized response has a 4xx status code
+func (o *CreateOrUpdateMeteringCredentialsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create or update metering credentials unauthorized response has a 5xx status code
+func (o *CreateOrUpdateMeteringCredentialsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update metering credentials unauthorized response a status code equal to that given
+func (o *CreateOrUpdateMeteringCredentialsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateOrUpdateMeteringCredentialsUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsUnauthorized ", 401)
+}
+
+func (o *CreateOrUpdateMeteringCredentialsUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewCreateOrUpdateMeteringCredentialsForbidden() *CreateOrUpdateMeteringCred
 	return &CreateOrUpdateMeteringCredentialsForbidden{}
 }
 
-/* CreateOrUpdateMeteringCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+CreateOrUpdateMeteringCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateOrUpdateMeteringCredentialsForbidden struct {
 }
 
+// IsSuccess returns true when this create or update metering credentials forbidden response has a 2xx status code
+func (o *CreateOrUpdateMeteringCredentialsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create or update metering credentials forbidden response has a 3xx status code
+func (o *CreateOrUpdateMeteringCredentialsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update metering credentials forbidden response has a 4xx status code
+func (o *CreateOrUpdateMeteringCredentialsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create or update metering credentials forbidden response has a 5xx status code
+func (o *CreateOrUpdateMeteringCredentialsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update metering credentials forbidden response a status code equal to that given
+func (o *CreateOrUpdateMeteringCredentialsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateOrUpdateMeteringCredentialsForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsForbidden ", 403)
+}
+
+func (o *CreateOrUpdateMeteringCredentialsForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentialsForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewCreateOrUpdateMeteringCredentialsDefault(code int) *CreateOrUpdateMeteri
 	}
 }
 
-/* CreateOrUpdateMeteringCredentialsDefault describes a response with status code -1, with default header values.
+/*
+CreateOrUpdateMeteringCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *CreateOrUpdateMeteringCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create or update metering credentials default response has a 2xx status code
+func (o *CreateOrUpdateMeteringCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create or update metering credentials default response has a 3xx status code
+func (o *CreateOrUpdateMeteringCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create or update metering credentials default response has a 4xx status code
+func (o *CreateOrUpdateMeteringCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create or update metering credentials default response has a 5xx status code
+func (o *CreateOrUpdateMeteringCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create or update metering credentials default response a status code equal to that given
+func (o *CreateOrUpdateMeteringCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateOrUpdateMeteringCredentialsDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateOrUpdateMeteringCredentialsDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/credentials][%d] createOrUpdateMeteringCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateOrUpdateMeteringCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

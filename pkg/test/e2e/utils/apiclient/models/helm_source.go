@@ -18,11 +18,11 @@ import (
 // swagger:model HelmSource
 type HelmSource struct {
 
-	// Name of the Chart
+	// Name of the Chart.
 	// +kubebuilder:validation:MinLength=1
 	ChartName string `json:"chartName,omitempty"`
 
-	// Version of the Chart
+	// Version of the Chart.
 	// +kubebuilder:validation:MinLength=1
 	ChartVersion string `json:"chartVersion,omitempty"`
 

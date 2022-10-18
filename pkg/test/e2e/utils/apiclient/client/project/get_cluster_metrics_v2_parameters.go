@@ -52,10 +52,12 @@ func NewGetClusterMetricsV2ParamsWithHTTPClient(client *http.Client) *GetCluster
 	}
 }
 
-/* GetClusterMetricsV2Params contains all the parameters to send to the API endpoint
-   for the get cluster metrics v2 operation.
+/*
+GetClusterMetricsV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get cluster metrics v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type GetClusterMetricsV2Params struct {
 

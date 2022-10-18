@@ -58,14 +58,44 @@ func NewDeleteDefaultConstraintOK() *DeleteDefaultConstraintOK {
 	return &DeleteDefaultConstraintOK{}
 }
 
-/* DeleteDefaultConstraintOK describes a response with status code 200, with default header values.
+/*
+DeleteDefaultConstraintOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteDefaultConstraintOK struct {
 }
 
+// IsSuccess returns true when this delete default constraint o k response has a 2xx status code
+func (o *DeleteDefaultConstraintOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete default constraint o k response has a 3xx status code
+func (o *DeleteDefaultConstraintOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete default constraint o k response has a 4xx status code
+func (o *DeleteDefaultConstraintOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete default constraint o k response has a 5xx status code
+func (o *DeleteDefaultConstraintOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete default constraint o k response a status code equal to that given
+func (o *DeleteDefaultConstraintOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteDefaultConstraintOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraintOK ", 200)
+}
+
+func (o *DeleteDefaultConstraintOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraintOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteDefaultConstraintUnauthorized() *DeleteDefaultConstraintUnauthoriz
 	return &DeleteDefaultConstraintUnauthorized{}
 }
 
-/* DeleteDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteDefaultConstraintUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete default constraint unauthorized response has a 2xx status code
+func (o *DeleteDefaultConstraintUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete default constraint unauthorized response has a 3xx status code
+func (o *DeleteDefaultConstraintUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete default constraint unauthorized response has a 4xx status code
+func (o *DeleteDefaultConstraintUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete default constraint unauthorized response has a 5xx status code
+func (o *DeleteDefaultConstraintUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete default constraint unauthorized response a status code equal to that given
+func (o *DeleteDefaultConstraintUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteDefaultConstraintUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraintUnauthorized ", 401)
+}
+
+func (o *DeleteDefaultConstraintUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraintUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteDefaultConstraintForbidden() *DeleteDefaultConstraintForbidden {
 	return &DeleteDefaultConstraintForbidden{}
 }
 
-/* DeleteDefaultConstraintForbidden describes a response with status code 403, with default header values.
+/*
+DeleteDefaultConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteDefaultConstraintForbidden struct {
 }
 
+// IsSuccess returns true when this delete default constraint forbidden response has a 2xx status code
+func (o *DeleteDefaultConstraintForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete default constraint forbidden response has a 3xx status code
+func (o *DeleteDefaultConstraintForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete default constraint forbidden response has a 4xx status code
+func (o *DeleteDefaultConstraintForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete default constraint forbidden response has a 5xx status code
+func (o *DeleteDefaultConstraintForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete default constraint forbidden response a status code equal to that given
+func (o *DeleteDefaultConstraintForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteDefaultConstraintForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraintForbidden ", 403)
+}
+
+func (o *DeleteDefaultConstraintForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraintForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteDefaultConstraintDefault(code int) *DeleteDefaultConstraintDefault
 	}
 }
 
-/* DeleteDefaultConstraintDefault describes a response with status code -1, with default header values.
+/*
+DeleteDefaultConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteDefaultConstraintDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete default constraint default response has a 2xx status code
+func (o *DeleteDefaultConstraintDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete default constraint default response has a 3xx status code
+func (o *DeleteDefaultConstraintDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete default constraint default response has a 4xx status code
+func (o *DeleteDefaultConstraintDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete default constraint default response has a 5xx status code
+func (o *DeleteDefaultConstraintDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete default constraint default response a status code equal to that given
+func (o *DeleteDefaultConstraintDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteDefaultConstraintDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraint default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteDefaultConstraintDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/constraints/{constraint_name}][%d] deleteDefaultConstraint default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteDefaultConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,8 @@ func NewGetKubermaticSettingsOK() *GetKubermaticSettingsOK {
 	return &GetKubermaticSettingsOK{}
 }
 
-/* GetKubermaticSettingsOK describes a response with status code 200, with default header values.
+/*
+GetKubermaticSettingsOK describes a response with status code 200, with default header values.
 
 GlobalSettings
 */
@@ -66,9 +67,39 @@ type GetKubermaticSettingsOK struct {
 	Payload *models.GlobalSettings
 }
 
+// IsSuccess returns true when this get kubermatic settings o k response has a 2xx status code
+func (o *GetKubermaticSettingsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get kubermatic settings o k response has a 3xx status code
+func (o *GetKubermaticSettingsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get kubermatic settings o k response has a 4xx status code
+func (o *GetKubermaticSettingsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get kubermatic settings o k response has a 5xx status code
+func (o *GetKubermaticSettingsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get kubermatic settings o k response a status code equal to that given
+func (o *GetKubermaticSettingsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetKubermaticSettingsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetKubermaticSettingsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetKubermaticSettingsOK) GetPayload() *models.GlobalSettings {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetKubermaticSettingsUnauthorized() *GetKubermaticSettingsUnauthorized {
 	return &GetKubermaticSettingsUnauthorized{}
 }
 
-/* GetKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetKubermaticSettingsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetKubermaticSettingsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get kubermatic settings unauthorized response has a 2xx status code
+func (o *GetKubermaticSettingsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get kubermatic settings unauthorized response has a 3xx status code
+func (o *GetKubermaticSettingsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get kubermatic settings unauthorized response has a 4xx status code
+func (o *GetKubermaticSettingsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get kubermatic settings unauthorized response has a 5xx status code
+func (o *GetKubermaticSettingsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get kubermatic settings unauthorized response a status code equal to that given
+func (o *GetKubermaticSettingsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetKubermaticSettingsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsUnauthorized ", 401)
+}
+
+func (o *GetKubermaticSettingsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetKubermaticSettingsForbidden() *GetKubermaticSettingsForbidden {
 	return &GetKubermaticSettingsForbidden{}
 }
 
-/* GetKubermaticSettingsForbidden describes a response with status code 403, with default header values.
+/*
+GetKubermaticSettingsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetKubermaticSettingsForbidden struct {
 }
 
+// IsSuccess returns true when this get kubermatic settings forbidden response has a 2xx status code
+func (o *GetKubermaticSettingsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get kubermatic settings forbidden response has a 3xx status code
+func (o *GetKubermaticSettingsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get kubermatic settings forbidden response has a 4xx status code
+func (o *GetKubermaticSettingsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get kubermatic settings forbidden response has a 5xx status code
+func (o *GetKubermaticSettingsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get kubermatic settings forbidden response a status code equal to that given
+func (o *GetKubermaticSettingsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetKubermaticSettingsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsForbidden ", 403)
+}
+
+func (o *GetKubermaticSettingsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettingsForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetKubermaticSettingsDefault(code int) *GetKubermaticSettingsDefault {
 	}
 }
 
-/* GetKubermaticSettingsDefault describes a response with status code -1, with default header values.
+/*
+GetKubermaticSettingsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetKubermaticSettingsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get kubermatic settings default response has a 2xx status code
+func (o *GetKubermaticSettingsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get kubermatic settings default response has a 3xx status code
+func (o *GetKubermaticSettingsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get kubermatic settings default response has a 4xx status code
+func (o *GetKubermaticSettingsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get kubermatic settings default response has a 5xx status code
+func (o *GetKubermaticSettingsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get kubermatic settings default response a status code equal to that given
+func (o *GetKubermaticSettingsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetKubermaticSettingsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettings default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetKubermaticSettingsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin/settings][%d] getKubermaticSettings default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetKubermaticSettingsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

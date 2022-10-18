@@ -44,7 +44,7 @@ type ClientService interface {
 }
 
 /*
-  AddUserToProject Adds the given user to the given project
+AddUserToProject Adds the given user to the given project
 */
 func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserToProjectCreated, error) {
 	// TODO: Validate the params before sending
@@ -82,7 +82,7 @@ func (a *Client) AddUserToProject(params *AddUserToProjectParams, authInfo runti
 }
 
 /*
-  DeleteUserFromProject Removes the given member from the project
+DeleteUserFromProject Removes the given member from the project
 */
 func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteUserFromProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -120,7 +120,7 @@ func (a *Client) DeleteUserFromProject(params *DeleteUserFromProjectParams, auth
 }
 
 /*
-  EditUserInProject Changes membership of the given user for the given project
+EditUserInProject Changes membership of the given user for the given project
 */
 func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*EditUserInProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -158,7 +158,7 @@ func (a *Client) EditUserInProject(params *EditUserInProjectParams, authInfo run
 }
 
 /*
-  GetCurrentUser returns information about the current user
+GetCurrentUser returns information about the current user
 */
 func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentUserOK, error) {
 	// TODO: Validate the params before sending
@@ -196,7 +196,7 @@ func (a *Client) GetCurrentUser(params *GetCurrentUserParams, authInfo runtime.C
 }
 
 /*
-  GetUsersForProject Get list of users for the given project
+GetUsersForProject Get list of users for the given project
 */
 func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetUsersForProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -234,9 +234,9 @@ func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo r
 }
 
 /*
-  LogoutCurrentUser adds current authorization bearer token to the blacklist
+LogoutCurrentUser adds current authorization bearer token to the blacklist
 
-  Enforces user to login again with the new token.
+Enforces user to login again with the new token.
 */
 func (a *Client) LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogoutCurrentUserOK, error) {
 	// TODO: Validate the params before sending

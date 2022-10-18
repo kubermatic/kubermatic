@@ -58,14 +58,44 @@ func NewDeleteMachineDeploymentNodeOK() *DeleteMachineDeploymentNodeOK {
 	return &DeleteMachineDeploymentNodeOK{}
 }
 
-/* DeleteMachineDeploymentNodeOK describes a response with status code 200, with default header values.
+/*
+DeleteMachineDeploymentNodeOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteMachineDeploymentNodeOK struct {
 }
 
+// IsSuccess returns true when this delete machine deployment node o k response has a 2xx status code
+func (o *DeleteMachineDeploymentNodeOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete machine deployment node o k response has a 3xx status code
+func (o *DeleteMachineDeploymentNodeOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete machine deployment node o k response has a 4xx status code
+func (o *DeleteMachineDeploymentNodeOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete machine deployment node o k response has a 5xx status code
+func (o *DeleteMachineDeploymentNodeOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete machine deployment node o k response a status code equal to that given
+func (o *DeleteMachineDeploymentNodeOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteMachineDeploymentNodeOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNodeOK ", 200)
+}
+
+func (o *DeleteMachineDeploymentNodeOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNodeOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteMachineDeploymentNodeUnauthorized() *DeleteMachineDeploymentNodeUn
 	return &DeleteMachineDeploymentNodeUnauthorized{}
 }
 
-/* DeleteMachineDeploymentNodeUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteMachineDeploymentNodeUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteMachineDeploymentNodeUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete machine deployment node unauthorized response has a 2xx status code
+func (o *DeleteMachineDeploymentNodeUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete machine deployment node unauthorized response has a 3xx status code
+func (o *DeleteMachineDeploymentNodeUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete machine deployment node unauthorized response has a 4xx status code
+func (o *DeleteMachineDeploymentNodeUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete machine deployment node unauthorized response has a 5xx status code
+func (o *DeleteMachineDeploymentNodeUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete machine deployment node unauthorized response a status code equal to that given
+func (o *DeleteMachineDeploymentNodeUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteMachineDeploymentNodeUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNodeUnauthorized ", 401)
+}
+
+func (o *DeleteMachineDeploymentNodeUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNodeUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteMachineDeploymentNodeForbidden() *DeleteMachineDeploymentNodeForbi
 	return &DeleteMachineDeploymentNodeForbidden{}
 }
 
-/* DeleteMachineDeploymentNodeForbidden describes a response with status code 403, with default header values.
+/*
+DeleteMachineDeploymentNodeForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteMachineDeploymentNodeForbidden struct {
 }
 
+// IsSuccess returns true when this delete machine deployment node forbidden response has a 2xx status code
+func (o *DeleteMachineDeploymentNodeForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete machine deployment node forbidden response has a 3xx status code
+func (o *DeleteMachineDeploymentNodeForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete machine deployment node forbidden response has a 4xx status code
+func (o *DeleteMachineDeploymentNodeForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete machine deployment node forbidden response has a 5xx status code
+func (o *DeleteMachineDeploymentNodeForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete machine deployment node forbidden response a status code equal to that given
+func (o *DeleteMachineDeploymentNodeForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteMachineDeploymentNodeForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNodeForbidden ", 403)
+}
+
+func (o *DeleteMachineDeploymentNodeForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNodeForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteMachineDeploymentNodeDefault(code int) *DeleteMachineDeploymentNod
 	}
 }
 
-/* DeleteMachineDeploymentNodeDefault describes a response with status code -1, with default header values.
+/*
+DeleteMachineDeploymentNodeDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteMachineDeploymentNodeDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete machine deployment node default response has a 2xx status code
+func (o *DeleteMachineDeploymentNodeDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete machine deployment node default response has a 3xx status code
+func (o *DeleteMachineDeploymentNodeDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete machine deployment node default response has a 4xx status code
+func (o *DeleteMachineDeploymentNodeDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete machine deployment node default response has a 5xx status code
+func (o *DeleteMachineDeploymentNodeDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete machine deployment node default response a status code equal to that given
+func (o *DeleteMachineDeploymentNodeDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteMachineDeploymentNodeDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNode default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteMachineDeploymentNodeDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}][%d] deleteMachineDeploymentNode default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteMachineDeploymentNodeDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

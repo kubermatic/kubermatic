@@ -383,7 +383,7 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
 	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSizeGB))
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", *rawConfig.DiskSizeGB))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
 	}
@@ -794,7 +794,7 @@ func getPacketResourceRequirements(ctx context.Context,
 	}
 
 	if plan.Specs.Memory.Total != "" {
-		memReq, err = resource.ParseQuantity(plan.Specs.Memory.Total)
+		memReq, err = resource.ParseQuantity(strings.TrimSuffix(plan.Specs.Memory.Total, "B"))
 		if err != nil {
 			return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
 		}

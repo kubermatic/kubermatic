@@ -28,7 +28,7 @@ REALDIR="$(cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))" && pwd)"
 source ${REALDIR}/lib.sh
 
 cd ${BASEDIR}
-chartname=$(yq4 '.name' Chart.yaml)
+chartname=$(yq '.name' Chart.yaml)
 echodate "(Golden master) Testing ${chartname}..."
 exitCode=0
 
@@ -36,7 +36,7 @@ set +o errexit
 helm version
 echodate "Fetching dependencies..."
 i=0
-for url in $(yq4 '.dependencies.[].repository' Chart.yaml); do
+for url in $(yq '.dependencies.[].repository' Chart.yaml); do
   i=$((i + 1))
   helm repo add ${chartname}-dep-${i} ${url}
 done

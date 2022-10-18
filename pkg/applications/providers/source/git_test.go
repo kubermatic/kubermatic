@@ -497,12 +497,12 @@ func newGitSSHServer(repoPath string, pub string, t *testing.T) string {
 // createGitRepository create a git repository named repo1 in temp directory and returns information about the repository.
 //
 // the repository has the following structure:
-//  * C5 (feature-1) add subdir2/file5
-//  | * C4 (master) add file4
-//  | * C3 add file3
-//  |/
-//  * C2 (tag: v1.0.0) subdir/file2
-//  * C1 add file1
+//   - C5 (feature-1) add subdir2/file5
+//     | * C4 (master) add file4
+//     | * C3 add file3
+//     |/
+//   - C2 (tag: v1.0.0) subdir/file2
+//   - C1 add file1
 //
 // The content of the repository for master branch is:
 // .
@@ -510,7 +510,8 @@ func newGitSSHServer(repoPath string, pub string, t *testing.T) string {
 // ├── file3
 // ├── file4
 // └── subdir
-//      └── file2
+//
+//	└── file2
 //
 // the content of the repository for feature-1 branch is:
 // .
@@ -518,7 +519,8 @@ func newGitSSHServer(repoPath string, pub string, t *testing.T) string {
 // ├── subdir
 // │   └── file2
 // └── subdir2
-//     └── file5
+//
+//	└── file5
 func createGitRepository(t *testing.T, temp string) repoInfo {
 	repoDir := temp + "/repo1"
 	err := os.Mkdir(repoDir, 0700)

@@ -43,11 +43,11 @@ while IFS= read -r crd; do
   name=$(echo "$crd" | jq -r '.spec.names.plural')
   filename="crd/$name.yaml"
 
-  pretty=$(echo "$crd" | yq4 --prettyPrint)
+  pretty=$(echo "$crd" | yq --prettyPrint)
 
   echo "# This file has been generated with Velero $version. Do not edit." > $filename
   echo -e "---\n$pretty" >> $filename
 
   # remove misleading values
-  yq4 --inplace 'del(.metadata.creationTimestamp)' $filename
+  yq --inplace 'del(.metadata.creationTimestamp)' $filename
 done <<< "$crds"

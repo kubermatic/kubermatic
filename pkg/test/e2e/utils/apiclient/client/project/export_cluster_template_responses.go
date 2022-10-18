@@ -58,7 +58,8 @@ func NewExportClusterTemplateOK() *ExportClusterTemplateOK {
 	return &ExportClusterTemplateOK{}
 }
 
-/* ExportClusterTemplateOK describes a response with status code 200, with default header values.
+/*
+ExportClusterTemplateOK describes a response with status code 200, with default header values.
 
 ClusterTemplate
 */
@@ -66,9 +67,39 @@ type ExportClusterTemplateOK struct {
 	Payload *models.ClusterTemplate
 }
 
+// IsSuccess returns true when this export cluster template o k response has a 2xx status code
+func (o *ExportClusterTemplateOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this export cluster template o k response has a 3xx status code
+func (o *ExportClusterTemplateOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this export cluster template o k response has a 4xx status code
+func (o *ExportClusterTemplateOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this export cluster template o k response has a 5xx status code
+func (o *ExportClusterTemplateOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this export cluster template o k response a status code equal to that given
+func (o *ExportClusterTemplateOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ExportClusterTemplateOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplateOK  %+v", 200, o.Payload)
 }
+
+func (o *ExportClusterTemplateOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplateOK  %+v", 200, o.Payload)
+}
+
 func (o *ExportClusterTemplateOK) GetPayload() *models.ClusterTemplate {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewExportClusterTemplateUnauthorized() *ExportClusterTemplateUnauthorized {
 	return &ExportClusterTemplateUnauthorized{}
 }
 
-/* ExportClusterTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+ExportClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ExportClusterTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this export cluster template unauthorized response has a 2xx status code
+func (o *ExportClusterTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this export cluster template unauthorized response has a 3xx status code
+func (o *ExportClusterTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this export cluster template unauthorized response has a 4xx status code
+func (o *ExportClusterTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this export cluster template unauthorized response has a 5xx status code
+func (o *ExportClusterTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this export cluster template unauthorized response a status code equal to that given
+func (o *ExportClusterTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ExportClusterTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplateUnauthorized ", 401)
+}
+
+func (o *ExportClusterTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplateUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewExportClusterTemplateForbidden() *ExportClusterTemplateForbidden {
 	return &ExportClusterTemplateForbidden{}
 }
 
-/* ExportClusterTemplateForbidden describes a response with status code 403, with default header values.
+/*
+ExportClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ExportClusterTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this export cluster template forbidden response has a 2xx status code
+func (o *ExportClusterTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this export cluster template forbidden response has a 3xx status code
+func (o *ExportClusterTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this export cluster template forbidden response has a 4xx status code
+func (o *ExportClusterTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this export cluster template forbidden response has a 5xx status code
+func (o *ExportClusterTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this export cluster template forbidden response a status code equal to that given
+func (o *ExportClusterTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ExportClusterTemplateForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplateForbidden ", 403)
+}
+
+func (o *ExportClusterTemplateForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplateForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewExportClusterTemplateDefault(code int) *ExportClusterTemplateDefault {
 	}
 }
 
-/* ExportClusterTemplateDefault describes a response with status code -1, with default header values.
+/*
+ExportClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *ExportClusterTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this export cluster template default response has a 2xx status code
+func (o *ExportClusterTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this export cluster template default response has a 3xx status code
+func (o *ExportClusterTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this export cluster template default response has a 4xx status code
+func (o *ExportClusterTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this export cluster template default response has a 5xx status code
+func (o *ExportClusterTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this export cluster template default response a status code equal to that given
+func (o *ExportClusterTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ExportClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ExportClusterTemplateDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/export][%d] exportClusterTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ExportClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

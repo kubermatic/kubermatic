@@ -104,53 +104,18 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Cluster represents a Kubermatic Kubernetes Platform user cluster.
+// Cluster objects exist on Seed clusters and each user cluster consists
+// of a namespace containing the Kubernetes control plane and additional
+// pods (like Prometheus or the machine-controller).
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterSpec   `json:"spec,omitempty"`
+	// Spec describes the desired cluster state.
+	Spec ClusterSpec `json:"spec,omitempty"`
+
+	// Status contains reconciliation information for the cluster.
 	Status ClusterStatus `json:"status,omitempty"`
-
-	// Address contains the IPs/URLs to access the cluster control plane.
-	// This field is optional and replaced by the identical struct in the
-	// ClusterStatus. No code should rely on these fields anymore.
-	// +optional
-	Address ClusterAddress `json:"address,omitempty"`
-}
-
-// GetAddress returns the address and can handle both KKP 2.20 clusters
-// (where the address is a top-level element in the CRD) and 2.21+ clusters
-// (where the address is part of the ClusterStatus). In KKP 2.22+ this function
-// should be removed and all components should just use cluster.Status.Address
-// directly.
-func (c *Cluster) GetAddress() ClusterAddress {
-	address := c.Status.Address.DeepCopy()
-
-	if address.AdminToken == "" {
-		address.AdminToken = c.Address.AdminToken
-	}
-
-	if address.URL == "" {
-		address.URL = c.Address.URL
-	}
-
-	if address.ExternalName == "" {
-		address.ExternalName = c.Address.ExternalName
-	}
-
-	if address.InternalName == "" {
-		address.InternalName = c.Address.InternalName
-	}
-
-	if address.IP == "" {
-		address.IP = c.Address.IP
-	}
-
-	if address.Port == 0 {
-		address.Port = c.Address.Port
-	}
-
-	return *address
 }
 
 // +kubebuilder:object:generate=true
@@ -172,6 +137,8 @@ type ClusterSpec struct {
 	// Version defines the wanted version of the control plane.
 	Version semver.Semver `json:"version"`
 
+	// Cloud contains information regarding the cloud provider that
+	// is responsible for hosting the cluster's workload.
 	Cloud CloudSpec `json:"cloud"`
 
 	// +kubebuilder:validation:Enum=docker;containerd
@@ -188,7 +155,13 @@ type ClusterSpec struct {
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
+	// ExposeStrategy is the strategy used to expose a cluster control plane.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy"`
+
+	// Optional: APIServerAllowedIPRanges is a list of IP ranges allowed to access the API server.
+	// Applicable only if the expose strategy of the cluster is LoadBalancer.
+	// If not configured, access to the API server is unrestricted.
+	APIServerAllowedIPRanges *NetworkRanges `json:"apiServerAllowedIPRanges,omitempty"`
 
 	// Optional: Component specific overrides that allow customization of control plane components.
 	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
@@ -259,7 +232,6 @@ type ClusterSpec struct {
 	ApplicationSettings *ApplicationSettings `json:"applicationSettings,omitempty"`
 
 	// Optional: Configures encryption-at-rest for Kubernetes API data. This needs the `encryptionAtRest` feature gate.
-	// THIS IS A PLACEHOLDER AND NOT FUNCTIONAL YET.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 
 	// If this is set to true, the cluster will not be reconciled by KKP.

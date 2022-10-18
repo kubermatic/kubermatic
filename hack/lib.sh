@@ -102,9 +102,14 @@ write_junit() {
 EOF
 }
 
+is_containerized() {
+  # we're inside a Kubernetes pod/container or inside a container launched by containerize()
+  [ -n "${KUBERNETES_SERVICE_HOST:-}" ] || [ -n "${CONTAINERIZED:-}" ]
+}
+
 containerize() {
   local cmd="$1"
-  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.1.0}"
+  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.2.0}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
   local gomodcache="${CONTAINERIZE_GOMODCACHE:-/tmp/.gomodcache}"
   local skip="${NO_CONTAINERIZE:-}"
@@ -112,7 +117,7 @@ containerize() {
   # short-circuit containerize when in some cases it needs to be avoided
   [ -n "$skip" ] && return
 
-  if ! [ -f /.dockerenv ]; then
+  if ! is_containerized; then
     echodate "Running $cmd in a Docker container using $image..."
     mkdir -p "$gocache"
     mkdir -p "$gomodcache"
@@ -124,6 +129,7 @@ containerize() {
       -w /go/src/k8c.io/kubermatic \
       -e "GOCACHE=$gocache" \
       -e "GOMODCACHE=$gomodcache" \
+      -e "CONTAINERIZED=true" \
       -u "$(id -u):$(id -g)" \
       --entrypoint="$cmd" \
       --rm \
@@ -352,6 +358,16 @@ check_all_deployments_ready() {
   return 0
 }
 
+check_seed_ready() {
+  status="$(kubectl --namespace "$1" get seed "$2" --output json | jq -r '.status.conditions.ResourcesReconciled.status')"
+  if [ "$status" != "True" ]; then
+    echodate "Seed does not yet have ResourcesReconciled=True condition."
+    return 1
+  fi
+
+  return 0
+}
+
 cleanup_kubermatic_clusters_in_kind() {
   # Tolerate errors and just continue
   set +e
@@ -424,10 +440,10 @@ set_helm_charts_version() {
   while IFS= read -r -d '' chartFile; do
     chart="$(basename $(dirname "$chartFile"))"
 
-    yq4 --inplace ".version = \"$version\"" "$chartFile"
+    yq --inplace ".version = \"$version\"" "$chartFile"
     if [ "$chart" = "kubermatic-operator" ]; then
-      yq4 --inplace ".appVersion = \"$version\"" "$chartFile"
-      yq4 --inplace ".kubermaticOperator.image.tag = \"$dockerTag\"" "$(dirname "$chartFile")/values.yaml"
+      yq --inplace ".appVersion = \"$version\"" "$chartFile"
+      yq --inplace ".kubermaticOperator.image.tag = \"$dockerTag\"" "$(dirname "$chartFile")/values.yaml"
     fi
   done < <(find charts -name 'Chart.yaml' -print0 | sort --zero-terminated)
 }
@@ -456,7 +472,7 @@ set_crds_version_annotation() {
   fi
 
   while IFS= read -r -d '' filename; do
-    yq4 --inplace ".metadata.annotations.\"app.kubernetes.io/version\" = \"$version\"" "$filename"
+    yq --inplace ".metadata.annotations.\"app.kubernetes.io/version\" = \"$version\"" "$filename"
   done < <(find "$directory" -name '*.yaml' -print0 | sort --zero-terminated)
 }
 
@@ -490,4 +506,15 @@ safebase64() {
 
   echo "$value" | base64 -w0
   echo
+}
+
+run_swagger() {
+  # For some reason, since go-swagger 0.30.0, GOFLAGS with `-trimpath` causes
+  # Swagger to ignore/forget/don't see half of the necessary types and completely
+  # mangles the generated spec.
+  # After multiple days of debugging we simply gave up and ensure that GOFLAGS
+  # is not set for generating/verifying the Swagger spec.
+  export GOFLAGS=
+
+  go run github.com/go-swagger/go-swagger/cmd/swagger $@
 }

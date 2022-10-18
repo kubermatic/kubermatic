@@ -52,10 +52,12 @@ func NewListPacketSizesParamsWithHTTPClient(client *http.Client) *ListPacketSize
 	}
 }
 
-/* ListPacketSizesParams contains all the parameters to send to the API endpoint
-   for the list packet sizes operation.
+/*
+ListPacketSizesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list packet sizes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListPacketSizesParams struct {
 

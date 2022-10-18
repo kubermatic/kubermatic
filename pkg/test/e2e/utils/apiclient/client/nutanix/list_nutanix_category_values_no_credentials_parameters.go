@@ -52,10 +52,12 @@ func NewListNutanixCategoryValuesNoCredentialsParamsWithHTTPClient(client *http.
 	}
 }
 
-/* ListNutanixCategoryValuesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list nutanix category values no credentials operation.
+/*
+ListNutanixCategoryValuesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list nutanix category values no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNutanixCategoryValuesNoCredentialsParams struct {
 

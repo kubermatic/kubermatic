@@ -37,12 +37,18 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Addon specifies a add-on.
+// Addon specifies a cluster addon. Addons can be installed into user clusters
+// to provide additional manifests for CNIs, CSIs or other applications, which makes
+// addons a necessary component to create functioning user clusters.
+// Addon objects must be created inside cluster namespaces.
 type Addon struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AddonSpec   `json:"spec,omitempty"`
+	// Spec describes the desired addon state.
+	Spec AddonSpec `json:"spec,omitempty"`
+
+	// Status contains information about the reconciliation status.
 	Status AddonStatus `json:"status,omitempty"`
 }
 
@@ -68,7 +74,10 @@ type AddonSpec struct {
 	// apiserver must be installed before this addon can be installed. The addon will not
 	// be installed until that resource is served.
 	RequiredResourceTypes []GroupVersionKind `json:"requiredResourceTypes,omitempty"`
-	// IsDefault indicates whether the addon is default
+	// IsDefault indicates whether the addon is installed because it was configured in
+	// the default addon section in the KubermaticConfiguration. User-installed addons
+	// must not set this field to true, as extra default Addon objects (that are not in
+	// the KubermaticConfiguration) will be garbage-collected.
 	IsDefault bool `json:"isDefault,omitempty"`
 }
 
@@ -83,6 +92,7 @@ type AddonList struct {
 	Items []Addon `json:"items"`
 }
 
+// AddonStatus contains information about the reconciliation status.
 type AddonStatus struct {
 	Conditions map[AddonConditionType]AddonCondition `json:"conditions,omitempty"`
 }
@@ -96,7 +106,7 @@ type AddonCondition struct {
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
 	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime"`
-	// Last time the condition transit from one status to another.
+	// Last time the condition transitioned from one status to another.
 	// +optional
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 }

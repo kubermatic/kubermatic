@@ -52,10 +52,12 @@ func NewListGCPSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *List
 	}
 }
 
-/* ListGCPSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list g c p sizes no credentials operation.
+/*
+ListGCPSizesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g c p sizes no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGCPSizesNoCredentialsParams struct {
 

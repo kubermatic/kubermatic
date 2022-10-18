@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -742,7 +742,7 @@ func (r rawTemplateGen) BuildPtr() *kubermaticv1.ClusterTemplate {
 func (r rawTemplateGen) Build() kubermaticv1.ClusterTemplate {
 	version := r.Version
 	if version == nil {
-		version = defaults.DefaultKubernetesVersioning.Default
+		version = defaulting.DefaultKubernetesVersioning.Default
 	}
 
 	c := kubermaticv1.ClusterTemplate{
@@ -760,8 +760,10 @@ func (r rawTemplateGen) Build() kubermaticv1.ClusterTemplate {
 			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
-					Token: "thisis.reallyreallyfake",
+					Token:   "thisis.reallyreallyfake",
+					Network: "this-is-required-for-external-ccm-to-work",
 				},
 			},
 			Features: map[string]bool{

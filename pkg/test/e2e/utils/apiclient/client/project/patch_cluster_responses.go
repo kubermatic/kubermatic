@@ -58,7 +58,8 @@ func NewPatchClusterOK() *PatchClusterOK {
 	return &PatchClusterOK{}
 }
 
-/* PatchClusterOK describes a response with status code 200, with default header values.
+/*
+PatchClusterOK describes a response with status code 200, with default header values.
 
 Cluster
 */
@@ -66,9 +67,39 @@ type PatchClusterOK struct {
 	Payload *models.Cluster
 }
 
+// IsSuccess returns true when this patch cluster o k response has a 2xx status code
+func (o *PatchClusterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch cluster o k response has a 3xx status code
+func (o *PatchClusterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster o k response has a 4xx status code
+func (o *PatchClusterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch cluster o k response has a 5xx status code
+func (o *PatchClusterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster o k response a status code equal to that given
+func (o *PatchClusterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchClusterOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchClusterOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchClusterOK) GetPayload() *models.Cluster {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewPatchClusterUnauthorized() *PatchClusterUnauthorized {
 	return &PatchClusterUnauthorized{}
 }
 
-/* PatchClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch cluster unauthorized response has a 2xx status code
+func (o *PatchClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch cluster unauthorized response has a 3xx status code
+func (o *PatchClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster unauthorized response has a 4xx status code
+func (o *PatchClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch cluster unauthorized response has a 5xx status code
+func (o *PatchClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster unauthorized response a status code equal to that given
+func (o *PatchClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterUnauthorized ", 401)
+}
+
+func (o *PatchClusterUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewPatchClusterForbidden() *PatchClusterForbidden {
 	return &PatchClusterForbidden{}
 }
 
-/* PatchClusterForbidden describes a response with status code 403, with default header values.
+/*
+PatchClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchClusterForbidden struct {
 }
 
+// IsSuccess returns true when this patch cluster forbidden response has a 2xx status code
+func (o *PatchClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch cluster forbidden response has a 3xx status code
+func (o *PatchClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch cluster forbidden response has a 4xx status code
+func (o *PatchClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch cluster forbidden response has a 5xx status code
+func (o *PatchClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch cluster forbidden response a status code equal to that given
+func (o *PatchClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchClusterForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterForbidden ", 403)
+}
+
+func (o *PatchClusterForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchClusterForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewPatchClusterDefault(code int) *PatchClusterDefault {
 	}
 }
 
-/* PatchClusterDefault describes a response with status code -1, with default header values.
+/*
+PatchClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *PatchClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch cluster default response has a 2xx status code
+func (o *PatchClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch cluster default response has a 3xx status code
+func (o *PatchClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch cluster default response has a 4xx status code
+func (o *PatchClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch cluster default response has a 5xx status code
+func (o *PatchClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch cluster default response a status code equal to that given
+func (o *PatchClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchClusterDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchClusterDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}][%d] patchCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

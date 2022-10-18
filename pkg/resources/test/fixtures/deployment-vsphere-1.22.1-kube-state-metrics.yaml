@@ -5,6 +5,7 @@ metadata:
   labels:
     app: kube-state-metrics
   name: kube-state-metrics
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -36,7 +37,7 @@ spec:
         - '{"command":"/kube-state-metrics","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--port","8080","--telemetry-port","8081"]}'
         command:
         - /http-prober-bin/http-prober
-        image: k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.5.0
+        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.5.0
         name: kube-state-metrics
         ports:
         - containerPort: 8080

@@ -58,7 +58,8 @@ func NewGetUsersForProjectOK() *GetUsersForProjectOK {
 	return &GetUsersForProjectOK{}
 }
 
-/* GetUsersForProjectOK describes a response with status code 200, with default header values.
+/*
+GetUsersForProjectOK describes a response with status code 200, with default header values.
 
 User
 */
@@ -66,9 +67,39 @@ type GetUsersForProjectOK struct {
 	Payload []*models.User
 }
 
+// IsSuccess returns true when this get users for project o k response has a 2xx status code
+func (o *GetUsersForProjectOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get users for project o k response has a 3xx status code
+func (o *GetUsersForProjectOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get users for project o k response has a 4xx status code
+func (o *GetUsersForProjectOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get users for project o k response has a 5xx status code
+func (o *GetUsersForProjectOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get users for project o k response a status code equal to that given
+func (o *GetUsersForProjectOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetUsersForProjectOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectOK  %+v", 200, o.Payload)
 }
+
+func (o *GetUsersForProjectOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectOK  %+v", 200, o.Payload)
+}
+
 func (o *GetUsersForProjectOK) GetPayload() []*models.User {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewGetUsersForProjectUnauthorized() *GetUsersForProjectUnauthorized {
 	return &GetUsersForProjectUnauthorized{}
 }
 
-/* GetUsersForProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+GetUsersForProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetUsersForProjectUnauthorized struct {
 }
 
+// IsSuccess returns true when this get users for project unauthorized response has a 2xx status code
+func (o *GetUsersForProjectUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get users for project unauthorized response has a 3xx status code
+func (o *GetUsersForProjectUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get users for project unauthorized response has a 4xx status code
+func (o *GetUsersForProjectUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get users for project unauthorized response has a 5xx status code
+func (o *GetUsersForProjectUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get users for project unauthorized response a status code equal to that given
+func (o *GetUsersForProjectUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetUsersForProjectUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectUnauthorized ", 401)
+}
+
+func (o *GetUsersForProjectUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewGetUsersForProjectForbidden() *GetUsersForProjectForbidden {
 	return &GetUsersForProjectForbidden{}
 }
 
-/* GetUsersForProjectForbidden describes a response with status code 403, with default header values.
+/*
+GetUsersForProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetUsersForProjectForbidden struct {
 }
 
+// IsSuccess returns true when this get users for project forbidden response has a 2xx status code
+func (o *GetUsersForProjectForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get users for project forbidden response has a 3xx status code
+func (o *GetUsersForProjectForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get users for project forbidden response has a 4xx status code
+func (o *GetUsersForProjectForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get users for project forbidden response has a 5xx status code
+func (o *GetUsersForProjectForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get users for project forbidden response a status code equal to that given
+func (o *GetUsersForProjectForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetUsersForProjectForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectForbidden ", 403)
+}
+
+func (o *GetUsersForProjectForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProjectForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewGetUsersForProjectDefault(code int) *GetUsersForProjectDefault {
 	}
 }
 
-/* GetUsersForProjectDefault describes a response with status code -1, with default header values.
+/*
+GetUsersForProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *GetUsersForProjectDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get users for project default response has a 2xx status code
+func (o *GetUsersForProjectDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get users for project default response has a 3xx status code
+func (o *GetUsersForProjectDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get users for project default response has a 4xx status code
+func (o *GetUsersForProjectDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get users for project default response has a 5xx status code
+func (o *GetUsersForProjectDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get users for project default response a status code equal to that given
+func (o *GetUsersForProjectDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetUsersForProjectDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProject default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetUsersForProjectDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/users][%d] getUsersForProject default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetUsersForProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

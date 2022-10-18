@@ -36,7 +36,7 @@ See the [LICENSE](LICENSE) file for licensing information as it pertains to file
 
 We strongly recommend that you use an official release of Kubermatic Kubernetes Platform. Follow the instructions under the **Installation** section of [our documentation][21] to get started.
 
-_The code and sample YAML files in the master branch of the kubermatic repository are under active development and are not guaranteed to be stable. Use them at your own risk!_
+_The code and sample YAML files in the main branch of the kubermatic repository are under active development and are not guaranteed to be stable. Use them at your own risk!_
 
 ## More information
 
@@ -80,11 +80,25 @@ cd kubermatic
 There are a couple of scripts in the `hacks` directory to aid in running the components locally
 for testing purposes.
 
-You can create a cluster via the UI at `https://dev.kubermatic.io`, then use `kubectl` to add a
-`worker-name=<<hostname-of-your-laptop>>` label to the cluster. This will make your locally
-running controllers manage the cluster.
+#### Running components locally
 
-#### Running locally
+##### user-cluster-controller-manager
+
+In order to instrument the seed-controller to allow for a local user-cluster-controller-manager, you need to add a `worker-name` label with your local machine's name as its value. Additionally, you need to scale down the already running deployment.
+
+```sh
+# Using a kubeconfig, which points to the seed-cluster
+export cluster_id="<id-of-your-user-cluster>"
+kubectl label cluster ${cluster_id} worker-name=$(uname -n)
+kubectl scale deployment -n cluster-${cluster_id} usercluster-controller --replicas=0
+```
+
+Afterwards, you can start your local user-cluster-controller-manager.
+
+```sh
+# Using a kubeconfig, which points to the seed-cluster
+./hack/run-user-cluster-controller-manager.sh
+```
 
 ##### kubermatic-api
 
@@ -136,12 +150,12 @@ hack/update-codegen.sh
 See [the list of releases][3] to find out about feature changes.
 
 [1]: https://github.com/kubermatic/kubermatic/issues
-[2]: https://github.com/kubermatic/kubermatic/blob/master/CONTRIBUTING.md
+[2]: https://github.com/kubermatic/kubermatic/blob/main/CONTRIBUTING.md
 [3]: https://github.com/kubermatic/kubermatic/releases
-[4]: https://github.com/kubermatic/kubermatic/blob/master/CODE_OF_CONDUCT.md
+[4]: https://github.com/kubermatic/kubermatic/blob/main/CODE_OF_CONDUCT.md
 
 [12]: https://kubermatic-community.slack.com/messages/kubermatic
-[13]: https://github.com/kubermatic/kubermatic/blob/master/Zenhub.md
+[13]: https://github.com/kubermatic/kubermatic/blob/main/Zenhub.md
 [15]: http://kubermatic-community.slack.com
 [16]: https://join.slack.com/t/kubermatic-community/shared_invite/zt-vqjjqnza-dDw8BuUm3HvD4VGrVQ_ptw
 

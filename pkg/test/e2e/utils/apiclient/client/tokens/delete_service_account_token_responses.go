@@ -58,14 +58,44 @@ func NewDeleteServiceAccountTokenOK() *DeleteServiceAccountTokenOK {
 	return &DeleteServiceAccountTokenOK{}
 }
 
-/* DeleteServiceAccountTokenOK describes a response with status code 200, with default header values.
+/*
+DeleteServiceAccountTokenOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteServiceAccountTokenOK struct {
 }
 
+// IsSuccess returns true when this delete service account token o k response has a 2xx status code
+func (o *DeleteServiceAccountTokenOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete service account token o k response has a 3xx status code
+func (o *DeleteServiceAccountTokenOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete service account token o k response has a 4xx status code
+func (o *DeleteServiceAccountTokenOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete service account token o k response has a 5xx status code
+func (o *DeleteServiceAccountTokenOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete service account token o k response a status code equal to that given
+func (o *DeleteServiceAccountTokenOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteServiceAccountTokenOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountTokenOK ", 200)
+}
+
+func (o *DeleteServiceAccountTokenOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountTokenOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteServiceAccountTokenUnauthorized() *DeleteServiceAccountTokenUnauth
 	return &DeleteServiceAccountTokenUnauthorized{}
 }
 
-/* DeleteServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteServiceAccountTokenUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete service account token unauthorized response has a 2xx status code
+func (o *DeleteServiceAccountTokenUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete service account token unauthorized response has a 3xx status code
+func (o *DeleteServiceAccountTokenUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete service account token unauthorized response has a 4xx status code
+func (o *DeleteServiceAccountTokenUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete service account token unauthorized response has a 5xx status code
+func (o *DeleteServiceAccountTokenUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete service account token unauthorized response a status code equal to that given
+func (o *DeleteServiceAccountTokenUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteServiceAccountTokenUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountTokenUnauthorized ", 401)
+}
+
+func (o *DeleteServiceAccountTokenUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountTokenUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteServiceAccountTokenForbidden() *DeleteServiceAccountTokenForbidden
 	return &DeleteServiceAccountTokenForbidden{}
 }
 
-/* DeleteServiceAccountTokenForbidden describes a response with status code 403, with default header values.
+/*
+DeleteServiceAccountTokenForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteServiceAccountTokenForbidden struct {
 }
 
+// IsSuccess returns true when this delete service account token forbidden response has a 2xx status code
+func (o *DeleteServiceAccountTokenForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete service account token forbidden response has a 3xx status code
+func (o *DeleteServiceAccountTokenForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete service account token forbidden response has a 4xx status code
+func (o *DeleteServiceAccountTokenForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete service account token forbidden response has a 5xx status code
+func (o *DeleteServiceAccountTokenForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete service account token forbidden response a status code equal to that given
+func (o *DeleteServiceAccountTokenForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteServiceAccountTokenForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountTokenForbidden ", 403)
+}
+
+func (o *DeleteServiceAccountTokenForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountTokenForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteServiceAccountTokenDefault(code int) *DeleteServiceAccountTokenDef
 	}
 }
 
-/* DeleteServiceAccountTokenDefault describes a response with status code -1, with default header values.
+/*
+DeleteServiceAccountTokenDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteServiceAccountTokenDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete service account token default response has a 2xx status code
+func (o *DeleteServiceAccountTokenDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete service account token default response has a 3xx status code
+func (o *DeleteServiceAccountTokenDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete service account token default response has a 4xx status code
+func (o *DeleteServiceAccountTokenDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete service account token default response has a 5xx status code
+func (o *DeleteServiceAccountTokenDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete service account token default response a status code equal to that given
+func (o *DeleteServiceAccountTokenDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteServiceAccountTokenDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountToken default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteServiceAccountTokenDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] deleteServiceAccountToken default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteServiceAccountTokenDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

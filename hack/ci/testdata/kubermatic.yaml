@@ -28,6 +28,7 @@ spec:
     replicas: 1
     debugLog: true
   featureGates:
+    EtcdLauncher: true
     # VPA won't do anything useful due to missing Prometheus, but we can
     # at least ensure we deploy a working set of Deployments.
     VerticalPodAutoscaler: true

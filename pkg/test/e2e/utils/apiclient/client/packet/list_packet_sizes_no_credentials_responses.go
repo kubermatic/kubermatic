@@ -46,7 +46,8 @@ func NewListPacketSizesNoCredentialsOK() *ListPacketSizesNoCredentialsOK {
 	return &ListPacketSizesNoCredentialsOK{}
 }
 
-/* ListPacketSizesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListPacketSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 PacketSizeList
 */
@@ -54,9 +55,39 @@ type ListPacketSizesNoCredentialsOK struct {
 	Payload []models.PacketSizeList
 }
 
+// IsSuccess returns true when this list packet sizes no credentials o k response has a 2xx status code
+func (o *ListPacketSizesNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list packet sizes no credentials o k response has a 3xx status code
+func (o *ListPacketSizesNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list packet sizes no credentials o k response has a 4xx status code
+func (o *ListPacketSizesNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list packet sizes no credentials o k response has a 5xx status code
+func (o *ListPacketSizesNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list packet sizes no credentials o k response a status code equal to that given
+func (o *ListPacketSizesNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListPacketSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes][%d] listPacketSizesNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListPacketSizesNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes][%d] listPacketSizesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListPacketSizesNoCredentialsOK) GetPayload() []models.PacketSizeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListPacketSizesNoCredentialsDefault(code int) *ListPacketSizesNoCredenti
 	}
 }
 
-/* ListPacketSizesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListPacketSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListPacketSizesNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list packet sizes no credentials default response has a 2xx status code
+func (o *ListPacketSizesNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list packet sizes no credentials default response has a 3xx status code
+func (o *ListPacketSizesNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list packet sizes no credentials default response has a 4xx status code
+func (o *ListPacketSizesNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list packet sizes no credentials default response has a 5xx status code
+func (o *ListPacketSizesNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list packet sizes no credentials default response a status code equal to that given
+func (o *ListPacketSizesNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListPacketSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes][%d] listPacketSizesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListPacketSizesNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/packet/sizes][%d] listPacketSizesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListPacketSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

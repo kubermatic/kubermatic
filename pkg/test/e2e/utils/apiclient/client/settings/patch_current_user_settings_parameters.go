@@ -52,10 +52,12 @@ func NewPatchCurrentUserSettingsParamsWithHTTPClient(client *http.Client) *Patch
 	}
 }
 
-/* PatchCurrentUserSettingsParams contains all the parameters to send to the API endpoint
-   for the patch current user settings operation.
+/*
+PatchCurrentUserSettingsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch current user settings operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchCurrentUserSettingsParams struct {
 

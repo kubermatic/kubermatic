@@ -21,7 +21,6 @@ import (
 )
 
 const (
-
 	// UserProjectBindingResourceName represents "Resource" defined in Kubernetes.
 	UserProjectBindingResourceName = "userprojectbindings"
 
@@ -56,6 +55,7 @@ type UserProjectBindingSpec struct {
 	// TODO: add "Role" field and deprecate "Group" in favour of it to be in line with GroupProjectBinding resource.
 
 	// Group is the user's group, determining their permissions within the project.
+	// Must be one of `owners`, `editors`, `viewers` or `projectmanagers`.
 	Group string `json:"group"`
 }
 

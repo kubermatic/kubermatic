@@ -58,7 +58,8 @@ func NewRestartMachineDeploymentOK() *RestartMachineDeploymentOK {
 	return &RestartMachineDeploymentOK{}
 }
 
-/* RestartMachineDeploymentOK describes a response with status code 200, with default header values.
+/*
+RestartMachineDeploymentOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -66,9 +67,39 @@ type RestartMachineDeploymentOK struct {
 	Payload *models.NodeDeployment
 }
 
+// IsSuccess returns true when this restart machine deployment o k response has a 2xx status code
+func (o *RestartMachineDeploymentOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this restart machine deployment o k response has a 3xx status code
+func (o *RestartMachineDeploymentOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this restart machine deployment o k response has a 4xx status code
+func (o *RestartMachineDeploymentOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this restart machine deployment o k response has a 5xx status code
+func (o *RestartMachineDeploymentOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this restart machine deployment o k response a status code equal to that given
+func (o *RestartMachineDeploymentOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *RestartMachineDeploymentOK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeploymentOK  %+v", 200, o.Payload)
 }
+
+func (o *RestartMachineDeploymentOK) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeploymentOK  %+v", 200, o.Payload)
+}
+
 func (o *RestartMachineDeploymentOK) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewRestartMachineDeploymentUnauthorized() *RestartMachineDeploymentUnauthor
 	return &RestartMachineDeploymentUnauthorized{}
 }
 
-/* RestartMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+RestartMachineDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type RestartMachineDeploymentUnauthorized struct {
 }
 
+// IsSuccess returns true when this restart machine deployment unauthorized response has a 2xx status code
+func (o *RestartMachineDeploymentUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this restart machine deployment unauthorized response has a 3xx status code
+func (o *RestartMachineDeploymentUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this restart machine deployment unauthorized response has a 4xx status code
+func (o *RestartMachineDeploymentUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this restart machine deployment unauthorized response has a 5xx status code
+func (o *RestartMachineDeploymentUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this restart machine deployment unauthorized response a status code equal to that given
+func (o *RestartMachineDeploymentUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *RestartMachineDeploymentUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeploymentUnauthorized ", 401)
+}
+
+func (o *RestartMachineDeploymentUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeploymentUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewRestartMachineDeploymentForbidden() *RestartMachineDeploymentForbidden {
 	return &RestartMachineDeploymentForbidden{}
 }
 
-/* RestartMachineDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+RestartMachineDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type RestartMachineDeploymentForbidden struct {
 }
 
+// IsSuccess returns true when this restart machine deployment forbidden response has a 2xx status code
+func (o *RestartMachineDeploymentForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this restart machine deployment forbidden response has a 3xx status code
+func (o *RestartMachineDeploymentForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this restart machine deployment forbidden response has a 4xx status code
+func (o *RestartMachineDeploymentForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this restart machine deployment forbidden response has a 5xx status code
+func (o *RestartMachineDeploymentForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this restart machine deployment forbidden response a status code equal to that given
+func (o *RestartMachineDeploymentForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *RestartMachineDeploymentForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeploymentForbidden ", 403)
+}
+
+func (o *RestartMachineDeploymentForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeploymentForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewRestartMachineDeploymentDefault(code int) *RestartMachineDeploymentDefau
 	}
 }
 
-/* RestartMachineDeploymentDefault describes a response with status code -1, with default header values.
+/*
+RestartMachineDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *RestartMachineDeploymentDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this restart machine deployment default response has a 2xx status code
+func (o *RestartMachineDeploymentDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this restart machine deployment default response has a 3xx status code
+func (o *RestartMachineDeploymentDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this restart machine deployment default response has a 4xx status code
+func (o *RestartMachineDeploymentDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this restart machine deployment default response has a 5xx status code
+func (o *RestartMachineDeploymentDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this restart machine deployment default response a status code equal to that given
+func (o *RestartMachineDeploymentDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *RestartMachineDeploymentDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeployment default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *RestartMachineDeploymentDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}][%d] restartMachineDeployment default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *RestartMachineDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

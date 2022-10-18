@@ -58,14 +58,44 @@ func NewUpgradeClusterNodeDeploymentsOK() *UpgradeClusterNodeDeploymentsOK {
 	return &UpgradeClusterNodeDeploymentsOK{}
 }
 
-/* UpgradeClusterNodeDeploymentsOK describes a response with status code 200, with default header values.
+/*
+UpgradeClusterNodeDeploymentsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpgradeClusterNodeDeploymentsOK struct {
 }
 
+// IsSuccess returns true when this upgrade cluster node deployments o k response has a 2xx status code
+func (o *UpgradeClusterNodeDeploymentsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this upgrade cluster node deployments o k response has a 3xx status code
+func (o *UpgradeClusterNodeDeploymentsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this upgrade cluster node deployments o k response has a 4xx status code
+func (o *UpgradeClusterNodeDeploymentsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this upgrade cluster node deployments o k response has a 5xx status code
+func (o *UpgradeClusterNodeDeploymentsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this upgrade cluster node deployments o k response a status code equal to that given
+func (o *UpgradeClusterNodeDeploymentsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpgradeClusterNodeDeploymentsOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeploymentsOK ", 200)
+}
+
+func (o *UpgradeClusterNodeDeploymentsOK) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeploymentsOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewUpgradeClusterNodeDeploymentsUnauthorized() *UpgradeClusterNodeDeploymen
 	return &UpgradeClusterNodeDeploymentsUnauthorized{}
 }
 
-/* UpgradeClusterNodeDeploymentsUnauthorized describes a response with status code 401, with default header values.
+/*
+UpgradeClusterNodeDeploymentsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpgradeClusterNodeDeploymentsUnauthorized struct {
 }
 
+// IsSuccess returns true when this upgrade cluster node deployments unauthorized response has a 2xx status code
+func (o *UpgradeClusterNodeDeploymentsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this upgrade cluster node deployments unauthorized response has a 3xx status code
+func (o *UpgradeClusterNodeDeploymentsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this upgrade cluster node deployments unauthorized response has a 4xx status code
+func (o *UpgradeClusterNodeDeploymentsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this upgrade cluster node deployments unauthorized response has a 5xx status code
+func (o *UpgradeClusterNodeDeploymentsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this upgrade cluster node deployments unauthorized response a status code equal to that given
+func (o *UpgradeClusterNodeDeploymentsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpgradeClusterNodeDeploymentsUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeploymentsUnauthorized ", 401)
+}
+
+func (o *UpgradeClusterNodeDeploymentsUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeploymentsUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewUpgradeClusterNodeDeploymentsForbidden() *UpgradeClusterNodeDeploymentsF
 	return &UpgradeClusterNodeDeploymentsForbidden{}
 }
 
-/* UpgradeClusterNodeDeploymentsForbidden describes a response with status code 403, with default header values.
+/*
+UpgradeClusterNodeDeploymentsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpgradeClusterNodeDeploymentsForbidden struct {
 }
 
+// IsSuccess returns true when this upgrade cluster node deployments forbidden response has a 2xx status code
+func (o *UpgradeClusterNodeDeploymentsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this upgrade cluster node deployments forbidden response has a 3xx status code
+func (o *UpgradeClusterNodeDeploymentsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this upgrade cluster node deployments forbidden response has a 4xx status code
+func (o *UpgradeClusterNodeDeploymentsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this upgrade cluster node deployments forbidden response has a 5xx status code
+func (o *UpgradeClusterNodeDeploymentsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this upgrade cluster node deployments forbidden response a status code equal to that given
+func (o *UpgradeClusterNodeDeploymentsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpgradeClusterNodeDeploymentsForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeploymentsForbidden ", 403)
+}
+
+func (o *UpgradeClusterNodeDeploymentsForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeploymentsForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewUpgradeClusterNodeDeploymentsDefault(code int) *UpgradeClusterNodeDeploy
 	}
 }
 
-/* UpgradeClusterNodeDeploymentsDefault describes a response with status code -1, with default header values.
+/*
+UpgradeClusterNodeDeploymentsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *UpgradeClusterNodeDeploymentsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this upgrade cluster node deployments default response has a 2xx status code
+func (o *UpgradeClusterNodeDeploymentsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this upgrade cluster node deployments default response has a 3xx status code
+func (o *UpgradeClusterNodeDeploymentsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this upgrade cluster node deployments default response has a 4xx status code
+func (o *UpgradeClusterNodeDeploymentsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this upgrade cluster node deployments default response has a 5xx status code
+func (o *UpgradeClusterNodeDeploymentsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this upgrade cluster node deployments default response a status code equal to that given
+func (o *UpgradeClusterNodeDeploymentsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpgradeClusterNodeDeploymentsDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeployments default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpgradeClusterNodeDeploymentsDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/upgrades][%d] upgradeClusterNodeDeployments default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpgradeClusterNodeDeploymentsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

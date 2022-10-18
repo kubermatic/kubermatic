@@ -46,7 +46,8 @@ func NewListGCPNetworksNoCredentialsOK() *ListGCPNetworksNoCredentialsOK {
 	return &ListGCPNetworksNoCredentialsOK{}
 }
 
-/* ListGCPNetworksNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListGCPNetworksNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPNetworkList
 */
@@ -54,9 +55,39 @@ type ListGCPNetworksNoCredentialsOK struct {
 	Payload models.GCPNetworkList
 }
 
+// IsSuccess returns true when this list g c p networks no credentials o k response has a 2xx status code
+func (o *ListGCPNetworksNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p networks no credentials o k response has a 3xx status code
+func (o *ListGCPNetworksNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p networks no credentials o k response has a 4xx status code
+func (o *ListGCPNetworksNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p networks no credentials o k response has a 5xx status code
+func (o *ListGCPNetworksNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p networks no credentials o k response a status code equal to that given
+func (o *ListGCPNetworksNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPNetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPNetworksNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPNetworksNoCredentialsOK) GetPayload() models.GCPNetworkList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGCPNetworksNoCredentialsDefault(code int) *ListGCPNetworksNoCredenti
 	}
 }
 
-/* ListGCPNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListGCPNetworksNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGCPNetworksNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p networks no credentials default response has a 2xx status code
+func (o *ListGCPNetworksNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p networks no credentials default response has a 3xx status code
+func (o *ListGCPNetworksNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p networks no credentials default response has a 4xx status code
+func (o *ListGCPNetworksNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p networks no credentials default response has a 5xx status code
+func (o *ListGCPNetworksNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p networks no credentials default response a status code equal to that given
+func (o *ListGCPNetworksNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPNetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPNetworksNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/networks][%d] listGCPNetworksNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPNetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

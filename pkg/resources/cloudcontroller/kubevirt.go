@@ -22,7 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -77,10 +77,9 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 			}
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
-
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()), []corev1.Volume{
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled(), false), []corev1.Volume{
 				{
-					Name: resources.CloudConfigConfigMapName,
+					Name: resources.CloudConfigSeedSecretName,
 					VolumeSource: corev1.VolumeSource{
 						Projected: &corev1.ProjectedVolumeSource{
 							Sources: []corev1.VolumeProjection{
@@ -90,8 +89,8 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 									},
 								},
 								{
-									ConfigMap: &corev1.ConfigMapProjection{
-										LocalObjectReference: corev1.LocalObjectReference{Name: resources.CloudConfigConfigMapName},
+									Secret: &corev1.SecretProjection{
+										LocalObjectReference: corev1.LocalObjectReference{Name: resources.CloudConfigSeedSecretName},
 									},
 								},
 							},
@@ -103,15 +102,12 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/kubevirt-cloud-controller-manager:" + KubeVirtCCMTag,
-					Command: []string{"/bin/kubevirt-cloud-controller-manager"},
-					Args:    getKVFlags(data),
-					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-						Name:      resources.CloudConfigConfigMapName,
-						MountPath: "/etc/kubernetes/cloud",
-						ReadOnly:  true,
-					}),
+					Name:         ccmContainerName,
+					Image:        registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/kubevirt-cloud-controller-manager:" + KubeVirtCCMTag)),
+					Command:      []string{"/bin/kubevirt-cloud-controller-manager"},
+					Args:         getKVFlags(data),
+					Env:          getEnvVars(),
+					VolumeMounts: getVolumeMounts(true),
 				},
 			}
 
@@ -119,19 +115,11 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 				ccmContainerName: kvResourceRequirements.DeepCopy(),
 			}
 
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
-			}
-
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
+
 			return dep, nil
 		}
 	}

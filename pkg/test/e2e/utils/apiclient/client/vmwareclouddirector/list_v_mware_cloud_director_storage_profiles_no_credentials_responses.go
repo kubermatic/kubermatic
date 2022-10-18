@@ -46,7 +46,8 @@ func NewListVMwareCloudDirectorStorageProfilesNoCredentialsOK() *ListVMwareCloud
 	return &ListVMwareCloudDirectorStorageProfilesNoCredentialsOK{}
 }
 
-/* ListVMwareCloudDirectorStorageProfilesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListVMwareCloudDirectorStorageProfilesNoCredentialsOK describes a response with status code 200, with default header values.
 
 VMwareCloudDirectorStorageProfileList
 */
@@ -54,9 +55,39 @@ type ListVMwareCloudDirectorStorageProfilesNoCredentialsOK struct {
 	Payload models.VMwareCloudDirectorStorageProfileList
 }
 
+// IsSuccess returns true when this list v mware cloud director storage profiles no credentials o k response has a 2xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list v mware cloud director storage profiles no credentials o k response has a 3xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list v mware cloud director storage profiles no credentials o k response has a 4xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list v mware cloud director storage profiles no credentials o k response has a 5xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list v mware cloud director storage profiles no credentials o k response a status code equal to that given
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/storageprofiles][%d] listVMwareCloudDirectorStorageProfilesNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/storageprofiles][%d] listVMwareCloudDirectorStorageProfilesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsOK) GetPayload() models.VMwareCloudDirectorStorageProfileList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListVMwareCloudDirectorStorageProfilesNoCredentialsDefault(code int) *Li
 	}
 }
 
-/* ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) Code() int 
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list v mware cloud director storage profiles no credentials default response has a 2xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list v mware cloud director storage profiles no credentials default response has a 3xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list v mware cloud director storage profiles no credentials default response has a 4xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list v mware cloud director storage profiles no credentials default response has a 5xx status code
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list v mware cloud director storage profiles no credentials default response a status code equal to that given
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/storageprofiles][%d] listVMwareCloudDirectorStorageProfilesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vmwareclouddirector/storageprofiles][%d] listVMwareCloudDirectorStorageProfilesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListVMwareCloudDirectorStorageProfilesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

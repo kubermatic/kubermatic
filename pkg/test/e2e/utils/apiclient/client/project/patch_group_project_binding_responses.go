@@ -60,7 +60,8 @@ func NewPatchGroupProjectBindingOK() *PatchGroupProjectBindingOK {
 	return &PatchGroupProjectBindingOK{}
 }
 
-/* PatchGroupProjectBindingOK describes a response with status code 200, with default header values.
+/*
+PatchGroupProjectBindingOK describes a response with status code 200, with default header values.
 
 GroupProjectBinding
 */
@@ -68,9 +69,39 @@ type PatchGroupProjectBindingOK struct {
 	Payload *models.GroupProjectBinding
 }
 
+// IsSuccess returns true when this patch group project binding o k response has a 2xx status code
+func (o *PatchGroupProjectBindingOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch group project binding o k response has a 3xx status code
+func (o *PatchGroupProjectBindingOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch group project binding o k response has a 4xx status code
+func (o *PatchGroupProjectBindingOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch group project binding o k response has a 5xx status code
+func (o *PatchGroupProjectBindingOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch group project binding o k response a status code equal to that given
+func (o *PatchGroupProjectBindingOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchGroupProjectBindingOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchGroupProjectBindingOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchGroupProjectBindingOK) GetPayload() *models.GroupProjectBinding {
 	return o.Payload
 }
@@ -92,14 +123,44 @@ func NewPatchGroupProjectBindingUnauthorized() *PatchGroupProjectBindingUnauthor
 	return &PatchGroupProjectBindingUnauthorized{}
 }
 
-/* PatchGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchGroupProjectBindingUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch group project binding unauthorized response has a 2xx status code
+func (o *PatchGroupProjectBindingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch group project binding unauthorized response has a 3xx status code
+func (o *PatchGroupProjectBindingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch group project binding unauthorized response has a 4xx status code
+func (o *PatchGroupProjectBindingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch group project binding unauthorized response has a 5xx status code
+func (o *PatchGroupProjectBindingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch group project binding unauthorized response a status code equal to that given
+func (o *PatchGroupProjectBindingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchGroupProjectBindingUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingUnauthorized ", 401)
+}
+
+func (o *PatchGroupProjectBindingUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingUnauthorized ", 401)
 }
 
@@ -113,14 +174,44 @@ func NewPatchGroupProjectBindingForbidden() *PatchGroupProjectBindingForbidden {
 	return &PatchGroupProjectBindingForbidden{}
 }
 
-/* PatchGroupProjectBindingForbidden describes a response with status code 403, with default header values.
+/*
+PatchGroupProjectBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchGroupProjectBindingForbidden struct {
 }
 
+// IsSuccess returns true when this patch group project binding forbidden response has a 2xx status code
+func (o *PatchGroupProjectBindingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch group project binding forbidden response has a 3xx status code
+func (o *PatchGroupProjectBindingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch group project binding forbidden response has a 4xx status code
+func (o *PatchGroupProjectBindingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch group project binding forbidden response has a 5xx status code
+func (o *PatchGroupProjectBindingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch group project binding forbidden response a status code equal to that given
+func (o *PatchGroupProjectBindingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchGroupProjectBindingForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingForbidden ", 403)
+}
+
+func (o *PatchGroupProjectBindingForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBindingForbidden ", 403)
 }
 
@@ -136,7 +227,8 @@ func NewPatchGroupProjectBindingDefault(code int) *PatchGroupProjectBindingDefau
 	}
 }
 
-/* PatchGroupProjectBindingDefault describes a response with status code -1, with default header values.
+/*
+PatchGroupProjectBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,9 +243,39 @@ func (o *PatchGroupProjectBindingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch group project binding default response has a 2xx status code
+func (o *PatchGroupProjectBindingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch group project binding default response has a 3xx status code
+func (o *PatchGroupProjectBindingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch group project binding default response has a 4xx status code
+func (o *PatchGroupProjectBindingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch group project binding default response has a 5xx status code
+func (o *PatchGroupProjectBindingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch group project binding default response a status code equal to that given
+func (o *PatchGroupProjectBindingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchGroupProjectBindingDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBinding default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchGroupProjectBindingDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] patchGroupProjectBinding default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchGroupProjectBindingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -170,7 +292,8 @@ func (o *PatchGroupProjectBindingDefault) readResponse(response runtime.ClientRe
 	return nil
 }
 
-/*PatchGroupProjectBindingBody patch group project binding body
+/*
+PatchGroupProjectBindingBody patch group project binding body
 swagger:model PatchGroupProjectBindingBody
 */
 type PatchGroupProjectBindingBody struct {

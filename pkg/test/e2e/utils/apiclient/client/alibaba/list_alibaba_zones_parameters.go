@@ -52,10 +52,12 @@ func NewListAlibabaZonesParamsWithHTTPClient(client *http.Client) *ListAlibabaZo
 	}
 }
 
-/* ListAlibabaZonesParams contains all the parameters to send to the API endpoint
-   for the list alibaba zones operation.
+/*
+ListAlibabaZonesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list alibaba zones operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAlibabaZonesParams struct {
 

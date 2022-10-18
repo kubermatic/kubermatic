@@ -40,7 +40,6 @@ type DatacenterSpecOpenstack struct {
 	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"`
 
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
 	ManageSecurityGroups bool `json:"manageSecurityGroups,omitempty"`
 
@@ -48,7 +47,6 @@ type DatacenterSpecOpenstack struct {
 	Region string `json:"region,omitempty"`
 
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
 	TrustDevicePath bool `json:"trustDevicePath,omitempty"`
 

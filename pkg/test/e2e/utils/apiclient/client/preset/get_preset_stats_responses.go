@@ -64,7 +64,8 @@ func NewGetPresetStatsOK() *GetPresetStatsOK {
 	return &GetPresetStatsOK{}
 }
 
-/* GetPresetStatsOK describes a response with status code 200, with default header values.
+/*
+GetPresetStatsOK describes a response with status code 200, with default header values.
 
 PresetStats
 */
@@ -72,9 +73,39 @@ type GetPresetStatsOK struct {
 	Payload *models.PresetStats
 }
 
+// IsSuccess returns true when this get preset stats o k response has a 2xx status code
+func (o *GetPresetStatsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get preset stats o k response has a 3xx status code
+func (o *GetPresetStatsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get preset stats o k response has a 4xx status code
+func (o *GetPresetStatsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get preset stats o k response has a 5xx status code
+func (o *GetPresetStatsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get preset stats o k response a status code equal to that given
+func (o *GetPresetStatsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetPresetStatsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetPresetStatsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetPresetStatsOK) GetPayload() *models.PresetStats {
 	return o.Payload
 }
@@ -96,14 +127,44 @@ func NewGetPresetStatsUnauthorized() *GetPresetStatsUnauthorized {
 	return &GetPresetStatsUnauthorized{}
 }
 
-/* GetPresetStatsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetPresetStatsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetPresetStatsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get preset stats unauthorized response has a 2xx status code
+func (o *GetPresetStatsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get preset stats unauthorized response has a 3xx status code
+func (o *GetPresetStatsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get preset stats unauthorized response has a 4xx status code
+func (o *GetPresetStatsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get preset stats unauthorized response has a 5xx status code
+func (o *GetPresetStatsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get preset stats unauthorized response a status code equal to that given
+func (o *GetPresetStatsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetPresetStatsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsUnauthorized ", 401)
+}
+
+func (o *GetPresetStatsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsUnauthorized ", 401)
 }
 
@@ -117,14 +178,44 @@ func NewGetPresetStatsForbidden() *GetPresetStatsForbidden {
 	return &GetPresetStatsForbidden{}
 }
 
-/* GetPresetStatsForbidden describes a response with status code 403, with default header values.
+/*
+GetPresetStatsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetPresetStatsForbidden struct {
 }
 
+// IsSuccess returns true when this get preset stats forbidden response has a 2xx status code
+func (o *GetPresetStatsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get preset stats forbidden response has a 3xx status code
+func (o *GetPresetStatsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get preset stats forbidden response has a 4xx status code
+func (o *GetPresetStatsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get preset stats forbidden response has a 5xx status code
+func (o *GetPresetStatsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get preset stats forbidden response a status code equal to that given
+func (o *GetPresetStatsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetPresetStatsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsForbidden ", 403)
+}
+
+func (o *GetPresetStatsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsForbidden ", 403)
 }
 
@@ -138,14 +229,44 @@ func NewGetPresetStatsNotFound() *GetPresetStatsNotFound {
 	return &GetPresetStatsNotFound{}
 }
 
-/* GetPresetStatsNotFound describes a response with status code 404, with default header values.
+/*
+GetPresetStatsNotFound describes a response with status code 404, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetPresetStatsNotFound struct {
 }
 
+// IsSuccess returns true when this get preset stats not found response has a 2xx status code
+func (o *GetPresetStatsNotFound) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get preset stats not found response has a 3xx status code
+func (o *GetPresetStatsNotFound) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get preset stats not found response has a 4xx status code
+func (o *GetPresetStatsNotFound) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get preset stats not found response has a 5xx status code
+func (o *GetPresetStatsNotFound) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get preset stats not found response a status code equal to that given
+func (o *GetPresetStatsNotFound) IsCode(code int) bool {
+	return code == 404
+}
+
 func (o *GetPresetStatsNotFound) Error() string {
+	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsNotFound ", 404)
+}
+
+func (o *GetPresetStatsNotFound) String() string {
 	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStatsNotFound ", 404)
 }
 
@@ -161,7 +282,8 @@ func NewGetPresetStatsDefault(code int) *GetPresetStatsDefault {
 	}
 }
 
-/* GetPresetStatsDefault describes a response with status code -1, with default header values.
+/*
+GetPresetStatsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -176,9 +298,39 @@ func (o *GetPresetStatsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get preset stats default response has a 2xx status code
+func (o *GetPresetStatsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get preset stats default response has a 3xx status code
+func (o *GetPresetStatsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get preset stats default response has a 4xx status code
+func (o *GetPresetStatsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get preset stats default response has a 5xx status code
+func (o *GetPresetStatsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get preset stats default response a status code equal to that given
+func (o *GetPresetStatsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetPresetStatsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStats default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetPresetStatsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/presets/{preset_name}/stats][%d] getPresetStats default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetPresetStatsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

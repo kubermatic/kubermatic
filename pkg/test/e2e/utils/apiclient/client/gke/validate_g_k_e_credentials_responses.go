@@ -46,14 +46,44 @@ func NewValidateGKECredentialsOK() *ValidateGKECredentialsOK {
 	return &ValidateGKECredentialsOK{}
 }
 
-/* ValidateGKECredentialsOK describes a response with status code 200, with default header values.
+/*
+ValidateGKECredentialsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type ValidateGKECredentialsOK struct {
 }
 
+// IsSuccess returns true when this validate g k e credentials o k response has a 2xx status code
+func (o *ValidateGKECredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this validate g k e credentials o k response has a 3xx status code
+func (o *ValidateGKECredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this validate g k e credentials o k response has a 4xx status code
+func (o *ValidateGKECredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this validate g k e credentials o k response has a 5xx status code
+func (o *ValidateGKECredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this validate g k e credentials o k response a status code equal to that given
+func (o *ValidateGKECredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ValidateGKECredentialsOK) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/validatecredentials][%d] validateGKECredentialsOK ", 200)
+}
+
+func (o *ValidateGKECredentialsOK) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/validatecredentials][%d] validateGKECredentialsOK ", 200)
 }
 
@@ -69,7 +99,8 @@ func NewValidateGKECredentialsDefault(code int) *ValidateGKECredentialsDefault {
 	}
 }
 
-/* ValidateGKECredentialsDefault describes a response with status code -1, with default header values.
+/*
+ValidateGKECredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -84,9 +115,39 @@ func (o *ValidateGKECredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this validate g k e credentials default response has a 2xx status code
+func (o *ValidateGKECredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this validate g k e credentials default response has a 3xx status code
+func (o *ValidateGKECredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this validate g k e credentials default response has a 4xx status code
+func (o *ValidateGKECredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this validate g k e credentials default response has a 5xx status code
+func (o *ValidateGKECredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this validate g k e credentials default response a status code equal to that given
+func (o *ValidateGKECredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ValidateGKECredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/validatecredentials][%d] validateGKECredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ValidateGKECredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/validatecredentials][%d] validateGKECredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ValidateGKECredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,8 @@ func NewListConstraintsOK() *ListConstraintsOK {
 	return &ListConstraintsOK{}
 }
 
-/* ListConstraintsOK describes a response with status code 200, with default header values.
+/*
+ListConstraintsOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -66,9 +67,39 @@ type ListConstraintsOK struct {
 	Payload []*models.Constraint
 }
 
+// IsSuccess returns true when this list constraints o k response has a 2xx status code
+func (o *ListConstraintsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list constraints o k response has a 3xx status code
+func (o *ListConstraintsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list constraints o k response has a 4xx status code
+func (o *ListConstraintsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list constraints o k response has a 5xx status code
+func (o *ListConstraintsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list constraints o k response a status code equal to that given
+func (o *ListConstraintsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListConstraintsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListConstraintsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListConstraintsOK) GetPayload() []*models.Constraint {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListConstraintsUnauthorized() *ListConstraintsUnauthorized {
 	return &ListConstraintsUnauthorized{}
 }
 
-/* ListConstraintsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListConstraintsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListConstraintsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list constraints unauthorized response has a 2xx status code
+func (o *ListConstraintsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list constraints unauthorized response has a 3xx status code
+func (o *ListConstraintsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list constraints unauthorized response has a 4xx status code
+func (o *ListConstraintsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list constraints unauthorized response has a 5xx status code
+func (o *ListConstraintsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list constraints unauthorized response a status code equal to that given
+func (o *ListConstraintsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListConstraintsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsUnauthorized ", 401)
+}
+
+func (o *ListConstraintsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListConstraintsForbidden() *ListConstraintsForbidden {
 	return &ListConstraintsForbidden{}
 }
 
-/* ListConstraintsForbidden describes a response with status code 403, with default header values.
+/*
+ListConstraintsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListConstraintsForbidden struct {
 }
 
+// IsSuccess returns true when this list constraints forbidden response has a 2xx status code
+func (o *ListConstraintsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list constraints forbidden response has a 3xx status code
+func (o *ListConstraintsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list constraints forbidden response has a 4xx status code
+func (o *ListConstraintsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list constraints forbidden response has a 5xx status code
+func (o *ListConstraintsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list constraints forbidden response a status code equal to that given
+func (o *ListConstraintsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListConstraintsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsForbidden ", 403)
+}
+
+func (o *ListConstraintsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListConstraintsDefault(code int) *ListConstraintsDefault {
 	}
 }
 
-/* ListConstraintsDefault describes a response with status code -1, with default header values.
+/*
+ListConstraintsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListConstraintsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list constraints default response has a 2xx status code
+func (o *ListConstraintsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list constraints default response has a 3xx status code
+func (o *ListConstraintsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list constraints default response has a 4xx status code
+func (o *ListConstraintsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list constraints default response has a 5xx status code
+func (o *ListConstraintsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list constraints default response a status code equal to that given
+func (o *ListConstraintsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListConstraintsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraints default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListConstraintsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraints default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListConstraintsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -33,7 +33,7 @@ func TestCreateUpdateHetznerCluster(t *testing.T) {
 		{
 			name:       "create cluster on Hetzner",
 			dc:         "kubermatic",
-			location:   "hetzner-hel1",
+			location:   "hetzner-nbg1",
 			version:    utils.KubernetesVersion(),
 			credential: "e2e-hetzner",
 			replicas:   1,
@@ -85,7 +85,7 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 		{
 			name:       "delete cluster before is up",
 			dc:         "kubermatic",
-			location:   "hetzner-hel1",
+			location:   "hetzner-nbg1",
 			version:    utils.KubernetesVersion(),
 			credential: "e2e-hetzner",
 			replicas:   0,

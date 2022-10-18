@@ -24,6 +24,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -78,6 +79,8 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 		MLA:                                  apiCluster.Spec.MLA,
 		ContainerRuntime:                     apiCluster.Spec.ContainerRuntime,
 		CNIPlugin:                            apiCluster.Spec.CNIPlugin,
+		ExposeStrategy:                       apiCluster.Spec.ExposeStrategy,
+		APIServerAllowedIPRanges:             apiCluster.Spec.APIServerAllowedIPRanges,
 	}
 
 	if apiCluster.Spec.ClusterNetwork != nil {
@@ -103,7 +106,7 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 }
 
 func CloudProviderForCluster(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (provider.CloudProvider, error) {
-	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("invalid cloud spec: %w", err)
 	}

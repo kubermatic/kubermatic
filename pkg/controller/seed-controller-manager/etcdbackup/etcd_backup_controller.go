@@ -30,7 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -350,7 +350,7 @@ func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *ku
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
 	}
 
-	return kuberneteshelper.ContainerFromString(defaults.DefaultNewBackupStoreContainer)
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultNewBackupStoreContainer)
 }
 
 func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
@@ -359,7 +359,7 @@ func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *k
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
 	}
 
-	return kuberneteshelper.ContainerFromString(defaults.DefaultNewBackupDeleteContainer)
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultNewBackupDeleteContainer)
 }
 
 func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
@@ -566,7 +566,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				}
 			} else if backup.BackupPhase == "" && r.clock.Now().Sub(backup.ScheduledTime.Time) >= 0 && backupConfig.DeletionTimestamp == nil {
 				job := r.backupJob(backupConfig, cluster, backup, destination, storeContainer)
-				if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
+				if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 					return nil, fmt.Errorf("error creating job for backup %s: %w", backup.BackupName, err)
 				}
 				backup.BackupPhase = kubermaticv1.BackupStatusPhaseRunning
@@ -649,7 +649,7 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 	destination *kubermaticv1.BackupDestination, deleteContainer *corev1.Container) error {
 	if deleteContainer != nil {
 		job := r.backupDeleteJob(backupConfig, cluster, backup, destination, deleteContainer)
-		if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
+		if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 			return fmt.Errorf("error creating delete job for backup %s: %w", backup.BackupName, err)
 		}
 		backup.DeletePhase = kubermaticv1.BackupStatusPhaseRunning

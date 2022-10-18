@@ -1,0 +1,497 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: Seed
+metadata:
+  name: <<exampleseed>>
+  namespace: kubermatic
+spec:
+  # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+  # For informational purposes in the Kubermatic dashboard only.
+  country: ""
+  # Datacenters contains a map of the possible datacenters (DCs) in this seed.
+  # Each DC must have a globally unique identifier (i.e. names must be unique
+  # across all seeds).
+  datacenters:
+    <<exampledc>>:
+      # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+      # For informational purposes in the Kubermatic dashboard only.
+      country: ""
+      # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+      # For informational purposes in the Kubermatic dashboard only.
+      location: ""
+      # Node holds node-specific settings, like e.g. HTTP proxy, Docker
+      # registries and the like. Proxy settings are inherited from the seed if
+      # not specified here.
+      node:
+        # Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
+        containerdRegistryMirrors: null
+        # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
+        httpProxy: ""
+        # Optional: These image registries will be configured as insecure
+        # on the container runtime.
+        insecureRegistries: []
+        # Optional: If set this will be set as NO_PROXY environment variable on the node;
+        # The value must be a comma-separated list of domains for which no proxy
+        # should be used, e.g. "*.example.com,internal.dev".
+        # Note that the in-cluster apiserver URL will be automatically prepended
+        # to this value.
+        noProxy: ""
+        # Optional: Translates to --pod-infra-container-image on the kubelet.
+        # If not set, the kubelet will default it.
+        pauseImage: ""
+        # Optional: These image registries will be configured as registry mirrors
+        # on the container runtime.
+        registryMirrors: []
+      # Spec describes the cloud provider settings used to manage resources
+      # in this datacenter. Exactly one cloud provider must be defined.
+      spec:
+        alibaba:
+          # Region to use, for a full list of regions see
+          # https://www.alibabacloud.com/help/doc-detail/40654.htm
+          region: ""
+        anexia:
+          # LocationID the location of the region
+          locationID: ""
+        aws:
+          # List of AMIs to use for a given operating system.
+          # This gets defaulted by querying for the latest AMI for the given distribution
+          # when machines are created, so under normal circumstances it is not necessary
+          # to define the AMIs statically.
+          images:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            rockylinux: ""
+            sles: ""
+            ubuntu: ""
+          # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
+          # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+          region: ""
+        azure:
+          # Region to use, for example "westeurope". A list of available regions can be
+          # found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
+          location: ""
+        # BringYourOwn contains settings for clusters using manually created
+        # nodes via kubeadm.
+        bringyourown: {}
+        digitalocean:
+          # Datacenter location, e.g. "ams3". A list of existing datacenters can be found
+          # at https://www.digitalocean.com/docs/platform/availability-matrix/
+          region: ""
+        # EnforceAuditLogging enforces audit logging on every cluster within the DC,
+        # ignoring cluster-specific settings.
+        enforceAuditLogging: false
+        # EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
+        # ignoring cluster-specific settings
+        enforcePodSecurityPolicy: false
+        gcp:
+          # Region to use, for example "europe-west3", for a full list of regions see
+          # https://cloud.google.com/compute/docs/regions-zones/
+          region: ""
+          # Optional: Regional clusters spread their resources across multiple availability zones.
+          # Refer to the official documentation for more details on this:
+          # https://cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters
+          regional: false
+          # List of enabled zones, for example [a, c]. See the link above for the available
+          # zones in your chosen region.
+          zoneSuffixes: []
+        hetzner:
+          # Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
+          # at https://docs.hetzner.com/general/others/data-centers-and-connection/
+          datacenter: ""
+          # Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
+          # For informational purposes only.
+          location: ""
+          # Network is the pre-existing Hetzner network in which the machines are running.
+          # While machines can be in multiple networks, a single one must be chosen for the
+          # HCloud CCM to work.
+          network: ""
+        kubevirt:
+          # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
+          # configuration based on DNSPolicy.
+          dnsConfig:
+            # A list of DNS name server IP addresses.
+            # This will be appended to the base nameservers generated from DNSPolicy.
+            # Duplicated nameservers will be removed.
+            nameservers: null
+            # A list of DNS resolver options.
+            # This will be merged with the base options generated from DNSPolicy.
+            # Duplicated entries will be removed. Resolution options given in Options
+            # will override those that appear in the base DNSPolicy.
+            options: null
+            # A list of DNS search domains for host-name lookup.
+            # This will be appended to the base search paths generated from DNSPolicy.
+            # Duplicated search paths will be removed.
+            searches: null
+          # DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
+          # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
+          # policy selected with DNSPolicy.
+          dnsPolicy: ""
+        # Nutanix is experimental and unsupported
+        nutanix:
+          # Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
+          allowInsecure: false
+          # Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
+          # for example "nutanix.example.com" or "10.0.0.1"
+          endpoint: ""
+          # Images to use for each supported operating system
+          images:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            rockylinux: ""
+            sles: ""
+            ubuntu: ""
+          # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
+          port: 9440
+        openstack:
+          authURL: ""
+          availabilityZone: ""
+          # Used for automatic network creation
+          dnsServers: []
+          # Optional: List of enabled flavors for the given datacenter
+          enabledFlavors: []
+          # Optional
+          enforceFloatingIP: false
+          # Optional
+          ignoreVolumeAZ: false
+          # Images to use for each supported operating system.
+          images:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            rockylinux: ""
+            sles: ""
+            ubuntu: ""
+          # Optional: defines if the IPv6 is enabled for the datacenter
+          ipv6Enabled: false
+          # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
+          # This setting defaults to true.
+          manageSecurityGroups: true
+          nodeSizeRequirements:
+            # MinimumMemory is the minimum required amount of memory, measured in MB
+            minimumMemory: 0
+            # VCPUs is the minimum required amount of (virtual) CPUs
+            minimumVCPUs: 0
+          region: ""
+          # Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
+          # This setting defaults to false.
+          trustDevicePath: false
+          # Optional: Gets mapped to the "use-octavia" setting in the cloud config.
+          # use-octavia is enabled by default in CCM since v1.17.0, and disabled by
+          # default with the in-tree cloud provider.
+          useOctavia: true
+        # DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+        operatingSystemProfiles:
+          amzn2: ""
+          centos: ""
+          flatcar: ""
+          rhel: ""
+          rockylinux: ""
+          sles: ""
+          ubuntu: ""
+        packet:
+          # The list of enabled facilities, for example "ams1", for a full list of available
+          # facilities see https://metal.equinix.com/developers/docs/locations/facilities/
+          facilities: []
+          # Metros are facilities that are grouped together geographically and share capacity
+          # and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
+          metro: ""
+        # ProviderReconciliationInterval is the time that must have passed since a
+        # Cluster's status.lastProviderReconciliation to make the cliuster controller
+        # perform an in-depth provider reconciliation, where for example missing security
+        # groups will be reconciled.
+        # Setting this too low can cause rate limits by the cloud provider, setting this
+        # too high means that *if* a resource at a cloud provider is removed/changed outside
+        # of KKP, it will take this long to fix it.
+        providerReconciliationInterval: 6h0m0s
+        # Optional: When defined, only users with an e-mail address on the
+        # given domains can make use of this datacenter. You can define multiple
+        # domains, e.g. "example.com", one of which must match the email domain
+        # exactly (i.e. "example.com" will not match "user@test.example.com").
+        requiredEmails: []
+        vmwareclouddirector:
+          # If set to true, disables the TLS certificate check against the endpoint.
+          allowInsecure: false
+          # The default catalog which contains the VM templates.
+          catalog: ""
+          # The name of the storage profile to use for disks attached to the VMs.
+          storageProfile: ""
+          # A list of VM templates to use for a given operating system. You must
+          # define at least one template.
+          templates:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            rockylinux: ""
+            sles: ""
+            ubuntu: ""
+          # Endpoint URL to use, including protocol, for example "https://vclouddirector.example.com".
+          url: ""
+        vsphere:
+          # If set to true, disables the TLS certificate check against the endpoint.
+          allowInsecure: false
+          # The name of the vSphere cluster to use. Used for out-of-tree CSI Driver.
+          cluster: ""
+          # The name of the datacenter to use.
+          datacenter: ""
+          # The default Datastore to be used for provisioning volumes using storage
+          # classes/dynamic provisioning and for storing virtual machine files in
+          # case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
+          datastore: ""
+          # Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
+          endpoint: ""
+          # Optional: Infra management user is the user that will be used for everything
+          # except the cloud provider functionality, which will still use the credentials
+          # passed in via the Kubermatic dashboard/API.
+          infraManagementUser:
+            password: ""
+            username: ""
+          # Optional: defines if the IPv6 is enabled for the datacenter
+          ipv6Enabled: false
+          # Optional: The root path for cluster specific VM folders. Each cluster gets its own
+          # folder below the root folder. Must be the FQDN (for example
+          # "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
+          # folder: "/datacenter-1/vm"
+          rootPath: ""
+          # The name of the storage policy to use for the storage class created in the user cluster.
+          storagePolicy: ""
+          # A list of VM templates to use for a given operating system. You must
+          # define at least one template.
+          # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
+          templates:
+            amzn2: ""
+            centos: ""
+            flatcar: ""
+            rhel: ""
+            rockylinux: ""
+            sles: ""
+            ubuntu: ""
+  # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
+  # to default all new created clusters
+  defaultClusterTemplate: ""
+  # DefaultComponentSettings are default values to set for newly created clusters.
+  # Deprecated: Use DefaultClusterTemplate instead.
+  defaultComponentSettings:
+    # Apiserver configures kube-apiserver settings.
+    apiserver:
+      endpointReconcilingDisabled: null
+      nodePortRange: 30000-32767
+      replicas: 2
+      resources: null
+      tolerations: null
+    # ControllerManager configures kube-controller-manager settings.
+    controllerManager:
+      leaderElection:
+        # LeaseDurationSeconds is the duration in seconds that non-leader candidates
+        # will wait to force acquire leadership. This is measured against time of
+        # last observed ack.
+        leaseDurationSeconds: null
+        # RenewDeadlineSeconds is the duration in seconds that the acting controlplane
+        # will retry refreshing leadership before giving up.
+        renewDeadlineSeconds: null
+        # RetryPeriodSeconds is the duration in seconds the LeaderElector clients
+        # should wait between tries of actions.
+        retryPeriodSeconds: null
+      replicas: 1
+      resources: null
+      tolerations: null
+    # Etcd configures the etcd ring used to store Kubernetes data.
+    etcd:
+      clusterSize: 3
+      diskSize: 5Gi
+      resources: null
+      storageClass: ""
+      tolerations: null
+    # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+    konnectivityProxy:
+      resources: null
+    # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
+    # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
+    # strategy is configured.
+    nodePortProxyEnvoy:
+      # DockerRepository is the repository containing the component's image.
+      dockerRepository: ""
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits: null
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests: null
+    # Prometheus configures the Prometheus instance deployed into the cluster control plane.
+    prometheus:
+      resources: null
+    # Scheduler configures kube-scheduler settings.
+    scheduler:
+      leaderElection:
+        # LeaseDurationSeconds is the duration in seconds that non-leader candidates
+        # will wait to force acquire leadership. This is measured against time of
+        # last observed ack.
+        leaseDurationSeconds: null
+        # RenewDeadlineSeconds is the duration in seconds that the acting controlplane
+        # will retry refreshing leadership before giving up.
+        renewDeadlineSeconds: null
+        # RetryPeriodSeconds is the duration in seconds the LeaderElector clients
+        # should wait between tries of actions.
+        retryPeriodSeconds: null
+      replicas: 1
+      resources: null
+      tolerations: null
+  # EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
+  # if this is set, the new backup/restore controllers are enabled for this Seed.
+  etcdBackupRestore: null
+  # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
+  exposeStrategy: NodePort
+  # A reference to the Kubeconfig of this cluster. The Kubeconfig must
+  # have cluster-admin privileges. This field is mandatory for every
+  # seed, even if there are no datacenters defined yet.
+  kubeconfig:
+    # API version of the referent.
+    apiVersion: ""
+    # If referring to a piece of an object instead of an entire object, this string
+    # should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+    # For example, if the object reference is to a container within a pod, this would take on a value like:
+    # "spec.containers{name}" (where "name" refers to the name of the container that triggered
+    # the event) or if no container name is specified "spec.containers[2]" (container with
+    # index 2 in this pod). This syntax is chosen only to have some well-defined way of
+    # referencing a part of an object.
+    fieldPath: ""
+    # Kind of the referent.
+    # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+    kind: ""
+    # Name of the referent.
+    # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+    name: ""
+    # Namespace of the referent.
+    # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+    namespace: ""
+    # Specific resourceVersion to which this reference is made, if any.
+    # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+    resourceVersion: ""
+    # UID of the referent.
+    # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+    uid: ""
+  # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+  # For informational purposes in the Kubermatic dashboard only.
+  location: ""
+  # Metering configures the metering tool on user clusters across the seed.
+  metering:
+    enabled: false
+    # ReportConfigurations is a map of report configuration definitions.
+    reports:
+      weekly:
+        # Interval defines the number of days consulted in the metering report.
+        interval: 7
+        # Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.
+        # Please note that this functionality works only for object storage that supports an object lifecycle management mechanism.
+        retention: null
+        # Schedule in Cron format, see https://en.wikipedia.org/wiki/Cron. Please take a note that Schedule is responsible
+        # only for setting the time when a report generation mechanism kicks off. The Interval MUST be set independently.
+        schedule: 0 1 * * 6
+        # Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
+        type: null
+    # StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
+    storageClassName: kubermatic-fast
+    # StorageSize is the size of the storage class. Default value is 100Gi.
+    storageSize: 100Gi
+  # Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
+  mla:
+    # Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
+    userClusterMLAEnabled: false
+  # NodeportProxy can be used to configure the NodePort proxy service that is
+  # responsible for making user-cluster control planes accessible from the outside.
+  nodeportProxy:
+    # Annotations are used to further tweak the LoadBalancer integration with the
+    # cloud provider where the seed cluster is running.
+    # Deprecated: Use .envoy.loadBalancerService.annotations instead.
+    annotations: {}
+    # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
+    # setup on the seed cluster. This should only be used if a suitable replacement
+    # is installed (like the nodeport-proxy Helm chart).
+    disable: false
+    # Envoy configures the Envoy application itself.
+    envoy:
+      # DockerRepository is the repository containing the component's image.
+      dockerRepository: docker.io/envoyproxy/envoy-alpine
+      loadBalancerService:
+        # Annotations are used to further tweak the LoadBalancer integration with the
+        # cloud provider.
+        annotations:
+          service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+          service.beta.kubernetes.io/aws-load-balancer-type: nlb
+        # SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
+        # This field will be ignored if the cloud-provider does not support the feature.
+        # More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+        sourceRanges: []
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits:
+          cpu: "1"
+          memory: 128Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests:
+          cpu: 50m
+          memory: 32Mi
+    # EnvoyManager configures the Kubermatic-internal Envoy manager.
+    envoyManager:
+      # DockerRepository is the repository containing the component's image.
+      dockerRepository: quay.io/kubermatic/nodeport-proxy
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits:
+          cpu: 150m
+          memory: 48Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests:
+          cpu: 50m
+          memory: 32Mi
+    # Updater configures the component responsible for updating the LoadBalancer
+    # service.
+    updater:
+      # DockerRepository is the repository containing the component's image.
+      dockerRepository: quay.io/kubermatic/nodeport-proxy
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits:
+          cpu: 150m
+          memory: 32Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests:
+          cpu: 50m
+          memory: 32Mi
+  # Optional: ProxySettings can be used to configure HTTP proxy settings on the
+  # worker nodes in user clusters. However, proxy settings on nodes take precedence.
+  proxySettings:
+    # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
+    httpProxy: ""
+    # Optional: If set this will be set as NO_PROXY environment variable on the node;
+    # The value must be a comma-separated list of domains for which no proxy
+    # should be used, e.g. "*.example.com,internal.dev".
+    # Note that the in-cluster apiserver URL will be automatically prepended
+    # to this value.
+    noProxy: ""
+  # Optional: This can be used to override the DNS name used for this seed.
+  # By default the seed name is used.
+  seedDNSOverwrite: ""

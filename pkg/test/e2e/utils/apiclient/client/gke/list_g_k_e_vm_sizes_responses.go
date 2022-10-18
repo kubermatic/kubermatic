@@ -46,7 +46,8 @@ func NewListGKEVMSizesOK() *ListGKEVMSizesOK {
 	return &ListGKEVMSizesOK{}
 }
 
-/* ListGKEVMSizesOK describes a response with status code 200, with default header values.
+/*
+ListGKEVMSizesOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -54,9 +55,39 @@ type ListGKEVMSizesOK struct {
 	Payload models.GCPMachineSizeList
 }
 
+// IsSuccess returns true when this list g k e Vm sizes o k response has a 2xx status code
+func (o *ListGKEVMSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e Vm sizes o k response has a 3xx status code
+func (o *ListGKEVMSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e Vm sizes o k response has a 4xx status code
+func (o *ListGKEVMSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e Vm sizes o k response has a 5xx status code
+func (o *ListGKEVMSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e Vm sizes o k response a status code equal to that given
+func (o *ListGKEVMSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEVMSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/vmsizes][%d] listGKEVmSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEVMSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/vmsizes][%d] listGKEVmSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEVMSizesOK) GetPayload() models.GCPMachineSizeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGKEVMSizesDefault(code int) *ListGKEVMSizesDefault {
 	}
 }
 
-/* ListGKEVMSizesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEVMSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGKEVMSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e VM sizes default response has a 2xx status code
+func (o *ListGKEVMSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e VM sizes default response has a 3xx status code
+func (o *ListGKEVMSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e VM sizes default response has a 4xx status code
+func (o *ListGKEVMSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e VM sizes default response has a 5xx status code
+func (o *ListGKEVMSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e VM sizes default response a status code equal to that given
+func (o *ListGKEVMSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEVMSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/vmsizes][%d] listGKEVMSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEVMSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/vmsizes][%d] listGKEVMSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEVMSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

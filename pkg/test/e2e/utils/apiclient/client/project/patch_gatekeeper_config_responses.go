@@ -58,7 +58,8 @@ func NewPatchGatekeeperConfigOK() *PatchGatekeeperConfigOK {
 	return &PatchGatekeeperConfigOK{}
 }
 
-/* PatchGatekeeperConfigOK describes a response with status code 200, with default header values.
+/*
+PatchGatekeeperConfigOK describes a response with status code 200, with default header values.
 
 GatekeeperConfig
 */
@@ -66,9 +67,39 @@ type PatchGatekeeperConfigOK struct {
 	Payload *models.GatekeeperConfig
 }
 
+// IsSuccess returns true when this patch gatekeeper config o k response has a 2xx status code
+func (o *PatchGatekeeperConfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch gatekeeper config o k response has a 3xx status code
+func (o *PatchGatekeeperConfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch gatekeeper config o k response has a 4xx status code
+func (o *PatchGatekeeperConfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch gatekeeper config o k response has a 5xx status code
+func (o *PatchGatekeeperConfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch gatekeeper config o k response a status code equal to that given
+func (o *PatchGatekeeperConfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchGatekeeperConfigOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfigOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchGatekeeperConfigOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfigOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchGatekeeperConfigOK) GetPayload() *models.GatekeeperConfig {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewPatchGatekeeperConfigUnauthorized() *PatchGatekeeperConfigUnauthorized {
 	return &PatchGatekeeperConfigUnauthorized{}
 }
 
-/* PatchGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchGatekeeperConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch gatekeeper config unauthorized response has a 2xx status code
+func (o *PatchGatekeeperConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch gatekeeper config unauthorized response has a 3xx status code
+func (o *PatchGatekeeperConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch gatekeeper config unauthorized response has a 4xx status code
+func (o *PatchGatekeeperConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch gatekeeper config unauthorized response has a 5xx status code
+func (o *PatchGatekeeperConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch gatekeeper config unauthorized response a status code equal to that given
+func (o *PatchGatekeeperConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchGatekeeperConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfigUnauthorized ", 401)
+}
+
+func (o *PatchGatekeeperConfigUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfigUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewPatchGatekeeperConfigForbidden() *PatchGatekeeperConfigForbidden {
 	return &PatchGatekeeperConfigForbidden{}
 }
 
-/* PatchGatekeeperConfigForbidden describes a response with status code 403, with default header values.
+/*
+PatchGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchGatekeeperConfigForbidden struct {
 }
 
+// IsSuccess returns true when this patch gatekeeper config forbidden response has a 2xx status code
+func (o *PatchGatekeeperConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch gatekeeper config forbidden response has a 3xx status code
+func (o *PatchGatekeeperConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch gatekeeper config forbidden response has a 4xx status code
+func (o *PatchGatekeeperConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch gatekeeper config forbidden response has a 5xx status code
+func (o *PatchGatekeeperConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch gatekeeper config forbidden response a status code equal to that given
+func (o *PatchGatekeeperConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchGatekeeperConfigForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfigForbidden ", 403)
+}
+
+func (o *PatchGatekeeperConfigForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfigForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewPatchGatekeeperConfigDefault(code int) *PatchGatekeeperConfigDefault {
 	}
 }
 
-/* PatchGatekeeperConfigDefault describes a response with status code -1, with default header values.
+/*
+PatchGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *PatchGatekeeperConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch gatekeeper config default response has a 2xx status code
+func (o *PatchGatekeeperConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch gatekeeper config default response has a 3xx status code
+func (o *PatchGatekeeperConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch gatekeeper config default response has a 4xx status code
+func (o *PatchGatekeeperConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch gatekeeper config default response has a 5xx status code
+func (o *PatchGatekeeperConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch gatekeeper config default response a status code equal to that given
+func (o *PatchGatekeeperConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchGatekeeperConfigDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchGatekeeperConfigDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] patchGatekeeperConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchGatekeeperConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

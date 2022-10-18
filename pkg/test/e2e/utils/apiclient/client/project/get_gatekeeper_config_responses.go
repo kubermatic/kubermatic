@@ -58,7 +58,8 @@ func NewGetGatekeeperConfigOK() *GetGatekeeperConfigOK {
 	return &GetGatekeeperConfigOK{}
 }
 
-/* GetGatekeeperConfigOK describes a response with status code 200, with default header values.
+/*
+GetGatekeeperConfigOK describes a response with status code 200, with default header values.
 
 GatekeeperConfig
 */
@@ -66,9 +67,39 @@ type GetGatekeeperConfigOK struct {
 	Payload *models.GatekeeperConfig
 }
 
+// IsSuccess returns true when this get gatekeeper config o k response has a 2xx status code
+func (o *GetGatekeeperConfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get gatekeeper config o k response has a 3xx status code
+func (o *GetGatekeeperConfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get gatekeeper config o k response has a 4xx status code
+func (o *GetGatekeeperConfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get gatekeeper config o k response has a 5xx status code
+func (o *GetGatekeeperConfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get gatekeeper config o k response a status code equal to that given
+func (o *GetGatekeeperConfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetGatekeeperConfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfigOK  %+v", 200, o.Payload)
 }
+
+func (o *GetGatekeeperConfigOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfigOK  %+v", 200, o.Payload)
+}
+
 func (o *GetGatekeeperConfigOK) GetPayload() *models.GatekeeperConfig {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetGatekeeperConfigUnauthorized() *GetGatekeeperConfigUnauthorized {
 	return &GetGatekeeperConfigUnauthorized{}
 }
 
-/* GetGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+GetGatekeeperConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetGatekeeperConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this get gatekeeper config unauthorized response has a 2xx status code
+func (o *GetGatekeeperConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get gatekeeper config unauthorized response has a 3xx status code
+func (o *GetGatekeeperConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get gatekeeper config unauthorized response has a 4xx status code
+func (o *GetGatekeeperConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get gatekeeper config unauthorized response has a 5xx status code
+func (o *GetGatekeeperConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get gatekeeper config unauthorized response a status code equal to that given
+func (o *GetGatekeeperConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetGatekeeperConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfigUnauthorized ", 401)
+}
+
+func (o *GetGatekeeperConfigUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfigUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetGatekeeperConfigForbidden() *GetGatekeeperConfigForbidden {
 	return &GetGatekeeperConfigForbidden{}
 }
 
-/* GetGatekeeperConfigForbidden describes a response with status code 403, with default header values.
+/*
+GetGatekeeperConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetGatekeeperConfigForbidden struct {
 }
 
+// IsSuccess returns true when this get gatekeeper config forbidden response has a 2xx status code
+func (o *GetGatekeeperConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get gatekeeper config forbidden response has a 3xx status code
+func (o *GetGatekeeperConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get gatekeeper config forbidden response has a 4xx status code
+func (o *GetGatekeeperConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get gatekeeper config forbidden response has a 5xx status code
+func (o *GetGatekeeperConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get gatekeeper config forbidden response a status code equal to that given
+func (o *GetGatekeeperConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetGatekeeperConfigForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfigForbidden ", 403)
+}
+
+func (o *GetGatekeeperConfigForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfigForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetGatekeeperConfigDefault(code int) *GetGatekeeperConfigDefault {
 	}
 }
 
-/* GetGatekeeperConfigDefault describes a response with status code -1, with default header values.
+/*
+GetGatekeeperConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetGatekeeperConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get gatekeeper config default response has a 2xx status code
+func (o *GetGatekeeperConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get gatekeeper config default response has a 3xx status code
+func (o *GetGatekeeperConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get gatekeeper config default response has a 4xx status code
+func (o *GetGatekeeperConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get gatekeeper config default response has a 5xx status code
+func (o *GetGatekeeperConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get gatekeeper config default response a status code equal to that given
+func (o *GetGatekeeperConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetGatekeeperConfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetGatekeeperConfigDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config][%d] getGatekeeperConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetGatekeeperConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -46,7 +46,8 @@ func NewGetDatacenterOK() *GetDatacenterOK {
 	return &GetDatacenterOK{}
 }
 
-/* GetDatacenterOK describes a response with status code 200, with default header values.
+/*
+GetDatacenterOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -54,9 +55,39 @@ type GetDatacenterOK struct {
 	Payload *models.Datacenter
 }
 
+// IsSuccess returns true when this get datacenter o k response has a 2xx status code
+func (o *GetDatacenterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get datacenter o k response has a 3xx status code
+func (o *GetDatacenterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get datacenter o k response has a 4xx status code
+func (o *GetDatacenterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get datacenter o k response has a 5xx status code
+func (o *GetDatacenterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get datacenter o k response a status code equal to that given
+func (o *GetDatacenterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetDatacenterOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc/{dc}][%d] getDatacenterOK  %+v", 200, o.Payload)
 }
+
+func (o *GetDatacenterOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/dc/{dc}][%d] getDatacenterOK  %+v", 200, o.Payload)
+}
+
 func (o *GetDatacenterOK) GetPayload() *models.Datacenter {
 	return o.Payload
 }
@@ -80,7 +111,8 @@ func NewGetDatacenterDefault(code int) *GetDatacenterDefault {
 	}
 }
 
-/* GetDatacenterDefault describes a response with status code -1, with default header values.
+/*
+GetDatacenterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -95,9 +127,39 @@ func (o *GetDatacenterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get datacenter default response has a 2xx status code
+func (o *GetDatacenterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get datacenter default response has a 3xx status code
+func (o *GetDatacenterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get datacenter default response has a 4xx status code
+func (o *GetDatacenterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get datacenter default response has a 5xx status code
+func (o *GetDatacenterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get datacenter default response a status code equal to that given
+func (o *GetDatacenterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetDatacenterDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc/{dc}][%d] getDatacenter default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetDatacenterDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/dc/{dc}][%d] getDatacenter default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetDatacenterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

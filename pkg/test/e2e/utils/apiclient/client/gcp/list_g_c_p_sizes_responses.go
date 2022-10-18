@@ -46,7 +46,8 @@ func NewListGCPSizesOK() *ListGCPSizesOK {
 	return &ListGCPSizesOK{}
 }
 
-/* ListGCPSizesOK describes a response with status code 200, with default header values.
+/*
+ListGCPSizesOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -54,9 +55,39 @@ type ListGCPSizesOK struct {
 	Payload models.GCPMachineSizeList
 }
 
+// IsSuccess returns true when this list g c p sizes o k response has a 2xx status code
+func (o *ListGCPSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p sizes o k response has a 3xx status code
+func (o *ListGCPSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p sizes o k response has a 4xx status code
+func (o *ListGCPSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p sizes o k response has a 5xx status code
+func (o *ListGCPSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p sizes o k response a status code equal to that given
+func (o *ListGCPSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPSizesOK) GetPayload() models.GCPMachineSizeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGCPSizesDefault(code int) *ListGCPSizesDefault {
 	}
 }
 
-/* ListGCPSizesDefault describes a response with status code -1, with default header values.
+/*
+ListGCPSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGCPSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p sizes default response has a 2xx status code
+func (o *ListGCPSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p sizes default response has a 3xx status code
+func (o *ListGCPSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p sizes default response has a 4xx status code
+func (o *ListGCPSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p sizes default response has a 5xx status code
+func (o *ListGCPSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p sizes default response a status code equal to that given
+func (o *ListGCPSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/sizes][%d] listGCPSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

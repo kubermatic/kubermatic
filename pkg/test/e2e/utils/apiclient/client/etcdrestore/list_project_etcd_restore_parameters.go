@@ -52,10 +52,12 @@ func NewListProjectEtcdRestoreParamsWithHTTPClient(client *http.Client) *ListPro
 	}
 }
 
-/* ListProjectEtcdRestoreParams contains all the parameters to send to the API endpoint
-   for the list project etcd restore operation.
+/*
+ListProjectEtcdRestoreParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list project etcd restore operation.
+
+	Typically these are written to a http.Request.
 */
 type ListProjectEtcdRestoreParams struct {
 

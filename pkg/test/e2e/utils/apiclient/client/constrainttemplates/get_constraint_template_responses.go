@@ -58,7 +58,8 @@ func NewGetConstraintTemplateOK() *GetConstraintTemplateOK {
 	return &GetConstraintTemplateOK{}
 }
 
-/* GetConstraintTemplateOK describes a response with status code 200, with default header values.
+/*
+GetConstraintTemplateOK describes a response with status code 200, with default header values.
 
 ConstraintTemplate
 */
@@ -66,9 +67,39 @@ type GetConstraintTemplateOK struct {
 	Payload *models.ConstraintTemplate
 }
 
+// IsSuccess returns true when this get constraint template o k response has a 2xx status code
+func (o *GetConstraintTemplateOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get constraint template o k response has a 3xx status code
+func (o *GetConstraintTemplateOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get constraint template o k response has a 4xx status code
+func (o *GetConstraintTemplateOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get constraint template o k response has a 5xx status code
+func (o *GetConstraintTemplateOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get constraint template o k response a status code equal to that given
+func (o *GetConstraintTemplateOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetConstraintTemplateOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplateOK  %+v", 200, o.Payload)
 }
+
+func (o *GetConstraintTemplateOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplateOK  %+v", 200, o.Payload)
+}
+
 func (o *GetConstraintTemplateOK) GetPayload() *models.ConstraintTemplate {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetConstraintTemplateUnauthorized() *GetConstraintTemplateUnauthorized {
 	return &GetConstraintTemplateUnauthorized{}
 }
 
-/* GetConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+GetConstraintTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetConstraintTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this get constraint template unauthorized response has a 2xx status code
+func (o *GetConstraintTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get constraint template unauthorized response has a 3xx status code
+func (o *GetConstraintTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get constraint template unauthorized response has a 4xx status code
+func (o *GetConstraintTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get constraint template unauthorized response has a 5xx status code
+func (o *GetConstraintTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get constraint template unauthorized response a status code equal to that given
+func (o *GetConstraintTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetConstraintTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplateUnauthorized ", 401)
+}
+
+func (o *GetConstraintTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplateUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetConstraintTemplateForbidden() *GetConstraintTemplateForbidden {
 	return &GetConstraintTemplateForbidden{}
 }
 
-/* GetConstraintTemplateForbidden describes a response with status code 403, with default header values.
+/*
+GetConstraintTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetConstraintTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this get constraint template forbidden response has a 2xx status code
+func (o *GetConstraintTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get constraint template forbidden response has a 3xx status code
+func (o *GetConstraintTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get constraint template forbidden response has a 4xx status code
+func (o *GetConstraintTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get constraint template forbidden response has a 5xx status code
+func (o *GetConstraintTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get constraint template forbidden response a status code equal to that given
+func (o *GetConstraintTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetConstraintTemplateForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplateForbidden ", 403)
+}
+
+func (o *GetConstraintTemplateForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplateForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetConstraintTemplateDefault(code int) *GetConstraintTemplateDefault {
 	}
 }
 
-/* GetConstraintTemplateDefault describes a response with status code -1, with default header values.
+/*
+GetConstraintTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetConstraintTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get constraint template default response has a 2xx status code
+func (o *GetConstraintTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get constraint template default response has a 3xx status code
+func (o *GetConstraintTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get constraint template default response has a 4xx status code
+func (o *GetConstraintTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get constraint template default response has a 5xx status code
+func (o *GetConstraintTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get constraint template default response a status code equal to that given
+func (o *GetConstraintTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetConstraintTemplateDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetConstraintTemplateDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/constrainttemplates/{ct_name}][%d] getConstraintTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetConstraintTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

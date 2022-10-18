@@ -43,7 +43,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-controller
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-controller:v6.0.1'
+          image: '{{ Image "registry.k8s.io/sig-storage/snapshot-controller:v6.0.1" }}'
           args:
             - "--v=5"
           imagePullPolicy: IfNotPresent

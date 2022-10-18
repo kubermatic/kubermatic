@@ -54,10 +54,12 @@ func NewCreateAddonParamsWithHTTPClient(client *http.Client) *CreateAddonParams 
 	}
 }
 
-/* CreateAddonParams contains all the parameters to send to the API endpoint
-   for the create addon operation.
+/*
+CreateAddonParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create addon operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateAddonParams struct {
 

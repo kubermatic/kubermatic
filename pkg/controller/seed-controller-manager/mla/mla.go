@@ -94,8 +94,7 @@ func newGrafanaClientProvider(client ctrlruntimeclient.Client, httpClient *http.
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
 // * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
-// * org user grafana controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
-// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User
+// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User and its Group/UserProjectBindings
 // * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 // * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
 // * rule group controller - manager rule groups that will be used to generate alerts.
@@ -127,7 +126,6 @@ func Add(
 		return fmt.Errorf("failed to prepare Grafana client: %w", err)
 	}
 
-	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, clientProvider)
 	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), clientProvider, mlaNamespace, log, overwriteRegistry)
@@ -147,16 +145,13 @@ func Add(
 		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla org grafana controller: %w", err)
 		}
-		if err := newOrgUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgUserGrafanaController); err != nil {
-			return fmt.Errorf("failed to create mla org user garafana controller: %w", err)
-		}
 		if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, datasourceGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla datasource grafana controller: %w", err)
 		}
 		if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, alertmanagerController); err != nil {
 			return fmt.Errorf("failed to create mla alertmanager configuration controller: %w", err)
 		}
-		if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
+		if err := newUserGrafanaReconciler(ctx, mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla user grafana controller: %w", err)
 		}
 		if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupController); err != nil {
@@ -165,6 +160,9 @@ func Add(
 		if err := newRuleGroupSyncReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupSyncController); err != nil {
 			return fmt.Errorf("failed to create rule group controller %w", err)
 		}
+		if err := newUserProjectBindingReconciler(mgr, log, numWorkers); err != nil {
+			return fmt.Errorf("failed to create user project binding controller")
+		}
 	} else {
 		cleanupController := newCleanupController(
 			mgr.GetClient(),
@@ -172,7 +170,6 @@ func Add(
 			datasourceGrafanaController,
 			dashboardGrafanaController,
 			alertmanagerController,
-			orgUserGrafanaController,
 			orgGrafanaController,
 			userGrafanaController,
 			ruleGroupController,

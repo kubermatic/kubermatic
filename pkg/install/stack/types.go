@@ -40,6 +40,7 @@ type DeployOptions struct {
 	RawKubermaticConfiguration *unstructured.Unstructured
 	ForceHelmReleaseUpgrade    bool
 	ChartsDirectory            string
+	AllowEditionChange         bool
 
 	SeedsGetter      provider.SeedsGetter
 	SeedClientGetter provider.SeedClientGetter
@@ -50,10 +51,13 @@ type DeployOptions struct {
 	EnableCertManagerV2Migration       bool
 	EnableCertManagerUpstreamMigration bool
 	EnableNginxIngressMigration        bool
-	EnableOpenstackCSIDriverMigration  bool
-	EnableLogrotateMigration           bool
 	DisableTelemetry                   bool
 	DisableDependencyUpdate            bool
+
+	MLASkipMinio             bool
+	MLASkipMinioLifecycleMgr bool
+	MLAForceSecrets          bool
+	MLAIncludeIap            bool
 }
 
 type Stack interface {

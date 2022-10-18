@@ -58,7 +58,8 @@ func NewListServiceAccountTokensOK() *ListServiceAccountTokensOK {
 	return &ListServiceAccountTokensOK{}
 }
 
-/* ListServiceAccountTokensOK describes a response with status code 200, with default header values.
+/*
+ListServiceAccountTokensOK describes a response with status code 200, with default header values.
 
 PublicServiceAccountToken
 */
@@ -66,9 +67,39 @@ type ListServiceAccountTokensOK struct {
 	Payload []*models.PublicServiceAccountToken
 }
 
+// IsSuccess returns true when this list service account tokens o k response has a 2xx status code
+func (o *ListServiceAccountTokensOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list service account tokens o k response has a 3xx status code
+func (o *ListServiceAccountTokensOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list service account tokens o k response has a 4xx status code
+func (o *ListServiceAccountTokensOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list service account tokens o k response has a 5xx status code
+func (o *ListServiceAccountTokensOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list service account tokens o k response a status code equal to that given
+func (o *ListServiceAccountTokensOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListServiceAccountTokensOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensOK  %+v", 200, o.Payload)
 }
+
+func (o *ListServiceAccountTokensOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensOK  %+v", 200, o.Payload)
+}
+
 func (o *ListServiceAccountTokensOK) GetPayload() []*models.PublicServiceAccountToken {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListServiceAccountTokensUnauthorized() *ListServiceAccountTokensUnauthor
 	return &ListServiceAccountTokensUnauthorized{}
 }
 
-/* ListServiceAccountTokensUnauthorized describes a response with status code 401, with default header values.
+/*
+ListServiceAccountTokensUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListServiceAccountTokensUnauthorized struct {
 }
 
+// IsSuccess returns true when this list service account tokens unauthorized response has a 2xx status code
+func (o *ListServiceAccountTokensUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list service account tokens unauthorized response has a 3xx status code
+func (o *ListServiceAccountTokensUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list service account tokens unauthorized response has a 4xx status code
+func (o *ListServiceAccountTokensUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list service account tokens unauthorized response has a 5xx status code
+func (o *ListServiceAccountTokensUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list service account tokens unauthorized response a status code equal to that given
+func (o *ListServiceAccountTokensUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListServiceAccountTokensUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensUnauthorized ", 401)
+}
+
+func (o *ListServiceAccountTokensUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListServiceAccountTokensForbidden() *ListServiceAccountTokensForbidden {
 	return &ListServiceAccountTokensForbidden{}
 }
 
-/* ListServiceAccountTokensForbidden describes a response with status code 403, with default header values.
+/*
+ListServiceAccountTokensForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListServiceAccountTokensForbidden struct {
 }
 
+// IsSuccess returns true when this list service account tokens forbidden response has a 2xx status code
+func (o *ListServiceAccountTokensForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list service account tokens forbidden response has a 3xx status code
+func (o *ListServiceAccountTokensForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list service account tokens forbidden response has a 4xx status code
+func (o *ListServiceAccountTokensForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list service account tokens forbidden response has a 5xx status code
+func (o *ListServiceAccountTokensForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list service account tokens forbidden response a status code equal to that given
+func (o *ListServiceAccountTokensForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListServiceAccountTokensForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensForbidden ", 403)
+}
+
+func (o *ListServiceAccountTokensForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokensForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListServiceAccountTokensDefault(code int) *ListServiceAccountTokensDefau
 	}
 }
 
-/* ListServiceAccountTokensDefault describes a response with status code -1, with default header values.
+/*
+ListServiceAccountTokensDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListServiceAccountTokensDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list service account tokens default response has a 2xx status code
+func (o *ListServiceAccountTokensDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list service account tokens default response has a 3xx status code
+func (o *ListServiceAccountTokensDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list service account tokens default response has a 4xx status code
+func (o *ListServiceAccountTokensDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list service account tokens default response has a 5xx status code
+func (o *ListServiceAccountTokensDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list service account tokens default response a status code equal to that given
+func (o *ListServiceAccountTokensDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListServiceAccountTokensDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokens default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListServiceAccountTokensDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens][%d] listServiceAccountTokens default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListServiceAccountTokensDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

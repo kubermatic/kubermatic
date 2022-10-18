@@ -58,7 +58,8 @@ func NewListExternalClusterMachineDeploymentsOK() *ListExternalClusterMachineDep
 	return &ListExternalClusterMachineDeploymentsOK{}
 }
 
-/* ListExternalClusterMachineDeploymentsOK describes a response with status code 200, with default header values.
+/*
+ListExternalClusterMachineDeploymentsOK describes a response with status code 200, with default header values.
 
 ExternalClusterMachineDeployment
 */
@@ -66,9 +67,39 @@ type ListExternalClusterMachineDeploymentsOK struct {
 	Payload []*models.ExternalClusterMachineDeployment
 }
 
+// IsSuccess returns true when this list external cluster machine deployments o k response has a 2xx status code
+func (o *ListExternalClusterMachineDeploymentsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list external cluster machine deployments o k response has a 3xx status code
+func (o *ListExternalClusterMachineDeploymentsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list external cluster machine deployments o k response has a 4xx status code
+func (o *ListExternalClusterMachineDeploymentsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list external cluster machine deployments o k response has a 5xx status code
+func (o *ListExternalClusterMachineDeploymentsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list external cluster machine deployments o k response a status code equal to that given
+func (o *ListExternalClusterMachineDeploymentsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListExternalClusterMachineDeploymentsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeploymentsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListExternalClusterMachineDeploymentsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeploymentsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListExternalClusterMachineDeploymentsOK) GetPayload() []*models.ExternalClusterMachineDeployment {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListExternalClusterMachineDeploymentsUnauthorized() *ListExternalCluster
 	return &ListExternalClusterMachineDeploymentsUnauthorized{}
 }
 
-/* ListExternalClusterMachineDeploymentsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListExternalClusterMachineDeploymentsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListExternalClusterMachineDeploymentsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list external cluster machine deployments unauthorized response has a 2xx status code
+func (o *ListExternalClusterMachineDeploymentsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list external cluster machine deployments unauthorized response has a 3xx status code
+func (o *ListExternalClusterMachineDeploymentsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list external cluster machine deployments unauthorized response has a 4xx status code
+func (o *ListExternalClusterMachineDeploymentsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list external cluster machine deployments unauthorized response has a 5xx status code
+func (o *ListExternalClusterMachineDeploymentsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list external cluster machine deployments unauthorized response a status code equal to that given
+func (o *ListExternalClusterMachineDeploymentsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListExternalClusterMachineDeploymentsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeploymentsUnauthorized ", 401)
+}
+
+func (o *ListExternalClusterMachineDeploymentsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeploymentsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListExternalClusterMachineDeploymentsForbidden() *ListExternalClusterMac
 	return &ListExternalClusterMachineDeploymentsForbidden{}
 }
 
-/* ListExternalClusterMachineDeploymentsForbidden describes a response with status code 403, with default header values.
+/*
+ListExternalClusterMachineDeploymentsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListExternalClusterMachineDeploymentsForbidden struct {
 }
 
+// IsSuccess returns true when this list external cluster machine deployments forbidden response has a 2xx status code
+func (o *ListExternalClusterMachineDeploymentsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list external cluster machine deployments forbidden response has a 3xx status code
+func (o *ListExternalClusterMachineDeploymentsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list external cluster machine deployments forbidden response has a 4xx status code
+func (o *ListExternalClusterMachineDeploymentsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list external cluster machine deployments forbidden response has a 5xx status code
+func (o *ListExternalClusterMachineDeploymentsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list external cluster machine deployments forbidden response a status code equal to that given
+func (o *ListExternalClusterMachineDeploymentsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListExternalClusterMachineDeploymentsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeploymentsForbidden ", 403)
+}
+
+func (o *ListExternalClusterMachineDeploymentsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeploymentsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListExternalClusterMachineDeploymentsDefault(code int) *ListExternalClus
 	}
 }
 
-/* ListExternalClusterMachineDeploymentsDefault describes a response with status code -1, with default header values.
+/*
+ListExternalClusterMachineDeploymentsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListExternalClusterMachineDeploymentsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list external cluster machine deployments default response has a 2xx status code
+func (o *ListExternalClusterMachineDeploymentsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list external cluster machine deployments default response has a 3xx status code
+func (o *ListExternalClusterMachineDeploymentsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list external cluster machine deployments default response has a 4xx status code
+func (o *ListExternalClusterMachineDeploymentsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list external cluster machine deployments default response has a 5xx status code
+func (o *ListExternalClusterMachineDeploymentsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list external cluster machine deployments default response a status code equal to that given
+func (o *ListExternalClusterMachineDeploymentsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListExternalClusterMachineDeploymentsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeployments default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListExternalClusterMachineDeploymentsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/machinedeployments][%d] listExternalClusterMachineDeployments default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListExternalClusterMachineDeploymentsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

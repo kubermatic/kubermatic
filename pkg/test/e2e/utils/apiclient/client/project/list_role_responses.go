@@ -58,7 +58,8 @@ func NewListRoleOK() *ListRoleOK {
 	return &ListRoleOK{}
 }
 
-/* ListRoleOK describes a response with status code 200, with default header values.
+/*
+ListRoleOK describes a response with status code 200, with default header values.
 
 Role
 */
@@ -66,9 +67,39 @@ type ListRoleOK struct {
 	Payload []*models.Role
 }
 
+// IsSuccess returns true when this list role o k response has a 2xx status code
+func (o *ListRoleOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list role o k response has a 3xx status code
+func (o *ListRoleOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list role o k response has a 4xx status code
+func (o *ListRoleOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list role o k response has a 5xx status code
+func (o *ListRoleOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list role o k response a status code equal to that given
+func (o *ListRoleOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListRoleOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRoleOK  %+v", 200, o.Payload)
 }
+
+func (o *ListRoleOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRoleOK  %+v", 200, o.Payload)
+}
+
 func (o *ListRoleOK) GetPayload() []*models.Role {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListRoleUnauthorized() *ListRoleUnauthorized {
 	return &ListRoleUnauthorized{}
 }
 
-/* ListRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+ListRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListRoleUnauthorized struct {
 }
 
+// IsSuccess returns true when this list role unauthorized response has a 2xx status code
+func (o *ListRoleUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list role unauthorized response has a 3xx status code
+func (o *ListRoleUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list role unauthorized response has a 4xx status code
+func (o *ListRoleUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list role unauthorized response has a 5xx status code
+func (o *ListRoleUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list role unauthorized response a status code equal to that given
+func (o *ListRoleUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListRoleUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRoleUnauthorized ", 401)
+}
+
+func (o *ListRoleUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRoleUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListRoleForbidden() *ListRoleForbidden {
 	return &ListRoleForbidden{}
 }
 
-/* ListRoleForbidden describes a response with status code 403, with default header values.
+/*
+ListRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListRoleForbidden struct {
 }
 
+// IsSuccess returns true when this list role forbidden response has a 2xx status code
+func (o *ListRoleForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list role forbidden response has a 3xx status code
+func (o *ListRoleForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list role forbidden response has a 4xx status code
+func (o *ListRoleForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list role forbidden response has a 5xx status code
+func (o *ListRoleForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list role forbidden response a status code equal to that given
+func (o *ListRoleForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListRoleForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRoleForbidden ", 403)
+}
+
+func (o *ListRoleForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRoleForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListRoleDefault(code int) *ListRoleDefault {
 	}
 }
 
-/* ListRoleDefault describes a response with status code -1, with default header values.
+/*
+ListRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListRoleDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list role default response has a 2xx status code
+func (o *ListRoleDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list role default response has a 3xx status code
+func (o *ListRoleDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list role default response has a 4xx status code
+func (o *ListRoleDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list role default response has a 5xx status code
+func (o *ListRoleDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list role default response a status code equal to that given
+func (o *ListRoleDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListRoleDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRole default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListRoleDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles][%d] listRole default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

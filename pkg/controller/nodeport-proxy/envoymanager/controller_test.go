@@ -32,7 +32,7 @@ import (
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
-	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -363,8 +363,8 @@ func TestSync(t *testing.T) {
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
 			s, _ := c.cache.GetSnapshot(c.EnvoyNodeName)
 
-			for name, res := range s.Resources[envoycachetype.Cluster].Items {
-				gotClusters[name] = res.Resource.(*envoyclusterv3.Cluster)
+			for name, res := range s.GetResources(envoyresourcev3.ClusterType) {
+				gotClusters[name] = res.(*envoyclusterv3.Cluster)
 			}
 			// Delete the admin cluster. We're not going to bother comparing it here, as its a static resource.
 			// It would just pollute the testing code
@@ -375,8 +375,8 @@ func TestSync(t *testing.T) {
 			}
 
 			gotListeners := map[string]*envoylistenerv3.Listener{}
-			for name, res := range s.Resources[envoycachetype.Listener].Items {
-				gotListeners[name] = res.Resource.(*envoylistenerv3.Listener)
+			for name, res := range s.GetResources(envoyresourcev3.ListenerType) {
+				gotListeners[name] = res.(*envoylistenerv3.Listener)
 			}
 			delete(gotListeners, "service_stats")
 

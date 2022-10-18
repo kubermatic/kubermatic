@@ -58,14 +58,44 @@ func NewDeleteNodeForClusterLegacyOK() *DeleteNodeForClusterLegacyOK {
 	return &DeleteNodeForClusterLegacyOK{}
 }
 
-/* DeleteNodeForClusterLegacyOK describes a response with status code 200, with default header values.
+/*
+DeleteNodeForClusterLegacyOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteNodeForClusterLegacyOK struct {
 }
 
+// IsSuccess returns true when this delete node for cluster legacy o k response has a 2xx status code
+func (o *DeleteNodeForClusterLegacyOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete node for cluster legacy o k response has a 3xx status code
+func (o *DeleteNodeForClusterLegacyOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete node for cluster legacy o k response has a 4xx status code
+func (o *DeleteNodeForClusterLegacyOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete node for cluster legacy o k response has a 5xx status code
+func (o *DeleteNodeForClusterLegacyOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete node for cluster legacy o k response a status code equal to that given
+func (o *DeleteNodeForClusterLegacyOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteNodeForClusterLegacyOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacyOK ", 200)
+}
+
+func (o *DeleteNodeForClusterLegacyOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacyOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteNodeForClusterLegacyUnauthorized() *DeleteNodeForClusterLegacyUnau
 	return &DeleteNodeForClusterLegacyUnauthorized{}
 }
 
-/* DeleteNodeForClusterLegacyUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteNodeForClusterLegacyUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteNodeForClusterLegacyUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete node for cluster legacy unauthorized response has a 2xx status code
+func (o *DeleteNodeForClusterLegacyUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete node for cluster legacy unauthorized response has a 3xx status code
+func (o *DeleteNodeForClusterLegacyUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete node for cluster legacy unauthorized response has a 4xx status code
+func (o *DeleteNodeForClusterLegacyUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete node for cluster legacy unauthorized response has a 5xx status code
+func (o *DeleteNodeForClusterLegacyUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete node for cluster legacy unauthorized response a status code equal to that given
+func (o *DeleteNodeForClusterLegacyUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteNodeForClusterLegacyUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacyUnauthorized ", 401)
+}
+
+func (o *DeleteNodeForClusterLegacyUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacyUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteNodeForClusterLegacyForbidden() *DeleteNodeForClusterLegacyForbidd
 	return &DeleteNodeForClusterLegacyForbidden{}
 }
 
-/* DeleteNodeForClusterLegacyForbidden describes a response with status code 403, with default header values.
+/*
+DeleteNodeForClusterLegacyForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteNodeForClusterLegacyForbidden struct {
 }
 
+// IsSuccess returns true when this delete node for cluster legacy forbidden response has a 2xx status code
+func (o *DeleteNodeForClusterLegacyForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete node for cluster legacy forbidden response has a 3xx status code
+func (o *DeleteNodeForClusterLegacyForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete node for cluster legacy forbidden response has a 4xx status code
+func (o *DeleteNodeForClusterLegacyForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete node for cluster legacy forbidden response has a 5xx status code
+func (o *DeleteNodeForClusterLegacyForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete node for cluster legacy forbidden response a status code equal to that given
+func (o *DeleteNodeForClusterLegacyForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteNodeForClusterLegacyForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacyForbidden ", 403)
+}
+
+func (o *DeleteNodeForClusterLegacyForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacyForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteNodeForClusterLegacyDefault(code int) *DeleteNodeForClusterLegacyD
 	}
 }
 
-/* DeleteNodeForClusterLegacyDefault describes a response with status code -1, with default header values.
+/*
+DeleteNodeForClusterLegacyDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteNodeForClusterLegacyDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete node for cluster legacy default response has a 2xx status code
+func (o *DeleteNodeForClusterLegacyDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete node for cluster legacy default response has a 3xx status code
+func (o *DeleteNodeForClusterLegacyDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete node for cluster legacy default response has a 4xx status code
+func (o *DeleteNodeForClusterLegacyDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete node for cluster legacy default response has a 5xx status code
+func (o *DeleteNodeForClusterLegacyDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete node for cluster legacy default response a status code equal to that given
+func (o *DeleteNodeForClusterLegacyDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteNodeForClusterLegacyDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacy default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteNodeForClusterLegacyDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodes/{node_id}][%d] deleteNodeForClusterLegacy default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteNodeForClusterLegacyDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

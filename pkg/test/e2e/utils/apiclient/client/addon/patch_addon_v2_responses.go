@@ -58,7 +58,8 @@ func NewPatchAddonV2OK() *PatchAddonV2OK {
 	return &PatchAddonV2OK{}
 }
 
-/* PatchAddonV2OK describes a response with status code 200, with default header values.
+/*
+PatchAddonV2OK describes a response with status code 200, with default header values.
 
 Addon
 */
@@ -66,9 +67,39 @@ type PatchAddonV2OK struct {
 	Payload *models.Addon
 }
 
+// IsSuccess returns true when this patch addon v2 o k response has a 2xx status code
+func (o *PatchAddonV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch addon v2 o k response has a 3xx status code
+func (o *PatchAddonV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch addon v2 o k response has a 4xx status code
+func (o *PatchAddonV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch addon v2 o k response has a 5xx status code
+func (o *PatchAddonV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch addon v2 o k response a status code equal to that given
+func (o *PatchAddonV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchAddonV2OK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2OK  %+v", 200, o.Payload)
 }
+
+func (o *PatchAddonV2OK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2OK  %+v", 200, o.Payload)
+}
+
 func (o *PatchAddonV2OK) GetPayload() *models.Addon {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewPatchAddonV2Unauthorized() *PatchAddonV2Unauthorized {
 	return &PatchAddonV2Unauthorized{}
 }
 
-/* PatchAddonV2Unauthorized describes a response with status code 401, with default header values.
+/*
+PatchAddonV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchAddonV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this patch addon v2 unauthorized response has a 2xx status code
+func (o *PatchAddonV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch addon v2 unauthorized response has a 3xx status code
+func (o *PatchAddonV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch addon v2 unauthorized response has a 4xx status code
+func (o *PatchAddonV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch addon v2 unauthorized response has a 5xx status code
+func (o *PatchAddonV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch addon v2 unauthorized response a status code equal to that given
+func (o *PatchAddonV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchAddonV2Unauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2Unauthorized ", 401)
+}
+
+func (o *PatchAddonV2Unauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2Unauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewPatchAddonV2Forbidden() *PatchAddonV2Forbidden {
 	return &PatchAddonV2Forbidden{}
 }
 
-/* PatchAddonV2Forbidden describes a response with status code 403, with default header values.
+/*
+PatchAddonV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchAddonV2Forbidden struct {
 }
 
+// IsSuccess returns true when this patch addon v2 forbidden response has a 2xx status code
+func (o *PatchAddonV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch addon v2 forbidden response has a 3xx status code
+func (o *PatchAddonV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch addon v2 forbidden response has a 4xx status code
+func (o *PatchAddonV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch addon v2 forbidden response has a 5xx status code
+func (o *PatchAddonV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch addon v2 forbidden response a status code equal to that given
+func (o *PatchAddonV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchAddonV2Forbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2Forbidden ", 403)
+}
+
+func (o *PatchAddonV2Forbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2Forbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewPatchAddonV2Default(code int) *PatchAddonV2Default {
 	}
 }
 
-/* PatchAddonV2Default describes a response with status code -1, with default header values.
+/*
+PatchAddonV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *PatchAddonV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch addon v2 default response has a 2xx status code
+func (o *PatchAddonV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch addon v2 default response has a 3xx status code
+func (o *PatchAddonV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch addon v2 default response has a 4xx status code
+func (o *PatchAddonV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch addon v2 default response has a 5xx status code
+func (o *PatchAddonV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch addon v2 default response a status code equal to that given
+func (o *PatchAddonV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchAddonV2Default) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchAddonV2Default) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}][%d] patchAddonV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchAddonV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

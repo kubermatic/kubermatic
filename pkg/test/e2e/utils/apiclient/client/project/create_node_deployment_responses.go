@@ -58,7 +58,8 @@ func NewCreateNodeDeploymentCreated() *CreateNodeDeploymentCreated {
 	return &CreateNodeDeploymentCreated{}
 }
 
-/* CreateNodeDeploymentCreated describes a response with status code 201, with default header values.
+/*
+CreateNodeDeploymentCreated describes a response with status code 201, with default header values.
 
 NodeDeployment
 */
@@ -66,9 +67,39 @@ type CreateNodeDeploymentCreated struct {
 	Payload *models.NodeDeployment
 }
 
+// IsSuccess returns true when this create node deployment created response has a 2xx status code
+func (o *CreateNodeDeploymentCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create node deployment created response has a 3xx status code
+func (o *CreateNodeDeploymentCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create node deployment created response has a 4xx status code
+func (o *CreateNodeDeploymentCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create node deployment created response has a 5xx status code
+func (o *CreateNodeDeploymentCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create node deployment created response a status code equal to that given
+func (o *CreateNodeDeploymentCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateNodeDeploymentCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateNodeDeploymentCreated) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateNodeDeploymentCreated) GetPayload() *models.NodeDeployment {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewCreateNodeDeploymentUnauthorized() *CreateNodeDeploymentUnauthorized {
 	return &CreateNodeDeploymentUnauthorized{}
 }
 
-/* CreateNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateNodeDeploymentUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateNodeDeploymentUnauthorized struct {
 }
 
+// IsSuccess returns true when this create node deployment unauthorized response has a 2xx status code
+func (o *CreateNodeDeploymentUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create node deployment unauthorized response has a 3xx status code
+func (o *CreateNodeDeploymentUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create node deployment unauthorized response has a 4xx status code
+func (o *CreateNodeDeploymentUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create node deployment unauthorized response has a 5xx status code
+func (o *CreateNodeDeploymentUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create node deployment unauthorized response a status code equal to that given
+func (o *CreateNodeDeploymentUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateNodeDeploymentUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentUnauthorized ", 401)
+}
+
+func (o *CreateNodeDeploymentUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewCreateNodeDeploymentForbidden() *CreateNodeDeploymentForbidden {
 	return &CreateNodeDeploymentForbidden{}
 }
 
-/* CreateNodeDeploymentForbidden describes a response with status code 403, with default header values.
+/*
+CreateNodeDeploymentForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateNodeDeploymentForbidden struct {
 }
 
+// IsSuccess returns true when this create node deployment forbidden response has a 2xx status code
+func (o *CreateNodeDeploymentForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create node deployment forbidden response has a 3xx status code
+func (o *CreateNodeDeploymentForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create node deployment forbidden response has a 4xx status code
+func (o *CreateNodeDeploymentForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create node deployment forbidden response has a 5xx status code
+func (o *CreateNodeDeploymentForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create node deployment forbidden response a status code equal to that given
+func (o *CreateNodeDeploymentForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateNodeDeploymentForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentForbidden ", 403)
+}
+
+func (o *CreateNodeDeploymentForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewCreateNodeDeploymentDefault(code int) *CreateNodeDeploymentDefault {
 	}
 }
 
-/* CreateNodeDeploymentDefault describes a response with status code -1, with default header values.
+/*
+CreateNodeDeploymentDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *CreateNodeDeploymentDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create node deployment default response has a 2xx status code
+func (o *CreateNodeDeploymentDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create node deployment default response has a 3xx status code
+func (o *CreateNodeDeploymentDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create node deployment default response has a 4xx status code
+func (o *CreateNodeDeploymentDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create node deployment default response has a 5xx status code
+func (o *CreateNodeDeploymentDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create node deployment default response a status code equal to that given
+func (o *CreateNodeDeploymentDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateNodeDeploymentDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeployment default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateNodeDeploymentDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeployment default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateNodeDeploymentDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -42,7 +42,7 @@ type ClientService interface {
 }
 
 /*
-  AddTokenToServiceAccount Generates a token for the given service account
+AddTokenToServiceAccount Generates a token for the given service account
 */
 func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddTokenToServiceAccountCreated, error) {
 	// TODO: Validate the params before sending
@@ -80,7 +80,7 @@ func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams
 }
 
 /*
-  DeleteServiceAccountToken Deletes the token
+DeleteServiceAccountToken Deletes the token
 */
 func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -118,7 +118,7 @@ func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenPara
 }
 
 /*
-  ListServiceAccountTokens List tokens for the given service account
+ListServiceAccountTokens List tokens for the given service account
 */
 func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountTokensOK, error) {
 	// TODO: Validate the params before sending
@@ -156,7 +156,7 @@ func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams
 }
 
 /*
-  PatchServiceAccountToken Patches the token name
+PatchServiceAccountToken Patches the token name
 */
 func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -194,7 +194,7 @@ func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams
 }
 
 /*
-  UpdateServiceAccountToken Updates and regenerates the token
+UpdateServiceAccountToken Updates and regenerates the token
 */
 func (a *Client) UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountTokenOK, error) {
 	// TODO: Validate the params before sending

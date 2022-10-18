@@ -58,7 +58,8 @@ func NewPatchConstraintOK() *PatchConstraintOK {
 	return &PatchConstraintOK{}
 }
 
-/* PatchConstraintOK describes a response with status code 200, with default header values.
+/*
+PatchConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -66,9 +67,39 @@ type PatchConstraintOK struct {
 	Payload *models.Constraint
 }
 
+// IsSuccess returns true when this patch constraint o k response has a 2xx status code
+func (o *PatchConstraintOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch constraint o k response has a 3xx status code
+func (o *PatchConstraintOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch constraint o k response has a 4xx status code
+func (o *PatchConstraintOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch constraint o k response has a 5xx status code
+func (o *PatchConstraintOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch constraint o k response a status code equal to that given
+func (o *PatchConstraintOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchConstraintOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraintOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchConstraintOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraintOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewPatchConstraintUnauthorized() *PatchConstraintUnauthorized {
 	return &PatchConstraintUnauthorized{}
 }
 
-/* PatchConstraintUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchConstraintUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch constraint unauthorized response has a 2xx status code
+func (o *PatchConstraintUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch constraint unauthorized response has a 3xx status code
+func (o *PatchConstraintUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch constraint unauthorized response has a 4xx status code
+func (o *PatchConstraintUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch constraint unauthorized response has a 5xx status code
+func (o *PatchConstraintUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch constraint unauthorized response a status code equal to that given
+func (o *PatchConstraintUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchConstraintUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraintUnauthorized ", 401)
+}
+
+func (o *PatchConstraintUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraintUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewPatchConstraintForbidden() *PatchConstraintForbidden {
 	return &PatchConstraintForbidden{}
 }
 
-/* PatchConstraintForbidden describes a response with status code 403, with default header values.
+/*
+PatchConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchConstraintForbidden struct {
 }
 
+// IsSuccess returns true when this patch constraint forbidden response has a 2xx status code
+func (o *PatchConstraintForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch constraint forbidden response has a 3xx status code
+func (o *PatchConstraintForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch constraint forbidden response has a 4xx status code
+func (o *PatchConstraintForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch constraint forbidden response has a 5xx status code
+func (o *PatchConstraintForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch constraint forbidden response a status code equal to that given
+func (o *PatchConstraintForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchConstraintForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraintForbidden ", 403)
+}
+
+func (o *PatchConstraintForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraintForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewPatchConstraintDefault(code int) *PatchConstraintDefault {
 	}
 }
 
-/* PatchConstraintDefault describes a response with status code -1, with default header values.
+/*
+PatchConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *PatchConstraintDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch constraint default response has a 2xx status code
+func (o *PatchConstraintDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch constraint default response has a 3xx status code
+func (o *PatchConstraintDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch constraint default response has a 4xx status code
+func (o *PatchConstraintDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch constraint default response has a 5xx status code
+func (o *PatchConstraintDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch constraint default response a status code equal to that given
+func (o *PatchConstraintDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchConstraintDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraint default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchConstraintDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] patchConstraint default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

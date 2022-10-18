@@ -58,7 +58,8 @@ func NewGetExternalClusterMetricsOK() *GetExternalClusterMetricsOK {
 	return &GetExternalClusterMetricsOK{}
 }
 
-/* GetExternalClusterMetricsOK describes a response with status code 200, with default header values.
+/*
+GetExternalClusterMetricsOK describes a response with status code 200, with default header values.
 
 ClusterMetrics
 */
@@ -66,9 +67,39 @@ type GetExternalClusterMetricsOK struct {
 	Payload *models.ClusterMetrics
 }
 
+// IsSuccess returns true when this get external cluster metrics o k response has a 2xx status code
+func (o *GetExternalClusterMetricsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get external cluster metrics o k response has a 3xx status code
+func (o *GetExternalClusterMetricsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get external cluster metrics o k response has a 4xx status code
+func (o *GetExternalClusterMetricsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get external cluster metrics o k response has a 5xx status code
+func (o *GetExternalClusterMetricsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get external cluster metrics o k response a status code equal to that given
+func (o *GetExternalClusterMetricsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetExternalClusterMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetricsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetExternalClusterMetricsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetricsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetExternalClusterMetricsOK) GetPayload() *models.ClusterMetrics {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetExternalClusterMetricsUnauthorized() *GetExternalClusterMetricsUnauth
 	return &GetExternalClusterMetricsUnauthorized{}
 }
 
-/* GetExternalClusterMetricsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetExternalClusterMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetExternalClusterMetricsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get external cluster metrics unauthorized response has a 2xx status code
+func (o *GetExternalClusterMetricsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get external cluster metrics unauthorized response has a 3xx status code
+func (o *GetExternalClusterMetricsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get external cluster metrics unauthorized response has a 4xx status code
+func (o *GetExternalClusterMetricsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get external cluster metrics unauthorized response has a 5xx status code
+func (o *GetExternalClusterMetricsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get external cluster metrics unauthorized response a status code equal to that given
+func (o *GetExternalClusterMetricsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetExternalClusterMetricsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetricsUnauthorized ", 401)
+}
+
+func (o *GetExternalClusterMetricsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetricsUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetExternalClusterMetricsForbidden() *GetExternalClusterMetricsForbidden
 	return &GetExternalClusterMetricsForbidden{}
 }
 
-/* GetExternalClusterMetricsForbidden describes a response with status code 403, with default header values.
+/*
+GetExternalClusterMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetExternalClusterMetricsForbidden struct {
 }
 
+// IsSuccess returns true when this get external cluster metrics forbidden response has a 2xx status code
+func (o *GetExternalClusterMetricsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get external cluster metrics forbidden response has a 3xx status code
+func (o *GetExternalClusterMetricsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get external cluster metrics forbidden response has a 4xx status code
+func (o *GetExternalClusterMetricsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get external cluster metrics forbidden response has a 5xx status code
+func (o *GetExternalClusterMetricsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get external cluster metrics forbidden response a status code equal to that given
+func (o *GetExternalClusterMetricsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetExternalClusterMetricsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetricsForbidden ", 403)
+}
+
+func (o *GetExternalClusterMetricsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetricsForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetExternalClusterMetricsDefault(code int) *GetExternalClusterMetricsDef
 	}
 }
 
-/* GetExternalClusterMetricsDefault describes a response with status code -1, with default header values.
+/*
+GetExternalClusterMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetExternalClusterMetricsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get external cluster metrics default response has a 2xx status code
+func (o *GetExternalClusterMetricsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get external cluster metrics default response has a 3xx status code
+func (o *GetExternalClusterMetricsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get external cluster metrics default response has a 4xx status code
+func (o *GetExternalClusterMetricsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get external cluster metrics default response has a 5xx status code
+func (o *GetExternalClusterMetricsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get external cluster metrics default response a status code equal to that given
+func (o *GetExternalClusterMetricsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetExternalClusterMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetrics default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetExternalClusterMetricsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics][%d] getExternalClusterMetrics default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetExternalClusterMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

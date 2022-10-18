@@ -28,10 +28,11 @@ import (
 	"context"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, seedName string, namespace string) (provider.SeedGetter, error) {
-	return provider.SeedGetterFactory(ctx, client, seedName, namespace)
+	return kubernetes.SeedGetterFactory(ctx, client, seedName, namespace)
 }

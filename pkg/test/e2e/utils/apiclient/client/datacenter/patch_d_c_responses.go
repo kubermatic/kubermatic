@@ -58,7 +58,8 @@ func NewPatchDCOK() *PatchDCOK {
 	return &PatchDCOK{}
 }
 
-/* PatchDCOK describes a response with status code 200, with default header values.
+/*
+PatchDCOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -66,9 +67,39 @@ type PatchDCOK struct {
 	Payload *models.Datacenter
 }
 
+// IsSuccess returns true when this patch d c o k response has a 2xx status code
+func (o *PatchDCOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch d c o k response has a 3xx status code
+func (o *PatchDCOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch d c o k response has a 4xx status code
+func (o *PatchDCOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch d c o k response has a 5xx status code
+func (o *PatchDCOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch d c o k response a status code equal to that given
+func (o *PatchDCOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchDCOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDCOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchDCOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDCOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchDCOK) GetPayload() *models.Datacenter {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewPatchDCUnauthorized() *PatchDCUnauthorized {
 	return &PatchDCUnauthorized{}
 }
 
-/* PatchDCUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchDCUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch d c unauthorized response has a 2xx status code
+func (o *PatchDCUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch d c unauthorized response has a 3xx status code
+func (o *PatchDCUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch d c unauthorized response has a 4xx status code
+func (o *PatchDCUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch d c unauthorized response has a 5xx status code
+func (o *PatchDCUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch d c unauthorized response a status code equal to that given
+func (o *PatchDCUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchDCUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDCUnauthorized ", 401)
+}
+
+func (o *PatchDCUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDCUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewPatchDCForbidden() *PatchDCForbidden {
 	return &PatchDCForbidden{}
 }
 
-/* PatchDCForbidden describes a response with status code 403, with default header values.
+/*
+PatchDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchDCForbidden struct {
 }
 
+// IsSuccess returns true when this patch d c forbidden response has a 2xx status code
+func (o *PatchDCForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch d c forbidden response has a 3xx status code
+func (o *PatchDCForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch d c forbidden response has a 4xx status code
+func (o *PatchDCForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch d c forbidden response has a 5xx status code
+func (o *PatchDCForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch d c forbidden response a status code equal to that given
+func (o *PatchDCForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchDCForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDCForbidden ", 403)
+}
+
+func (o *PatchDCForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDCForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewPatchDCDefault(code int) *PatchDCDefault {
 	}
 }
 
-/* PatchDCDefault describes a response with status code -1, with default header values.
+/*
+PatchDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *PatchDCDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch d c default response has a 2xx status code
+func (o *PatchDCDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch d c default response has a 3xx status code
+func (o *PatchDCDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch d c default response has a 4xx status code
+func (o *PatchDCDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch d c default response has a 5xx status code
+func (o *PatchDCDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch d c default response a status code equal to that given
+func (o *PatchDCDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchDCDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDC default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchDCDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/seed/{seed_name}/dc/{dc}][%d] patchDC default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchDCDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

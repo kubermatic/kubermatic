@@ -42,7 +42,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -189,7 +189,7 @@ func GenerateCluster(
 
 	credentialName := body.Cluster.Credential
 	if len(credentialName) > 0 {
-		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, credentialName, body.Cluster.Spec.Cloud, dc)
+		cloudSpec, err := credentialManager.SetCloudCredentials(ctx, adminUserInfo, projectID, credentialName, body.Cluster.Spec.Cloud, dc)
 		if err != nil {
 			return nil, utilerrors.NewBadRequest("invalid credentials: %v", err)
 		}
@@ -287,16 +287,6 @@ func GenerateCluster(
 		partialCluster.Spec.EnableOperatingSystemManager = pointer.BoolPtr(true)
 	} else {
 		partialCluster.Spec.EnableOperatingSystemManager = body.Cluster.Spec.EnableOperatingSystemManager
-	}
-
-	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
-		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
-		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
-		}
-		if partialCluster.Spec.Cloud.VSphere != nil {
-			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
-		}
 	}
 
 	return partialCluster, nil
@@ -540,6 +530,7 @@ func PatchEndpoint(
 	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime
 	newInternalCluster.Spec.ClusterNetwork.KonnectivityEnabled = patchedCluster.Spec.ClusterNetwork.KonnectivityEnabled
 	newInternalCluster.Spec.CNIPlugin = patchedCluster.Spec.CNIPlugin
+	newInternalCluster.Spec.ExposeStrategy = patchedCluster.Spec.ExposeStrategy
 	newInternalCluster.Spec.EnableOperatingSystemManager = patchedCluster.Spec.EnableOperatingSystemManager
 	newInternalCluster.Spec.KubernetesDashboard = patchedCluster.Spec.KubernetesDashboard
 
@@ -749,7 +740,7 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	if !cloudcontroller.MigrationToExternalCloudControllerSupported(dc, oldCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
+	if !resources.MigrationToExternalCloudControllerSupported(dc, oldCluster, version.NewFromConfiguration(config).GetIncompatibilities()...) {
 		return nil, utilerrors.NewBadRequest("external CCM not supported by the given provider")
 	}
 
@@ -1096,10 +1087,11 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			ContainerRuntime:                     internalCluster.Spec.ContainerRuntime,
 			ClusterNetwork:                       &internalCluster.Spec.ClusterNetwork,
 			CNIPlugin:                            internalCluster.Spec.CNIPlugin,
+			ExposeStrategy:                       internalCluster.Spec.ExposeStrategy,
 		},
 		Status: apiv1.ClusterStatus{
 			Version:              internalCluster.Status.Versions.ControlPlane,
-			URL:                  internalCluster.GetAddress().URL,
+			URL:                  internalCluster.Status.Address.URL,
 			ExternalCCMMigration: convertInternalCCMStatusToExternal(internalCluster, datacenter, incompatibilities...),
 		},
 		Type: apiv1.KubernetesClusterType,
@@ -1139,7 +1131,7 @@ func ValidateClusterSpec(updateManager common.UpdateManager, body apiv1.CreateCl
 		return errors.New("invalid cluster name: too long (greater than 100 characters)")
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(body.Cluster.Spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(body.Cluster.Spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}
@@ -1221,7 +1213,7 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 }
 
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, incompatibilities ...*version.ProviderIncompatibility) apiv1.ExternalCCMMigrationStatus {
-	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], cloudcontroller.MigrationToExternalCloudControllerSupported(datacenter, cluster, incompatibilities...); {
+	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], resources.MigrationToExternalCloudControllerSupported(datacenter, cluster, incompatibilities...); {
 	case externalCCMEnabled:
 		if kubermaticv1helper.NeedCCMMigration(cluster) {
 			return apiv1.ExternalCCMMigrationInProgress

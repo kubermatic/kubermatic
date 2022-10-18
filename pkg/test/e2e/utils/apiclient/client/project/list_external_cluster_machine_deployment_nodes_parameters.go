@@ -52,10 +52,12 @@ func NewListExternalClusterMachineDeploymentNodesParamsWithHTTPClient(client *ht
 	}
 }
 
-/* ListExternalClusterMachineDeploymentNodesParams contains all the parameters to send to the API endpoint
-   for the list external cluster machine deployment nodes operation.
+/*
+ListExternalClusterMachineDeploymentNodesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list external cluster machine deployment nodes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListExternalClusterMachineDeploymentNodesParams struct {
 

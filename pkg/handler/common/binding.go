@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -82,6 +83,9 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 		if roleUser.Group != "" && subject.Name == roleUser.Group {
 			return nil, utilerrors.NewBadRequest("group %s already connected to role %s", roleUser.Group, roleID)
 		}
+		if roleUser.ServiceAccount != "" && subject.Name == roleUser.ServiceAccount && subject.Namespace == roleUser.ServiceAccountNamespace {
+			return nil, utilerrors.NewBadRequest("service account %s/%s already connected to the role %s", roleUser.ServiceAccountNamespace, roleUser.ServiceAccount, roleID)
+		}
 	}
 
 	if roleUser.UserEmail != "" {
@@ -98,6 +102,15 @@ func BindUserToRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInf
 				Kind:     rbacv1.GroupKind,
 				APIGroup: rbacv1.GroupName,
 				Name:     roleUser.Group,
+			})
+	}
+	if roleUser.ServiceAccount != "" {
+		existingRoleBinding.Subjects = append(existingRoleBinding.Subjects,
+			rbacv1.Subject{
+				Kind:      rbacv1.ServiceAccountKind,
+				APIGroup:  "",
+				Name:      roleUser.ServiceAccount,
+				Namespace: roleUser.ServiceAccountNamespace,
 			})
 	}
 
@@ -150,6 +163,9 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 		if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
 			return nil, utilerrors.NewBadRequest("group %s already connected to the cluster role %s", clusterRoleUser.Group, roleID)
 		}
+		if clusterRoleUser.ServiceAccount != "" && subject.Name == clusterRoleUser.ServiceAccount && subject.Namespace == clusterRoleUser.ServiceAccountNamespace {
+			return nil, utilerrors.NewBadRequest("service account %s/%s already connected to the cluster role %s", clusterRoleUser.ServiceAccountNamespace, clusterRoleUser.ServiceAccount, roleID)
+		}
 	}
 
 	if clusterRoleUser.UserEmail != "" {
@@ -166,6 +182,16 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 				Kind:     rbacv1.GroupKind,
 				APIGroup: rbacv1.GroupName,
 				Name:     clusterRoleUser.Group,
+			})
+	}
+
+	if clusterRoleUser.ServiceAccount != "" {
+		existingClusterRoleBinding.Subjects = append(existingClusterRoleBinding.Subjects,
+			rbacv1.Subject{
+				Kind:      rbacv1.ServiceAccountKind,
+				APIGroup:  "",
+				Name:      clusterRoleUser.ServiceAccount,
+				Namespace: clusterRoleUser.ServiceAccountNamespace,
 			})
 	}
 
@@ -217,6 +243,9 @@ func UnbindUserFromRoleBindingEndpoint(ctx context.Context, userInfoGetter provi
 			continue
 		}
 		if roleUser.Group != "" && subject.Name == roleUser.Group {
+			continue
+		}
+		if roleUser.ServiceAccount != "" && subject.Name == roleUser.ServiceAccount && subject.Namespace == roleUser.ServiceAccountNamespace {
 			continue
 		}
 		newSubjects = append(newSubjects, subject)
@@ -273,6 +302,9 @@ func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGette
 		if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
 			continue
 		}
+		if clusterRoleUser.ServiceAccount != "" && subject.Name == clusterRoleUser.ServiceAccount && subject.Namespace == clusterRoleUser.ServiceAccountNamespace {
+			continue
+		}
 		newSubjects = append(newSubjects, subject)
 	}
 	binding.Subjects = newSubjects
@@ -284,6 +316,61 @@ func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGette
 	return convertInternalClusterRoleBindingToExternal(binding), nil
 }
 
+// UnbindServiceAccountFromRoles unbinds the service account from all rolebindings labelled UserClusterComponentKey = UserClusterBindingComponentValue.
+func UnbindServiceAccountFromRoles(ctx context.Context, client ctrlruntimeclient.Client, serviceAccount *corev1.ServiceAccount) error {
+	roleBindingList := &rbacv1.RoleBindingList{}
+	if err := client.List(ctx, roleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
+		return fmt.Errorf("failed to list rolebinding: %w", err)
+	}
+
+	for _, roleBinding := range roleBindingList.Items {
+		shouldUpate := false
+		var newSubjects []rbacv1.Subject
+		for _, subject := range roleBinding.Subjects {
+			if subject.Name == serviceAccount.Name && subject.Namespace == serviceAccount.Namespace {
+				shouldUpate = true
+				continue
+			}
+			newSubjects = append(newSubjects, subject)
+		}
+		if shouldUpate {
+			binding := roleBinding.DeepCopy()
+			binding.Subjects = newSubjects
+			if err := client.Update(ctx, binding); err != nil {
+				return fmt.Errorf("failed to unbind service account '%s/%s' from role binding '%s/%s': %w", serviceAccount.Namespace, serviceAccount.Name, roleBinding.Namespace, roleBinding.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+// UnbindServiceAccountFromClusterRoles unbinds the service account from all clusterRolebindings labelled UserClusterComponentKey = UserClusterBindingComponentValue.
+func UnbindServiceAccountFromClusterRoles(ctx context.Context, client ctrlruntimeclient.Client, serviceAccount *corev1.ServiceAccount) error {
+	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+	if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
+		return fmt.Errorf("failed to list clusterRoleBinding: %w", err)
+	}
+
+	for _, clusterRoleBinding := range clusterRoleBindingList.Items {
+		shouldUpate := false
+		var newSubjects []rbacv1.Subject
+		for _, subject := range clusterRoleBinding.Subjects {
+			if subject.Name == serviceAccount.Name && subject.Namespace == serviceAccount.Namespace {
+				shouldUpate = true
+				continue
+			}
+			newSubjects = append(newSubjects, subject)
+		}
+		if shouldUpate {
+			binding := clusterRoleBinding.DeepCopy()
+			binding.Subjects = newSubjects
+			if err := client.Update(ctx, binding); err != nil {
+				return fmt.Errorf("failed to unbind service account '%s/%s' from cluster role binding '%s': %w", serviceAccount.Namespace, serviceAccount.Name, clusterRoleBinding.Name, err)
+			}
+		}
+	}
+	return nil
+}
 func ListRoleBindingEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 

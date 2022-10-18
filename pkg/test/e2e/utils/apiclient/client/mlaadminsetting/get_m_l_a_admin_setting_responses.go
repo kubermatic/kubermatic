@@ -58,7 +58,8 @@ func NewGetMLAAdminSettingOK() *GetMLAAdminSettingOK {
 	return &GetMLAAdminSettingOK{}
 }
 
-/* GetMLAAdminSettingOK describes a response with status code 200, with default header values.
+/*
+GetMLAAdminSettingOK describes a response with status code 200, with default header values.
 
 MLAAdminSetting
 */
@@ -66,9 +67,39 @@ type GetMLAAdminSettingOK struct {
 	Payload *models.MLAAdminSetting
 }
 
+// IsSuccess returns true when this get m l a admin setting o k response has a 2xx status code
+func (o *GetMLAAdminSettingOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get m l a admin setting o k response has a 3xx status code
+func (o *GetMLAAdminSettingOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get m l a admin setting o k response has a 4xx status code
+func (o *GetMLAAdminSettingOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get m l a admin setting o k response has a 5xx status code
+func (o *GetMLAAdminSettingOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get m l a admin setting o k response a status code equal to that given
+func (o *GetMLAAdminSettingOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetMLAAdminSettingOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSettingOK  %+v", 200, o.Payload)
 }
+
+func (o *GetMLAAdminSettingOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSettingOK  %+v", 200, o.Payload)
+}
+
 func (o *GetMLAAdminSettingOK) GetPayload() *models.MLAAdminSetting {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetMLAAdminSettingUnauthorized() *GetMLAAdminSettingUnauthorized {
 	return &GetMLAAdminSettingUnauthorized{}
 }
 
-/* GetMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
+/*
+GetMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetMLAAdminSettingUnauthorized struct {
 }
 
+// IsSuccess returns true when this get m l a admin setting unauthorized response has a 2xx status code
+func (o *GetMLAAdminSettingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get m l a admin setting unauthorized response has a 3xx status code
+func (o *GetMLAAdminSettingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get m l a admin setting unauthorized response has a 4xx status code
+func (o *GetMLAAdminSettingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get m l a admin setting unauthorized response has a 5xx status code
+func (o *GetMLAAdminSettingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get m l a admin setting unauthorized response a status code equal to that given
+func (o *GetMLAAdminSettingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetMLAAdminSettingUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSettingUnauthorized ", 401)
+}
+
+func (o *GetMLAAdminSettingUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSettingUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetMLAAdminSettingForbidden() *GetMLAAdminSettingForbidden {
 	return &GetMLAAdminSettingForbidden{}
 }
 
-/* GetMLAAdminSettingForbidden describes a response with status code 403, with default header values.
+/*
+GetMLAAdminSettingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetMLAAdminSettingForbidden struct {
 }
 
+// IsSuccess returns true when this get m l a admin setting forbidden response has a 2xx status code
+func (o *GetMLAAdminSettingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get m l a admin setting forbidden response has a 3xx status code
+func (o *GetMLAAdminSettingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get m l a admin setting forbidden response has a 4xx status code
+func (o *GetMLAAdminSettingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get m l a admin setting forbidden response has a 5xx status code
+func (o *GetMLAAdminSettingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get m l a admin setting forbidden response a status code equal to that given
+func (o *GetMLAAdminSettingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetMLAAdminSettingForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSettingForbidden ", 403)
+}
+
+func (o *GetMLAAdminSettingForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSettingForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetMLAAdminSettingDefault(code int) *GetMLAAdminSettingDefault {
 	}
 }
 
-/* GetMLAAdminSettingDefault describes a response with status code -1, with default header values.
+/*
+GetMLAAdminSettingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetMLAAdminSettingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get m l a admin setting default response has a 2xx status code
+func (o *GetMLAAdminSettingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get m l a admin setting default response has a 3xx status code
+func (o *GetMLAAdminSettingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get m l a admin setting default response has a 4xx status code
+func (o *GetMLAAdminSettingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get m l a admin setting default response has a 5xx status code
+func (o *GetMLAAdminSettingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get m l a admin setting default response a status code equal to that given
+func (o *GetMLAAdminSettingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetMLAAdminSettingDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSetting default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetMLAAdminSettingDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] getMLAAdminSetting default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetMLAAdminSettingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -184,7 +184,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 			Annotations: application.Annotations,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:        application.Spec.Namespace.Name,
 				Create:      application.Spec.Namespace.Create,
 				Labels:      application.Spec.Namespace.Labels,
@@ -201,11 +201,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 	err := client.Create(ctx, &applicationInstallation)
 	if err != nil {
 		// If the application already exists, we just ignore the error and move forward.
-		if apierrors.IsAlreadyExists(err) {
-			return nil
-		}
-
-		return err
+		return ctrlruntimeclient.IgnoreAlreadyExists(err)
 	}
 
 	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Initial ApplicationInstallation %s has been created", applicationInstallation.Name)

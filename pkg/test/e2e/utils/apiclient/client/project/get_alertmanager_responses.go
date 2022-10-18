@@ -58,7 +58,8 @@ func NewGetAlertmanagerOK() *GetAlertmanagerOK {
 	return &GetAlertmanagerOK{}
 }
 
-/* GetAlertmanagerOK describes a response with status code 200, with default header values.
+/*
+GetAlertmanagerOK describes a response with status code 200, with default header values.
 
 Alertmanager
 */
@@ -66,9 +67,39 @@ type GetAlertmanagerOK struct {
 	Payload *models.Alertmanager
 }
 
+// IsSuccess returns true when this get alertmanager o k response has a 2xx status code
+func (o *GetAlertmanagerOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get alertmanager o k response has a 3xx status code
+func (o *GetAlertmanagerOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get alertmanager o k response has a 4xx status code
+func (o *GetAlertmanagerOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get alertmanager o k response has a 5xx status code
+func (o *GetAlertmanagerOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get alertmanager o k response a status code equal to that given
+func (o *GetAlertmanagerOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetAlertmanagerOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanagerOK  %+v", 200, o.Payload)
 }
+
+func (o *GetAlertmanagerOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanagerOK  %+v", 200, o.Payload)
+}
+
 func (o *GetAlertmanagerOK) GetPayload() *models.Alertmanager {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetAlertmanagerUnauthorized() *GetAlertmanagerUnauthorized {
 	return &GetAlertmanagerUnauthorized{}
 }
 
-/* GetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
+/*
+GetAlertmanagerUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetAlertmanagerUnauthorized struct {
 }
 
+// IsSuccess returns true when this get alertmanager unauthorized response has a 2xx status code
+func (o *GetAlertmanagerUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get alertmanager unauthorized response has a 3xx status code
+func (o *GetAlertmanagerUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get alertmanager unauthorized response has a 4xx status code
+func (o *GetAlertmanagerUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get alertmanager unauthorized response has a 5xx status code
+func (o *GetAlertmanagerUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get alertmanager unauthorized response a status code equal to that given
+func (o *GetAlertmanagerUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetAlertmanagerUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanagerUnauthorized ", 401)
+}
+
+func (o *GetAlertmanagerUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanagerUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetAlertmanagerForbidden() *GetAlertmanagerForbidden {
 	return &GetAlertmanagerForbidden{}
 }
 
-/* GetAlertmanagerForbidden describes a response with status code 403, with default header values.
+/*
+GetAlertmanagerForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetAlertmanagerForbidden struct {
 }
 
+// IsSuccess returns true when this get alertmanager forbidden response has a 2xx status code
+func (o *GetAlertmanagerForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get alertmanager forbidden response has a 3xx status code
+func (o *GetAlertmanagerForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get alertmanager forbidden response has a 4xx status code
+func (o *GetAlertmanagerForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get alertmanager forbidden response has a 5xx status code
+func (o *GetAlertmanagerForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get alertmanager forbidden response a status code equal to that given
+func (o *GetAlertmanagerForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetAlertmanagerForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanagerForbidden ", 403)
+}
+
+func (o *GetAlertmanagerForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanagerForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetAlertmanagerDefault(code int) *GetAlertmanagerDefault {
 	}
 }
 
-/* GetAlertmanagerDefault describes a response with status code -1, with default header values.
+/*
+GetAlertmanagerDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetAlertmanagerDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get alertmanager default response has a 2xx status code
+func (o *GetAlertmanagerDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get alertmanager default response has a 3xx status code
+func (o *GetAlertmanagerDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get alertmanager default response has a 4xx status code
+func (o *GetAlertmanagerDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get alertmanager default response has a 5xx status code
+func (o *GetAlertmanagerDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get alertmanager default response a status code equal to that given
+func (o *GetAlertmanagerDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetAlertmanagerDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanager default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetAlertmanagerDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config][%d] getAlertmanager default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetAlertmanagerDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

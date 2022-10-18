@@ -21,6 +21,7 @@ package vsphere
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -47,16 +48,16 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 					Name:         "Management",
 				},
 				{
-					AbsolutePath: fmt.Sprintf("/%s/network/Default Network", vSphereDatacenter),
-					RelativePath: "Default Network",
-					Type:         "DistributedVirtualPortgroup",
-					Name:         "Default Network",
-				},
-				{
 					AbsolutePath: fmt.Sprintf("/%s/network/DSwitchAlpha-DVUplinks-2001", vSphereDatacenter),
 					RelativePath: "DSwitchAlpha-DVUplinks-2001",
 					Type:         "DistributedVirtualPortgroup",
 					Name:         "DSwitchAlpha-DVUplinks-2001",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/Default Network", vSphereDatacenter),
+					RelativePath: "Default Network",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "Default Network",
 				},
 			},
 		},
@@ -69,8 +70,16 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !diff.SemanticallyEqual(test.expectedNetworkInfos, networkInfos) {
-				t.Fatalf("Got network infos differ from expected ones:\n%v", diff.ObjectDiff(test.expectedNetworkInfos, networkInfos))
+			sort.Slice(test.expectedNetworkInfos, func(i, j int) bool {
+				return test.expectedNetworkInfos[i].AbsolutePath < test.expectedNetworkInfos[j].AbsolutePath
+			})
+
+			sort.Slice(networkInfos, func(i, j int) bool {
+				return networkInfos[i].AbsolutePath < networkInfos[j].AbsolutePath
+			})
+
+			if changes := diff.ObjectDiff(test.expectedNetworkInfos, networkInfos); changes != "" {
+				t.Errorf("Got network infos differ from expected ones. Diff: %v", changes)
 			}
 		})
 	}

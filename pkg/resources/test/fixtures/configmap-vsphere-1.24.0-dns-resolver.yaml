@@ -19,3 +19,5 @@ data:
     }
 metadata:
   creationTimestamp: null
+  name: dns-resolver
+  namespace: cluster-de-test-01

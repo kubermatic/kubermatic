@@ -62,9 +62,9 @@ func TestValidateClusterSpec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateClusterSpec(test.spec, dc, features.FeatureGate{}, []*version.Version{{
+			err := ValidateClusterSpec(test.spec, dc, features.FeatureGate{}, version.New([]*version.Version{{
 				Version: semverlib.MustParse("1.2.3"),
-			}}, nil).ToAggregate()
+			}}, nil, nil), nil).ToAggregate()
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)
@@ -883,6 +883,96 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 				return tc.gcpSubnetworkResp, nil
 			})
 			assert.Equal(t, tc.expectedError, err)
+		})
+	}
+}
+
+func TestValidateEncryptionConfiguration(t *testing.T) {
+	tests := []struct {
+		name        string
+		clusterSpec *kubermaticv1.ClusterSpec
+		expectErr   field.ErrorList
+	}{
+		{
+			name: "small key",
+			clusterSpec: &kubermaticv1.ClusterSpec{
+				Features: map[string]bool{
+					kubermaticv1.ClusterFeatureEncryptionAtRest: true,
+				},
+				EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+					Enabled: true,
+					Secretbox: &kubermaticv1.SecretboxEncryptionConfiguration{
+						Keys: []kubermaticv1.SecretboxKey{
+							{
+								Name:  "small-key",
+								Value: "cmLcMbw6gdxPHQ==",
+							},
+						},
+					},
+				},
+			},
+			expectErr: field.ErrorList{
+				&field.Error{
+					Type:     "FieldValueInvalid",
+					Field:    "spec.encryptionConfiguration.secretbox.keys[0]",
+					BadValue: "small-key",
+					Detail:   "key length should be 32 it is 10",
+				},
+			},
+		},
+		{
+			name: "bad base64",
+			clusterSpec: &kubermaticv1.ClusterSpec{
+				Features: map[string]bool{
+					kubermaticv1.ClusterFeatureEncryptionAtRest: true,
+				},
+				EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+					Enabled: true,
+					Secretbox: &kubermaticv1.SecretboxEncryptionConfiguration{
+						Keys: []kubermaticv1.SecretboxKey{
+							{
+								Name:  "small-key",
+								Value: "cmLcMbw6gdxPH$==",
+							},
+						},
+					},
+				},
+			},
+			expectErr: field.ErrorList{
+				&field.Error{
+					Type:     "FieldValueInvalid",
+					Field:    "spec.encryptionConfiguration.secretbox.keys[0]",
+					BadValue: "small-key",
+					Detail:   "illegal base64 data at input byte 13",
+				},
+			},
+		},
+		{
+			name: "good key",
+			clusterSpec: &kubermaticv1.ClusterSpec{
+				Features: map[string]bool{
+					kubermaticv1.ClusterFeatureEncryptionAtRest: true,
+				},
+				EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+					Enabled: true,
+					Secretbox: &kubermaticv1.SecretboxEncryptionConfiguration{
+						Keys: []kubermaticv1.SecretboxKey{
+							{
+								Name:  "good-key",
+								Value: "RGolflgAc+eBbm1lys87pTNQZVf0i67rlpPZGtTkVjQ=",
+							},
+						},
+					},
+				},
+			},
+			expectErr: field.ErrorList{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateEncryptionConfiguration(test.clusterSpec, field.NewPath("spec", "encryptionConfiguration"))
+			assert.Equal(t, test.expectErr, err)
 		})
 	}
 }

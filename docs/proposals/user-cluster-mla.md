@@ -260,7 +260,7 @@ Gateway will be used to serve both Prometheus and Loki connections. Therefore, t
 a User Cluster have to be reachable from the User Cluster itself.
 
 For the initial implementation, we will leverage the existing
-KKP [expose strategies](https://docs.kubermatic.com/kubermatic/master/architecture/concepts/expose_strategy/) that are
+KKP [expose strategies](https://docs.kubermatic.com/kubermatic/v2.20/tutorials_howtos/networking/expose_strategies/) that are
 used for exposing Kubernetes control plane services to user clusters for exposing the MLA Gateway. Depending on the
 strategy used in the Seed it would be one of:
 
@@ -268,7 +268,7 @@ strategy used in the Seed it would be one of:
 - `Global LoadBalancer` / `One LoadBalancer Per User Cluster` - would allocate one more listener on the LoadBalancer per
   user cluster + one more NodePort per user cluster,
 - `SNI` (part of
-  the `Tunneling` [expose strategy](https://github.com/kubermatic/kubermatic/blob/master/docs/proposals/http-tunnel-expose-strategy.md)) - would
+  the `Tunneling` [expose strategy](https://github.com/kubermatic/kubermatic/blob/main/docs/proposals/http-tunnel-expose-strategy.md)) - would
   not allocate more LB listeners nor NodePorts. The User Cluster would be connected to a MLA-specific HTTPS
   endpoint for the given cluster, e.g.,  `https://mla.<<cluster-id>>.<<seed-cluster-name>>.base.domain`.
 
@@ -276,7 +276,7 @@ For this connectivity strategy, all that is needed from an implementation perspe
 proper `nodeport-proxy.k8s.io/expose` annotation on the MLA Gateway Deployment resource.
 
 As a potential enhancement, we could consider expanding on
-the [tunneling expose strategy](https://github.com/kubermatic/kubermatic/blob/master/docs/proposals/http-tunnel-expose-strategy.md),
+the [tunneling expose strategy](https://github.com/kubermatic/kubermatic/blob/main/docs/proposals/http-tunnel-expose-strategy.md),
 and tunneling the MLA traffic through the tunneler agents running on the User Cluster worker nodes to reduce the total
 amount of HTTPs connections between the User Cluster and the Seed Cluster (as one Loki Promtail runs on each node in the
 User Cluster and opens its own connection to the Gateway).

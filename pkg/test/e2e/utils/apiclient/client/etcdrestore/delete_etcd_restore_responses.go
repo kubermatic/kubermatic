@@ -64,14 +64,44 @@ func NewDeleteEtcdRestoreOK() *DeleteEtcdRestoreOK {
 	return &DeleteEtcdRestoreOK{}
 }
 
-/* DeleteEtcdRestoreOK describes a response with status code 200, with default header values.
+/*
+DeleteEtcdRestoreOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteEtcdRestoreOK struct {
 }
 
+// IsSuccess returns true when this delete etcd restore o k response has a 2xx status code
+func (o *DeleteEtcdRestoreOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete etcd restore o k response has a 3xx status code
+func (o *DeleteEtcdRestoreOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete etcd restore o k response has a 4xx status code
+func (o *DeleteEtcdRestoreOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete etcd restore o k response has a 5xx status code
+func (o *DeleteEtcdRestoreOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete etcd restore o k response a status code equal to that given
+func (o *DeleteEtcdRestoreOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteEtcdRestoreOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreOK ", 200)
+}
+
+func (o *DeleteEtcdRestoreOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreOK ", 200)
 }
 
@@ -85,14 +115,44 @@ func NewDeleteEtcdRestoreUnauthorized() *DeleteEtcdRestoreUnauthorized {
 	return &DeleteEtcdRestoreUnauthorized{}
 }
 
-/* DeleteEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteEtcdRestoreUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteEtcdRestoreUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete etcd restore unauthorized response has a 2xx status code
+func (o *DeleteEtcdRestoreUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete etcd restore unauthorized response has a 3xx status code
+func (o *DeleteEtcdRestoreUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete etcd restore unauthorized response has a 4xx status code
+func (o *DeleteEtcdRestoreUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete etcd restore unauthorized response has a 5xx status code
+func (o *DeleteEtcdRestoreUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete etcd restore unauthorized response a status code equal to that given
+func (o *DeleteEtcdRestoreUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteEtcdRestoreUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreUnauthorized ", 401)
+}
+
+func (o *DeleteEtcdRestoreUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreUnauthorized ", 401)
 }
 
@@ -106,14 +166,44 @@ func NewDeleteEtcdRestoreForbidden() *DeleteEtcdRestoreForbidden {
 	return &DeleteEtcdRestoreForbidden{}
 }
 
-/* DeleteEtcdRestoreForbidden describes a response with status code 403, with default header values.
+/*
+DeleteEtcdRestoreForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteEtcdRestoreForbidden struct {
 }
 
+// IsSuccess returns true when this delete etcd restore forbidden response has a 2xx status code
+func (o *DeleteEtcdRestoreForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete etcd restore forbidden response has a 3xx status code
+func (o *DeleteEtcdRestoreForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete etcd restore forbidden response has a 4xx status code
+func (o *DeleteEtcdRestoreForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete etcd restore forbidden response has a 5xx status code
+func (o *DeleteEtcdRestoreForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete etcd restore forbidden response a status code equal to that given
+func (o *DeleteEtcdRestoreForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteEtcdRestoreForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreForbidden ", 403)
+}
+
+func (o *DeleteEtcdRestoreForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreForbidden ", 403)
 }
 
@@ -127,7 +217,8 @@ func NewDeleteEtcdRestoreConflict() *DeleteEtcdRestoreConflict {
 	return &DeleteEtcdRestoreConflict{}
 }
 
-/* DeleteEtcdRestoreConflict describes a response with status code 409, with default header values.
+/*
+DeleteEtcdRestoreConflict describes a response with status code 409, with default header values.
 
 errorResponse
 */
@@ -135,9 +226,39 @@ type DeleteEtcdRestoreConflict struct {
 	Payload *models.ErrorResponse
 }
 
+// IsSuccess returns true when this delete etcd restore conflict response has a 2xx status code
+func (o *DeleteEtcdRestoreConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete etcd restore conflict response has a 3xx status code
+func (o *DeleteEtcdRestoreConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete etcd restore conflict response has a 4xx status code
+func (o *DeleteEtcdRestoreConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete etcd restore conflict response has a 5xx status code
+func (o *DeleteEtcdRestoreConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete etcd restore conflict response a status code equal to that given
+func (o *DeleteEtcdRestoreConflict) IsCode(code int) bool {
+	return code == 409
+}
+
 func (o *DeleteEtcdRestoreConflict) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreConflict  %+v", 409, o.Payload)
 }
+
+func (o *DeleteEtcdRestoreConflict) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestoreConflict  %+v", 409, o.Payload)
+}
+
 func (o *DeleteEtcdRestoreConflict) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -161,7 +282,8 @@ func NewDeleteEtcdRestoreDefault(code int) *DeleteEtcdRestoreDefault {
 	}
 }
 
-/* DeleteEtcdRestoreDefault describes a response with status code -1, with default header values.
+/*
+DeleteEtcdRestoreDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -176,9 +298,39 @@ func (o *DeleteEtcdRestoreDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete etcd restore default response has a 2xx status code
+func (o *DeleteEtcdRestoreDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete etcd restore default response has a 3xx status code
+func (o *DeleteEtcdRestoreDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete etcd restore default response has a 4xx status code
+func (o *DeleteEtcdRestoreDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete etcd restore default response has a 5xx status code
+func (o *DeleteEtcdRestoreDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete etcd restore default response a status code equal to that given
+func (o *DeleteEtcdRestoreDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteEtcdRestoreDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestore default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteEtcdRestoreDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdrestores/{er_name}][%d] deleteEtcdRestore default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteEtcdRestoreDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

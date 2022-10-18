@@ -5,6 +5,7 @@ metadata:
   labels:
     app: metrics-server
   name: metrics-server
+  namespace: cluster-de-test-01
 spec:
   replicas: 2
   selector:
@@ -53,7 +54,7 @@ spec:
         - '{"command":"/metrics-server","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--kubelet-insecure-tls","--kubelet-use-node-status-port","--secure-port","4443","--metric-resolution","15s","--kubelet-preferred-address-types","ExternalIP,InternalIP","--v","1","--tls-cert-file","/etc/serving-cert/serving.crt","--tls-private-key-file","/etc/serving-cert/serving.key"]}'
         command:
         - /http-prober-bin/http-prober
-        image: k8s.gcr.io/metrics-server/metrics-server:v0.6.1
+        image: registry.k8s.io/metrics-server/metrics-server:v0.6.1
         livenessProbe:
           failureThreshold: 3
           httpGet:

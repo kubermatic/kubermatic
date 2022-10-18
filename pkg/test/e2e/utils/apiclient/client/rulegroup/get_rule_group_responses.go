@@ -58,7 +58,8 @@ func NewGetRuleGroupOK() *GetRuleGroupOK {
 	return &GetRuleGroupOK{}
 }
 
-/* GetRuleGroupOK describes a response with status code 200, with default header values.
+/*
+GetRuleGroupOK describes a response with status code 200, with default header values.
 
 RuleGroup
 */
@@ -66,9 +67,39 @@ type GetRuleGroupOK struct {
 	Payload *models.RuleGroup
 }
 
+// IsSuccess returns true when this get rule group o k response has a 2xx status code
+func (o *GetRuleGroupOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get rule group o k response has a 3xx status code
+func (o *GetRuleGroupOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get rule group o k response has a 4xx status code
+func (o *GetRuleGroupOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get rule group o k response has a 5xx status code
+func (o *GetRuleGroupOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get rule group o k response a status code equal to that given
+func (o *GetRuleGroupOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetRuleGroupOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupOK  %+v", 200, o.Payload)
 }
+
+func (o *GetRuleGroupOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupOK  %+v", 200, o.Payload)
+}
+
 func (o *GetRuleGroupOK) GetPayload() *models.RuleGroup {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetRuleGroupUnauthorized() *GetRuleGroupUnauthorized {
 	return &GetRuleGroupUnauthorized{}
 }
 
-/* GetRuleGroupUnauthorized describes a response with status code 401, with default header values.
+/*
+GetRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetRuleGroupUnauthorized struct {
 }
 
+// IsSuccess returns true when this get rule group unauthorized response has a 2xx status code
+func (o *GetRuleGroupUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get rule group unauthorized response has a 3xx status code
+func (o *GetRuleGroupUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get rule group unauthorized response has a 4xx status code
+func (o *GetRuleGroupUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get rule group unauthorized response has a 5xx status code
+func (o *GetRuleGroupUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get rule group unauthorized response a status code equal to that given
+func (o *GetRuleGroupUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetRuleGroupUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupUnauthorized ", 401)
+}
+
+func (o *GetRuleGroupUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetRuleGroupForbidden() *GetRuleGroupForbidden {
 	return &GetRuleGroupForbidden{}
 }
 
-/* GetRuleGroupForbidden describes a response with status code 403, with default header values.
+/*
+GetRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetRuleGroupForbidden struct {
 }
 
+// IsSuccess returns true when this get rule group forbidden response has a 2xx status code
+func (o *GetRuleGroupForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get rule group forbidden response has a 3xx status code
+func (o *GetRuleGroupForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get rule group forbidden response has a 4xx status code
+func (o *GetRuleGroupForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get rule group forbidden response has a 5xx status code
+func (o *GetRuleGroupForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get rule group forbidden response a status code equal to that given
+func (o *GetRuleGroupForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetRuleGroupForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupForbidden ", 403)
+}
+
+func (o *GetRuleGroupForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetRuleGroupDefault(code int) *GetRuleGroupDefault {
 	}
 }
 
-/* GetRuleGroupDefault describes a response with status code -1, with default header values.
+/*
+GetRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetRuleGroupDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get rule group default response has a 2xx status code
+func (o *GetRuleGroupDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get rule group default response has a 3xx status code
+func (o *GetRuleGroupDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get rule group default response has a 4xx status code
+func (o *GetRuleGroupDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get rule group default response has a 5xx status code
+func (o *GetRuleGroupDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get rule group default response a status code equal to that given
+func (o *GetRuleGroupDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetRuleGroupDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroup default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetRuleGroupDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroup default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetRuleGroupDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

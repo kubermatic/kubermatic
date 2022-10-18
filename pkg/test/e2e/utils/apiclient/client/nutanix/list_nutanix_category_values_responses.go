@@ -46,7 +46,8 @@ func NewListNutanixCategoryValuesOK() *ListNutanixCategoryValuesOK {
 	return &ListNutanixCategoryValuesOK{}
 }
 
-/* ListNutanixCategoryValuesOK describes a response with status code 200, with default header values.
+/*
+ListNutanixCategoryValuesOK describes a response with status code 200, with default header values.
 
 NutanixCategoryValueList
 */
@@ -54,9 +55,39 @@ type ListNutanixCategoryValuesOK struct {
 	Payload models.NutanixCategoryValueList
 }
 
+// IsSuccess returns true when this list nutanix category values o k response has a 2xx status code
+func (o *ListNutanixCategoryValuesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list nutanix category values o k response has a 3xx status code
+func (o *ListNutanixCategoryValuesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list nutanix category values o k response has a 4xx status code
+func (o *ListNutanixCategoryValuesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list nutanix category values o k response has a 5xx status code
+func (o *ListNutanixCategoryValuesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list nutanix category values o k response a status code equal to that given
+func (o *ListNutanixCategoryValuesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNutanixCategoryValuesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/categories/{category}/values][%d] listNutanixCategoryValuesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNutanixCategoryValuesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/categories/{category}/values][%d] listNutanixCategoryValuesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNutanixCategoryValuesOK) GetPayload() models.NutanixCategoryValueList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListNutanixCategoryValuesDefault(code int) *ListNutanixCategoryValuesDef
 	}
 }
 
-/* ListNutanixCategoryValuesDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixCategoryValuesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListNutanixCategoryValuesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list nutanix category values default response has a 2xx status code
+func (o *ListNutanixCategoryValuesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list nutanix category values default response has a 3xx status code
+func (o *ListNutanixCategoryValuesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list nutanix category values default response has a 4xx status code
+func (o *ListNutanixCategoryValuesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list nutanix category values default response has a 5xx status code
+func (o *ListNutanixCategoryValuesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list nutanix category values default response a status code equal to that given
+func (o *ListNutanixCategoryValuesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNutanixCategoryValuesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/categories/{category}/values][%d] listNutanixCategoryValues default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNutanixCategoryValuesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/categories/{category}/values][%d] listNutanixCategoryValues default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNutanixCategoryValuesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

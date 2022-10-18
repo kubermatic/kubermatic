@@ -60,14 +60,44 @@ func NewUpdatePresetStatusOK() *UpdatePresetStatusOK {
 	return &UpdatePresetStatusOK{}
 }
 
-/* UpdatePresetStatusOK describes a response with status code 200, with default header values.
+/*
+UpdatePresetStatusOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdatePresetStatusOK struct {
 }
 
+// IsSuccess returns true when this update preset status o k response has a 2xx status code
+func (o *UpdatePresetStatusOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update preset status o k response has a 3xx status code
+func (o *UpdatePresetStatusOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update preset status o k response has a 4xx status code
+func (o *UpdatePresetStatusOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update preset status o k response has a 5xx status code
+func (o *UpdatePresetStatusOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update preset status o k response a status code equal to that given
+func (o *UpdatePresetStatusOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdatePresetStatusOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatusOK ", 200)
+}
+
+func (o *UpdatePresetStatusOK) String() string {
 	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatusOK ", 200)
 }
 
@@ -81,14 +111,44 @@ func NewUpdatePresetStatusUnauthorized() *UpdatePresetStatusUnauthorized {
 	return &UpdatePresetStatusUnauthorized{}
 }
 
-/* UpdatePresetStatusUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdatePresetStatusUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdatePresetStatusUnauthorized struct {
 }
 
+// IsSuccess returns true when this update preset status unauthorized response has a 2xx status code
+func (o *UpdatePresetStatusUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update preset status unauthorized response has a 3xx status code
+func (o *UpdatePresetStatusUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update preset status unauthorized response has a 4xx status code
+func (o *UpdatePresetStatusUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update preset status unauthorized response has a 5xx status code
+func (o *UpdatePresetStatusUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update preset status unauthorized response a status code equal to that given
+func (o *UpdatePresetStatusUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdatePresetStatusUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatusUnauthorized ", 401)
+}
+
+func (o *UpdatePresetStatusUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatusUnauthorized ", 401)
 }
 
@@ -102,14 +162,44 @@ func NewUpdatePresetStatusForbidden() *UpdatePresetStatusForbidden {
 	return &UpdatePresetStatusForbidden{}
 }
 
-/* UpdatePresetStatusForbidden describes a response with status code 403, with default header values.
+/*
+UpdatePresetStatusForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdatePresetStatusForbidden struct {
 }
 
+// IsSuccess returns true when this update preset status forbidden response has a 2xx status code
+func (o *UpdatePresetStatusForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update preset status forbidden response has a 3xx status code
+func (o *UpdatePresetStatusForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update preset status forbidden response has a 4xx status code
+func (o *UpdatePresetStatusForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update preset status forbidden response has a 5xx status code
+func (o *UpdatePresetStatusForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update preset status forbidden response a status code equal to that given
+func (o *UpdatePresetStatusForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdatePresetStatusForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatusForbidden ", 403)
+}
+
+func (o *UpdatePresetStatusForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatusForbidden ", 403)
 }
 
@@ -125,7 +215,8 @@ func NewUpdatePresetStatusDefault(code int) *UpdatePresetStatusDefault {
 	}
 }
 
-/* UpdatePresetStatusDefault describes a response with status code -1, with default header values.
+/*
+UpdatePresetStatusDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -140,9 +231,39 @@ func (o *UpdatePresetStatusDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update preset status default response has a 2xx status code
+func (o *UpdatePresetStatusDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update preset status default response has a 3xx status code
+func (o *UpdatePresetStatusDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update preset status default response has a 4xx status code
+func (o *UpdatePresetStatusDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update preset status default response has a 5xx status code
+func (o *UpdatePresetStatusDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update preset status default response a status code equal to that given
+func (o *UpdatePresetStatusDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdatePresetStatusDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatus default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdatePresetStatusDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v2/presets/{preset_name}/status][%d] updatePresetStatus default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdatePresetStatusDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -159,7 +280,8 @@ func (o *UpdatePresetStatusDefault) readResponse(response runtime.ClientResponse
 	return nil
 }
 
-/*UpdatePresetStatusBody update preset status body
+/*
+UpdatePresetStatusBody update preset status body
 swagger:model UpdatePresetStatusBody
 */
 type UpdatePresetStatusBody struct {

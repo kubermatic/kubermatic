@@ -46,7 +46,8 @@ func NewListGCPDiskTypesNoCredentialsOK() *ListGCPDiskTypesNoCredentialsOK {
 	return &ListGCPDiskTypesNoCredentialsOK{}
 }
 
-/* ListGCPDiskTypesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListGCPDiskTypesNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPDiskTypeList
 */
@@ -54,9 +55,39 @@ type ListGCPDiskTypesNoCredentialsOK struct {
 	Payload models.GCPDiskTypeList
 }
 
+// IsSuccess returns true when this list g c p disk types no credentials o k response has a 2xx status code
+func (o *ListGCPDiskTypesNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p disk types no credentials o k response has a 3xx status code
+func (o *ListGCPDiskTypesNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p disk types no credentials o k response has a 4xx status code
+func (o *ListGCPDiskTypesNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p disk types no credentials o k response has a 5xx status code
+func (o *ListGCPDiskTypesNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p disk types no credentials o k response a status code equal to that given
+func (o *ListGCPDiskTypesNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPDiskTypesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes][%d] listGCPDiskTypesNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPDiskTypesNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes][%d] listGCPDiskTypesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPDiskTypesNoCredentialsOK) GetPayload() models.GCPDiskTypeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGCPDiskTypesNoCredentialsDefault(code int) *ListGCPDiskTypesNoCreden
 	}
 }
 
-/* ListGCPDiskTypesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListGCPDiskTypesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGCPDiskTypesNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p disk types no credentials default response has a 2xx status code
+func (o *ListGCPDiskTypesNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p disk types no credentials default response has a 3xx status code
+func (o *ListGCPDiskTypesNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p disk types no credentials default response has a 4xx status code
+func (o *ListGCPDiskTypesNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p disk types no credentials default response has a 5xx status code
+func (o *ListGCPDiskTypesNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p disk types no credentials default response a status code equal to that given
+func (o *ListGCPDiskTypesNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPDiskTypesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes][%d] listGCPDiskTypesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPDiskTypesNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/disktypes][%d] listGCPDiskTypesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPDiskTypesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

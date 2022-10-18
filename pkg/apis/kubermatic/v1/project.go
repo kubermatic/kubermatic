@@ -52,7 +52,9 @@ const (
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Status",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Project is the type describing a project.
+// Project is the type describing a project. A project is a collection of
+// SSH keys, clusters and members. Members are assigned by creating UserProjectBinding
+// objects.
 type Project struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -69,6 +71,9 @@ type ProjectSpec struct {
 
 // ProjectStatus represents the current status of a project.
 type ProjectStatus struct {
+	// Phase describes the project phase. New projects are in the `Inactive`
+	// phase; after being reconciled they move to `Active` and during deletion
+	// they are `Terminating`.
 	Phase ProjectPhase `json:"phase"`
 }
 

@@ -27,17 +27,17 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/distribution/distribution/v3/reference"
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -52,7 +52,7 @@ import (
 )
 
 const (
-	cloudProviderExternalFlag = "external"
+	CloudProviderExternalFlag = "external"
 )
 
 type CABundle interface {
@@ -258,7 +258,7 @@ func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 }
 
 func (d *TemplateData) EtcdLauncherImage() string {
-	return d.parseImage(d.etcdLauncherImage)
+	return registry.Must(d.RewriteImage(d.etcdLauncherImage))
 }
 
 func (d *TemplateData) EtcdLauncherTag() string {
@@ -293,7 +293,7 @@ func (d *TemplateData) NodePortRange() string {
 func (d *TemplateData) NodePorts() (int, int) {
 	portrange, err := kubenetutil.ParsePortRange(d.ComputedNodePortRange())
 	if err != nil {
-		portrange, _ = kubenetutil.ParsePortRange(defaults.DefaultNodePortRange)
+		portrange, _ = kubenetutil.ParsePortRange(DefaultNodePortRange)
 	}
 
 	return portrange.Base, portrange.Base + portrange.Size - 1
@@ -304,7 +304,7 @@ func (d *TemplateData) ComputedNodePortRange() string {
 	nodePortRange := d.NodePortRange()
 
 	if nodePortRange == "" {
-		nodePortRange = defaults.DefaultNodePortRange
+		nodePortRange = DefaultNodePortRange
 	}
 
 	if cluster := d.Cluster(); cluster != nil {
@@ -361,19 +361,27 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 
 // ProviderName returns the name of the clusters providerName.
 func (d *TemplateData) ProviderName() string {
-	p, err := provider.ClusterCloudProviderName(d.cluster.Spec.Cloud)
+	p, err := kubermaticv1helper.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
 		kubermaticlog.Logger.Errorw("could not identify cloud provider", zap.Error(err))
 	}
 	return p
 }
 
-// ImageRegistry returns the image registry to use or the passed in default if no override is specified.
-func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
-	if d.OverwriteRegistry != "" {
-		return d.OverwriteRegistry
-	}
-	return defaultRegistry
+// GetLegacyOverwriteRegistry should not be used by new code, rather the
+// ImageRewriter() should be used instead.
+func (d *TemplateData) GetLegacyOverwriteRegistry() string {
+	return d.OverwriteRegistry
+}
+
+// ImageRewriter returns a Docker image rewriter.
+func (d *TemplateData) ImageRewriter() registry.ImageRewriter {
+	return registry.GetImageRewriterFunc(d.OverwriteRegistry)
+}
+
+// RewriteImage rewrites a Docker image to apply a custom registry if specified.
+func (d *TemplateData) RewriteImage(image string) (string, error) {
+	return d.ImageRewriter()(image)
 }
 
 // GetRootCA returns the root CA of the cluster.
@@ -421,7 +429,7 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().GetAddress().Port, nil
+		return d.Cluster().Status.Address.Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: KonnectivityProxyServiceName}
@@ -436,7 +444,7 @@ func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return d.Cluster().GetAddress().Port, nil
+		return d.Cluster().Status.Address.Port, nil
 	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: MLAGatewayExternalServiceName}
@@ -453,22 +461,7 @@ func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 }
 
 func (d *TemplateData) KubermaticAPIImage() string {
-	return d.parseImage(d.kubermaticImage)
-}
-
-func (d *TemplateData) parseImage(image string) string {
-	named, _ := reference.ParseNormalizedNamed(image)
-	domain := reference.Domain(named)
-	remainder := reference.Path(named)
-
-	if d.OverwriteRegistry != "" {
-		domain = d.OverwriteRegistry
-	}
-	if domain == "" {
-		domain = RegistryDocker
-	}
-
-	return domain + "/" + remainder
+	return registry.Must(d.RewriteImage(d.kubermaticImage))
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {
@@ -476,7 +469,7 @@ func (d *TemplateData) KubermaticDockerTag() string {
 }
 
 func (d *TemplateData) DNATControllerImage() string {
-	return d.parseImage(d.dnatControllerImage)
+	return registry.Must(d.RewriteImage(d.dnatControllerImage))
 }
 
 func (d *TemplateData) BackupSchedule() time.Duration {
@@ -510,7 +503,7 @@ func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte,
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
-	return provider.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
+	return kubermaticv1helper.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
@@ -540,7 +533,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 			logger.Debugw("controller-manager command", "args", cmd.Args)
 
 			// If no --cloud-provider flag is provided in-tree cloud provider is disabled.
-			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternalFlag {
+			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == CloudProviderExternalFlag {
 				logger.Debug("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
@@ -596,27 +589,30 @@ func getContainer(d *appsv1.Deployment, containerName string) *corev1.Container 
 func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloudProvider bool) string {
 	switch {
 	case cluster.Spec.Cloud.AWS != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return CloudProviderExternalFlag
+		}
 		return "aws"
 	case cluster.Spec.Cloud.VSphere != nil:
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return "vsphere"
 	case cluster.Spec.Cloud.Azure != nil:
 		if externalCloudProvider {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return "azure"
 	case cluster.Spec.Cloud.GCP != nil:
 		return "gce"
 	case cluster.Spec.Cloud.Openstack != nil:
 		if externalCloudProvider {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return "openstack"
 	case cluster.Spec.Cloud.Hetzner != nil:
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			return cloudProviderExternalFlag
+			return CloudProviderExternalFlag
 		}
 		return ""
 	default:
@@ -656,6 +652,9 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		if cluster.Spec.Cloud.VSphere != nil {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
+		if cluster.Spec.Cloud.AWS != nil {
+			featureFlags = append(featureFlags, "CSIMigrationAWS=true")
+		}
 		if cluster.Spec.Cloud.Azure != nil {
 			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=true", "CSIMigrationAzureFile=true")
 		}
@@ -684,6 +683,8 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
 		case cluster.Spec.Cloud.VSphere != nil:
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=false")
+		case cluster.Spec.Cloud.Azure != nil:
+			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=false", "CSIMigrationAzureFile=false")
 		}
 	}
 	return featureFlags
@@ -796,7 +797,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
 		}
 	}
-	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.GetAddress().InternalName)...)
+	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
 	vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})

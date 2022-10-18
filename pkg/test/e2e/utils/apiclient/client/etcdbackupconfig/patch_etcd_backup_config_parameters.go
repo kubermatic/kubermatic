@@ -54,10 +54,12 @@ func NewPatchEtcdBackupConfigParamsWithHTTPClient(client *http.Client) *PatchEtc
 	}
 }
 
-/* PatchEtcdBackupConfigParams contains all the parameters to send to the API endpoint
-   for the patch etcd backup config operation.
+/*
+PatchEtcdBackupConfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the patch etcd backup config operation.
+
+	Typically these are written to a http.Request.
 */
 type PatchEtcdBackupConfigParams struct {
 

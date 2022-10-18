@@ -46,7 +46,8 @@ func NewListAKSLocationsOK() *ListAKSLocationsOK {
 	return &ListAKSLocationsOK{}
 }
 
-/* ListAKSLocationsOK describes a response with status code 200, with default header values.
+/*
+ListAKSLocationsOK describes a response with status code 200, with default header values.
 
 AKSLocationList
 */
@@ -54,9 +55,39 @@ type ListAKSLocationsOK struct {
 	Payload models.AKSLocationList
 }
 
+// IsSuccess returns true when this list a k s locations o k response has a 2xx status code
+func (o *ListAKSLocationsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a k s locations o k response has a 3xx status code
+func (o *ListAKSLocationsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a k s locations o k response has a 4xx status code
+func (o *ListAKSLocationsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a k s locations o k response has a 5xx status code
+func (o *ListAKSLocationsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a k s locations o k response a status code equal to that given
+func (o *ListAKSLocationsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAKSLocationsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/locations][%d] listAKSLocationsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAKSLocationsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/locations][%d] listAKSLocationsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAKSLocationsOK) GetPayload() models.AKSLocationList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListAKSLocationsDefault(code int) *ListAKSLocationsDefault {
 	}
 }
 
-/* ListAKSLocationsDefault describes a response with status code -1, with default header values.
+/*
+ListAKSLocationsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListAKSLocationsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a k s locations default response has a 2xx status code
+func (o *ListAKSLocationsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a k s locations default response has a 3xx status code
+func (o *ListAKSLocationsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a k s locations default response has a 4xx status code
+func (o *ListAKSLocationsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a k s locations default response has a 5xx status code
+func (o *ListAKSLocationsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a k s locations default response a status code equal to that given
+func (o *ListAKSLocationsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAKSLocationsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/locations][%d] listAKSLocations default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAKSLocationsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/locations][%d] listAKSLocations default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAKSLocationsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

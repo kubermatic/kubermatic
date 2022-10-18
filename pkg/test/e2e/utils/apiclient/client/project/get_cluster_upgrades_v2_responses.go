@@ -58,7 +58,8 @@ func NewGetClusterUpgradesV2OK() *GetClusterUpgradesV2OK {
 	return &GetClusterUpgradesV2OK{}
 }
 
-/* GetClusterUpgradesV2OK describes a response with status code 200, with default header values.
+/*
+GetClusterUpgradesV2OK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -66,9 +67,39 @@ type GetClusterUpgradesV2OK struct {
 	Payload []*models.MasterVersion
 }
 
+// IsSuccess returns true when this get cluster upgrades v2 o k response has a 2xx status code
+func (o *GetClusterUpgradesV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get cluster upgrades v2 o k response has a 3xx status code
+func (o *GetClusterUpgradesV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster upgrades v2 o k response has a 4xx status code
+func (o *GetClusterUpgradesV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get cluster upgrades v2 o k response has a 5xx status code
+func (o *GetClusterUpgradesV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster upgrades v2 o k response a status code equal to that given
+func (o *GetClusterUpgradesV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetClusterUpgradesV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2OK  %+v", 200, o.Payload)
 }
+
+func (o *GetClusterUpgradesV2OK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2OK  %+v", 200, o.Payload)
+}
+
 func (o *GetClusterUpgradesV2OK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewGetClusterUpgradesV2Unauthorized() *GetClusterUpgradesV2Unauthorized {
 	return &GetClusterUpgradesV2Unauthorized{}
 }
 
-/* GetClusterUpgradesV2Unauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterUpgradesV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetClusterUpgradesV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this get cluster upgrades v2 unauthorized response has a 2xx status code
+func (o *GetClusterUpgradesV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster upgrades v2 unauthorized response has a 3xx status code
+func (o *GetClusterUpgradesV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster upgrades v2 unauthorized response has a 4xx status code
+func (o *GetClusterUpgradesV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster upgrades v2 unauthorized response has a 5xx status code
+func (o *GetClusterUpgradesV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster upgrades v2 unauthorized response a status code equal to that given
+func (o *GetClusterUpgradesV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetClusterUpgradesV2Unauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2Unauthorized ", 401)
+}
+
+func (o *GetClusterUpgradesV2Unauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2Unauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewGetClusterUpgradesV2Forbidden() *GetClusterUpgradesV2Forbidden {
 	return &GetClusterUpgradesV2Forbidden{}
 }
 
-/* GetClusterUpgradesV2Forbidden describes a response with status code 403, with default header values.
+/*
+GetClusterUpgradesV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetClusterUpgradesV2Forbidden struct {
 }
 
+// IsSuccess returns true when this get cluster upgrades v2 forbidden response has a 2xx status code
+func (o *GetClusterUpgradesV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster upgrades v2 forbidden response has a 3xx status code
+func (o *GetClusterUpgradesV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster upgrades v2 forbidden response has a 4xx status code
+func (o *GetClusterUpgradesV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster upgrades v2 forbidden response has a 5xx status code
+func (o *GetClusterUpgradesV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster upgrades v2 forbidden response a status code equal to that given
+func (o *GetClusterUpgradesV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetClusterUpgradesV2Forbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2Forbidden ", 403)
+}
+
+func (o *GetClusterUpgradesV2Forbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2Forbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewGetClusterUpgradesV2Default(code int) *GetClusterUpgradesV2Default {
 	}
 }
 
-/* GetClusterUpgradesV2Default describes a response with status code -1, with default header values.
+/*
+GetClusterUpgradesV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *GetClusterUpgradesV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get cluster upgrades v2 default response has a 2xx status code
+func (o *GetClusterUpgradesV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get cluster upgrades v2 default response has a 3xx status code
+func (o *GetClusterUpgradesV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get cluster upgrades v2 default response has a 4xx status code
+func (o *GetClusterUpgradesV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get cluster upgrades v2 default response has a 5xx status code
+func (o *GetClusterUpgradesV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get cluster upgrades v2 default response a status code equal to that given
+func (o *GetClusterUpgradesV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetClusterUpgradesV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetClusterUpgradesV2Default) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades][%d] getClusterUpgradesV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetClusterUpgradesV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

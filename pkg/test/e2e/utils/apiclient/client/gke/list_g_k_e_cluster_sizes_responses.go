@@ -58,7 +58,8 @@ func NewListGKEClusterSizesOK() *ListGKEClusterSizesOK {
 	return &ListGKEClusterSizesOK{}
 }
 
-/* ListGKEClusterSizesOK describes a response with status code 200, with default header values.
+/*
+ListGKEClusterSizesOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -66,9 +67,39 @@ type ListGKEClusterSizesOK struct {
 	Payload models.GCPMachineSizeList
 }
 
+// IsSuccess returns true when this list g k e cluster sizes o k response has a 2xx status code
+func (o *ListGKEClusterSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e cluster sizes o k response has a 3xx status code
+func (o *ListGKEClusterSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster sizes o k response has a 4xx status code
+func (o *ListGKEClusterSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e cluster sizes o k response has a 5xx status code
+func (o *ListGKEClusterSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster sizes o k response a status code equal to that given
+func (o *ListGKEClusterSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEClusterSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEClusterSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEClusterSizesOK) GetPayload() models.GCPMachineSizeList {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListGKEClusterSizesUnauthorized() *ListGKEClusterSizesUnauthorized {
 	return &ListGKEClusterSizesUnauthorized{}
 }
 
-/* ListGKEClusterSizesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListGKEClusterSizesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListGKEClusterSizesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list g k e cluster sizes unauthorized response has a 2xx status code
+func (o *ListGKEClusterSizesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster sizes unauthorized response has a 3xx status code
+func (o *ListGKEClusterSizesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster sizes unauthorized response has a 4xx status code
+func (o *ListGKEClusterSizesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster sizes unauthorized response has a 5xx status code
+func (o *ListGKEClusterSizesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster sizes unauthorized response a status code equal to that given
+func (o *ListGKEClusterSizesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListGKEClusterSizesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizesUnauthorized ", 401)
+}
+
+func (o *ListGKEClusterSizesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizesUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListGKEClusterSizesForbidden() *ListGKEClusterSizesForbidden {
 	return &ListGKEClusterSizesForbidden{}
 }
 
-/* ListGKEClusterSizesForbidden describes a response with status code 403, with default header values.
+/*
+ListGKEClusterSizesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListGKEClusterSizesForbidden struct {
 }
 
+// IsSuccess returns true when this list g k e cluster sizes forbidden response has a 2xx status code
+func (o *ListGKEClusterSizesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster sizes forbidden response has a 3xx status code
+func (o *ListGKEClusterSizesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster sizes forbidden response has a 4xx status code
+func (o *ListGKEClusterSizesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster sizes forbidden response has a 5xx status code
+func (o *ListGKEClusterSizesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster sizes forbidden response a status code equal to that given
+func (o *ListGKEClusterSizesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListGKEClusterSizesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizesForbidden ", 403)
+}
+
+func (o *ListGKEClusterSizesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizesForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListGKEClusterSizesDefault(code int) *ListGKEClusterSizesDefault {
 	}
 }
 
-/* ListGKEClusterSizesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEClusterSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListGKEClusterSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e cluster sizes default response has a 2xx status code
+func (o *ListGKEClusterSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e cluster sizes default response has a 3xx status code
+func (o *ListGKEClusterSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e cluster sizes default response has a 4xx status code
+func (o *ListGKEClusterSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e cluster sizes default response has a 5xx status code
+func (o *ListGKEClusterSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e cluster sizes default response a status code equal to that given
+func (o *ListGKEClusterSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEClusterSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEClusterSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/sizes][%d] listGKEClusterSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEClusterSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

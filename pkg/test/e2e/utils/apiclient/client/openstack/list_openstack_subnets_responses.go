@@ -46,7 +46,8 @@ func NewListOpenstackSubnetsOK() *ListOpenstackSubnetsOK {
 	return &ListOpenstackSubnetsOK{}
 }
 
-/* ListOpenstackSubnetsOK describes a response with status code 200, with default header values.
+/*
+ListOpenstackSubnetsOK describes a response with status code 200, with default header values.
 
 OpenstackSubnet
 */
@@ -54,9 +55,39 @@ type ListOpenstackSubnetsOK struct {
 	Payload []*models.OpenstackSubnet
 }
 
+// IsSuccess returns true when this list openstack subnets o k response has a 2xx status code
+func (o *ListOpenstackSubnetsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list openstack subnets o k response has a 3xx status code
+func (o *ListOpenstackSubnetsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list openstack subnets o k response has a 4xx status code
+func (o *ListOpenstackSubnetsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list openstack subnets o k response has a 5xx status code
+func (o *ListOpenstackSubnetsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list openstack subnets o k response a status code equal to that given
+func (o *ListOpenstackSubnetsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListOpenstackSubnetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/subnets][%d] listOpenstackSubnetsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListOpenstackSubnetsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/openstack/subnets][%d] listOpenstackSubnetsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListOpenstackSubnetsOK) GetPayload() []*models.OpenstackSubnet {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListOpenstackSubnetsDefault(code int) *ListOpenstackSubnetsDefault {
 	}
 }
 
-/* ListOpenstackSubnetsDefault describes a response with status code -1, with default header values.
+/*
+ListOpenstackSubnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListOpenstackSubnetsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list openstack subnets default response has a 2xx status code
+func (o *ListOpenstackSubnetsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list openstack subnets default response has a 3xx status code
+func (o *ListOpenstackSubnetsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list openstack subnets default response has a 4xx status code
+func (o *ListOpenstackSubnetsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list openstack subnets default response has a 5xx status code
+func (o *ListOpenstackSubnetsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list openstack subnets default response a status code equal to that given
+func (o *ListOpenstackSubnetsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListOpenstackSubnetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/openstack/subnets][%d] listOpenstackSubnets default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListOpenstackSubnetsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/openstack/subnets][%d] listOpenstackSubnets default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListOpenstackSubnetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

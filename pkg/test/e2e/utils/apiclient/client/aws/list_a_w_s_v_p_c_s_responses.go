@@ -46,7 +46,8 @@ func NewListAWSVPCSOK() *ListAWSVPCSOK {
 	return &ListAWSVPCSOK{}
 }
 
-/* ListAWSVPCSOK describes a response with status code 200, with default header values.
+/*
+ListAWSVPCSOK describes a response with status code 200, with default header values.
 
 AWSVPCList
 */
@@ -54,9 +55,39 @@ type ListAWSVPCSOK struct {
 	Payload models.AWSVPCList
 }
 
+// IsSuccess returns true when this list a w s v p c s o k response has a 2xx status code
+func (o *ListAWSVPCSOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a w s v p c s o k response has a 3xx status code
+func (o *ListAWSVPCSOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a w s v p c s o k response has a 4xx status code
+func (o *ListAWSVPCSOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a w s v p c s o k response has a 5xx status code
+func (o *ListAWSVPCSOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a w s v p c s o k response a status code equal to that given
+func (o *ListAWSVPCSOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAWSVPCSOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCSOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAWSVPCSOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCSOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAWSVPCSOK) GetPayload() models.AWSVPCList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListAWSVPCSDefault(code int) *ListAWSVPCSDefault {
 	}
 }
 
-/* ListAWSVPCSDefault describes a response with status code -1, with default header values.
+/*
+ListAWSVPCSDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListAWSVPCSDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a w s v p c s default response has a 2xx status code
+func (o *ListAWSVPCSDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a w s v p c s default response has a 3xx status code
+func (o *ListAWSVPCSDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a w s v p c s default response has a 4xx status code
+func (o *ListAWSVPCSDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a w s v p c s default response has a 5xx status code
+func (o *ListAWSVPCSDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a w s v p c s default response a status code equal to that given
+func (o *ListAWSVPCSDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAWSVPCSDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCS default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAWSVPCSDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/vpcs][%d] listAWSVPCS default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAWSVPCSDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

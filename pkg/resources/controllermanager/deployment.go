@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -119,7 +120,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			if data.Cluster().Spec.Cloud.VSphere != nil {
 				fakeVMWareUUIDMount := corev1.VolumeMount{
-					Name:      resources.CloudConfigConfigMapName,
+					Name:      resources.CloudConfigSeedSecretName,
 					SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
 					MountPath: "/sys/class/dmi/id/product_serial",
 					ReadOnly:  true,
@@ -151,7 +152,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + version.String(),
+					Image:   registry.Must(data.RewriteImage(resources.RegistryK8S + "/kube-controller-manager:v" + version.String())),
 					Command: []string{"/usr/local/bin/kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,
@@ -328,7 +329,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      resources.CloudConfigConfigMapName,
+			Name:      resources.CloudConfigSeedSecretName,
 			MountPath: "/etc/kubernetes/cloud",
 			ReadOnly:  true,
 		},
@@ -369,12 +370,10 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CloudConfigConfigMapName,
+			Name: resources.CloudConfigSeedSecretName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.CloudConfigConfigMapName,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.CloudConfigSeedSecretName,
 				},
 			},
 		},
@@ -438,7 +437,7 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
 
-	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().GetAddress().InternalName)...)
+	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...)
 	return vars, nil
 }
 

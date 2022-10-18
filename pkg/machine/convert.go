@@ -44,6 +44,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/utils/pointer"
 )
 
 // GetAPIV1OperatingSystemSpec returns the api compatible OperatingSystemSpec for the given machine.
@@ -348,7 +349,22 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 				TemplateID: config.TemplateID.Value,
 				CPUs:       config.CPUs,
 				Memory:     int64(config.Memory),
-				DiskSize:   int64(config.DiskSize),
+			}
+
+			if config.DiskSize > 0 {
+				cloudSpec.Anexia.DiskSize = pointer.Int64(int64(config.DiskSize))
+			}
+
+			if diskCount := len(config.Disks); diskCount > 0 {
+				cloudSpec.Anexia.Disks = make([]apiv1.AnexiaDiskConfig, diskCount)
+
+				for diskIndex, diskConfig := range config.Disks {
+					cloudSpec.Anexia.Disks[diskIndex].Size = int64(diskConfig.Size)
+
+					if diskConfig.PerformanceType.Value != "" {
+						cloudSpec.Anexia.Disks[diskIndex].PerformanceType = pointer.String(diskConfig.PerformanceType.Value)
+					}
+				}
 			}
 		}
 	case providerconfig.CloudProviderNutanix:

@@ -51,7 +51,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-validation
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-validation-webhook:v6.0.1'
+          image: '{{ Image "registry.k8s.io/sig-storage/snapshot-validation-webhook:v6.0.1" }}'
           imagePullPolicy: IfNotPresent
           args: ['--tls-cert-file=/run/secrets/tls/cert.pem', '--tls-private-key-file=/run/secrets/tls/key.pem']
           ports:

@@ -52,10 +52,12 @@ func NewValidateGKECredentialsParamsWithHTTPClient(client *http.Client) *Validat
 	}
 }
 
-/* ValidateGKECredentialsParams contains all the parameters to send to the API endpoint
-   for the validate g k e credentials operation.
+/*
+ValidateGKECredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the validate g k e credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ValidateGKECredentialsParams struct {
 

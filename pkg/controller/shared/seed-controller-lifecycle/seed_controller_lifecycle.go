@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	ControllerName = "kp-seed-lifecycle-controller"
+	ControllerName = "kkp-seed-lifecycle-controller"
 
 	// We must only enqueue this one key.
 	queueKey = ControllerName
@@ -159,7 +159,7 @@ func Add(
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	err := r.reconcile(ctx)
 	if err != nil {
-		r.log.Errorw("reconiliation failed", zap.Error(err))
+		r.log.Errorw("Reconciliation failed", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
@@ -168,6 +168,16 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	seeds, err := r.seedsGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get seeds: %w", err)
+	}
+
+	for name, seed := range seeds {
+		// Before the seed-init controller in the operator has initialized the seed with our
+		// CRDs, there is no point in trying to do anything useful with it, so to prevent
+		// controllers from running into errors, we skip uninitialized seeds.
+		if !seed.Status.IsInitialized() {
+			r.log.Debugw("Seed has not yet been initialized, skipping.", "seed", seed.Name)
+			delete(seeds, name)
+		}
 	}
 
 	seedKubeconfigMap := map[string]rest.Config{}

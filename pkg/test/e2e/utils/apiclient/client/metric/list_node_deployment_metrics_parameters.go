@@ -52,10 +52,12 @@ func NewListNodeDeploymentMetricsParamsWithHTTPClient(client *http.Client) *List
 	}
 }
 
-/* ListNodeDeploymentMetricsParams contains all the parameters to send to the API endpoint
-   for the list node deployment metrics operation.
+/*
+ListNodeDeploymentMetricsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list node deployment metrics operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNodeDeploymentMetricsParams struct {
 

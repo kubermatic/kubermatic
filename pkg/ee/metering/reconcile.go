@@ -51,33 +51,22 @@ import (
 )
 
 const (
-	// legacy naming.
-	meteringToolName = "kubermatic-metering"
-	meteringDataName = "metering-data"
-
 	meteringName = "metering"
 )
 
-func getMeteringImage(overwriter registry.WithOverwriteFunc) string {
-	return overwriter(resources.RegistryQuay) + "/kubermatic/metering:v1.0.0"
+func getMeteringImage(overwriter registry.ImageRewriter) string {
+	return registry.Must(overwriter(resources.RegistryQuay + "/kubermatic/metering:v1.0.0"))
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
 func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
-	overwriter := registry.GetOverwriteFunc(cfg.Spec.UserCluster.OverwriteRegistry)
-
-	// ensure legacy components are removed (as they were hardcoded to be in the KKP
-	// namespace, for the cleanup we must not use the Seed's namespace)
-	err := cleanupLegacyMeteringResources(ctx, client, resources.KubermaticNamespace)
-	if err != nil {
-		return fmt.Errorf("failed to cleanup legacy metering components: %w", err)
-	}
+	overwriter := registry.GetImageRewriterFunc(cfg.Spec.UserCluster.OverwriteRegistry)
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
 		return undeploy(ctx, client, seed.Namespace)
 	}
 
-	err = prometheus.ReconcilePrometheus(ctx, client, scheme, overwriter, seed)
+	err := prometheus.ReconcilePrometheus(ctx, client, scheme, overwriter, seed)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile metering prometheus: %w", err)
 	}
@@ -94,7 +83,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	return nil
 }
 
-func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
+func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.ImageRewriter, modifiers ...reconciling.ObjectModifier) error {
 	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations, seed.Namespace); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
@@ -236,46 +225,6 @@ func undeploy(ctx context.Context, client ctrlruntimeclient.Client, namespace st
 	}
 	if err := cleanupResource(ctx, client, key, &corev1.ServiceAccount{}); err != nil {
 		return fmt.Errorf("failed to cleanup metering prometheus ServiceAccount: %w", err)
-	}
-
-	return nil
-}
-
-// cleanupLegacyMeteringResources removes all active parts of the legacy metering installation.
-func cleanupLegacyMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, namespace string) error {
-	key := types.NamespacedName{Namespace: namespace, Name: meteringToolName}
-	if err := cleanupResource(ctx, client, key, &appsv1.Deployment{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering Deployment: %w", err)
-	}
-
-	if err := cleanupResource(ctx, client, key, &rbacv1.ClusterRoleBinding{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering ClusterRoleBinding: %w", err)
-	}
-
-	if err := cleanupResource(ctx, client, key, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering ServiceAccount: %w", err)
-	}
-
-	legacyReportingCronJobs := &batchv1.CronJobList{}
-	listOpts := []ctrlruntimeclient.ListOption{
-		ctrlruntimeclient.InNamespace(namespace),
-		ctrlruntimeclient.ListOption(ctrlruntimeclient.HasLabels{meteringToolName}),
-	}
-	if err := client.List(ctx, legacyReportingCronJobs, listOpts...); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to list reporting cronjobs: %w", err)
-		}
-	}
-
-	for _, cronJob := range legacyReportingCronJobs.Items {
-		key = types.NamespacedName{Namespace: cronJob.Namespace, Name: cronJob.Name}
-		if err := cleanupResource(ctx, client, key, &batchv1.CronJob{}); err != nil {
-			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
-		}
-	}
-
-	if err := cleanupResource(ctx, client, types.NamespacedName{Namespace: namespace, Name: meteringDataName}, &corev1.PersistentVolumeClaim{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering PersistentVolumeClaim: %w", err)
 	}
 
 	return nil

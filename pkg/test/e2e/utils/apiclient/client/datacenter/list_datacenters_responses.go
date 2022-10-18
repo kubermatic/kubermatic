@@ -46,7 +46,8 @@ func NewListDatacentersOK() *ListDatacentersOK {
 	return &ListDatacentersOK{}
 }
 
-/* ListDatacentersOK describes a response with status code 200, with default header values.
+/*
+ListDatacentersOK describes a response with status code 200, with default header values.
 
 DatacenterList
 */
@@ -54,9 +55,39 @@ type ListDatacentersOK struct {
 	Payload models.DatacenterList
 }
 
+// IsSuccess returns true when this list datacenters o k response has a 2xx status code
+func (o *ListDatacentersOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list datacenters o k response has a 3xx status code
+func (o *ListDatacentersOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list datacenters o k response has a 4xx status code
+func (o *ListDatacentersOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list datacenters o k response has a 5xx status code
+func (o *ListDatacentersOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list datacenters o k response a status code equal to that given
+func (o *ListDatacentersOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListDatacentersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacentersOK  %+v", 200, o.Payload)
 }
+
+func (o *ListDatacentersOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacentersOK  %+v", 200, o.Payload)
+}
+
 func (o *ListDatacentersOK) GetPayload() models.DatacenterList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListDatacentersDefault(code int) *ListDatacentersDefault {
 	}
 }
 
-/* ListDatacentersDefault describes a response with status code -1, with default header values.
+/*
+ListDatacentersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListDatacentersDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list datacenters default response has a 2xx status code
+func (o *ListDatacentersDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list datacenters default response has a 3xx status code
+func (o *ListDatacentersDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list datacenters default response has a 4xx status code
+func (o *ListDatacentersDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list datacenters default response has a 5xx status code
+func (o *ListDatacentersDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list datacenters default response a status code equal to that given
+func (o *ListDatacentersDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListDatacentersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacenters default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListDatacentersDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/dc][%d] listDatacenters default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListDatacentersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

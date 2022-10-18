@@ -26,6 +26,7 @@ import (
 
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,9 +43,9 @@ func addCommands(cmd *cobra.Command, logger *logrus.Logger, versions kubermaticv
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedsGetter, error) {
-	return provider.SeedsGetterFactory(ctx, client, kubermaticmaster.KubermaticOperatorNamespace)
+	return kubernetes.SeedsGetterFactory(ctx, client, kubermaticmaster.KubermaticOperatorNamespace)
 }
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
-	return provider.SeedKubeconfigGetterFactory(ctx, client)
+	return kubernetes.SeedKubeconfigGetterFactory(ctx, client)
 }

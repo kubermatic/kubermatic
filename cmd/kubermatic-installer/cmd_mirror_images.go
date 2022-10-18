@@ -27,7 +27,8 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -94,7 +95,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of found images")
 
-	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Address of the registry to push to, for example localhost:5000")
+	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Path to a local directory containing KKP addons. Takes precedence over --addons-image")
 	cmd.PersistentFlags().StringVar(&opt.AddonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
 
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
@@ -114,10 +115,6 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		if options.AddonsImage != "" && options.AddonsPath != "" {
 			return errors.New("--addons-image and --addons-path must not be set at the same time")
-		}
-
-		if options.AddonsImage == "" && options.AddonsPath == "" {
-			return errors.New("either --addons-image or --addons-path must be set")
 		}
 
 		// error out early if there is no useful Helm binary
@@ -150,7 +147,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
-		kubermaticConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+		if config == nil {
+			return errors.New("please specify your KubermaticConfiguration via --config")
+		}
+
+		kubermaticConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			return fmt.Errorf("failed to default KubermaticConfiguration: %w", err)
 		}
@@ -197,11 +198,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					)
 
 					versionLogger.Debug("Collecting images…")
-					images, err := images.GetImagesForVersion(
+					imagesWithoutKonnectivity, err := images.GetImagesForVersion(
 						versionLogger,
 						clusterVersion,
 						cloudSpec,
 						cniPlugin,
+						false,
 						kubermaticConfig,
 						options.AddonsPath,
 						versions,
@@ -210,7 +212,26 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					if err != nil {
 						return fmt.Errorf("failed to get images: %w", err)
 					}
-					imageSet.Insert(images...)
+					imageSet.Insert(imagesWithoutKonnectivity...)
+
+					if kubermaticConfig.Spec.FeatureGates[features.KonnectivityService] {
+						imagesWithKonnectivity, err := images.GetImagesForVersion(
+							versionLogger,
+							clusterVersion,
+							cloudSpec,
+							cniPlugin,
+							true,
+							kubermaticConfig,
+							options.AddonsPath,
+							versions,
+							caBundle,
+						)
+
+						if err != nil {
+							return fmt.Errorf("failed to get images: %w", err)
+						}
+						imageSet.Insert(imagesWithKonnectivity...)
+					}
 				}
 			}
 		}

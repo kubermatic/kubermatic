@@ -52,10 +52,12 @@ func NewListClustersForProjectParamsWithHTTPClient(client *http.Client) *ListClu
 	}
 }
 
-/* ListClustersForProjectParams contains all the parameters to send to the API endpoint
-   for the list clusters for project operation.
+/*
+ListClustersForProjectParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list clusters for project operation.
+
+	Typically these are written to a http.Request.
 */
 type ListClustersForProjectParams struct {
 

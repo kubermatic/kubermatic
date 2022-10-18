@@ -17,6 +17,7 @@ limitations under the License.
 package common
 
 import (
+	"fmt"
 	"testing"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -24,87 +25,38 @@ import (
 
 func TestComparableVersionSuffix(t *testing.T) {
 	testcases := []struct {
-		input    string
-		expected string
+		greater string
+		smaller string
 	}{
-		{
-			input:    "",
-			expected: "",
-		},
-		{
-			input:    "v1.0",
-			expected: "v1.0",
-		},
-		{
-			input:    "v1.0.1",
-			expected: "v1.0.1",
-		},
-		{
-			input:    "v1.0.1-beta",
-			expected: "v1.0.1-beta",
-		},
-		{
-			input:    "v1.0.1-beta.1",
-			expected: "v1.0.1-beta.1",
-		},
-		{
-			input:    "v1.0.1-beta.1-randomsuffix",
-			expected: "v1.0.1-beta.1-randomsuffix",
-		},
-		{
-			input:    "v1.0.1-beta.1-1-gabcdef",
-			expected: "v1.0.1-beta.1-000000001",
-		},
-		{
-			input:    "v1.0.1-beta.1-123-gabcdef",
-			expected: "v1.0.1-beta.1-000000123",
-		},
-		{
-			input:    "v1.0.1-123-gabcdef",
-			expected: "v1.0.1-000000123",
-		},
+		// { X > Y }
+		{"v1.10", "v1.9"},
+		{"v1.0.1", "v1.0.0"},
+		{"v1.0.10", "v1.0.9"},
+		{"v1.0.0", "v1.0.0-beta.1"},
+		{"v1.0.0-alpha.1", "v1.0.0-alpha.0"},
+		{"v1.0.0-beta.0", "v1.0.0-alpha.2"},
+		{"v1.0.0-1-gabcdef", "v1.0.0"},
+		{"v1.0.0-10-gabcdef", "v1.0.0-9-gabcdef"},
+		{"v1.0.1", "v1.0.0-9-gabcdef"},
+		{"v1.0.1-beta.1-9-gabcdef", "v1.0.0-beta.1"},
+		{"v1.0.1-beta.1-10-gabcdef", "v1.0.0-beta.1-9-gabcdef"},
 	}
 
 	for _, testcase := range testcases {
-		t.Run(testcase.input, func(t *testing.T) {
-			output := comparableVersionSuffix(testcase.input)
-			if output != testcase.expected {
-				t.Fatalf("Expected %q, got %q.", testcase.expected, output)
+		t.Run(fmt.Sprintf("%s > %s", testcase.greater, testcase.smaller), func(t *testing.T) {
+			smaller, err := semverlib.NewVersion(comparableVersionSuffix(testcase.smaller))
+			if err != nil {
+				t.Fatalf("Failed to parse smaller value %q: %v", testcase.smaller, err)
+			}
+
+			greater, err := semverlib.NewVersion(comparableVersionSuffix(testcase.greater))
+			if err != nil {
+				t.Fatalf("Failed to parse greater value %q: %v", testcase.greater, err)
+			}
+
+			if !greater.GreaterThan(smaller) {
+				t.Fatalf("Comparing %q > %q after patching (%q > %q) should have yielded true.", testcase.greater, testcase.smaller, greater.String(), smaller.String())
 			}
 		})
-	}
-
-	a := "v2.21.0-alpha.1-12-ge5f502f5a"
-	b := "v2.21.0-alpha.1-9-g78b7db4bd"
-
-	av, err := semverlib.NewVersion(a)
-	if err != nil {
-		t.Fatalf("Failed to parse %q: %v", a, err)
-	}
-
-	bv, err := semverlib.NewVersion(b)
-	if err != nil {
-		t.Fatalf("Failed to parse %q: %v", b, err)
-	}
-
-	if av.GreaterThan(bv) {
-		t.Fatalf("Comparing %q > %q without patching should have yielded false.", a, b)
-	}
-
-	a = comparableVersionSuffix(a)
-	b = comparableVersionSuffix(b)
-
-	av, err = semverlib.NewVersion(a)
-	if err != nil {
-		t.Fatalf("Failed to parse %q: %v", a, err)
-	}
-
-	bv, err = semverlib.NewVersion(b)
-	if err != nil {
-		t.Fatalf("Failed to parse %q: %v", b, err)
-	}
-
-	if !av.GreaterThan(bv) {
-		t.Fatalf("Comparing %q > %q after patching should have yielded true.", a, b)
 	}
 }

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/go-openapi/runtime"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -37,6 +37,7 @@ import (
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 	utilpointer "k8s.io/utils/pointer"
 )
 
@@ -88,7 +89,7 @@ func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 func (s *awsScenario) NodeDeployments(ctx context.Context, replicas int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := awsInstanceType
 	volumeType := awsVolumeType
-	volumeSize := int64(awsVolumeSize)
+	volumeSize := int32(awsVolumeSize)
 
 	listVPCParams := &awsapiclient.ListAWSVPCSParams{
 		Context:         ctx,
@@ -254,10 +255,10 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 
 	// Find three subnets that are in different AZs to preserve the multi az testcase
 	allAZs := sets.NewString()
-	var subnets []*ec2.Subnet
+	var subnets []ec2types.Subnet
 	for _, subnet := range allSubnets {
-		if !allAZs.Has(*subnet.AvailabilityZone) {
-			allAZs.Insert(*subnet.AvailabilityZone)
+		if !allAZs.Has(pointer.StringDeref(subnet.AvailabilityZone, "")) {
+			allAZs.Insert(pointer.StringDeref(subnet.AvailabilityZone, ""))
 			subnets = append(subnets, subnet)
 		}
 	}

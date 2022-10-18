@@ -1,0 +1,133 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinitions
+metadata:
+  name: <<appdef-name>>
+spec:
+  # Description of the application. what is its purpose
+  description: ""
+  # Method used to install the application
+  method: helm
+  # Available version for this application
+  versions:
+    - # Template defines how application is installed (source provenance, Method...)
+      template:
+        # Defined how the source of the application (e.g Helm chart) is retrieved.
+        # Exactly one type of source must be defined.
+        source:
+          # Install application from a Git repository
+          git:
+            # Credentials are optional and holds the git credentials
+            credentials:
+              # Authentication method. Either password or token or ssh-key.
+              # if method is password then username and password must be defined.
+              # if method is token then token must be defined.
+              # if method is ssh-key then ssh-key must be defined.
+              method: password ||token || ssh-key
+              # Password holds the ref and key in the secret for the Password credential.
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              password:
+                # The key of the secret to select from. Must be a valid secret key.
+                key: pass
+                # Name of the referent.
+                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                name: <<secret-name>>
+                # Specify whether the Secret or its key must be defined
+                optional: false
+              # SSHKey holds the ref and key in the secret for the SshKey credential.
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              sshKey:
+                # The key of the secret to select from. Must be a valid secret key.
+                key: private-key
+                # Name of the referent.
+                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                name: <<secret-name>>
+                # Specify whether the Secret or its key must be defined
+                optional: false
+              # Token holds the ref and key in the secret for the token credential.
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              token:
+                # The key of the secret to select from. Must be a valid secret key.
+                key: token
+                # Name of the referent.
+                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                name: <<secret-name>>
+                # Specify whether the Secret or its key must be defined
+                optional: false
+              # Username holds the ref and key in the secret for the username credential.
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              username:
+                # The key of the secret to select from. Must be a valid secret key.
+                key: user
+                # Name of the referent.
+                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                name: <<secret-name>>
+                # Specify whether the Secret or its key must be defined
+                optional: false
+            # Path of the "source" in the repository. default is repository root
+            path: charts/apache
+            # Git reference to checkout.
+            # For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance
+            ref:
+              # Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.
+              branch: main
+              # Commit SHA in a Branch to checkout.
+
+              # It must be used in conjunction with branch field.
+              commit: 8061ceb738db42fe82b4c305b7aa5459d926d03e
+              # Tag to check out.
+              # It can not be used in conjunction with commit or branch.
+              tag: v1.2.3
+            # URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)
+            remote: https://git.example.com/repo || git@example.com/repo
+          # Install Application from a Helm repository
+          helm:
+            # Name of the Chart.
+            chartName: my-app
+            # Version of the Chart.
+            chartVersion: v13.9.0
+            # Credentials are optional and hold the ref to the secret with helm credentials.
+            # Either username / Password or registryConfigFile can be defined.
+            credentials:
+              # Password holds the ref and key in the secret for the Password credential.
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              password:
+                # The key of the secret to select from. Must be a valid secret key.
+                key: pass
+                # Name of the referent.
+                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                name: <<secret-name>>
+                # Specify whether the Secret or its key must be defined
+                optional: false
+              # RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
+              # file that follows the same format rules as ~/.docker/config.json
+              # The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              registryConfigFile:
+                # The key of the secret to select from. Must be a valid secret key.
+                key: .dockerconfigjson
+                # Name of the referent.
+                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                name: <<secret-name>>
+                # Specify whether the Secret or its key must be defined
+                optional: false
+              # Username holds the ref and key in the secret for the username credential.
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              username:
+                # The key of the secret to select from. Must be a valid secret key.
+                key: user
+                # Name of the referent.
+                # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                name: <<secret-name>>
+                # Specify whether the Secret or its key must be defined
+                optional: false
+            # URl of the helm repository.
+            # It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
+            url: https://charts.example.com || oci://localhost:5000/myrepo
+      # Version of the application (e.g. v1.2.3)
+      version: v1.2.3

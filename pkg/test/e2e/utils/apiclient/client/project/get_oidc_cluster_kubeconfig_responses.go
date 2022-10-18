@@ -58,7 +58,8 @@ func NewGetOidcClusterKubeconfigOK() *GetOidcClusterKubeconfigOK {
 	return &GetOidcClusterKubeconfigOK{}
 }
 
-/* GetOidcClusterKubeconfigOK describes a response with status code 200, with default header values.
+/*
+GetOidcClusterKubeconfigOK describes a response with status code 200, with default header values.
 
 Kubeconfig is a clusters kubeconfig
 */
@@ -66,9 +67,39 @@ type GetOidcClusterKubeconfigOK struct {
 	Payload []uint8
 }
 
+// IsSuccess returns true when this get oidc cluster kubeconfig o k response has a 2xx status code
+func (o *GetOidcClusterKubeconfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get oidc cluster kubeconfig o k response has a 3xx status code
+func (o *GetOidcClusterKubeconfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get oidc cluster kubeconfig o k response has a 4xx status code
+func (o *GetOidcClusterKubeconfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get oidc cluster kubeconfig o k response has a 5xx status code
+func (o *GetOidcClusterKubeconfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get oidc cluster kubeconfig o k response a status code equal to that given
+func (o *GetOidcClusterKubeconfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetOidcClusterKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigOK  %+v", 200, o.Payload)
 }
+
+func (o *GetOidcClusterKubeconfigOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigOK  %+v", 200, o.Payload)
+}
+
 func (o *GetOidcClusterKubeconfigOK) GetPayload() []uint8 {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewGetOidcClusterKubeconfigUnauthorized() *GetOidcClusterKubeconfigUnauthor
 	return &GetOidcClusterKubeconfigUnauthorized{}
 }
 
-/* GetOidcClusterKubeconfigUnauthorized describes a response with status code 401, with default header values.
+/*
+GetOidcClusterKubeconfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetOidcClusterKubeconfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this get oidc cluster kubeconfig unauthorized response has a 2xx status code
+func (o *GetOidcClusterKubeconfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get oidc cluster kubeconfig unauthorized response has a 3xx status code
+func (o *GetOidcClusterKubeconfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get oidc cluster kubeconfig unauthorized response has a 4xx status code
+func (o *GetOidcClusterKubeconfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get oidc cluster kubeconfig unauthorized response has a 5xx status code
+func (o *GetOidcClusterKubeconfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get oidc cluster kubeconfig unauthorized response a status code equal to that given
+func (o *GetOidcClusterKubeconfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetOidcClusterKubeconfigUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigUnauthorized ", 401)
+}
+
+func (o *GetOidcClusterKubeconfigUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewGetOidcClusterKubeconfigForbidden() *GetOidcClusterKubeconfigForbidden {
 	return &GetOidcClusterKubeconfigForbidden{}
 }
 
-/* GetOidcClusterKubeconfigForbidden describes a response with status code 403, with default header values.
+/*
+GetOidcClusterKubeconfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetOidcClusterKubeconfigForbidden struct {
 }
 
+// IsSuccess returns true when this get oidc cluster kubeconfig forbidden response has a 2xx status code
+func (o *GetOidcClusterKubeconfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get oidc cluster kubeconfig forbidden response has a 3xx status code
+func (o *GetOidcClusterKubeconfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get oidc cluster kubeconfig forbidden response has a 4xx status code
+func (o *GetOidcClusterKubeconfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get oidc cluster kubeconfig forbidden response has a 5xx status code
+func (o *GetOidcClusterKubeconfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get oidc cluster kubeconfig forbidden response a status code equal to that given
+func (o *GetOidcClusterKubeconfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetOidcClusterKubeconfigForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigForbidden ", 403)
+}
+
+func (o *GetOidcClusterKubeconfigForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfigForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewGetOidcClusterKubeconfigDefault(code int) *GetOidcClusterKubeconfigDefau
 	}
 }
 
-/* GetOidcClusterKubeconfigDefault describes a response with status code -1, with default header values.
+/*
+GetOidcClusterKubeconfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *GetOidcClusterKubeconfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get oidc cluster kubeconfig default response has a 2xx status code
+func (o *GetOidcClusterKubeconfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get oidc cluster kubeconfig default response has a 3xx status code
+func (o *GetOidcClusterKubeconfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get oidc cluster kubeconfig default response has a 4xx status code
+func (o *GetOidcClusterKubeconfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get oidc cluster kubeconfig default response has a 5xx status code
+func (o *GetOidcClusterKubeconfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get oidc cluster kubeconfig default response a status code equal to that given
+func (o *GetOidcClusterKubeconfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetOidcClusterKubeconfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetOidcClusterKubeconfigDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig][%d] getOidcClusterKubeconfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetOidcClusterKubeconfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

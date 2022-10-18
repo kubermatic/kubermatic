@@ -17,6 +17,5 @@ limitations under the License.
 /*
 Package masterconstraintsyncercontroller contains a controller that is responsible for ensuring that the
 kubermatic constraint are synced from master to the seed clusters.
-
 */
 package masterconstraintsynchronizer

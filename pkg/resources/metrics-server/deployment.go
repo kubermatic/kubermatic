@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -63,7 +64,7 @@ type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetRootCA() (*triple.KeyPair, error)
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	DNATControllerImage() string
 	DNATControllerTag() string
 	NodeAccessNetwork() string
@@ -112,7 +113,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/metrics-server/metrics-server:" + tag,
+					Image:   registry.Must(data.RewriteImage(resources.RegistryK8S + "/metrics-server/metrics-server:" + tag)),
 					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -123,7 +124,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 						"--secure-port", "4443",
 						"--metric-resolution", "15s",
 						// We use the same as the API server as we use the same dnat-controller
-						"--kubelet-preferred-address-types", "ExternalIP,InternalIP",
+						"--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(data.Cluster(), data.IsKonnectivityEnabled()),
 						"--v", "1",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,

@@ -52,10 +52,12 @@ func NewGetExternalClusterMachineDeploymentUpgradesParamsWithHTTPClient(client *
 	}
 }
 
-/* GetExternalClusterMachineDeploymentUpgradesParams contains all the parameters to send to the API endpoint
-   for the get external cluster machine deployment upgrades operation.
+/*
+GetExternalClusterMachineDeploymentUpgradesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get external cluster machine deployment upgrades operation.
+
+	Typically these are written to a http.Request.
 */
 type GetExternalClusterMachineDeploymentUpgradesParams struct {
 

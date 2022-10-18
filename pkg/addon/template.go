@@ -30,7 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
@@ -45,7 +45,9 @@ const (
 
 func txtFuncMap(overwriteRegistry string) template.FuncMap {
 	funcs := sprig.TxtFuncMap()
+	// Registry is deprecated and should not be used anymore.
 	funcs["Registry"] = registry.GetOverwriteFunc(overwriteRegistry)
+	funcs["Image"] = registry.GetImageRewriterFunc(overwriteRegistry)
 	funcs["join"] = strings.Join
 	return funcs
 }
@@ -72,7 +74,7 @@ func NewTemplateData(
 	ipamAllocations *kubermaticv1.IPAMAllocationList,
 	variables map[string]interface{},
 ) (*TemplateData, error) {
-	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}
@@ -140,7 +142,7 @@ func NewTemplateData(
 			//nolint:staticcheck
 			OwnerName:         cluster.Status.UserName,
 			OwnerEmail:        cluster.Status.UserEmail,
-			Address:           cluster.GetAddress(),
+			Address:           cluster.Status.Address,
 			CloudProviderName: providerName,
 			Version:           semverlib.MustParse(cluster.Status.Versions.ControlPlane.String()),
 			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),

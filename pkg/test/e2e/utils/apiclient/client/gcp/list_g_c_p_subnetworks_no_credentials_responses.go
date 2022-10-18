@@ -46,7 +46,8 @@ func NewListGCPSubnetworksNoCredentialsOK() *ListGCPSubnetworksNoCredentialsOK {
 	return &ListGCPSubnetworksNoCredentialsOK{}
 }
 
-/* ListGCPSubnetworksNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListGCPSubnetworksNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPSubnetworkList
 */
@@ -54,9 +55,39 @@ type ListGCPSubnetworksNoCredentialsOK struct {
 	Payload models.GCPSubnetworkList
 }
 
+// IsSuccess returns true when this list g c p subnetworks no credentials o k response has a 2xx status code
+func (o *ListGCPSubnetworksNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p subnetworks no credentials o k response has a 3xx status code
+func (o *ListGCPSubnetworksNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p subnetworks no credentials o k response has a 4xx status code
+func (o *ListGCPSubnetworksNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p subnetworks no credentials o k response has a 5xx status code
+func (o *ListGCPSubnetworksNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p subnetworks no credentials o k response a status code equal to that given
+func (o *ListGCPSubnetworksNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPSubnetworksNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPSubnetworksNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPSubnetworksNoCredentialsOK) GetPayload() models.GCPSubnetworkList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGCPSubnetworksNoCredentialsDefault(code int) *ListGCPSubnetworksNoCr
 	}
 }
 
-/* ListGCPSubnetworksNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListGCPSubnetworksNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGCPSubnetworksNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p subnetworks no credentials default response has a 2xx status code
+func (o *ListGCPSubnetworksNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p subnetworks no credentials default response has a 3xx status code
+func (o *ListGCPSubnetworksNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p subnetworks no credentials default response has a 4xx status code
+func (o *ListGCPSubnetworksNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p subnetworks no credentials default response has a 5xx status code
+func (o *ListGCPSubnetworksNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p subnetworks no credentials default response a status code equal to that given
+func (o *ListGCPSubnetworksNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPSubnetworksNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPSubnetworksNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/subnetworks][%d] listGCPSubnetworksNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPSubnetworksNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

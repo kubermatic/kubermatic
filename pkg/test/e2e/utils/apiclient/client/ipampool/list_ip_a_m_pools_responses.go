@@ -58,7 +58,8 @@ func NewListIPAMPoolsOK() *ListIPAMPoolsOK {
 	return &ListIPAMPoolsOK{}
 }
 
-/* ListIPAMPoolsOK describes a response with status code 200, with default header values.
+/*
+ListIPAMPoolsOK describes a response with status code 200, with default header values.
 
 IPAMPool
 */
@@ -66,9 +67,39 @@ type ListIPAMPoolsOK struct {
 	Payload []*models.IPAMPool
 }
 
+// IsSuccess returns true when this list Ip a m pools o k response has a 2xx status code
+func (o *ListIPAMPoolsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list Ip a m pools o k response has a 3xx status code
+func (o *ListIPAMPoolsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list Ip a m pools o k response has a 4xx status code
+func (o *ListIPAMPoolsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list Ip a m pools o k response has a 5xx status code
+func (o *ListIPAMPoolsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list Ip a m pools o k response a status code equal to that given
+func (o *ListIPAMPoolsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListIPAMPoolsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListIPAMPoolsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListIPAMPoolsOK) GetPayload() []*models.IPAMPool {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListIPAMPoolsUnauthorized() *ListIPAMPoolsUnauthorized {
 	return &ListIPAMPoolsUnauthorized{}
 }
 
-/* ListIPAMPoolsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListIPAMPoolsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListIPAMPoolsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list Ip a m pools unauthorized response has a 2xx status code
+func (o *ListIPAMPoolsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list Ip a m pools unauthorized response has a 3xx status code
+func (o *ListIPAMPoolsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list Ip a m pools unauthorized response has a 4xx status code
+func (o *ListIPAMPoolsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list Ip a m pools unauthorized response has a 5xx status code
+func (o *ListIPAMPoolsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list Ip a m pools unauthorized response a status code equal to that given
+func (o *ListIPAMPoolsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListIPAMPoolsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsUnauthorized ", 401)
+}
+
+func (o *ListIPAMPoolsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListIPAMPoolsForbidden() *ListIPAMPoolsForbidden {
 	return &ListIPAMPoolsForbidden{}
 }
 
-/* ListIPAMPoolsForbidden describes a response with status code 403, with default header values.
+/*
+ListIPAMPoolsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListIPAMPoolsForbidden struct {
 }
 
+// IsSuccess returns true when this list Ip a m pools forbidden response has a 2xx status code
+func (o *ListIPAMPoolsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list Ip a m pools forbidden response has a 3xx status code
+func (o *ListIPAMPoolsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list Ip a m pools forbidden response has a 4xx status code
+func (o *ListIPAMPoolsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list Ip a m pools forbidden response has a 5xx status code
+func (o *ListIPAMPoolsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list Ip a m pools forbidden response a status code equal to that given
+func (o *ListIPAMPoolsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListIPAMPoolsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsForbidden ", 403)
+}
+
+func (o *ListIPAMPoolsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIpAMPoolsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListIPAMPoolsDefault(code int) *ListIPAMPoolsDefault {
 	}
 }
 
-/* ListIPAMPoolsDefault describes a response with status code -1, with default header values.
+/*
+ListIPAMPoolsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListIPAMPoolsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list IP a m pools default response has a 2xx status code
+func (o *ListIPAMPoolsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list IP a m pools default response has a 3xx status code
+func (o *ListIPAMPoolsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list IP a m pools default response has a 4xx status code
+func (o *ListIPAMPoolsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list IP a m pools default response has a 5xx status code
+func (o *ListIPAMPoolsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list IP a m pools default response a status code equal to that given
+func (o *ListIPAMPoolsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListIPAMPoolsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIPAMPools default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListIPAMPoolsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/seeds/{seed_name}/ipampools][%d] listIPAMPools default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListIPAMPoolsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

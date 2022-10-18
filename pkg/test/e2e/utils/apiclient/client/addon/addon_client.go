@@ -58,7 +58,7 @@ type ClientService interface {
 }
 
 /*
-  CreateAddon Creates an addon that will belong to the given cluster
+CreateAddon Creates an addon that will belong to the given cluster
 */
 func (a *Client) CreateAddon(params *CreateAddonParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAddonCreated, error) {
 	// TODO: Validate the params before sending
@@ -96,7 +96,7 @@ func (a *Client) CreateAddon(params *CreateAddonParams, authInfo runtime.ClientA
 }
 
 /*
-  CreateAddonV2 Creates an addon that will belong to the given cluster
+CreateAddonV2 Creates an addon that will belong to the given cluster
 */
 func (a *Client) CreateAddonV2(params *CreateAddonV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAddonV2Created, error) {
 	// TODO: Validate the params before sending
@@ -134,7 +134,7 @@ func (a *Client) CreateAddonV2(params *CreateAddonV2Params, authInfo runtime.Cli
 }
 
 /*
-  DeleteAddon deletes the given addon that belongs to the cluster
+DeleteAddon deletes the given addon that belongs to the cluster
 */
 func (a *Client) DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAddonOK, error) {
 	// TODO: Validate the params before sending
@@ -172,7 +172,7 @@ func (a *Client) DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientA
 }
 
 /*
-  DeleteAddonV2 deletes the given addon that belongs to the cluster
+DeleteAddonV2 deletes the given addon that belongs to the cluster
 */
 func (a *Client) DeleteAddonV2(params *DeleteAddonV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAddonV2OK, error) {
 	// TODO: Validate the params before sending
@@ -210,7 +210,7 @@ func (a *Client) DeleteAddonV2(params *DeleteAddonV2Params, authInfo runtime.Cli
 }
 
 /*
-  GetAddon gets an addon that is assigned to the given cluster
+GetAddon gets an addon that is assigned to the given cluster
 */
 func (a *Client) GetAddon(params *GetAddonParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAddonOK, error) {
 	// TODO: Validate the params before sending
@@ -248,7 +248,7 @@ func (a *Client) GetAddon(params *GetAddonParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  GetAddonV2 gets an addon that is assigned to the given cluster
+GetAddonV2 gets an addon that is assigned to the given cluster
 */
 func (a *Client) GetAddonV2(params *GetAddonV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAddonV2OK, error) {
 	// TODO: Validate the params before sending
@@ -286,7 +286,7 @@ func (a *Client) GetAddonV2(params *GetAddonV2Params, authInfo runtime.ClientAut
 }
 
 /*
-  ListAccessibleAddons Lists names of addons that can be configured inside the user clusters
+ListAccessibleAddons Lists names of addons that can be configured inside the user clusters
 */
 func (a *Client) ListAccessibleAddons(params *ListAccessibleAddonsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAccessibleAddonsOK, error) {
 	// TODO: Validate the params before sending
@@ -324,7 +324,7 @@ func (a *Client) ListAccessibleAddons(params *ListAccessibleAddonsParams, authIn
 }
 
 /*
-  ListAddons Lists addons that belong to the given cluster
+ListAddons Lists addons that belong to the given cluster
 */
 func (a *Client) ListAddons(params *ListAddonsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAddonsOK, error) {
 	// TODO: Validate the params before sending
@@ -362,7 +362,7 @@ func (a *Client) ListAddons(params *ListAddonsParams, authInfo runtime.ClientAut
 }
 
 /*
-  ListAddonsV2 Lists addons that belong to the given cluster
+ListAddonsV2 Lists addons that belong to the given cluster
 */
 func (a *Client) ListAddonsV2(params *ListAddonsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAddonsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -400,7 +400,7 @@ func (a *Client) ListAddonsV2(params *ListAddonsV2Params, authInfo runtime.Clien
 }
 
 /*
-  ListInstallableAddons Lists names of addons that can be installed inside the user cluster
+ListInstallableAddons Lists names of addons that can be installed inside the user cluster
 */
 func (a *Client) ListInstallableAddons(params *ListInstallableAddonsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallableAddonsOK, error) {
 	// TODO: Validate the params before sending
@@ -438,7 +438,7 @@ func (a *Client) ListInstallableAddons(params *ListInstallableAddonsParams, auth
 }
 
 /*
-  ListInstallableAddonsV2 Lists names of addons that can be installed inside the user cluster
+ListInstallableAddonsV2 Lists names of addons that can be installed inside the user cluster
 */
 func (a *Client) ListInstallableAddonsV2(params *ListInstallableAddonsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallableAddonsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -476,7 +476,7 @@ func (a *Client) ListInstallableAddonsV2(params *ListInstallableAddonsV2Params, 
 }
 
 /*
-  PatchAddon patches an addon that is assigned to the given cluster
+PatchAddon patches an addon that is assigned to the given cluster
 */
 func (a *Client) PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchAddonOK, error) {
 	// TODO: Validate the params before sending
@@ -514,7 +514,7 @@ func (a *Client) PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAut
 }
 
 /*
-  PatchAddonV2 patches an addon that is assigned to the given cluster
+PatchAddonV2 patches an addon that is assigned to the given cluster
 */
 func (a *Client) PatchAddonV2(params *PatchAddonV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchAddonV2OK, error) {
 	// TODO: Validate the params before sending

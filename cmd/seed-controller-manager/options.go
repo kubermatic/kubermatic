@@ -31,8 +31,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -127,9 +127,9 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
-	flag.StringVar(&c.kubermaticImage, "kubermatic-image", defaults.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
-	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", defaults.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
-	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaults.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
+	flag.StringVar(&c.kubermaticImage, "kubermatic-image", defaulting.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
+	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", defaulting.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
+	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", defaulting.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for Seed resources")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
@@ -233,7 +233,7 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to process: %w", err)
 	}

@@ -52,7 +52,7 @@ type ClientService interface {
 }
 
 /*
-  CreateDC creates the datacenter for a specified seed
+CreateDC creates the datacenter for a specified seed
 */
 func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDCCreated, error) {
 	// TODO: Validate the params before sending
@@ -90,7 +90,7 @@ func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  DeleteDC deletes the datacenter
+DeleteDC deletes the datacenter
 */
 func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteDCOK, error) {
 	// TODO: Validate the params before sending
@@ -128,7 +128,7 @@ func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  GetDCForProvider gets the datacenter for the specified provider
+GetDCForProvider gets the datacenter for the specified provider
 */
 func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDCForProviderOK, error) {
 	// TODO: Validate the params before sending
@@ -166,7 +166,7 @@ func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runti
 }
 
 /*
-  GetDCForSeed returns the specified datacenter for the specified seed
+GetDCForSeed returns the specified datacenter for the specified seed
 */
 func (a *Client) GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDCForSeedOK, error) {
 	// TODO: Validate the params before sending
@@ -204,7 +204,7 @@ func (a *Client) GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.Clien
 }
 
 /*
-  GetDatacenter get datacenter API
+GetDatacenter get datacenter API
 */
 func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDatacenterOK, error) {
 	// TODO: Validate the params before sending
@@ -242,7 +242,7 @@ func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.Cli
 }
 
 /*
-  ListDCForProvider returns all datacenters for the specified provider
+ListDCForProvider returns all datacenters for the specified provider
 */
 func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDCForProviderOK, error) {
 	// TODO: Validate the params before sending
@@ -280,7 +280,7 @@ func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo run
 }
 
 /*
-  ListDCForSeed returns all datacenters for the specified seed
+ListDCForSeed returns all datacenters for the specified seed
 */
 func (a *Client) ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDCForSeedOK, error) {
 	// TODO: Validate the params before sending
@@ -318,7 +318,7 @@ func (a *Client) ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.Cli
 }
 
 /*
-  ListDatacenters list datacenters API
+ListDatacenters list datacenters API
 */
 func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDatacentersOK, error) {
 	// TODO: Validate the params before sending
@@ -356,7 +356,7 @@ func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime
 }
 
 /*
-  PatchDC patches the datacenter
+PatchDC patches the datacenter
 */
 func (a *Client) PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchDCOK, error) {
 	// TODO: Validate the params before sending
@@ -394,7 +394,7 @@ func (a *Client) PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  UpdateDC updates the datacenter the datacenter spec will be overwritten with the one provided in the request
+UpdateDC updates the datacenter the datacenter spec will be overwritten with the one provided in the request
 */
 func (a *Client) UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateDCOK, error) {
 	// TODO: Validate the params before sending

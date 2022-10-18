@@ -52,10 +52,12 @@ func NewListSSHKeysAssignedToClusterV2ParamsWithHTTPClient(client *http.Client) 
 	}
 }
 
-/* ListSSHKeysAssignedToClusterV2Params contains all the parameters to send to the API endpoint
-   for the list SSH keys assigned to cluster v2 operation.
+/*
+ListSSHKeysAssignedToClusterV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list SSH keys assigned to cluster v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListSSHKeysAssignedToClusterV2Params struct {
 

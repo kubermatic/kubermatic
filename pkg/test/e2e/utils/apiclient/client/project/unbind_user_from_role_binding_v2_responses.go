@@ -58,7 +58,8 @@ func NewUnbindUserFromRoleBindingV2OK() *UnbindUserFromRoleBindingV2OK {
 	return &UnbindUserFromRoleBindingV2OK{}
 }
 
-/* UnbindUserFromRoleBindingV2OK describes a response with status code 200, with default header values.
+/*
+UnbindUserFromRoleBindingV2OK describes a response with status code 200, with default header values.
 
 RoleBinding
 */
@@ -66,9 +67,39 @@ type UnbindUserFromRoleBindingV2OK struct {
 	Payload *models.RoleBinding
 }
 
+// IsSuccess returns true when this unbind user from role binding v2 o k response has a 2xx status code
+func (o *UnbindUserFromRoleBindingV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this unbind user from role binding v2 o k response has a 3xx status code
+func (o *UnbindUserFromRoleBindingV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this unbind user from role binding v2 o k response has a 4xx status code
+func (o *UnbindUserFromRoleBindingV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this unbind user from role binding v2 o k response has a 5xx status code
+func (o *UnbindUserFromRoleBindingV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this unbind user from role binding v2 o k response a status code equal to that given
+func (o *UnbindUserFromRoleBindingV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UnbindUserFromRoleBindingV2OK) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2OK  %+v", 200, o.Payload)
 }
+
+func (o *UnbindUserFromRoleBindingV2OK) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2OK  %+v", 200, o.Payload)
+}
+
 func (o *UnbindUserFromRoleBindingV2OK) GetPayload() *models.RoleBinding {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewUnbindUserFromRoleBindingV2Unauthorized() *UnbindUserFromRoleBindingV2Un
 	return &UnbindUserFromRoleBindingV2Unauthorized{}
 }
 
-/* UnbindUserFromRoleBindingV2Unauthorized describes a response with status code 401, with default header values.
+/*
+UnbindUserFromRoleBindingV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UnbindUserFromRoleBindingV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this unbind user from role binding v2 unauthorized response has a 2xx status code
+func (o *UnbindUserFromRoleBindingV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this unbind user from role binding v2 unauthorized response has a 3xx status code
+func (o *UnbindUserFromRoleBindingV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this unbind user from role binding v2 unauthorized response has a 4xx status code
+func (o *UnbindUserFromRoleBindingV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this unbind user from role binding v2 unauthorized response has a 5xx status code
+func (o *UnbindUserFromRoleBindingV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this unbind user from role binding v2 unauthorized response a status code equal to that given
+func (o *UnbindUserFromRoleBindingV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UnbindUserFromRoleBindingV2Unauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2Unauthorized ", 401)
+}
+
+func (o *UnbindUserFromRoleBindingV2Unauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2Unauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewUnbindUserFromRoleBindingV2Forbidden() *UnbindUserFromRoleBindingV2Forbi
 	return &UnbindUserFromRoleBindingV2Forbidden{}
 }
 
-/* UnbindUserFromRoleBindingV2Forbidden describes a response with status code 403, with default header values.
+/*
+UnbindUserFromRoleBindingV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UnbindUserFromRoleBindingV2Forbidden struct {
 }
 
+// IsSuccess returns true when this unbind user from role binding v2 forbidden response has a 2xx status code
+func (o *UnbindUserFromRoleBindingV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this unbind user from role binding v2 forbidden response has a 3xx status code
+func (o *UnbindUserFromRoleBindingV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this unbind user from role binding v2 forbidden response has a 4xx status code
+func (o *UnbindUserFromRoleBindingV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this unbind user from role binding v2 forbidden response has a 5xx status code
+func (o *UnbindUserFromRoleBindingV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this unbind user from role binding v2 forbidden response a status code equal to that given
+func (o *UnbindUserFromRoleBindingV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UnbindUserFromRoleBindingV2Forbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2Forbidden ", 403)
+}
+
+func (o *UnbindUserFromRoleBindingV2Forbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2Forbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewUnbindUserFromRoleBindingV2Default(code int) *UnbindUserFromRoleBindingV
 	}
 }
 
-/* UnbindUserFromRoleBindingV2Default describes a response with status code -1, with default header values.
+/*
+UnbindUserFromRoleBindingV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *UnbindUserFromRoleBindingV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this unbind user from role binding v2 default response has a 2xx status code
+func (o *UnbindUserFromRoleBindingV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this unbind user from role binding v2 default response has a 3xx status code
+func (o *UnbindUserFromRoleBindingV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this unbind user from role binding v2 default response has a 4xx status code
+func (o *UnbindUserFromRoleBindingV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this unbind user from role binding v2 default response has a 5xx status code
+func (o *UnbindUserFromRoleBindingV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this unbind user from role binding v2 default response a status code equal to that given
+func (o *UnbindUserFromRoleBindingV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UnbindUserFromRoleBindingV2Default) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UnbindUserFromRoleBindingV2Default) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] unbindUserFromRoleBindingV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UnbindUserFromRoleBindingV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

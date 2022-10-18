@@ -218,11 +218,11 @@ const (
 	// CABundleConfigMapKey is the key under which a ConfigMap must contain a PEM-encoded collection of certificates.
 	CABundleConfigMapKey = "ca-bundle.pem"
 
-	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
-	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigName is the name for the configmap containing the cloud-config used by the csi driver.
-	CSICloudConfigName = "cloud-config-csi"
-	// CloudConfigKey is the key under which the cloud-config in the cloud-config configmap can be found.
+	// CloudConfigSeedSecretName is the name for the secret containing the cloud-config inside the usercluster namespace
+	// on the seed cluster. Not to be confused with CloudConfigSecretName, which is the copy of this Secret inside the
+	// usercluster.
+	CloudConfigSeedSecretName = "cloud-config"
+	// CloudConfigKey is the key under which the cloud-config in the cloud-config Secret can be found.
 	CloudConfigKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
@@ -400,6 +400,8 @@ const (
 
 	// RegistryK8SGCR defines the kubernetes specific docker registry at google.
 	RegistryK8SGCR = "k8s.gcr.io"
+	// RegistryK8S defines the (new) official registry hosted by the Kubernetes project.
+	RegistryK8S = "registry.k8s.io"
 	// RegistryEUGCR defines the docker registry at google EU.
 	RegistryEUGCR = "eu.gcr.io"
 	// RegistryUSGCR defines the docker registry at google US.
@@ -417,8 +419,8 @@ const (
 
 	// TopologyKeyHostname defines the topology key for the node hostname.
 	TopologyKeyHostname = "kubernetes.io/hostname"
-	// TopologyKeyFailureDomainZone defines the topology key for the node's cloud provider zone.
-	TopologyKeyFailureDomainZone = "failure-domain.beta.kubernetes.io/zone"
+	// TopologyKeyZone defines the topology key for the node's cloud provider zone.
+	TopologyKeyZone = "topology.kubernetes.io/zone"
 
 	// MachineCRDName defines the CRD name for machine objects.
 	MachineCRDName = "machines.cluster.k8s.io"
@@ -474,6 +476,9 @@ const (
 	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
 	// KubeVirtInfraSecretKey infra kubeconfig.
 	KubeVirtInfraSecretKey = "infra-kubeconfig"
+
+	// DefaultNodePortRange is a Kubernetes cluster's default nodeport range.
+	DefaultNodePortRange = "30000-32767"
 )
 
 const (
@@ -718,6 +723,7 @@ const (
 	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"
 	ExternalGKEClusterSeriveAccount   = "serviceAccount"
+	GKEUnspecifiedReleaseChannel      = "UNSPECIFIED"
 	GKERapidReleaseChannel            = "RAPID"
 	GKERegularReleaseChannel          = "REGULAR"
 	GKEStableReleaseChannel           = "STABLE"
@@ -750,11 +756,13 @@ const (
 	CreatingAKSMDState  AKSMDState = "Creating"
 	SucceededAKSMDState AKSMDState = "Succeeded"
 	RunningAKSMDState   AKSMDState = "Running"
+	StoppedAKSMDState   AKSMDState = "Stopped"
 	FailedAKSMDState    AKSMDState = "Failed"
 	DeletingAKSMDState  AKSMDState = "Deleting"
 	UpgradingAKSMDState AKSMDState = "Upgrading"
 	UpdatingAKSMDState  AKSMDState = "Updating"
 	ScalingAKSMDState   AKSMDState = "Scaling"
+	StartingAKSMDState  AKSMDState = "Starting"
 )
 
 type EKSState string
@@ -924,6 +932,7 @@ const (
 	NetworkPolicyDNSAllow                      = "dns-allow"
 	NetworkPolicyOpenVPNServerAllow            = "openvpn-server-allow"
 	NetworkPolicyMachineControllerWebhookAllow = "machine-controller-webhook-allow"
+	NetworkPolicyUserClusterWebhookAllow       = "usercluster-webhook-allow"
 	NetworkPolicyMetricsServerAllow            = "metrics-server-allow"
 	NetworkPolicyClusterExternalAddrAllow      = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
@@ -1014,7 +1023,7 @@ func GetAllowedTLSCipherSuites() []string {
 
 // GetClusterExternalIP returns a net.IP for the given Cluster.
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
-	address := cluster.GetAddress()
+	address := cluster.Status.Address
 
 	ip := net.ParseIP(address.IP)
 	if ip == nil {
@@ -1531,9 +1540,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 }
 
 // SupportsFailureDomainZoneAntiAffinity checks if there are any nodes with the
-// TopologyKeyFailureDomainZone label.
+// TopologyKeyZone label.
 func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
-	selector, err := labels.Parse(TopologyKeyFailureDomainZone)
+	selector, err := labels.Parse(TopologyKeyZone)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse selector: %w", err)
 	}
@@ -1546,7 +1555,7 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 
 	nodeList := &corev1.NodeList{}
 	if err := client.List(ctx, nodeList, opts); err != nil {
-		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyFailureDomainZone, err)
+		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyZone, err)
 	}
 
 	return len(nodeList.Items) != 0, nil
@@ -1719,4 +1728,25 @@ func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
 		return IPTablesProxyMode
 	}
 	return IPVSProxyMode
+}
+
+// GetKubeletPreferredAddressTypes returns the preferred address types in the correct order to be used when
+// contacting kubelet from the control plane.
+func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivityEnabled bool) string {
+	if cluster.Spec.Cloud.GCP != nil {
+		return "InternalIP"
+	}
+	if cluster.IsDualStack() && cluster.Spec.Cloud.Hetzner != nil {
+		// Due to https://github.com/hetznercloud/hcloud-cloud-controller-manager/issues/305
+		// InternalIP needs to be preferred over ExternalIP in dual-stack Hetzner clusters
+		return "InternalIP,ExternalIP"
+	}
+	if isKonnectivityEnabled {
+		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
+		// This request fails because of security policies disallow external traffic to the node.
+		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
+		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
+		return "InternalIP,ExternalIP"
+	}
+	return "ExternalIP,InternalIP"
 }

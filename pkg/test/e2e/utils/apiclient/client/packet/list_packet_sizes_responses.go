@@ -46,7 +46,8 @@ func NewListPacketSizesOK() *ListPacketSizesOK {
 	return &ListPacketSizesOK{}
 }
 
-/* ListPacketSizesOK describes a response with status code 200, with default header values.
+/*
+ListPacketSizesOK describes a response with status code 200, with default header values.
 
 PacketSizeList
 */
@@ -54,9 +55,39 @@ type ListPacketSizesOK struct {
 	Payload []models.PacketSizeList
 }
 
+// IsSuccess returns true when this list packet sizes o k response has a 2xx status code
+func (o *ListPacketSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list packet sizes o k response has a 3xx status code
+func (o *ListPacketSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list packet sizes o k response has a 4xx status code
+func (o *ListPacketSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list packet sizes o k response has a 5xx status code
+func (o *ListPacketSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list packet sizes o k response a status code equal to that given
+func (o *ListPacketSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListPacketSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListPacketSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListPacketSizesOK) GetPayload() []models.PacketSizeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListPacketSizesDefault(code int) *ListPacketSizesDefault {
 	}
 }
 
-/* ListPacketSizesDefault describes a response with status code -1, with default header values.
+/*
+ListPacketSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListPacketSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list packet sizes default response has a 2xx status code
+func (o *ListPacketSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list packet sizes default response has a 3xx status code
+func (o *ListPacketSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list packet sizes default response has a 4xx status code
+func (o *ListPacketSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list packet sizes default response has a 5xx status code
+func (o *ListPacketSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list packet sizes default response a status code equal to that given
+func (o *ListPacketSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListPacketSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListPacketSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/packet/sizes][%d] listPacketSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListPacketSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

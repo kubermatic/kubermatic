@@ -58,7 +58,8 @@ func NewPatchExternalClusterOK() *PatchExternalClusterOK {
 	return &PatchExternalClusterOK{}
 }
 
-/* PatchExternalClusterOK describes a response with status code 200, with default header values.
+/*
+PatchExternalClusterOK describes a response with status code 200, with default header values.
 
 ExternalCluster
 */
@@ -66,9 +67,39 @@ type PatchExternalClusterOK struct {
 	Payload *models.ExternalCluster
 }
 
+// IsSuccess returns true when this patch external cluster o k response has a 2xx status code
+func (o *PatchExternalClusterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch external cluster o k response has a 3xx status code
+func (o *PatchExternalClusterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch external cluster o k response has a 4xx status code
+func (o *PatchExternalClusterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch external cluster o k response has a 5xx status code
+func (o *PatchExternalClusterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch external cluster o k response a status code equal to that given
+func (o *PatchExternalClusterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchExternalClusterOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalClusterOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchExternalClusterOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalClusterOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchExternalClusterOK) GetPayload() *models.ExternalCluster {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewPatchExternalClusterUnauthorized() *PatchExternalClusterUnauthorized {
 	return &PatchExternalClusterUnauthorized{}
 }
 
-/* PatchExternalClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchExternalClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch external cluster unauthorized response has a 2xx status code
+func (o *PatchExternalClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch external cluster unauthorized response has a 3xx status code
+func (o *PatchExternalClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch external cluster unauthorized response has a 4xx status code
+func (o *PatchExternalClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch external cluster unauthorized response has a 5xx status code
+func (o *PatchExternalClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch external cluster unauthorized response a status code equal to that given
+func (o *PatchExternalClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchExternalClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalClusterUnauthorized ", 401)
+}
+
+func (o *PatchExternalClusterUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalClusterUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewPatchExternalClusterForbidden() *PatchExternalClusterForbidden {
 	return &PatchExternalClusterForbidden{}
 }
 
-/* PatchExternalClusterForbidden describes a response with status code 403, with default header values.
+/*
+PatchExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchExternalClusterForbidden struct {
 }
 
+// IsSuccess returns true when this patch external cluster forbidden response has a 2xx status code
+func (o *PatchExternalClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch external cluster forbidden response has a 3xx status code
+func (o *PatchExternalClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch external cluster forbidden response has a 4xx status code
+func (o *PatchExternalClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch external cluster forbidden response has a 5xx status code
+func (o *PatchExternalClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch external cluster forbidden response a status code equal to that given
+func (o *PatchExternalClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchExternalClusterForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalClusterForbidden ", 403)
+}
+
+func (o *PatchExternalClusterForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalClusterForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewPatchExternalClusterDefault(code int) *PatchExternalClusterDefault {
 	}
 }
 
-/* PatchExternalClusterDefault describes a response with status code -1, with default header values.
+/*
+PatchExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *PatchExternalClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch external cluster default response has a 2xx status code
+func (o *PatchExternalClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch external cluster default response has a 3xx status code
+func (o *PatchExternalClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch external cluster default response has a 4xx status code
+func (o *PatchExternalClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch external cluster default response has a 5xx status code
+func (o *PatchExternalClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch external cluster default response a status code equal to that given
+func (o *PatchExternalClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchExternalClusterDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] patchExternalCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

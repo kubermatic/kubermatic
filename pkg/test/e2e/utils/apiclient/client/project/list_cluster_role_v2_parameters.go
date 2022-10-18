@@ -52,10 +52,12 @@ func NewListClusterRoleV2ParamsWithHTTPClient(client *http.Client) *ListClusterR
 	}
 }
 
-/* ListClusterRoleV2Params contains all the parameters to send to the API endpoint
-   for the list cluster role v2 operation.
+/*
+ListClusterRoleV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list cluster role v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListClusterRoleV2Params struct {
 

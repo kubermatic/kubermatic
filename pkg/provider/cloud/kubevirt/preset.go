@@ -21,10 +21,9 @@ import (
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
+	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -46,7 +45,8 @@ func reconcilePresets(ctx context.Context, namespace string, client ctrlruntimec
 		return err
 	}
 
-	presets.Items = append(presets.Items, *GetKubermaticStandardPreset())
+	// add Kubermatic standards
+	presets.Items = append(presets.Items, GetKubermaticStandardPresets(client, &kvmanifests.StandardPresetGetter{})...)
 
 	for _, preset := range presets.Items {
 		presetCreators := []reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter{
@@ -60,35 +60,12 @@ func reconcilePresets(ctx context.Context, namespace string, client ctrlruntimec
 	return nil
 }
 
-// GetKubermaticStandardPreset returns a standard VirtualMachineInstancePreset with 2 CPUs and 8Gi of memory.
-func GetKubermaticStandardPreset() *kubevirtv1.VirtualMachineInstancePreset {
-	cpuQuantity, err := resource.ParseQuantity("2")
-	if err != nil {
-		return nil
+// GetKubermaticStandardPresets returns the Kubermatic standard VirtualMachineInstancePresets.
+func GetKubermaticStandardPresets(client ctrlruntimeclient.Client, getter kvmanifests.ManifestFSGetter) []kubevirtv1.VirtualMachineInstancePreset {
+	objs := kvmanifests.RuntimeFromYaml(client, getter)
+	presets := make([]kubevirtv1.VirtualMachineInstancePreset, 0, len(objs))
+	for _, obj := range objs {
+		presets = append(presets, *obj.(*kubevirtv1.VirtualMachineInstancePreset))
 	}
-	memoryQuantity, err := resource.ParseQuantity("8Gi")
-	if err != nil {
-		return nil
-	}
-	resourceList := corev1.ResourceList{
-		corev1.ResourceMemory: memoryQuantity,
-		corev1.ResourceCPU:    cpuQuantity,
-	}
-
-	return &kubevirtv1.VirtualMachineInstancePreset{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "kubermatic-standard",
-		},
-		Spec: kubevirtv1.VirtualMachineInstancePresetSpec{
-			Selector: metav1.LabelSelector{
-				MatchLabels: map[string]string{"kubevirt.io/flavor": "kubermatic-standard"},
-			},
-			Domain: &kubevirtv1.DomainSpec{
-				Resources: kubevirtv1.ResourceRequirements{
-					Requests: resourceList,
-					Limits:   resourceList,
-				},
-			},
-		},
-	}
+	return presets
 }

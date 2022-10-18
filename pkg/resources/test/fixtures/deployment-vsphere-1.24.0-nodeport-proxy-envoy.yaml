@@ -5,6 +5,7 @@ metadata:
   labels:
     app: nodeport-proxy-envoy
   name: nodeport-proxy-envoy
+  namespace: cluster-de-test-01
 spec:
   replicas: 2
   selector:

@@ -58,7 +58,8 @@ func NewListProjectEtcdBackupConfigOK() *ListProjectEtcdBackupConfigOK {
 	return &ListProjectEtcdBackupConfigOK{}
 }
 
-/* ListProjectEtcdBackupConfigOK describes a response with status code 200, with default header values.
+/*
+ListProjectEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EtcdBackupConfig
 */
@@ -66,9 +67,39 @@ type ListProjectEtcdBackupConfigOK struct {
 	Payload []*models.EtcdBackupConfig
 }
 
+// IsSuccess returns true when this list project etcd backup config o k response has a 2xx status code
+func (o *ListProjectEtcdBackupConfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list project etcd backup config o k response has a 3xx status code
+func (o *ListProjectEtcdBackupConfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list project etcd backup config o k response has a 4xx status code
+func (o *ListProjectEtcdBackupConfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list project etcd backup config o k response has a 5xx status code
+func (o *ListProjectEtcdBackupConfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list project etcd backup config o k response a status code equal to that given
+func (o *ListProjectEtcdBackupConfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListProjectEtcdBackupConfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfigOK  %+v", 200, o.Payload)
 }
+
+func (o *ListProjectEtcdBackupConfigOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfigOK  %+v", 200, o.Payload)
+}
+
 func (o *ListProjectEtcdBackupConfigOK) GetPayload() []*models.EtcdBackupConfig {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListProjectEtcdBackupConfigUnauthorized() *ListProjectEtcdBackupConfigUn
 	return &ListProjectEtcdBackupConfigUnauthorized{}
 }
 
-/* ListProjectEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+ListProjectEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListProjectEtcdBackupConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this list project etcd backup config unauthorized response has a 2xx status code
+func (o *ListProjectEtcdBackupConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list project etcd backup config unauthorized response has a 3xx status code
+func (o *ListProjectEtcdBackupConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list project etcd backup config unauthorized response has a 4xx status code
+func (o *ListProjectEtcdBackupConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list project etcd backup config unauthorized response has a 5xx status code
+func (o *ListProjectEtcdBackupConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list project etcd backup config unauthorized response a status code equal to that given
+func (o *ListProjectEtcdBackupConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListProjectEtcdBackupConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfigUnauthorized ", 401)
+}
+
+func (o *ListProjectEtcdBackupConfigUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfigUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListProjectEtcdBackupConfigForbidden() *ListProjectEtcdBackupConfigForbi
 	return &ListProjectEtcdBackupConfigForbidden{}
 }
 
-/* ListProjectEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
+/*
+ListProjectEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListProjectEtcdBackupConfigForbidden struct {
 }
 
+// IsSuccess returns true when this list project etcd backup config forbidden response has a 2xx status code
+func (o *ListProjectEtcdBackupConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list project etcd backup config forbidden response has a 3xx status code
+func (o *ListProjectEtcdBackupConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list project etcd backup config forbidden response has a 4xx status code
+func (o *ListProjectEtcdBackupConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list project etcd backup config forbidden response has a 5xx status code
+func (o *ListProjectEtcdBackupConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list project etcd backup config forbidden response a status code equal to that given
+func (o *ListProjectEtcdBackupConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListProjectEtcdBackupConfigForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfigForbidden ", 403)
+}
+
+func (o *ListProjectEtcdBackupConfigForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfigForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListProjectEtcdBackupConfigDefault(code int) *ListProjectEtcdBackupConfi
 	}
 }
 
-/* ListProjectEtcdBackupConfigDefault describes a response with status code -1, with default header values.
+/*
+ListProjectEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListProjectEtcdBackupConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list project etcd backup config default response has a 2xx status code
+func (o *ListProjectEtcdBackupConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list project etcd backup config default response has a 3xx status code
+func (o *ListProjectEtcdBackupConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list project etcd backup config default response has a 4xx status code
+func (o *ListProjectEtcdBackupConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list project etcd backup config default response has a 5xx status code
+func (o *ListProjectEtcdBackupConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list project etcd backup config default response a status code equal to that given
+func (o *ListProjectEtcdBackupConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListProjectEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListProjectEtcdBackupConfigDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/etcdbackupconfigs][%d] listProjectEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListProjectEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

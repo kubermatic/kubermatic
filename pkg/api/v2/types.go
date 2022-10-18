@@ -27,6 +27,7 @@ import (
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
@@ -280,15 +281,20 @@ type EtcdBackupConfigStatus struct {
 
 type BackupStatus struct {
 	// ScheduledTime will always be set when the BackupStatus is created, so it'll never be nil
-	ScheduledTime      *apiv1.Time                    `json:"scheduledTime,omitempty"`
-	BackupName         string                         `json:"backupName,omitempty"`
-	JobName            string                         `json:"jobName,omitempty"`
-	BackupStartTime    *apiv1.Time                    `json:"backupStartTime,omitempty"`
+	// swagger:strfmt date-time
+	ScheduledTime *apiv1.Time `json:"scheduledTime,omitempty"`
+	BackupName    string      `json:"backupName,omitempty"`
+	JobName       string      `json:"jobName,omitempty"`
+	// swagger:strfmt date-time
+	BackupStartTime *apiv1.Time `json:"backupStartTime,omitempty"`
+	// swagger:strfmt date-time
 	BackupFinishedTime *apiv1.Time                    `json:"backupFinishedTime,omitempty"`
 	BackupPhase        kubermaticv1.BackupStatusPhase `json:"backupPhase,omitempty"`
 	BackupMessage      string                         `json:"backupMessage,omitempty"`
 	DeleteJobName      string                         `json:"deleteJobName,omitempty"`
-	DeleteStartTime    *apiv1.Time                    `json:"deleteStartTime,omitempty"`
+	// swagger:strfmt date-time
+	DeleteStartTime *apiv1.Time `json:"deleteStartTime,omitempty"`
+	// swagger:strfmt date-time
 	DeleteFinishedTime *apiv1.Time                    `json:"deleteFinishedTime,omitempty"`
 	DeletePhase        kubermaticv1.BackupStatusPhase `json:"deletePhase,omitempty"`
 	DeleteMessage      string                         `json:"deleteMessage,omitempty"`
@@ -301,9 +307,11 @@ type EtcdBackupConfigCondition struct {
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
 	// +optional
+	// swagger:strfmt date-time
 	LastHeartbeatTime apiv1.Time `json:"lastHeartbeatTime,omitempty"`
 	// Last time the condition transit from one status to another.
 	// +optional
+	// swagger:strfmt date-time
 	LastTransitionTime apiv1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	// +optional
@@ -342,8 +350,9 @@ type EtcdRestore struct {
 }
 
 type EtcdRestoreStatus struct {
-	Phase       kubermaticv1.EtcdRestorePhase `json:"phase"`
-	RestoreTime *apiv1.Time                   `json:"restoreTime,omitempty"`
+	Phase kubermaticv1.EtcdRestorePhase `json:"phase"`
+	// swagger:strfmt date-time
+	RestoreTime *apiv1.Time `json:"restoreTime,omitempty"`
 }
 
 // EtcdRestoreSpec represents an object holding the etcd backup restore configuration specification
@@ -428,40 +437,58 @@ const (
 	// DeletingExternalClusterState state indicates the cluster is being deleted.
 	DeletingExternalClusterState ExternalClusterState = "Deleting"
 
+	// StartingExternalClusterState state indicates the cluster is starting.
+	StartingExternalClusterState ExternalClusterState = "Starting"
+
 	// UnknownExternalClusterState indicates undefined state.
 	UnknownExternalClusterState ExternalClusterState = "Unknown"
 
 	// ErrorExternalClusterState state indicates the cluster is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
 	ErrorExternalClusterState ExternalClusterState = "Error"
+
+	// WarningExternalClusterState state indicates the cluster is usable but with some warnings. Details can be found in the
+	// `statusMessage` field.
+	WarningExternalClusterState ExternalClusterState = "Warning"
 )
 
 const (
-	// ProvisioningExternalClusterMDState state indicates the cluster machine dedeployment is being created.
+	// ProvisioningExternalClusterMDState state indicates the cluster machine deployment is being created.
 	ProvisioningExternalClusterMDState ExternalClusterMDState = "Provisioning"
 
-	// RunningExternalClusterMDState state indicates the cluster machine dedeployment has been created and is fully usable.
+	// RunningExternalClusterMDState state indicates the cluster machine deployment has been created and is fully usable.
 	RunningExternalClusterMDState ExternalClusterMDState = "Running"
 
-	// ReconcilingExternalClusterMDState state indicates that some work is actively being done on the machine dedeployment, such as upgrading the master or
+	// StoppedExternalClusterMDState state indicates the cluster machine deployment is stopped. This state is specific to AKS clusters.
+	StoppedExternalClusterMDState ExternalClusterMDState = "Stopped"
+
+	// ReconcilingExternalClusterMDState state indicates that some work is actively being done on the machine deployment, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
 	ReconcilingExternalClusterMDState ExternalClusterMDState = "Reconciling"
 
-	// DeletingExternalClusterMDState state indicates the machine dedeployment is being deleted.
+	// DeletingExternalClusterMDState state indicates the machine deployment is being deleted.
 	DeletingExternalClusterMDState ExternalClusterMDState = "Deleting"
+
+	// StartingExternalClusterMDState state indicates the cluster machine deployment is starting.
+	StartingExternalClusterMDState ExternalClusterMDState = "Starting"
 
 	// UnknownExternalClusterMDState indicates undefined state.
 	UnknownExternalClusterMDState ExternalClusterMDState = "Unknown"
 
-	// ErrorExternalClusterMDState state indicates the machine dedeployment is unusable. It will be automatically deleted. Details can be found in the
+	// ErrorExternalClusterMDState state indicates the machine deployment is unusable. It will be automatically deleted. Details can be found in the
 	// `statusMessage` field.
 	ErrorExternalClusterMDState ExternalClusterMDState = "Error"
+
+	// WarningExternalClusterMDState state indicates the machine deployment is usable but with some warnings. Details can be found in the
+	// `statusMessage` field.
+	WarningExternalClusterMDState ExternalClusterMDState = "Warning"
 )
 
 // ExternalClusterStatus defines the external cluster status.
 type ExternalClusterStatus struct {
 	State         ExternalClusterState `json:"state"`
 	StatusMessage string               `json:"statusMessage,omitempty"`
+	AKS           *AKSClusterStatus    `json:"aks,omitempty"`
 }
 
 // ExternalClusterSpec defines the external cluster specification.
@@ -663,7 +690,7 @@ type EKSKubernetesNetworkConfigResponse struct {
 	// IP family is always ipv4, unless you have a 1.21 or later cluster running
 	// version 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when
 	// you created the cluster.
-	IpFamily *string `json:"ipFamily,omitempty"`
+	IpFamily string `json:"ipFamily,omitempty"`
 
 	// The CIDR block that Kubernetes pod and service IP addresses are assigned
 	// from. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a
@@ -689,12 +716,11 @@ type AKSCloudSpec struct {
 	ClientID       string `json:"clientID,omitempty" required:"true"`
 	ClientSecret   string `json:"clientSecret,omitempty" required:"true"`
 	ResourceGroup  string `json:"resourceGroup" required:"true"`
+	Location       string `json:"location"`
 }
 
 // AKSClusterSpec Azure Kubernetes Service cluster.
 type AKSClusterSpec struct {
-	// Location - Resource location
-	Location string `json:"location" required:"true"`
 	// The timestamp of resource creation (UTC).
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	// The identity that created the resource.
@@ -741,6 +767,18 @@ type AKSNetworkProfile struct {
 	LoadBalancerSku string `json:"loadBalancerSku,omitempty"`
 }
 
+type (
+	AKSProvisioningState string
+	AKSPowerState        string
+)
+
+type AKSClusterStatus struct {
+	// ProvisioningState - Defines values for AKS cluster provisioning state.
+	ProvisioningState AKSProvisioningState `json:"provisioningState"`
+	// PowerState - Defines values for AKS cluster power state.
+	PowerState AKSPowerState `json:"powerState"`
+}
+
 type VpcConfigRequest struct {
 	// The VPC associated with your cluster.
 	VpcId *string `json:"vpcId,omitempty"`
@@ -750,12 +788,12 @@ type VpcConfigRequest struct {
 	// your nodes and the Kubernetes control plane.
 	// For more information, see Amazon EKS security group considerations (https://docs.aws.amazon.com/eks/latest/userguide/sec-group-reqs.html)
 	// in the Amazon EKS User Guide .
-	SecurityGroupIds []*string `json:"securityGroupIds" required:"true"`
+	SecurityGroupIds []string `json:"securityGroupIds" required:"true"`
 
 	// Specify subnets for your Amazon EKS nodes. Amazon EKS creates cross-account
 	// elastic network interfaces in these subnets to allow communication between
 	// your nodes and the Kubernetes control plane.
-	SubnetIds []*string `json:"subnetIds" required:"true"`
+	SubnetIds []string `json:"subnetIds" required:"true"`
 }
 
 // ExternalClusterNode represents an object holding external cluster node
@@ -776,6 +814,7 @@ type ExternalClusterMachineDeployment struct {
 type ExternalClusterMDPhase struct {
 	State         ExternalClusterMDState `json:"state"`
 	StatusMessage string                 `json:"statusMessage,omitempty"`
+	AKS           *AKSMDPhase            `json:"aks,omitempty"`
 }
 
 // GKECluster represents a object of GKE cluster.
@@ -846,6 +885,38 @@ type EKSClusterList []EKSCluster
 // swagger:model EKSRegionList
 type EKSRegionList []string
 
+// EKSClusterRole represents a EKS Cluster Service Role.
+// swagger:model EKSClusterRole
+type EKSClusterRole struct {
+	// RoleName  represents the friendly name that identifies the role.
+	RoleName string `json:"roleName"`
+
+	// The Amazon Resource Name (ARN) specifying the role. For more information
+	// about ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)
+	// in the IAM User Guide guide.
+	Arn string `json:"arn"`
+}
+
+// EKSClusterRoleList represents a list of EKS Cluster Service Roles.
+// swagger:model EKSClusterRoleList
+type EKSClusterRoleList []EKSClusterRole
+
+// EKSNodeRole represents a EKS Node IAM Role.
+// swagger:model EKSNodeRole
+type EKSNodeRole struct {
+	// RoleName  represents the friendly name that identifies the role.
+	RoleName string `json:"roleName"`
+
+	// The Amazon Resource Name (ARN) specifying the role. For more information
+	// about ARNs and how to use them in policies, see IAM identifiers (https://docs.aws.amazon.com/IAM/latest/UserGuide/Using_Identifiers.html)
+	// in the IAM User Guide guide.
+	Arn string `json:"arn"`
+}
+
+// EKSNodeRoleList represents a list of EKS Node IAM Roles.
+// swagger:model EKSNodeRoleList
+type EKSNodeRoleList []EKSNodeRole
+
 // EKSAMITypeList represents a list of EKS AMI Types for node group.
 // swagger:model EKSAMITypeList
 type EKSAMITypeList []string
@@ -861,11 +932,12 @@ type EKSInstanceTypeList []EKSInstanceType
 // EKSInstanceType is the object representing EKS nodegroup instancetype..
 // swagger:model EKSInstanceType
 type EKSInstanceType struct {
-	Name       string  `json:"name"`
-	PrettyName string  `json:"pretty_name,omitempty"`
-	Memory     float32 `json:"memory,omitempty"`
-	VCPUs      int     `json:"vcpus,omitempty"`
-	GPUs       int     `json:"gpus,omitempty"`
+	Name         string  `json:"name"`
+	PrettyName   string  `json:"pretty_name,omitempty"`
+	Memory       float32 `json:"memory,omitempty"`
+	VCPUs        int     `json:"vcpus,omitempty"`
+	GPUs         int     `json:"gpus,omitempty"`
+	Architecture string  `json:"architecture,omitempty"`
 }
 
 // EKSSubnetList represents an array of EKS subnet.
@@ -880,7 +952,8 @@ type EKSSubnet struct {
 	// The ID of the subnet.
 	SubnetId string `json:"subnetId"`
 	// The ID of the VPC the subnet is in.
-	VpcId string `json:"vpcId"`
+	VpcId   string `json:"vpcId"`
+	Default bool   `json:"default"`
 }
 
 // EKSSecurityGroupList represents an array of EKS securityGroup.
@@ -907,11 +980,12 @@ type EKSVPC struct {
 	IsDefault bool   `json:"default"`
 }
 
-// AKSCluster represents a object of AKS cluster.
+// AKSCluster represents an object of AKS cluster.
 // swagger:model AKSCluster
 type AKSCluster struct {
 	Name          string `json:"name"`
 	ResourceGroup string `json:"resourceGroup"`
+	Location      string `json:"location"`
 	IsImported    bool   `json:"imported"`
 }
 
@@ -923,11 +997,11 @@ type AKSClusterList []AKSCluster
 // swagger:model AKSVMSizeList
 type AKSVMSizeList []AKSVMSize
 
-// AKSLocationList represents a list of AKS Location object for node group.
+// AKSLocationList represents a list of AKS Locations.
 // swagger:model AKSLocationList
 type AKSLocationList []AKSLocation
 
-// AKSLocation is the object representing Azure Location.
+// AKSLocation represents an object of Azure Location.
 // swagger:model AKSLocation
 type AKSLocation struct {
 	// The location name.
@@ -935,6 +1009,16 @@ type AKSLocation struct {
 	// READ-ONLY; The category of the region.
 	RegionCategory string `json:"regionCategory,omitempty"`
 }
+
+// AzureResourceGroup represents an object of Azure ResourceGroup information.
+type AzureResourceGroup struct {
+	// The name of the resource group.
+	Name string `json:"name,omitempty"`
+}
+
+// AzureResourceGroupList represents an list of AKS ResourceGroups.
+// swagger:model AzureResourceGroupList
+type AzureResourceGroupList []AzureResourceGroup
 
 // AKSVMSize is the object representing Azure VM sizes.
 // swagger:model AKSVMSize
@@ -982,7 +1066,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// in the Amazon EKS User Guide.
 	//
 	// Subnets is a required field
-	Subnets []*string `json:"subnets" required:"true"`
+	Subnets []string `json:"subnets" required:"true"`
 
 	// The Amazon Resource Name (ARN) of the IAM role to associate with your node
 	// group. The Amazon EKS worker node kubelet daemon makes calls to AWS APIs
@@ -1011,6 +1095,9 @@ type EKSMachineDeploymentCloudSpec struct {
 	// in the Amazon EKS User Guide.
 	AmiType string `json:"amiType,omitempty"`
 
+	// The architecture of the machine image.
+	Architecture string `json:"architecture,omitempty"`
+
 	// The capacity type for your node group. Possible values ON_DEMAND | SPOT
 	CapacityType string `json:"capacityType,omitempty"`
 
@@ -1019,7 +1106,7 @@ type EKSMachineDeploymentCloudSpec struct {
 	// or the node group deployment will fail. For more information about using
 	// launch templates with Amazon EKS, see Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
 	// in the Amazon EKS User Guide.
-	DiskSize int64 `json:"diskSize,omitempty"`
+	DiskSize int32 `json:"diskSize,omitempty"`
 
 	// Specify the instance types for a node group. If you specify a GPU instance
 	// type, be sure to specify AL2_x86_64_GPU with the amiType parameter. If you
@@ -1033,17 +1120,17 @@ type EKSMachineDeploymentCloudSpec struct {
 	// node group capacity types (https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types)
 	// and Launch template support (https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html)
 	// in the Amazon EKS User Guide.
-	InstanceTypes []*string `json:"instanceTypes,omitempty"`
+	InstanceTypes []string `json:"instanceTypes,omitempty"`
 
 	// The Kubernetes labels to be applied to the nodes in the node group when they
 	// are created.
-	Labels map[string]*string `json:"labels,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// The metadata applied to the node group to assist with categorization and
 	// organization. Each tag consists of a key and an optional value. You define
 	// both. Node group tags do not propagate to any other resources associated
 	// with the node group, such as the Amazon EC2 instances or subnets.
-	Tags map[string]*string `json:"tags,omitempty"`
+	Tags map[string]string `json:"tags,omitempty"`
 
 	// The scaling configuration details for the Auto Scaling group that is created
 	// for your node group.
@@ -1061,17 +1148,17 @@ type EKSMachineDeploymentCloudSpec struct {
 
 type EKSNodegroupScalingConfig struct {
 	// The current number of nodes that the managed node group should maintain.
-	DesiredSize int64 `json:"desiredSize,omitempty"`
+	DesiredSize int32 `json:"desiredSize,omitempty"`
 
 	// The maximum number of nodes that the managed node group can scale out to.
 	// For information about the maximum number that you can specify, see Amazon
 	// EKS service quotas (https://docs.aws.amazon.com/eks/latest/userguide/service-quotas.html)
 	// in the Amazon EKS User Guide.
-	MaxSize int64 `json:"maxSize,omitempty"`
+	MaxSize int32 `json:"maxSize,omitempty"`
 
 	// The minimum number of nodes that the managed node group can scale in to.
 	// This number must be greater than zero.
-	MinSize int64 `json:"minSize,omitempty"`
+	MinSize int32 `json:"minSize,omitempty"`
 }
 
 type AKSMachineDeploymentCloudSpec struct {
@@ -1083,6 +1170,13 @@ type AKSMachineDeploymentCloudSpec struct {
 	OptionalSettings AgentPoolOptionalSettings `json:"optionalSettings,omitempty"`
 	// Configuration - Configuration of created AKS agentpool
 	Configuration AgentPoolConfig `json:"configuration,omitempty"`
+}
+
+type AKSMDPhase struct {
+	// ProvisioningState - Defines values for AKS node pool provisioning state.
+	ProvisioningState AKSProvisioningState `json:"provisioningState"`
+	// PowerState - Defines values for AKS node pool power state.
+	PowerState AKSPowerState `json:"powerState"`
 }
 
 type AgentPoolBasics struct {
@@ -1252,6 +1346,22 @@ type GKEClusterSpec struct {
 	// CreateTime: [Output only] The time the cluster was created, in
 	// RFC3339 (https://www.ietf.org/rfc/rfc3339.txt) text format.
 	CreateTime string `json:"createTime,omitempty"`
+
+	// ReleaseChannel: channel specifies which release channel the cluster is
+	// subscribed to.
+	//
+	// Possible values:
+	//   "UNSPECIFIED" - No channel specified.
+	//   "RAPID" - RAPID channel is offered on an early access basis for
+	// customers who want to test new releases. WARNING: Versions available
+	// in the RAPID Channel may be subject to unresolved issues with no
+	// known workaround and are not subject to any SLAs.
+	//   "REGULAR" - Clusters subscribed to REGULAR receive versions that
+	// are considered GA quality. REGULAR is intended for production users
+	// who want to take advantage of new features.
+	//   "STABLE" - Clusters subscribed to STABLE receive versions that are
+	// known to be stable and reliable in production.
+	ReleaseChannel string `json:"releaseChannel,omitempty"`
 
 	// GKEClusterAutoscaling: Cluster-level autoscaling configuration.
 	Autoscaling *GKEClusterAutoscaling `json:"autoscaling,omitempty"`
@@ -1493,6 +1603,45 @@ type VirtualMachineInstancePreset struct {
 	Spec string `json:"spec,omitempty"`
 }
 
+// VirtualMachineInstancetypeList represents a list of VirtualMachineInstancetype.
+// VirtualMachineInstancetype are divided into 2 categories: "custom" or "kubermatic".
+// swagger:model VirtualMachineInstancetypeList
+type VirtualMachineInstancetypeList struct {
+	Instancetypes map[VirtualMachineInstancetypeCategory][]VirtualMachineInstancetype `json:"instancetypes,omitempty"`
+}
+
+// VirtualMachineInstancetypeCategory defines a category of VirtualMachineInstancetype.
+type VirtualMachineInstancetypeCategory string
+
+const (
+
+	// cluster-wide resources (KubeVirt VirtualMachineClusterInstancetype).
+	InstancetypeCustom VirtualMachineInstancetypeCategory = "custom"
+
+	// namespaced resources (KubeVirt VirtualMachineInstancetype).
+	InstancetypeKubermatic VirtualMachineInstancetypeCategory = "kubermatic"
+)
+
+// VirtualMachineInstanctype represents a KubeVirt VirtualMachineInstanctype
+// swagger:model VirtualMachineInstancetype
+type VirtualMachineInstancetype struct {
+	Name string `json:"name,omitempty"`
+	// Spec contains the kvinstancetypealpha1v1.VirtualMachineInstanctype.Spec object marshalled
+	// Required by UI to not embed the whole kubevirt.io API object, but a marshalled spec.
+	Spec string `json:"spec,omitempty"`
+}
+
+// VirtualMachinePreference represents a KubeVirt VirtualMachinePreference
+// swagger:model VirtualMachinePreference
+type VirtualMachinePreference VirtualMachineInstancetype
+
+// VirtualMachinePreferenceList represents a list of VirtualMachinePreference.
+// VirtualMachinePreference are divided into 2 categories: "custom" or "kubermatic".
+// swagger:model VirtualMachinePreferenceList
+type VirtualMachinePreferenceList struct {
+	Preferences map[VirtualMachineInstancetypeCategory][]VirtualMachinePreference `json:"preferences,omitempty"`
+}
+
 // StorageClassList represents a list of Kubernetes StorageClass.
 // swagger:model StorageClassList
 type StorageClassList []StorageClass
@@ -1575,11 +1724,11 @@ type ResourceQuotaStatus struct {
 // swagger:model Quota
 type Quota struct {
 	// CPU holds the quantity of CPU.
-	CPU int64 `json:"cpu,omitempty"`
+	CPU *int64 `json:"cpu,omitempty"`
 	// Memory represents the RAM amount. Denoted in GB, rounded to 2 decimal places.
-	Memory float64 `json:"memory,omitempty"`
+	Memory *float64 `json:"memory,omitempty"`
 	// Storage represents the disk size. Denoted in GB, rounded to 2 decimal places.
-	Storage float64 `json:"storage,omitempty"`
+	Storage *float64 `json:"storage,omitempty"`
 }
 
 // swagger:model GroupProjectBinding
@@ -1597,7 +1746,7 @@ type ApplicationInstallation struct {
 
 	Namespace string `json:"namespace,omitempty"`
 
-	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+	Spec *ApplicationInstallationSpec `json:"spec"`
 
 	Status *ApplicationInstallationStatus `json:"status"`
 }
@@ -1609,7 +1758,45 @@ type ApplicationInstallationBody struct {
 
 	Namespace string `json:"namespace,omitempty"`
 
-	Spec *appskubermaticv1.ApplicationInstallationSpec `json:"spec"`
+	Spec *ApplicationInstallationSpec `json:"spec"`
+}
+
+type ApplicationInstallationSpec struct {
+	// Namespace describe the desired state of the namespace where application will be created.
+	Namespace NamespaceSpec `json:"namespace"`
+
+	// ApplicationRef is a reference to identify which Application should be deployed
+	ApplicationRef appskubermaticv1.ApplicationRef `json:"applicationRef"`
+
+	// Values describe overrides for manifest-rendering. It's a free yaml field.
+	// +kubebuilder:pruning:PreserveUnknownFields
+	Values runtime.RawExtension `json:"values,omitempty"`
+	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
+}
+
+// NamespaceSpec describe the desired state of the namespace where application will be created.
+type NamespaceSpec struct {
+	// Name is the namespace to deploy the Application into.
+	// Should be a valid lowercase RFC1123 domain name
+	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
+	Name string `json:"name"`
+
+	// +kubebuilder:default:=true
+
+	// Create defines whether the namespace should be created if it does not exist. Defaults to true
+	Create bool `json:"create"`
+
+	// Labels of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations of the namespace
+	// More info: http://kubernetes.io/docs/user-guide/annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // ApplicationInstallationStatus is the object representing the status of an Application.
@@ -1633,9 +1820,11 @@ type ApplicationInstallationCondition struct {
 	Status corev1.ConditionStatus `json:"status"`
 	// Last time we got an update on a given condition.
 	// +optional
+	// swagger:strfmt date-time
 	LastHeartbeatTime apiv1.Time `json:"lastHeartbeatTime,omitempty"`
 	// Last time the condition transit from one status to another.
 	// +optional
+	// swagger:strfmt date-time
 	LastTransitionTime apiv1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
@@ -1670,4 +1859,11 @@ type OperatingSystemProfile struct {
 	Name                    string   `json:"name"`
 	OperatingSystem         string   `json:"operatingSystem"`
 	SupportedCloudProviders []string `json:"supportedCloudProviders,omitempty"`
+}
+
+// ClusterServiceAccount represent a k8s service account to access cluster.
+// swagger:model ClusterServiceAccount
+type ClusterServiceAccount struct {
+	apiv1.ObjectMeta `json:",inline"`
+	Namespace        string `json:"namespace,omitempty"`
 }

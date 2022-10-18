@@ -46,7 +46,8 @@ func NewListAWSSizesNoCredentialsV2OK() *ListAWSSizesNoCredentialsV2OK {
 	return &ListAWSSizesNoCredentialsV2OK{}
 }
 
-/* ListAWSSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
+/*
+ListAWSSizesNoCredentialsV2OK describes a response with status code 200, with default header values.
 
 AWSSizeList
 */
@@ -54,9 +55,39 @@ type ListAWSSizesNoCredentialsV2OK struct {
 	Payload models.AWSSizeList
 }
 
+// IsSuccess returns true when this list a w s sizes no credentials v2 o k response has a 2xx status code
+func (o *ListAWSSizesNoCredentialsV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a w s sizes no credentials v2 o k response has a 3xx status code
+func (o *ListAWSSizesNoCredentialsV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a w s sizes no credentials v2 o k response has a 4xx status code
+func (o *ListAWSSizesNoCredentialsV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a w s sizes no credentials v2 o k response has a 5xx status code
+func (o *ListAWSSizesNoCredentialsV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a w s sizes no credentials v2 o k response a status code equal to that given
+func (o *ListAWSSizesNoCredentialsV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAWSSizesNoCredentialsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes][%d] listAWSSizesNoCredentialsV2OK  %+v", 200, o.Payload)
 }
+
+func (o *ListAWSSizesNoCredentialsV2OK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes][%d] listAWSSizesNoCredentialsV2OK  %+v", 200, o.Payload)
+}
+
 func (o *ListAWSSizesNoCredentialsV2OK) GetPayload() models.AWSSizeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListAWSSizesNoCredentialsV2Default(code int) *ListAWSSizesNoCredentialsV
 	}
 }
 
-/* ListAWSSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
+/*
+ListAWSSizesNoCredentialsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListAWSSizesNoCredentialsV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a w s sizes no credentials v2 default response has a 2xx status code
+func (o *ListAWSSizesNoCredentialsV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a w s sizes no credentials v2 default response has a 3xx status code
+func (o *ListAWSSizesNoCredentialsV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a w s sizes no credentials v2 default response has a 4xx status code
+func (o *ListAWSSizesNoCredentialsV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a w s sizes no credentials v2 default response has a 5xx status code
+func (o *ListAWSSizesNoCredentialsV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a w s sizes no credentials v2 default response a status code equal to that given
+func (o *ListAWSSizesNoCredentialsV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAWSSizesNoCredentialsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes][%d] listAWSSizesNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAWSSizesNoCredentialsV2Default) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes][%d] listAWSSizesNoCredentialsV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAWSSizesNoCredentialsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

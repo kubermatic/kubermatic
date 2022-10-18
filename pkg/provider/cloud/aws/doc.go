@@ -21,36 +21,36 @@ This provider is responsible for managing a variety of resources in the
 AWS cloud, some of which can pre-exist, some are always created explicitly
 for a given usercluster. These resources are:
 
-* EC2: VPC
-  A VPC must already exist. If the user doesn't specify a VPC, the provider chooses
-  the default VPC for the given AWS account. If during reconciliation the VPC
-  is not found, an error is raised and no further reconciliation can happen.
+  - EC2: VPC
+    A VPC must already exist. If the user doesn't specify a VPC, the provider chooses
+    the default VPC for the given AWS account. If during reconciliation the VPC
+    is not found, an error is raised and no further reconciliation can happen.
 
-* EC2: Route Table (RT)
-  A usercluster can use its own RT, but if none is given by the user, the default
-  RT for the VPC will be used (shared among many userclusters).
-  KKP never creates or deletes route tables, it only tags them with the cluster tag.
+  - EC2: Route Table (RT)
+    A usercluster can use its own RT, but if none is given by the user, the default
+    RT for the VPC will be used (shared among many userclusters).
+    KKP never creates or deletes route tables, it only tags them with the cluster tag.
 
-* EC2: Security Group (SG)
-  This one can be specified by the user, but is otherwise created automatically.
-  Every usercluster lives in its own SG and the SG is always tagged with the
-  cluster tag.
+  - EC2: Security Group (SG)
+    This one can be specified by the user, but is otherwise created automatically.
+    Every usercluster lives in its own SG and the SG is always tagged with the
+    cluster tag.
 
-* EC2: Subnets
-  The AWS CCM requires that all subnets are tagged with the cluster name, as
-  documented in https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.1/deploy/subnet_discovery/.
-  KKP does not create or remove subnets, but tags them, so that multiple userclusters
-  can share the same subnets.
+  - EC2: Subnets
+    The AWS CCM requires that all subnets are tagged with the cluster name, as
+    documented in https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.1/deploy/subnet_discovery/.
+    KKP does not create or remove subnets, but tags them, so that multiple userclusters
+    can share the same subnets.
 
-* IAM: Control plane role
-  This one can be specified by the user, but is otherwise created automatically.
-  Every usercluster has its own control plan role. If the specified role does not
-  exist, it is created.
+  - IAM: Control plane role
+    This one can be specified by the user, but is otherwise created automatically.
+    Every usercluster has its own control plan role. If the specified role does not
+    exist, it is created.
 
-* IAM: Worker role & instance profile
-  This one can be specified by the user, but is otherwise created automatically.
-  Every usercluster has its own worker role/profile. If the specified profile does not
-  exist, it is created.
+  - IAM: Worker role & instance profile
+    This one can be specified by the user, but is otherwise created automatically.
+    Every usercluster has its own worker role/profile. If the specified profile does not
+    exist, it is created.
 
 During cluster deletion, KKP will try to clean up and remove unneeded resources again.
 However, if the user specified a given field (e.g. a SG ID), KKP does not remove

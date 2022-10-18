@@ -552,7 +552,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	}
 
 	oldAddon := addon.DeepCopy()
-	setAddonCodition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
@@ -620,7 +620,7 @@ func formatGVK(gvk kubermaticv1.GroupVersionKind) string {
 	return fmt.Sprintf("%s/%s %s", gvk.Group, gvk.Version, gvk.Kind)
 }
 
-func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
+func setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
 	now := metav1.Now()
 
 	condition, exists := a.Status.Conditions[condType]

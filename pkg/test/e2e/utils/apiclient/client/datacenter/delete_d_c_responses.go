@@ -58,14 +58,44 @@ func NewDeleteDCOK() *DeleteDCOK {
 	return &DeleteDCOK{}
 }
 
-/* DeleteDCOK describes a response with status code 200, with default header values.
+/*
+DeleteDCOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteDCOK struct {
 }
 
+// IsSuccess returns true when this delete d c o k response has a 2xx status code
+func (o *DeleteDCOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete d c o k response has a 3xx status code
+func (o *DeleteDCOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete d c o k response has a 4xx status code
+func (o *DeleteDCOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete d c o k response has a 5xx status code
+func (o *DeleteDCOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete d c o k response a status code equal to that given
+func (o *DeleteDCOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteDCOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDCOK ", 200)
+}
+
+func (o *DeleteDCOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDCOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteDCUnauthorized() *DeleteDCUnauthorized {
 	return &DeleteDCUnauthorized{}
 }
 
-/* DeleteDCUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteDCUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteDCUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete d c unauthorized response has a 2xx status code
+func (o *DeleteDCUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete d c unauthorized response has a 3xx status code
+func (o *DeleteDCUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete d c unauthorized response has a 4xx status code
+func (o *DeleteDCUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete d c unauthorized response has a 5xx status code
+func (o *DeleteDCUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete d c unauthorized response a status code equal to that given
+func (o *DeleteDCUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteDCUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDCUnauthorized ", 401)
+}
+
+func (o *DeleteDCUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDCUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteDCForbidden() *DeleteDCForbidden {
 	return &DeleteDCForbidden{}
 }
 
-/* DeleteDCForbidden describes a response with status code 403, with default header values.
+/*
+DeleteDCForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteDCForbidden struct {
 }
 
+// IsSuccess returns true when this delete d c forbidden response has a 2xx status code
+func (o *DeleteDCForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete d c forbidden response has a 3xx status code
+func (o *DeleteDCForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete d c forbidden response has a 4xx status code
+func (o *DeleteDCForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete d c forbidden response has a 5xx status code
+func (o *DeleteDCForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete d c forbidden response a status code equal to that given
+func (o *DeleteDCForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteDCForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDCForbidden ", 403)
+}
+
+func (o *DeleteDCForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDCForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteDCDefault(code int) *DeleteDCDefault {
 	}
 }
 
-/* DeleteDCDefault describes a response with status code -1, with default header values.
+/*
+DeleteDCDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteDCDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete d c default response has a 2xx status code
+func (o *DeleteDCDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete d c default response has a 3xx status code
+func (o *DeleteDCDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete d c default response has a 4xx status code
+func (o *DeleteDCDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete d c default response has a 5xx status code
+func (o *DeleteDCDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete d c default response a status code equal to that given
+func (o *DeleteDCDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteDCDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDC default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteDCDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/seed/{seed_name}/dc/{dc}][%d] deleteDC default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteDCDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

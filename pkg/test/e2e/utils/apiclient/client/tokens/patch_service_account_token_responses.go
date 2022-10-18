@@ -58,7 +58,8 @@ func NewPatchServiceAccountTokenOK() *PatchServiceAccountTokenOK {
 	return &PatchServiceAccountTokenOK{}
 }
 
-/* PatchServiceAccountTokenOK describes a response with status code 200, with default header values.
+/*
+PatchServiceAccountTokenOK describes a response with status code 200, with default header values.
 
 PublicServiceAccountToken
 */
@@ -66,9 +67,39 @@ type PatchServiceAccountTokenOK struct {
 	Payload *models.PublicServiceAccountToken
 }
 
+// IsSuccess returns true when this patch service account token o k response has a 2xx status code
+func (o *PatchServiceAccountTokenOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this patch service account token o k response has a 3xx status code
+func (o *PatchServiceAccountTokenOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch service account token o k response has a 4xx status code
+func (o *PatchServiceAccountTokenOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this patch service account token o k response has a 5xx status code
+func (o *PatchServiceAccountTokenOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch service account token o k response a status code equal to that given
+func (o *PatchServiceAccountTokenOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *PatchServiceAccountTokenOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenOK  %+v", 200, o.Payload)
 }
+
+func (o *PatchServiceAccountTokenOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenOK  %+v", 200, o.Payload)
+}
+
 func (o *PatchServiceAccountTokenOK) GetPayload() *models.PublicServiceAccountToken {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewPatchServiceAccountTokenUnauthorized() *PatchServiceAccountTokenUnauthor
 	return &PatchServiceAccountTokenUnauthorized{}
 }
 
-/* PatchServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
+/*
+PatchServiceAccountTokenUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchServiceAccountTokenUnauthorized struct {
 }
 
+// IsSuccess returns true when this patch service account token unauthorized response has a 2xx status code
+func (o *PatchServiceAccountTokenUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch service account token unauthorized response has a 3xx status code
+func (o *PatchServiceAccountTokenUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch service account token unauthorized response has a 4xx status code
+func (o *PatchServiceAccountTokenUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch service account token unauthorized response has a 5xx status code
+func (o *PatchServiceAccountTokenUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch service account token unauthorized response a status code equal to that given
+func (o *PatchServiceAccountTokenUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *PatchServiceAccountTokenUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenUnauthorized ", 401)
+}
+
+func (o *PatchServiceAccountTokenUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewPatchServiceAccountTokenForbidden() *PatchServiceAccountTokenForbidden {
 	return &PatchServiceAccountTokenForbidden{}
 }
 
-/* PatchServiceAccountTokenForbidden describes a response with status code 403, with default header values.
+/*
+PatchServiceAccountTokenForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type PatchServiceAccountTokenForbidden struct {
 }
 
+// IsSuccess returns true when this patch service account token forbidden response has a 2xx status code
+func (o *PatchServiceAccountTokenForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this patch service account token forbidden response has a 3xx status code
+func (o *PatchServiceAccountTokenForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this patch service account token forbidden response has a 4xx status code
+func (o *PatchServiceAccountTokenForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this patch service account token forbidden response has a 5xx status code
+func (o *PatchServiceAccountTokenForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this patch service account token forbidden response a status code equal to that given
+func (o *PatchServiceAccountTokenForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *PatchServiceAccountTokenForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenForbidden ", 403)
+}
+
+func (o *PatchServiceAccountTokenForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountTokenForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewPatchServiceAccountTokenDefault(code int) *PatchServiceAccountTokenDefau
 	}
 }
 
-/* PatchServiceAccountTokenDefault describes a response with status code -1, with default header values.
+/*
+PatchServiceAccountTokenDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *PatchServiceAccountTokenDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this patch service account token default response has a 2xx status code
+func (o *PatchServiceAccountTokenDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this patch service account token default response has a 3xx status code
+func (o *PatchServiceAccountTokenDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this patch service account token default response has a 4xx status code
+func (o *PatchServiceAccountTokenDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this patch service account token default response has a 5xx status code
+func (o *PatchServiceAccountTokenDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this patch service account token default response a status code equal to that given
+func (o *PatchServiceAccountTokenDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *PatchServiceAccountTokenDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountToken default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *PatchServiceAccountTokenDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}][%d] patchServiceAccountToken default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *PatchServiceAccountTokenDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

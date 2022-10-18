@@ -5,6 +5,7 @@ metadata:
   labels:
     app: operating-system-manager
   name: operating-system-manager
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -80,7 +81,7 @@ spec:
               key: applicationCredentialSecret
               name: cloud-credentials
               optional: true
-        image: quay.io/kubermatic/operating-system-manager:v0.6.0
+        image: quay.io/kubermatic/operating-system-manager:v1.1.1
         livenessProbe:
           failureThreshold: 3
           httpGet:

@@ -34,6 +34,8 @@ type ClientService interface {
 
 	ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodeVersionsNoCredentialsOK, error)
 
+	ListAKSResourceGroups(params *ListAKSResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSResourceGroupsOK, error)
+
 	ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesOK, error)
 
 	ListAKSVMSizesNoCredentials(params *ListAKSVMSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesNoCredentialsOK, error)
@@ -46,7 +48,7 @@ type ClientService interface {
 }
 
 /*
-  ListAKSLocations lists a k s recommended locations
+ListAKSLocations lists a k s recommended locations
 */
 func (a *Client) ListAKSLocations(params *ListAKSLocationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSLocationsOK, error) {
 	// TODO: Validate the params before sending
@@ -84,7 +86,7 @@ func (a *Client) ListAKSLocations(params *ListAKSLocationsParams, authInfo runti
 }
 
 /*
-  ListAKSNodePoolModes gets the a k s node pool modes
+ListAKSNodePoolModes gets the a k s node pool modes
 */
 func (a *Client) ListAKSNodePoolModes(params *ListAKSNodePoolModesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodePoolModesOK, error) {
 	// TODO: Validate the params before sending
@@ -122,7 +124,7 @@ func (a *Client) ListAKSNodePoolModes(params *ListAKSNodePoolModesParams, authIn
 }
 
 /*
-  ListAKSNodeVersionsNoCredentials gets a k s nodepool available versions
+ListAKSNodeVersionsNoCredentials gets a k s nodepool available versions
 */
 func (a *Client) ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSNodeVersionsNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -160,7 +162,45 @@ func (a *Client) ListAKSNodeVersionsNoCredentials(params *ListAKSNodeVersionsNoC
 }
 
 /*
-  ListAKSVMSizes lists a k s available VM sizes in an azure region
+ListAKSResourceGroups lists resource groups in an azure subscription
+*/
+func (a *Client) ListAKSResourceGroups(params *ListAKSResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSResourceGroupsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAKSResourceGroupsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listAKSResourceGroups",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/aks/resourcegroups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAKSResourceGroupsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAKSResourceGroupsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAKSResourceGroupsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListAKSVMSizes lists a k s available VM sizes in an azure region
 */
 func (a *Client) ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -198,7 +238,7 @@ func (a *Client) ListAKSVMSizes(params *ListAKSVMSizesParams, authInfo runtime.C
 }
 
 /*
-  ListAKSVMSizesNoCredentials gets a k s available VM sizes in an azure region
+ListAKSVMSizesNoCredentials gets a k s available VM sizes in an azure region
 */
 func (a *Client) ListAKSVMSizesNoCredentials(params *ListAKSVMSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVMSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -236,7 +276,7 @@ func (a *Client) ListAKSVMSizesNoCredentials(params *ListAKSVMSizesNoCredentials
 }
 
 /*
-  ListAKSVersions Lists AKS versions
+ListAKSVersions Lists AKS versions
 */
 func (a *Client) ListAKSVersions(params *ListAKSVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -274,7 +314,7 @@ func (a *Client) ListAKSVersions(params *ListAKSVersionsParams, authInfo runtime
 }
 
 /*
-  ValidateAKSCredentials Validates AKS credentials
+ValidateAKSCredentials Validates AKS credentials
 */
 func (a *Client) ValidateAKSCredentials(params *ValidateAKSCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateAKSCredentialsOK, error) {
 	// TODO: Validate the params before sending

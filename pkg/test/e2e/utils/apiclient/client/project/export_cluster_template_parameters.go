@@ -52,10 +52,12 @@ func NewExportClusterTemplateParamsWithHTTPClient(client *http.Client) *ExportCl
 	}
 }
 
-/* ExportClusterTemplateParams contains all the parameters to send to the API endpoint
-   for the export cluster template operation.
+/*
+ExportClusterTemplateParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the export cluster template operation.
+
+	Typically these are written to a http.Request.
 */
 type ExportClusterTemplateParams struct {
 

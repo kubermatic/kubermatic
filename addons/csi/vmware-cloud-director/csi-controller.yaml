@@ -134,7 +134,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.2.1
+          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.2.1" }}
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -147,7 +147,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v2.2.2
+          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v2.2.2" }}
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -165,7 +165,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image:  {{ Registry "projects.registry.vmware.com" }}/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.2.0.latest
+          image:  {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.2.0.latest" }}
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-director-named-disk-csi-driver

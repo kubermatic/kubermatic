@@ -58,7 +58,8 @@ func NewListAddonsV2OK() *ListAddonsV2OK {
 	return &ListAddonsV2OK{}
 }
 
-/* ListAddonsV2OK describes a response with status code 200, with default header values.
+/*
+ListAddonsV2OK describes a response with status code 200, with default header values.
 
 Addon
 */
@@ -66,9 +67,39 @@ type ListAddonsV2OK struct {
 	Payload []*models.Addon
 }
 
+// IsSuccess returns true when this list addons v2 o k response has a 2xx status code
+func (o *ListAddonsV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list addons v2 o k response has a 3xx status code
+func (o *ListAddonsV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list addons v2 o k response has a 4xx status code
+func (o *ListAddonsV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list addons v2 o k response has a 5xx status code
+func (o *ListAddonsV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list addons v2 o k response a status code equal to that given
+func (o *ListAddonsV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAddonsV2OK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2OK  %+v", 200, o.Payload)
 }
+
+func (o *ListAddonsV2OK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2OK  %+v", 200, o.Payload)
+}
+
 func (o *ListAddonsV2OK) GetPayload() []*models.Addon {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListAddonsV2Unauthorized() *ListAddonsV2Unauthorized {
 	return &ListAddonsV2Unauthorized{}
 }
 
-/* ListAddonsV2Unauthorized describes a response with status code 401, with default header values.
+/*
+ListAddonsV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListAddonsV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this list addons v2 unauthorized response has a 2xx status code
+func (o *ListAddonsV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list addons v2 unauthorized response has a 3xx status code
+func (o *ListAddonsV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list addons v2 unauthorized response has a 4xx status code
+func (o *ListAddonsV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list addons v2 unauthorized response has a 5xx status code
+func (o *ListAddonsV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list addons v2 unauthorized response a status code equal to that given
+func (o *ListAddonsV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListAddonsV2Unauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2Unauthorized ", 401)
+}
+
+func (o *ListAddonsV2Unauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2Unauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListAddonsV2Forbidden() *ListAddonsV2Forbidden {
 	return &ListAddonsV2Forbidden{}
 }
 
-/* ListAddonsV2Forbidden describes a response with status code 403, with default header values.
+/*
+ListAddonsV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListAddonsV2Forbidden struct {
 }
 
+// IsSuccess returns true when this list addons v2 forbidden response has a 2xx status code
+func (o *ListAddonsV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list addons v2 forbidden response has a 3xx status code
+func (o *ListAddonsV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list addons v2 forbidden response has a 4xx status code
+func (o *ListAddonsV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list addons v2 forbidden response has a 5xx status code
+func (o *ListAddonsV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list addons v2 forbidden response a status code equal to that given
+func (o *ListAddonsV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListAddonsV2Forbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2Forbidden ", 403)
+}
+
+func (o *ListAddonsV2Forbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2Forbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListAddonsV2Default(code int) *ListAddonsV2Default {
 	}
 }
 
-/* ListAddonsV2Default describes a response with status code -1, with default header values.
+/*
+ListAddonsV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListAddonsV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list addons v2 default response has a 2xx status code
+func (o *ListAddonsV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list addons v2 default response has a 3xx status code
+func (o *ListAddonsV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list addons v2 default response has a 4xx status code
+func (o *ListAddonsV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list addons v2 default response has a 5xx status code
+func (o *ListAddonsV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list addons v2 default response a status code equal to that given
+func (o *ListAddonsV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAddonsV2Default) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAddonsV2Default) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/addons][%d] listAddonsV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAddonsV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

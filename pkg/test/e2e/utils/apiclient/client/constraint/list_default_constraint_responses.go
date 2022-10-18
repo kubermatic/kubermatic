@@ -58,7 +58,8 @@ func NewListDefaultConstraintOK() *ListDefaultConstraintOK {
 	return &ListDefaultConstraintOK{}
 }
 
-/* ListDefaultConstraintOK describes a response with status code 200, with default header values.
+/*
+ListDefaultConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -66,9 +67,39 @@ type ListDefaultConstraintOK struct {
 	Payload []*models.Constraint
 }
 
+// IsSuccess returns true when this list default constraint o k response has a 2xx status code
+func (o *ListDefaultConstraintOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list default constraint o k response has a 3xx status code
+func (o *ListDefaultConstraintOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list default constraint o k response has a 4xx status code
+func (o *ListDefaultConstraintOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list default constraint o k response has a 5xx status code
+func (o *ListDefaultConstraintOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list default constraint o k response a status code equal to that given
+func (o *ListDefaultConstraintOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListDefaultConstraintOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraintOK  %+v", 200, o.Payload)
 }
+
+func (o *ListDefaultConstraintOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraintOK  %+v", 200, o.Payload)
+}
+
 func (o *ListDefaultConstraintOK) GetPayload() []*models.Constraint {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListDefaultConstraintUnauthorized() *ListDefaultConstraintUnauthorized {
 	return &ListDefaultConstraintUnauthorized{}
 }
 
-/* ListDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
+/*
+ListDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListDefaultConstraintUnauthorized struct {
 }
 
+// IsSuccess returns true when this list default constraint unauthorized response has a 2xx status code
+func (o *ListDefaultConstraintUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list default constraint unauthorized response has a 3xx status code
+func (o *ListDefaultConstraintUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list default constraint unauthorized response has a 4xx status code
+func (o *ListDefaultConstraintUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list default constraint unauthorized response has a 5xx status code
+func (o *ListDefaultConstraintUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list default constraint unauthorized response a status code equal to that given
+func (o *ListDefaultConstraintUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListDefaultConstraintUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraintUnauthorized ", 401)
+}
+
+func (o *ListDefaultConstraintUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraintUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListDefaultConstraintForbidden() *ListDefaultConstraintForbidden {
 	return &ListDefaultConstraintForbidden{}
 }
 
-/* ListDefaultConstraintForbidden describes a response with status code 403, with default header values.
+/*
+ListDefaultConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListDefaultConstraintForbidden struct {
 }
 
+// IsSuccess returns true when this list default constraint forbidden response has a 2xx status code
+func (o *ListDefaultConstraintForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list default constraint forbidden response has a 3xx status code
+func (o *ListDefaultConstraintForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list default constraint forbidden response has a 4xx status code
+func (o *ListDefaultConstraintForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list default constraint forbidden response has a 5xx status code
+func (o *ListDefaultConstraintForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list default constraint forbidden response a status code equal to that given
+func (o *ListDefaultConstraintForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListDefaultConstraintForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraintForbidden ", 403)
+}
+
+func (o *ListDefaultConstraintForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraintForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListDefaultConstraintDefault(code int) *ListDefaultConstraintDefault {
 	}
 }
 
-/* ListDefaultConstraintDefault describes a response with status code -1, with default header values.
+/*
+ListDefaultConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListDefaultConstraintDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list default constraint default response has a 2xx status code
+func (o *ListDefaultConstraintDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list default constraint default response has a 3xx status code
+func (o *ListDefaultConstraintDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list default constraint default response has a 4xx status code
+func (o *ListDefaultConstraintDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list default constraint default response has a 5xx status code
+func (o *ListDefaultConstraintDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list default constraint default response a status code equal to that given
+func (o *ListDefaultConstraintDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListDefaultConstraintDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraint default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListDefaultConstraintDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/constraints][%d] listDefaultConstraint default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListDefaultConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

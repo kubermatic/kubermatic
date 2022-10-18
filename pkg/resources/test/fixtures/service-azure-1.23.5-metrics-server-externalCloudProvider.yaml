@@ -5,6 +5,7 @@ metadata:
   labels:
     app: metrics-server
   name: metrics-server
+  namespace: cluster-de-test-01
 spec:
   ports:
   - port: 443

@@ -18,9 +18,12 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -79,12 +82,18 @@ type WebsocketSettingsWriter func(ctx context.Context, providers watcher.Provide
 type WebsocketUserWriter func(ctx context.Context, providers watcher.Providers, ws *websocket.Conn, userEmail string)
 type WebsocketTerminalWriter func(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *rest.Config, userEmailID string)
 
+const (
+	maxNumberOfTerminalActiveConnectionsPerUser = 5
+	terminalActiveConnectionsMemoryDuration     = 24 * time.Hour
+	waitForKubeconfigSecretTimeout              = 5 * time.Minute
+)
+
 func (r Routing) RegisterV1Websocket(mux *mux.Router) {
 	providers := getProviders(r)
 
 	mux.HandleFunc("/ws/admin/settings", getSettingsWatchHandler(wsh.WriteSettings, providers, r))
 	mux.HandleFunc("/ws/me", getUserWatchHandler(wsh.WriteUser, providers, r))
-	mux.HandleFunc("/ws/projects/{project_id}/clusters/{cluster_id}/terminal", getTerminalWatchHandler(wsh.Terminal, providers, r))
+	mux.HandleFunc("/ws/projects/{project_id}/clusters/{cluster_id}/terminal", getTerminalWatchHandler(wsh.Terminal, providers, r, maxNumberOfTerminalActiveConnectionsPerUser, terminalActiveConnectionsMemoryDuration))
 }
 
 func getProviders(r Routing) watcher.Providers {
@@ -140,7 +149,66 @@ func getUserWatchHandler(writer WebsocketUserWriter, providers watcher.Providers
 	}
 }
 
-func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.Providers, routing Routing) func(w http.ResponseWriter, req *http.Request) {
+type connections struct {
+	active map[string]int
+	mutex  sync.Mutex
+}
+
+func newConnections() *connections {
+	return &connections{
+		active: make(map[string]int),
+	}
+}
+
+func (l *connections) getActiveConnections(key string) int {
+	l.mutex.Lock()
+	activeConnections := l.active[key]
+	l.mutex.Unlock()
+
+	return activeConnections
+}
+
+func (l *connections) increaseActiveConnections(key string) {
+	l.mutex.Lock()
+	_, alreadyCreated := l.active[key]
+	if !alreadyCreated {
+		l.active[key] = 0
+	}
+	l.active[key]++
+	l.mutex.Unlock()
+}
+
+func (l *connections) decreaseActiveConnections(key string) {
+	l.mutex.Lock()
+	_, alreadyCreated := l.active[key]
+	if !alreadyCreated {
+		l.active[key] = 0
+	}
+	if l.active[key] > 0 {
+		l.active[key]--
+	}
+	l.mutex.Unlock()
+}
+
+func (l *connections) releaseMemory() {
+	l.mutex.Lock()
+	for key := range l.active {
+		delete(l.active, key)
+	}
+	l.mutex.Unlock()
+}
+
+func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.Providers, routing Routing, maxNumberOfConnections int, memoryDuration time.Duration) func(w http.ResponseWriter, req *http.Request) {
+	connectionsPerUser := newConnections()
+
+	// Cleaning the map from time to time to release the memory
+	go func() {
+		for {
+			time.Sleep(memoryDuration)
+			connectionsPerUser.releaseMemory()
+		}
+	}()
+
 	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		authenticatedUser, err := verifyAuthorizationToken(req, routing.tokenVerifiers, routing.tokenExtractors)
@@ -184,7 +252,6 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		}
 
 		userEmailID := wsh.EncodeUserEmailtoID(authenticatedUser.Email)
-		podAndKubeconfigSecretName := userEmailID
 		k8sClient, err := clusterProvider.GetAdminK8sClientForUserCluster(ctx, cluster)
 		if err != nil {
 			return
@@ -197,22 +264,41 @@ func getTerminalWatchHandler(writer WebsocketTerminalWriter, providers watcher.P
 		if err != nil {
 			return
 		}
-		kubeconfigSecret := &corev1.Secret{}
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
-			Namespace: metav1.NamespaceSystem,
-			Name:      podAndKubeconfigSecretName,
-		}, kubeconfigSecret); err != nil {
-			log.Logger.Debug(err)
-			return
-		}
 
 		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
 			log.Logger.Debug(err)
 			return
 		}
+		defer ws.Close()
 
-		writer(ctx, ws, client, k8sClient, cfg, podAndKubeconfigSecretName)
+		// Checking user active connections for project cluster
+		userProjectClusterUniqueKey := fmt.Sprintf("%s-%s-%s", projectID, clusterID, authenticatedUser.Email)
+		if connectionsPerUser.getActiveConnections(userProjectClusterUniqueKey) >= maxNumberOfConnections {
+			log.Logger.Debug("reached the maximum number of terminal active connections for the user")
+			wsh.SendMessage(ws, string(wsh.ConnectionPoolExceeded))
+			return
+		}
+		connectionsPerUser.increaseActiveConnections(userProjectClusterUniqueKey)
+		defer connectionsPerUser.decreaseActiveConnections(userProjectClusterUniqueKey)
+
+		if !wsh.WaitFor(5*time.Second, waitForKubeconfigSecretTimeout, func() bool {
+			kubeconfigSecret := &corev1.Secret{}
+			if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
+				Namespace: metav1.NamespaceSystem,
+				Name:      handlercommon.KubeconfigSecretName(userEmailID),
+			}, kubeconfigSecret); err == nil {
+				// secret exists
+				return true
+			}
+			log.Logger.Debug(err)
+			wsh.SendMessage(ws, string(wsh.KubeconfigSecretMissing))
+			return false
+		}) {
+			return
+		}
+
+		writer(ctx, ws, client, k8sClient, cfg, userEmailID)
 	}
 }
 

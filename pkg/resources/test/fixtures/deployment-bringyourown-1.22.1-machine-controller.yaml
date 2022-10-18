@@ -5,6 +5,7 @@ metadata:
   labels:
     app: machine-controller
   name: machine-controller
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -60,7 +61,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:v1.53.0
+        image: quay.io/kubermatic/machine-controller:v1.55.0
         livenessProbe:
           failureThreshold: 3
           httpGet:

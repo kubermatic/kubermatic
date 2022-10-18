@@ -52,12 +52,20 @@ func NewListEKSInstanceTypesNoCredentialsParamsWithHTTPClient(client *http.Clien
 	}
 }
 
-/* ListEKSInstanceTypesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list e k s instance types no credentials operation.
+/*
+ListEKSInstanceTypesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s instance types no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSInstanceTypesNoCredentialsParams struct {
+
+	/* Architecture.
+
+	   architecture query parameter. Supports: arm64 and x86_64 types.
+	*/
+	Architecture *string
 
 	// ClusterID.
 	ClusterID string
@@ -118,6 +126,17 @@ func (o *ListEKSInstanceTypesNoCredentialsParams) SetHTTPClient(client *http.Cli
 	o.HTTPClient = client
 }
 
+// WithArchitecture adds the architecture to the list e k s instance types no credentials params
+func (o *ListEKSInstanceTypesNoCredentialsParams) WithArchitecture(architecture *string) *ListEKSInstanceTypesNoCredentialsParams {
+	o.SetArchitecture(architecture)
+	return o
+}
+
+// SetArchitecture adds the architecture to the list e k s instance types no credentials params
+func (o *ListEKSInstanceTypesNoCredentialsParams) SetArchitecture(architecture *string) {
+	o.Architecture = architecture
+}
+
 // WithClusterID adds the clusterID to the list e k s instance types no credentials params
 func (o *ListEKSInstanceTypesNoCredentialsParams) WithClusterID(clusterID string) *ListEKSInstanceTypesNoCredentialsParams {
 	o.SetClusterID(clusterID)
@@ -147,6 +166,23 @@ func (o *ListEKSInstanceTypesNoCredentialsParams) WriteToRequest(r runtime.Clien
 		return err
 	}
 	var res []error
+
+	if o.Architecture != nil {
+
+		// query param architecture
+		var qrArchitecture string
+
+		if o.Architecture != nil {
+			qrArchitecture = *o.Architecture
+		}
+		qArchitecture := qrArchitecture
+		if qArchitecture != "" {
+
+			if err := r.SetQueryParam("architecture", qArchitecture); err != nil {
+				return err
+			}
+		}
+	}
 
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {

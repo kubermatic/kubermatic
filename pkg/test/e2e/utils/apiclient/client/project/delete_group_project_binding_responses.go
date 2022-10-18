@@ -58,14 +58,44 @@ func NewDeleteGroupProjectBindingOK() *DeleteGroupProjectBindingOK {
 	return &DeleteGroupProjectBindingOK{}
 }
 
-/* DeleteGroupProjectBindingOK describes a response with status code 200, with default header values.
+/*
+DeleteGroupProjectBindingOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteGroupProjectBindingOK struct {
 }
 
+// IsSuccess returns true when this delete group project binding o k response has a 2xx status code
+func (o *DeleteGroupProjectBindingOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete group project binding o k response has a 3xx status code
+func (o *DeleteGroupProjectBindingOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete group project binding o k response has a 4xx status code
+func (o *DeleteGroupProjectBindingOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete group project binding o k response has a 5xx status code
+func (o *DeleteGroupProjectBindingOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete group project binding o k response a status code equal to that given
+func (o *DeleteGroupProjectBindingOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteGroupProjectBindingOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBindingOK ", 200)
+}
+
+func (o *DeleteGroupProjectBindingOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBindingOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteGroupProjectBindingUnauthorized() *DeleteGroupProjectBindingUnauth
 	return &DeleteGroupProjectBindingUnauthorized{}
 }
 
-/* DeleteGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteGroupProjectBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteGroupProjectBindingUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete group project binding unauthorized response has a 2xx status code
+func (o *DeleteGroupProjectBindingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete group project binding unauthorized response has a 3xx status code
+func (o *DeleteGroupProjectBindingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete group project binding unauthorized response has a 4xx status code
+func (o *DeleteGroupProjectBindingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete group project binding unauthorized response has a 5xx status code
+func (o *DeleteGroupProjectBindingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete group project binding unauthorized response a status code equal to that given
+func (o *DeleteGroupProjectBindingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteGroupProjectBindingUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBindingUnauthorized ", 401)
+}
+
+func (o *DeleteGroupProjectBindingUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBindingUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteGroupProjectBindingForbidden() *DeleteGroupProjectBindingForbidden
 	return &DeleteGroupProjectBindingForbidden{}
 }
 
-/* DeleteGroupProjectBindingForbidden describes a response with status code 403, with default header values.
+/*
+DeleteGroupProjectBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteGroupProjectBindingForbidden struct {
 }
 
+// IsSuccess returns true when this delete group project binding forbidden response has a 2xx status code
+func (o *DeleteGroupProjectBindingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete group project binding forbidden response has a 3xx status code
+func (o *DeleteGroupProjectBindingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete group project binding forbidden response has a 4xx status code
+func (o *DeleteGroupProjectBindingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete group project binding forbidden response has a 5xx status code
+func (o *DeleteGroupProjectBindingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete group project binding forbidden response a status code equal to that given
+func (o *DeleteGroupProjectBindingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteGroupProjectBindingForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBindingForbidden ", 403)
+}
+
+func (o *DeleteGroupProjectBindingForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBindingForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteGroupProjectBindingDefault(code int) *DeleteGroupProjectBindingDef
 	}
 }
 
-/* DeleteGroupProjectBindingDefault describes a response with status code -1, with default header values.
+/*
+DeleteGroupProjectBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteGroupProjectBindingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete group project binding default response has a 2xx status code
+func (o *DeleteGroupProjectBindingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete group project binding default response has a 3xx status code
+func (o *DeleteGroupProjectBindingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete group project binding default response has a 4xx status code
+func (o *DeleteGroupProjectBindingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete group project binding default response has a 5xx status code
+func (o *DeleteGroupProjectBindingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete group project binding default response a status code equal to that given
+func (o *DeleteGroupProjectBindingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteGroupProjectBindingDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBinding default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteGroupProjectBindingDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/groupbindings/{binding_name}][%d] deleteGroupProjectBinding default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteGroupProjectBindingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -46,7 +46,8 @@ func NewListEKSClustersOK() *ListEKSClustersOK {
 	return &ListEKSClustersOK{}
 }
 
-/* ListEKSClustersOK describes a response with status code 200, with default header values.
+/*
+ListEKSClustersOK describes a response with status code 200, with default header values.
 
 EKSClusterList
 */
@@ -54,9 +55,39 @@ type ListEKSClustersOK struct {
 	Payload models.EKSClusterList
 }
 
+// IsSuccess returns true when this list e k s clusters o k response has a 2xx status code
+func (o *ListEKSClustersOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list e k s clusters o k response has a 3xx status code
+func (o *ListEKSClustersOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s clusters o k response has a 4xx status code
+func (o *ListEKSClustersOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list e k s clusters o k response has a 5xx status code
+func (o *ListEKSClustersOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s clusters o k response a status code equal to that given
+func (o *ListEKSClustersOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListEKSClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/eks/clusters][%d] listEKSClustersOK  %+v", 200, o.Payload)
 }
+
+func (o *ListEKSClustersOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/eks/clusters][%d] listEKSClustersOK  %+v", 200, o.Payload)
+}
+
 func (o *ListEKSClustersOK) GetPayload() models.EKSClusterList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListEKSClustersDefault(code int) *ListEKSClustersDefault {
 	}
 }
 
-/* ListEKSClustersDefault describes a response with status code -1, with default header values.
+/*
+ListEKSClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListEKSClustersDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list e k s clusters default response has a 2xx status code
+func (o *ListEKSClustersDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list e k s clusters default response has a 3xx status code
+func (o *ListEKSClustersDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list e k s clusters default response has a 4xx status code
+func (o *ListEKSClustersDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list e k s clusters default response has a 5xx status code
+func (o *ListEKSClustersDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list e k s clusters default response a status code equal to that given
+func (o *ListEKSClustersDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListEKSClustersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/eks/clusters][%d] listEKSClusters default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListEKSClustersDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/providers/eks/clusters][%d] listEKSClusters default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListEKSClustersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

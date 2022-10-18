@@ -1,0 +1,73 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-proxy
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager-proxy
+  replicas: {{ .Values.alertmanagerProxy.proxy.replicas }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  progressDeadlineSeconds: 600
+  revisionHistoryLimit: 10
+  template:
+    metadata:
+      annotations:
+        prometheus.io/metrics_path: /stats/prometheus
+        prometheus.io/port: "9902"
+        prometheus.io/scrape: "true"
+      labels:
+        app.kubernetes.io/name: alertmanager-proxy
+    spec:
+      containers:
+        - name: envoy
+          image: '{{ .Values.alertmanagerProxy.proxy.image.repository }}:{{ .Values.alertmanagerProxy.proxy.image.tag }}'
+          ports:
+            - containerPort: 8080
+              name: proxy
+              protocol: TCP
+            - containerPort: 9902
+              name: stats
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: 9902
+              scheme: HTTP
+            periodSeconds: 3
+            successThreshold: 1
+            timeoutSeconds: 1
+          volumeMounts:
+            - name:  envoy-config
+              mountPath: /etc/envoy
+          resources:
+{{ toYaml .Values.alertmanagerProxy.proxy.resources | indent 12 }}
+      volumes:
+        - name: envoy-config
+          configMap:
+            name: alertmanager-proxy-config
+      nodeSelector:
+{{ toYaml .Values.alertmanagerProxy.proxy.nodeSelector | indent 8 }}
+      affinity:
+{{ toYaml .Values.alertmanagerProxy.proxy.affinity | indent 8 }}
+      tolerations:
+{{ toYaml .Values.alertmanagerProxy.proxy.tolerations | indent 8 }}

@@ -30,6 +30,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 type NutanixCommonReq struct {
@@ -320,7 +322,7 @@ func getNutanixClient(ctx context.Context, req NutanixCommonReq, presetProvider 
 	}
 
 	if len(req.Credential) > 0 {
-		preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+		preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 		if err != nil {
 			return nil, nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 		}

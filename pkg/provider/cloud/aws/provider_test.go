@@ -28,7 +28,8 @@ import (
 )
 
 func newCloudProvider(t *testing.T) *AmazonEC2 {
-	cs := getTestClientSet(t)
+	ctx := context.Background()
+	cs := getTestClientSet(ctx, t)
 
 	provider, err := NewCloudProvider(&kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{

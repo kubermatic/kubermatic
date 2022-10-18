@@ -46,7 +46,8 @@ func NewListAzureSizesOK() *ListAzureSizesOK {
 	return &ListAzureSizesOK{}
 }
 
-/* ListAzureSizesOK describes a response with status code 200, with default header values.
+/*
+ListAzureSizesOK describes a response with status code 200, with default header values.
 
 AzureSizeList
 */
@@ -54,9 +55,39 @@ type ListAzureSizesOK struct {
 	Payload models.AzureSizeList
 }
 
+// IsSuccess returns true when this list azure sizes o k response has a 2xx status code
+func (o *ListAzureSizesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list azure sizes o k response has a 3xx status code
+func (o *ListAzureSizesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list azure sizes o k response has a 4xx status code
+func (o *ListAzureSizesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list azure sizes o k response has a 5xx status code
+func (o *ListAzureSizesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list azure sizes o k response a status code equal to that given
+func (o *ListAzureSizesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAzureSizesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAzureSizesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAzureSizesOK) GetPayload() models.AzureSizeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListAzureSizesDefault(code int) *ListAzureSizesDefault {
 	}
 }
 
-/* ListAzureSizesDefault describes a response with status code -1, with default header values.
+/*
+ListAzureSizesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListAzureSizesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list azure sizes default response has a 2xx status code
+func (o *ListAzureSizesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list azure sizes default response has a 3xx status code
+func (o *ListAzureSizesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list azure sizes default response has a 4xx status code
+func (o *ListAzureSizesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list azure sizes default response has a 5xx status code
+func (o *ListAzureSizesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list azure sizes default response a status code equal to that given
+func (o *ListAzureSizesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAzureSizesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAzureSizesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/azure/sizes][%d] listAzureSizes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAzureSizesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

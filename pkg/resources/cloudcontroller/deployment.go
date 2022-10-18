@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,6 +40,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	var creatorGetter reconciling.NamedDeploymentCreatorGetter
 
 	switch {
+	case data.Cluster().Spec.Cloud.AWS != nil:
+		creatorGetter = awsDeploymentCreator(data)
+
 	case data.Cluster().Spec.Cloud.Azure != nil:
 		creatorGetter = azureDeploymentCreator(data)
 
@@ -76,7 +80,14 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				containerNames := sets.NewString(ccmContainerName)
 
 				if !data.IsKonnectivityEnabled() {
-					containerNames.Insert(openvpnClientContainerName)
+					// inject the openVPN sidecar container
+					openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+					if err != nil {
+						return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+					}
+					modified.Spec.Template.Spec.Containers = append(modified.Spec.Template.Spec.Containers, *openvpnSidecar)
+
+					containerNames.Insert(openvpnSidecar.Name)
 				}
 
 				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)

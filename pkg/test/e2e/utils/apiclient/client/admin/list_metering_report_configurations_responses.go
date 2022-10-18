@@ -58,7 +58,8 @@ func NewListMeteringReportConfigurationsOK() *ListMeteringReportConfigurationsOK
 	return &ListMeteringReportConfigurationsOK{}
 }
 
-/* ListMeteringReportConfigurationsOK describes a response with status code 200, with default header values.
+/*
+ListMeteringReportConfigurationsOK describes a response with status code 200, with default header values.
 
 MeteringReportConfiguration
 */
@@ -66,9 +67,39 @@ type ListMeteringReportConfigurationsOK struct {
 	Payload []*models.MeteringReportConfiguration
 }
 
+// IsSuccess returns true when this list metering report configurations o k response has a 2xx status code
+func (o *ListMeteringReportConfigurationsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list metering report configurations o k response has a 3xx status code
+func (o *ListMeteringReportConfigurationsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list metering report configurations o k response has a 4xx status code
+func (o *ListMeteringReportConfigurationsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list metering report configurations o k response has a 5xx status code
+func (o *ListMeteringReportConfigurationsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list metering report configurations o k response a status code equal to that given
+func (o *ListMeteringReportConfigurationsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListMeteringReportConfigurationsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurationsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListMeteringReportConfigurationsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurationsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListMeteringReportConfigurationsOK) GetPayload() []*models.MeteringReportConfiguration {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListMeteringReportConfigurationsUnauthorized() *ListMeteringReportConfig
 	return &ListMeteringReportConfigurationsUnauthorized{}
 }
 
-/* ListMeteringReportConfigurationsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListMeteringReportConfigurationsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListMeteringReportConfigurationsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list metering report configurations unauthorized response has a 2xx status code
+func (o *ListMeteringReportConfigurationsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list metering report configurations unauthorized response has a 3xx status code
+func (o *ListMeteringReportConfigurationsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list metering report configurations unauthorized response has a 4xx status code
+func (o *ListMeteringReportConfigurationsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list metering report configurations unauthorized response has a 5xx status code
+func (o *ListMeteringReportConfigurationsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list metering report configurations unauthorized response a status code equal to that given
+func (o *ListMeteringReportConfigurationsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListMeteringReportConfigurationsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurationsUnauthorized ", 401)
+}
+
+func (o *ListMeteringReportConfigurationsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurationsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListMeteringReportConfigurationsForbidden() *ListMeteringReportConfigura
 	return &ListMeteringReportConfigurationsForbidden{}
 }
 
-/* ListMeteringReportConfigurationsForbidden describes a response with status code 403, with default header values.
+/*
+ListMeteringReportConfigurationsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListMeteringReportConfigurationsForbidden struct {
 }
 
+// IsSuccess returns true when this list metering report configurations forbidden response has a 2xx status code
+func (o *ListMeteringReportConfigurationsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list metering report configurations forbidden response has a 3xx status code
+func (o *ListMeteringReportConfigurationsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list metering report configurations forbidden response has a 4xx status code
+func (o *ListMeteringReportConfigurationsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list metering report configurations forbidden response has a 5xx status code
+func (o *ListMeteringReportConfigurationsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list metering report configurations forbidden response a status code equal to that given
+func (o *ListMeteringReportConfigurationsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListMeteringReportConfigurationsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurationsForbidden ", 403)
+}
+
+func (o *ListMeteringReportConfigurationsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurationsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListMeteringReportConfigurationsDefault(code int) *ListMeteringReportCon
 	}
 }
 
-/* ListMeteringReportConfigurationsDefault describes a response with status code -1, with default header values.
+/*
+ListMeteringReportConfigurationsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListMeteringReportConfigurationsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list metering report configurations default response has a 2xx status code
+func (o *ListMeteringReportConfigurationsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list metering report configurations default response has a 3xx status code
+func (o *ListMeteringReportConfigurationsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list metering report configurations default response has a 4xx status code
+func (o *ListMeteringReportConfigurationsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list metering report configurations default response has a 5xx status code
+func (o *ListMeteringReportConfigurationsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list metering report configurations default response a status code equal to that given
+func (o *ListMeteringReportConfigurationsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListMeteringReportConfigurationsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurations default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListMeteringReportConfigurationsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin/metering/configurations/reports][%d] listMeteringReportConfigurations default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListMeteringReportConfigurationsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

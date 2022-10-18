@@ -52,10 +52,12 @@ func NewListGKEClusterImagesParamsWithHTTPClient(client *http.Client) *ListGKECl
 	}
 }
 
-/* ListGKEClusterImagesParams contains all the parameters to send to the API endpoint
-   for the list g k e cluster images operation.
+/*
+ListGKEClusterImagesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e cluster images operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEClusterImagesParams struct {
 

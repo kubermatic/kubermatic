@@ -13,7 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package edition
+
+import (
+	"fmt"
+	"strings"
+)
 
 type Type int
 
@@ -21,6 +27,17 @@ const (
 	CE Type = iota
 	EE
 )
+
+func FromString(edition string) (Type, error) {
+	switch strings.ToLower(edition) {
+	case "ee", "enterprise edition":
+		return EE, nil
+	case "ce", "community edition":
+		return CE, nil
+	default:
+		return 0, fmt.Errorf("unknown edition %q", edition)
+	}
+}
 
 func (e Type) String() string {
 	switch e {

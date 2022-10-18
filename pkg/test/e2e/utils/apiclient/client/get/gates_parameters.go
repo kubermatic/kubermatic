@@ -52,10 +52,12 @@ func NewGatesParamsWithHTTPClient(client *http.Client) *GatesParams {
 	}
 }
 
-/* GatesParams contains all the parameters to send to the API endpoint
-   for the gates operation.
+/*
+GatesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the gates operation.
+
+	Typically these are written to a http.Request.
 */
 type GatesParams struct {
 	timeout    time.Duration

@@ -44,7 +44,7 @@ type ClientService interface {
 }
 
 /*
-  CreateEtcdBackupConfig Creates a etcd backup config that will belong to the given cluster
+CreateEtcdBackupConfig Creates a etcd backup config that will belong to the given cluster
 */
 func (a *Client) CreateEtcdBackupConfig(params *CreateEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateEtcdBackupConfigCreated, error) {
 	// TODO: Validate the params before sending
@@ -82,7 +82,7 @@ func (a *Client) CreateEtcdBackupConfig(params *CreateEtcdBackupConfigParams, au
 }
 
 /*
-  DeleteEtcdBackupConfig Deletes a etcd backup config for a given cluster based on its id
+DeleteEtcdBackupConfig Deletes a etcd backup config for a given cluster based on its id
 */
 func (a *Client) DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -120,7 +120,7 @@ func (a *Client) DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, au
 }
 
 /*
-  GetEtcdBackupConfig Gets a etcd backup config for a given cluster based on its id
+GetEtcdBackupConfig Gets a etcd backup config for a given cluster based on its id
 */
 func (a *Client) GetEtcdBackupConfig(params *GetEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -158,7 +158,7 @@ func (a *Client) GetEtcdBackupConfig(params *GetEtcdBackupConfigParams, authInfo
 }
 
 /*
-  ListEtcdBackupConfig List etcd backup configs for a given cluster
+ListEtcdBackupConfig List etcd backup configs for a given cluster
 */
 func (a *Client) ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -196,7 +196,7 @@ func (a *Client) ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authIn
 }
 
 /*
-  ListProjectEtcdBackupConfig List etcd backup configs for a given project
+ListProjectEtcdBackupConfig List etcd backup configs for a given project
 */
 func (a *Client) ListProjectEtcdBackupConfig(params *ListProjectEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -234,7 +234,7 @@ func (a *Client) ListProjectEtcdBackupConfig(params *ListProjectEtcdBackupConfig
 }
 
 /*
-  PatchEtcdBackupConfig Patches a etcd backup config for a given cluster based on its id
+PatchEtcdBackupConfig Patches a etcd backup config for a given cluster based on its id
 */
 func (a *Client) PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchEtcdBackupConfigOK, error) {
 	// TODO: Validate the params before sending

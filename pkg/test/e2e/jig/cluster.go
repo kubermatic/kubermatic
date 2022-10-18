@@ -195,6 +195,11 @@ func (j *ClusterJig) WithPreset(presetSecret string) *ClusterJig {
 	return j
 }
 
+func (j *ClusterJig) WithFeatures(features map[string]bool) *ClusterJig {
+	j.spec.Features = features
+	return j
+}
+
 func (j *ClusterJig) ClusterName() string {
 	return j.clusterName
 }
@@ -489,13 +494,13 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addon Addon) error {
 		return fmt.Errorf("failed to get current cluster: %w", err)
 	}
 
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(j.client, KubermaticNamespace())
+	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(j.client, KubermaticNamespace())
 	if err != nil {
 		return fmt.Errorf("failed to create configGetter: %w", err)
 	}
 
 	addonProvider := kubernetes.NewAddonProvider(j.client, nil, configGetter)
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, addon.Name, addon.Variables, addon.Labels); err != nil && !apierrors.IsAlreadyExists(err) {
+	if _, err = addonProvider.NewUnsecured(ctx, cluster, addon.Name, addon.Variables, addon.Labels); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 		return fmt.Errorf("failed to ensure addon: %w", err)
 	}
 

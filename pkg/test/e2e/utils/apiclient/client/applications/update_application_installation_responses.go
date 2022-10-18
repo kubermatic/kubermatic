@@ -58,7 +58,8 @@ func NewUpdateApplicationInstallationOK() *UpdateApplicationInstallationOK {
 	return &UpdateApplicationInstallationOK{}
 }
 
-/* UpdateApplicationInstallationOK describes a response with status code 200, with default header values.
+/*
+UpdateApplicationInstallationOK describes a response with status code 200, with default header values.
 
 ApplicationInstallation
 */
@@ -66,9 +67,39 @@ type UpdateApplicationInstallationOK struct {
 	Payload *models.ApplicationInstallation
 }
 
+// IsSuccess returns true when this update application installation o k response has a 2xx status code
+func (o *UpdateApplicationInstallationOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update application installation o k response has a 3xx status code
+func (o *UpdateApplicationInstallationOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update application installation o k response has a 4xx status code
+func (o *UpdateApplicationInstallationOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update application installation o k response has a 5xx status code
+func (o *UpdateApplicationInstallationOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update application installation o k response a status code equal to that given
+func (o *UpdateApplicationInstallationOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdateApplicationInstallationOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallationOK  %+v", 200, o.Payload)
 }
+
+func (o *UpdateApplicationInstallationOK) String() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallationOK  %+v", 200, o.Payload)
+}
+
 func (o *UpdateApplicationInstallationOK) GetPayload() *models.ApplicationInstallation {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewUpdateApplicationInstallationUnauthorized() *UpdateApplicationInstallati
 	return &UpdateApplicationInstallationUnauthorized{}
 }
 
-/* UpdateApplicationInstallationUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateApplicationInstallationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateApplicationInstallationUnauthorized struct {
 }
 
+// IsSuccess returns true when this update application installation unauthorized response has a 2xx status code
+func (o *UpdateApplicationInstallationUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update application installation unauthorized response has a 3xx status code
+func (o *UpdateApplicationInstallationUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update application installation unauthorized response has a 4xx status code
+func (o *UpdateApplicationInstallationUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update application installation unauthorized response has a 5xx status code
+func (o *UpdateApplicationInstallationUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update application installation unauthorized response a status code equal to that given
+func (o *UpdateApplicationInstallationUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateApplicationInstallationUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallationUnauthorized ", 401)
+}
+
+func (o *UpdateApplicationInstallationUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallationUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewUpdateApplicationInstallationForbidden() *UpdateApplicationInstallationF
 	return &UpdateApplicationInstallationForbidden{}
 }
 
-/* UpdateApplicationInstallationForbidden describes a response with status code 403, with default header values.
+/*
+UpdateApplicationInstallationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateApplicationInstallationForbidden struct {
 }
 
+// IsSuccess returns true when this update application installation forbidden response has a 2xx status code
+func (o *UpdateApplicationInstallationForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update application installation forbidden response has a 3xx status code
+func (o *UpdateApplicationInstallationForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update application installation forbidden response has a 4xx status code
+func (o *UpdateApplicationInstallationForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update application installation forbidden response has a 5xx status code
+func (o *UpdateApplicationInstallationForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update application installation forbidden response a status code equal to that given
+func (o *UpdateApplicationInstallationForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateApplicationInstallationForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallationForbidden ", 403)
+}
+
+func (o *UpdateApplicationInstallationForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallationForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewUpdateApplicationInstallationDefault(code int) *UpdateApplicationInstall
 	}
 }
 
-/* UpdateApplicationInstallationDefault describes a response with status code -1, with default header values.
+/*
+UpdateApplicationInstallationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *UpdateApplicationInstallationDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update application installation default response has a 2xx status code
+func (o *UpdateApplicationInstallationDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update application installation default response has a 3xx status code
+func (o *UpdateApplicationInstallationDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update application installation default response has a 4xx status code
+func (o *UpdateApplicationInstallationDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update application installation default response has a 5xx status code
+func (o *UpdateApplicationInstallationDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update application installation default response a status code equal to that given
+func (o *UpdateApplicationInstallationDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateApplicationInstallationDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallation default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateApplicationInstallationDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations/{namespace}/{appinstall_name}][%d] updateApplicationInstallation default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateApplicationInstallationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

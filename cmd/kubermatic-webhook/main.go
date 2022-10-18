@@ -29,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
@@ -225,7 +226,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup IPAMPool webhook
 
-	ipamPoolValidator := ipampoolvalidation.NewValidator(seedGetter, seedClientGetter)
+	ipamPoolValidator := ipampoolvalidation.NewValidator()
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.IPAMPool{}).WithValidator(ipamPoolValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup IPAMPool validation webhook", zap.Error(err))
 	}
@@ -276,9 +277,9 @@ func createGetters(ctx context.Context, log *zap.SugaredLogger, mgr manager.Mana
 	var err error
 
 	if options.kubermaticConfiguration != nil {
-		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+		configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
 	} else {
-		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(client, options.namespace)
+		configGetter, err = kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(client, options.namespace)
 	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
@@ -304,12 +305,12 @@ func createGetters(ctx context.Context, log *zap.SugaredLogger, mgr manager.Mana
 		log.Fatalw("Failed to create seeds getter", zap.Error(err))
 	}
 
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, client)
+	seedKubeconfigGetter, err := kubernetesprovider.SeedKubeconfigGetterFactory(ctx, client)
 	if err != nil {
 		log.Fatalw("Failed to create seed kubeconfig getter", zap.Error(err))
 	}
 
-	seedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
+	seedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 	return
 }

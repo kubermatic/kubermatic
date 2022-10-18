@@ -17,17 +17,96 @@ limitations under the License.
 // Package registry groups all container registry related types and helpers in one place.
 package registry
 
+import (
+	"fmt"
+
+	"github.com/distribution/distribution/v3/reference"
+)
+
+const (
+	// RegistryDocker exists to prevent an import loop between the resources and this package.
+	RegistryDocker = "docker.io"
+)
+
+func Must(s string, err error) string {
+	if err != nil {
+		panic(err)
+	}
+
+	return s
+}
+
 // WithOverwriteFunc is a function that takes a string and either returns that string or a defined override value.
 type WithOverwriteFunc func(string) string
 
 // GetOverwriteFunc returns a WithOverwriteFunc based on the given override value.
+// Deprecated: This function should not be used anymore. Use the much more
+// flexible GetImageRewriterFunc instead.
 func GetOverwriteFunc(overwriteRegistry string) WithOverwriteFunc {
-	if overwriteRegistry != "" {
-		return func(string) string {
-			return overwriteRegistry
+	if overwriteRegistry == "" {
+		return func(s string) string {
+			return s
 		}
 	}
-	return func(s string) string {
-		return s
+
+	return func(_ string) string {
+		return overwriteRegistry
 	}
+}
+
+// ImageRewriter is a function that takes a Docker image reference
+// (for example "docker.io/repo/image:tag@sha256:abc123") and
+// potentially changes the registry to point to a local registry.
+// It's a distinct type from WithOverwriteFunc as it does not just
+// work on a registry, but a full image reference.
+type ImageRewriter func(string) (string, error)
+
+// GetImageRewriterFunc returns a ImageRewriter that will apply the given
+// overwriteRegistry to a given docker image reference.
+func GetImageRewriterFunc(overwriteRegistry string) ImageRewriter {
+	return func(image string) (string, error) {
+		return RewriteImage(image, overwriteRegistry)
+	}
+}
+
+// RewriteImage will apply the given overwriteRegistry to a given docker
+// image reference.
+func RewriteImage(image, overwriteRegistry string) (string, error) {
+	named, err := reference.ParseNormalizedNamed(image)
+	if err != nil {
+		return "", fmt.Errorf("invalid reference %q: %w", image, err)
+	}
+
+	domain := reference.Domain(named)
+	origDomain := domain
+	if origDomain == "" {
+		origDomain = RegistryDocker
+	}
+
+	if overwriteRegistry != "" {
+		domain = overwriteRegistry
+	}
+	if domain == "" {
+		domain = RegistryDocker
+	}
+
+	// construct name image name
+	image = domain + "/" + reference.Path(named)
+
+	if tagged, ok := named.(reference.Tagged); ok {
+		image += ":" + tagged.Tag()
+	}
+
+	// If the registry (domain) has been changed, remove the
+	// digest as it's unlikely that a) the repo digest has
+	// been kept when mirroring the image and b) the chance
+	// of a local registry being poisoned with bad images is
+	// much lower anyhow.
+	if origDomain == domain {
+		if digested, ok := named.(reference.Digested); ok {
+			image += "@" + string(digested.Digest())
+		}
+	}
+
+	return image, nil
 }

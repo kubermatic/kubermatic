@@ -58,7 +58,8 @@ func NewGetResourceQuotaOK() *GetResourceQuotaOK {
 	return &GetResourceQuotaOK{}
 }
 
-/* GetResourceQuotaOK describes a response with status code 200, with default header values.
+/*
+GetResourceQuotaOK describes a response with status code 200, with default header values.
 
 ResourceQuota
 */
@@ -66,9 +67,39 @@ type GetResourceQuotaOK struct {
 	Payload *models.ResourceQuota
 }
 
+// IsSuccess returns true when this get resource quota o k response has a 2xx status code
+func (o *GetResourceQuotaOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get resource quota o k response has a 3xx status code
+func (o *GetResourceQuotaOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get resource quota o k response has a 4xx status code
+func (o *GetResourceQuotaOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get resource quota o k response has a 5xx status code
+func (o *GetResourceQuotaOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get resource quota o k response a status code equal to that given
+func (o *GetResourceQuotaOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetResourceQuotaOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaOK  %+v", 200, o.Payload)
 }
+
+func (o *GetResourceQuotaOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaOK  %+v", 200, o.Payload)
+}
+
 func (o *GetResourceQuotaOK) GetPayload() *models.ResourceQuota {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetResourceQuotaUnauthorized() *GetResourceQuotaUnauthorized {
 	return &GetResourceQuotaUnauthorized{}
 }
 
-/* GetResourceQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+GetResourceQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetResourceQuotaUnauthorized struct {
 }
 
+// IsSuccess returns true when this get resource quota unauthorized response has a 2xx status code
+func (o *GetResourceQuotaUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get resource quota unauthorized response has a 3xx status code
+func (o *GetResourceQuotaUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get resource quota unauthorized response has a 4xx status code
+func (o *GetResourceQuotaUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get resource quota unauthorized response has a 5xx status code
+func (o *GetResourceQuotaUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get resource quota unauthorized response a status code equal to that given
+func (o *GetResourceQuotaUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetResourceQuotaUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaUnauthorized ", 401)
+}
+
+func (o *GetResourceQuotaUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetResourceQuotaForbidden() *GetResourceQuotaForbidden {
 	return &GetResourceQuotaForbidden{}
 }
 
-/* GetResourceQuotaForbidden describes a response with status code 403, with default header values.
+/*
+GetResourceQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetResourceQuotaForbidden struct {
 }
 
+// IsSuccess returns true when this get resource quota forbidden response has a 2xx status code
+func (o *GetResourceQuotaForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get resource quota forbidden response has a 3xx status code
+func (o *GetResourceQuotaForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get resource quota forbidden response has a 4xx status code
+func (o *GetResourceQuotaForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get resource quota forbidden response has a 5xx status code
+func (o *GetResourceQuotaForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get resource quota forbidden response a status code equal to that given
+func (o *GetResourceQuotaForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetResourceQuotaForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaForbidden ", 403)
+}
+
+func (o *GetResourceQuotaForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuotaForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetResourceQuotaDefault(code int) *GetResourceQuotaDefault {
 	}
 }
 
-/* GetResourceQuotaDefault describes a response with status code -1, with default header values.
+/*
+GetResourceQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetResourceQuotaDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get resource quota default response has a 2xx status code
+func (o *GetResourceQuotaDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get resource quota default response has a 3xx status code
+func (o *GetResourceQuotaDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get resource quota default response has a 4xx status code
+func (o *GetResourceQuotaDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get resource quota default response has a 5xx status code
+func (o *GetResourceQuotaDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get resource quota default response a status code equal to that given
+func (o *GetResourceQuotaDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetResourceQuotaDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuota default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetResourceQuotaDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/quotas/{quota_name}][%d] getResourceQuota default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetResourceQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

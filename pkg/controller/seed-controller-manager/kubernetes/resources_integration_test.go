@@ -24,11 +24,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,7 +50,7 @@ func (c *testUserClusterConnectionProvider) GetClient(context.Context, *kubermat
 	return c, nil
 }
 
-func (c *testUserClusterConnectionProvider) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object) error {
+func (c *testUserClusterConnectionProvider) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object, _ ...ctrlruntimeclient.GetOption) error {
 	switch x := obj.(type) {
 	case *corev1.ServiceAccount:
 		x.Secrets = append(x.Secrets, corev1.ObjectReference{
@@ -110,7 +111,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}()
 
 	caBundle := certificates.NewFakeCABundle()
-	version := defaults.DefaultKubernetesVersioning.Default
+	version := defaulting.DefaultKubernetesVersioning.Default
 
 	testCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -240,9 +241,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		Client:               mgr.GetClient(),
 		dockerPullConfigJSON: []byte("{}"),
 		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
-		kubermaticImage:      defaults.DefaultKubermaticImage,
-		dnatControllerImage:  defaults.DefaultDNATControllerImage,
-		etcdLauncherImage:    defaults.DefaultEtcdLauncherImage,
+		kubermaticImage:      defaulting.DefaultKubermaticImage,
+		dnatControllerImage:  defaulting.DefaultDNATControllerImage,
+		etcdLauncherImage:    defaulting.DefaultEtcdLauncherImage,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return &kubermaticv1.Seed{
 				Spec: kubermaticv1.SeedSpec{
@@ -257,6 +258,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
+		versions:                kubermatic.NewFakeVersions(),
 	}
 
 	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {

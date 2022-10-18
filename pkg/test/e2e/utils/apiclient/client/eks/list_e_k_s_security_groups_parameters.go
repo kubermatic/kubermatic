@@ -52,10 +52,12 @@ func NewListEKSSecurityGroupsParamsWithHTTPClient(client *http.Client) *ListEKSS
 	}
 }
 
-/* ListEKSSecurityGroupsParams contains all the parameters to send to the API endpoint
-   for the list e k s security groups operation.
+/*
+ListEKSSecurityGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s security groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSSecurityGroupsParams struct {
 

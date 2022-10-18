@@ -52,10 +52,12 @@ func NewListNutanixProjectsParamsWithHTTPClient(client *http.Client) *ListNutani
 	}
 }
 
-/* ListNutanixProjectsParams contains all the parameters to send to the API endpoint
-   for the list nutanix projects operation.
+/*
+ListNutanixProjectsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list nutanix projects operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNutanixProjectsParams struct {
 

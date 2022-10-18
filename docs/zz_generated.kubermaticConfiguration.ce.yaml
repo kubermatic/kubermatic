@@ -1,0 +1,652 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: KubermaticConfiguration
+metadata:
+  name: <<mykubermatic>>
+  namespace: kubermatic
+spec:
+  # API configures the frontend REST API used by the dashboard.
+  api:
+    # AccessibleAddons is a list of addons that should be enabled in the API.
+    accessibleAddons:
+      - cluster-autoscaler
+      - node-exporter
+      - kube-state-metrics
+      - multus
+      - hubble
+      - metallb
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic REST API image.
+    dockerRepository: quay.io/kubermatic/kubermatic
+    # PProfEndpoint controls the port the API should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+    # Replicas sets the number of pod replicas for the API deployment.
+    replicas: 2
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      limits:
+        cpu: 250m
+        memory: 1Gi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      requests:
+        cpu: 100m
+        memory: 150Mi
+  # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
+  # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
+  auth:
+    clientID: kubermatic
+    issuerClientID: kubermaticIssuer
+    issuerClientSecret: ""
+    issuerCookieKey: ""
+    issuerRedirectURL: https://example.com/api/v1/kubeconfig
+    serviceAccountKey: ""
+    skipTokenIssuerTLSVerify: false
+    tokenIssuer: https://example.com/dex
+  # CABundle references a ConfigMap in the same namespace as the KubermaticConfiguration.
+  # This ConfigMap must contain a ca-bundle.pem with PEM-encoded certificates. This bundle
+  # automatically synchronized into each seed and each usercluster. APIGroup and Kind are
+  # currently ignored.
+  caBundle:
+    # APIGroup is the group for the resource being referenced.
+    # If APIGroup is not specified, the specified Kind must be in the core API group.
+    # For any other third-party types, APIGroup is required.
+    apiGroup: null
+    # Kind is the type of resource being referenced
+    kind: ""
+    # Name is the name of resource being referenced
+    name: ca-bundle
+  # ExposeStrategy is the strategy to expose the cluster with.
+  # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
+  # if this is set to LoadBalancerStrategy.
+  exposeStrategy: NodePort
+  # FeatureGates are used to optionally enable certain features.
+  featureGates: {}
+  # ImagePullSecret is used to authenticate against Docker registries.
+  imagePullSecret: ""
+  # Ingress contains settings for making the API and UI accessible remotely.
+  ingress:
+    # CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)
+    # that will be used to acquire the certificate for the configured domain.
+    # To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
+    # matching Issuer in Kubermatic's namespace.
+    # Setting an empty name disables the automatic creation of certificates and disables
+    # the TLS settings on the Kubermatic Ingress.
+    certificateIssuer:
+      # APIGroup is the group for the resource being referenced.
+      # If APIGroup is not specified, the specified Kind must be in the core API group.
+      # For any other third-party types, APIGroup is required.
+      apiGroup: null
+      # Kind is the type of resource being referenced
+      kind: ClusterIssuer
+      # Name is the name of resource being referenced
+      name: ""
+    # ClassName is the Ingress resource's class name, used for selecting the appropriate
+    # ingress controller.
+    className: nginx
+    # Disable will prevent an Ingress from being created at all. This is mostly useful
+    # during testing. If the Ingress is disabled, the CertificateIssuer setting can also
+    # be left empty, as no Certificate resource will be created.
+    disable: false
+    # Domain is the base domain where the dashboard shall be available. Even with
+    # a disabled Ingress, this must always be a valid hostname.
+    domain: example.com
+  # MasterController configures the master-controller-manager.
+  masterController:
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic master-controller-manager image.
+    dockerRepository: quay.io/kubermatic/kubermatic
+    # PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+    # ProjectsMigrator configures the migrator for user projects.
+    projectsMigrator:
+      # DryRun makes the migrator only log the actions it would take.
+      dryRun: false
+    # Replicas sets the number of pod replicas for the master-controller-manager.
+    replicas: 1
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      limits:
+        cpu: 100m
+        memory: 400Mi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      requests:
+        cpu: 50m
+        memory: 128Mi
+  # Proxy allows to configure Kubermatic to use proxies to talk to the
+  # world outside of its cluster.
+  proxy:
+    # HTTP is the full URL to the proxy to use for plaintext HTTP
+    # connections, e.g. "http://internalproxy.example.com:8080".
+    http: ""
+    # HTTPS is the full URL to the proxy to use for encrypted HTTPS
+    # connections, e.g. "http://secureinternalproxy.example.com:8080".
+    https: ""
+    # NoProxy is a comma-separated list of hostnames / network masks
+    # for which no proxy shall be used. If you make use of proxies,
+    # this list should contain all local and cluster-internal domains
+    # and networks, e.g. "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,mydomain".
+    # The operator will always prepend the following elements to this
+    # list if proxying is configured (i.e. HTTP/HTTPS are not empty):
+    # "127.0.0.1/8", "localhost", ".local", ".local.", "kubernetes", ".default", ".svc"
+    noProxy: ""
+  # SeedController configures the seed-controller-manager.
+  seedController:
+    # BackupCleanupContainer is the container used for removing expired backups from the storage location.
+    # This container is only relevant when the old, deprecated backup controllers are enabled.
+    backupCleanupContainer: |
+      name: cleanup-container
+      image: quay.io/kubermatic/s3-storer:v0.1.6
+      command:
+      - /bin/sh
+      - -c
+      - |
+        set -euo pipefail
+
+        endpoint=minio.minio.svc.cluster.local:9000
+        bucket=kubermatic-etcd-backups
+
+        # by default, we keep the most recent backup for every user cluster
+        s3-storeuploader delete-old-revisions \
+          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+          --max-revisions 1 \
+          --endpoint "$endpoint" \
+          --bucket "$bucket" \
+          --prefix $CLUSTER
+
+        # alternatively, delete all backups for this cluster
+        #s3-storeuploader delete-all \
+        # --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+        # --endpoint "$endpoint" \
+        # --bucket "$bucket" \
+        # --prefix $CLUSTER
+      env:
+      - name: ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: kubermatic-s3-credentials
+            key: ACCESS_KEY_ID
+      - name: SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: kubermatic-s3-credentials
+            key: SECRET_ACCESS_KEY
+    # BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
+    # This container is only relevant when the new backup/restore controllers are enabled.
+    backupDeleteContainer: |
+      name: delete-container
+      image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
+      command:
+      - /bin/sh
+      - -c
+      - |
+        SSL_FLAGS="--ca-certs=/etc/ca-bundle/ca-bundle.pem"
+        if [ "${INSECURE:-false}" == "true" ]; then
+          SSL_FLAGS="--no-ssl"
+        fi
+
+        s3cmd $SSL_FLAGS \
+          --access_key=$ACCESS_KEY_ID \
+          --secret_key=$SECRET_ACCESS_KEY \
+          --host=$ENDPOINT \
+          --host-bucket='%(bucket).'$ENDPOINT \
+          del s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_DELETE
+
+        case $? in
+        12)
+          # backup no longer exists, which is fine
+          exit 0
+          ;;
+        0)
+          exit 0
+          ;;
+        *)
+          exit $?
+          ;;
+        esac
+    # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
+    backupStoreContainer: |
+      name: store-container
+      image: quay.io/kubermatic/s3-storer:v0.1.6
+      command:
+      - /bin/sh
+      - -c
+      - |
+        set -euo pipefail
+
+        endpoint=minio.minio.svc.cluster.local:9000
+        bucket=kubermatic-etcd-backups
+
+        s3-storeuploader store \
+          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+          --file /backup/snapshot.db \
+          --endpoint "$endpoint" \
+          --bucket "$bucket" \
+          --create-bucket \
+          --prefix $CLUSTER
+
+        s3-storeuploader delete-old-revisions \
+          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+          --max-revisions 20 \
+          --endpoint "$endpoint" \
+          --bucket "$bucket" \
+          --prefix $CLUSTER
+      env:
+      - name: ACCESS_KEY_ID
+        valueFrom:
+          secretKeyRef:
+            name: kubermatic-s3-credentials
+            key: ACCESS_KEY_ID
+      - name: SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: kubermatic-s3-credentials
+            key: SECRET_ACCESS_KEY
+      volumeMounts:
+      - name: etcd-backup
+        mountPath: /backup
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
+    dockerRepository: quay.io/kubermatic/kubermatic
+    # MaximumParallelReconciles limits the number of cluster reconciliations
+    # that are active at any given time.
+    maximumParallelReconciles: 10
+    # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+    # Replicas sets the number of pod replicas for the seed-controller-manager.
+    replicas: 1
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      requests:
+        cpu: 200m
+        memory: 100Mi
+  # UI configures the dashboard.
+  ui:
+    # Config sets flags for various dashboard features.
+    config: |-
+      {
+        "share_kubeconfig": false
+      }
+    # DockerRepository is the repository containing the Kubermatic dashboard image.
+    dockerRepository: quay.io/kubermatic/dashboard
+    # Replicas sets the number of pod replicas for the UI deployment.
+    replicas: 2
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      limits:
+        cpu: 250m
+        memory: 128Mi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      requests:
+        cpu: 100m
+        memory: 64Mi
+  # UserCluster configures various aspects of the user-created clusters.
+  userCluster:
+    # Addons controls the optional additions installed into each user cluster.
+    addons:
+      # Default is the list of addons to be installed by default into each cluster.
+      # Mutually exclusive with "defaultManifests".
+      default: null
+      # DefaultManifests is a list of addon manifests to install into all clusters.
+      # Mutually exclusive with "default".
+      defaultManifests: |-
+        apiVersion: v1
+        kind: List
+        items:
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: canal
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: cilium
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: csi
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: kube-proxy
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: openvpn
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: rbac
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: kubeadm-configmap
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: kubelet-configmap
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: default-storage-class
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: pod-security-policy
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: aws-node-termination-handler
+            labels:
+              addons.kubermatic.io/ensure: true
+        - apiVersion: kubermatic.k8c.io/v1
+          kind: Addon
+          metadata:
+            name: azure-cloud-node-manager
+            labels:
+              addons.kubermatic.io/ensure: true
+      # DockerRepository is the repository containing the Docker image containing
+      # the possible addon manifests.
+      dockerRepository: quay.io/kubermatic/addons
+      # DockerTagSuffix is appended to the tag used for referring to the addons image.
+      # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
+      # suffix it becomes "v2.15.0-SUFFIX".
+      dockerTagSuffix: ""
+    # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
+    apiserverReplicas: 2
+    # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
+    # the Kubernetes API server.
+    disableApiserverEndpointReconciling: false
+    # DNATControllerDockerRepository is the repository containing the
+    # dnat-controller image.
+    dnatControllerDockerRepository: quay.io/kubermatic/kubeletdnat-controller
+    # EtcdLauncherDockerRepository is the repository containing the Kubermatic
+    # etcd-launcher image.
+    etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher
+    # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
+    etcdVolumeSize: 5Gi
+    # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+    kubermaticDockerRepository: quay.io/kubermatic/kubermatic
+    # MachineController configures the Machine Controller
+    machineController:
+      # ImageRepository is used to override the Machine Controller image repository.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+      imageRepository: ""
+      # ImageTag is used to override the Machine Controller image.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+      imageTag: ""
+    # Monitoring can be used to fine-tune to in-cluster Prometheus.
+    monitoring:
+      # CustomRules can be used to inject custom recording and alerting rules. This field
+      # must be a YAML-formatted string with a `group` element at its root, as documented
+      # on https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/.
+      # This value is treated as a Go template, which allows to inject dynamic values like
+      # the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
+      # and the documentation for more information on the available fields.
+      customRules: ""
+      # CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
+      # YAML-formatted string containing an array of scrape configurations as documented
+      # on https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
+      # This value is treated as a Go template, which allows to inject dynamic values like
+      # the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
+      # and the documentation for more information on the available fields.
+      customScrapingConfigs: ""
+      # DisableDefaultRules disables the recording and alerting rules.
+      disableDefaultRules: false
+      # DisableDefaultScrapingConfigs disables the default scraping targets.
+      disableDefaultScrapingConfigs: false
+      # ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
+      # inside the user clusters.
+      scrapeAnnotationPrefix: monitoring.kubermatic.io
+    # NodePortRange is the port range for user clusters - this must match the NodePort
+    # range of the seed cluster.
+    nodePortRange: 30000-32767
+    # OperatingSystemManager configures the image repo and the tag version for osm deployment.
+    operatingSystemManager:
+      # ImageRepository is used to override the OperatingSystemManager image repository.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageRepository: ""
+      # ImageTag is used to override the OperatingSystemManager image.
+      # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+      # it is not recommended, to use this field due to compatibility with the overall KKP stack.
+      imageTag: ""
+    # OverwriteRegistry specifies a custom Docker registry which will be used for all images
+    # used for user clusters (user cluster control plane + addons). This also applies to
+    # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
+    overwriteRegistry: ""
+  # Versions configures the available and default Kubernetes versions and updates.
+  versions:
+    # Default is the default version to offer users.
+    default: v1.23.12
+    # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
+    externalClusters:
+      aks:
+        # Default is the default version to offer users.
+        default: v1.22
+        # Updates is a list of available upgrades.
+        updates: null
+        # Versions lists the available versions.
+        versions:
+          - v1.24
+          - v1.23
+          - v1.22
+      eks:
+        # Default is the default version to offer users.
+        default: v1.22
+        # Updates is a list of available upgrades.
+        updates: null
+        # Versions lists the available versions.
+        versions:
+          - v1.23
+          - v1.22
+          - v1.21
+          - v1.20
+    # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
+    providerIncompatibilities:
+      - # Condition is the cluster or datacenter condition that must be met to block a specific version
+        condition: nonAMD64WithCanalAndIPVS
+        # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
+        operation: UPGRADE
+        # Provider to which to apply the compatibility check.
+        # Empty string matches all providers
+        provider: ""
+        # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+        version: 1.23.*
+      - condition: nonAMD64WithCanalAndIPVS
+        operation: UPGRADE
+        provider: ""
+        version: 1.24.*
+      - condition: externalCloudProvider
+        operation: SUPPORT
+        provider: aws
+        version: < 1.24.0
+      - condition: externalCloudProvider
+        operation: CREATE
+        provider: aws
+        version: < 1.24.0
+      - condition: externalCloudProvider
+        operation: UPGRADE
+        provider: aws
+        version: < 1.24.0
+    # Updates is a list of available and automatic upgrades.
+    # All 'to' versions must be configured in the version list for this orchestrator.
+    # Each update may optionally be configured to be 'automatic: true', in which case the
+    # controlplane of all clusters whose version matches the 'from' directive will get
+    # updated to the 'to' version. If automatic is enabled, the 'to' version must be a
+    # version and not a version range.
+    # Also, updates may set 'automaticNodeUpdate: true', in which case Nodes will get
+    # updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
+    # because Nodes may not have a newer version than the controlplane.
+    updates:
+      - # Automatic controls whether this update is executed automatically
+        # for the control plane of all matching user clusters.
+        automatic: true
+        # Automatic controls whether this update is executed automatically
+        # for the worker nodes of all matching user clusters.
+        automaticNodeUpdate: false
+        # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
+        from: 1.21.*
+        # To is the version to which an update is allowed.
+        # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
+        # Can be a wildcard otherwise, e.g. "1.20.*".
+        to: 1.22.12
+      - from: 1.22.*
+        to: 1.22.*
+      - automatic: true
+        from: '>= 1.22.0, < 1.22.15'
+        to: 1.22.15
+      - from: 1.22.*
+        to: 1.23.*
+      - from: 1.23.*
+        to: 1.23.*
+      - automatic: true
+        from: '>= 1.23.0, < 1.23.12'
+        to: 1.23.12
+      - from: 1.23.*
+        to: 1.24.*
+      - from: 1.24.*
+        to: 1.24.*
+      - automatic: true
+        from: '>= 1.24.0, < 1.24.6'
+        to: 1.24.6
+    # Versions lists the available versions.
+    versions:
+      - v1.22.5
+      - v1.22.9
+      - v1.22.12
+      - v1.22.15
+      - v1.23.6
+      - v1.23.9
+      - v1.23.12
+      - v1.24.3
+      - v1.24.6
+  # VerticalPodAutoscaler configures the Kubernetes VPA integration.
+  verticalPodAutoscaler:
+    admissionController:
+      # DockerRepository is the repository containing the component's image.
+      dockerRepository: registry.k8s.io/autoscaling/vpa-admission-controller
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests:
+          cpu: 50m
+          memory: 32Mi
+    recommender:
+      # DockerRepository is the repository containing the component's image.
+      dockerRepository: registry.k8s.io/autoscaling/vpa-recommender
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits:
+          cpu: 200m
+          memory: 3Gi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests:
+          cpu: 50m
+          memory: 512Mi
+    updater:
+      # DockerRepository is the repository containing the component's image.
+      dockerRepository: registry.k8s.io/autoscaling/vpa-updater
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests:
+          cpu: 50m
+          memory: 32Mi
+  # Webhook configures the webhook.
+  webhook:
+    # DebugLog enables more verbose logging.
+    debugLog: false
+    # DockerRepository is the repository containing the Kubermatic webhook image.
+    dockerRepository: quay.io/kubermatic/kubermatic
+    # PProfEndpoint controls the port the webhook should listen on to provide pprof
+    # data. This port is never exposed from the container and only available via port-forwardings.
+    pprofEndpoint: :6600
+    # Replicas sets the number of pod replicas for the webhook.
+    replicas: 1
+    # Resources describes the requested and maximum allowed CPU/memory usage.
+    resources:
+      # Limits describes the maximum amount of compute resources allowed.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      limits:
+        cpu: 250m
+        memory: 256Mi
+      # Requests describes the minimum amount of compute resources required.
+      # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+      # otherwise to an implementation-defined value.
+      # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      requests:
+        cpu: 50m
+        memory: 64Mi
+status:
+  # KubermaticEdition current Kubermatic Edition , i.e. Community Edition or Enterprise Edition.
+  kubermaticEdition: ""
+  # KubermaticVersion current Kubermatic Version.
+  kubermaticVersion: ""

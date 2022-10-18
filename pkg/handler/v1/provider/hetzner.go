@@ -27,6 +27,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 func HetznerSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -46,7 +48,7 @@ func HetznerSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

@@ -39,6 +39,7 @@ stringData:
         batchwait: 1s
         external_labels: {}
         timeout: 10s
+        url: http://loki:3100/loki/api/v1/push
     
     positions:
       filename: /run/promtail/positions.yaml
@@ -47,6 +48,8 @@ stringData:
       - job_name: kubernetes-pods-name
         kubernetes_sd_configs:
         - role: pod
+        pipeline_stages:
+        - cri: {}
         relabel_configs:
         - source_labels:
           - __meta_kubernetes_pod_label_name
@@ -88,6 +91,20 @@ stringData:
       - job_name: kubernetes-pods-app
         kubernetes_sd_configs:
         - role: pod
+        pipeline_stages:
+        - cri: {}
+        - match:
+            selector: '{app="k8c-events-lokiloader"}'
+            stages:
+              - json:
+                  expressions:
+                    clusterID: clusterID
+                    projectID: projectID
+                    seed: seed
+              - labels:
+                  clusterID:
+                  projectID:
+                  seed:
         relabel_configs:
         - action: drop
           regex: .+
@@ -133,6 +150,8 @@ stringData:
       - job_name: kubernetes-pods-direct-controllers
         kubernetes_sd_configs:
         - role: pod
+        pipeline_stages:
+        - cri: {}
         relabel_configs:
         - action: drop
           regex: .+
@@ -184,6 +203,8 @@ stringData:
       - job_name: kubernetes-pods-indirect-controller
         kubernetes_sd_configs:
         - role: pod
+        pipeline_stages:
+        - cri: {}
         relabel_configs:
         - action: drop
           regex: .+
@@ -237,6 +258,8 @@ stringData:
       - job_name: kubernetes-pods-static
         kubernetes_sd_configs:
         - role: pod
+        pipeline_stages:
+        - cri: {}
         relabel_configs:
         - action: drop
           regex: ''
@@ -378,7 +401,7 @@ spec:
         app.kubernetes.io/name: promtail
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: ec7136d83086e81ed551df43ffb81f8a308bd3d4e463995c53daaf2013d59485
+        checksum/config: cc68b18e6a6109f9b8542a69f8132d80081e6f4b1207440351d8730aa85bf357
         prometheus.io/port: "3101"
         prometheus.io/scrape: "true"
     spec:

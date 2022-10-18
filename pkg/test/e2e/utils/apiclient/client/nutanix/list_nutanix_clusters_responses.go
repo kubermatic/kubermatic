@@ -46,7 +46,8 @@ func NewListNutanixClustersOK() *ListNutanixClustersOK {
 	return &ListNutanixClustersOK{}
 }
 
-/* ListNutanixClustersOK describes a response with status code 200, with default header values.
+/*
+ListNutanixClustersOK describes a response with status code 200, with default header values.
 
 NutanixClusterList
 */
@@ -54,9 +55,39 @@ type ListNutanixClustersOK struct {
 	Payload models.NutanixClusterList
 }
 
+// IsSuccess returns true when this list nutanix clusters o k response has a 2xx status code
+func (o *ListNutanixClustersOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list nutanix clusters o k response has a 3xx status code
+func (o *ListNutanixClustersOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list nutanix clusters o k response has a 4xx status code
+func (o *ListNutanixClustersOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list nutanix clusters o k response has a 5xx status code
+func (o *ListNutanixClustersOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list nutanix clusters o k response a status code equal to that given
+func (o *ListNutanixClustersOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNutanixClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/clusters][%d] listNutanixClustersOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNutanixClustersOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/clusters][%d] listNutanixClustersOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNutanixClustersOK) GetPayload() models.NutanixClusterList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListNutanixClustersDefault(code int) *ListNutanixClustersDefault {
 	}
 }
 
-/* ListNutanixClustersDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListNutanixClustersDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list nutanix clusters default response has a 2xx status code
+func (o *ListNutanixClustersDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list nutanix clusters default response has a 3xx status code
+func (o *ListNutanixClustersDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list nutanix clusters default response has a 4xx status code
+func (o *ListNutanixClustersDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list nutanix clusters default response has a 5xx status code
+func (o *ListNutanixClustersDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list nutanix clusters default response a status code equal to that given
+func (o *ListNutanixClustersDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNutanixClustersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/clusters][%d] listNutanixClusters default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNutanixClustersDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/clusters][%d] listNutanixClusters default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNutanixClustersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -52,10 +52,12 @@ func NewListDigitaloceanSizesNoCredentialsParamsWithHTTPClient(client *http.Clie
 	}
 }
 
-/* ListDigitaloceanSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list digitalocean sizes no credentials operation.
+/*
+ListDigitaloceanSizesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list digitalocean sizes no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListDigitaloceanSizesNoCredentialsParams struct {
 

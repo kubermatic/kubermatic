@@ -58,7 +58,8 @@ func NewListAKSNodePoolModesOK() *ListAKSNodePoolModesOK {
 	return &ListAKSNodePoolModesOK{}
 }
 
-/* ListAKSNodePoolModesOK describes a response with status code 200, with default header values.
+/*
+ListAKSNodePoolModesOK describes a response with status code 200, with default header values.
 
 AKSNodePoolModes
 */
@@ -66,9 +67,39 @@ type ListAKSNodePoolModesOK struct {
 	Payload models.AKSNodePoolModes
 }
 
+// IsSuccess returns true when this list a k s node pool modes o k response has a 2xx status code
+func (o *ListAKSNodePoolModesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a k s node pool modes o k response has a 3xx status code
+func (o *ListAKSNodePoolModesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a k s node pool modes o k response has a 4xx status code
+func (o *ListAKSNodePoolModesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a k s node pool modes o k response has a 5xx status code
+func (o *ListAKSNodePoolModesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a k s node pool modes o k response a status code equal to that given
+func (o *ListAKSNodePoolModesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAKSNodePoolModesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAKSNodePoolModesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAKSNodePoolModesOK) GetPayload() models.AKSNodePoolModes {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListAKSNodePoolModesUnauthorized() *ListAKSNodePoolModesUnauthorized {
 	return &ListAKSNodePoolModesUnauthorized{}
 }
 
-/* ListAKSNodePoolModesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListAKSNodePoolModesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListAKSNodePoolModesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list a k s node pool modes unauthorized response has a 2xx status code
+func (o *ListAKSNodePoolModesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list a k s node pool modes unauthorized response has a 3xx status code
+func (o *ListAKSNodePoolModesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a k s node pool modes unauthorized response has a 4xx status code
+func (o *ListAKSNodePoolModesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list a k s node pool modes unauthorized response has a 5xx status code
+func (o *ListAKSNodePoolModesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a k s node pool modes unauthorized response a status code equal to that given
+func (o *ListAKSNodePoolModesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListAKSNodePoolModesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModesUnauthorized ", 401)
+}
+
+func (o *ListAKSNodePoolModesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModesUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListAKSNodePoolModesForbidden() *ListAKSNodePoolModesForbidden {
 	return &ListAKSNodePoolModesForbidden{}
 }
 
-/* ListAKSNodePoolModesForbidden describes a response with status code 403, with default header values.
+/*
+ListAKSNodePoolModesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListAKSNodePoolModesForbidden struct {
 }
 
+// IsSuccess returns true when this list a k s node pool modes forbidden response has a 2xx status code
+func (o *ListAKSNodePoolModesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list a k s node pool modes forbidden response has a 3xx status code
+func (o *ListAKSNodePoolModesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a k s node pool modes forbidden response has a 4xx status code
+func (o *ListAKSNodePoolModesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list a k s node pool modes forbidden response has a 5xx status code
+func (o *ListAKSNodePoolModesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a k s node pool modes forbidden response a status code equal to that given
+func (o *ListAKSNodePoolModesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListAKSNodePoolModesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModesForbidden ", 403)
+}
+
+func (o *ListAKSNodePoolModesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModesForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListAKSNodePoolModesDefault(code int) *ListAKSNodePoolModesDefault {
 	}
 }
 
-/* ListAKSNodePoolModesDefault describes a response with status code -1, with default header values.
+/*
+ListAKSNodePoolModesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListAKSNodePoolModesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a k s node pool modes default response has a 2xx status code
+func (o *ListAKSNodePoolModesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a k s node pool modes default response has a 3xx status code
+func (o *ListAKSNodePoolModesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a k s node pool modes default response has a 4xx status code
+func (o *ListAKSNodePoolModesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a k s node pool modes default response has a 5xx status code
+func (o *ListAKSNodePoolModesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a k s node pool modes default response a status code equal to that given
+func (o *ListAKSNodePoolModesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAKSNodePoolModesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAKSNodePoolModesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/aks/modes][%d] listAKSNodePoolModes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAKSNodePoolModesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

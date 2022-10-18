@@ -46,7 +46,8 @@ func NewListNutanixProjectsOK() *ListNutanixProjectsOK {
 	return &ListNutanixProjectsOK{}
 }
 
-/* ListNutanixProjectsOK describes a response with status code 200, with default header values.
+/*
+ListNutanixProjectsOK describes a response with status code 200, with default header values.
 
 NutanixProjectList
 */
@@ -54,9 +55,39 @@ type ListNutanixProjectsOK struct {
 	Payload models.NutanixProjectList
 }
 
+// IsSuccess returns true when this list nutanix projects o k response has a 2xx status code
+func (o *ListNutanixProjectsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list nutanix projects o k response has a 3xx status code
+func (o *ListNutanixProjectsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list nutanix projects o k response has a 4xx status code
+func (o *ListNutanixProjectsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list nutanix projects o k response has a 5xx status code
+func (o *ListNutanixProjectsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list nutanix projects o k response a status code equal to that given
+func (o *ListNutanixProjectsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNutanixProjectsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/projects][%d] listNutanixProjectsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNutanixProjectsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/projects][%d] listNutanixProjectsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNutanixProjectsOK) GetPayload() models.NutanixProjectList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListNutanixProjectsDefault(code int) *ListNutanixProjectsDefault {
 	}
 }
 
-/* ListNutanixProjectsDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixProjectsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListNutanixProjectsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list nutanix projects default response has a 2xx status code
+func (o *ListNutanixProjectsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list nutanix projects default response has a 3xx status code
+func (o *ListNutanixProjectsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list nutanix projects default response has a 4xx status code
+func (o *ListNutanixProjectsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list nutanix projects default response has a 5xx status code
+func (o *ListNutanixProjectsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list nutanix projects default response a status code equal to that given
+func (o *ListNutanixProjectsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNutanixProjectsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/projects][%d] listNutanixProjects default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNutanixProjectsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/nutanix/{dc}/projects][%d] listNutanixProjects default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNutanixProjectsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -17,16 +17,17 @@ import (
 // swagger:model Alibaba
 type Alibaba struct {
 
-	// access key ID
+	// Access Key ID to authenticate against Alibaba.
 	AccessKeyID string `json:"accessKeyID,omitempty"`
 
-	// access key secret
+	// Access Key Secret to authenticate against Alibaba.
 	AccessKeySecret string `json:"accessKeySecret,omitempty"`
 
-	// datacenter
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 }
 

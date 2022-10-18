@@ -27,8 +27,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -229,7 +229,7 @@ func (r *Reconciler) getAddons(ctx context.Context) (*kubermaticv1.AddonList, er
 // mechanism where instead of an AddonList, only a []string is given.
 func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 	defaultAddonList := kubermaticv1.AddonList{}
-	if err := yaml.UnmarshalStrict([]byte(defaults.DefaultKubernetesAddons), &defaultAddonList); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(defaulting.DefaultKubernetesAddons), &defaultAddonList); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal default addon list: %w", err)
 	}
 

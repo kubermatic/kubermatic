@@ -58,7 +58,8 @@ func NewUnbindUserFromClusterRoleBindingOK() *UnbindUserFromClusterRoleBindingOK
 	return &UnbindUserFromClusterRoleBindingOK{}
 }
 
-/* UnbindUserFromClusterRoleBindingOK describes a response with status code 200, with default header values.
+/*
+UnbindUserFromClusterRoleBindingOK describes a response with status code 200, with default header values.
 
 ClusterRoleBinding
 */
@@ -66,9 +67,39 @@ type UnbindUserFromClusterRoleBindingOK struct {
 	Payload *models.ClusterRoleBinding
 }
 
+// IsSuccess returns true when this unbind user from cluster role binding o k response has a 2xx status code
+func (o *UnbindUserFromClusterRoleBindingOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this unbind user from cluster role binding o k response has a 3xx status code
+func (o *UnbindUserFromClusterRoleBindingOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this unbind user from cluster role binding o k response has a 4xx status code
+func (o *UnbindUserFromClusterRoleBindingOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this unbind user from cluster role binding o k response has a 5xx status code
+func (o *UnbindUserFromClusterRoleBindingOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this unbind user from cluster role binding o k response a status code equal to that given
+func (o *UnbindUserFromClusterRoleBindingOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UnbindUserFromClusterRoleBindingOK) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingOK  %+v", 200, o.Payload)
 }
+
+func (o *UnbindUserFromClusterRoleBindingOK) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingOK  %+v", 200, o.Payload)
+}
+
 func (o *UnbindUserFromClusterRoleBindingOK) GetPayload() *models.ClusterRoleBinding {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewUnbindUserFromClusterRoleBindingUnauthorized() *UnbindUserFromClusterRol
 	return &UnbindUserFromClusterRoleBindingUnauthorized{}
 }
 
-/* UnbindUserFromClusterRoleBindingUnauthorized describes a response with status code 401, with default header values.
+/*
+UnbindUserFromClusterRoleBindingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UnbindUserFromClusterRoleBindingUnauthorized struct {
 }
 
+// IsSuccess returns true when this unbind user from cluster role binding unauthorized response has a 2xx status code
+func (o *UnbindUserFromClusterRoleBindingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this unbind user from cluster role binding unauthorized response has a 3xx status code
+func (o *UnbindUserFromClusterRoleBindingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this unbind user from cluster role binding unauthorized response has a 4xx status code
+func (o *UnbindUserFromClusterRoleBindingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this unbind user from cluster role binding unauthorized response has a 5xx status code
+func (o *UnbindUserFromClusterRoleBindingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this unbind user from cluster role binding unauthorized response a status code equal to that given
+func (o *UnbindUserFromClusterRoleBindingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UnbindUserFromClusterRoleBindingUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingUnauthorized ", 401)
+}
+
+func (o *UnbindUserFromClusterRoleBindingUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewUnbindUserFromClusterRoleBindingForbidden() *UnbindUserFromClusterRoleBi
 	return &UnbindUserFromClusterRoleBindingForbidden{}
 }
 
-/* UnbindUserFromClusterRoleBindingForbidden describes a response with status code 403, with default header values.
+/*
+UnbindUserFromClusterRoleBindingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UnbindUserFromClusterRoleBindingForbidden struct {
 }
 
+// IsSuccess returns true when this unbind user from cluster role binding forbidden response has a 2xx status code
+func (o *UnbindUserFromClusterRoleBindingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this unbind user from cluster role binding forbidden response has a 3xx status code
+func (o *UnbindUserFromClusterRoleBindingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this unbind user from cluster role binding forbidden response has a 4xx status code
+func (o *UnbindUserFromClusterRoleBindingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this unbind user from cluster role binding forbidden response has a 5xx status code
+func (o *UnbindUserFromClusterRoleBindingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this unbind user from cluster role binding forbidden response a status code equal to that given
+func (o *UnbindUserFromClusterRoleBindingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UnbindUserFromClusterRoleBindingForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingForbidden ", 403)
+}
+
+func (o *UnbindUserFromClusterRoleBindingForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBindingForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewUnbindUserFromClusterRoleBindingDefault(code int) *UnbindUserFromCluster
 	}
 }
 
-/* UnbindUserFromClusterRoleBindingDefault describes a response with status code -1, with default header values.
+/*
+UnbindUserFromClusterRoleBindingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *UnbindUserFromClusterRoleBindingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this unbind user from cluster role binding default response has a 2xx status code
+func (o *UnbindUserFromClusterRoleBindingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this unbind user from cluster role binding default response has a 3xx status code
+func (o *UnbindUserFromClusterRoleBindingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this unbind user from cluster role binding default response has a 4xx status code
+func (o *UnbindUserFromClusterRoleBindingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this unbind user from cluster role binding default response has a 5xx status code
+func (o *UnbindUserFromClusterRoleBindingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this unbind user from cluster role binding default response a status code equal to that given
+func (o *UnbindUserFromClusterRoleBindingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UnbindUserFromClusterRoleBindingDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBinding default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UnbindUserFromClusterRoleBindingDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] unbindUserFromClusterRoleBinding default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UnbindUserFromClusterRoleBindingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -42,7 +42,7 @@ type ClientService interface {
 }
 
 /*
-  CreateIPAMPool creates a IP a m pool
+CreateIPAMPool creates a IP a m pool
 */
 func (a *Client) CreateIPAMPool(params *CreateIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateIPAMPoolCreated, error) {
 	// TODO: Validate the params before sending
@@ -80,7 +80,7 @@ func (a *Client) CreateIPAMPool(params *CreateIPAMPoolParams, authInfo runtime.C
 }
 
 /*
-  DeleteIPAMPool removes an existing IP a m pool
+DeleteIPAMPool removes an existing IP a m pool
 */
 func (a *Client) DeleteIPAMPool(params *DeleteIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteIPAMPoolOK, error) {
 	// TODO: Validate the params before sending
@@ -118,7 +118,7 @@ func (a *Client) DeleteIPAMPool(params *DeleteIPAMPoolParams, authInfo runtime.C
 }
 
 /*
-  GetIPAMPool gets a specific IP a m pool
+GetIPAMPool gets a specific IP a m pool
 */
 func (a *Client) GetIPAMPool(params *GetIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetIPAMPoolOK, error) {
 	// TODO: Validate the params before sending
@@ -156,7 +156,7 @@ func (a *Client) GetIPAMPool(params *GetIPAMPoolParams, authInfo runtime.ClientA
 }
 
 /*
-  ListIPAMPools lists IP a m pools
+ListIPAMPools lists IP a m pools
 */
 func (a *Client) ListIPAMPools(params *ListIPAMPoolsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListIPAMPoolsOK, error) {
 	// TODO: Validate the params before sending
@@ -194,7 +194,7 @@ func (a *Client) ListIPAMPools(params *ListIPAMPoolsParams, authInfo runtime.Cli
 }
 
 /*
-  PatchIPAMPool patches a IP a m pool
+PatchIPAMPool patches a IP a m pool
 */
 func (a *Client) PatchIPAMPool(params *PatchIPAMPoolParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchIPAMPoolOK, error) {
 	// TODO: Validate the params before sending

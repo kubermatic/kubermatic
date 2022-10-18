@@ -52,10 +52,12 @@ func NewListAzureResourceGroupsParamsWithHTTPClient(client *http.Client) *ListAz
 	}
 }
 
-/* ListAzureResourceGroupsParams contains all the parameters to send to the API endpoint
-   for the list azure resource groups operation.
+/*
+ListAzureResourceGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure resource groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureResourceGroupsParams struct {
 

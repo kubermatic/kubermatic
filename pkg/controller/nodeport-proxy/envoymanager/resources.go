@@ -167,7 +167,7 @@ func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *c
 
 // build returns a new Snapshot from the resources derived by the Services
 // provided so far.
-func (sb *snapshotBuilder) build(version string) (envoycachev3.Snapshot, error) {
+func (sb *snapshotBuilder) build(version string) (*envoycachev3.Snapshot, error) {
 	l, c := sb.makeInitialResources()
 
 	l = append(l, sb.listeners...)
@@ -674,7 +674,7 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 	return upsServers
 }
 
-func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) (envoycachev3.Snapshot, error) {
+func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) (*envoycachev3.Snapshot, error) {
 	return envoycachev3.NewSnapshot(
 		version,
 		map[envoyresourcev3.Type][]envoycachetype.Resource{

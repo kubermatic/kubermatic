@@ -461,6 +461,20 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 	if err != nil {
 		return nil, fmt.Errorf("cannot output existing node deployment: %w", err)
 	}
+	var unmarshalPatched *apiv1.NodeDeployment
+	if err := json.Unmarshal(patch, &unmarshalPatched); err != nil {
+		return nil, fmt.Errorf("cannot decode patched nodedeployment: %w ===", err)
+	}
+
+	selectedOperatingSystems := selectedOperatingSystems(unmarshalPatched.Spec.Template.OperatingSystem)
+
+	if selectedOperatingSystems > 1 {
+		return nil, fmt.Errorf("cannot have more than one os")
+	}
+
+	if selectedOperatingSystems == 1 {
+		nodeDeployment.Spec.Template.OperatingSystem = unmarshalPatched.Spec.Template.OperatingSystem
+	}
 
 	nodeDeploymentJSON, err := json.Marshal(nodeDeployment)
 	if err != nil {
@@ -861,4 +875,30 @@ func getNodeForMachine(machine *clusterv1alpha1.Machine, nodes []corev1.Node) *c
 		}
 	}
 	return nil
+}
+
+func selectedOperatingSystems(os apiv1.OperatingSystemSpec) int {
+	counter := 0
+	if os.AmazonLinux != nil {
+		counter++
+	}
+	if os.CentOS != nil {
+		counter++
+	}
+	if os.Flatcar != nil {
+		counter++
+	}
+	if os.RHEL != nil {
+		counter++
+	}
+	if os.RockyLinux != nil {
+		counter++
+	}
+	if os.SLES != nil {
+		counter++
+	}
+	if os.Ubuntu != nil {
+		counter++
+	}
+	return counter
 }

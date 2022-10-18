@@ -58,7 +58,8 @@ func NewBindUserToClusterRoleV2OK() *BindUserToClusterRoleV2OK {
 	return &BindUserToClusterRoleV2OK{}
 }
 
-/* BindUserToClusterRoleV2OK describes a response with status code 200, with default header values.
+/*
+BindUserToClusterRoleV2OK describes a response with status code 200, with default header values.
 
 ClusterRoleBinding
 */
@@ -66,9 +67,39 @@ type BindUserToClusterRoleV2OK struct {
 	Payload *models.ClusterRoleBinding
 }
 
+// IsSuccess returns true when this bind user to cluster role v2 o k response has a 2xx status code
+func (o *BindUserToClusterRoleV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this bind user to cluster role v2 o k response has a 3xx status code
+func (o *BindUserToClusterRoleV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to cluster role v2 o k response has a 4xx status code
+func (o *BindUserToClusterRoleV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this bind user to cluster role v2 o k response has a 5xx status code
+func (o *BindUserToClusterRoleV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to cluster role v2 o k response a status code equal to that given
+func (o *BindUserToClusterRoleV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *BindUserToClusterRoleV2OK) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2OK  %+v", 200, o.Payload)
 }
+
+func (o *BindUserToClusterRoleV2OK) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2OK  %+v", 200, o.Payload)
+}
+
 func (o *BindUserToClusterRoleV2OK) GetPayload() *models.ClusterRoleBinding {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewBindUserToClusterRoleV2Unauthorized() *BindUserToClusterRoleV2Unauthoriz
 	return &BindUserToClusterRoleV2Unauthorized{}
 }
 
-/* BindUserToClusterRoleV2Unauthorized describes a response with status code 401, with default header values.
+/*
+BindUserToClusterRoleV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type BindUserToClusterRoleV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this bind user to cluster role v2 unauthorized response has a 2xx status code
+func (o *BindUserToClusterRoleV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this bind user to cluster role v2 unauthorized response has a 3xx status code
+func (o *BindUserToClusterRoleV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to cluster role v2 unauthorized response has a 4xx status code
+func (o *BindUserToClusterRoleV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this bind user to cluster role v2 unauthorized response has a 5xx status code
+func (o *BindUserToClusterRoleV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to cluster role v2 unauthorized response a status code equal to that given
+func (o *BindUserToClusterRoleV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *BindUserToClusterRoleV2Unauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2Unauthorized ", 401)
+}
+
+func (o *BindUserToClusterRoleV2Unauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2Unauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewBindUserToClusterRoleV2Forbidden() *BindUserToClusterRoleV2Forbidden {
 	return &BindUserToClusterRoleV2Forbidden{}
 }
 
-/* BindUserToClusterRoleV2Forbidden describes a response with status code 403, with default header values.
+/*
+BindUserToClusterRoleV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type BindUserToClusterRoleV2Forbidden struct {
 }
 
+// IsSuccess returns true when this bind user to cluster role v2 forbidden response has a 2xx status code
+func (o *BindUserToClusterRoleV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this bind user to cluster role v2 forbidden response has a 3xx status code
+func (o *BindUserToClusterRoleV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to cluster role v2 forbidden response has a 4xx status code
+func (o *BindUserToClusterRoleV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this bind user to cluster role v2 forbidden response has a 5xx status code
+func (o *BindUserToClusterRoleV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to cluster role v2 forbidden response a status code equal to that given
+func (o *BindUserToClusterRoleV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *BindUserToClusterRoleV2Forbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2Forbidden ", 403)
+}
+
+func (o *BindUserToClusterRoleV2Forbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2Forbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewBindUserToClusterRoleV2Default(code int) *BindUserToClusterRoleV2Default
 	}
 }
 
-/* BindUserToClusterRoleV2Default describes a response with status code -1, with default header values.
+/*
+BindUserToClusterRoleV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *BindUserToClusterRoleV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this bind user to cluster role v2 default response has a 2xx status code
+func (o *BindUserToClusterRoleV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this bind user to cluster role v2 default response has a 3xx status code
+func (o *BindUserToClusterRoleV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this bind user to cluster role v2 default response has a 4xx status code
+func (o *BindUserToClusterRoleV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this bind user to cluster role v2 default response has a 5xx status code
+func (o *BindUserToClusterRoleV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this bind user to cluster role v2 default response a status code equal to that given
+func (o *BindUserToClusterRoleV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *BindUserToClusterRoleV2Default) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *BindUserToClusterRoleV2Default) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings][%d] bindUserToClusterRoleV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *BindUserToClusterRoleV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

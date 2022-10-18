@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -254,7 +255,7 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.SNIType.String()
 				// Maps SNI host with the port name of this service.
 				s.Annotations[nodeportproxy.PortHostMappingAnnotationKey] =
-					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.GetAddress().ExternalName)
+					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.Status.Address.ExternalName)
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", c.Spec.ExposeStrategy)
@@ -313,7 +314,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "nginx",
-					Image:           data.ImageRegistry(resources.RegistryDocker) + "/" + image + ":" + version,
+					Image:           registry.Must(data.RewriteImage(resources.RegistryDocker + "/" + image + ":" + version)),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Ports: []corev1.ContainerPort{
 						{
@@ -464,7 +465,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 				return nil, fmt.Errorf("failed to get MLA Gateway ca: %w", err)
 			}
 
-			address := c.GetAddress()
+			address := c.Status.Address
 			if address.ExternalName == "" {
 				return nil, fmt.Errorf("unable to issue MLA Gateway certificate: cluster ExternalName is empty")
 			}

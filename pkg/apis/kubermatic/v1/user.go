@@ -41,7 +41,8 @@ const (
 // +kubebuilder:printcolumn:JSONPath=".spec.admin",name="Admin",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// User specifies a user.
+// User specifies a KKP user. Users can be either humans or KKP service
+// accounts.
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -58,7 +59,7 @@ type UserStatus struct {
 
 // UserSpec specifies a user.
 type UserSpec struct {
-	// ID is an unnused legacy field.
+	// ID is an unused legacy field.
 	// Deprecated: do not set this field anymore.
 	ID string `json:"id,omitempty"`
 	// Name is the full name of this user.
@@ -79,7 +80,12 @@ type UserSpec struct {
 	// +optional
 	Project string `json:"project,omitempty"`
 
-	Settings               *UserSettings                           `json:"settings,omitempty"`
+	// Settings contains both user-configurable and system-owned configuration for the
+	// KKP dashboard.
+	Settings *UserSettings `json:"settings,omitempty"`
+
+	// InvalidTokensReference is a reference to a Secret that contains invalidated
+	// login tokens. The tokens are used to provide a safe logout mechanism.
 	InvalidTokensReference *providerconfig.GlobalSecretKeySelector `json:"invalidTokensReference,omitempty"`
 }
 

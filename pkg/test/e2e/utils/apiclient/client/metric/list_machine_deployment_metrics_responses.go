@@ -58,7 +58,8 @@ func NewListMachineDeploymentMetricsOK() *ListMachineDeploymentMetricsOK {
 	return &ListMachineDeploymentMetricsOK{}
 }
 
-/* ListMachineDeploymentMetricsOK describes a response with status code 200, with default header values.
+/*
+ListMachineDeploymentMetricsOK describes a response with status code 200, with default header values.
 
 NodeMetric
 */
@@ -66,9 +67,39 @@ type ListMachineDeploymentMetricsOK struct {
 	Payload []*models.NodeMetric
 }
 
+// IsSuccess returns true when this list machine deployment metrics o k response has a 2xx status code
+func (o *ListMachineDeploymentMetricsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list machine deployment metrics o k response has a 3xx status code
+func (o *ListMachineDeploymentMetricsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployment metrics o k response has a 4xx status code
+func (o *ListMachineDeploymentMetricsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list machine deployment metrics o k response has a 5xx status code
+func (o *ListMachineDeploymentMetricsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployment metrics o k response a status code equal to that given
+func (o *ListMachineDeploymentMetricsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListMachineDeploymentMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetricsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListMachineDeploymentMetricsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetricsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListMachineDeploymentMetricsOK) GetPayload() []*models.NodeMetric {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListMachineDeploymentMetricsUnauthorized() *ListMachineDeploymentMetrics
 	return &ListMachineDeploymentMetricsUnauthorized{}
 }
 
-/* ListMachineDeploymentMetricsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListMachineDeploymentMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListMachineDeploymentMetricsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list machine deployment metrics unauthorized response has a 2xx status code
+func (o *ListMachineDeploymentMetricsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list machine deployment metrics unauthorized response has a 3xx status code
+func (o *ListMachineDeploymentMetricsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployment metrics unauthorized response has a 4xx status code
+func (o *ListMachineDeploymentMetricsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list machine deployment metrics unauthorized response has a 5xx status code
+func (o *ListMachineDeploymentMetricsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployment metrics unauthorized response a status code equal to that given
+func (o *ListMachineDeploymentMetricsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListMachineDeploymentMetricsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetricsUnauthorized ", 401)
+}
+
+func (o *ListMachineDeploymentMetricsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetricsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListMachineDeploymentMetricsForbidden() *ListMachineDeploymentMetricsFor
 	return &ListMachineDeploymentMetricsForbidden{}
 }
 
-/* ListMachineDeploymentMetricsForbidden describes a response with status code 403, with default header values.
+/*
+ListMachineDeploymentMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListMachineDeploymentMetricsForbidden struct {
 }
 
+// IsSuccess returns true when this list machine deployment metrics forbidden response has a 2xx status code
+func (o *ListMachineDeploymentMetricsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list machine deployment metrics forbidden response has a 3xx status code
+func (o *ListMachineDeploymentMetricsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list machine deployment metrics forbidden response has a 4xx status code
+func (o *ListMachineDeploymentMetricsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list machine deployment metrics forbidden response has a 5xx status code
+func (o *ListMachineDeploymentMetricsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list machine deployment metrics forbidden response a status code equal to that given
+func (o *ListMachineDeploymentMetricsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListMachineDeploymentMetricsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetricsForbidden ", 403)
+}
+
+func (o *ListMachineDeploymentMetricsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetricsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListMachineDeploymentMetricsDefault(code int) *ListMachineDeploymentMetr
 	}
 }
 
-/* ListMachineDeploymentMetricsDefault describes a response with status code -1, with default header values.
+/*
+ListMachineDeploymentMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListMachineDeploymentMetricsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list machine deployment metrics default response has a 2xx status code
+func (o *ListMachineDeploymentMetricsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list machine deployment metrics default response has a 3xx status code
+func (o *ListMachineDeploymentMetricsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list machine deployment metrics default response has a 4xx status code
+func (o *ListMachineDeploymentMetricsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list machine deployment metrics default response has a 5xx status code
+func (o *ListMachineDeploymentMetricsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list machine deployment metrics default response a status code equal to that given
+func (o *ListMachineDeploymentMetricsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListMachineDeploymentMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetrics default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListMachineDeploymentMetricsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics][%d] listMachineDeploymentMetrics default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListMachineDeploymentMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

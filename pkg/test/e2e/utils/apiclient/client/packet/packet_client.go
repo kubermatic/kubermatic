@@ -38,7 +38,7 @@ type ClientService interface {
 }
 
 /*
-  ListPacketSizes Lists sizes from packet
+ListPacketSizes Lists sizes from packet
 */
 func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -76,7 +76,7 @@ func (a *Client) ListPacketSizes(params *ListPacketSizesParams, authInfo runtime
 }
 
 /*
-  ListPacketSizesNoCredentials Lists sizes from packet
+ListPacketSizesNoCredentials Lists sizes from packet
 */
 func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -114,7 +114,7 @@ func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentia
 }
 
 /*
-  ListPacketSizesNoCredentialsV2 Lists sizes from packet
+ListPacketSizesNoCredentialsV2 Lists sizes from packet
 */
 func (a *Client) ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPacketSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

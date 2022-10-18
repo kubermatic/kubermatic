@@ -52,10 +52,12 @@ func NewDeleteClusterTemplateParamsWithHTTPClient(client *http.Client) *DeleteCl
 	}
 }
 
-/* DeleteClusterTemplateParams contains all the parameters to send to the API endpoint
-   for the delete cluster template operation.
+/*
+DeleteClusterTemplateParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete cluster template operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteClusterTemplateParams struct {
 

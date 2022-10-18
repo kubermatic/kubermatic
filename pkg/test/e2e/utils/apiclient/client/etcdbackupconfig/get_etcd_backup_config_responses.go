@@ -58,7 +58,8 @@ func NewGetEtcdBackupConfigOK() *GetEtcdBackupConfigOK {
 	return &GetEtcdBackupConfigOK{}
 }
 
-/* GetEtcdBackupConfigOK describes a response with status code 200, with default header values.
+/*
+GetEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EtcdBackupConfig
 */
@@ -66,9 +67,39 @@ type GetEtcdBackupConfigOK struct {
 	Payload *models.EtcdBackupConfig
 }
 
+// IsSuccess returns true when this get etcd backup config o k response has a 2xx status code
+func (o *GetEtcdBackupConfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get etcd backup config o k response has a 3xx status code
+func (o *GetEtcdBackupConfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get etcd backup config o k response has a 4xx status code
+func (o *GetEtcdBackupConfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get etcd backup config o k response has a 5xx status code
+func (o *GetEtcdBackupConfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get etcd backup config o k response a status code equal to that given
+func (o *GetEtcdBackupConfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetEtcdBackupConfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigOK  %+v", 200, o.Payload)
 }
+
+func (o *GetEtcdBackupConfigOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigOK  %+v", 200, o.Payload)
+}
+
 func (o *GetEtcdBackupConfigOK) GetPayload() *models.EtcdBackupConfig {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetEtcdBackupConfigUnauthorized() *GetEtcdBackupConfigUnauthorized {
 	return &GetEtcdBackupConfigUnauthorized{}
 }
 
-/* GetEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+GetEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetEtcdBackupConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this get etcd backup config unauthorized response has a 2xx status code
+func (o *GetEtcdBackupConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get etcd backup config unauthorized response has a 3xx status code
+func (o *GetEtcdBackupConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get etcd backup config unauthorized response has a 4xx status code
+func (o *GetEtcdBackupConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get etcd backup config unauthorized response has a 5xx status code
+func (o *GetEtcdBackupConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get etcd backup config unauthorized response a status code equal to that given
+func (o *GetEtcdBackupConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetEtcdBackupConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigUnauthorized ", 401)
+}
+
+func (o *GetEtcdBackupConfigUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetEtcdBackupConfigForbidden() *GetEtcdBackupConfigForbidden {
 	return &GetEtcdBackupConfigForbidden{}
 }
 
-/* GetEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
+/*
+GetEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetEtcdBackupConfigForbidden struct {
 }
 
+// IsSuccess returns true when this get etcd backup config forbidden response has a 2xx status code
+func (o *GetEtcdBackupConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get etcd backup config forbidden response has a 3xx status code
+func (o *GetEtcdBackupConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get etcd backup config forbidden response has a 4xx status code
+func (o *GetEtcdBackupConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get etcd backup config forbidden response has a 5xx status code
+func (o *GetEtcdBackupConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get etcd backup config forbidden response a status code equal to that given
+func (o *GetEtcdBackupConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetEtcdBackupConfigForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigForbidden ", 403)
+}
+
+func (o *GetEtcdBackupConfigForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfigForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetEtcdBackupConfigDefault(code int) *GetEtcdBackupConfigDefault {
 	}
 }
 
-/* GetEtcdBackupConfigDefault describes a response with status code -1, with default header values.
+/*
+GetEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetEtcdBackupConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get etcd backup config default response has a 2xx status code
+func (o *GetEtcdBackupConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get etcd backup config default response has a 3xx status code
+func (o *GetEtcdBackupConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get etcd backup config default response has a 4xx status code
+func (o *GetEtcdBackupConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get etcd backup config default response has a 5xx status code
+func (o *GetEtcdBackupConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get etcd backup config default response a status code equal to that given
+func (o *GetEtcdBackupConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetEtcdBackupConfigDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] getEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

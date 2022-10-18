@@ -58,14 +58,44 @@ func NewDeleteClusterTemplateOK() *DeleteClusterTemplateOK {
 	return &DeleteClusterTemplateOK{}
 }
 
-/* DeleteClusterTemplateOK describes a response with status code 200, with default header values.
+/*
+DeleteClusterTemplateOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteClusterTemplateOK struct {
 }
 
+// IsSuccess returns true when this delete cluster template o k response has a 2xx status code
+func (o *DeleteClusterTemplateOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete cluster template o k response has a 3xx status code
+func (o *DeleteClusterTemplateOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster template o k response has a 4xx status code
+func (o *DeleteClusterTemplateOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete cluster template o k response has a 5xx status code
+func (o *DeleteClusterTemplateOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster template o k response a status code equal to that given
+func (o *DeleteClusterTemplateOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteClusterTemplateOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplateOK ", 200)
+}
+
+func (o *DeleteClusterTemplateOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplateOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteClusterTemplateUnauthorized() *DeleteClusterTemplateUnauthorized {
 	return &DeleteClusterTemplateUnauthorized{}
 }
 
-/* DeleteClusterTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteClusterTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete cluster template unauthorized response has a 2xx status code
+func (o *DeleteClusterTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete cluster template unauthorized response has a 3xx status code
+func (o *DeleteClusterTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster template unauthorized response has a 4xx status code
+func (o *DeleteClusterTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete cluster template unauthorized response has a 5xx status code
+func (o *DeleteClusterTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster template unauthorized response a status code equal to that given
+func (o *DeleteClusterTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteClusterTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplateUnauthorized ", 401)
+}
+
+func (o *DeleteClusterTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplateUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteClusterTemplateForbidden() *DeleteClusterTemplateForbidden {
 	return &DeleteClusterTemplateForbidden{}
 }
 
-/* DeleteClusterTemplateForbidden describes a response with status code 403, with default header values.
+/*
+DeleteClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteClusterTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this delete cluster template forbidden response has a 2xx status code
+func (o *DeleteClusterTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete cluster template forbidden response has a 3xx status code
+func (o *DeleteClusterTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete cluster template forbidden response has a 4xx status code
+func (o *DeleteClusterTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete cluster template forbidden response has a 5xx status code
+func (o *DeleteClusterTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete cluster template forbidden response a status code equal to that given
+func (o *DeleteClusterTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteClusterTemplateForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplateForbidden ", 403)
+}
+
+func (o *DeleteClusterTemplateForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplateForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteClusterTemplateDefault(code int) *DeleteClusterTemplateDefault {
 	}
 }
 
-/* DeleteClusterTemplateDefault describes a response with status code -1, with default header values.
+/*
+DeleteClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteClusterTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete cluster template default response has a 2xx status code
+func (o *DeleteClusterTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete cluster template default response has a 3xx status code
+func (o *DeleteClusterTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete cluster template default response has a 4xx status code
+func (o *DeleteClusterTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete cluster template default response has a 5xx status code
+func (o *DeleteClusterTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete cluster template default response a status code equal to that given
+func (o *DeleteClusterTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteClusterTemplateDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] deleteClusterTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

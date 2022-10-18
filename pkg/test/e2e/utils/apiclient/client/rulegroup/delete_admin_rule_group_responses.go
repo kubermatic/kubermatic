@@ -58,14 +58,44 @@ func NewDeleteAdminRuleGroupOK() *DeleteAdminRuleGroupOK {
 	return &DeleteAdminRuleGroupOK{}
 }
 
-/* DeleteAdminRuleGroupOK describes a response with status code 200, with default header values.
+/*
+DeleteAdminRuleGroupOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteAdminRuleGroupOK struct {
 }
 
+// IsSuccess returns true when this delete admin rule group o k response has a 2xx status code
+func (o *DeleteAdminRuleGroupOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete admin rule group o k response has a 3xx status code
+func (o *DeleteAdminRuleGroupOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete admin rule group o k response has a 4xx status code
+func (o *DeleteAdminRuleGroupOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete admin rule group o k response has a 5xx status code
+func (o *DeleteAdminRuleGroupOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete admin rule group o k response a status code equal to that given
+func (o *DeleteAdminRuleGroupOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteAdminRuleGroupOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroupOK ", 200)
+}
+
+func (o *DeleteAdminRuleGroupOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroupOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteAdminRuleGroupUnauthorized() *DeleteAdminRuleGroupUnauthorized {
 	return &DeleteAdminRuleGroupUnauthorized{}
 }
 
-/* DeleteAdminRuleGroupUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteAdminRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteAdminRuleGroupUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete admin rule group unauthorized response has a 2xx status code
+func (o *DeleteAdminRuleGroupUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete admin rule group unauthorized response has a 3xx status code
+func (o *DeleteAdminRuleGroupUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete admin rule group unauthorized response has a 4xx status code
+func (o *DeleteAdminRuleGroupUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete admin rule group unauthorized response has a 5xx status code
+func (o *DeleteAdminRuleGroupUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete admin rule group unauthorized response a status code equal to that given
+func (o *DeleteAdminRuleGroupUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteAdminRuleGroupUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroupUnauthorized ", 401)
+}
+
+func (o *DeleteAdminRuleGroupUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroupUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteAdminRuleGroupForbidden() *DeleteAdminRuleGroupForbidden {
 	return &DeleteAdminRuleGroupForbidden{}
 }
 
-/* DeleteAdminRuleGroupForbidden describes a response with status code 403, with default header values.
+/*
+DeleteAdminRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteAdminRuleGroupForbidden struct {
 }
 
+// IsSuccess returns true when this delete admin rule group forbidden response has a 2xx status code
+func (o *DeleteAdminRuleGroupForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete admin rule group forbidden response has a 3xx status code
+func (o *DeleteAdminRuleGroupForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete admin rule group forbidden response has a 4xx status code
+func (o *DeleteAdminRuleGroupForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete admin rule group forbidden response has a 5xx status code
+func (o *DeleteAdminRuleGroupForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete admin rule group forbidden response a status code equal to that given
+func (o *DeleteAdminRuleGroupForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteAdminRuleGroupForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroupForbidden ", 403)
+}
+
+func (o *DeleteAdminRuleGroupForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroupForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteAdminRuleGroupDefault(code int) *DeleteAdminRuleGroupDefault {
 	}
 }
 
-/* DeleteAdminRuleGroupDefault describes a response with status code -1, with default header values.
+/*
+DeleteAdminRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteAdminRuleGroupDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete admin rule group default response has a 2xx status code
+func (o *DeleteAdminRuleGroupDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete admin rule group default response has a 3xx status code
+func (o *DeleteAdminRuleGroupDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete admin rule group default response has a 4xx status code
+func (o *DeleteAdminRuleGroupDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete admin rule group default response has a 5xx status code
+func (o *DeleteAdminRuleGroupDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete admin rule group default response a status code equal to that given
+func (o *DeleteAdminRuleGroupDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteAdminRuleGroupDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroup default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteAdminRuleGroupDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/seeds/{seed_name}/rulegroups/{rulegroup_id}][%d] deleteAdminRuleGroup default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteAdminRuleGroupDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

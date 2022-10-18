@@ -58,7 +58,8 @@ func NewGetNetworkDefaultsOK() *GetNetworkDefaultsOK {
 	return &GetNetworkDefaultsOK{}
 }
 
-/* GetNetworkDefaultsOK describes a response with status code 200, with default header values.
+/*
+GetNetworkDefaultsOK describes a response with status code 200, with default header values.
 
 NetworkDefaults
 */
@@ -66,9 +67,39 @@ type GetNetworkDefaultsOK struct {
 	Payload *models.NetworkDefaults
 }
 
+// IsSuccess returns true when this get network defaults o k response has a 2xx status code
+func (o *GetNetworkDefaultsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get network defaults o k response has a 3xx status code
+func (o *GetNetworkDefaultsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get network defaults o k response has a 4xx status code
+func (o *GetNetworkDefaultsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get network defaults o k response has a 5xx status code
+func (o *GetNetworkDefaultsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get network defaults o k response a status code equal to that given
+func (o *GetNetworkDefaultsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetNetworkDefaultsOK) Error() string {
 	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetNetworkDefaultsOK) String() string {
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetNetworkDefaultsOK) GetPayload() *models.NetworkDefaults {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetNetworkDefaultsUnauthorized() *GetNetworkDefaultsUnauthorized {
 	return &GetNetworkDefaultsUnauthorized{}
 }
 
-/* GetNetworkDefaultsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetNetworkDefaultsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetNetworkDefaultsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get network defaults unauthorized response has a 2xx status code
+func (o *GetNetworkDefaultsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get network defaults unauthorized response has a 3xx status code
+func (o *GetNetworkDefaultsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get network defaults unauthorized response has a 4xx status code
+func (o *GetNetworkDefaultsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get network defaults unauthorized response has a 5xx status code
+func (o *GetNetworkDefaultsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get network defaults unauthorized response a status code equal to that given
+func (o *GetNetworkDefaultsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetNetworkDefaultsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsUnauthorized ", 401)
+}
+
+func (o *GetNetworkDefaultsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetNetworkDefaultsForbidden() *GetNetworkDefaultsForbidden {
 	return &GetNetworkDefaultsForbidden{}
 }
 
-/* GetNetworkDefaultsForbidden describes a response with status code 403, with default header values.
+/*
+GetNetworkDefaultsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetNetworkDefaultsForbidden struct {
 }
 
+// IsSuccess returns true when this get network defaults forbidden response has a 2xx status code
+func (o *GetNetworkDefaultsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get network defaults forbidden response has a 3xx status code
+func (o *GetNetworkDefaultsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get network defaults forbidden response has a 4xx status code
+func (o *GetNetworkDefaultsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get network defaults forbidden response has a 5xx status code
+func (o *GetNetworkDefaultsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get network defaults forbidden response a status code equal to that given
+func (o *GetNetworkDefaultsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetNetworkDefaultsForbidden) Error() string {
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsForbidden ", 403)
+}
+
+func (o *GetNetworkDefaultsForbidden) String() string {
 	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaultsForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetNetworkDefaultsDefault(code int) *GetNetworkDefaultsDefault {
 	}
 }
 
-/* GetNetworkDefaultsDefault describes a response with status code -1, with default header values.
+/*
+GetNetworkDefaultsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetNetworkDefaultsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get network defaults default response has a 2xx status code
+func (o *GetNetworkDefaultsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get network defaults default response has a 3xx status code
+func (o *GetNetworkDefaultsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get network defaults default response has a 4xx status code
+func (o *GetNetworkDefaultsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get network defaults default response has a 5xx status code
+func (o *GetNetworkDefaultsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get network defaults default response a status code equal to that given
+func (o *GetNetworkDefaultsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetNetworkDefaultsDefault) Error() string {
 	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaults default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetNetworkDefaultsDefault) String() string {
+	return fmt.Sprintf("[GET /providers/{provider_name}/dc/{dc}/networkdefaults][%d] getNetworkDefaults default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetNetworkDefaultsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

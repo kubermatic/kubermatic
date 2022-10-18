@@ -52,10 +52,12 @@ func NewDeleteApplicationInstallationParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* DeleteApplicationInstallationParams contains all the parameters to send to the API endpoint
-   for the delete application installation operation.
+/*
+DeleteApplicationInstallationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete application installation operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteApplicationInstallationParams struct {
 

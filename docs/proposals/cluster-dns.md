@@ -20,7 +20,7 @@ This breaks a couple of use cases, for example:
 
 *Access from the master components to the pod & service network*
 
-The apiserver already has access to the pod & service network using a custom vpn implementation https://github.com/kubermatic/pod-network-bridge
+The apiserver already has access to the pod & service network using a custom vpn implementation kubermatic/pod-network-bridge.
 This might be replaced by openvpn in the future.
 
 ## Implementation
@@ -42,7 +42,7 @@ From the places mentioned above, only the kubernetes master components (apiserve
 
 The master components of the user-cluster need to be configured to use the deployed DNS service within the user cluster.
 This cluster-IP of the dns service is predefined as `10.10.10.10`.
-Pods can be configured using "spec.dnsConfig" mentioned in https://raw.githubusercontent.com/kubernetes/website/master/docs/concepts/services-networking/custom-dns.yaml
+Pods can be configured using "spec.dnsConfig" mentioned in https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/
 
 ## Task & effort
 

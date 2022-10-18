@@ -58,7 +58,8 @@ func NewGetClusterMetricsOK() *GetClusterMetricsOK {
 	return &GetClusterMetricsOK{}
 }
 
-/* GetClusterMetricsOK describes a response with status code 200, with default header values.
+/*
+GetClusterMetricsOK describes a response with status code 200, with default header values.
 
 ClusterMetrics
 */
@@ -66,9 +67,39 @@ type GetClusterMetricsOK struct {
 	Payload *models.ClusterMetrics
 }
 
+// IsSuccess returns true when this get cluster metrics o k response has a 2xx status code
+func (o *GetClusterMetricsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get cluster metrics o k response has a 3xx status code
+func (o *GetClusterMetricsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster metrics o k response has a 4xx status code
+func (o *GetClusterMetricsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get cluster metrics o k response has a 5xx status code
+func (o *GetClusterMetricsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster metrics o k response a status code equal to that given
+func (o *GetClusterMetricsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetClusterMetricsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetricsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetClusterMetricsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetricsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetClusterMetricsOK) GetPayload() *models.ClusterMetrics {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetClusterMetricsUnauthorized() *GetClusterMetricsUnauthorized {
 	return &GetClusterMetricsUnauthorized{}
 }
 
-/* GetClusterMetricsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterMetricsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetClusterMetricsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get cluster metrics unauthorized response has a 2xx status code
+func (o *GetClusterMetricsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster metrics unauthorized response has a 3xx status code
+func (o *GetClusterMetricsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster metrics unauthorized response has a 4xx status code
+func (o *GetClusterMetricsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster metrics unauthorized response has a 5xx status code
+func (o *GetClusterMetricsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster metrics unauthorized response a status code equal to that given
+func (o *GetClusterMetricsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetClusterMetricsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetricsUnauthorized ", 401)
+}
+
+func (o *GetClusterMetricsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetricsUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetClusterMetricsForbidden() *GetClusterMetricsForbidden {
 	return &GetClusterMetricsForbidden{}
 }
 
-/* GetClusterMetricsForbidden describes a response with status code 403, with default header values.
+/*
+GetClusterMetricsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetClusterMetricsForbidden struct {
 }
 
+// IsSuccess returns true when this get cluster metrics forbidden response has a 2xx status code
+func (o *GetClusterMetricsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster metrics forbidden response has a 3xx status code
+func (o *GetClusterMetricsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster metrics forbidden response has a 4xx status code
+func (o *GetClusterMetricsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster metrics forbidden response has a 5xx status code
+func (o *GetClusterMetricsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster metrics forbidden response a status code equal to that given
+func (o *GetClusterMetricsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetClusterMetricsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetricsForbidden ", 403)
+}
+
+func (o *GetClusterMetricsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetricsForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetClusterMetricsDefault(code int) *GetClusterMetricsDefault {
 	}
 }
 
-/* GetClusterMetricsDefault describes a response with status code -1, with default header values.
+/*
+GetClusterMetricsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetClusterMetricsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get cluster metrics default response has a 2xx status code
+func (o *GetClusterMetricsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get cluster metrics default response has a 3xx status code
+func (o *GetClusterMetricsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get cluster metrics default response has a 4xx status code
+func (o *GetClusterMetricsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get cluster metrics default response has a 5xx status code
+func (o *GetClusterMetricsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get cluster metrics default response a status code equal to that given
+func (o *GetClusterMetricsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetClusterMetricsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetrics default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetClusterMetricsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/metrics][%d] getClusterMetrics default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetClusterMetricsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

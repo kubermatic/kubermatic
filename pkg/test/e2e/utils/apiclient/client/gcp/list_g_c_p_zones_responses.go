@@ -46,7 +46,8 @@ func NewListGCPZonesOK() *ListGCPZonesOK {
 	return &ListGCPZonesOK{}
 }
 
-/* ListGCPZonesOK describes a response with status code 200, with default header values.
+/*
+ListGCPZonesOK describes a response with status code 200, with default header values.
 
 GCPZoneList
 */
@@ -54,9 +55,39 @@ type ListGCPZonesOK struct {
 	Payload models.GCPZoneList
 }
 
+// IsSuccess returns true when this list g c p zones o k response has a 2xx status code
+func (o *ListGCPZonesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p zones o k response has a 3xx status code
+func (o *ListGCPZonesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p zones o k response has a 4xx status code
+func (o *ListGCPZonesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p zones o k response has a 5xx status code
+func (o *ListGCPZonesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p zones o k response a status code equal to that given
+func (o *ListGCPZonesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPZonesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZonesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPZonesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZonesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPZonesOK) GetPayload() models.GCPZoneList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGCPZonesDefault(code int) *ListGCPZonesDefault {
 	}
 }
 
-/* ListGCPZonesDefault describes a response with status code -1, with default header values.
+/*
+ListGCPZonesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGCPZonesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p zones default response has a 2xx status code
+func (o *ListGCPZonesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p zones default response has a 3xx status code
+func (o *ListGCPZonesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p zones default response has a 4xx status code
+func (o *ListGCPZonesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p zones default response has a 5xx status code
+func (o *ListGCPZonesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p zones default response a status code equal to that given
+func (o *ListGCPZonesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPZonesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZones default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPZonesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/{dc}/zones][%d] listGCPZones default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPZonesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

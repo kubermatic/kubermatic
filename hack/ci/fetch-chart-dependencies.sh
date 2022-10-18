@@ -24,15 +24,15 @@ REALDIR="$(cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))" && pwd)"
 source ${REALDIR}/../lib.sh
 
 cd ${BASEDIR}
-charts=$(find charts/ -name Chart.yaml | sort)
+charts=$(find charts/ -name Chart.yaml -not -path 'charts/mla/*' | sort)
 
 [ -n "$charts" ] && while read -r chartYAML; do
   dirname="$(dirname $(echo "$chartYAML"))"
-  chartname=$(yq4 '.name' "$chartYAML")
+  chartname=$(yq '.name' "$chartYAML")
   echodate "Fetching dependencies for ${chartname}..."
 
   i=0
-  for url in $(yq4 '.dependencies.[].repository' "$chartYAML"); do
+  for url in $(yq '.dependencies.[].repository' "$chartYAML"); do
     i=$((i + 1))
     helm repo add ${chartname}-dep-${i} ${url}
   done

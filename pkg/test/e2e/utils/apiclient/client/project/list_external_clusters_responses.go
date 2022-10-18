@@ -58,7 +58,8 @@ func NewListExternalClustersOK() *ListExternalClustersOK {
 	return &ListExternalClustersOK{}
 }
 
-/* ListExternalClustersOK describes a response with status code 200, with default header values.
+/*
+ListExternalClustersOK describes a response with status code 200, with default header values.
 
 ExternalCluster
 */
@@ -66,9 +67,39 @@ type ListExternalClustersOK struct {
 	Payload []*models.ExternalCluster
 }
 
+// IsSuccess returns true when this list external clusters o k response has a 2xx status code
+func (o *ListExternalClustersOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list external clusters o k response has a 3xx status code
+func (o *ListExternalClustersOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list external clusters o k response has a 4xx status code
+func (o *ListExternalClustersOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list external clusters o k response has a 5xx status code
+func (o *ListExternalClustersOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list external clusters o k response a status code equal to that given
+func (o *ListExternalClustersOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListExternalClustersOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersOK  %+v", 200, o.Payload)
 }
+
+func (o *ListExternalClustersOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersOK  %+v", 200, o.Payload)
+}
+
 func (o *ListExternalClustersOK) GetPayload() []*models.ExternalCluster {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListExternalClustersUnauthorized() *ListExternalClustersUnauthorized {
 	return &ListExternalClustersUnauthorized{}
 }
 
-/* ListExternalClustersUnauthorized describes a response with status code 401, with default header values.
+/*
+ListExternalClustersUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListExternalClustersUnauthorized struct {
 }
 
+// IsSuccess returns true when this list external clusters unauthorized response has a 2xx status code
+func (o *ListExternalClustersUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list external clusters unauthorized response has a 3xx status code
+func (o *ListExternalClustersUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list external clusters unauthorized response has a 4xx status code
+func (o *ListExternalClustersUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list external clusters unauthorized response has a 5xx status code
+func (o *ListExternalClustersUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list external clusters unauthorized response a status code equal to that given
+func (o *ListExternalClustersUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListExternalClustersUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersUnauthorized ", 401)
+}
+
+func (o *ListExternalClustersUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListExternalClustersForbidden() *ListExternalClustersForbidden {
 	return &ListExternalClustersForbidden{}
 }
 
-/* ListExternalClustersForbidden describes a response with status code 403, with default header values.
+/*
+ListExternalClustersForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListExternalClustersForbidden struct {
 }
 
+// IsSuccess returns true when this list external clusters forbidden response has a 2xx status code
+func (o *ListExternalClustersForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list external clusters forbidden response has a 3xx status code
+func (o *ListExternalClustersForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list external clusters forbidden response has a 4xx status code
+func (o *ListExternalClustersForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list external clusters forbidden response has a 5xx status code
+func (o *ListExternalClustersForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list external clusters forbidden response a status code equal to that given
+func (o *ListExternalClustersForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListExternalClustersForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersForbidden ", 403)
+}
+
+func (o *ListExternalClustersForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClustersForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListExternalClustersDefault(code int) *ListExternalClustersDefault {
 	}
 }
 
-/* ListExternalClustersDefault describes a response with status code -1, with default header values.
+/*
+ListExternalClustersDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListExternalClustersDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list external clusters default response has a 2xx status code
+func (o *ListExternalClustersDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list external clusters default response has a 3xx status code
+func (o *ListExternalClustersDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list external clusters default response has a 4xx status code
+func (o *ListExternalClustersDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list external clusters default response has a 5xx status code
+func (o *ListExternalClustersDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list external clusters default response a status code equal to that given
+func (o *ListExternalClustersDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListExternalClustersDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClusters default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListExternalClustersDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters][%d] listExternalClusters default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListExternalClustersDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

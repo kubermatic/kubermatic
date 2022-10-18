@@ -58,7 +58,8 @@ func NewListGKEClusterImagesOK() *ListGKEClusterImagesOK {
 	return &ListGKEClusterImagesOK{}
 }
 
-/* ListGKEClusterImagesOK describes a response with status code 200, with default header values.
+/*
+ListGKEClusterImagesOK describes a response with status code 200, with default header values.
 
 GKEImageList
 */
@@ -66,9 +67,39 @@ type ListGKEClusterImagesOK struct {
 	Payload models.GKEImageList
 }
 
+// IsSuccess returns true when this list g k e cluster images o k response has a 2xx status code
+func (o *ListGKEClusterImagesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e cluster images o k response has a 3xx status code
+func (o *ListGKEClusterImagesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster images o k response has a 4xx status code
+func (o *ListGKEClusterImagesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e cluster images o k response has a 5xx status code
+func (o *ListGKEClusterImagesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster images o k response a status code equal to that given
+func (o *ListGKEClusterImagesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEClusterImagesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImagesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEClusterImagesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImagesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEClusterImagesOK) GetPayload() models.GKEImageList {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListGKEClusterImagesUnauthorized() *ListGKEClusterImagesUnauthorized {
 	return &ListGKEClusterImagesUnauthorized{}
 }
 
-/* ListGKEClusterImagesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListGKEClusterImagesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListGKEClusterImagesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list g k e cluster images unauthorized response has a 2xx status code
+func (o *ListGKEClusterImagesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster images unauthorized response has a 3xx status code
+func (o *ListGKEClusterImagesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster images unauthorized response has a 4xx status code
+func (o *ListGKEClusterImagesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster images unauthorized response has a 5xx status code
+func (o *ListGKEClusterImagesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster images unauthorized response a status code equal to that given
+func (o *ListGKEClusterImagesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListGKEClusterImagesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImagesUnauthorized ", 401)
+}
+
+func (o *ListGKEClusterImagesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImagesUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListGKEClusterImagesForbidden() *ListGKEClusterImagesForbidden {
 	return &ListGKEClusterImagesForbidden{}
 }
 
-/* ListGKEClusterImagesForbidden describes a response with status code 403, with default header values.
+/*
+ListGKEClusterImagesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListGKEClusterImagesForbidden struct {
 }
 
+// IsSuccess returns true when this list g k e cluster images forbidden response has a 2xx status code
+func (o *ListGKEClusterImagesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list g k e cluster images forbidden response has a 3xx status code
+func (o *ListGKEClusterImagesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e cluster images forbidden response has a 4xx status code
+func (o *ListGKEClusterImagesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list g k e cluster images forbidden response has a 5xx status code
+func (o *ListGKEClusterImagesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e cluster images forbidden response a status code equal to that given
+func (o *ListGKEClusterImagesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListGKEClusterImagesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImagesForbidden ", 403)
+}
+
+func (o *ListGKEClusterImagesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImagesForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListGKEClusterImagesDefault(code int) *ListGKEClusterImagesDefault {
 	}
 }
 
-/* ListGKEClusterImagesDefault describes a response with status code -1, with default header values.
+/*
+ListGKEClusterImagesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListGKEClusterImagesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e cluster images default response has a 2xx status code
+func (o *ListGKEClusterImagesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e cluster images default response has a 3xx status code
+func (o *ListGKEClusterImagesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e cluster images default response has a 4xx status code
+func (o *ListGKEClusterImagesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e cluster images default response has a 5xx status code
+func (o *ListGKEClusterImagesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e cluster images default response a status code equal to that given
+func (o *ListGKEClusterImagesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEClusterImagesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImages default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEClusterImagesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/gke/images][%d] listGKEClusterImages default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEClusterImagesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,14 +58,44 @@ func NewCreateOrUpdateBackupCredentialsOK() *CreateOrUpdateBackupCredentialsOK {
 	return &CreateOrUpdateBackupCredentialsOK{}
 }
 
-/* CreateOrUpdateBackupCredentialsOK describes a response with status code 200, with default header values.
+/*
+CreateOrUpdateBackupCredentialsOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateOrUpdateBackupCredentialsOK struct {
 }
 
+// IsSuccess returns true when this create or update backup credentials o k response has a 2xx status code
+func (o *CreateOrUpdateBackupCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create or update backup credentials o k response has a 3xx status code
+func (o *CreateOrUpdateBackupCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update backup credentials o k response has a 4xx status code
+func (o *CreateOrUpdateBackupCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create or update backup credentials o k response has a 5xx status code
+func (o *CreateOrUpdateBackupCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update backup credentials o k response a status code equal to that given
+func (o *CreateOrUpdateBackupCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *CreateOrUpdateBackupCredentialsOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentialsOK ", 200)
+}
+
+func (o *CreateOrUpdateBackupCredentialsOK) String() string {
 	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentialsOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewCreateOrUpdateBackupCredentialsUnauthorized() *CreateOrUpdateBackupCrede
 	return &CreateOrUpdateBackupCredentialsUnauthorized{}
 }
 
-/* CreateOrUpdateBackupCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateOrUpdateBackupCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateOrUpdateBackupCredentialsUnauthorized struct {
 }
 
+// IsSuccess returns true when this create or update backup credentials unauthorized response has a 2xx status code
+func (o *CreateOrUpdateBackupCredentialsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create or update backup credentials unauthorized response has a 3xx status code
+func (o *CreateOrUpdateBackupCredentialsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update backup credentials unauthorized response has a 4xx status code
+func (o *CreateOrUpdateBackupCredentialsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create or update backup credentials unauthorized response has a 5xx status code
+func (o *CreateOrUpdateBackupCredentialsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update backup credentials unauthorized response a status code equal to that given
+func (o *CreateOrUpdateBackupCredentialsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateOrUpdateBackupCredentialsUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentialsUnauthorized ", 401)
+}
+
+func (o *CreateOrUpdateBackupCredentialsUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentialsUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewCreateOrUpdateBackupCredentialsForbidden() *CreateOrUpdateBackupCredenti
 	return &CreateOrUpdateBackupCredentialsForbidden{}
 }
 
-/* CreateOrUpdateBackupCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+CreateOrUpdateBackupCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateOrUpdateBackupCredentialsForbidden struct {
 }
 
+// IsSuccess returns true when this create or update backup credentials forbidden response has a 2xx status code
+func (o *CreateOrUpdateBackupCredentialsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create or update backup credentials forbidden response has a 3xx status code
+func (o *CreateOrUpdateBackupCredentialsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create or update backup credentials forbidden response has a 4xx status code
+func (o *CreateOrUpdateBackupCredentialsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create or update backup credentials forbidden response has a 5xx status code
+func (o *CreateOrUpdateBackupCredentialsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create or update backup credentials forbidden response a status code equal to that given
+func (o *CreateOrUpdateBackupCredentialsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateOrUpdateBackupCredentialsForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentialsForbidden ", 403)
+}
+
+func (o *CreateOrUpdateBackupCredentialsForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentialsForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewCreateOrUpdateBackupCredentialsDefault(code int) *CreateOrUpdateBackupCr
 	}
 }
 
-/* CreateOrUpdateBackupCredentialsDefault describes a response with status code -1, with default header values.
+/*
+CreateOrUpdateBackupCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *CreateOrUpdateBackupCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create or update backup credentials default response has a 2xx status code
+func (o *CreateOrUpdateBackupCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create or update backup credentials default response has a 3xx status code
+func (o *CreateOrUpdateBackupCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create or update backup credentials default response has a 4xx status code
+func (o *CreateOrUpdateBackupCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create or update backup credentials default response has a 5xx status code
+func (o *CreateOrUpdateBackupCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create or update backup credentials default response a status code equal to that given
+func (o *CreateOrUpdateBackupCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateOrUpdateBackupCredentialsDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateOrUpdateBackupCredentialsDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v2/seeds/{seed_name}/backupcredentials][%d] createOrUpdateBackupCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateOrUpdateBackupCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

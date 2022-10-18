@@ -22,8 +22,6 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-// Copied from https://github.com/kubernetes/kubernetes/blob/master/pkg/util/workqueue/prometheus/prometheus.go
-// and  https://github.com/kubernetes-sigs/controller-runtime/blob/v0.3.0/pkg/metrics/workqueue.go
 // Package prometheus sets the workqueue DefaultMetricsFactory to produce
 // prometheus metrics. To use this package, you just have to import it.
 

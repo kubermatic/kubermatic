@@ -92,6 +92,22 @@ type GKEClusterSpec struct {
 	// network will be used.
 	Network string `json:"network,omitempty"`
 
+	// ReleaseChannel: channel specifies which release channel the cluster is
+	// subscribed to.
+	//
+	// Possible values:
+	// "UNSPECIFIED" - No channel specified.
+	// "RAPID" - RAPID channel is offered on an early access basis for
+	// customers who want to test new releases. WARNING: Versions available
+	// in the RAPID Channel may be subject to unresolved issues with no
+	// known workaround and are not subject to any SLAs.
+	// "REGULAR" - Clusters subscribed to REGULAR receive versions that
+	// are considered GA quality. REGULAR is intended for production users
+	// who want to take advantage of new features.
+	// "STABLE" - Clusters subscribed to STABLE receive versions that are
+	// known to be stable and reliable in production.
+	ReleaseChannel string `json:"releaseChannel,omitempty"`
+
 	// Subnetwork: The name of the Google Compute Engine subnetwork
 	// (https://cloud.google.com/compute/docs/subnetworks) to which the
 	// cluster is connected.

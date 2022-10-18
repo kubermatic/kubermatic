@@ -46,7 +46,8 @@ func NewListGKEVersionsOK() *ListGKEVersionsOK {
 	return &ListGKEVersionsOK{}
 }
 
-/* ListGKEVersionsOK describes a response with status code 200, with default header values.
+/*
+ListGKEVersionsOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -54,9 +55,39 @@ type ListGKEVersionsOK struct {
 	Payload []*models.MasterVersion
 }
 
+// IsSuccess returns true when this list g k e versions o k response has a 2xx status code
+func (o *ListGKEVersionsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g k e versions o k response has a 3xx status code
+func (o *ListGKEVersionsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g k e versions o k response has a 4xx status code
+func (o *ListGKEVersionsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g k e versions o k response has a 5xx status code
+func (o *ListGKEVersionsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g k e versions o k response a status code equal to that given
+func (o *ListGKEVersionsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGKEVersionsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/versions][%d] listGKEVersionsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGKEVersionsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/versions][%d] listGKEVersionsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGKEVersionsOK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGKEVersionsDefault(code int) *ListGKEVersionsDefault {
 	}
 }
 
-/* ListGKEVersionsDefault describes a response with status code -1, with default header values.
+/*
+ListGKEVersionsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGKEVersionsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g k e versions default response has a 2xx status code
+func (o *ListGKEVersionsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g k e versions default response has a 3xx status code
+func (o *ListGKEVersionsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g k e versions default response has a 4xx status code
+func (o *ListGKEVersionsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g k e versions default response has a 5xx status code
+func (o *ListGKEVersionsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g k e versions default response a status code equal to that given
+func (o *ListGKEVersionsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGKEVersionsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/gke/versions][%d] listGKEVersions default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGKEVersionsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/gke/versions][%d] listGKEVersions default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGKEVersionsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

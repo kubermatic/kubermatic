@@ -73,12 +73,6 @@ func MasterControllerManagerDeploymentCreator(cfg *kubermaticv1.KubermaticConfig
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
-			// since #8556, this Deployment doesn't use the webhook-cert Secret
-			// anymore, but if we don't explicitly set the volumes to empty,
-			// the volume will never be removed from the Deployment;
-			// this line can be removed in KKP 2.22+
-			d.Spec.Template.Spec.Volumes = []corev1.Volume{}
-
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",

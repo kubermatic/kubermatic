@@ -46,13 +46,25 @@ type ClientService interface {
 
 	ListGKEZones(params *ListGKEZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEZonesOK, error)
 
+	ListProjectGKEDiskTypes(params *ListProjectGKEDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEDiskTypesOK, error)
+
+	ListProjectGKEImages(params *ListProjectGKEImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEImagesOK, error)
+
+	ListProjectGKEVMSizes(params *ListProjectGKEVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEVMSizesOK, error)
+
+	ListProjectGKEVersions(params *ListProjectGKEVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEVersionsOK, error)
+
+	ListProjectGKEZones(params *ListProjectGKEZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEZonesOK, error)
+
 	ValidateGKECredentials(params *ValidateGKECredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateGKECredentialsOK, error)
+
+	ValidateProjectGKECredentials(params *ValidateProjectGKECredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateProjectGKECredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
-  ListGKEClusterDiskTypes gets g k e cluster machine disk types
+ListGKEClusterDiskTypes gets g k e cluster machine disk types
 */
 func (a *Client) ListGKEClusterDiskTypes(params *ListGKEClusterDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterDiskTypesOK, error) {
 	// TODO: Validate the params before sending
@@ -90,7 +102,7 @@ func (a *Client) ListGKEClusterDiskTypes(params *ListGKEClusterDiskTypesParams, 
 }
 
 /*
-  ListGKEClusterImages gets g k e cluster images
+ListGKEClusterImages gets g k e cluster images
 */
 func (a *Client) ListGKEClusterImages(params *ListGKEClusterImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterImagesOK, error) {
 	// TODO: Validate the params before sending
@@ -128,7 +140,7 @@ func (a *Client) ListGKEClusterImages(params *ListGKEClusterImagesParams, authIn
 }
 
 /*
-  ListGKEClusterSizes gets g k e cluster machine sizes
+ListGKEClusterSizes gets g k e cluster machine sizes
 */
 func (a *Client) ListGKEClusterSizes(params *ListGKEClusterSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -166,7 +178,7 @@ func (a *Client) ListGKEClusterSizes(params *ListGKEClusterSizesParams, authInfo
 }
 
 /*
-  ListGKEClusterZones gets g k e cluster zones
+ListGKEClusterZones gets g k e cluster zones
 */
 func (a *Client) ListGKEClusterZones(params *ListGKEClusterZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClusterZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -204,7 +216,7 @@ func (a *Client) ListGKEClusterZones(params *ListGKEClusterZonesParams, authInfo
 }
 
 /*
-  ListGKEDiskTypes gets g k e machine disk types
+ListGKEDiskTypes gets g k e machine disk types
 */
 func (a *Client) ListGKEDiskTypes(params *ListGKEDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEDiskTypesOK, error) {
 	// TODO: Validate the params before sending
@@ -242,7 +254,7 @@ func (a *Client) ListGKEDiskTypes(params *ListGKEDiskTypesParams, authInfo runti
 }
 
 /*
-  ListGKEImages Lists GKE image types
+ListGKEImages Lists GKE image types
 */
 func (a *Client) ListGKEImages(params *ListGKEImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEImagesOK, error) {
 	// TODO: Validate the params before sending
@@ -280,7 +292,7 @@ func (a *Client) ListGKEImages(params *ListGKEImagesParams, authInfo runtime.Cli
 }
 
 /*
-  ListGKEVMSizes Lists GKE vmsizes
+ListGKEVMSizes Lists GKE vmsizes
 */
 func (a *Client) ListGKEVMSizes(params *ListGKEVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVMSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -318,7 +330,7 @@ func (a *Client) ListGKEVMSizes(params *ListGKEVMSizesParams, authInfo runtime.C
 }
 
 /*
-  ListGKEVersions Lists GKE versions
+ListGKEVersions Lists GKE versions
 */
 func (a *Client) ListGKEVersions(params *ListGKEVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEVersionsOK, error) {
 	// TODO: Validate the params before sending
@@ -356,7 +368,7 @@ func (a *Client) ListGKEVersions(params *ListGKEVersionsParams, authInfo runtime
 }
 
 /*
-  ListGKEZones Lists GKE zones
+ListGKEZones Lists GKE zones
 */
 func (a *Client) ListGKEZones(params *ListGKEZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -394,7 +406,197 @@ func (a *Client) ListGKEZones(params *ListGKEZonesParams, authInfo runtime.Clien
 }
 
 /*
-  ValidateGKECredentials Validates GKE credentials
+ListProjectGKEDiskTypes lists g k e machine disk types
+*/
+func (a *Client) ListProjectGKEDiskTypes(params *ListProjectGKEDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEDiskTypesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectGKEDiskTypesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectGKEDiskTypes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/disktypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectGKEDiskTypesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectGKEDiskTypesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectGKEDiskTypesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectGKEImages lists g k e image types
+*/
+func (a *Client) ListProjectGKEImages(params *ListProjectGKEImagesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEImagesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectGKEImagesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectGKEImages",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/images",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectGKEImagesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectGKEImagesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectGKEImagesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectGKEVMSizes lists g k e VM sizes
+*/
+func (a *Client) ListProjectGKEVMSizes(params *ListProjectGKEVMSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEVMSizesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectGKEVMSizesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectGKEVMSizes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/vmsizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectGKEVMSizesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectGKEVMSizesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectGKEVMSizesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectGKEVersions lists g k e versions
+*/
+func (a *Client) ListProjectGKEVersions(params *ListProjectGKEVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEVersionsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectGKEVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectGKEVersions",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectGKEVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectGKEVersionsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectGKEVersionsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectGKEZones lists g k e zones
+*/
+func (a *Client) ListProjectGKEZones(params *ListProjectGKEZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectGKEZonesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectGKEZonesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectGKEZones",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/zones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectGKEZonesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectGKEZonesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectGKEZonesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ValidateGKECredentials Validates GKE credentials
 */
 func (a *Client) ValidateGKECredentials(params *ValidateGKECredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateGKECredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -428,6 +630,44 @@ func (a *Client) ValidateGKECredentials(params *ValidateGKECredentialsParams, au
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ValidateGKECredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ValidateProjectGKECredentials validates g k e credentials
+*/
+func (a *Client) ValidateProjectGKECredentials(params *ValidateProjectGKECredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateProjectGKECredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewValidateProjectGKECredentialsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "validateProjectGKECredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/gke/validatecredentials",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ValidateProjectGKECredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ValidateProjectGKECredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ValidateProjectGKECredentialsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -25,8 +25,8 @@ type UpdateMeteringReportConfigurationReader struct {
 // ReadResponse reads a server response into the received o.
 func (o *UpdateMeteringReportConfigurationReader) ReadResponse(response runtime.ClientResponse, consumer runtime.Consumer) (interface{}, error) {
 	switch response.Code() {
-	case 201:
-		result := NewUpdateMeteringReportConfigurationCreated()
+	case 200:
+		result := NewUpdateMeteringReportConfigurationOK()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
 			return nil, err
 		}
@@ -55,23 +55,53 @@ func (o *UpdateMeteringReportConfigurationReader) ReadResponse(response runtime.
 	}
 }
 
-// NewUpdateMeteringReportConfigurationCreated creates a UpdateMeteringReportConfigurationCreated with default headers values
-func NewUpdateMeteringReportConfigurationCreated() *UpdateMeteringReportConfigurationCreated {
-	return &UpdateMeteringReportConfigurationCreated{}
+// NewUpdateMeteringReportConfigurationOK creates a UpdateMeteringReportConfigurationOK with default headers values
+func NewUpdateMeteringReportConfigurationOK() *UpdateMeteringReportConfigurationOK {
+	return &UpdateMeteringReportConfigurationOK{}
 }
 
-/* UpdateMeteringReportConfigurationCreated describes a response with status code 201, with default header values.
+/*
+UpdateMeteringReportConfigurationOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
-type UpdateMeteringReportConfigurationCreated struct {
+type UpdateMeteringReportConfigurationOK struct {
 }
 
-func (o *UpdateMeteringReportConfigurationCreated) Error() string {
-	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationCreated ", 201)
+// IsSuccess returns true when this update metering report configuration o k response has a 2xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsSuccess() bool {
+	return true
 }
 
-func (o *UpdateMeteringReportConfigurationCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+// IsRedirect returns true when this update metering report configuration o k response has a 3xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update metering report configuration o k response has a 4xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update metering report configuration o k response has a 5xx status code
+func (o *UpdateMeteringReportConfigurationOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update metering report configuration o k response a status code equal to that given
+func (o *UpdateMeteringReportConfigurationOK) IsCode(code int) bool {
+	return code == 200
+}
+
+func (o *UpdateMeteringReportConfigurationOK) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK ", 200)
+}
+
+func (o *UpdateMeteringReportConfigurationOK) String() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationOK ", 200)
+}
+
+func (o *UpdateMeteringReportConfigurationOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	return nil
 }
@@ -81,14 +111,44 @@ func NewUpdateMeteringReportConfigurationUnauthorized() *UpdateMeteringReportCon
 	return &UpdateMeteringReportConfigurationUnauthorized{}
 }
 
-/* UpdateMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateMeteringReportConfigurationUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateMeteringReportConfigurationUnauthorized struct {
 }
 
+// IsSuccess returns true when this update metering report configuration unauthorized response has a 2xx status code
+func (o *UpdateMeteringReportConfigurationUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update metering report configuration unauthorized response has a 3xx status code
+func (o *UpdateMeteringReportConfigurationUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update metering report configuration unauthorized response has a 4xx status code
+func (o *UpdateMeteringReportConfigurationUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update metering report configuration unauthorized response has a 5xx status code
+func (o *UpdateMeteringReportConfigurationUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update metering report configuration unauthorized response a status code equal to that given
+func (o *UpdateMeteringReportConfigurationUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateMeteringReportConfigurationUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationUnauthorized ", 401)
+}
+
+func (o *UpdateMeteringReportConfigurationUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationUnauthorized ", 401)
 }
 
@@ -102,14 +162,44 @@ func NewUpdateMeteringReportConfigurationForbidden() *UpdateMeteringReportConfig
 	return &UpdateMeteringReportConfigurationForbidden{}
 }
 
-/* UpdateMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
+/*
+UpdateMeteringReportConfigurationForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateMeteringReportConfigurationForbidden struct {
 }
 
+// IsSuccess returns true when this update metering report configuration forbidden response has a 2xx status code
+func (o *UpdateMeteringReportConfigurationForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update metering report configuration forbidden response has a 3xx status code
+func (o *UpdateMeteringReportConfigurationForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update metering report configuration forbidden response has a 4xx status code
+func (o *UpdateMeteringReportConfigurationForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update metering report configuration forbidden response has a 5xx status code
+func (o *UpdateMeteringReportConfigurationForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update metering report configuration forbidden response a status code equal to that given
+func (o *UpdateMeteringReportConfigurationForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateMeteringReportConfigurationForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationForbidden ", 403)
+}
+
+func (o *UpdateMeteringReportConfigurationForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfigurationForbidden ", 403)
 }
 
@@ -125,7 +215,8 @@ func NewUpdateMeteringReportConfigurationDefault(code int) *UpdateMeteringReport
 	}
 }
 
-/* UpdateMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
+/*
+UpdateMeteringReportConfigurationDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -140,9 +231,39 @@ func (o *UpdateMeteringReportConfigurationDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update metering report configuration default response has a 2xx status code
+func (o *UpdateMeteringReportConfigurationDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update metering report configuration default response has a 3xx status code
+func (o *UpdateMeteringReportConfigurationDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update metering report configuration default response has a 4xx status code
+func (o *UpdateMeteringReportConfigurationDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update metering report configuration default response has a 5xx status code
+func (o *UpdateMeteringReportConfigurationDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update metering report configuration default response a status code equal to that given
+func (o *UpdateMeteringReportConfigurationDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateMeteringReportConfigurationDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateMeteringReportConfigurationDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v1/admin/metering/configurations/reports/{name}][%d] updateMeteringReportConfiguration default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateMeteringReportConfigurationDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -159,7 +280,8 @@ func (o *UpdateMeteringReportConfigurationDefault) readResponse(response runtime
 	return nil
 }
 
-/*UpdateMeteringReportConfigurationBody update metering report configuration body
+/*
+UpdateMeteringReportConfigurationBody update metering report configuration body
 swagger:model UpdateMeteringReportConfigurationBody
 */
 type UpdateMeteringReportConfigurationBody struct {
@@ -172,6 +294,9 @@ type UpdateMeteringReportConfigurationBody struct {
 
 	// schedule
 	Schedule string `json:"schedule,omitempty"`
+
+	// types
+	Types []string `json:"types"`
 }
 
 // Validate validates this update metering report configuration body

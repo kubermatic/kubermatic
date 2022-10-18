@@ -48,11 +48,11 @@ var (
 )
 
 // DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
-			version = "v0.0.31"
+			version = "v0.0.33"
 		)
 
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -73,11 +73,12 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 				},
 			}
 
+			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			ds.Spec.Template.Spec.ServiceAccountName = resources.KonnectivityServiceAccountName
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            resources.KonnectivityAgentContainer,
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryEUGCR), name, version),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryEUGCR, name, version))),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/proxy-agent"},
 					Args: []string{

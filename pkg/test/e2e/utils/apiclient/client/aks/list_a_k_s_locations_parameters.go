@@ -52,10 +52,12 @@ func NewListAKSLocationsParamsWithHTTPClient(client *http.Client) *ListAKSLocati
 	}
 }
 
-/* ListAKSLocationsParams contains all the parameters to send to the API endpoint
-   for the list a k s locations operation.
+/*
+ListAKSLocationsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s locations operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSLocationsParams struct {
 	timeout    time.Duration

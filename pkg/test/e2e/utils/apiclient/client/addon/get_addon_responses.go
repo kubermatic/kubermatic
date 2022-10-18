@@ -58,7 +58,8 @@ func NewGetAddonOK() *GetAddonOK {
 	return &GetAddonOK{}
 }
 
-/* GetAddonOK describes a response with status code 200, with default header values.
+/*
+GetAddonOK describes a response with status code 200, with default header values.
 
 Addon
 */
@@ -66,9 +67,39 @@ type GetAddonOK struct {
 	Payload *models.Addon
 }
 
+// IsSuccess returns true when this get addon o k response has a 2xx status code
+func (o *GetAddonOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get addon o k response has a 3xx status code
+func (o *GetAddonOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get addon o k response has a 4xx status code
+func (o *GetAddonOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get addon o k response has a 5xx status code
+func (o *GetAddonOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get addon o k response a status code equal to that given
+func (o *GetAddonOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetAddonOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddonOK  %+v", 200, o.Payload)
 }
+
+func (o *GetAddonOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddonOK  %+v", 200, o.Payload)
+}
+
 func (o *GetAddonOK) GetPayload() *models.Addon {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetAddonUnauthorized() *GetAddonUnauthorized {
 	return &GetAddonUnauthorized{}
 }
 
-/* GetAddonUnauthorized describes a response with status code 401, with default header values.
+/*
+GetAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetAddonUnauthorized struct {
 }
 
+// IsSuccess returns true when this get addon unauthorized response has a 2xx status code
+func (o *GetAddonUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get addon unauthorized response has a 3xx status code
+func (o *GetAddonUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get addon unauthorized response has a 4xx status code
+func (o *GetAddonUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get addon unauthorized response has a 5xx status code
+func (o *GetAddonUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get addon unauthorized response a status code equal to that given
+func (o *GetAddonUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetAddonUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddonUnauthorized ", 401)
+}
+
+func (o *GetAddonUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddonUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetAddonForbidden() *GetAddonForbidden {
 	return &GetAddonForbidden{}
 }
 
-/* GetAddonForbidden describes a response with status code 403, with default header values.
+/*
+GetAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetAddonForbidden struct {
 }
 
+// IsSuccess returns true when this get addon forbidden response has a 2xx status code
+func (o *GetAddonForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get addon forbidden response has a 3xx status code
+func (o *GetAddonForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get addon forbidden response has a 4xx status code
+func (o *GetAddonForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get addon forbidden response has a 5xx status code
+func (o *GetAddonForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get addon forbidden response a status code equal to that given
+func (o *GetAddonForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetAddonForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddonForbidden ", 403)
+}
+
+func (o *GetAddonForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddonForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetAddonDefault(code int) *GetAddonDefault {
 	}
 }
 
-/* GetAddonDefault describes a response with status code -1, with default header values.
+/*
+GetAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetAddonDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get addon default response has a 2xx status code
+func (o *GetAddonDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get addon default response has a 3xx status code
+func (o *GetAddonDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get addon default response has a 4xx status code
+func (o *GetAddonDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get addon default response has a 5xx status code
+func (o *GetAddonDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get addon default response a status code equal to that given
+func (o *GetAddonDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetAddonDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddon default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetAddonDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons/{addon_id}][%d] getAddon default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetAddonDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

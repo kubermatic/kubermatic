@@ -117,7 +117,7 @@ const (
 	SeedPausedPhase SeedPhase = "Paused"
 )
 
-// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled
+// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled;ClusterInitialized
 
 // SeedConditionType is used to indicate the type of a seed condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered
@@ -131,6 +131,12 @@ const (
 	// SeedConditionResourcesReconciled indicates that the KKP operator has finished setting up the
 	// resources inside the seed cluster.
 	SeedConditionResourcesReconciled SeedConditionType = "ResourcesReconciled"
+	// SeedConditionClusterInitialized indicates that the KKP operator has finished setting up the
+	// CRDs and other prerequisites on the Seed cluster. After this condition is true, other
+	// controllers can begin to create watches and reconcile resources (i.e. this condition is
+	// a precondition to ResourcesReconciled). Once this condition is true, it is never set to false
+	// again.
+	SeedConditionClusterInitialized SeedConditionType = "ClusterInitialized"
 )
 
 var AllSeedConditionTypes = []SeedConditionType{
@@ -175,7 +181,8 @@ type SeedList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a Seed cluster.
+// Seed is the type representing a Seed cluster. Seed clusters host the the control planes
+// for KKP user clusters.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -242,6 +249,12 @@ func (ss *SeedStatus) HasConditionValue(conditionType SeedConditionType, conditi
 	}
 
 	return condition.Status == conditionStatus
+}
+
+// IsInitialized returns true if the seed cluster was successfully initialized and
+// is ready for controllers to operate on it.
+func (ss *SeedStatus) IsInitialized() bool {
+	return ss.Conditions[SeedConditionClusterInitialized].Status == corev1.ConditionTrue
 }
 
 // The spec for a seed cluster.
@@ -413,6 +426,9 @@ type DatacenterSpec struct {
 	// too high means that *if* a resource at a cloud provider is removed/changed outside
 	// of KKP, it will take this long to fix it.
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
+
+	// DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+	DefaultOperatingSystemProfiles OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
 }
 
 var (
@@ -483,6 +499,9 @@ func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
 // ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
 
+// OperatingSystemProfileList defines a map of operating system and the OperatingSystemProfile to use.
+type OperatingSystemProfileList map[providerconfig.OperatingSystem]string
+
 // DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 type DatacenterSpecHetzner struct {
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
@@ -518,7 +537,6 @@ type DatacenterSpecOpenstack struct {
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
 	ManageSecurityGroups *bool `json:"manageSecurityGroups,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
@@ -526,7 +544,6 @@ type DatacenterSpecOpenstack struct {
 	// default with the in-tree cloud provider.
 	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
 	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
@@ -617,7 +634,7 @@ type DatacenterSpecBringYourOwn struct {
 // DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
-	// facilities see https://support.packet.com/kb/articles/data-centers
+	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
 	Facilities []string `json:"facilities,omitempty"`
 	// Metros are facilities that are grouped together geographically and share capacity
 	// and networking features, see https://metal.equinix.com/developers/docs/locations/metros/

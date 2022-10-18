@@ -38,6 +38,7 @@ import (
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
@@ -186,9 +187,9 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	var configGetter provider.KubermaticConfigurationGetter
 	if options.kubermaticConfiguration != nil {
-		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+		configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
 	} else {
-		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
+		configGetter, err = kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
 	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
@@ -202,22 +203,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 	if err != nil {
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
-	}
-
-	// migrate existing data
-
-	// create a dedicated client because the manager isn't started yet and so the caches
-	// are also not ready yet; for the migration there is no need for caches anyway.
-	migrationClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	})
-	if err != nil {
-		log.Fatalw("Failed to create migration client", zap.Error(err))
-	}
-
-	if err := migrateClusterAddresses(rootCtx, log, migrationClient); err != nil {
-		log.Fatalw("Failed to migrate Cluster addresses", zap.Error(err))
 	}
 
 	ctrlCtx := &controllerContext{

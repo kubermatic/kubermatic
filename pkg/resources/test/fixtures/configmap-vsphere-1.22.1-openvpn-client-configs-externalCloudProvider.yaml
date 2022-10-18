@@ -9,3 +9,5 @@ metadata:
   creationTimestamp: null
   labels:
     app: openvpn-server
+  name: openvpn-client-configs
+  namespace: cluster-de-test-01

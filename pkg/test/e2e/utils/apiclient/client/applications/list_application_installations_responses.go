@@ -58,7 +58,8 @@ func NewListApplicationInstallationsOK() *ListApplicationInstallationsOK {
 	return &ListApplicationInstallationsOK{}
 }
 
-/* ListApplicationInstallationsOK describes a response with status code 200, with default header values.
+/*
+ListApplicationInstallationsOK describes a response with status code 200, with default header values.
 
 ApplicationInstallation
 */
@@ -66,9 +67,39 @@ type ListApplicationInstallationsOK struct {
 	Payload []*models.ApplicationInstallation
 }
 
+// IsSuccess returns true when this list application installations o k response has a 2xx status code
+func (o *ListApplicationInstallationsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list application installations o k response has a 3xx status code
+func (o *ListApplicationInstallationsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list application installations o k response has a 4xx status code
+func (o *ListApplicationInstallationsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list application installations o k response has a 5xx status code
+func (o *ListApplicationInstallationsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list application installations o k response a status code equal to that given
+func (o *ListApplicationInstallationsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListApplicationInstallationsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallationsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListApplicationInstallationsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallationsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListApplicationInstallationsOK) GetPayload() []*models.ApplicationInstallation {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListApplicationInstallationsUnauthorized() *ListApplicationInstallations
 	return &ListApplicationInstallationsUnauthorized{}
 }
 
-/* ListApplicationInstallationsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListApplicationInstallationsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListApplicationInstallationsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list application installations unauthorized response has a 2xx status code
+func (o *ListApplicationInstallationsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list application installations unauthorized response has a 3xx status code
+func (o *ListApplicationInstallationsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list application installations unauthorized response has a 4xx status code
+func (o *ListApplicationInstallationsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list application installations unauthorized response has a 5xx status code
+func (o *ListApplicationInstallationsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list application installations unauthorized response a status code equal to that given
+func (o *ListApplicationInstallationsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListApplicationInstallationsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallationsUnauthorized ", 401)
+}
+
+func (o *ListApplicationInstallationsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallationsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListApplicationInstallationsForbidden() *ListApplicationInstallationsFor
 	return &ListApplicationInstallationsForbidden{}
 }
 
-/* ListApplicationInstallationsForbidden describes a response with status code 403, with default header values.
+/*
+ListApplicationInstallationsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListApplicationInstallationsForbidden struct {
 }
 
+// IsSuccess returns true when this list application installations forbidden response has a 2xx status code
+func (o *ListApplicationInstallationsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list application installations forbidden response has a 3xx status code
+func (o *ListApplicationInstallationsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list application installations forbidden response has a 4xx status code
+func (o *ListApplicationInstallationsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list application installations forbidden response has a 5xx status code
+func (o *ListApplicationInstallationsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list application installations forbidden response a status code equal to that given
+func (o *ListApplicationInstallationsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListApplicationInstallationsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallationsForbidden ", 403)
+}
+
+func (o *ListApplicationInstallationsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallationsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListApplicationInstallationsDefault(code int) *ListApplicationInstallati
 	}
 }
 
-/* ListApplicationInstallationsDefault describes a response with status code -1, with default header values.
+/*
+ListApplicationInstallationsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListApplicationInstallationsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list application installations default response has a 2xx status code
+func (o *ListApplicationInstallationsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list application installations default response has a 3xx status code
+func (o *ListApplicationInstallationsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list application installations default response has a 4xx status code
+func (o *ListApplicationInstallationsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list application installations default response has a 5xx status code
+func (o *ListApplicationInstallationsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list application installations default response a status code equal to that given
+func (o *ListApplicationInstallationsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListApplicationInstallationsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallations default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListApplicationInstallationsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/applicationinstallations][%d] listApplicationInstallations default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListApplicationInstallationsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

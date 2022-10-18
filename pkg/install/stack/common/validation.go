@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 )
 
@@ -35,7 +35,7 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 
 	// we need the actual, effective versioning configuration, which most users will
 	// probably not override
-	defaulted, err := defaults.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
 	if err != nil {
 		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
 	}

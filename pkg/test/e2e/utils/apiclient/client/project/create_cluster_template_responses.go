@@ -62,7 +62,8 @@ func NewCreateClusterTemplateCreated() *CreateClusterTemplateCreated {
 	return &CreateClusterTemplateCreated{}
 }
 
-/* CreateClusterTemplateCreated describes a response with status code 201, with default header values.
+/*
+CreateClusterTemplateCreated describes a response with status code 201, with default header values.
 
 ClusterTemplate
 */
@@ -70,9 +71,39 @@ type CreateClusterTemplateCreated struct {
 	Payload *models.ClusterTemplate
 }
 
+// IsSuccess returns true when this create cluster template created response has a 2xx status code
+func (o *CreateClusterTemplateCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create cluster template created response has a 3xx status code
+func (o *CreateClusterTemplateCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster template created response has a 4xx status code
+func (o *CreateClusterTemplateCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create cluster template created response has a 5xx status code
+func (o *CreateClusterTemplateCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster template created response a status code equal to that given
+func (o *CreateClusterTemplateCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateClusterTemplateCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplateCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateClusterTemplateCreated) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplateCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateClusterTemplateCreated) GetPayload() *models.ClusterTemplate {
 	return o.Payload
 }
@@ -94,14 +125,44 @@ func NewCreateClusterTemplateUnauthorized() *CreateClusterTemplateUnauthorized {
 	return &CreateClusterTemplateUnauthorized{}
 }
 
-/* CreateClusterTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateClusterTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this create cluster template unauthorized response has a 2xx status code
+func (o *CreateClusterTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster template unauthorized response has a 3xx status code
+func (o *CreateClusterTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster template unauthorized response has a 4xx status code
+func (o *CreateClusterTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster template unauthorized response has a 5xx status code
+func (o *CreateClusterTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster template unauthorized response a status code equal to that given
+func (o *CreateClusterTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateClusterTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplateUnauthorized ", 401)
+}
+
+func (o *CreateClusterTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplateUnauthorized ", 401)
 }
 
@@ -115,14 +176,44 @@ func NewCreateClusterTemplateForbidden() *CreateClusterTemplateForbidden {
 	return &CreateClusterTemplateForbidden{}
 }
 
-/* CreateClusterTemplateForbidden describes a response with status code 403, with default header values.
+/*
+CreateClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateClusterTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this create cluster template forbidden response has a 2xx status code
+func (o *CreateClusterTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster template forbidden response has a 3xx status code
+func (o *CreateClusterTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster template forbidden response has a 4xx status code
+func (o *CreateClusterTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster template forbidden response has a 5xx status code
+func (o *CreateClusterTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster template forbidden response a status code equal to that given
+func (o *CreateClusterTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateClusterTemplateForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplateForbidden ", 403)
+}
+
+func (o *CreateClusterTemplateForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplateForbidden ", 403)
 }
 
@@ -138,7 +229,8 @@ func NewCreateClusterTemplateDefault(code int) *CreateClusterTemplateDefault {
 	}
 }
 
-/* CreateClusterTemplateDefault describes a response with status code -1, with default header values.
+/*
+CreateClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -153,9 +245,39 @@ func (o *CreateClusterTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create cluster template default response has a 2xx status code
+func (o *CreateClusterTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create cluster template default response has a 3xx status code
+func (o *CreateClusterTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create cluster template default response has a 4xx status code
+func (o *CreateClusterTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create cluster template default response has a 5xx status code
+func (o *CreateClusterTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create cluster template default response a status code equal to that given
+func (o *CreateClusterTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateClusterTemplateDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clustertemplates][%d] createClusterTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -172,7 +294,8 @@ func (o *CreateClusterTemplateDefault) readResponse(response runtime.ClientRespo
 	return nil
 }
 
-/*CreateClusterTemplateBody create cluster template body
+/*
+CreateClusterTemplateBody create cluster template body
 swagger:model CreateClusterTemplateBody
 */
 type CreateClusterTemplateBody struct {

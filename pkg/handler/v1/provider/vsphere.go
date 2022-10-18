@@ -28,6 +28,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetProvider provider.PresetProvider,
@@ -45,7 +47,7 @@ func VsphereNetworksEndpoint(seedsGetter provider.SeedsGetter, presetProvider pr
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -84,7 +86,7 @@ func VsphereFoldersEndpoint(seedsGetter provider.SeedsGetter, presetProvider pro
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

@@ -52,10 +52,12 @@ func NewGetNetworkDefaultsParamsWithHTTPClient(client *http.Client) *GetNetworkD
 	}
 }
 
-/* GetNetworkDefaultsParams contains all the parameters to send to the API endpoint
-   for the get network defaults operation.
+/*
+GetNetworkDefaultsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get network defaults operation.
+
+	Typically these are written to a http.Request.
 */
 type GetNetworkDefaultsParams struct {
 

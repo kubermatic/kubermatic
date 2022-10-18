@@ -52,10 +52,12 @@ func NewListKubevirtStorageClassesParamsWithHTTPClient(client *http.Client) *Lis
 	}
 }
 
-/* ListKubevirtStorageClassesParams contains all the parameters to send to the API endpoint
-   for the list kubevirt storage classes operation.
+/*
+ListKubevirtStorageClassesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list kubevirt storage classes operation.
+
+	Typically these are written to a http.Request.
 */
 type ListKubevirtStorageClassesParams struct {
 

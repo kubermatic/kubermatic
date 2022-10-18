@@ -27,6 +27,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -51,7 +53,7 @@ func AzureSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -94,7 +96,7 @@ func AzureAvailabilityZonesEndpoint(presetProvider provider.PresetProvider, user
 		}
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

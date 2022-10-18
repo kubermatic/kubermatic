@@ -53,10 +53,12 @@ func NewListNodesForClusterParamsWithHTTPClient(client *http.Client) *ListNodesF
 	}
 }
 
-/* ListNodesForClusterParams contains all the parameters to send to the API endpoint
-   for the list nodes for cluster operation.
+/*
+ListNodesForClusterParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list nodes for cluster operation.
+
+	Typically these are written to a http.Request.
 */
 type ListNodesForClusterParams struct {
 

@@ -2,6 +2,8 @@
 
 metadata:
   creationTimestamp: null
+  name: front-loadbalancer
+  namespace: cluster-de-test-01
 spec:
   ports:
   - name: secure

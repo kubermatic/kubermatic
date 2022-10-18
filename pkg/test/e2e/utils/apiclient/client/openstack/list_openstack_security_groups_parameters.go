@@ -53,10 +53,12 @@ func NewListOpenstackSecurityGroupsParamsWithHTTPClient(client *http.Client) *Li
 	}
 }
 
-/* ListOpenstackSecurityGroupsParams contains all the parameters to send to the API endpoint
-   for the list openstack security groups operation.
+/*
+ListOpenstackSecurityGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list openstack security groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListOpenstackSecurityGroupsParams struct {
 

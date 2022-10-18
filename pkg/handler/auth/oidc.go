@@ -64,12 +64,12 @@ type OIDCToken struct {
 type OIDCIssuerVerifier interface {
 	OIDCIssuer
 	TokenVerifier
-	RedirectURIPathSetter
+	RedirectURIPathGetter
 }
 
-type RedirectURIPathSetter interface {
-	// SetRedirectPath overrides configured path for a given URI
-	SetRedirectPath(path string) error
+type RedirectURIPathGetter interface {
+	// GetRedirectURI gets redirect URI for a given path
+	GetRedirectURI(path string) (string, error)
 }
 
 // OIDCIssuer exposes methods for getting OIDC tokens.
@@ -81,10 +81,10 @@ type OIDCIssuer interface {
 	// always provide a non-zero string and validate that it matches the
 	// the state query parameter on your redirect callback.
 	// See http://tools.ietf.org/html/rfc6749#section-10.12 for more info.
-	AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string
+	AuthCodeURL(state string, offlineAsScope bool, overwriteRedirectURI string, scopes ...string) string
 
 	// Exchange converts an authorization code into a token.
-	Exchange(ctx context.Context, code string) (OIDCToken, error)
+	Exchange(ctx context.Context, code, overwriteRedirectURI string) (OIDCToken, error)
 }
 
 // OpenIDClient implements OIDCIssuerVerifier and TokenExtractorVerifier.
@@ -198,8 +198,8 @@ func (o *OpenIDClient) Verify(ctx context.Context, token string) (TokenClaims, e
 // always provide a non-zero string and validate that it matches the
 // the state query parameter on your redirect callback.
 // See http://tools.ietf.org/html/rfc6749#section-10.12 for more info.
-func (o *OpenIDClient) AuthCodeURL(state string, offlineAsScope bool, scopes ...string) string {
-	oauth2Config := o.oauth2Config(scopes...)
+func (o *OpenIDClient) AuthCodeURL(state string, offlineAsScope bool, overwriteRedirectURI string, scopes ...string) string {
+	oauth2Config := o.oauth2Config(overwriteRedirectURI, scopes...)
 	options := oauth2.AccessTypeOnline
 	if !offlineAsScope {
 		options = oauth2.AccessTypeOffline
@@ -208,9 +208,9 @@ func (o *OpenIDClient) AuthCodeURL(state string, offlineAsScope bool, scopes ...
 }
 
 // Exchange converts an authorization code into a token.
-func (o *OpenIDClient) Exchange(ctx context.Context, code string) (OIDCToken, error) {
+func (o *OpenIDClient) Exchange(ctx context.Context, code, overwriteRedirectURI string) (OIDCToken, error) {
 	clientCtx := oidc.ClientContext(ctx, o.httpClient)
-	oauth2Config := o.oauth2Config()
+	oauth2Config := o.oauth2Config(overwriteRedirectURI)
 
 	tokens, err := oauth2Config.Exchange(clientCtx, code)
 	if err != nil {
@@ -225,22 +225,26 @@ func (o *OpenIDClient) Exchange(ctx context.Context, code string) (OIDCToken, er
 	return oidcToken, nil
 }
 
-func (o *OpenIDClient) SetRedirectPath(path string) error {
+func (o *OpenIDClient) GetRedirectURI(path string) (string, error) {
 	u, err := url.Parse(o.redirectURI)
 	if err != nil {
-		return err
+		return "", err
 	}
-	o.redirectURI = fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, path)
-	return nil
+	return fmt.Sprintf("%s://%s%s", u.Scheme, u.Host, path), nil
 }
 
-func (o *OpenIDClient) oauth2Config(scopes ...string) *oauth2.Config {
+func (o *OpenIDClient) oauth2Config(overwriteRedirectURI string, scopes ...string) *oauth2.Config {
+	redirectURI := o.redirectURI
+	if overwriteRedirectURI != "" {
+		redirectURI = overwriteRedirectURI
+	}
+
 	return &oauth2.Config{
 		ClientID:     o.clientID,
 		ClientSecret: o.clientSecret,
 		Endpoint:     o.provider.Endpoint(),
 		Scopes:       scopes,
-		RedirectURL:  o.redirectURI,
+		RedirectURL:  redirectURI,
 	}
 }
 

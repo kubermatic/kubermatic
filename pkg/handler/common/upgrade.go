@@ -26,6 +26,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -63,7 +64,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the cloud provider name: %w", err)
 	}

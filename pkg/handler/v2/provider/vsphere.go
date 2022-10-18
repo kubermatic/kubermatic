@@ -30,6 +30,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider,
@@ -67,7 +69,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetProvider p
 		password := req.Password
 
 		if len(req.Credential) > 0 {
-			preset, err := presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}

@@ -58,7 +58,8 @@ func NewGetBackupDestinationNamesOK() *GetBackupDestinationNamesOK {
 	return &GetBackupDestinationNamesOK{}
 }
 
-/* GetBackupDestinationNamesOK describes a response with status code 200, with default header values.
+/*
+GetBackupDestinationNamesOK describes a response with status code 200, with default header values.
 
 BackupDestinationNames
 */
@@ -66,9 +67,39 @@ type GetBackupDestinationNamesOK struct {
 	Payload models.BackupDestinationNames
 }
 
+// IsSuccess returns true when this get backup destination names o k response has a 2xx status code
+func (o *GetBackupDestinationNamesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get backup destination names o k response has a 3xx status code
+func (o *GetBackupDestinationNamesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get backup destination names o k response has a 4xx status code
+func (o *GetBackupDestinationNamesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get backup destination names o k response has a 5xx status code
+func (o *GetBackupDestinationNamesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get backup destination names o k response a status code equal to that given
+func (o *GetBackupDestinationNamesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetBackupDestinationNamesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNamesOK  %+v", 200, o.Payload)
 }
+
+func (o *GetBackupDestinationNamesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNamesOK  %+v", 200, o.Payload)
+}
+
 func (o *GetBackupDestinationNamesOK) GetPayload() models.BackupDestinationNames {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewGetBackupDestinationNamesUnauthorized() *GetBackupDestinationNamesUnauth
 	return &GetBackupDestinationNamesUnauthorized{}
 }
 
-/* GetBackupDestinationNamesUnauthorized describes a response with status code 401, with default header values.
+/*
+GetBackupDestinationNamesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetBackupDestinationNamesUnauthorized struct {
 }
 
+// IsSuccess returns true when this get backup destination names unauthorized response has a 2xx status code
+func (o *GetBackupDestinationNamesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get backup destination names unauthorized response has a 3xx status code
+func (o *GetBackupDestinationNamesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get backup destination names unauthorized response has a 4xx status code
+func (o *GetBackupDestinationNamesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get backup destination names unauthorized response has a 5xx status code
+func (o *GetBackupDestinationNamesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get backup destination names unauthorized response a status code equal to that given
+func (o *GetBackupDestinationNamesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetBackupDestinationNamesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNamesUnauthorized ", 401)
+}
+
+func (o *GetBackupDestinationNamesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNamesUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewGetBackupDestinationNamesForbidden() *GetBackupDestinationNamesForbidden
 	return &GetBackupDestinationNamesForbidden{}
 }
 
-/* GetBackupDestinationNamesForbidden describes a response with status code 403, with default header values.
+/*
+GetBackupDestinationNamesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetBackupDestinationNamesForbidden struct {
 }
 
+// IsSuccess returns true when this get backup destination names forbidden response has a 2xx status code
+func (o *GetBackupDestinationNamesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get backup destination names forbidden response has a 3xx status code
+func (o *GetBackupDestinationNamesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get backup destination names forbidden response has a 4xx status code
+func (o *GetBackupDestinationNamesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get backup destination names forbidden response has a 5xx status code
+func (o *GetBackupDestinationNamesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get backup destination names forbidden response a status code equal to that given
+func (o *GetBackupDestinationNamesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetBackupDestinationNamesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNamesForbidden ", 403)
+}
+
+func (o *GetBackupDestinationNamesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNamesForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewGetBackupDestinationNamesDefault(code int) *GetBackupDestinationNamesDef
 	}
 }
 
-/* GetBackupDestinationNamesDefault describes a response with status code -1, with default header values.
+/*
+GetBackupDestinationNamesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *GetBackupDestinationNamesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get backup destination names default response has a 2xx status code
+func (o *GetBackupDestinationNamesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get backup destination names default response has a 3xx status code
+func (o *GetBackupDestinationNamesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get backup destination names default response has a 4xx status code
+func (o *GetBackupDestinationNamesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get backup destination names default response has a 5xx status code
+func (o *GetBackupDestinationNamesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get backup destination names default response a status code equal to that given
+func (o *GetBackupDestinationNamesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetBackupDestinationNamesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNames default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetBackupDestinationNamesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/backupdestinations][%d] getBackupDestinationNames default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetBackupDestinationNamesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

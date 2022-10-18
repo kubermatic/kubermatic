@@ -27,7 +27,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -37,7 +37,7 @@ import (
 )
 
 func TestCreateClusterTemplateEndpoint(t *testing.T) {
-	version := defaults.DefaultKubernetesVersioning.Default.String()
+	version := defaulting.DefaultKubernetesVersioning.Default.String()
 
 	t.Parallel()
 	testcases := []struct {
@@ -155,7 +155,7 @@ func TestCreateClusterTemplateEndpoint(t *testing.T) {
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: test.GenDefaultVersions(),
+				Versions: defaulting.DefaultKubernetesVersioning.Versions,
 			},
 		},
 	}
@@ -705,7 +705,7 @@ func TestExportlusterTemplates(t *testing.T) {
 }
 
 func TestImportClusterTemplateEndpoint(t *testing.T) {
-	version := defaults.DefaultKubernetesVersioning.Default.String()
+	version := defaulting.DefaultKubernetesVersioning.Default.String()
 
 	t.Parallel()
 	testcases := []struct {
@@ -796,7 +796,7 @@ func TestImportClusterTemplateEndpoint(t *testing.T) {
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Versions: kubermaticv1.KubermaticVersioningConfiguration{
-				Versions: test.GenDefaultVersions(),
+				Versions: defaulting.DefaultKubernetesVersioning.Versions,
 			},
 		},
 	}

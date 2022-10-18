@@ -22,7 +22,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.18.4 containerize ./hack/gen-api-client.sh
+CONTAINERIZE_IMAGE=golang:1.19.1 containerize ./hack/gen-api-client.sh
 
 cd cmd/kubermatic-api/
 SWAGGER_FILE="swagger.json"
@@ -33,7 +33,7 @@ function cleanup() {
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-go run github.com/go-swagger/go-swagger/cmd/swagger generate spec \
+run_swagger generate spec \
   --tags=ee \
   --scan-models \
   -o ${TMP_SWAGGER}
@@ -41,7 +41,7 @@ go run github.com/go-swagger/go-swagger/cmd/swagger generate spec \
 rm -r ../../pkg/test/e2e/utils/apiclient/
 mkdir -p ../../pkg/test/e2e/utils/apiclient/
 
-go run github.com/go-swagger/go-swagger/cmd/swagger generate client \
+run_swagger generate client \
   -q \
   --skip-validation \
   -f ${TMP_SWAGGER} \

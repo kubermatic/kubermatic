@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -132,7 +133,7 @@ func getConfigGetter(t *testing.T, storeContainer, deleteContainer *corev1.Conta
 		config.Spec.SeedController.BackupDeleteContainer = encodeContainerAsYAML(t, deleteContainer)
 	}
 
-	configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+	configGetter, err := kubernetesprovider.StaticKubermaticConfigurationGetterFactory(config)
 	if err != nil {
 		t.Fatalf("failed to create config getter: %v", err)
 	}

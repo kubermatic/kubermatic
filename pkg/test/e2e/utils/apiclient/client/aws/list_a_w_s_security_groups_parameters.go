@@ -52,10 +52,12 @@ func NewListAWSSecurityGroupsParamsWithHTTPClient(client *http.Client) *ListAWSS
 	}
 }
 
-/* ListAWSSecurityGroupsParams contains all the parameters to send to the API endpoint
-   for the list a w s security groups operation.
+/*
+ListAWSSecurityGroupsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a w s security groups operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAWSSecurityGroupsParams struct {
 

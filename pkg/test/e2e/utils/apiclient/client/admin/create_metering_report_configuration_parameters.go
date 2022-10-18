@@ -52,10 +52,12 @@ func NewCreateMeteringReportConfigurationParamsWithHTTPClient(client *http.Clien
 	}
 }
 
-/* CreateMeteringReportConfigurationParams contains all the parameters to send to the API endpoint
-   for the create metering report configuration operation.
+/*
+CreateMeteringReportConfigurationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create metering report configuration operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateMeteringReportConfigurationParams struct {
 

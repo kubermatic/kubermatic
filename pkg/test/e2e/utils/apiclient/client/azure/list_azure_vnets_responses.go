@@ -46,7 +46,8 @@ func NewListAzureVnetsOK() *ListAzureVnetsOK {
 	return &ListAzureVnetsOK{}
 }
 
-/* ListAzureVnetsOK describes a response with status code 200, with default header values.
+/*
+ListAzureVnetsOK describes a response with status code 200, with default header values.
 
 AzureVirtualNetworksList
 */
@@ -54,9 +55,39 @@ type ListAzureVnetsOK struct {
 	Payload *models.AzureVirtualNetworksList
 }
 
+// IsSuccess returns true when this list azure vnets o k response has a 2xx status code
+func (o *ListAzureVnetsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list azure vnets o k response has a 3xx status code
+func (o *ListAzureVnetsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list azure vnets o k response has a 4xx status code
+func (o *ListAzureVnetsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list azure vnets o k response has a 5xx status code
+func (o *ListAzureVnetsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list azure vnets o k response a status code equal to that given
+func (o *ListAzureVnetsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAzureVnetsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/vnets][%d] listAzureVnetsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAzureVnetsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/azure/vnets][%d] listAzureVnetsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAzureVnetsOK) GetPayload() *models.AzureVirtualNetworksList {
 	return o.Payload
 }
@@ -80,7 +111,8 @@ func NewListAzureVnetsDefault(code int) *ListAzureVnetsDefault {
 	}
 }
 
-/* ListAzureVnetsDefault describes a response with status code -1, with default header values.
+/*
+ListAzureVnetsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -95,9 +127,39 @@ func (o *ListAzureVnetsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list azure vnets default response has a 2xx status code
+func (o *ListAzureVnetsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list azure vnets default response has a 3xx status code
+func (o *ListAzureVnetsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list azure vnets default response has a 4xx status code
+func (o *ListAzureVnetsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list azure vnets default response has a 5xx status code
+func (o *ListAzureVnetsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list azure vnets default response a status code equal to that given
+func (o *ListAzureVnetsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAzureVnetsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/providers/azure/vnets][%d] listAzureVnets default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAzureVnetsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/providers/azure/vnets][%d] listAzureVnets default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAzureVnetsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

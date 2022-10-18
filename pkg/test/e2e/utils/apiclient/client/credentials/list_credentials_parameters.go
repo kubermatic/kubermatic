@@ -52,10 +52,12 @@ func NewListCredentialsParamsWithHTTPClient(client *http.Client) *ListCredential
 	}
 }
 
-/* ListCredentialsParams contains all the parameters to send to the API endpoint
-   for the list credentials operation.
+/*
+ListCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListCredentialsParams struct {
 

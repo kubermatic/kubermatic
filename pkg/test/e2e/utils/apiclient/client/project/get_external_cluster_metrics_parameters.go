@@ -52,10 +52,12 @@ func NewGetExternalClusterMetricsParamsWithHTTPClient(client *http.Client) *GetE
 	}
 }
 
-/* GetExternalClusterMetricsParams contains all the parameters to send to the API endpoint
-   for the get external cluster metrics operation.
+/*
+GetExternalClusterMetricsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the get external cluster metrics operation.
+
+	Typically these are written to a http.Request.
 */
 type GetExternalClusterMetricsParams struct {
 

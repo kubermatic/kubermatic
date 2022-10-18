@@ -144,7 +144,7 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 			Namespace: applicationNamespace,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:   "default",
 				Create: false,
 			},

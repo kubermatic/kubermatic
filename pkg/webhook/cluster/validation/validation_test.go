@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -58,7 +58,6 @@ func init() {
 // kube-apiserver *before* the admission webhook is called. So for example this function
 // ensures that an empty nodeport range fails, but in reality, this never happens
 // because of the mutating webhook.
-//
 func TestHandle(t *testing.T) {
 	seed := kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1419,7 +1418,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: semver.NewSemverOrDie("1.23.9"),
+				Version: test.LatestKubernetesVersionForRelease("1.23", &config),
 			}.Build(),
 			oldCluster: rawClusterGen{
 				Name:      "foo",
@@ -1724,7 +1723,7 @@ func TestHandle(t *testing.T) {
 						NodePortRange: "30000-32000",
 					},
 				},
-				Version: defaults.DefaultKubernetesVersioning.Default,
+				Version: defaulting.DefaultKubernetesVersioning.Default,
 			}.BuildPtr(),
 			wantAllowed: false,
 		},
@@ -1791,7 +1790,7 @@ func (r rawClusterGen) BuildPtr() *kubermaticv1.Cluster {
 func (r rawClusterGen) Build() kubermaticv1.Cluster {
 	version := r.Version
 	if version == nil {
-		version = defaults.DefaultKubernetesVersioning.Default
+		version = defaulting.DefaultKubernetesVersioning.Default
 	}
 
 	c := kubermaticv1.Cluster{
@@ -1809,8 +1808,10 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
-					Token: "thisis.reallyreallyfake",
+					Token:   "thisis.reallyreallyfake",
+					Network: "this-is-required-for-ccm",
 				},
 			},
 			Features: map[string]bool{

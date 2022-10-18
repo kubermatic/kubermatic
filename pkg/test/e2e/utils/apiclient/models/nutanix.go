@@ -32,10 +32,11 @@ type Nutanix struct {
 	// ClusterName is the Nutanix cluster to deploy resources and nodes to.
 	ClusterName string `json:"clusterName,omitempty"`
 
-	// datacenter
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 
-	// enabled
+	// Only enabled presets will be available in the KKP dashboard.
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Password is the password corresponding to the provided user.

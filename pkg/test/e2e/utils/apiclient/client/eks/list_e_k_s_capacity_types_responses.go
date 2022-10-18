@@ -58,7 +58,8 @@ func NewListEKSCapacityTypesOK() *ListEKSCapacityTypesOK {
 	return &ListEKSCapacityTypesOK{}
 }
 
-/* ListEKSCapacityTypesOK describes a response with status code 200, with default header values.
+/*
+ListEKSCapacityTypesOK describes a response with status code 200, with default header values.
 
 EKSCapacityTypeList
 */
@@ -66,9 +67,39 @@ type ListEKSCapacityTypesOK struct {
 	Payload models.EKSCapacityTypeList
 }
 
+// IsSuccess returns true when this list e k s capacity types o k response has a 2xx status code
+func (o *ListEKSCapacityTypesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list e k s capacity types o k response has a 3xx status code
+func (o *ListEKSCapacityTypesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s capacity types o k response has a 4xx status code
+func (o *ListEKSCapacityTypesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list e k s capacity types o k response has a 5xx status code
+func (o *ListEKSCapacityTypesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s capacity types o k response a status code equal to that given
+func (o *ListEKSCapacityTypesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListEKSCapacityTypesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypesOK  %+v", 200, o.Payload)
 }
+
+func (o *ListEKSCapacityTypesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypesOK  %+v", 200, o.Payload)
+}
+
 func (o *ListEKSCapacityTypesOK) GetPayload() models.EKSCapacityTypeList {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListEKSCapacityTypesUnauthorized() *ListEKSCapacityTypesUnauthorized {
 	return &ListEKSCapacityTypesUnauthorized{}
 }
 
-/* ListEKSCapacityTypesUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSCapacityTypesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListEKSCapacityTypesUnauthorized struct {
 }
 
+// IsSuccess returns true when this list e k s capacity types unauthorized response has a 2xx status code
+func (o *ListEKSCapacityTypesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s capacity types unauthorized response has a 3xx status code
+func (o *ListEKSCapacityTypesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s capacity types unauthorized response has a 4xx status code
+func (o *ListEKSCapacityTypesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s capacity types unauthorized response has a 5xx status code
+func (o *ListEKSCapacityTypesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s capacity types unauthorized response a status code equal to that given
+func (o *ListEKSCapacityTypesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListEKSCapacityTypesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypesUnauthorized ", 401)
+}
+
+func (o *ListEKSCapacityTypesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypesUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListEKSCapacityTypesForbidden() *ListEKSCapacityTypesForbidden {
 	return &ListEKSCapacityTypesForbidden{}
 }
 
-/* ListEKSCapacityTypesForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSCapacityTypesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListEKSCapacityTypesForbidden struct {
 }
 
+// IsSuccess returns true when this list e k s capacity types forbidden response has a 2xx status code
+func (o *ListEKSCapacityTypesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s capacity types forbidden response has a 3xx status code
+func (o *ListEKSCapacityTypesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s capacity types forbidden response has a 4xx status code
+func (o *ListEKSCapacityTypesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s capacity types forbidden response has a 5xx status code
+func (o *ListEKSCapacityTypesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s capacity types forbidden response a status code equal to that given
+func (o *ListEKSCapacityTypesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListEKSCapacityTypesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypesForbidden ", 403)
+}
+
+func (o *ListEKSCapacityTypesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypesForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListEKSCapacityTypesDefault(code int) *ListEKSCapacityTypesDefault {
 	}
 }
 
-/* ListEKSCapacityTypesDefault describes a response with status code -1, with default header values.
+/*
+ListEKSCapacityTypesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListEKSCapacityTypesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list e k s capacity types default response has a 2xx status code
+func (o *ListEKSCapacityTypesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list e k s capacity types default response has a 3xx status code
+func (o *ListEKSCapacityTypesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list e k s capacity types default response has a 4xx status code
+func (o *ListEKSCapacityTypesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list e k s capacity types default response has a 5xx status code
+func (o *ListEKSCapacityTypesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list e k s capacity types default response a status code equal to that given
+func (o *ListEKSCapacityTypesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListEKSCapacityTypesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypes default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListEKSCapacityTypesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/eks/capacitytypes][%d] listEKSCapacityTypes default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListEKSCapacityTypesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

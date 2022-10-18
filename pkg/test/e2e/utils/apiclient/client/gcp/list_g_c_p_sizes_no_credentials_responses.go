@@ -46,7 +46,8 @@ func NewListGCPSizesNoCredentialsOK() *ListGCPSizesNoCredentialsOK {
 	return &ListGCPSizesNoCredentialsOK{}
 }
 
-/* ListGCPSizesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListGCPSizesNoCredentialsOK describes a response with status code 200, with default header values.
 
 GCPMachineSizeList
 */
@@ -54,9 +55,39 @@ type ListGCPSizesNoCredentialsOK struct {
 	Payload models.GCPMachineSizeList
 }
 
+// IsSuccess returns true when this list g c p sizes no credentials o k response has a 2xx status code
+func (o *ListGCPSizesNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p sizes no credentials o k response has a 3xx status code
+func (o *ListGCPSizesNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p sizes no credentials o k response has a 4xx status code
+func (o *ListGCPSizesNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p sizes no credentials o k response has a 5xx status code
+func (o *ListGCPSizesNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p sizes no credentials o k response a status code equal to that given
+func (o *ListGCPSizesNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPSizesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes][%d] listGCPSizesNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPSizesNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes][%d] listGCPSizesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPSizesNoCredentialsOK) GetPayload() models.GCPMachineSizeList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGCPSizesNoCredentialsDefault(code int) *ListGCPSizesNoCredentialsDef
 	}
 }
 
-/* ListGCPSizesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListGCPSizesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGCPSizesNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p sizes no credentials default response has a 2xx status code
+func (o *ListGCPSizesNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p sizes no credentials default response has a 3xx status code
+func (o *ListGCPSizesNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p sizes no credentials default response has a 4xx status code
+func (o *ListGCPSizesNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p sizes no credentials default response has a 5xx status code
+func (o *ListGCPSizesNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p sizes no credentials default response a status code equal to that given
+func (o *ListGCPSizesNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPSizesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes][%d] listGCPSizesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPSizesNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/gcp/sizes][%d] listGCPSizesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPSizesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

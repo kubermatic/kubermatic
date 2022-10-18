@@ -25,12 +25,15 @@ import (
 	"reflect"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/util/edition"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,6 +48,9 @@ func main() {
 	if flag.NArg() < 2 {
 		log.Fatal("Usage: go run main.go SRC_ROOT TARGET")
 	}
+
+	ed := edition.KubermaticEdition
+	log.Printf("Generating for %s", ed)
 
 	root := flag.Arg(0)
 	target := flag.Arg(1)
@@ -61,8 +67,14 @@ func main() {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
+	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/apps.kubermatic/v1/*.go"))
+	if err != nil {
+		log.Fatalf("Failed to find appsKubermatic go files: %v", err)
+	}
+
 	var files []string
 	files = append(files, kubermaticFiles...)
+	files = append(files, appsKubermaticFiles...)
 	files = append(files, filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"))
 
 	cm, err := genyaml.NewCommentMap(nil, files...)
@@ -75,12 +87,14 @@ func main() {
 	examples := map[string]runtime.Object{
 		"kubermaticConfiguration": config,
 		"seed":                    createExampleSeed(config),
+		"applicationDefinition":   createExampleApplicationDefinition(),
+		"applicationInstallation": createExampleApplicationInstallation(),
 	}
 
 	for name, data := range examples {
 		log.Printf("Creating example YAML for %s resources...", name)
 
-		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.yaml", name))
+		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.%s.yaml", name, strings.ToLower(ed.ShortString())))
 
 		f, err := os.Create(filename)
 		if err != nil {
@@ -101,9 +115,11 @@ func main() {
 
 func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
+	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
 
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
 		imageList[operatingSystem] = ""
+		operatingSystemProfileList[operatingSystem] = ""
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{
@@ -129,10 +145,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						RegistryMirrors:    []string{},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
-						ProviderReconciliationInterval: &metav1.Duration{Duration: defaults.DefaultCloudProviderReconciliationInterval},
+						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
 						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						RequiredEmails:                 []string{},
+						DefaultOperatingSystemProfiles: operatingSystemProfileList,
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Images: imageList,
 						},
@@ -199,7 +216,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 		},
 	}
 
-	defaulted, err := defaults.DefaultSeed(seed, config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultSeed(seed, config, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default Seed: %v", err)
 	}
@@ -228,14 +245,14 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 			FeatureGates: map[string]bool{},
 			API:          kubermaticv1.KubermaticAPIConfiguration{},
 			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
-				BackupStoreContainer:   defaults.DefaultBackupStoreContainer,
-				BackupCleanupContainer: defaults.DefaultBackupCleanupContainer,
-				BackupDeleteContainer:  defaults.DefaultNewBackupDeleteContainer,
+				BackupStoreContainer:   defaulting.DefaultBackupStoreContainer,
+				BackupCleanupContainer: defaulting.DefaultBackupCleanupContainer,
+				BackupDeleteContainer:  defaulting.DefaultNewBackupDeleteContainer,
 			},
 		},
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(cfg, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(cfg, zap.NewNop().Sugar())
 	if err != nil {
 		log.Fatalf("Failed to default KubermaticConfiguration: %v", err)
 	}
@@ -256,6 +273,112 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 
 	setUpdateDefaults(&defaulted.Spec.Versions)
 	return defaulted
+}
+
+func createExampleApplicationDefinition() *appskubermaticv1.ApplicationDefinition {
+	return &appskubermaticv1.ApplicationDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+			Kind:       appskubermaticv1.ApplicationDefinitionKindName,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "<<appdef-name>>",
+		},
+		Spec: appskubermaticv1.ApplicationDefinitionSpec{
+			Description: "",
+			Method:      appskubermaticv1.HelmTemplateMethod,
+			Versions: []appskubermaticv1.ApplicationVersion{
+				{
+					Version: "v1.2.3",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "https://charts.example.com || oci://localhost:5000/myrepo",
+								ChartName:    "my-app",
+								ChartVersion: "v13.9.0",
+								Credentials: &appskubermaticv1.HelmCredentials{
+									Username: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
+										Key:                  "user",
+										Optional:             pointer.Bool(false),
+									},
+									Password: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
+										Key:                  "pass",
+										Optional:             pointer.Bool(false),
+									},
+									RegistryConfigFile: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
+										Key:                  ".dockerconfigjson",
+										Optional:             pointer.Bool(false),
+									},
+								},
+							},
+							Git: &appskubermaticv1.GitSource{
+								Remote: "https://git.example.com/repo || git@example.com/repo",
+								Ref: appskubermaticv1.GitReference{
+									Branch: "main",
+									Commit: "8061ceb738db42fe82b4c305b7aa5459d926d03e",
+									Tag:    "v1.2.3",
+								},
+								Path: "charts/apache",
+								Credentials: &appskubermaticv1.GitCredentials{
+									Method: "password ||token || ssh-key",
+									Username: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
+										Key:                  "user",
+										Optional:             pointer.Bool(false),
+									},
+									Password: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
+										Key:                  "pass",
+										Optional:             pointer.Bool(false),
+									},
+									Token: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
+										Key:                  "token",
+										Optional:             pointer.Bool(false),
+									},
+									SSHKey: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
+										Key:                  "private-key",
+										Optional:             pointer.Bool(false),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+			Kind:       appskubermaticv1.ApplicationInstallationKindName,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "<<appInstallation-name>>",
+		},
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
+				Name:        "my-namespace",
+				Create:      true,
+				Labels:      map[string]string{"env": "dev"},
+				Annotations: map[string]string{"project-code": "azerty"},
+			},
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name: "apache",
+				Version: appskubermaticv1.Version{
+					Version: *semverlib.MustParse("v1.2.3"),
+				},
+			},
+			Values: runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)},
+		},
+	}
 }
 
 // validateAllFieldsAreDefined recursively checks that all fields relevant

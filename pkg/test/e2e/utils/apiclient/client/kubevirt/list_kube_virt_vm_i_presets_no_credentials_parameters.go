@@ -52,10 +52,12 @@ func NewListKubeVirtVMIPresetsNoCredentialsParamsWithHTTPClient(client *http.Cli
 	}
 }
 
-/* ListKubeVirtVMIPresetsNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list kube virt VM i presets no credentials operation.
+/*
+ListKubeVirtVMIPresetsNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list kube virt VM i presets no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListKubeVirtVMIPresetsNoCredentialsParams struct {
 

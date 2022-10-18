@@ -46,29 +46,53 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-var operatingSystems = map[string]models.OperatingSystemSpec{
-	"centos":     centos(),
-	"flatcar":    flatcar(),
-	"rhel":       rhel(),
-	"sles":       sles(),
-	"ubuntu":     ubuntu(),
-	"rockylinux": rockyLinux(),
+const (
+	// Operating Systems.
+	CentOS     string = "centos"
+	Flatcar    string = "flatcar"
+	RHEL       string = "rhel"
+	SLES       string = "sles"
+	Ubuntu     string = "ubuntu"
+	RockyLinux string = "rockylinux"
+
+	// CNI.
+	Canal  string = "canal"
+	Cilium string = "cilium"
+
+	// Providers.
+	Azure        string = "azure"
+	GCP          string = "gcp"
+	AWS          string = "aws"
+	OpenStack    string = "openstack"
+	Hetzner      string = "hetzner"
+	DigitalOcean string = "do"
+	Equinix      string = "equinix"
+	VSphere      string = "vsphere"
+)
+
+var operatingSystems = map[string]func() models.OperatingSystemSpec{
+	CentOS:     centos,
+	Flatcar:    flatcar,
+	RHEL:       rhel,
+	SLES:       sles,
+	Ubuntu:     ubuntu,
+	RockyLinux: rockyLinux,
 }
 
 var cloudProviders = map[string]clusterSpec{
-	"azure":     azure{},
-	"gcp":       gcp{},
-	"aws":       aws{},
-	"openstack": openstack{},
-	"hetzner":   hetzner{},
-	"do":        do{},
-	"equinix":   equinix{},
-	"vsphere":   vsphere{},
+	Azure:        azure{},
+	GCP:          gcp{},
+	AWS:          aws{},
+	OpenStack:    openstack{},
+	Hetzner:      hetzner{},
+	DigitalOcean: do{},
+	Equinix:      equinix{},
+	VSphere:      vsphere{},
 }
 
 var cnis = map[string]models.CNIPluginSettings{
-	"cilium": cilium(),
-	"canal":  canal(),
+	Cilium: cilium(),
+	Canal:  canal(),
 }
 
 // TestCloudClusterIPFamily creates clusters and runs dualstack tests against them.
@@ -101,144 +125,169 @@ func TestCloudClusterIPFamily(t *testing.T) {
 
 	tests := []testCase{
 		{
-			cloudName: "azure",
+			cloudName: Azure,
 			osNames: []string{
-				"ubuntu",
+				Flatcar,
+				RHEL,
+				RockyLinux,
+				Ubuntu,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "azure",
+			cloudName: Azure,
 			osNames: []string{
-				"centos",
-				"ubuntu",
+				CentOS,
+				Flatcar,
+				RHEL,
+				RockyLinux,
+				Ubuntu,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "aws",
+			cloudName: AWS,
 			osNames: []string{
-				"rhel",
-				"ubuntu",
+				RHEL,
+				Ubuntu,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:                 "cilium",
+			cni:                 Cilium,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "aws",
+			cloudName: AWS,
 			osNames: []string{
-				"ubuntu",
+				RHEL,
+				Ubuntu,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:                 "canal",
+			cni:                 Canal,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "gcp",
+			cloudName: GCP,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
 			},
-			cni:                 "cilium",
+			cni:                 Cilium,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "gcp",
+			cloudName: GCP,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
 			},
-			cni:                 "canal",
+			cni:                 Canal,
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudName: "openstack",
+			cloudName: OpenStack,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
+				Flatcar,
+				RHEL,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "openstack",
+			cloudName: OpenStack,
 			osNames: []string{
-				"centos",
-				"ubuntu",
+				Ubuntu,
+				Flatcar,
+				RHEL,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "hetzner",
+			cloudName: Hetzner,
 			osNames: []string{
-				"ubuntu",
-				"rockylinux",
+				Ubuntu,
+				RockyLinux,
 			},
-			cni:      "cilium",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "hetzner",
+			cloudName: Hetzner,
 			osNames: []string{
-				"ubuntu",
-				"rockylinux",
+				Ubuntu,
+				RockyLinux,
 			},
-			cni:      "canal",
-			ipFamily: util.DualStack,
-		}, {
-			cloudName: "do",
-			osNames: []string{
-				"ubuntu",
-			},
-			cni:      "cilium",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "do",
+			cloudName: DigitalOcean,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
+				RockyLinux,
 			},
-			cni:      "canal",
+			cni:      Cilium,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "equinix",
+			cloudName: DigitalOcean,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
+				CentOS,
+				RockyLinux,
 			},
-			cni:      "canal",
+			cni:      Canal,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudName: "equinix",
+			cloudName: Equinix,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
+				CentOS,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:      "cilium",
-			ipFamily: util.DualStack,
+			cni:       Canal,
+			ipFamily:  util.DualStack,
+			skipNodes: true,
 		},
 		{
-			cloudName: "vsphere",
+			cloudName: Equinix,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
+				Flatcar,
+				RockyLinux,
 			},
-			cni:                    "canal",
+			cni:       Cilium,
+			ipFamily:  util.DualStack,
+			skipNodes: true,
+		},
+		{
+			cloudName: VSphere,
+			osNames: []string{
+				Ubuntu,
+			},
+			cni:                    Canal,
 			ipFamily:               util.DualStack,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 		{
-			cloudName: "vsphere",
+			cloudName: VSphere,
 			osNames: []string{
-				"ubuntu",
+				Ubuntu,
 			},
-			cni:                    "cilium",
+			cni:                    Cilium,
 			ipFamily:               util.DualStack,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
@@ -290,9 +339,9 @@ func TestCloudClusterIPFamily(t *testing.T) {
 		cniSpec := cnis[test.cni]
 		netConfig := defaultClusterNetworkingConfig()
 		switch test.cni {
-		case "canal":
+		case Canal:
 			netConfig = netConfig.WithProxyMode("ipvs")
-		case "cilium":
+		case Cilium:
 			netConfig = netConfig.WithProxyMode("ebpf")
 		}
 
@@ -321,6 +370,7 @@ func TestCloudClusterIPFamily(t *testing.T) {
 				}
 				t.Fatalf("failed to create cluster: %v", err)
 			}
+
 			defer func() {
 				mu.Lock()
 				cleanup()
@@ -330,17 +380,28 @@ func TestCloudClusterIPFamily(t *testing.T) {
 			nodeSpec := cloud.NodeSpec()
 
 			for _, osName := range testOSNames {
-				// TODO: why don't we need to do this for other clouds?
-				if test.cloudName == "openstack" {
+				// This is needed because node spec for OpenStack requires image.
+				operatingSystem := operatingSystems[osName]()
+
+				if test.cloudName == OpenStack {
 					img := openstack{}.getImage(osName)
 					nodeSpec.Openstack.Image = &img
+					if osName == RHEL {
+						operatingSystem = addRHELSubscriptionInfo(operatingSystem)
+					}
+				}
+
+				if test.cloudName == Azure {
+					if osName == RHEL {
+						operatingSystem = addRHELSubscriptionInfo(operatingSystem)
+					}
 				}
 
 				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithProjectID(projectID).
 					WithClusterID(clusterID).
-					WithOS(operatingSystems[osName]).
+					WithOS(operatingSystem).
 					WithNodeSpec(nodeSpec),
 				)
 				if err != nil {
@@ -461,7 +522,7 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) bool {
 }
 
 func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expectedNodes int) error {
-	return wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
+	return wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
 		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			t.Logf("failed to get nodes list: %s", err)
@@ -493,21 +554,24 @@ func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expected
 
 func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, string, func(), error) {
 	var teardowns []func() error
+	var once sync.Once
 	cleanup := func() {
-		n := len(teardowns)
-		for i := range teardowns {
-			err := wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
-				err := teardowns[n-1-i]()
+		once.Do(func() {
+			n := len(teardowns)
+			for i := range teardowns {
+				err := wait.Poll(10*time.Second, 10*time.Minute, func() (bool, error) {
+					err := teardowns[n-1-i]()
+					if err != nil {
+						t.Log(err)
+						return false, nil
+					}
+					return true, nil
+				})
 				if err != nil {
-					t.Log(err)
-					return false, nil
+					t.Errorf("cleanup failed: %s", err)
 				}
-				return true, nil
-			})
-			if err != nil {
-				t.Errorf("cleanup failed: %s", err)
 			}
-		}
+		})
 	}
 
 	// create a project

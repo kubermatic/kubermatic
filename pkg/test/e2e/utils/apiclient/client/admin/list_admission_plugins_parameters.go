@@ -52,10 +52,12 @@ func NewListAdmissionPluginsParamsWithHTTPClient(client *http.Client) *ListAdmis
 	}
 }
 
-/* ListAdmissionPluginsParams contains all the parameters to send to the API endpoint
-   for the list admission plugins operation.
+/*
+ListAdmissionPluginsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list admission plugins operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAdmissionPluginsParams struct {
 	timeout    time.Duration

@@ -23,7 +23,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
@@ -125,7 +124,7 @@ func TestCreateAddon(t *testing.T) {
 				Build()
 
 			config := createKubermaticConfiguration(addons)
-			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(config)
 			if err != nil {
 				t.Fatalf("Failed to create Config Getter: %v", err)
 			}
@@ -351,7 +350,7 @@ func TestUpdateAddon(t *testing.T) {
 			client := ctrlruntimefakeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			config := createKubermaticConfiguration(addons)
-			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(config)
 			if err != nil {
 				t.Fatalf("Failed to create Config Getter: %v", err)
 			}

@@ -380,7 +380,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 
 	// could also use a StaticKubermaticConfigurationGetterFactory, but this nicely tests
 	// the more complex implementation on the side
-	configGetter, err := provider.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
+	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(fakeClient, resources.KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1046,6 +1046,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "private-do1",
+				ProviderName:   string(kubermaticv1.FakeCloudProvider),
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
 			Version:               version,
@@ -1383,6 +1384,7 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
 		DatacenterName: "OpenstackDatacenter",
+		ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
 			Username:       "username",
 			Password:       "password",
@@ -1401,6 +1403,7 @@ func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 func GenClusterWithOpenstackProjectAuth(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
 	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
 		DatacenterName: "OpenstackDatacenter",
+		ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 		Openstack: &kubermaticv1.OpenstackCloudSpec{
 			Username:       "username",
 			Password:       "password",
@@ -1719,6 +1722,20 @@ func GenDefaultGroupRoleBinding(name, namespace, roleID, group string) *rbacv1.R
 	}
 }
 
+func GenServiceAccountRoleBinding(name string, namespace string, roleID string, subjects []rbacv1.Subject) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+			Namespace: namespace,
+		},
+		Subjects: subjects,
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
 func GenDefaultClusterRoleBinding(name, roleID, userEmail string) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1749,6 +1766,19 @@ func GenDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.Clust
 				Name: group,
 			},
 		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
+func GenServiceAccountClusterRoleBinding(name string, roleID string, subjects []rbacv1.Subject) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+		},
+		Subjects: subjects,
 		RoleRef: rbacv1.RoleRef{
 			Name: roleID,
 		},
@@ -2145,7 +2175,7 @@ func GenApplicationInstallation(name, clusterName, targetnamespace string) *apps
 			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:   targetnamespace,
 				Create: true,
 			},
@@ -2166,8 +2196,8 @@ func GenApiApplicationInstallation(name, clusterName, targetnamespace string) *a
 			ID:   name,
 		},
 		Namespace: targetnamespace,
-		Spec: &appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+		Spec: &apiv2.ApplicationInstallationSpec{
+			Namespace: apiv2.NamespaceSpec{
 				Name:   targetnamespace,
 				Create: true,
 			},

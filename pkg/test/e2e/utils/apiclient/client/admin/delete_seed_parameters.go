@@ -52,10 +52,12 @@ func NewDeleteSeedParamsWithHTTPClient(client *http.Client) *DeleteSeedParams {
 	}
 }
 
-/* DeleteSeedParams contains all the parameters to send to the API endpoint
-   for the delete seed operation.
+/*
+DeleteSeedParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete seed operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteSeedParams struct {
 

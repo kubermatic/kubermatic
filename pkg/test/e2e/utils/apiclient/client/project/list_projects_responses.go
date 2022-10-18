@@ -58,7 +58,8 @@ func NewListProjectsOK() *ListProjectsOK {
 	return &ListProjectsOK{}
 }
 
-/* ListProjectsOK describes a response with status code 200, with default header values.
+/*
+ListProjectsOK describes a response with status code 200, with default header values.
 
 Project
 */
@@ -66,9 +67,39 @@ type ListProjectsOK struct {
 	Payload []*models.Project
 }
 
+// IsSuccess returns true when this list projects o k response has a 2xx status code
+func (o *ListProjectsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list projects o k response has a 3xx status code
+func (o *ListProjectsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list projects o k response has a 4xx status code
+func (o *ListProjectsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list projects o k response has a 5xx status code
+func (o *ListProjectsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list projects o k response a status code equal to that given
+func (o *ListProjectsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListProjectsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjectsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListProjectsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjectsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListProjectsOK) GetPayload() []*models.Project {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListProjectsUnauthorized() *ListProjectsUnauthorized {
 	return &ListProjectsUnauthorized{}
 }
 
-/* ListProjectsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListProjectsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListProjectsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list projects unauthorized response has a 2xx status code
+func (o *ListProjectsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list projects unauthorized response has a 3xx status code
+func (o *ListProjectsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list projects unauthorized response has a 4xx status code
+func (o *ListProjectsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list projects unauthorized response has a 5xx status code
+func (o *ListProjectsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list projects unauthorized response a status code equal to that given
+func (o *ListProjectsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListProjectsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjectsUnauthorized ", 401)
+}
+
+func (o *ListProjectsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjectsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListProjectsConflict() *ListProjectsConflict {
 	return &ListProjectsConflict{}
 }
 
-/* ListProjectsConflict describes a response with status code 409, with default header values.
+/*
+ListProjectsConflict describes a response with status code 409, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListProjectsConflict struct {
 }
 
+// IsSuccess returns true when this list projects conflict response has a 2xx status code
+func (o *ListProjectsConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list projects conflict response has a 3xx status code
+func (o *ListProjectsConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list projects conflict response has a 4xx status code
+func (o *ListProjectsConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list projects conflict response has a 5xx status code
+func (o *ListProjectsConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list projects conflict response a status code equal to that given
+func (o *ListProjectsConflict) IsCode(code int) bool {
+	return code == 409
+}
+
 func (o *ListProjectsConflict) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjectsConflict ", 409)
+}
+
+func (o *ListProjectsConflict) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjectsConflict ", 409)
 }
 
@@ -132,7 +223,8 @@ func NewListProjectsDefault(code int) *ListProjectsDefault {
 	}
 }
 
-/* ListProjectsDefault describes a response with status code -1, with default header values.
+/*
+ListProjectsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListProjectsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list projects default response has a 2xx status code
+func (o *ListProjectsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list projects default response has a 3xx status code
+func (o *ListProjectsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list projects default response has a 4xx status code
+func (o *ListProjectsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list projects default response has a 5xx status code
+func (o *ListProjectsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list projects default response a status code equal to that given
+func (o *ListProjectsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListProjectsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjects default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListProjectsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects][%d] listProjects default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListProjectsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

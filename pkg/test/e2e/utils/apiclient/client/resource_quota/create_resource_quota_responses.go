@@ -61,14 +61,44 @@ func NewCreateResourceQuotaCreated() *CreateResourceQuotaCreated {
 	return &CreateResourceQuotaCreated{}
 }
 
-/* CreateResourceQuotaCreated describes a response with status code 201, with default header values.
+/*
+CreateResourceQuotaCreated describes a response with status code 201, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateResourceQuotaCreated struct {
 }
 
+// IsSuccess returns true when this create resource quota created response has a 2xx status code
+func (o *CreateResourceQuotaCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create resource quota created response has a 3xx status code
+func (o *CreateResourceQuotaCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create resource quota created response has a 4xx status code
+func (o *CreateResourceQuotaCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create resource quota created response has a 5xx status code
+func (o *CreateResourceQuotaCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create resource quota created response a status code equal to that given
+func (o *CreateResourceQuotaCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateResourceQuotaCreated) Error() string {
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaCreated ", 201)
+}
+
+func (o *CreateResourceQuotaCreated) String() string {
 	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaCreated ", 201)
 }
 
@@ -82,14 +112,44 @@ func NewCreateResourceQuotaUnauthorized() *CreateResourceQuotaUnauthorized {
 	return &CreateResourceQuotaUnauthorized{}
 }
 
-/* CreateResourceQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateResourceQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateResourceQuotaUnauthorized struct {
 }
 
+// IsSuccess returns true when this create resource quota unauthorized response has a 2xx status code
+func (o *CreateResourceQuotaUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create resource quota unauthorized response has a 3xx status code
+func (o *CreateResourceQuotaUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create resource quota unauthorized response has a 4xx status code
+func (o *CreateResourceQuotaUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create resource quota unauthorized response has a 5xx status code
+func (o *CreateResourceQuotaUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create resource quota unauthorized response a status code equal to that given
+func (o *CreateResourceQuotaUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateResourceQuotaUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaUnauthorized ", 401)
+}
+
+func (o *CreateResourceQuotaUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaUnauthorized ", 401)
 }
 
@@ -103,14 +163,44 @@ func NewCreateResourceQuotaForbidden() *CreateResourceQuotaForbidden {
 	return &CreateResourceQuotaForbidden{}
 }
 
-/* CreateResourceQuotaForbidden describes a response with status code 403, with default header values.
+/*
+CreateResourceQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateResourceQuotaForbidden struct {
 }
 
+// IsSuccess returns true when this create resource quota forbidden response has a 2xx status code
+func (o *CreateResourceQuotaForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create resource quota forbidden response has a 3xx status code
+func (o *CreateResourceQuotaForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create resource quota forbidden response has a 4xx status code
+func (o *CreateResourceQuotaForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create resource quota forbidden response has a 5xx status code
+func (o *CreateResourceQuotaForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create resource quota forbidden response a status code equal to that given
+func (o *CreateResourceQuotaForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateResourceQuotaForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaForbidden ", 403)
+}
+
+func (o *CreateResourceQuotaForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuotaForbidden ", 403)
 }
 
@@ -126,7 +216,8 @@ func NewCreateResourceQuotaDefault(code int) *CreateResourceQuotaDefault {
 	}
 }
 
-/* CreateResourceQuotaDefault describes a response with status code -1, with default header values.
+/*
+CreateResourceQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -141,9 +232,39 @@ func (o *CreateResourceQuotaDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create resource quota default response has a 2xx status code
+func (o *CreateResourceQuotaDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create resource quota default response has a 3xx status code
+func (o *CreateResourceQuotaDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create resource quota default response has a 4xx status code
+func (o *CreateResourceQuotaDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create resource quota default response has a 5xx status code
+func (o *CreateResourceQuotaDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create resource quota default response a status code equal to that given
+func (o *CreateResourceQuotaDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateResourceQuotaDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuota default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateResourceQuotaDefault) String() string {
+	return fmt.Sprintf("[POST /api/v2/quotas][%d] createResourceQuota default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateResourceQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -160,7 +281,8 @@ func (o *CreateResourceQuotaDefault) readResponse(response runtime.ClientRespons
 	return nil
 }
 
-/*CreateResourceQuotaBody create resource quota body
+/*
+CreateResourceQuotaBody create resource quota body
 swagger:model CreateResourceQuotaBody
 */
 type CreateResourceQuotaBody struct {

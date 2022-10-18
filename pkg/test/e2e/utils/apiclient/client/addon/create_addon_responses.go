@@ -58,7 +58,8 @@ func NewCreateAddonCreated() *CreateAddonCreated {
 	return &CreateAddonCreated{}
 }
 
-/* CreateAddonCreated describes a response with status code 201, with default header values.
+/*
+CreateAddonCreated describes a response with status code 201, with default header values.
 
 Addon
 */
@@ -66,9 +67,39 @@ type CreateAddonCreated struct {
 	Payload *models.Addon
 }
 
+// IsSuccess returns true when this create addon created response has a 2xx status code
+func (o *CreateAddonCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create addon created response has a 3xx status code
+func (o *CreateAddonCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create addon created response has a 4xx status code
+func (o *CreateAddonCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create addon created response has a 5xx status code
+func (o *CreateAddonCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create addon created response a status code equal to that given
+func (o *CreateAddonCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateAddonCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateAddonCreated) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateAddonCreated) GetPayload() *models.Addon {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewCreateAddonUnauthorized() *CreateAddonUnauthorized {
 	return &CreateAddonUnauthorized{}
 }
 
-/* CreateAddonUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateAddonUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateAddonUnauthorized struct {
 }
 
+// IsSuccess returns true when this create addon unauthorized response has a 2xx status code
+func (o *CreateAddonUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create addon unauthorized response has a 3xx status code
+func (o *CreateAddonUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create addon unauthorized response has a 4xx status code
+func (o *CreateAddonUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create addon unauthorized response has a 5xx status code
+func (o *CreateAddonUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create addon unauthorized response a status code equal to that given
+func (o *CreateAddonUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateAddonUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonUnauthorized ", 401)
+}
+
+func (o *CreateAddonUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewCreateAddonForbidden() *CreateAddonForbidden {
 	return &CreateAddonForbidden{}
 }
 
-/* CreateAddonForbidden describes a response with status code 403, with default header values.
+/*
+CreateAddonForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateAddonForbidden struct {
 }
 
+// IsSuccess returns true when this create addon forbidden response has a 2xx status code
+func (o *CreateAddonForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create addon forbidden response has a 3xx status code
+func (o *CreateAddonForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create addon forbidden response has a 4xx status code
+func (o *CreateAddonForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create addon forbidden response has a 5xx status code
+func (o *CreateAddonForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create addon forbidden response a status code equal to that given
+func (o *CreateAddonForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateAddonForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonForbidden ", 403)
+}
+
+func (o *CreateAddonForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddonForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewCreateAddonDefault(code int) *CreateAddonDefault {
 	}
 }
 
-/* CreateAddonDefault describes a response with status code -1, with default header values.
+/*
+CreateAddonDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *CreateAddonDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create addon default response has a 2xx status code
+func (o *CreateAddonDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create addon default response has a 3xx status code
+func (o *CreateAddonDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create addon default response has a 4xx status code
+func (o *CreateAddonDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create addon default response has a 5xx status code
+func (o *CreateAddonDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create addon default response a status code equal to that given
+func (o *CreateAddonDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateAddonDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddon default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateAddonDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons][%d] createAddon default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateAddonDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

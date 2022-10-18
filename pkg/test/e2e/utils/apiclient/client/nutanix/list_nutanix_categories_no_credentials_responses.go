@@ -46,7 +46,8 @@ func NewListNutanixCategoriesNoCredentialsOK() *ListNutanixCategoriesNoCredentia
 	return &ListNutanixCategoriesNoCredentialsOK{}
 }
 
-/* ListNutanixCategoriesNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListNutanixCategoriesNoCredentialsOK describes a response with status code 200, with default header values.
 
 NutanixCategoryList
 */
@@ -54,9 +55,39 @@ type ListNutanixCategoriesNoCredentialsOK struct {
 	Payload models.NutanixCategoryList
 }
 
+// IsSuccess returns true when this list nutanix categories no credentials o k response has a 2xx status code
+func (o *ListNutanixCategoriesNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list nutanix categories no credentials o k response has a 3xx status code
+func (o *ListNutanixCategoriesNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list nutanix categories no credentials o k response has a 4xx status code
+func (o *ListNutanixCategoriesNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list nutanix categories no credentials o k response has a 5xx status code
+func (o *ListNutanixCategoriesNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list nutanix categories no credentials o k response a status code equal to that given
+func (o *ListNutanixCategoriesNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNutanixCategoriesNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories][%d] listNutanixCategoriesNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNutanixCategoriesNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories][%d] listNutanixCategoriesNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNutanixCategoriesNoCredentialsOK) GetPayload() models.NutanixCategoryList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListNutanixCategoriesNoCredentialsDefault(code int) *ListNutanixCategori
 	}
 }
 
-/* ListNutanixCategoriesNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListNutanixCategoriesNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListNutanixCategoriesNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list nutanix categories no credentials default response has a 2xx status code
+func (o *ListNutanixCategoriesNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list nutanix categories no credentials default response has a 3xx status code
+func (o *ListNutanixCategoriesNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list nutanix categories no credentials default response has a 4xx status code
+func (o *ListNutanixCategoriesNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list nutanix categories no credentials default response has a 5xx status code
+func (o *ListNutanixCategoriesNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list nutanix categories no credentials default response a status code equal to that given
+func (o *ListNutanixCategoriesNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNutanixCategoriesNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories][%d] listNutanixCategoriesNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNutanixCategoriesNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/nutanix/categories][%d] listNutanixCategoriesNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNutanixCategoriesNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -58,7 +58,8 @@ func NewListOperatingSystemProfilesForClusterOK() *ListOperatingSystemProfilesFo
 	return &ListOperatingSystemProfilesForClusterOK{}
 }
 
-/* ListOperatingSystemProfilesForClusterOK describes a response with status code 200, with default header values.
+/*
+ListOperatingSystemProfilesForClusterOK describes a response with status code 200, with default header values.
 
 OperatingSystemProfile
 */
@@ -66,9 +67,39 @@ type ListOperatingSystemProfilesForClusterOK struct {
 	Payload []*models.OperatingSystemProfile
 }
 
+// IsSuccess returns true when this list operating system profiles for cluster o k response has a 2xx status code
+func (o *ListOperatingSystemProfilesForClusterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list operating system profiles for cluster o k response has a 3xx status code
+func (o *ListOperatingSystemProfilesForClusterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list operating system profiles for cluster o k response has a 4xx status code
+func (o *ListOperatingSystemProfilesForClusterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list operating system profiles for cluster o k response has a 5xx status code
+func (o *ListOperatingSystemProfilesForClusterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list operating system profiles for cluster o k response a status code equal to that given
+func (o *ListOperatingSystemProfilesForClusterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListOperatingSystemProfilesForClusterOK) Error() string {
 	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForClusterOK  %+v", 200, o.Payload)
 }
+
+func (o *ListOperatingSystemProfilesForClusterOK) String() string {
+	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForClusterOK  %+v", 200, o.Payload)
+}
+
 func (o *ListOperatingSystemProfilesForClusterOK) GetPayload() []*models.OperatingSystemProfile {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListOperatingSystemProfilesForClusterUnauthorized() *ListOperatingSystem
 	return &ListOperatingSystemProfilesForClusterUnauthorized{}
 }
 
-/* ListOperatingSystemProfilesForClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+ListOperatingSystemProfilesForClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListOperatingSystemProfilesForClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this list operating system profiles for cluster unauthorized response has a 2xx status code
+func (o *ListOperatingSystemProfilesForClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list operating system profiles for cluster unauthorized response has a 3xx status code
+func (o *ListOperatingSystemProfilesForClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list operating system profiles for cluster unauthorized response has a 4xx status code
+func (o *ListOperatingSystemProfilesForClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list operating system profiles for cluster unauthorized response has a 5xx status code
+func (o *ListOperatingSystemProfilesForClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list operating system profiles for cluster unauthorized response a status code equal to that given
+func (o *ListOperatingSystemProfilesForClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListOperatingSystemProfilesForClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForClusterUnauthorized ", 401)
+}
+
+func (o *ListOperatingSystemProfilesForClusterUnauthorized) String() string {
 	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForClusterUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListOperatingSystemProfilesForClusterForbidden() *ListOperatingSystemPro
 	return &ListOperatingSystemProfilesForClusterForbidden{}
 }
 
-/* ListOperatingSystemProfilesForClusterForbidden describes a response with status code 403, with default header values.
+/*
+ListOperatingSystemProfilesForClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListOperatingSystemProfilesForClusterForbidden struct {
 }
 
+// IsSuccess returns true when this list operating system profiles for cluster forbidden response has a 2xx status code
+func (o *ListOperatingSystemProfilesForClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list operating system profiles for cluster forbidden response has a 3xx status code
+func (o *ListOperatingSystemProfilesForClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list operating system profiles for cluster forbidden response has a 4xx status code
+func (o *ListOperatingSystemProfilesForClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list operating system profiles for cluster forbidden response has a 5xx status code
+func (o *ListOperatingSystemProfilesForClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list operating system profiles for cluster forbidden response a status code equal to that given
+func (o *ListOperatingSystemProfilesForClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListOperatingSystemProfilesForClusterForbidden) Error() string {
+	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForClusterForbidden ", 403)
+}
+
+func (o *ListOperatingSystemProfilesForClusterForbidden) String() string {
 	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForClusterForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListOperatingSystemProfilesForClusterDefault(code int) *ListOperatingSys
 	}
 }
 
-/* ListOperatingSystemProfilesForClusterDefault describes a response with status code -1, with default header values.
+/*
+ListOperatingSystemProfilesForClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListOperatingSystemProfilesForClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list operating system profiles for cluster default response has a 2xx status code
+func (o *ListOperatingSystemProfilesForClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list operating system profiles for cluster default response has a 3xx status code
+func (o *ListOperatingSystemProfilesForClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list operating system profiles for cluster default response has a 4xx status code
+func (o *ListOperatingSystemProfilesForClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list operating system profiles for cluster default response has a 5xx status code
+func (o *ListOperatingSystemProfilesForClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list operating system profiles for cluster default response a status code equal to that given
+func (o *ListOperatingSystemProfilesForClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListOperatingSystemProfilesForClusterDefault) Error() string {
 	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListOperatingSystemProfilesForClusterDefault) String() string {
+	return fmt.Sprintf("[GET /projects/{project_id}/clusters/{cluster_id}/operatingsystemprofiles][%d] listOperatingSystemProfilesForCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListOperatingSystemProfilesForClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

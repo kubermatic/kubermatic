@@ -19,4 +19,8 @@ package common
 const (
 	ARM64Architecture = "arm64"
 	X64Architecture   = "x64"
+	// The architecture of the machine image.
+	// Used for EKS api endpoints.
+	EKSARM64Architecture  = "arm64"
+	EKSX86_64Architecture = "x86_64"
 )

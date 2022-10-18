@@ -22,10 +22,11 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,14 +54,14 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v0.6.0"
+	Tag  = "v1.1.1"
 )
 
 type operatingSystemManagerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	Cluster() *kubermaticv1.Cluster
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	NodeLocalDNSCacheEnabled() bool
 	GetCSIMigrationFeatureGates() []string
 	DC() *kubermaticv1.Datacenter
@@ -135,7 +136,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
+			cloudProviderName, err := kubermaticv1helper.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
 				return nil, err
 			}
@@ -154,7 +155,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				nodePortRange:    data.ComputedNodePortRange(),
 			}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
+			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/operating-system-manager"))
 			if r := data.OperatingSystemManagerImageRepository(); r != "" {
 				repository = r
 			}

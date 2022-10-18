@@ -33,11 +33,11 @@ func addFlags(fs *flag.FlagSet) {
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt serverRunOptions) (provider.SeedsGetter, error) {
-	return provider.SeedsGetterFactory(ctx, client, opt.namespace)
+	return kubernetes.SeedsGetterFactory(ctx, client, opt.namespace)
 }
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt serverRunOptions) (provider.SeedKubeconfigGetter, error) {
-	return provider.SeedKubeconfigGetterFactory(ctx, client)
+	return kubernetes.SeedKubeconfigGetterFactory(ctx, client)
 }
 
 func resourceQuotaProviderFactory(_ kubernetes.ImpersonationClient, _ ctrlruntimeclient.Client) provider.ResourceQuotaProvider {

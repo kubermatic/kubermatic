@@ -52,10 +52,12 @@ func NewListDCForProviderParamsWithHTTPClient(client *http.Client) *ListDCForPro
 	}
 }
 
-/* ListDCForProviderParams contains all the parameters to send to the API endpoint
-   for the list d c for provider operation.
+/*
+ListDCForProviderParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list d c for provider operation.
+
+	Typically these are written to a http.Request.
 */
 type ListDCForProviderParams struct {
 

@@ -3597,7 +3597,7 @@ rules:
     resources:
       - endpointslices
     verbs:
-      - watch 
+      - watch
       - list
   - apiGroups: [""]
     resources:
@@ -3695,7 +3695,7 @@ rules:
 
 ---
 # Flannel ClusterRole
-# Pulled from https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel-rbac.yml
+# Pulled from https://github.com/flannel-io/flannel/blob/master/Documentation/kube-flannel.yml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -3791,7 +3791,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: '{{ Registry "quay.io" }}/calico/cni:v3.20.5'
+          image: '{{ Image "quay.io/calico/cni:v3.20.5" }}'
           command: ["/opt/cni/bin/install"]
           envFrom:
           - configMapRef:
@@ -3834,7 +3834,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: '{{ Registry "quay.io" }}/calico/node:v3.20.5'
+          image: '{{ Image "quay.io/calico/node:v3.20.5" }}'
           envFrom:
           - configMapRef:
               # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
@@ -3949,7 +3949,7 @@ spec:
         # This container runs flannel using the kube-subnet-mgr backend
         # for allocating subnets.
         - name: kube-flannel
-          image: '{{ Registry "quay.io" }}/coreos/flannel:v0.15.1'
+          image: '{{ Image "quay.io/coreos/flannel:v0.15.1" }}'
           command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
           securityContext:
             privileged: true
@@ -4065,7 +4065,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: calico-kube-controllers
-          image: '{{ Registry "quay.io" }}/calico/kube-controllers:v3.20.5'
+          image: '{{ Image "quay.io/calico/kube-controllers:v3.20.5" }}'
           env:
             # Choose which controllers to run.
             - name: ENABLED_CONTROLLERS

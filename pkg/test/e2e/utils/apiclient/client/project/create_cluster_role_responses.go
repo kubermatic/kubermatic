@@ -58,7 +58,8 @@ func NewCreateClusterRoleCreated() *CreateClusterRoleCreated {
 	return &CreateClusterRoleCreated{}
 }
 
-/* CreateClusterRoleCreated describes a response with status code 201, with default header values.
+/*
+CreateClusterRoleCreated describes a response with status code 201, with default header values.
 
 ClusterRole
 */
@@ -66,9 +67,39 @@ type CreateClusterRoleCreated struct {
 	Payload *models.ClusterRole
 }
 
+// IsSuccess returns true when this create cluster role created response has a 2xx status code
+func (o *CreateClusterRoleCreated) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this create cluster role created response has a 3xx status code
+func (o *CreateClusterRoleCreated) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster role created response has a 4xx status code
+func (o *CreateClusterRoleCreated) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create cluster role created response has a 5xx status code
+func (o *CreateClusterRoleCreated) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster role created response a status code equal to that given
+func (o *CreateClusterRoleCreated) IsCode(code int) bool {
+	return code == 201
+}
+
 func (o *CreateClusterRoleCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleCreated  %+v", 201, o.Payload)
 }
+
+func (o *CreateClusterRoleCreated) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleCreated  %+v", 201, o.Payload)
+}
+
 func (o *CreateClusterRoleCreated) GetPayload() *models.ClusterRole {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewCreateClusterRoleUnauthorized() *CreateClusterRoleUnauthorized {
 	return &CreateClusterRoleUnauthorized{}
 }
 
-/* CreateClusterRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+CreateClusterRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateClusterRoleUnauthorized struct {
 }
 
+// IsSuccess returns true when this create cluster role unauthorized response has a 2xx status code
+func (o *CreateClusterRoleUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster role unauthorized response has a 3xx status code
+func (o *CreateClusterRoleUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster role unauthorized response has a 4xx status code
+func (o *CreateClusterRoleUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster role unauthorized response has a 5xx status code
+func (o *CreateClusterRoleUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster role unauthorized response a status code equal to that given
+func (o *CreateClusterRoleUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *CreateClusterRoleUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleUnauthorized ", 401)
+}
+
+func (o *CreateClusterRoleUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewCreateClusterRoleForbidden() *CreateClusterRoleForbidden {
 	return &CreateClusterRoleForbidden{}
 }
 
-/* CreateClusterRoleForbidden describes a response with status code 403, with default header values.
+/*
+CreateClusterRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type CreateClusterRoleForbidden struct {
 }
 
+// IsSuccess returns true when this create cluster role forbidden response has a 2xx status code
+func (o *CreateClusterRoleForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create cluster role forbidden response has a 3xx status code
+func (o *CreateClusterRoleForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create cluster role forbidden response has a 4xx status code
+func (o *CreateClusterRoleForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create cluster role forbidden response has a 5xx status code
+func (o *CreateClusterRoleForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create cluster role forbidden response a status code equal to that given
+func (o *CreateClusterRoleForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *CreateClusterRoleForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleForbidden ", 403)
+}
+
+func (o *CreateClusterRoleForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRoleForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewCreateClusterRoleDefault(code int) *CreateClusterRoleDefault {
 	}
 }
 
-/* CreateClusterRoleDefault describes a response with status code -1, with default header values.
+/*
+CreateClusterRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *CreateClusterRoleDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this create cluster role default response has a 2xx status code
+func (o *CreateClusterRoleDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this create cluster role default response has a 3xx status code
+func (o *CreateClusterRoleDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this create cluster role default response has a 4xx status code
+func (o *CreateClusterRoleDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this create cluster role default response has a 5xx status code
+func (o *CreateClusterRoleDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this create cluster role default response a status code equal to that given
+func (o *CreateClusterRoleDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *CreateClusterRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRole default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *CreateClusterRoleDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/clusterroles][%d] createClusterRole default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *CreateClusterRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

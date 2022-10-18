@@ -58,7 +58,8 @@ func NewGetNodeUpgradesOK() *GetNodeUpgradesOK {
 	return &GetNodeUpgradesOK{}
 }
 
-/* GetNodeUpgradesOK describes a response with status code 200, with default header values.
+/*
+GetNodeUpgradesOK describes a response with status code 200, with default header values.
 
 MasterVersion
 */
@@ -66,9 +67,39 @@ type GetNodeUpgradesOK struct {
 	Payload []*models.MasterVersion
 }
 
+// IsSuccess returns true when this get node upgrades o k response has a 2xx status code
+func (o *GetNodeUpgradesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get node upgrades o k response has a 3xx status code
+func (o *GetNodeUpgradesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get node upgrades o k response has a 4xx status code
+func (o *GetNodeUpgradesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get node upgrades o k response has a 5xx status code
+func (o *GetNodeUpgradesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get node upgrades o k response a status code equal to that given
+func (o *GetNodeUpgradesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetNodeUpgradesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgradesOK  %+v", 200, o.Payload)
 }
+
+func (o *GetNodeUpgradesOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgradesOK  %+v", 200, o.Payload)
+}
+
 func (o *GetNodeUpgradesOK) GetPayload() []*models.MasterVersion {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewGetNodeUpgradesUnauthorized() *GetNodeUpgradesUnauthorized {
 	return &GetNodeUpgradesUnauthorized{}
 }
 
-/* GetNodeUpgradesUnauthorized describes a response with status code 401, with default header values.
+/*
+GetNodeUpgradesUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetNodeUpgradesUnauthorized struct {
 }
 
+// IsSuccess returns true when this get node upgrades unauthorized response has a 2xx status code
+func (o *GetNodeUpgradesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get node upgrades unauthorized response has a 3xx status code
+func (o *GetNodeUpgradesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get node upgrades unauthorized response has a 4xx status code
+func (o *GetNodeUpgradesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get node upgrades unauthorized response has a 5xx status code
+func (o *GetNodeUpgradesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get node upgrades unauthorized response a status code equal to that given
+func (o *GetNodeUpgradesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetNodeUpgradesUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgradesUnauthorized ", 401)
+}
+
+func (o *GetNodeUpgradesUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgradesUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewGetNodeUpgradesForbidden() *GetNodeUpgradesForbidden {
 	return &GetNodeUpgradesForbidden{}
 }
 
-/* GetNodeUpgradesForbidden describes a response with status code 403, with default header values.
+/*
+GetNodeUpgradesForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetNodeUpgradesForbidden struct {
 }
 
+// IsSuccess returns true when this get node upgrades forbidden response has a 2xx status code
+func (o *GetNodeUpgradesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get node upgrades forbidden response has a 3xx status code
+func (o *GetNodeUpgradesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get node upgrades forbidden response has a 4xx status code
+func (o *GetNodeUpgradesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get node upgrades forbidden response has a 5xx status code
+func (o *GetNodeUpgradesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get node upgrades forbidden response a status code equal to that given
+func (o *GetNodeUpgradesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetNodeUpgradesForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgradesForbidden ", 403)
+}
+
+func (o *GetNodeUpgradesForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgradesForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewGetNodeUpgradesDefault(code int) *GetNodeUpgradesDefault {
 	}
 }
 
-/* GetNodeUpgradesDefault describes a response with status code -1, with default header values.
+/*
+GetNodeUpgradesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *GetNodeUpgradesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get node upgrades default response has a 2xx status code
+func (o *GetNodeUpgradesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get node upgrades default response has a 3xx status code
+func (o *GetNodeUpgradesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get node upgrades default response has a 4xx status code
+func (o *GetNodeUpgradesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get node upgrades default response has a 5xx status code
+func (o *GetNodeUpgradesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get node upgrades default response a status code equal to that given
+func (o *GetNodeUpgradesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetNodeUpgradesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgrades default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetNodeUpgradesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/upgrades/node][%d] getNodeUpgrades default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetNodeUpgradesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -15,8 +15,7 @@
 presubmits:
   - name: pre-kubermatic-e2e-nutanix-ubuntu-1.24
     decorate: true
-    optional: true
-    # run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
+    run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-nutanix: "true"
@@ -31,7 +30,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-10
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.16-2
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -62,8 +61,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-nutanix-centos-1.24
     decorate: true
-    optional: true
-    # run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
+    run_if_changed: "(addons/csi/nutanix|pkg/provider/cloud/nutanix)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-nutanix: "true"
@@ -78,7 +76,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-10
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.16-2
           env:
             - name: KUBERMATIC_EDITION
               value: ee

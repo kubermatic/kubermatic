@@ -40,6 +40,10 @@ type ClientService interface {
 
 	ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error)
 
+	ListProjectPresets(params *ListProjectPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectPresetsOK, error)
+
+	ListProjectProviderPresets(params *ListProjectProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectProviderPresetsOK, error)
+
 	ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error)
 
 	UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetOK, error)
@@ -50,7 +54,7 @@ type ClientService interface {
 }
 
 /*
-  CreatePreset Creates the preset
+CreatePreset Creates the preset
 */
 func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePresetOK, error) {
 	// TODO: Validate the params before sending
@@ -88,7 +92,7 @@ func (a *Client) CreatePreset(params *CreatePresetParams, authInfo runtime.Clien
 }
 
 /*
-  DeletePreset removes preset
+DeletePreset removes preset
 */
 func (a *Client) DeletePreset(params *DeletePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePresetOK, error) {
 	// TODO: Validate the params before sending
@@ -126,7 +130,7 @@ func (a *Client) DeletePreset(params *DeletePresetParams, authInfo runtime.Clien
 }
 
 /*
-  DeletePresetProvider removes selected preset s provider
+DeletePresetProvider removes selected preset s provider
 */
 func (a *Client) DeletePresetProvider(params *DeletePresetProviderParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeletePresetProviderOK, error) {
 	// TODO: Validate the params before sending
@@ -164,9 +168,9 @@ func (a *Client) DeletePresetProvider(params *DeletePresetProviderParams, authIn
 }
 
 /*
-  DeleteProviderPreset deletes provider preset
+DeleteProviderPreset deletes provider preset
 
-  This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
+This endpoint has been depreciated in favour of /presets/{presets_name} and /presets/{preset_name}/providers/{provider_name}.
 */
 func (a *Client) DeleteProviderPreset(params *DeleteProviderPresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProviderPresetOK, error) {
 	// TODO: Validate the params before sending
@@ -204,7 +208,7 @@ func (a *Client) DeleteProviderPreset(params *DeleteProviderPresetParams, authIn
 }
 
 /*
-  GetPresetStats gets presets stats
+GetPresetStats gets presets stats
 */
 func (a *Client) GetPresetStats(params *GetPresetStatsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPresetStatsOK, error) {
 	// TODO: Validate the params before sending
@@ -242,7 +246,7 @@ func (a *Client) GetPresetStats(params *GetPresetStatsParams, authInfo runtime.C
 }
 
 /*
-  ListPresets Lists presets
+ListPresets Lists presets
 */
 func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListPresetsOK, error) {
 	// TODO: Validate the params before sending
@@ -280,7 +284,83 @@ func (a *Client) ListPresets(params *ListPresetsParams, authInfo runtime.ClientA
 }
 
 /*
-  ListProviderPresets Lists presets for the provider
+ListProjectPresets Lists presets in a specific project
+*/
+func (a *Client) ListProjectPresets(params *ListProjectPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectPresetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectPresetsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectPresets",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/presets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectPresetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectPresetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectPresetsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProjectProviderPresets Lists presets for the provider in a specific project
+*/
+func (a *Client) ListProjectProviderPresets(params *ListProjectProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectProviderPresetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListProjectProviderPresetsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listProjectProviderPresets",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/providers/{provider_name}/presets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListProjectProviderPresetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListProjectProviderPresetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListProjectProviderPresetsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListProviderPresets Lists presets for the provider
 */
 func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProviderPresetsOK, error) {
 	// TODO: Validate the params before sending
@@ -318,7 +398,7 @@ func (a *Client) ListProviderPresets(params *ListProviderPresetsParams, authInfo
 }
 
 /*
-  UpdatePreset Updates provider preset
+UpdatePreset Updates provider preset
 */
 func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetOK, error) {
 	// TODO: Validate the params before sending
@@ -356,7 +436,7 @@ func (a *Client) UpdatePreset(params *UpdatePresetParams, authInfo runtime.Clien
 }
 
 /*
-  UpdatePresetStatus updates the status of a preset it can enable or disable it so that it won t be listed by the list endpoints
+UpdatePresetStatus updates the status of a preset it can enable or disable it so that it won t be listed by the list endpoints
 */
 func (a *Client) UpdatePresetStatus(params *UpdatePresetStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePresetStatusOK, error) {
 	// TODO: Validate the params before sending

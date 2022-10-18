@@ -24,6 +24,7 @@ import (
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -37,7 +38,7 @@ const (
 
 // IsRunningInitContainer returns a init container which will wait until the apiserver is reachable via its ClusterIP.
 type isRunningInitContainerData interface {
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 }
 
@@ -82,7 +83,7 @@ func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, cont
 	}
 	copyContainer := corev1.Container{
 		Name:    initContainerName,
-		Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/http-prober:" + tag,
+		Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/http-prober:" + tag)),
 		Command: []string{"/bin/cp", "/usr/local/bin/http-prober", "/http-prober-bin/http-prober"},
 		VolumeMounts: []corev1.VolumeMount{{
 			Name:      emptyDirVolumeName,
@@ -148,7 +149,7 @@ func wrapContainer(data isRunningInitContainerData, container corev1.Container, 
 	})
 	container.Command = []string{"/http-prober-bin/http-prober"}
 	container.Args = []string{
-		"-endpoint", fmt.Sprintf("https://%s/healthz", data.Cluster().GetAddress().InternalName),
+		"-endpoint", fmt.Sprintf("https://%s/healthz", data.Cluster().Status.Address.InternalName),
 		"-insecure",
 		"-retries", "100",
 		"-retry-wait", "2",

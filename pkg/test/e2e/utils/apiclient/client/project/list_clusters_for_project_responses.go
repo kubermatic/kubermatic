@@ -58,7 +58,8 @@ func NewListClustersForProjectOK() *ListClustersForProjectOK {
 	return &ListClustersForProjectOK{}
 }
 
-/* ListClustersForProjectOK describes a response with status code 200, with default header values.
+/*
+ListClustersForProjectOK describes a response with status code 200, with default header values.
 
 ClusterList
 */
@@ -66,9 +67,39 @@ type ListClustersForProjectOK struct {
 	Payload models.ClusterList
 }
 
+// IsSuccess returns true when this list clusters for project o k response has a 2xx status code
+func (o *ListClustersForProjectOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list clusters for project o k response has a 3xx status code
+func (o *ListClustersForProjectOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list clusters for project o k response has a 4xx status code
+func (o *ListClustersForProjectOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list clusters for project o k response has a 5xx status code
+func (o *ListClustersForProjectOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list clusters for project o k response a status code equal to that given
+func (o *ListClustersForProjectOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListClustersForProjectOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProjectOK  %+v", 200, o.Payload)
 }
+
+func (o *ListClustersForProjectOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProjectOK  %+v", 200, o.Payload)
+}
+
 func (o *ListClustersForProjectOK) GetPayload() models.ClusterList {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListClustersForProjectUnauthorized() *ListClustersForProjectUnauthorized
 	return &ListClustersForProjectUnauthorized{}
 }
 
-/* ListClustersForProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+ListClustersForProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListClustersForProjectUnauthorized struct {
 }
 
+// IsSuccess returns true when this list clusters for project unauthorized response has a 2xx status code
+func (o *ListClustersForProjectUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list clusters for project unauthorized response has a 3xx status code
+func (o *ListClustersForProjectUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list clusters for project unauthorized response has a 4xx status code
+func (o *ListClustersForProjectUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list clusters for project unauthorized response has a 5xx status code
+func (o *ListClustersForProjectUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list clusters for project unauthorized response a status code equal to that given
+func (o *ListClustersForProjectUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListClustersForProjectUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProjectUnauthorized ", 401)
+}
+
+func (o *ListClustersForProjectUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProjectUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListClustersForProjectForbidden() *ListClustersForProjectForbidden {
 	return &ListClustersForProjectForbidden{}
 }
 
-/* ListClustersForProjectForbidden describes a response with status code 403, with default header values.
+/*
+ListClustersForProjectForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListClustersForProjectForbidden struct {
 }
 
+// IsSuccess returns true when this list clusters for project forbidden response has a 2xx status code
+func (o *ListClustersForProjectForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list clusters for project forbidden response has a 3xx status code
+func (o *ListClustersForProjectForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list clusters for project forbidden response has a 4xx status code
+func (o *ListClustersForProjectForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list clusters for project forbidden response has a 5xx status code
+func (o *ListClustersForProjectForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list clusters for project forbidden response a status code equal to that given
+func (o *ListClustersForProjectForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListClustersForProjectForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProjectForbidden ", 403)
+}
+
+func (o *ListClustersForProjectForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProjectForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListClustersForProjectDefault(code int) *ListClustersForProjectDefault {
 	}
 }
 
-/* ListClustersForProjectDefault describes a response with status code -1, with default header values.
+/*
+ListClustersForProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListClustersForProjectDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list clusters for project default response has a 2xx status code
+func (o *ListClustersForProjectDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list clusters for project default response has a 3xx status code
+func (o *ListClustersForProjectDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list clusters for project default response has a 4xx status code
+func (o *ListClustersForProjectDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list clusters for project default response has a 5xx status code
+func (o *ListClustersForProjectDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list clusters for project default response a status code equal to that given
+func (o *ListClustersForProjectDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListClustersForProjectDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProject default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListClustersForProjectDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/clusters][%d] listClustersForProject default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListClustersForProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

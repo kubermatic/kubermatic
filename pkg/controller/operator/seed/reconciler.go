@@ -18,7 +18,6 @@ package seed
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -27,18 +26,18 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -48,9 +47,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -58,16 +55,17 @@ import (
 // Reconciler (re)stores all components required for running a Kubermatic
 // seed cluster.
 type Reconciler struct {
-	log            *zap.SugaredLogger
-	scheme         *runtime.Scheme
-	namespace      string
-	masterClient   ctrlruntimeclient.Client
-	masterRecorder record.EventRecorder
-	seedClients    map[string]ctrlruntimeclient.Client
-	seedRecorders  map[string]record.EventRecorder
-	seedsGetter    provider.SeedsGetter
-	workerName     string
-	versions       kubermaticversion.Versions
+	log                    *zap.SugaredLogger
+	scheme                 *runtime.Scheme
+	namespace              string
+	masterClient           ctrlruntimeclient.Client
+	masterRecorder         record.EventRecorder
+	configGetter           provider.KubermaticConfigurationGetter
+	seedClients            map[string]ctrlruntimeclient.Client
+	seedRecorders          map[string]record.EventRecorder
+	initializedSeedsGetter provider.SeedsGetter
+	workerName             string
+	versions               kubermaticversion.Versions
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -75,6 +73,7 @@ type Reconciler struct {
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("seed", request.Name)
+	log.Debug("Reconciling")
 
 	err := r.reconcile(ctx, log, request.Name)
 	if err != nil {
@@ -85,17 +84,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seedName string) error {
-	log.Debug("reconciling")
-
 	// find requested seed
-	seeds, err := r.seedsGetter()
+	seeds, err := r.initializedSeedsGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get seeds: %w", err)
 	}
 
 	seed, exists := seeds[seedName]
 	if !exists {
-		log.Debug("ignoring request for non-existing seed")
+		log.Debug("ignoring request for non-existing / uninitialized seed")
 		return nil
 	}
 
@@ -122,20 +119,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 	seedRecorder := r.seedRecorders[seed.Name]
 
 	// find the owning KubermaticConfiguration
-	config, err := getKubermaticConfigurationForNamespace(ctx, r.masterClient, r.namespace, log)
+	config, err := r.configGetter(ctx)
 	if err != nil || config == nil {
 		return err
 	}
 
-	// create a copy of the configuration with default values applied
-	defaulted, err := defaults.DefaultConfiguration(config, log)
-	if err != nil {
-		return fmt.Errorf("failed to apply defaults to KubermaticConfiguration: %w", err)
-	}
-
 	// As the Seed CR is the owner for all resources managed by this controller,
-	// we wait for the seed-sync controller to do its job and mirror the Seed CR
-	// into the seed cluster.
+	// we need the copy of the Seed resource from the master cluster on the seed cluster.
 	seedCopy := &kubermaticv1.Seed{}
 	name := types.NamespacedName{
 		Name:      seed.Name,
@@ -144,11 +134,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	if err := seedClient.Get(ctx, name, seedCopy); err != nil {
 		if apierrors.IsNotFound(err) {
-			err = errors.New("seed cluster has not yet been provisioned and contains no Seed CR yet")
+			err = fmt.Errorf("cannot find copy of Seed resource on seed cluster: %w", err)
 
 			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seed.Name, err))
 			r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
-			seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
 
 			if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingSkipped", err.Error()); err != nil {
 				log.Errorw("Failed to update seed status", zap.Error(err))
@@ -162,11 +151,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// Seed CR inside the seed cluster was deleted
 	if seedCopy.DeletionTimestamp != nil {
-		return r.cleanupDeletedSeed(ctx, defaulted, seedCopy, seedClient, log)
+		return r.cleanupDeletedSeed(ctx, config, seedCopy, seedClient, log)
 	}
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
-	if err := r.reconcileResources(ctx, defaulted, seedCopy, seedClient, log); err != nil {
+	if err := r.reconcileResources(ctx, config, seedCopy, seedClient, log); err != nil {
 		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seed.Name, err))
 		r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -293,7 +282,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	// apply the default values from the config to the current Seed
-	seed, err := defaults.DefaultSeed(seed, cfg, log)
+	seed, err := defaulting.DefaultSeed(seed, cfg, log)
 	if err != nil {
 		return fmt.Errorf("failed to apply defaults to Seed: %w", err)
 	}
@@ -301,18 +290,6 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	caBundle, err := certificates.GlobalCABundle(ctx, r.masterClient, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to get CA bundle ConfigMap: %w", err)
-	}
-
-	// Ensure that Old version of ApplicationInstallation CRD is removed.
-	if err := controllerutil.RemoveOldApplicationInstallationCRD(ctx, client); err != nil {
-		return err
-	}
-
-	// This is a migration that is required to ensure that with the release of KKP v2.21
-	// we don't enable OSM for existing clusters.
-	// TODO: Remove this with KKP 2.22 release.
-	if err := r.disableOperatingSystemManager(ctx, client, log); err != nil {
-		return err
 	}
 
 	if err := r.reconcileCRDs(ctx, cfg, seed, client, log); err != nil {
@@ -390,7 +367,11 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 			return fmt.Errorf("failed to list CRDs for API group %q in the operator: %w", group, err)
 		}
 
-		for i := range crds {
+		for i, crdObject := range crds {
+			if crdutil.SkipCRDOnCluster(&crdObject, crdutil.SeedCluster) {
+				continue
+			}
+
 			creators = append(creators, common.CRDCreator(&crds[i], log, r.versions))
 		}
 	}
@@ -695,41 +676,4 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	return nil
-}
-
-func (r *Reconciler) disableOperatingSystemManager(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	log.Debug("performing migration for .Spec.EnableOperatingSystemManager field in Clusters")
-
-	// Master operator removes `cluster-webhook` service and at the time of execution of this piece of code, these webhook are effectively dead.
-	// Any request to create, update, or delete the clusters will be rejected by the admission webhooks. Therefore, we need to remove the validating and mutating webhooks for clusters.
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
-	}
-
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
-	}
-
-	clusterList := &kubermaticv1.ClusterList{}
-	if err := client.List(ctx, clusterList); err != nil {
-		return fmt.Errorf("failed to list clusters: %w", err)
-	}
-
-	var errors []error
-	// We need to ensure that we explicitly set `.spec.enableOperatingSystemManager` to false for existing clusters.
-	// Although by default if this value is `nil` it should be treated as a truthy case. This migration is completely safe
-	// to do since for all the new clusters this field will be explicitly set to `true` via the webhooks.
-	for _, cluster := range clusterList.Items {
-		if cluster.Spec.EnableOperatingSystemManager == nil {
-			cluster.Spec.EnableOperatingSystemManager = pointer.Bool(false)
-
-			if err := client.Update(ctx, &cluster); err != nil {
-				// Instead of breaking on the first error just aggregate them to []errors and try to cover as much resources
-				// as we can in each run.
-				errors = append(errors, err)
-			}
-		}
-	}
-
-	return kerrors.NewAggregate(errors)
 }

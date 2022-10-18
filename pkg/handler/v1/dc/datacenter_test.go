@@ -415,6 +415,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 		expectedResponse string
 		httpStatus       int
 		existingAPIUser  *apiv1.User
+		existingSeed     *kubermaticv1.Seed
 	}{
 		{
 			name: "admin should be able to create dc",
@@ -429,6 +430,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			expectedResponse: `{"metadata":{"name":"do-correct"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":""},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
 			httpStatus:       http.StatusCreated,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+			existingSeed:     test.GenTestSeed(),
 		},
 		{
 			name: "non-admin should not be able to create dc",
@@ -441,6 +443,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			httpStatus:       http.StatusForbidden,
 			existingAPIUser:  test.GenDefaultAPIUser(),
+			existingSeed:     test.GenTestSeed(),
 		},
 		{
 			name: "should not be able to create already existing dc",
@@ -453,6 +456,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"private-do1\" already exists"}}`,
 			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+			existingSeed:     test.GenTestSeed(),
 		},
 		{
 			name: "should not be able to create a dc in non existing seed",
@@ -465,6 +469,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			expectedResponse: `{"error":{"code":400,"message":"Bad request: seed \"idontexist\" does not exist"}}`,
 			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+			existingSeed:     test.GenTestSeed(),
 		},
 		{
 			name: "should not be able to create a dc with no specified provider",
@@ -476,6 +481,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: []"}}`,
 			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+			existingSeed:     test.GenTestSeed(),
 		},
 		{
 			name: "should not be able to create a dc with multiple specified providers",
@@ -489,6 +495,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: one DC provider should be specified, got: [digitalocean aws]"}}`,
 			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+			existingSeed:     test.GenTestSeed(),
 		},
 		{
 			name: "should receive a validation error when providing different seed name in path and request",
@@ -501,6 +508,24 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			expectedResponse: `{"error":{"code":400,"message":"Validation error: path seed \"different\" and request seed \"us-central1\" not equal"}}`,
 			httpStatus:       http.StatusBadRequest,
 			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+			existingSeed:     test.GenTestSeed(),
+		},
+		{
+			name: "admin should be able to create when the dc map is nil",
+			dcSpec: apiv1.DatacenterSpec{
+				Seed:         "us-central1",
+				Country:      "NL",
+				Location:     "Amsterdam",
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+			},
+			dcName:           "do-correct",
+			seedName:         "us-central1",
+			expectedResponse: `{"metadata":{"name":"do-correct"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","digitalocean":{"region":""},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false,"ipv6Enabled":false}}`,
+			httpStatus:       http.StatusCreated,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+			existingSeed: test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+				seed.Spec.Datacenters = nil
+			}),
 		},
 	}
 	for _, tc := range testcases {
@@ -519,7 +544,7 @@ func TestDatacenterCreateEndpoint(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/seed/%s/dc", tc.seedName), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []ctrlruntimeclient.Object{},
-				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, hack.NewTestRouting)
+				[]ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), tc.existingSeed}, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint: %v", err)
 			}

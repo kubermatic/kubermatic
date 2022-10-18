@@ -61,7 +61,8 @@ func NewUpdateSeedOK() *UpdateSeedOK {
 	return &UpdateSeedOK{}
 }
 
-/* UpdateSeedOK describes a response with status code 200, with default header values.
+/*
+UpdateSeedOK describes a response with status code 200, with default header values.
 
 Seed
 */
@@ -69,9 +70,39 @@ type UpdateSeedOK struct {
 	Payload *models.Seed
 }
 
+// IsSuccess returns true when this update seed o k response has a 2xx status code
+func (o *UpdateSeedOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update seed o k response has a 3xx status code
+func (o *UpdateSeedOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update seed o k response has a 4xx status code
+func (o *UpdateSeedOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update seed o k response has a 5xx status code
+func (o *UpdateSeedOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update seed o k response a status code equal to that given
+func (o *UpdateSeedOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdateSeedOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeedOK  %+v", 200, o.Payload)
 }
+
+func (o *UpdateSeedOK) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeedOK  %+v", 200, o.Payload)
+}
+
 func (o *UpdateSeedOK) GetPayload() *models.Seed {
 	return o.Payload
 }
@@ -93,14 +124,44 @@ func NewUpdateSeedUnauthorized() *UpdateSeedUnauthorized {
 	return &UpdateSeedUnauthorized{}
 }
 
-/* UpdateSeedUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateSeedUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateSeedUnauthorized struct {
 }
 
+// IsSuccess returns true when this update seed unauthorized response has a 2xx status code
+func (o *UpdateSeedUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update seed unauthorized response has a 3xx status code
+func (o *UpdateSeedUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update seed unauthorized response has a 4xx status code
+func (o *UpdateSeedUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update seed unauthorized response has a 5xx status code
+func (o *UpdateSeedUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update seed unauthorized response a status code equal to that given
+func (o *UpdateSeedUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateSeedUnauthorized) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeedUnauthorized ", 401)
+}
+
+func (o *UpdateSeedUnauthorized) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeedUnauthorized ", 401)
 }
 
@@ -114,14 +175,44 @@ func NewUpdateSeedForbidden() *UpdateSeedForbidden {
 	return &UpdateSeedForbidden{}
 }
 
-/* UpdateSeedForbidden describes a response with status code 403, with default header values.
+/*
+UpdateSeedForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateSeedForbidden struct {
 }
 
+// IsSuccess returns true when this update seed forbidden response has a 2xx status code
+func (o *UpdateSeedForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update seed forbidden response has a 3xx status code
+func (o *UpdateSeedForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update seed forbidden response has a 4xx status code
+func (o *UpdateSeedForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update seed forbidden response has a 5xx status code
+func (o *UpdateSeedForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update seed forbidden response a status code equal to that given
+func (o *UpdateSeedForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateSeedForbidden) Error() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeedForbidden ", 403)
+}
+
+func (o *UpdateSeedForbidden) String() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeedForbidden ", 403)
 }
 
@@ -137,7 +228,8 @@ func NewUpdateSeedDefault(code int) *UpdateSeedDefault {
 	}
 }
 
-/* UpdateSeedDefault describes a response with status code -1, with default header values.
+/*
+UpdateSeedDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -152,9 +244,39 @@ func (o *UpdateSeedDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update seed default response has a 2xx status code
+func (o *UpdateSeedDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update seed default response has a 3xx status code
+func (o *UpdateSeedDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update seed default response has a 4xx status code
+func (o *UpdateSeedDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update seed default response has a 5xx status code
+func (o *UpdateSeedDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update seed default response a status code equal to that given
+func (o *UpdateSeedDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateSeedDefault) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeed default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateSeedDefault) String() string {
+	return fmt.Sprintf("[PATCH /api/v1/admin/seeds/{seed_name}][%d] updateSeed default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateSeedDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -171,7 +293,8 @@ func (o *UpdateSeedDefault) readResponse(response runtime.ClientResponse, consum
 	return nil
 }
 
-/*UpdateSeedBody update seed body
+/*
+UpdateSeedBody update seed body
 swagger:model UpdateSeedBody
 */
 type UpdateSeedBody struct {

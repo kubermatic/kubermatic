@@ -43,7 +43,7 @@ spec:
       serviceAccountName: multus
       containers:
       - name: kube-multus
-        image: '{{ Registry "ghcr.io" }}/k8snetworkplumbingwg/multus-cni:v3.8.1'
+        image: '{{ Image "ghcr.io/k8snetworkplumbingwg/multus-cni:v3.8.1" }}'
         command: ["/entrypoint.sh"]
         args:
         - "--multus-conf-file=auto"
@@ -64,7 +64,7 @@ spec:
           mountPath: /host/opt/cni/bin
       initContainers:
         - name: install-multus-binary
-          image: '{{ Registry "ghcr.io" }}/k8snetworkplumbingwg/multus-cni:v3.8.1'
+          image: '{{ Image "ghcr.io/k8snetworkplumbingwg/multus-cni:v3.8.1" }}'
           command:
             - "cp"
             - "/usr/src/multus-cni/bin/multus"

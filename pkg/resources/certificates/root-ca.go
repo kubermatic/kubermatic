@@ -70,7 +70,7 @@ type caCreatorData interface {
 // RootCACreator returns a function to create a secret with the root ca.
 func RootCACreator(data caCreatorData) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.CASecretName, GetCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().GetAddress().ExternalName))
+		return resources.CASecretName, GetCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().Status.Address.ExternalName))
 	}
 }
 

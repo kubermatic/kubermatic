@@ -46,7 +46,8 @@ func NewListVSphereNetworksOK() *ListVSphereNetworksOK {
 	return &ListVSphereNetworksOK{}
 }
 
-/* ListVSphereNetworksOK describes a response with status code 200, with default header values.
+/*
+ListVSphereNetworksOK describes a response with status code 200, with default header values.
 
 VSphereNetwork
 */
@@ -54,9 +55,39 @@ type ListVSphereNetworksOK struct {
 	Payload []*models.VSphereNetwork
 }
 
+// IsSuccess returns true when this list v sphere networks o k response has a 2xx status code
+func (o *ListVSphereNetworksOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list v sphere networks o k response has a 3xx status code
+func (o *ListVSphereNetworksOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list v sphere networks o k response has a 4xx status code
+func (o *ListVSphereNetworksOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list v sphere networks o k response has a 5xx status code
+func (o *ListVSphereNetworksOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list v sphere networks o k response a status code equal to that given
+func (o *ListVSphereNetworksOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListVSphereNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworksOK  %+v", 200, o.Payload)
 }
+
+func (o *ListVSphereNetworksOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworksOK  %+v", 200, o.Payload)
+}
+
 func (o *ListVSphereNetworksOK) GetPayload() []*models.VSphereNetwork {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListVSphereNetworksDefault(code int) *ListVSphereNetworksDefault {
 	}
 }
 
-/* ListVSphereNetworksDefault describes a response with status code -1, with default header values.
+/*
+ListVSphereNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListVSphereNetworksDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list v sphere networks default response has a 2xx status code
+func (o *ListVSphereNetworksDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list v sphere networks default response has a 3xx status code
+func (o *ListVSphereNetworksDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list v sphere networks default response has a 4xx status code
+func (o *ListVSphereNetworksDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list v sphere networks default response has a 5xx status code
+func (o *ListVSphereNetworksDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list v sphere networks default response a status code equal to that given
+func (o *ListVSphereNetworksDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListVSphereNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworks default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListVSphereNetworksDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/vsphere/networks][%d] listVSphereNetworks default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListVSphereNetworksDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

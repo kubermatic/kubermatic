@@ -52,10 +52,12 @@ func NewListMachineDeploymentsParamsWithHTTPClient(client *http.Client) *ListMac
 	}
 }
 
-/* ListMachineDeploymentsParams contains all the parameters to send to the API endpoint
-   for the list machine deployments operation.
+/*
+ListMachineDeploymentsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list machine deployments operation.
+
+	Typically these are written to a http.Request.
 */
 type ListMachineDeploymentsParams struct {
 

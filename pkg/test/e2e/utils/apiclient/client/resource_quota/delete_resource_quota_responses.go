@@ -58,14 +58,44 @@ func NewDeleteResourceQuotaOK() *DeleteResourceQuotaOK {
 	return &DeleteResourceQuotaOK{}
 }
 
-/* DeleteResourceQuotaOK describes a response with status code 200, with default header values.
+/*
+DeleteResourceQuotaOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteResourceQuotaOK struct {
 }
 
+// IsSuccess returns true when this delete resource quota o k response has a 2xx status code
+func (o *DeleteResourceQuotaOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete resource quota o k response has a 3xx status code
+func (o *DeleteResourceQuotaOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete resource quota o k response has a 4xx status code
+func (o *DeleteResourceQuotaOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete resource quota o k response has a 5xx status code
+func (o *DeleteResourceQuotaOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete resource quota o k response a status code equal to that given
+func (o *DeleteResourceQuotaOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteResourceQuotaOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaOK ", 200)
+}
+
+func (o *DeleteResourceQuotaOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteResourceQuotaUnauthorized() *DeleteResourceQuotaUnauthorized {
 	return &DeleteResourceQuotaUnauthorized{}
 }
 
-/* DeleteResourceQuotaUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteResourceQuotaUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteResourceQuotaUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete resource quota unauthorized response has a 2xx status code
+func (o *DeleteResourceQuotaUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete resource quota unauthorized response has a 3xx status code
+func (o *DeleteResourceQuotaUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete resource quota unauthorized response has a 4xx status code
+func (o *DeleteResourceQuotaUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete resource quota unauthorized response has a 5xx status code
+func (o *DeleteResourceQuotaUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete resource quota unauthorized response a status code equal to that given
+func (o *DeleteResourceQuotaUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteResourceQuotaUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaUnauthorized ", 401)
+}
+
+func (o *DeleteResourceQuotaUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteResourceQuotaForbidden() *DeleteResourceQuotaForbidden {
 	return &DeleteResourceQuotaForbidden{}
 }
 
-/* DeleteResourceQuotaForbidden describes a response with status code 403, with default header values.
+/*
+DeleteResourceQuotaForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteResourceQuotaForbidden struct {
 }
 
+// IsSuccess returns true when this delete resource quota forbidden response has a 2xx status code
+func (o *DeleteResourceQuotaForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete resource quota forbidden response has a 3xx status code
+func (o *DeleteResourceQuotaForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete resource quota forbidden response has a 4xx status code
+func (o *DeleteResourceQuotaForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete resource quota forbidden response has a 5xx status code
+func (o *DeleteResourceQuotaForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete resource quota forbidden response a status code equal to that given
+func (o *DeleteResourceQuotaForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteResourceQuotaForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaForbidden ", 403)
+}
+
+func (o *DeleteResourceQuotaForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuotaForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteResourceQuotaDefault(code int) *DeleteResourceQuotaDefault {
 	}
 }
 
-/* DeleteResourceQuotaDefault describes a response with status code -1, with default header values.
+/*
+DeleteResourceQuotaDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteResourceQuotaDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete resource quota default response has a 2xx status code
+func (o *DeleteResourceQuotaDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete resource quota default response has a 3xx status code
+func (o *DeleteResourceQuotaDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete resource quota default response has a 4xx status code
+func (o *DeleteResourceQuotaDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete resource quota default response has a 5xx status code
+func (o *DeleteResourceQuotaDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete resource quota default response a status code equal to that given
+func (o *DeleteResourceQuotaDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteResourceQuotaDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuota default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteResourceQuotaDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/quotas/{quota_name}][%d] deleteResourceQuota default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteResourceQuotaDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

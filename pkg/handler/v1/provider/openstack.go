@@ -31,6 +31,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 func GetOpenstackAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetProvider provider.PresetProvider) (*provider.UserInfo, *resources.OpenstackCredentials, error) {
@@ -439,7 +441,7 @@ func DecodeOpenstackTenantReq(_ context.Context, r *http.Request) (interface{}, 
 }
 
 func getPresetCredentials(ctx context.Context, userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider, token string) (*resources.OpenstackCredentials, error) {
-	p, err := presetProvider.GetPreset(ctx, userInfo, presetName)
+	p, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), presetName)
 	if err != nil {
 		return nil, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
 	}

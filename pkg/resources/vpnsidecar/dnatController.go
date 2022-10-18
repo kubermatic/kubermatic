@@ -37,7 +37,6 @@ var (
 )
 
 type dnatControllerData interface {
-	ImageRegistry(string) string
 	NodeAccessNetwork() string
 	DNATControllerImage() string
 	DNATControllerTag() string

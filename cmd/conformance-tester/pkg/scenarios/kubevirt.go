@@ -148,7 +148,7 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 func (s *kubevirtScenario) getOSImage() (string, error) {
 	switch s.operatingSystem {
 	case providerconfig.OperatingSystemUbuntu:
-		return kubevirtImageHttpServerSvc + "/ubuntu.img", nil
+		return kubevirtImageHttpServerSvc + "/ubuntu-22.04.img", nil
 	case providerconfig.OperatingSystemCentOS:
 		return kubevirtImageHttpServerSvc + "/centos.img", nil
 	default:

@@ -58,14 +58,44 @@ func NewRevokeClusterViewerTokenV2OK() *RevokeClusterViewerTokenV2OK {
 	return &RevokeClusterViewerTokenV2OK{}
 }
 
-/* RevokeClusterViewerTokenV2OK describes a response with status code 200, with default header values.
+/*
+RevokeClusterViewerTokenV2OK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type RevokeClusterViewerTokenV2OK struct {
 }
 
+// IsSuccess returns true when this revoke cluster viewer token v2 o k response has a 2xx status code
+func (o *RevokeClusterViewerTokenV2OK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this revoke cluster viewer token v2 o k response has a 3xx status code
+func (o *RevokeClusterViewerTokenV2OK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this revoke cluster viewer token v2 o k response has a 4xx status code
+func (o *RevokeClusterViewerTokenV2OK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this revoke cluster viewer token v2 o k response has a 5xx status code
+func (o *RevokeClusterViewerTokenV2OK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this revoke cluster viewer token v2 o k response a status code equal to that given
+func (o *RevokeClusterViewerTokenV2OK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *RevokeClusterViewerTokenV2OK) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2OK ", 200)
+}
+
+func (o *RevokeClusterViewerTokenV2OK) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2OK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewRevokeClusterViewerTokenV2Unauthorized() *RevokeClusterViewerTokenV2Unau
 	return &RevokeClusterViewerTokenV2Unauthorized{}
 }
 
-/* RevokeClusterViewerTokenV2Unauthorized describes a response with status code 401, with default header values.
+/*
+RevokeClusterViewerTokenV2Unauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type RevokeClusterViewerTokenV2Unauthorized struct {
 }
 
+// IsSuccess returns true when this revoke cluster viewer token v2 unauthorized response has a 2xx status code
+func (o *RevokeClusterViewerTokenV2Unauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this revoke cluster viewer token v2 unauthorized response has a 3xx status code
+func (o *RevokeClusterViewerTokenV2Unauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this revoke cluster viewer token v2 unauthorized response has a 4xx status code
+func (o *RevokeClusterViewerTokenV2Unauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this revoke cluster viewer token v2 unauthorized response has a 5xx status code
+func (o *RevokeClusterViewerTokenV2Unauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this revoke cluster viewer token v2 unauthorized response a status code equal to that given
+func (o *RevokeClusterViewerTokenV2Unauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *RevokeClusterViewerTokenV2Unauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2Unauthorized ", 401)
+}
+
+func (o *RevokeClusterViewerTokenV2Unauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2Unauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewRevokeClusterViewerTokenV2Forbidden() *RevokeClusterViewerTokenV2Forbidd
 	return &RevokeClusterViewerTokenV2Forbidden{}
 }
 
-/* RevokeClusterViewerTokenV2Forbidden describes a response with status code 403, with default header values.
+/*
+RevokeClusterViewerTokenV2Forbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type RevokeClusterViewerTokenV2Forbidden struct {
 }
 
+// IsSuccess returns true when this revoke cluster viewer token v2 forbidden response has a 2xx status code
+func (o *RevokeClusterViewerTokenV2Forbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this revoke cluster viewer token v2 forbidden response has a 3xx status code
+func (o *RevokeClusterViewerTokenV2Forbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this revoke cluster viewer token v2 forbidden response has a 4xx status code
+func (o *RevokeClusterViewerTokenV2Forbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this revoke cluster viewer token v2 forbidden response has a 5xx status code
+func (o *RevokeClusterViewerTokenV2Forbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this revoke cluster viewer token v2 forbidden response a status code equal to that given
+func (o *RevokeClusterViewerTokenV2Forbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *RevokeClusterViewerTokenV2Forbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2Forbidden ", 403)
+}
+
+func (o *RevokeClusterViewerTokenV2Forbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2Forbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewRevokeClusterViewerTokenV2Default(code int) *RevokeClusterViewerTokenV2D
 	}
 }
 
-/* RevokeClusterViewerTokenV2Default describes a response with status code -1, with default header values.
+/*
+RevokeClusterViewerTokenV2Default describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *RevokeClusterViewerTokenV2Default) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this revoke cluster viewer token v2 default response has a 2xx status code
+func (o *RevokeClusterViewerTokenV2Default) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this revoke cluster viewer token v2 default response has a 3xx status code
+func (o *RevokeClusterViewerTokenV2Default) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this revoke cluster viewer token v2 default response has a 4xx status code
+func (o *RevokeClusterViewerTokenV2Default) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this revoke cluster viewer token v2 default response has a 5xx status code
+func (o *RevokeClusterViewerTokenV2Default) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this revoke cluster viewer token v2 default response a status code equal to that given
+func (o *RevokeClusterViewerTokenV2Default) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *RevokeClusterViewerTokenV2Default) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2 default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *RevokeClusterViewerTokenV2Default) String() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken][%d] revokeClusterViewerTokenV2 default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *RevokeClusterViewerTokenV2Default) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

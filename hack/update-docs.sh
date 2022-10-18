@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.18.4 containerize ./hack/update-docs.sh
+CONTAINERIZE_IMAGE=golang:1.19.1 containerize ./hack/update-docs.sh
 
 (
   cd docs
@@ -40,7 +40,9 @@ $sed -i "s/,omitempty/,$dummy/g" pkg/apis/kubermatic/v1/*.go vendor/k8s.io/api/c
 # there are some fields that we do actually want to ignore
 $sed -i 's/omitgenyaml/omitempty/g' pkg/apis/kubermatic/v1/*.go
 
-go run codegen/example-yaml/main.go . docs
+for edition in ce ee; do
+  go run -tags $edition codegen/example-yaml/main.go . docs
+done
 
 # revert our changes
 $sed -i 's/omitempty/omitgenyaml/g' pkg/apis/kubermatic/v1/*.go

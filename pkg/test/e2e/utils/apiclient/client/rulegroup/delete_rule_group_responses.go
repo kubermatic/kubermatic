@@ -58,14 +58,44 @@ func NewDeleteRuleGroupOK() *DeleteRuleGroupOK {
 	return &DeleteRuleGroupOK{}
 }
 
-/* DeleteRuleGroupOK describes a response with status code 200, with default header values.
+/*
+DeleteRuleGroupOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteRuleGroupOK struct {
 }
 
+// IsSuccess returns true when this delete rule group o k response has a 2xx status code
+func (o *DeleteRuleGroupOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete rule group o k response has a 3xx status code
+func (o *DeleteRuleGroupOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete rule group o k response has a 4xx status code
+func (o *DeleteRuleGroupOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete rule group o k response has a 5xx status code
+func (o *DeleteRuleGroupOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete rule group o k response a status code equal to that given
+func (o *DeleteRuleGroupOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteRuleGroupOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupOK ", 200)
+}
+
+func (o *DeleteRuleGroupOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteRuleGroupUnauthorized() *DeleteRuleGroupUnauthorized {
 	return &DeleteRuleGroupUnauthorized{}
 }
 
-/* DeleteRuleGroupUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteRuleGroupUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteRuleGroupUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete rule group unauthorized response has a 2xx status code
+func (o *DeleteRuleGroupUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete rule group unauthorized response has a 3xx status code
+func (o *DeleteRuleGroupUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete rule group unauthorized response has a 4xx status code
+func (o *DeleteRuleGroupUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete rule group unauthorized response has a 5xx status code
+func (o *DeleteRuleGroupUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete rule group unauthorized response a status code equal to that given
+func (o *DeleteRuleGroupUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteRuleGroupUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupUnauthorized ", 401)
+}
+
+func (o *DeleteRuleGroupUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteRuleGroupForbidden() *DeleteRuleGroupForbidden {
 	return &DeleteRuleGroupForbidden{}
 }
 
-/* DeleteRuleGroupForbidden describes a response with status code 403, with default header values.
+/*
+DeleteRuleGroupForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteRuleGroupForbidden struct {
 }
 
+// IsSuccess returns true when this delete rule group forbidden response has a 2xx status code
+func (o *DeleteRuleGroupForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete rule group forbidden response has a 3xx status code
+func (o *DeleteRuleGroupForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete rule group forbidden response has a 4xx status code
+func (o *DeleteRuleGroupForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete rule group forbidden response has a 5xx status code
+func (o *DeleteRuleGroupForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete rule group forbidden response a status code equal to that given
+func (o *DeleteRuleGroupForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteRuleGroupForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupForbidden ", 403)
+}
+
+func (o *DeleteRuleGroupForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteRuleGroupDefault(code int) *DeleteRuleGroupDefault {
 	}
 }
 
-/* DeleteRuleGroupDefault describes a response with status code -1, with default header values.
+/*
+DeleteRuleGroupDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteRuleGroupDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete rule group default response has a 2xx status code
+func (o *DeleteRuleGroupDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete rule group default response has a 3xx status code
+func (o *DeleteRuleGroupDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete rule group default response has a 4xx status code
+func (o *DeleteRuleGroupDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete rule group default response has a 5xx status code
+func (o *DeleteRuleGroupDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete rule group default response a status code equal to that given
+func (o *DeleteRuleGroupDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteRuleGroupDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroup default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteRuleGroupDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroup default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteRuleGroupDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

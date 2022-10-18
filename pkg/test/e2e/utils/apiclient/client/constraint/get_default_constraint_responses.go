@@ -58,7 +58,8 @@ func NewGetDefaultConstraintOK() *GetDefaultConstraintOK {
 	return &GetDefaultConstraintOK{}
 }
 
-/* GetDefaultConstraintOK describes a response with status code 200, with default header values.
+/*
+GetDefaultConstraintOK describes a response with status code 200, with default header values.
 
 Constraint
 */
@@ -66,9 +67,39 @@ type GetDefaultConstraintOK struct {
 	Payload *models.Constraint
 }
 
+// IsSuccess returns true when this get default constraint o k response has a 2xx status code
+func (o *GetDefaultConstraintOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get default constraint o k response has a 3xx status code
+func (o *GetDefaultConstraintOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get default constraint o k response has a 4xx status code
+func (o *GetDefaultConstraintOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get default constraint o k response has a 5xx status code
+func (o *GetDefaultConstraintOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get default constraint o k response a status code equal to that given
+func (o *GetDefaultConstraintOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetDefaultConstraintOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraintOK  %+v", 200, o.Payload)
 }
+
+func (o *GetDefaultConstraintOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraintOK  %+v", 200, o.Payload)
+}
+
 func (o *GetDefaultConstraintOK) GetPayload() *models.Constraint {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetDefaultConstraintUnauthorized() *GetDefaultConstraintUnauthorized {
 	return &GetDefaultConstraintUnauthorized{}
 }
 
-/* GetDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
+/*
+GetDefaultConstraintUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetDefaultConstraintUnauthorized struct {
 }
 
+// IsSuccess returns true when this get default constraint unauthorized response has a 2xx status code
+func (o *GetDefaultConstraintUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get default constraint unauthorized response has a 3xx status code
+func (o *GetDefaultConstraintUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get default constraint unauthorized response has a 4xx status code
+func (o *GetDefaultConstraintUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get default constraint unauthorized response has a 5xx status code
+func (o *GetDefaultConstraintUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get default constraint unauthorized response a status code equal to that given
+func (o *GetDefaultConstraintUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetDefaultConstraintUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraintUnauthorized ", 401)
+}
+
+func (o *GetDefaultConstraintUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraintUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetDefaultConstraintForbidden() *GetDefaultConstraintForbidden {
 	return &GetDefaultConstraintForbidden{}
 }
 
-/* GetDefaultConstraintForbidden describes a response with status code 403, with default header values.
+/*
+GetDefaultConstraintForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetDefaultConstraintForbidden struct {
 }
 
+// IsSuccess returns true when this get default constraint forbidden response has a 2xx status code
+func (o *GetDefaultConstraintForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get default constraint forbidden response has a 3xx status code
+func (o *GetDefaultConstraintForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get default constraint forbidden response has a 4xx status code
+func (o *GetDefaultConstraintForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get default constraint forbidden response has a 5xx status code
+func (o *GetDefaultConstraintForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get default constraint forbidden response a status code equal to that given
+func (o *GetDefaultConstraintForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetDefaultConstraintForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraintForbidden ", 403)
+}
+
+func (o *GetDefaultConstraintForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraintForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetDefaultConstraintDefault(code int) *GetDefaultConstraintDefault {
 	}
 }
 
-/* GetDefaultConstraintDefault describes a response with status code -1, with default header values.
+/*
+GetDefaultConstraintDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetDefaultConstraintDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get default constraint default response has a 2xx status code
+func (o *GetDefaultConstraintDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get default constraint default response has a 3xx status code
+func (o *GetDefaultConstraintDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get default constraint default response has a 4xx status code
+func (o *GetDefaultConstraintDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get default constraint default response has a 5xx status code
+func (o *GetDefaultConstraintDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get default constraint default response a status code equal to that given
+func (o *GetDefaultConstraintDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetDefaultConstraintDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraint default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetDefaultConstraintDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/constraints/{constraint_name}][%d] getDefaultConstraint default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetDefaultConstraintDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

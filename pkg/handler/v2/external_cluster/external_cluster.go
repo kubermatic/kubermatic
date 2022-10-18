@@ -45,6 +45,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -170,7 +171,7 @@ func CreateEndpoint(
 		}
 		var preset *kubermaticv1.Preset
 		if len(req.Credential) > 0 {
-			preset, err = presetProvider.GetPreset(ctx, userInfo, req.Credential)
+			preset, err = presetProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
 			if err != nil {
 				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
 			}
@@ -227,7 +228,6 @@ func CreateEndpoint(
 				if credentials := preset.Spec.EKS; credentials != nil {
 					cloud.EKS.AccessKeyID = credentials.AccessKeyID
 					cloud.EKS.SecretAccessKey = credentials.SecretAccessKey
-					cloud.EKS.Region = credentials.Region
 				}
 			}
 
@@ -641,7 +641,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
 				return nil, err
 			}
-			return patchEKSCluster(clusterToPatch, patchedCluster, secretKeySelector, cloud.EKS)
+			return patchEKSCluster(ctx, clusterToPatch, patchedCluster, secretKeySelector, cloud.EKS)
 		}
 		if cloud.AKS != nil {
 			if err := patchCluster(clusterToPatch, patchedCluster, req.Patch); err != nil {
@@ -1024,6 +1024,7 @@ func convertClusterToAPI(internalCluster *kubermaticv1.ExternalCluster) *apiv2.E
 		cluster.Cloud.AKS = &apiv2.AKSCloudSpec{
 			Name:          cloud.AKS.Name,
 			ResourceGroup: cloud.AKS.ResourceGroup,
+			Location:      cloud.AKS.Location,
 		}
 	}
 	if cloud.KubeOne != nil {
@@ -1049,7 +1050,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 		apiCluster.Status.State = apiv2.RunningExternalClusterState
 	} else {
 		if cloud.EKS != nil {
-			eksStatus, err := eks.GetClusterStatus(secretKeySelector, cloud.EKS)
+			eksStatus, err := eks.GetClusterStatus(ctx, secretKeySelector, cloud.EKS)
 			if err != nil {
 				apiCluster.Status = apiv2.ExternalClusterStatus{
 					State:         apiv2.ErrorExternalClusterState,
@@ -1095,7 +1096,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	if err != nil && apiCluster.Status.State == apiv2.RunningExternalClusterState {
 		apiCluster.Status = apiv2.ExternalClusterStatus{
 			State:         apiv2.ErrorExternalClusterState,
-			StatusMessage: fmt.Sprintf("can't access cluster via kubeconfig, check the privilidges, %v", err),
+			StatusMessage: "Can't access cluster via kubeconfig. Please check the credentials privileges.",
 		}
 	}
 	return apiCluster

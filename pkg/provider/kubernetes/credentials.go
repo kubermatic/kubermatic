@@ -156,7 +156,7 @@ func createOrUpdateAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.C
 	}
 
 	if validate != nil {
-		if err := awsprovider.ValidateCredentials(spec.AccessKeyID, spec.SecretAccessKey); err != nil {
+		if err := awsprovider.ValidateCredentials(ctx, spec.AccessKeyID, spec.SecretAccessKey); err != nil {
 			return false, fmt.Errorf("invalid AWS credentials: %w", err)
 		}
 	}
@@ -441,15 +441,9 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 		return false, nil
 	}
 
-	// ensure that CSI driver on user cluster will have an access to KubeVirt cluster
-	// Service Account
-	// Needed Role/Rolebinding are reconciled in pkg/provider/cloud/kubevirt/provider.go in ReconcileCluster(),
-	//   in a dedicated namespace <cluster-id>, after this namespace is reconciled.
-	r, err := kubevirt.NewReconciler(spec.Kubeconfig, cluster.Name)
-	if err != nil {
-		return false, err
-	}
-	csiKubeconfig, err := r.ReconcileCSIServiceAccount(ctx)
+	// ensure that CSI driver on user cluster will have access to KubeVirt cluster
+	// RBAC reconciliation takes place in the kubevirt cloud provider
+	csiKubeconfig, err := kubevirt.EnsureCSIInfraTokenAccess(ctx, spec.Kubeconfig)
 	if err != nil {
 		return false, err
 	}
@@ -748,7 +742,7 @@ func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneClou
 		return utilerrors.NewBadRequest("kubeone aws credentials missing")
 	}
 
-	if err := awsprovider.ValidateCredentials(cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey); err != nil {
+	if err := awsprovider.ValidateCredentials(ctx, cloud.AWS.AccessKeyID, cloud.AWS.SecretAccessKey); err != nil {
 		return fmt.Errorf("invalid AWS credentials: %w", err)
 	}
 

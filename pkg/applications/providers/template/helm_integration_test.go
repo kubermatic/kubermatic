@@ -78,7 +78,7 @@ var _ = Describe("helm template", func() {
 				Name:      "app1",
 			},
 			Spec: appskubermaticv1.ApplicationInstallationSpec{
-				Namespace: appskubermaticv1.NamespaceSpec{
+				Namespace: appskubermaticv1.AppNamespaceSpec{
 					Name: testNs.Name,
 				},
 				Values: runtime.RawExtension{},
@@ -363,8 +363,9 @@ func appendDefaultValues(source map[string]string, defaultValues map[string]stri
 // example:
 // toHelmRawValues("cmData", map[string]string{"hello": "world", "a": "b"}) produces this helm value file
 // cmData:
-//    hello: world
-//    a: b
+//
+//	hello: world
+//	a: b
 func toHelmRawValues(key string, values any) []byte {
 	helmValues := map[string]any{key: values}
 	rawValues, err := json.Marshal(helmValues)

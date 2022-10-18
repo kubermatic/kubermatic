@@ -54,10 +54,12 @@ func NewUpdateMLAAdminSettingParamsWithHTTPClient(client *http.Client) *UpdateML
 	}
 }
 
-/* UpdateMLAAdminSettingParams contains all the parameters to send to the API endpoint
-   for the update m l a admin setting operation.
+/*
+UpdateMLAAdminSettingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update m l a admin setting operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateMLAAdminSettingParams struct {
 

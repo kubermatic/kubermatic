@@ -31,6 +31,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -93,7 +94,7 @@ type ServerMetrics struct {
 
 // IsBringYourOwnProvider determines whether the spec holds BringYourOwn provider.
 func IsBringYourOwnProvider(spec kubermaticv1.CloudSpec) (bool, error) {
-	providerName, err := provider.ClusterCloudProviderName(spec)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(spec)
 	if err != nil {
 		return false, err
 	}
@@ -132,13 +133,13 @@ func GetReadyPod(ctx context.Context, client corev1interface.PodInterface, label
 
 // While it is tempting to write our own roundTripper to do all the reading/writing
 // in memory instead of opening a TCP port it has some drawbacks:
-// * net/http.ReadResponse does not work with websockets, because its body is hardcoded to be an
-//   io.ReadCloster and not an io.ReadWriteCloser:
-//   * https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transfer.go#L550
-//   * https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/httputil/reverseproxy.go#L518
-// * RoundTripping is a bit more complicated than just read and write, mimicking that badly is likely
-//   to be more expensive than doing the extra round via the TCP socket:
-//   https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transport.go#L454
+//   - net/http.ReadResponse does not work with websockets, because its body is hardcoded to be an
+//     io.ReadCloster and not an io.ReadWriteCloser:
+//   - https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transfer.go#L550
+//   - https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/httputil/reverseproxy.go#L518
+//   - RoundTripping is a bit more complicated than just read and write, mimicking that badly is likely
+//     to be more expensive than doing the extra round via the TCP socket:
+//     https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transport.go#L454
 func GetPortForwarder(
 	ctx context.Context,
 	coreClient corev1interface.CoreV1Interface,

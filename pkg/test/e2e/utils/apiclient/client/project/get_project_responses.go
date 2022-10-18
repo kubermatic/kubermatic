@@ -58,7 +58,8 @@ func NewGetProjectOK() *GetProjectOK {
 	return &GetProjectOK{}
 }
 
-/* GetProjectOK describes a response with status code 200, with default header values.
+/*
+GetProjectOK describes a response with status code 200, with default header values.
 
 Project
 */
@@ -66,9 +67,39 @@ type GetProjectOK struct {
 	Payload *models.Project
 }
 
+// IsSuccess returns true when this get project o k response has a 2xx status code
+func (o *GetProjectOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get project o k response has a 3xx status code
+func (o *GetProjectOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get project o k response has a 4xx status code
+func (o *GetProjectOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get project o k response has a 5xx status code
+func (o *GetProjectOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get project o k response a status code equal to that given
+func (o *GetProjectOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetProjectOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProjectOK  %+v", 200, o.Payload)
 }
+
+func (o *GetProjectOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProjectOK  %+v", 200, o.Payload)
+}
+
 func (o *GetProjectOK) GetPayload() *models.Project {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetProjectUnauthorized() *GetProjectUnauthorized {
 	return &GetProjectUnauthorized{}
 }
 
-/* GetProjectUnauthorized describes a response with status code 401, with default header values.
+/*
+GetProjectUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetProjectUnauthorized struct {
 }
 
+// IsSuccess returns true when this get project unauthorized response has a 2xx status code
+func (o *GetProjectUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get project unauthorized response has a 3xx status code
+func (o *GetProjectUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get project unauthorized response has a 4xx status code
+func (o *GetProjectUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get project unauthorized response has a 5xx status code
+func (o *GetProjectUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get project unauthorized response a status code equal to that given
+func (o *GetProjectUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetProjectUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProjectUnauthorized ", 401)
+}
+
+func (o *GetProjectUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProjectUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetProjectConflict() *GetProjectConflict {
 	return &GetProjectConflict{}
 }
 
-/* GetProjectConflict describes a response with status code 409, with default header values.
+/*
+GetProjectConflict describes a response with status code 409, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetProjectConflict struct {
 }
 
+// IsSuccess returns true when this get project conflict response has a 2xx status code
+func (o *GetProjectConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get project conflict response has a 3xx status code
+func (o *GetProjectConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get project conflict response has a 4xx status code
+func (o *GetProjectConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get project conflict response has a 5xx status code
+func (o *GetProjectConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get project conflict response a status code equal to that given
+func (o *GetProjectConflict) IsCode(code int) bool {
+	return code == 409
+}
+
 func (o *GetProjectConflict) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProjectConflict ", 409)
+}
+
+func (o *GetProjectConflict) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProjectConflict ", 409)
 }
 
@@ -134,7 +225,8 @@ func NewGetProjectDefault(code int) *GetProjectDefault {
 	}
 }
 
-/* GetProjectDefault describes a response with status code -1, with default header values.
+/*
+GetProjectDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetProjectDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get project default response has a 2xx status code
+func (o *GetProjectDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get project default response has a 3xx status code
+func (o *GetProjectDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get project default response has a 4xx status code
+func (o *GetProjectDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get project default response has a 5xx status code
+func (o *GetProjectDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get project default response a status code equal to that given
+func (o *GetProjectDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetProjectDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProject default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetProjectDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}][%d] getProject default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetProjectDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

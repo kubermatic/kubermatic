@@ -230,7 +230,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:   "scenario 7: update an existing resource quota",
-			method: http.MethodPatch,
+			method: http.MethodPut,
 			url:    fmt.Sprintf("/api/v2/quotas/project-%s", projectName),
 			body: `{
 				"cpu": 10,
@@ -246,7 +246,7 @@ func TestHandlerResourceQuotas(t *testing.T) {
 		},
 		{
 			name:   "scenario 8: update a non-existing resource quota",
-			method: http.MethodPatch,
+			method: http.MethodPut,
 			url:    "/api/v2/quotas/project-non-existing",
 			body: `{
 				"cpu": 10,
@@ -354,10 +354,15 @@ func genQuota(cpu resource.Quantity, mem resource.Quantity, storage resource.Qua
 	}
 }
 
-func genAPIQuota(cpu int64, mem float64, storage float64) apiv2.Quota {
-	return apiv2.Quota{
-		CPU:     cpu,
-		Memory:  mem,
-		Storage: storage,
+func genAPIQuota(cpu int64, mem, storage float64) apiv2.Quota {
+	quota := apiv2.Quota{
+		CPU: &cpu,
 	}
+	if mem != 0 {
+		quota.Memory = &mem
+	}
+	if storage != 0 {
+		quota.Storage = &storage
+	}
+	return quota
 }

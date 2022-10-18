@@ -46,7 +46,8 @@ func NewListAWSSubnetsNoCredentialsOK() *ListAWSSubnetsNoCredentialsOK {
 	return &ListAWSSubnetsNoCredentialsOK{}
 }
 
-/* ListAWSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListAWSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
 
 AWSSubnetList
 */
@@ -54,9 +55,39 @@ type ListAWSSubnetsNoCredentialsOK struct {
 	Payload models.AWSSubnetList
 }
 
+// IsSuccess returns true when this list a w s subnets no credentials o k response has a 2xx status code
+func (o *ListAWSSubnetsNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list a w s subnets no credentials o k response has a 3xx status code
+func (o *ListAWSSubnetsNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list a w s subnets no credentials o k response has a 4xx status code
+func (o *ListAWSSubnetsNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list a w s subnets no credentials o k response has a 5xx status code
+func (o *ListAWSSubnetsNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list a w s subnets no credentials o k response a status code equal to that given
+func (o *ListAWSSubnetsNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListAWSSubnetsNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListAWSSubnetsNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListAWSSubnetsNoCredentialsOK) GetPayload() models.AWSSubnetList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListAWSSubnetsNoCredentialsDefault(code int) *ListAWSSubnetsNoCredential
 	}
 }
 
-/* ListAWSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListAWSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListAWSSubnetsNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list a w s subnets no credentials default response has a 2xx status code
+func (o *ListAWSSubnetsNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list a w s subnets no credentials default response has a 3xx status code
+func (o *ListAWSSubnetsNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list a w s subnets no credentials default response has a 4xx status code
+func (o *ListAWSSubnetsNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list a w s subnets no credentials default response has a 5xx status code
+func (o *ListAWSSubnetsNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list a w s subnets no credentials default response a status code equal to that given
+func (o *ListAWSSubnetsNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListAWSSubnetsNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListAWSSubnetsNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/aws/subnets][%d] listAWSSubnetsNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListAWSSubnetsNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

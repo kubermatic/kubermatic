@@ -19,9 +19,12 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Azure/go-autorest/autorest/to"
-	ec2service "github.com/aws/aws-sdk-go/service/ec2"
+	ec2service "github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	ec2 "github.com/cristim/ec2-instances-info"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -41,15 +44,18 @@ func init() {
 
 // Region value will instruct the SDK where to make service API requests to.
 // Region must be provided before a service client request is made.
-const RegionEndpoint = "eu-central-1"
+const (
+	EKSClusterPolicy    = "AmazonEKSClusterPolicy"
+	EKSWorkerNodePolicy = "AmazonEKSWorkerNodePolicy"
+)
 
-func listEKSClusters(cred resources.EKSCredential, region string) ([]*string, error) {
-	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
+func listEKSClusters(ctx context.Context, cred resources.EKSCredential, region string) ([]string, error) {
+	client, err := awsprovider.GetClientSet(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", region)
 	if err != nil {
 		return nil, err
 	}
 
-	return eksprovider.ListClusters(client)
+	return eksprovider.ListClusters(ctx, client)
 }
 
 func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, cred resources.EKSCredential, projectID string) (apiv2.EKSClusterList, error) {
@@ -81,7 +87,7 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 	region := cred.Region
 	// list EKS clusters for user specified region
 	if region != "" {
-		eksClusters, err := listEKSClusters(cred, region)
+		eksClusters, err := listEKSClusters(ctx, cred, region)
 		if err != nil {
 			return nil, fmt.Errorf("cannot list clusters: %w", err)
 		}
@@ -89,33 +95,45 @@ func ListEKSClusters(ctx context.Context, projectProvider provider.ProjectProvid
 		for _, f := range eksClusters {
 			var imported bool
 			if clusterSet, ok := eksExternalCluster[region]; ok {
-				if clusterSet.Has(*f) {
+				if clusterSet.Has(f) {
 					imported = true
 				}
 			}
-			clusters = append(clusters, apiv2.EKSCluster{Name: *f, Region: region, IsImported: imported})
+			clusters = append(clusters, apiv2.EKSCluster{Name: f, Region: region, IsImported: imported})
 		}
 	}
 
 	return clusters, nil
 }
 
-func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSubnetList, error) {
-	subnetIDs := apiv2.EKSSubnetList{}
+func ListEKSSubnetIDs(ctx context.Context, cred resources.EKSCredential, vpcId string) (apiv2.EKSSubnetList, error) {
+	subnets := apiv2.EKSSubnetList{}
 
-	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcID)
+	subnetResults, err := awsprovider.GetSubnets(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region, vpcId)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, subnet := range subnetResults {
-		subnetIDs = append(subnetIDs, apiv2.EKSSubnet{
-			SubnetId:         to.String(subnet.SubnetId),
-			VpcId:            to.String(subnet.VpcId),
-			AvailabilityZone: to.String(subnet.AvailabilityZone),
+	azSubnetMap := make(map[string]string)
+	for _, subnetResult := range subnetResults {
+		var isDefault bool
+		// creating a list of subnets with unique availabilityZone
+		az := to.String(subnetResult.AvailabilityZone)
+		subnetId := to.String(subnetResult.SubnetId)
+		if _, ok := azSubnetMap[az]; !ok {
+			azSubnetMap[az] = subnetId
+			isDefault = true
+		}
+
+		subnets = append(subnets, apiv2.EKSSubnet{
+			SubnetId:         subnetId,
+			VpcId:            to.String(subnetResult.VpcId),
+			AvailabilityZone: az,
+			Default:          isDefault,
 		})
 	}
-	return subnetIDs, nil
+
+	return subnets, nil
 }
 
 func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPCList, error) {
@@ -133,30 +151,38 @@ func ListEKSVPC(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSVPC
 		}
 		vpcs = append(vpcs, vpc)
 	}
+
 	return vpcs, nil
 }
 
-func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSInstanceTypeList, error) {
+func ListInstanceTypes(ctx context.Context, cred resources.EKSCredential, architecture string) (apiv2.EKSInstanceTypeList, error) {
 	instanceTypes := apiv2.EKSInstanceTypeList{}
 
 	if data == nil {
 		return nil, fmt.Errorf("AWS instance type data not initialized")
 	}
 
-	instanceTypesResults, err := awsprovider.GetInstanceTypes(cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	instanceTypesResults, err := awsprovider.GetInstanceTypes(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, i := range *data {
 		for _, r := range instanceTypesResults {
-			if i.InstanceType == *r.InstanceType {
+			if ec2types.InstanceType(i.InstanceType) == r.InstanceType {
+				if len(architecture) > 0 {
+					if len(i.Arch) == 0 || i.Arch[0] != architecture {
+						continue
+					}
+				}
+
 				instanceTypes = append(instanceTypes, apiv2.EKSInstanceType{
-					Name:       i.InstanceType,
-					PrettyName: i.PrettyName,
-					Memory:     i.Memory,
-					VCPUs:      i.VCPU,
-					GPUs:       i.GPU,
+					Name:         i.InstanceType,
+					PrettyName:   i.PrettyName,
+					Memory:       i.Memory,
+					VCPUs:        i.VCPU,
+					GPUs:         i.GPU,
+					Architecture: i.Arch[0],
 				})
 				break
 			}
@@ -171,13 +197,13 @@ func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EK
 
 	// Must provide either a region or endpoint configured to use the SDK, even for operations that may enumerate other regions
 	// See https://github.com/aws/aws-sdk-go/issues/224 for more details
-	client, err := awsprovider.GetClientSet(cred.AccessKeyID, cred.SecretAccessKey, "", "", RegionEndpoint)
+	client, err := awsprovider.GetClientSet(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
 	if err != nil {
 		return nil, err
 	}
 
 	// Retrieves all regions/endpoints that work with EC2
-	regionOutput, err := client.EC2.DescribeRegions(regionInput)
+	regionOutput, err := client.EC2.DescribeRegions(ctx, regionInput)
 	if err != nil {
 		return nil, fmt.Errorf("cannot list regions: %w", err)
 	}
@@ -187,6 +213,76 @@ func ListEKSRegions(ctx context.Context, cred resources.EKSCredential) (apiv2.EK
 		regionList = append(regionList, *region.RegionName)
 	}
 	return regionList, nil
+}
+
+func ListEKSClusterRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSClusterRoleList, error) {
+	var rolesList apiv2.EKSClusterRoleList
+
+	client, err := awsprovider.GetClientSet(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, err
+	}
+	rolesOutput, err := client.IAM.ListRoles(ctx, &iam.ListRolesInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range rolesOutput.Roles {
+		if role.RoleName != nil && role.AssumeRolePolicyDocument != nil && strings.Contains(*role.AssumeRolePolicyDocument, "eks.amazonaws.com") {
+			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(ctx, &iam.ListAttachedRolePoliciesInput{
+				RoleName: role.RoleName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, policy := range rolePoliciesOutput.AttachedPolicies {
+				if policy.PolicyName != nil && *policy.PolicyName == EKSClusterPolicy {
+					if role.Arn != nil {
+						rolesList = append(rolesList, apiv2.EKSClusterRole{
+							RoleName: to.String(role.RoleName),
+							Arn:      to.String(role.Arn),
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return rolesList, nil
+}
+
+func ListEKSNodeRoles(ctx context.Context, cred resources.EKSCredential) (apiv2.EKSNodeRoleList, error) {
+	var rolesList apiv2.EKSNodeRoleList
+
+	client, err := awsprovider.GetClientSet(ctx, cred.AccessKeyID, cred.SecretAccessKey, "", "", cred.Region)
+	if err != nil {
+		return nil, err
+	}
+	rolesOutput, err := client.IAM.ListRoles(ctx, &iam.ListRolesInput{})
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range rolesOutput.Roles {
+		if role.RoleName != nil && role.AssumeRolePolicyDocument != nil && strings.Contains(*role.AssumeRolePolicyDocument, "ec2.amazonaws.com") {
+			rolePoliciesOutput, err := client.IAM.ListAttachedRolePolicies(ctx, &iam.ListAttachedRolePoliciesInput{
+				RoleName: role.RoleName,
+			})
+			if err != nil {
+				return nil, err
+			}
+			for _, policy := range rolePoliciesOutput.AttachedPolicies {
+				if policy.PolicyName != nil && *policy.PolicyName == EKSWorkerNodePolicy {
+					if role.Arn != nil {
+						rolesList = append(rolesList, apiv2.EKSNodeRole{
+							RoleName: to.String(role.RoleName),
+							Arn:      to.String(role.Arn),
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return rolesList, nil
 }
 
 func ListEKSSecurityGroup(ctx context.Context, cred resources.EKSCredential, vpcID string) (apiv2.EKSSecurityGroupList, error) {

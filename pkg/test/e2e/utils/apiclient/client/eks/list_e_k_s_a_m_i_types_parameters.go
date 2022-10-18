@@ -52,10 +52,12 @@ func NewListEKSAMITypesParamsWithHTTPClient(client *http.Client) *ListEKSAMIType
 	}
 }
 
-/* ListEKSAMITypesParams contains all the parameters to send to the API endpoint
-   for the list e k s a m i types operation.
+/*
+ListEKSAMITypesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list e k s a m i types operation.
+
+	Typically these are written to a http.Request.
 */
 type ListEKSAMITypesParams struct {
 	timeout    time.Duration

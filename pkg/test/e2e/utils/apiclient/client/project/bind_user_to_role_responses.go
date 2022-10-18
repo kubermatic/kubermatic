@@ -58,7 +58,8 @@ func NewBindUserToRoleOK() *BindUserToRoleOK {
 	return &BindUserToRoleOK{}
 }
 
-/* BindUserToRoleOK describes a response with status code 200, with default header values.
+/*
+BindUserToRoleOK describes a response with status code 200, with default header values.
 
 RoleBinding
 */
@@ -66,9 +67,39 @@ type BindUserToRoleOK struct {
 	Payload *models.RoleBinding
 }
 
+// IsSuccess returns true when this bind user to role o k response has a 2xx status code
+func (o *BindUserToRoleOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this bind user to role o k response has a 3xx status code
+func (o *BindUserToRoleOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to role o k response has a 4xx status code
+func (o *BindUserToRoleOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this bind user to role o k response has a 5xx status code
+func (o *BindUserToRoleOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to role o k response a status code equal to that given
+func (o *BindUserToRoleOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *BindUserToRoleOK) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleOK  %+v", 200, o.Payload)
 }
+
+func (o *BindUserToRoleOK) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleOK  %+v", 200, o.Payload)
+}
+
 func (o *BindUserToRoleOK) GetPayload() *models.RoleBinding {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewBindUserToRoleUnauthorized() *BindUserToRoleUnauthorized {
 	return &BindUserToRoleUnauthorized{}
 }
 
-/* BindUserToRoleUnauthorized describes a response with status code 401, with default header values.
+/*
+BindUserToRoleUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type BindUserToRoleUnauthorized struct {
 }
 
+// IsSuccess returns true when this bind user to role unauthorized response has a 2xx status code
+func (o *BindUserToRoleUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this bind user to role unauthorized response has a 3xx status code
+func (o *BindUserToRoleUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to role unauthorized response has a 4xx status code
+func (o *BindUserToRoleUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this bind user to role unauthorized response has a 5xx status code
+func (o *BindUserToRoleUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to role unauthorized response a status code equal to that given
+func (o *BindUserToRoleUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *BindUserToRoleUnauthorized) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleUnauthorized ", 401)
+}
+
+func (o *BindUserToRoleUnauthorized) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewBindUserToRoleForbidden() *BindUserToRoleForbidden {
 	return &BindUserToRoleForbidden{}
 }
 
-/* BindUserToRoleForbidden describes a response with status code 403, with default header values.
+/*
+BindUserToRoleForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type BindUserToRoleForbidden struct {
 }
 
+// IsSuccess returns true when this bind user to role forbidden response has a 2xx status code
+func (o *BindUserToRoleForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this bind user to role forbidden response has a 3xx status code
+func (o *BindUserToRoleForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this bind user to role forbidden response has a 4xx status code
+func (o *BindUserToRoleForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this bind user to role forbidden response has a 5xx status code
+func (o *BindUserToRoleForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this bind user to role forbidden response a status code equal to that given
+func (o *BindUserToRoleForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *BindUserToRoleForbidden) Error() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleForbidden ", 403)
+}
+
+func (o *BindUserToRoleForbidden) String() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRoleForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewBindUserToRoleDefault(code int) *BindUserToRoleDefault {
 	}
 }
 
-/* BindUserToRoleDefault describes a response with status code -1, with default header values.
+/*
+BindUserToRoleDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *BindUserToRoleDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this bind user to role default response has a 2xx status code
+func (o *BindUserToRoleDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this bind user to role default response has a 3xx status code
+func (o *BindUserToRoleDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this bind user to role default response has a 4xx status code
+func (o *BindUserToRoleDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this bind user to role default response has a 5xx status code
+func (o *BindUserToRoleDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this bind user to role default response a status code equal to that given
+func (o *BindUserToRoleDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *BindUserToRoleDefault) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRole default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *BindUserToRoleDefault) String() string {
+	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings][%d] bindUserToRole default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *BindUserToRoleDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

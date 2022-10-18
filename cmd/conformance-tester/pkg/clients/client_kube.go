@@ -29,10 +29,8 @@ import (
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	"k8c.io/kubermatic/v2/pkg/version"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -169,7 +167,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	name := fmt.Sprintf("%s-%s", c.opts.NamePrefix, rand.String(5))
 
 	// The cluster humanReadableName must be unique per project;
-	// we build up a readable humanReadableName with the various cli parameters annd
+	// we build up a readable humanReadableName with the various cli parameters and
 	// add a random string in the end to ensure we really have a unique humanReadableName.
 	humanReadableName := ""
 	if c.opts.NamePrefix != "" {
@@ -192,16 +190,6 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	if c.opts.DualStackEnabled {
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
-	}
-
-	if cloudcontroller.ExternalCloudControllerFeatureSupported(scenario.Datacenter(), cluster, version.NewFromConfiguration(c.opts.KubermaticConfiguration).GetIncompatibilities()...) {
-		cluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
-		if cloudcontroller.ExternalCloudControllerClusterName(cluster) {
-			cluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
-		}
-		if cluster.Spec.Cloud.VSphere != nil {
-			cluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] = true
-		}
 	}
 
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {

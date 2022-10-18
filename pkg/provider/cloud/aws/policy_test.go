@@ -19,6 +19,7 @@ limitations under the License.
 package aws
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"testing"
@@ -26,19 +27,42 @@ import (
 	testhelper "k8c.io/kubermatic/v2/pkg/test"
 )
 
-var update = flag.Bool("update", false, "update .golden files")
+var (
+	update      = flag.Bool("update", false, "update .golden files")
+	clusterName = "kramer"
+)
 
-func TestGetPolicy(t *testing.T) {
-	clusterName := "cluster-ajcnaw"
+func TestGetControlPlanePolicy(t *testing.T) {
 	policy, err := getControlPlanePolicy(clusterName)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
+	testGetPolicy(t, clusterName+"-control-plane", policy)
+}
+
+func TestGetWorkerPolicy(t *testing.T) {
+	policy, err := getWorkerPolicy(clusterName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testGetPolicy(t, clusterName+"-worker", policy)
+}
+
+func testGetPolicy(t *testing.T, identifier string, policy string) {
 	v := map[string]interface{}{}
 	if err := json.Unmarshal([]byte(policy), &v); err != nil {
-		t.Errorf("the policy does not contain valid json: %v", err)
+		t.Fatalf("the policy does not contain valid json: %v", err)
 	}
 
-	testhelper.CompareOutput(t, clusterName, policy, *update, ".json")
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetIndent("", "  ")
+
+	if err := encoder.Encode(v); err != nil {
+		t.Fatalf("Failed to re-encode policy as JSON: %v", err)
+	}
+
+	testhelper.CompareOutput(t, identifier, buf.String(), *update, ".json")
 }

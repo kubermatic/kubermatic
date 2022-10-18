@@ -28,10 +28,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/utils/pointer"
 )
 
 // KubeVirtGenericReq represent a request with common parameters for KubeVirt.
-// swagger:parameters listKubeVirtVMIPresets listKubevirtStorageClasses
+// swagger:parameters listKubeVirtVMIPresets listKubevirtStorageClasses listKubeVirtInstancetypes listKubeVirtIPreferences
 type KubeVirtGenericReq struct {
 	// in: header
 	// name: Kubeconfig (provided credential)
@@ -42,60 +44,110 @@ type KubeVirtGenericReq struct {
 }
 
 // KubeVirtGenericNoCredentialReq represent a generic KubeVirt request with cluster credentials.
-// swagger:parameters listKubeVirtVMIPresetsNoCredentials listKubevirtStorageClassesNoCredentials
+// swagger:parameters listKubeVirtVMIPresetsNoCredentials listKubevirtStorageClassesNoCredentials listKubeVirtInstancetypesNoCredentials listKubeVirtPreferencesNoCredentials
 type KubeVirtGenericNoCredentialReq struct {
 	cluster.GetClusterReq
 }
 
+func kubeconfigFromRequest(ctx context.Context, request interface{}, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) (string, error) {
+	req, ok := request.(KubeVirtGenericReq)
+	if !ok {
+		return "", fmt.Errorf("incorrect type of request, expected = KubeVirtGenericReq, got %T", request)
+	}
+	kubeconfig := req.Kubeconfig
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return "", common.KubernetesErrorToHTTPError(err)
+	}
+	if len(req.Credential) > 0 {
+		preset, err := presetsProvider.GetPreset(ctx, userInfo, pointer.String(""), req.Credential)
+		if err != nil {
+			return "", utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+		}
+		if credentials := preset.Spec.Kubevirt; credentials != nil {
+			kubeconfig = credentials.Kubeconfig
+		}
+	}
+	return kubeconfig, nil
+}
+
 // KubeVirtVMIPresetsEndpoint handles the request to list available KubeVirtVMIPresets (provided credentials).
+//
+// Deprecated: in favor of KubeVirtInstancetypesEndpoint.
 func KubeVirtVMIPresetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(KubeVirtGenericReq)
-		kubeconfig := req.Kubeconfig
-
-		userInfo, err := userInfoGetter(ctx, "")
+		kubeconfig, err := kubeconfigFromRequest(ctx, request, presetsProvider, userInfoGetter)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(ctx, userInfo, req.Credential)
-			if err != nil {
-				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credentials := preset.Spec.Kubevirt; credentials != nil {
-				kubeconfig = credentials.Kubeconfig
-			}
+			return nil, err
 		}
 		return providercommon.KubeVirtVMIPresets(ctx, kubeconfig, nil, settingsProvider)
 	}
 }
 
+// KubeVirtInstancetypesEndpoint handles the request to list available KubeVirtInstancetypes (provided credentials).
+func KubeVirtInstancetypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		kubeconfig, err := kubeconfigFromRequest(ctx, request, presetsProvider, userInfoGetter)
+		if err != nil {
+			return nil, err
+		}
+		return providercommon.KubeVirtInstancetypes(ctx, kubeconfig, nil, settingsProvider)
+	}
+}
+
+// KubeVirtPreferencesEndpoint handles the request to list available KubeVirtPreferences (provided credentials).
+func KubeVirtPreferencesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		kubeconfig, err := kubeconfigFromRequest(ctx, request, presetsProvider, userInfoGetter)
+		if err != nil {
+			return nil, err
+		}
+		return providercommon.KubeVirtPreferences(ctx, kubeconfig, nil, settingsProvider)
+	}
+}
+
 // KubeVirtVMIPresetsWithClusterCredentialsEndpoint handles the request to list available KubeVirtVMIPresets (cluster credentials).
+//
+// Deprecated: in favor of KubeVirtInstancetypesWithClusterCredentialsEndpoint.
 func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(KubeVirtGenericNoCredentialReq)
+		req, ok := request.(KubeVirtGenericNoCredentialReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = KubeVirtGenericNoCredentialReq, got %T", request)
+		}
 		return providercommon.KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, settingsProvider)
+	}
+}
+
+// KubeVirtInstacetypesWithClusterCredentialsEndpoint handles the request to list available KubeVirtInstancetypes (cluster credentials).
+func KubeVirtInstancetypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(KubeVirtGenericNoCredentialReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = KubeVirtGenericNoCredentialReq, got %T", request)
+		}
+		return providercommon.KubeVirtInstancetypesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, settingsProvider)
+	}
+}
+
+// KubeVirtPreferencesWithClusterCredentialsEndpoint handles the request to list available KubeVirtPreferences (cluster credentials).
+func KubeVirtPreferencesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(KubeVirtGenericNoCredentialReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = KubeVirtGenericNoCredentialReq, got %T", request)
+		}
+		return providercommon.KubeVirtPreferencesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, settingsProvider)
 	}
 }
 
 // KubeVirtStorageClassesEndpoint handles the request to list available k8s StorageClasses (provided credentials).
 func KubeVirtStorageClassesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(KubeVirtGenericReq)
-		kubeconfig := req.Kubeconfig
-
-		userInfo, err := userInfoGetter(ctx, "")
+		kubeconfig, err := kubeconfigFromRequest(ctx, request, presetsProvider, userInfoGetter)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if len(req.Credential) > 0 {
-			preset, err := presetsProvider.GetPreset(ctx, userInfo, req.Credential)
-			if err != nil {
-				return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
-			}
-			if credentials := preset.Spec.Kubevirt; credentials != nil {
-				kubeconfig = credentials.Kubeconfig
-			}
+			return nil, err
 		}
 		return providercommon.KubeVirtStorageClasses(ctx, kubeconfig)
 	}
@@ -104,7 +156,10 @@ func KubeVirtStorageClassesEndpoint(presetsProvider provider.PresetProvider, use
 // KubeVirtStorageClassesWithClusterCredentialsEndpoint handles the request to list storage classes (cluster credentials).
 func KubeVirtStorageClassesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(KubeVirtGenericNoCredentialReq)
+		req, ok := request.(KubeVirtGenericNoCredentialReq)
+		if !ok {
+			return nil, fmt.Errorf("incorrect type of request, expected = KubeVirtGenericNoCredentialReq, got %T", request)
+		}
 		return providercommon.KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
 	}
 }

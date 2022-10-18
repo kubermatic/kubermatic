@@ -60,7 +60,8 @@ func NewUpdateExternalClusterOK() *UpdateExternalClusterOK {
 	return &UpdateExternalClusterOK{}
 }
 
-/* UpdateExternalClusterOK describes a response with status code 200, with default header values.
+/*
+UpdateExternalClusterOK describes a response with status code 200, with default header values.
 
 ExternalCluster
 */
@@ -68,9 +69,39 @@ type UpdateExternalClusterOK struct {
 	Payload *models.ExternalCluster
 }
 
+// IsSuccess returns true when this update external cluster o k response has a 2xx status code
+func (o *UpdateExternalClusterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this update external cluster o k response has a 3xx status code
+func (o *UpdateExternalClusterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update external cluster o k response has a 4xx status code
+func (o *UpdateExternalClusterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this update external cluster o k response has a 5xx status code
+func (o *UpdateExternalClusterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update external cluster o k response a status code equal to that given
+func (o *UpdateExternalClusterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *UpdateExternalClusterOK) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterOK  %+v", 200, o.Payload)
 }
+
+func (o *UpdateExternalClusterOK) String() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterOK  %+v", 200, o.Payload)
+}
+
 func (o *UpdateExternalClusterOK) GetPayload() *models.ExternalCluster {
 	return o.Payload
 }
@@ -92,14 +123,44 @@ func NewUpdateExternalClusterUnauthorized() *UpdateExternalClusterUnauthorized {
 	return &UpdateExternalClusterUnauthorized{}
 }
 
-/* UpdateExternalClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+UpdateExternalClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateExternalClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this update external cluster unauthorized response has a 2xx status code
+func (o *UpdateExternalClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update external cluster unauthorized response has a 3xx status code
+func (o *UpdateExternalClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update external cluster unauthorized response has a 4xx status code
+func (o *UpdateExternalClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update external cluster unauthorized response has a 5xx status code
+func (o *UpdateExternalClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update external cluster unauthorized response a status code equal to that given
+func (o *UpdateExternalClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *UpdateExternalClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterUnauthorized ", 401)
+}
+
+func (o *UpdateExternalClusterUnauthorized) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterUnauthorized ", 401)
 }
 
@@ -113,14 +174,44 @@ func NewUpdateExternalClusterForbidden() *UpdateExternalClusterForbidden {
 	return &UpdateExternalClusterForbidden{}
 }
 
-/* UpdateExternalClusterForbidden describes a response with status code 403, with default header values.
+/*
+UpdateExternalClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type UpdateExternalClusterForbidden struct {
 }
 
+// IsSuccess returns true when this update external cluster forbidden response has a 2xx status code
+func (o *UpdateExternalClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this update external cluster forbidden response has a 3xx status code
+func (o *UpdateExternalClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this update external cluster forbidden response has a 4xx status code
+func (o *UpdateExternalClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this update external cluster forbidden response has a 5xx status code
+func (o *UpdateExternalClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this update external cluster forbidden response a status code equal to that given
+func (o *UpdateExternalClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *UpdateExternalClusterForbidden) Error() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterForbidden ", 403)
+}
+
+func (o *UpdateExternalClusterForbidden) String() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalClusterForbidden ", 403)
 }
 
@@ -136,7 +227,8 @@ func NewUpdateExternalClusterDefault(code int) *UpdateExternalClusterDefault {
 	}
 }
 
-/* UpdateExternalClusterDefault describes a response with status code -1, with default header values.
+/*
+UpdateExternalClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -151,9 +243,39 @@ func (o *UpdateExternalClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this update external cluster default response has a 2xx status code
+func (o *UpdateExternalClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this update external cluster default response has a 3xx status code
+func (o *UpdateExternalClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this update external cluster default response has a 4xx status code
+func (o *UpdateExternalClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this update external cluster default response has a 5xx status code
+func (o *UpdateExternalClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this update external cluster default response a status code equal to that given
+func (o *UpdateExternalClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *UpdateExternalClusterDefault) Error() string {
 	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *UpdateExternalClusterDefault) String() string {
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}][%d] updateExternalCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *UpdateExternalClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -170,7 +292,8 @@ func (o *UpdateExternalClusterDefault) readResponse(response runtime.ClientRespo
 	return nil
 }
 
-/*UpdateExternalClusterBody update external cluster body
+/*
+UpdateExternalClusterBody update external cluster body
 swagger:model UpdateExternalClusterBody
 */
 type UpdateExternalClusterBody struct {

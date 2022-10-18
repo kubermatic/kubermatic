@@ -46,7 +46,8 @@ func NewListGCPNetworksOK() *ListGCPNetworksOK {
 	return &ListGCPNetworksOK{}
 }
 
-/* ListGCPNetworksOK describes a response with status code 200, with default header values.
+/*
+ListGCPNetworksOK describes a response with status code 200, with default header values.
 
 GCPNetworkList
 */
@@ -54,9 +55,39 @@ type ListGCPNetworksOK struct {
 	Payload models.GCPNetworkList
 }
 
+// IsSuccess returns true when this list g c p networks o k response has a 2xx status code
+func (o *ListGCPNetworksOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list g c p networks o k response has a 3xx status code
+func (o *ListGCPNetworksOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list g c p networks o k response has a 4xx status code
+func (o *ListGCPNetworksOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list g c p networks o k response has a 5xx status code
+func (o *ListGCPNetworksOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list g c p networks o k response a status code equal to that given
+func (o *ListGCPNetworksOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListGCPNetworksOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworksOK  %+v", 200, o.Payload)
 }
+
+func (o *ListGCPNetworksOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworksOK  %+v", 200, o.Payload)
+}
+
 func (o *ListGCPNetworksOK) GetPayload() models.GCPNetworkList {
 	return o.Payload
 }
@@ -78,7 +109,8 @@ func NewListGCPNetworksDefault(code int) *ListGCPNetworksDefault {
 	}
 }
 
-/* ListGCPNetworksDefault describes a response with status code -1, with default header values.
+/*
+ListGCPNetworksDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -93,9 +125,39 @@ func (o *ListGCPNetworksDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list g c p networks default response has a 2xx status code
+func (o *ListGCPNetworksDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list g c p networks default response has a 3xx status code
+func (o *ListGCPNetworksDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list g c p networks default response has a 4xx status code
+func (o *ListGCPNetworksDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list g c p networks default response has a 5xx status code
+func (o *ListGCPNetworksDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list g c p networks default response a status code equal to that given
+func (o *ListGCPNetworksDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListGCPNetworksDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworks default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListGCPNetworksDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/gcp/networks][%d] listGCPNetworks default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListGCPNetworksDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

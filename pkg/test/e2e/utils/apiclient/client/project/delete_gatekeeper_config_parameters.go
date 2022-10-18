@@ -52,10 +52,12 @@ func NewDeleteGatekeeperConfigParamsWithHTTPClient(client *http.Client) *DeleteG
 	}
 }
 
-/* DeleteGatekeeperConfigParams contains all the parameters to send to the API endpoint
-   for the delete gatekeeper config operation.
+/*
+DeleteGatekeeperConfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete gatekeeper config operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteGatekeeperConfigParams struct {
 

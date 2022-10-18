@@ -58,7 +58,8 @@ func NewListDCForProviderOK() *ListDCForProviderOK {
 	return &ListDCForProviderOK{}
 }
 
-/* ListDCForProviderOK describes a response with status code 200, with default header values.
+/*
+ListDCForProviderOK describes a response with status code 200, with default header values.
 
 Datacenter
 */
@@ -66,9 +67,39 @@ type ListDCForProviderOK struct {
 	Payload []*models.Datacenter
 }
 
+// IsSuccess returns true when this list d c for provider o k response has a 2xx status code
+func (o *ListDCForProviderOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list d c for provider o k response has a 3xx status code
+func (o *ListDCForProviderOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list d c for provider o k response has a 4xx status code
+func (o *ListDCForProviderOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list d c for provider o k response has a 5xx status code
+func (o *ListDCForProviderOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list d c for provider o k response a status code equal to that given
+func (o *ListDCForProviderOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListDCForProviderOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProviderOK  %+v", 200, o.Payload)
 }
+
+func (o *ListDCForProviderOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProviderOK  %+v", 200, o.Payload)
+}
+
 func (o *ListDCForProviderOK) GetPayload() []*models.Datacenter {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListDCForProviderUnauthorized() *ListDCForProviderUnauthorized {
 	return &ListDCForProviderUnauthorized{}
 }
 
-/* ListDCForProviderUnauthorized describes a response with status code 401, with default header values.
+/*
+ListDCForProviderUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListDCForProviderUnauthorized struct {
 }
 
+// IsSuccess returns true when this list d c for provider unauthorized response has a 2xx status code
+func (o *ListDCForProviderUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list d c for provider unauthorized response has a 3xx status code
+func (o *ListDCForProviderUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list d c for provider unauthorized response has a 4xx status code
+func (o *ListDCForProviderUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list d c for provider unauthorized response has a 5xx status code
+func (o *ListDCForProviderUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list d c for provider unauthorized response a status code equal to that given
+func (o *ListDCForProviderUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListDCForProviderUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProviderUnauthorized ", 401)
+}
+
+func (o *ListDCForProviderUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProviderUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListDCForProviderForbidden() *ListDCForProviderForbidden {
 	return &ListDCForProviderForbidden{}
 }
 
-/* ListDCForProviderForbidden describes a response with status code 403, with default header values.
+/*
+ListDCForProviderForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListDCForProviderForbidden struct {
 }
 
+// IsSuccess returns true when this list d c for provider forbidden response has a 2xx status code
+func (o *ListDCForProviderForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list d c for provider forbidden response has a 3xx status code
+func (o *ListDCForProviderForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list d c for provider forbidden response has a 4xx status code
+func (o *ListDCForProviderForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list d c for provider forbidden response has a 5xx status code
+func (o *ListDCForProviderForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list d c for provider forbidden response a status code equal to that given
+func (o *ListDCForProviderForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListDCForProviderForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProviderForbidden ", 403)
+}
+
+func (o *ListDCForProviderForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProviderForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListDCForProviderDefault(code int) *ListDCForProviderDefault {
 	}
 }
 
-/* ListDCForProviderDefault describes a response with status code -1, with default header values.
+/*
+ListDCForProviderDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListDCForProviderDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list d c for provider default response has a 2xx status code
+func (o *ListDCForProviderDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list d c for provider default response has a 3xx status code
+func (o *ListDCForProviderDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list d c for provider default response has a 4xx status code
+func (o *ListDCForProviderDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list d c for provider default response has a 5xx status code
+func (o *ListDCForProviderDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list d c for provider default response a status code equal to that given
+func (o *ListDCForProviderDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListDCForProviderDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProvider default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListDCForProviderDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/providers/{provider_name}/dc][%d] listDCForProvider default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListDCForProviderDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

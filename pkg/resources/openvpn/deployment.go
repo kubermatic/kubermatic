@@ -24,6 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -70,7 +71,7 @@ type openVPNDeploymentCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	NodeAccessNetwork() string
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 }
 
 // DeploymentCreator returns the function to create and update the openvpn server deployment.
@@ -148,7 +149,7 @@ func DeploymentCreator(data openVPNDeploymentCreatorData) reconciling.NamedDeplo
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:    "iptables-init",
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v2.5.2-r0",
+					Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/openvpn:v2.5.2-r0")),
 					Command: []string{"/bin/bash"},
 					Args: []string{
 						"-c", `# do not give a 10.20.0.0/24 route to clients (nodes) but
@@ -207,7 +208,7 @@ iptables -A INPUT -i tun0 -j DROP
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v2.5.2-r0",
+					Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/openvpn:v2.5.2-r0")),
 					Command: []string{"/usr/sbin/openvpn"},
 					Args:    vpnArgs,
 					Ports: []corev1.ContainerPort{
@@ -260,7 +261,7 @@ iptables -A INPUT -i tun0 -j DROP
 				},
 				{
 					Name:    "ip-fixup",
-					Image:   data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/openvpn:v2.5.2-r0",
+					Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/openvpn:v2.5.2-r0")),
 					Command: []string{"/bin/bash"},
 					Args: []string{
 						"-c",
@@ -279,7 +280,7 @@ done`,
 				},
 				{
 					Name:    "openvpn-exporter",
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kumina/openvpn-exporter:v0.2.2",
+					Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/kumina/openvpn-exporter:v0.2.2")),
 					Command: []string{"/bin/openvpn_exporter"},
 					Args: []string{
 						"-openvpn.status_paths",

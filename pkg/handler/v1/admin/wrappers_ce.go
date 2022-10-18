@@ -45,12 +45,12 @@ func listMeteringReportConfigurations(_ provider.SeedsGetter) ([]apiv1.MeteringR
 	return nil, nil
 }
 
-func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) error {
-	return nil
+func createMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
+	return nil, nil
 }
 
-func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) error {
-	return nil
+func updateMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
+	return nil, nil
 }
 
 func deleteMeteringReportConfiguration(_ context.Context, _ interface{}, _ provider.SeedsGetter, _ ctrlruntimeclient.Client) error {

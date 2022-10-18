@@ -3,6 +3,7 @@
 metadata:
   creationTimestamp: null
   name: dns-resolver
+  namespace: cluster-de-test-01
 spec:
   ports:
   - name: dns

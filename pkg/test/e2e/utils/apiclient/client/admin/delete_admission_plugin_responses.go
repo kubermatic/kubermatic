@@ -58,14 +58,44 @@ func NewDeleteAdmissionPluginOK() *DeleteAdmissionPluginOK {
 	return &DeleteAdmissionPluginOK{}
 }
 
-/* DeleteAdmissionPluginOK describes a response with status code 200, with default header values.
+/*
+DeleteAdmissionPluginOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteAdmissionPluginOK struct {
 }
 
+// IsSuccess returns true when this delete admission plugin o k response has a 2xx status code
+func (o *DeleteAdmissionPluginOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete admission plugin o k response has a 3xx status code
+func (o *DeleteAdmissionPluginOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete admission plugin o k response has a 4xx status code
+func (o *DeleteAdmissionPluginOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete admission plugin o k response has a 5xx status code
+func (o *DeleteAdmissionPluginOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete admission plugin o k response a status code equal to that given
+func (o *DeleteAdmissionPluginOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteAdmissionPluginOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPluginOK ", 200)
+}
+
+func (o *DeleteAdmissionPluginOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPluginOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteAdmissionPluginUnauthorized() *DeleteAdmissionPluginUnauthorized {
 	return &DeleteAdmissionPluginUnauthorized{}
 }
 
-/* DeleteAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteAdmissionPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteAdmissionPluginUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete admission plugin unauthorized response has a 2xx status code
+func (o *DeleteAdmissionPluginUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete admission plugin unauthorized response has a 3xx status code
+func (o *DeleteAdmissionPluginUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete admission plugin unauthorized response has a 4xx status code
+func (o *DeleteAdmissionPluginUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete admission plugin unauthorized response has a 5xx status code
+func (o *DeleteAdmissionPluginUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete admission plugin unauthorized response a status code equal to that given
+func (o *DeleteAdmissionPluginUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteAdmissionPluginUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPluginUnauthorized ", 401)
+}
+
+func (o *DeleteAdmissionPluginUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPluginUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteAdmissionPluginForbidden() *DeleteAdmissionPluginForbidden {
 	return &DeleteAdmissionPluginForbidden{}
 }
 
-/* DeleteAdmissionPluginForbidden describes a response with status code 403, with default header values.
+/*
+DeleteAdmissionPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteAdmissionPluginForbidden struct {
 }
 
+// IsSuccess returns true when this delete admission plugin forbidden response has a 2xx status code
+func (o *DeleteAdmissionPluginForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete admission plugin forbidden response has a 3xx status code
+func (o *DeleteAdmissionPluginForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete admission plugin forbidden response has a 4xx status code
+func (o *DeleteAdmissionPluginForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete admission plugin forbidden response has a 5xx status code
+func (o *DeleteAdmissionPluginForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete admission plugin forbidden response a status code equal to that given
+func (o *DeleteAdmissionPluginForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteAdmissionPluginForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPluginForbidden ", 403)
+}
+
+func (o *DeleteAdmissionPluginForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPluginForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteAdmissionPluginDefault(code int) *DeleteAdmissionPluginDefault {
 	}
 }
 
-/* DeleteAdmissionPluginDefault describes a response with status code -1, with default header values.
+/*
+DeleteAdmissionPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteAdmissionPluginDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete admission plugin default response has a 2xx status code
+func (o *DeleteAdmissionPluginDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete admission plugin default response has a 3xx status code
+func (o *DeleteAdmissionPluginDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete admission plugin default response has a 4xx status code
+func (o *DeleteAdmissionPluginDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete admission plugin default response has a 5xx status code
+func (o *DeleteAdmissionPluginDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete admission plugin default response a status code equal to that given
+func (o *DeleteAdmissionPluginDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteAdmissionPluginDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPlugin default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteAdmissionPluginDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/admin/admission/plugins/{name}][%d] deleteAdmissionPlugin default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteAdmissionPluginDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

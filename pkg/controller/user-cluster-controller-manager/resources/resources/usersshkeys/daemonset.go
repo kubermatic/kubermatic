@@ -40,7 +40,7 @@ var (
 	hostPathType            = corev1.HostPathDirectoryOrCreate
 )
 
-func DaemonSetCreator(versions kubermatic.Versions, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return daemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
@@ -62,7 +62,7 @@ func DaemonSetCreator(versions kubermatic.Versions, registryWithOverwrite regist
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), dockerImage, versions.Kubermatic),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, dockerImage, versions.Kubermatic))),
 					Command:         []string{fmt.Sprintf("/usr/local/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{

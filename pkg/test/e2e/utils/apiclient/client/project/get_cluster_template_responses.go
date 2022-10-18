@@ -58,7 +58,8 @@ func NewGetClusterTemplateOK() *GetClusterTemplateOK {
 	return &GetClusterTemplateOK{}
 }
 
-/* GetClusterTemplateOK describes a response with status code 200, with default header values.
+/*
+GetClusterTemplateOK describes a response with status code 200, with default header values.
 
 ClusterTemplate
 */
@@ -66,9 +67,39 @@ type GetClusterTemplateOK struct {
 	Payload *models.ClusterTemplate
 }
 
+// IsSuccess returns true when this get cluster template o k response has a 2xx status code
+func (o *GetClusterTemplateOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get cluster template o k response has a 3xx status code
+func (o *GetClusterTemplateOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster template o k response has a 4xx status code
+func (o *GetClusterTemplateOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get cluster template o k response has a 5xx status code
+func (o *GetClusterTemplateOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster template o k response a status code equal to that given
+func (o *GetClusterTemplateOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetClusterTemplateOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplateOK  %+v", 200, o.Payload)
 }
+
+func (o *GetClusterTemplateOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplateOK  %+v", 200, o.Payload)
+}
+
 func (o *GetClusterTemplateOK) GetPayload() *models.ClusterTemplate {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewGetClusterTemplateUnauthorized() *GetClusterTemplateUnauthorized {
 	return &GetClusterTemplateUnauthorized{}
 }
 
-/* GetClusterTemplateUnauthorized describes a response with status code 401, with default header values.
+/*
+GetClusterTemplateUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetClusterTemplateUnauthorized struct {
 }
 
+// IsSuccess returns true when this get cluster template unauthorized response has a 2xx status code
+func (o *GetClusterTemplateUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster template unauthorized response has a 3xx status code
+func (o *GetClusterTemplateUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster template unauthorized response has a 4xx status code
+func (o *GetClusterTemplateUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster template unauthorized response has a 5xx status code
+func (o *GetClusterTemplateUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster template unauthorized response a status code equal to that given
+func (o *GetClusterTemplateUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetClusterTemplateUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplateUnauthorized ", 401)
+}
+
+func (o *GetClusterTemplateUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplateUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewGetClusterTemplateForbidden() *GetClusterTemplateForbidden {
 	return &GetClusterTemplateForbidden{}
 }
 
-/* GetClusterTemplateForbidden describes a response with status code 403, with default header values.
+/*
+GetClusterTemplateForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetClusterTemplateForbidden struct {
 }
 
+// IsSuccess returns true when this get cluster template forbidden response has a 2xx status code
+func (o *GetClusterTemplateForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get cluster template forbidden response has a 3xx status code
+func (o *GetClusterTemplateForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get cluster template forbidden response has a 4xx status code
+func (o *GetClusterTemplateForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get cluster template forbidden response has a 5xx status code
+func (o *GetClusterTemplateForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get cluster template forbidden response a status code equal to that given
+func (o *GetClusterTemplateForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetClusterTemplateForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplateForbidden ", 403)
+}
+
+func (o *GetClusterTemplateForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplateForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewGetClusterTemplateDefault(code int) *GetClusterTemplateDefault {
 	}
 }
 
-/* GetClusterTemplateDefault describes a response with status code -1, with default header values.
+/*
+GetClusterTemplateDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *GetClusterTemplateDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get cluster template default response has a 2xx status code
+func (o *GetClusterTemplateDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get cluster template default response has a 3xx status code
+func (o *GetClusterTemplateDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get cluster template default response has a 4xx status code
+func (o *GetClusterTemplateDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get cluster template default response has a 5xx status code
+func (o *GetClusterTemplateDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get cluster template default response a status code equal to that given
+func (o *GetClusterTemplateDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetClusterTemplateDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplate default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetClusterTemplateDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clustertemplates/{template_id}][%d] getClusterTemplate default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetClusterTemplateDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

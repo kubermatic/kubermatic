@@ -28,4 +28,5 @@ spec:
   userCluster:
     apiserverReplicas: 1
   featureGates:
+    EtcdLauncher: true
     HeadlessInstallation: true

@@ -17,14 +17,17 @@ limitations under the License.
 package exposestrategy
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,51 +72,40 @@ type clientJig struct {
 	e2eutils.TestPodConfig
 }
 
-func (cj *clientJig) QueryApiserverVersion(kasHostPort string, insecure bool, expectServerVersion semver.Semver, retries, minSuccess int) bool {
-	c := []string{
-		"kubectl",
-		"version",
-		"-o",
-		"json",
-	}
-	// If kasHostPort is provided we patch the kubeconfig
+func (cj *clientJig) VerifyApiserverVersion(ctx context.Context, kasHostPort string, insecure bool, expectServerVersion semver.Semver) error {
+	cmd := []string{"kubectl", "version", "--output", "json"}
+
+	// If kasHostPort is provided we override the server address
 	if kasHostPort != "" {
-		c = append([]string{
-			"sed",
-			fmt.Sprintf(`'s/\sserver: .*$/ server: https:\/\/%s/'`, kasHostPort),
-			"${KUBECONFIG}",
-			"|",
-		}, c...)
-		c = append(c, "--kubeconfig", "/dev/stdin")
+		cmd = append(cmd, "--server", fmt.Sprintf("https://%s", kasHostPort))
 	}
 	if insecure {
-		c = append(c, "--insecure-skip-tls-verify=true")
+		cmd = append(cmd, "--insecure-skip-tls-verify=true")
 	}
-	cmd := strings.Join(c, " ")
 
-	filterCmd := fmt.Sprintf("%s | grep -v '^\\s*$'", cmd)
-
-	s := 0
-	for i := 0; i < retries; i++ {
-		stdout, stderr, err := cj.Exec(clientContainerName, "/bin/sh", "-c", filterCmd)
+	return wait.PollImmediateLog(ctx, cj.Log, 1*time.Millisecond, 15*time.Second, func() (transient error, terminal error) {
+		stdout, stderr, err := cj.Exec(clientContainerName, cmd...)
 		if err != nil {
-			cj.Log.Infof("Failed to execute %q: %v, stdout: %q, stderr: %q", filterCmd, err, stdout, stderr)
-		} else {
-			rawVersion := strings.TrimSpace(stdout)
-			cj.Log.Debugf("Got response: %q", rawVersion)
-			v := KubeVersions{}
-			if err := json.Unmarshal([]byte(rawVersion), &v); err != nil {
-				cj.Log.Errorf("Failed to unmarshal output of kubeclt version command: %v", err)
-				continue
-			}
-			if v.ServerVersion.MajorVersion() == expectServerVersion.Semver().Major() &&
-				v.ServerVersion.MinorVersion() == expectServerVersion.Semver().Minor() {
-				s++
-			}
+			return fmt.Errorf("failed to execute kubectl (stdout=%q, stderr=%q): %w", stdout, stderr, err), nil
 		}
-	}
 
-	return s >= minSuccess
+		rawVersion := strings.TrimSpace(stdout)
+		cj.Log.Debugw("Got response", "body", rawVersion)
+
+		v := KubeVersions{}
+		if err := json.Unmarshal([]byte(rawVersion), &v); err != nil {
+			return fmt.Errorf("failed to unmarshal output of kubectl version command: %w", err), nil
+		}
+
+		currentMajorMinor := fmt.Sprintf("%s.%s", v.ServerVersion.Major, v.ServerVersion.Minor)
+		expectedMajorMinor := expectServerVersion.MajorMinor()
+
+		if currentMajorMinor != expectedMajorMinor {
+			return fmt.Errorf("expected serverVersion to be %q, but got %q", expectedMajorMinor, currentMajorMinor), nil
+		}
+
+		return nil, nil
+	})
 }
 
 // newClientPod returns a pod that runs a container allowing to run kubectl and

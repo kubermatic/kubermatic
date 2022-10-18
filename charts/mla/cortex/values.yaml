@@ -1,0 +1,1766 @@
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+cortex:
+  #  Container image settings.
+  #  Since the image is unique for all microservices, so are image settings.
+
+  # image:
+  #   repository: quay.io/cortexproject/cortex
+  #   tag: v1.10.0
+  #   pullPolicy: IfNotPresent
+
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistrKeySecretName
+
+  # Kubernetes cluster DNS domain
+  clusterDomain: cluster.local
+  tags:
+    blocks-storage-memcached: true
+  ingress:
+    enabled: false
+    annotations:
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: chart-example.local
+        paths:
+          - /
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+  serviceAccount:
+    create: true
+    name:
+    annotations: {}
+    automountServiceAccountToken: true
+  useExternalConfig: false
+  externalConfigSecretName: 'secret-with-config.yaml'
+  externalConfigVersion: '0'
+  config:
+    auth_enabled: true
+    api:
+      prometheus_http_prefix: '/prometheus'
+      response_compression_enabled: true
+    ingester:
+      max_transfer_retries: 0
+      lifecycler:
+        join_after: 0s
+        final_sleep: 0s
+        num_tokens: 512
+        ring:
+          replication_factor: 3
+          kvstore:
+            store: memberlist
+            prefix: 'collectors/'
+            consul:
+              host: 'consul:8500'
+              http_client_timeout: '20s'
+              consistent_reads: true
+    limits:
+      enforce_metric_name: false
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      max_query_lookback: 168h
+      accept_ha_samples: true
+      max_label_names_per_series: 40
+    schema:
+      configs:
+        - from: 2020-11-01
+          store: cassandra
+          object_store: cassandra
+          schema: v10
+          index:
+            prefix: index_
+            period: 168h
+          chunks:
+            prefix: chunks_
+            period: 168h
+    server:
+      http_listen_port: 8080
+      grpc_listen_port: 9095
+      grpc_server_max_recv_msg_size: 104857600
+      grpc_server_max_send_msg_size: 104857600
+      grpc_server_max_concurrent_streams: 1000
+    ingester_client:
+      grpc_client_config:
+        max_recv_msg_size: 104857600
+        max_send_msg_size: 104857600
+    # See https://github.com/cortexproject/cortex/blob/master/docs/configuration/config-file-reference.md#storage_config
+    storage:
+      engine: blocks
+      cassandra:
+        addresses: # configure cassandra addresses here.
+        keyspace: cortex # configure desired keyspace here.
+        auth: true
+        username: # configure cassandra user here.
+        password: # configure cassandra password here.
+      azure:
+        container_name: # configure azure blob container name here.
+        account_name: # configure azure storage account name here.
+        account_key: # configure azure storage account key here.
+      # aws:
+      #   dynamodb:
+      #     dynamodb_url:
+      #     api_limit:
+      #     throttle_limit:
+      #     metrics:
+      #       url:
+      #       target_queue_length:
+      #       scale_up_factor:
+      #       ignore_throttle_below:
+      #       queue_length_query:
+      #       write_throttle_query:
+      #       write_usage_query:
+      #       read_usage_query:
+      #       read_error_query:
+      #     chunk_gang_size:
+      #     chunk_get_max_parallelism:
+      #   s3:
+      #   bucketnames:
+      #   s3forcepathstyle:
+      index_queries_cache_config:
+        memcached:
+          expiration: 1h
+        memcached_client:
+          timeout: 1s
+    chunk_store:
+      chunk_cache_config:
+        memcached:
+          expiration: 1h
+        memcached_client:
+          timeout: 1s
+    # -- https://cortexmetrics.io/docs/configuration/configuration-file/#store_gateway_config
+    store_gateway:
+      sharding_enabled: true
+      sharding_ring:
+        replication_factor: 2
+        kvstore:
+          store: memberlist
+    table_manager:
+      retention_deletes_enabled: false
+      retention_period: 0s
+    distributor:
+      shard_by_all_labels: true
+      pool:
+        health_check_ingesters: true
+      ha_tracker:
+        enable_ha_tracker: true
+        # consul is required as ha_tracker does not support memberlist
+        kvstore:
+          store: consul
+          consul:
+            host: consul-consul-server:8500
+      ring:
+        kvstore:
+          store: memberlist
+    memberlist:
+      bind_port: 7946
+      # -- the service name of the memberlist
+      # if using memberlist discovery
+      join_members:
+        - cortex-ingester-headless
+      #  - '{{ include "cortex.fullname" $ }}-memberlist'
+    querier:
+      active_query_tracker_dir: /data/cortex/querier
+      query_ingesters_within: 365m
+      # -- Comma separated list of store-gateway addresses in DNS Service Discovery
+      # format. This option should is set automatically when using the blocks storage and the
+      # store-gateway sharding is disabled (when enabled, the store-gateway instances
+      # form a ring and addresses are picked from the ring).
+      # @default -- automatic
+      store_gateway_addresses: |-
+        {{ if and (eq .Values.config.storage.engine "blocks") (not .Values.config.store_gateway.sharding_enabled) -}}
+        dns+{{ include "cortex.storeGatewayFullname" $ }}-headless:9095
+        {{- end }}
+      query_store_after: 360m
+    query_range:
+      split_queries_by_interval: 24h
+      align_queries_with_step: true
+      cache_results: true
+      results_cache:
+        cache:
+          memcached:
+            expiration: 1h
+          memcached_client:
+            timeout: 1s
+    ruler:
+      enable_alertmanager_discovery: true
+      # -- Enable the experimental ruler config api.
+      enable_api: true
+      # -- Method to use for backend rule storage (configdb, azure, gcs, s3, swift, local) refer to https://cortexmetrics.io/docs/configuration/configuration-file/#ruler_config
+      storage:
+        type: s3
+        s3:
+          bucketnames: "cortex-ruler"
+          endpoint: "minio:9000"
+          s3forcepathstyle: true
+          insecure: true
+      # This is a KKP-specific headless alertmanager service, used to work around the Cortex helm chart bug in chart versions below v1.0.0
+      alertmanager_url: http://_http-metrics._tcp.cortex-alertmanager-headless-kkp/api/prom/alertmanager/
+      ring:
+        kvstore:
+          store: memberlist
+    runtime_config:
+      file: "/etc/cortex-runtime-cfg/runtime-config.yaml"
+      period: "10s"
+    alertmanager:
+      # -- Enable the experimental alertmanager config api.
+      enable_api: true
+      external_url: '/api/prom/alertmanager'
+      # -- Type of backend to use to store alertmanager configs. Supported values are: "configdb", "gcs", "s3", "local". refer to: https://cortexmetrics.io/docs/configuration/configuration-file/#alertmanager_config
+      storage:
+        type: s3
+        s3:
+          bucketnames: "alertmanager"
+          endpoint: "minio:9000"
+          s3forcepathstyle: true
+          insecure: true
+      data_dir: /data/cortex/alert-data
+    frontend:
+      #  max_outstanding_per_tenant: 1000
+      log_queries_longer_than: 10s
+    compactor:
+      block_deletion_marks_migration_enabled: false
+      data_dir: /data/cortex/compactor
+      compaction_interval: 30m
+      sharding_enabled: true
+      sharding_ring:
+        kvstore:
+          store: memberlist
+    blocks_storage:
+      backend: s3
+      bucket_store:
+        bucket_index:
+          enabled: true
+        sync_dir: /data
+        ignore_deletion_mark_delay: 1h
+      s3:
+        bucket_name: "cortex"
+        endpoint: "minio:9000"
+        insecure: true
+      tsdb:
+        dir: /data
+        retention_period: 365m
+        close_idle_tsdb_timeout: 365m
+        wal_compression_enabled: true
+        flush_blocks_on_shutdown: true
+  runtimeconfigmap:
+    # -- If true, a configmap for the `runtime_config` will be created.
+    # If false, the configmap _must_ exist already on the cluster or pods will fail to create.
+    create: false
+    annotations: {}
+    # -- https://cortexmetrics.io/docs/configuration/arguments/#runtime-configuration-file
+    runtime_config: {}
+  alertmanager:
+    enabled: true
+    replicas: 2
+    statefulSet:
+      ## If true, use a statefulset instead of a deployment for pod management.
+      ## This is useful for using a persistent volume for storing silences between restarts
+      ##
+      enabled: true
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources: {}
+    #  limits:
+    #    cpu: 200m
+    #    memory: 256Mi
+    #  requests:
+    #    cpu: 10m
+    #    memory: 32Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs:
+      alertmanager.storage.s3.access-key-id: $(ACCESS_KEY)
+      alertmanager.storage.s3.secret-access-key: $(SECRET_KEY)
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: target
+                    operator: In
+                    values:
+                      - alertmanager
+              topologyKey: "kubernetes.io/hostname"
+    annotations: {}
+    ## DEPRECATED: use persistentVolume.subPath instead
+    persistence:
+      subPath:
+    persistentVolume:
+      ## If true and alertmanager.statefulSet.enabled is true,
+      ## Alertmanager will create/use a Persistent Volume Claim
+      ## If false, use emptyDir
+      ##
+      enabled: true
+      ## Alertmanager data Persistent Volume Claim annotations
+      ##
+      annotations: {}
+      ## Alertmanager data Persistent Volume access modes
+      ## Must match those of existing PV or dynamic provisioner
+      ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+      ##
+      accessModes:
+        - ReadWriteOnce
+      ## Alertmanager data Persistent Volume size
+      ##
+      size: 2Gi
+      ## Subdirectory of Alertmanager data Persistent Volume to mount
+      ## Useful if the volume's root directory is not empty
+      ##
+      subPath: ''
+      ## Alertmanager data Persistent Volume Storage Class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is
+      ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+      ##   GKE, AWS & OpenStack)
+      ##
+      # storageClass: "-"
+
+      storageClass: "kubermatic-fast"
+    startupProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    # fsGroup: 10001
+    # runAsGroup: 10001
+    # runAsNonRoot: true
+    # runAsUser: 10001
+
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    ## Tolerations for pod assignment
+    ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    tolerations: []
+    # If not set then a PodDisruptionBudget will not be created
+    podDisruptionBudget:
+      maxUnavailable: 1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    statefulStrategy:
+      type: RollingUpdate
+    terminationGracePeriodSeconds: 60
+    initContainers: []
+    ## Init containers to be added to the cortex pod.
+    # - name: my-init-container
+    #   image: busybox:latest
+    #   command: ['sh', '-c', 'echo hello']
+
+    extraContainers: []
+    ## Additional containers to be added to the cortex pod.
+    # - name: reverse-proxy
+    #   image: angelbarrera92/basic-auth-reverse-proxy:dev
+    #   args:
+    #     - "serve"
+    #     - "--upstream=http://localhost:3100"
+    #     - "--auth-config=/etc/reverse-proxy-conf/authn.yaml"
+    #   ports:
+    #     - name: http
+    #       containerPort: 11811
+    #       protocol: TCP
+    #   volumeMounts:
+    #     - name: reverse-proxy-auth-config
+    #       mountPath: /etc/reverse-proxy-conf
+
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    ## Additional volumes to the cortex pod.
+    # - name: reverse-proxy-auth-config
+    #   secret:
+    #     secretName: reverse-proxy-auth-config
+
+    ## Extra volume mounts that will be added to the cortex container
+    extraVolumeMounts:
+      - mountPath: /tmp
+        name: storage
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    ## Additional ports to the cortex services. Useful to expose extra container ports.
+    # - port: 11811
+    #   protocol: TCP
+    #   name: http
+    #   targetPort: http
+
+    # Extra env variables to pass to the cortex container
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+    ## Sidecars that collect the configmaps with specified label and stores the included files them into the respective folders
+    sidecar:
+      image:
+        repository: quay.io/kiwigrid/k8s-sidecar
+        tag: 1.10.7
+        sha: ""
+      imagePullPolicy: IfNotPresent
+      resources: {}
+      #   limits:
+      #     cpu: 100m
+      #     memory: 100Mi
+      #   requests:
+      #     cpu: 50m
+      #     memory: 50Mi
+      # skipTlsVerify Set to true to skip tls verification for kube api calls
+      # skipTlsVerify: true
+      enableUniqueFilenames: false
+      enabled: false
+      label: cortex_alertmanager
+      watchMethod: null
+      labelValue: null
+      folder: /data
+      defaultFolderName: null
+      searchNamespace: null
+      folderAnnotation: null
+      securityContext:
+        runAsUser: 0
+  distributor:
+    replicas: 2
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources: {}
+    #  limits:
+    #    cpu: 1
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 100m
+    #    memory: 512Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs: {}
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - distributor
+              topologyKey: 'kubernetes.io/hostname'
+    annotations: {}
+    autoscaling:
+      # -- Creates a HorizontalPodAutoscaler for the distributor pods.
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 30
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 0 # 80
+      # -- Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#support-for-configurable-scaling-behavior
+      behavior: {}
+    persistence:
+      subPath:
+    startupProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    terminationGracePeriodSeconds: 60
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    env: []
+  ingester:
+    replicas: 3
+    statefulSet:
+      ## If true, use a statefulset instead of a deployment for pod management.
+      ## This is useful when using WAL
+      ##
+      enabled: true
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources: {}
+    #  limits:
+    #    cpu: 1
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 100m
+    #    memory: 512Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs:
+      blocks-storage.s3.access-key-id: $(ACCESS_KEY)
+      blocks-storage.s3.secret-access-key: $(SECRET_KEY)
+    #  log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - ingester
+              topologyKey: 'kubernetes.io/hostname'
+    annotations: {}
+    autoscaling:
+      enabled: false
+      minReplicas: 3
+      maxReplicas: 30
+      targetMemoryUtilizationPercentage: 80
+      behavior:
+        scaleDown:
+          # -- see https://cortexmetrics.io/docs/guides/ingesters-scaling-up-and-down/#scaling-down for scaledown details
+          policies:
+            - type: Pods
+              value: 1
+              # set to no less than 2x the maximum between -blocks-storage.bucket-store.sync-interval and -compactor.cleanup-interval
+              periodSeconds: 1800
+          # -- uses metrics from the past 1h to make scaleDown decisions
+          stabilizationWindowSeconds: 3600
+        scaleUp:
+          # -- This default scaleup policy allows adding 1 pod every 30 minutes.
+          # Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#support-for-configurable-scaling-behavior
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 1800
+    lifecycle:
+      # -- The /shutdown preStop hook is recommended as part of the ingester
+      # scaledown process, but can be removed to optimize rolling restarts in
+      # instances that will never be scaled down or when using chunks storage
+      # with WAL disabled.
+      # https://cortexmetrics.io/docs/guides/ingesters-scaling-up-and-down/#scaling-down
+      preStop:
+        httpGet:
+          path: "/ingester/shutdown"
+          port: http-metrics
+    ## DEPRECATED: use persistentVolume.subPath instead
+    persistence:
+      subPath:
+    persistentVolume:
+      ## If true and ingester.statefulSet.enabled is true,
+      ## Ingester will create/use a Persistent Volume Claim
+      ## If false, use emptyDir
+      ##
+      enabled: true
+      ## Ingester data Persistent Volume Claim annotations
+      ##
+      annotations: {}
+      ## Ingester data Persistent Volume access modes
+      ## Must match those of existing PV or dynamic provisioner
+      ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+      ##
+      accessModes:
+        - ReadWriteOnce
+      ## Ingester data Persistent Volume size
+      ##
+      size: 10Gi
+      ## Subdirectory of Ingester data Persistent Volume to mount
+      ## Useful if the volume's root directory is not empty
+      ##
+      subPath: ''
+      ## Ingester data Persistent Volume Storage Class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is
+      ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+      ##   GKE, AWS & OpenStack)
+      ##
+      # storageClass: "-"
+
+      storageClass: "kubermatic-fast"
+    startupProbe:
+      # WAL Replay can take a long time. Increasing failureThreshold for ~30 min of time until killed
+      failureThreshold: 60
+      initialDelaySeconds: 120
+      periodSeconds: 30
+      httpGet:
+        path: /ready
+        port: http-metrics
+        scheme: HTTP
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+        scheme: HTTP
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    statefulStrategy:
+      type: RollingUpdate
+    terminationGracePeriodSeconds: 240
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+  ruler:
+    enabled: true
+    replicas: 1
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources:
+      requests:
+        cpu: 5m
+    #  limits:
+    #    cpu: 200m
+    #    memory: 256Mi
+    #  requests:
+    #    cpu: 10m
+    #    memory: 32Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs:
+      ruler.storage.s3.access-key-id: $(ACCESS_KEY)
+      ruler.storage.s3.secret-access-key: $(SECRET_KEY)
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity: {}
+    annotations: {}
+    persistence:
+      subPath:
+    startupProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    terminationGracePeriodSeconds: 180
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+    # allow configuring rules via configmap in case you don't want to use the configs db
+    directories: {}
+    # tenant_foo:
+    #   rules1.txt: |
+    #     groups:
+    #       - name: should_fire
+    #         rules:
+    #           - alert: HighPercentageError
+    #             expr: |
+    #               sum(rate({app="foo", env="production"} |= "error" [5m])) by (job)
+    #                 /
+    #               sum(rate({app="foo", env="production"}[5m])) by (job)
+    #                 > 0.05
+    #             for: 10m
+    #             labels:
+    #               severity: warning
+    #             annotations:
+    #               summary: High error rate
+
+    ## Sidecars that collect the configmaps with specified label and stores the included files them into the respective folders
+    sidecar:
+      image:
+        repository: quay.io/kiwigrid/k8s-sidecar
+        tag: 1.10.7
+        sha: ""
+      imagePullPolicy: IfNotPresent
+      resources: {}
+      #   limits:
+      #     cpu: 100m
+      #     memory: 100Mi
+      #   requests:
+      #     cpu: 50m
+      #     memory: 50Mi
+      # skipTlsVerify Set to true to skip tls verification for kube api calls
+      # skipTlsVerify: true
+      enableUniqueFilenames: false
+      enabled: false
+      # label that the configmaps with rules are marked with
+      label: cortex_rules
+      watchMethod: null
+      # value of label that the configmaps with rules are set to
+      labelValue: null
+      # folder in the pod that should hold the collected rules (unless `defaultFolderName` is set)
+      folder: /tmp/rules
+      # The default folder name, it will create a subfolder under the `folder` and put rules in there instead
+      defaultFolderName: null
+      # If specified, the sidecar will search for rules config-maps inside this namespace.
+      # Otherwise the namespace in which the sidecar is running will be used.
+      # It's also possible to specify ALL to search in all namespaces
+      searchNamespace: null
+      # If specified, the sidecar will look for annotation with this name to create folder and put graph here.
+      # You can use this parameter together with `provider.foldersFromFilesStructure`to annotate configmaps and create folder structure.
+      folderAnnotation: null
+      securityContext:
+        runAsUser: 0
+      # running the sidecar will also run as root
+      # provider configuration that lets cortex manage the rules
+  querier:
+    replicas: 1
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources:
+      requests:
+        cpu: 5m
+    #  limits:
+    #    cpu: 1
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 50m
+    #    memory: 128Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs:
+      blocks-storage.s3.access-key-id: $(ACCESS_KEY)
+      blocks-storage.s3.secret-access-key: $(SECRET_KEY)
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - querier
+              topologyKey: 'kubernetes.io/hostname'
+    annotations: {}
+    autoscaling:
+      # -- Creates a HorizontalPodAutoscaler for the querier pods.
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 30
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 0 # 80
+      # -- Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#support-for-configurable-scaling-behavior
+      behavior: {}
+    persistence:
+      subPath:
+    startupProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    terminationGracePeriodSeconds: 180
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+  query_frontend:
+    replicas: 1
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources:
+      requests:
+        cpu: 5m
+    #  limits:
+    #    cpu: 1
+    #    memory: 256Mi
+    #  requests:
+    #    cpu: 10m
+    #    memory: 32Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs: {}
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - query-frontend
+              topologyKey: 'kubernetes.io/hostname'
+    annotations: {}
+    persistence:
+      subPath:
+    startupProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    terminationGracePeriodSeconds: 180
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    env: []
+  table_manager:
+    replicas: 1
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources: {}
+    #  limits:
+    #    cpu: 1
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 10m
+    #    memory: 32Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs: {}
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: 'http-metrics'
+    nodeSelector: {}
+    affinity: {}
+    annotations: {}
+    persistence:
+      subPath:
+    startupProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    terminationGracePeriodSeconds: 180
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes: []
+    extraVolumeMounts: []
+    extraPorts: []
+    env: []
+  configs:
+    enabled: false
+    replicas: 1
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources: {}
+    #  limits:
+    #    cpu: 1
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 10m
+    #    memory: 32Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs: {}
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: 'http-metrics'
+    nodeSelector: {}
+    affinity: {}
+    annotations: {}
+    persistence:
+      subPath:
+    startupProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    terminationGracePeriodSeconds: 180
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes: []
+    extraVolumeMounts: []
+    extraPorts: []
+    env: []
+  nginx:
+    enabled: false
+    replicas: 2
+    http_listen_port: 80
+    config:
+      dnsResolver: kube-dns.kube-system.svc.cluster.local
+      ## ref: http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size
+      client_max_body_size: 1M
+      # -- arbitrary snippet to inject in the http { } section of the nginx config
+      httpSnippet: ""
+      # -- arbitrary snippet to inject in the top section of the nginx config
+      mainSnippet: ""
+      # -- arbitrary snippet to inject in the server { } section of the nginx config
+      serverSnippet: ""
+      setHeaders: {}
+      # -- (optional) List of [auth tenants](https://cortexmetrics.io/docs/guides/auth/) to set in the nginx config
+      auth_orgs: []
+      # -- (optional) Name of basic auth secret.
+      # In order to use this option, a secret with htpasswd formatted contents at
+      # the key ".htpasswd" must exist. For example:
+      #
+      #   apiVersion: v1
+      #   kind: Secret
+      #   metadata:
+      #     name: my-secret
+      #     namespace: <same as cortex installation>
+      #   stringData:
+      #     .htpasswd: |
+      #       user1:$apr1$/woC1jnP$KAh0SsVn5qeSMjTtn0E9Q0
+      #       user2:$apr1$QdR8fNLT$vbCEEzDj7LyqCMyNpSoBh/
+      #
+      # Please note that the use of basic auth will not identify organizations
+      # the way X-Scope-OrgID does. Thus, the use of basic auth alone will not
+      # prevent one tenant from viewing the metrics of another. To ensure tenants
+      # are scoped appropriately, explicitly set the `X-Scope-OrgID` header
+      # in the nginx config. Example
+      #   setHeaders:
+      #     X-Scope-Org-Id: $remote_user
+      basicAuthSecretName: ""
+    image:
+      repository: nginx
+      tag: 1.21
+      pullPolicy: IfNotPresent
+    service:
+      type: ClusterIP
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources: {}
+    #  limits:
+    #    cpu: 100m
+    #    memory: 128Mi
+    #  requests:
+    #    cpu: 10m
+    #    memory: 16Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs: {}
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: ''
+      prometheus.io/port: 'http-metrics'
+    nodeSelector: {}
+    affinity: {}
+    annotations: {}
+    persistence:
+      subPath:
+    startupProbe:
+      httpGet:
+        path: /healthz
+        port: http-metrics
+      failureThreshold: 10
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: http-metrics
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: false
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
+    terminationGracePeriodSeconds: 10
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes: []
+    extraVolumeMounts: []
+    extraPorts: []
+    env: []
+  store_gateway:
+    replicas: 1
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources:
+      requests:
+        cpu: 5m
+    #  limits:
+    #    cpu: 1
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 100m
+    #    memory: 512Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs:
+      blocks-storage.s3.access-key-id: $(ACCESS_KEY)
+      blocks-storage.s3.secret-access-key: $(SECRET_KEY)
+    # log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - store-gateway
+              topologyKey: 'kubernetes.io/hostname'
+    annotations: {}
+    persistentVolume:
+      ## If true Store-gateway will create/use a Persistent Volume Claim
+      ## If false, use emptyDir
+      ##
+      enabled: true
+      ## Store-gateway data Persistent Volume Claim annotations
+      ##
+      annotations: {}
+      ## Store-gateway data Persistent Volume access modes
+      ## Must match those of existing PV or dynamic provisioner
+      ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+      ##
+      accessModes:
+        - ReadWriteOnce
+      ## Store-gateway data Persistent Volume size
+      ##
+      size: 2Gi
+      ## Subdirectory of Store-gateway data Persistent Volume to mount
+      ## Useful if the volume's root directory is not empty
+      ##
+      subPath: ''
+      ## Store-gateway data Persistent Volume Storage Class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is
+      ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+      ##   GKE, AWS & OpenStack)
+      ##
+      # storageClass: "-"
+
+      storageClass: "kubermatic-fast"
+    startupProbe:
+      # Increasing failureThreshold for ~30 min of time until killed
+      failureThreshold: 60
+      initialDelaySeconds: 120
+      periodSeconds: 30
+      httpGet:
+        path: /ready
+        port: http-metrics
+        scheme: HTTP
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+        scheme: HTTP
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+    terminationGracePeriodSeconds: 240
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    env:
+      - name: ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootUser
+      - name: SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: minio
+            key: rootPassword
+  compactor:
+    enabled: true
+    replicas: 1
+    service:
+      annotations: {}
+      labels: {}
+    serviceMonitor:
+      enabled: false
+      additionalLabels: {}
+      relabelings: []
+      metricRelabelings: []
+      # Additional endpoint configuration https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/api.md#endpoint
+      extraEndpointSpec: {}
+    resources: {}
+    #  limits:
+    #    cpu: 1
+    #    memory: 1Gi
+    #  requests:
+    #    cpu: 100m
+    #    memory: 512Mi
+
+    ## Additional Cortex container arguments, e.g. log level (debug, info, warn, error)
+    extraArgs: {}
+    #  log.level: debug
+
+    ## Pod Labels
+    podLabels: {}
+    ## Pod Annotations
+    podAnnotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8080'
+    nodeSelector: {}
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - compactor
+              topologyKey: 'kubernetes.io/hostname'
+    annotations: {}
+    persistentVolume:
+      ## If true compactor will create/use a Persistent Volume Claim
+      ## If false, use emptyDir
+      ##
+      enabled: true
+      ## compactor data Persistent Volume Claim annotations
+      ##
+      annotations: {}
+      ## compactor data Persistent Volume access modes
+      ## Must match those of existing PV or dynamic provisioner
+      ## Ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+      ##
+      accessModes:
+        - ReadWriteOnce
+      ## compactor data Persistent Volume size
+      ##
+      size: 2Gi
+      ## Subdirectory of compactor data Persistent Volume to mount
+      ## Useful if the volume's root directory is not empty
+      ##
+      subPath: ''
+      ## compactor data Persistent Volume Storage Class
+      ## If defined, storageClassName: <storageClass>
+      ## If set to "-", storageClassName: "", which disables dynamic provisioning
+      ## If undefined (the default) or set to null, no storageClassName spec is
+      ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+      ##   GKE, AWS & OpenStack)
+      ##
+      # storageClass: "-"
+
+      storageClass: "kubermatic-fast"
+    startupProbe:
+      # Increasing failureThreshold for ~30 min of time until killed
+      failureThreshold: 60
+      initialDelaySeconds: 120
+      periodSeconds: 30
+      httpGet:
+        path: /ready
+        port: http-metrics
+        scheme: HTTP
+    livenessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+        scheme: HTTP
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: http-metrics
+    securityContext: {}
+    containerSecurityContext:
+      enabled: true
+      readOnlyRootFilesystem: true
+    strategy:
+      type: RollingUpdate
+    terminationGracePeriodSeconds: 240
+    tolerations: []
+    podDisruptionBudget:
+      maxUnavailable: 1
+    initContainers: []
+    extraContainers: []
+    extraVolumes:
+      - name: cortex-runtime-config
+        configMap:
+          name: cortex-runtime-config
+    extraVolumeMounts:
+      - mountPath: "/etc/cortex-runtime-cfg"
+        name: "cortex-runtime-config"
+    extraPorts: []
+    env: []
+  # chunk caching
+  memcached:
+    enabled: false
+    architecture: "high-availability"
+    replicaCount: 2
+    pdbMinAvailable: 1
+    memcached:
+      maxItemMemory: 3840
+      extraArgs:
+        - -I 32m
+      threads: 32
+    resources: {}
+    #  requests:
+    #    memory: 1Gi
+    #    cpu: 10m
+    #  limits:
+    #    memory: 4Gi
+    #    cpu: 1
+    metrics:
+      enabled: true
+    # tolerations: {}
+    # - key: "dedicated"
+    #   operator: "Equal"
+    #   value: "cortex-memcached"
+    #   effect: "NoSchedule"
+    # affinity: {}
+    #   nodeAffinity:
+    #     requiredDuringSchedulingIgnoredDuringExecution:
+    #         nodeSelectorTerms:
+    #         - matchExpressions:
+    #           - key: dedicated
+    #             operator: In
+    #             values:
+    #             - cortex-memcached
+  # index read caching
+  memcached-index-read:
+    enabled: false
+    architecture: "high-availability"
+    replicaCount: 2
+    # pdbMinAvailable: 1
+    # image: memcached:1.5.7-alpine
+    memcached:
+      maxItemMemory: 3840
+      extraArgs:
+        - -I 32m
+      threads: 32
+    resources: {}
+    #  requests:
+    #    memory: 1Gi
+    #    cpu: 10m
+    #  limits:
+    #    memory: 4Gi
+    #    cpu: 1
+    metrics:
+      enabled: true
+    # tolerations: []
+    # - key: "dedicated"
+    #   operator: "Equal"
+    #   value: "cortex-memcached"
+    #   effect: "NoSchedule"
+    # affinity: {}
+    #   nodeAffinity:
+    #     requiredDuringSchedulingIgnoredDuringExecution:
+    #         nodeSelectorTerms:
+    #         - matchExpressions:
+    #           - key: dedicated
+    #             operator: In
+    #             values:
+    #             - cortex-memcached
+  # index write caching
+  memcached-index-write:
+    enabled: false
+    architecture: "high-availability"
+    replicaCount: 2
+    # dpdbMinAvailable: 1
+    # image: memcached:1.5.7-alpine
+    memcached:
+      maxItemMemory: 3840
+      extraArgs:
+        - -I 32m
+      threads: 32
+    resources: {}
+    #  requests:
+    #    memory: 1Gi
+    #    cpu: 10m
+    #  limits:
+    #    memory: 4Gi
+    #    cpu: 1
+    metrics:
+      enabled: true
+    # tolerations: []
+    # - key: "dedicated"
+    #   operator: "Equal"
+    #   value: "cortex-memcached"
+    #   effect: "NoSchedule"
+    # affinity: {}
+    #   nodeAffinity:
+    #     requiredDuringSchedulingIgnoredDuringExecution:
+    #         nodeSelectorTerms:
+    #         - matchExpressions:
+    #           - key: dedicated
+    #             operator: In
+    #             values:
+    #             - cortex-memcached
+  memcached-frontend:
+    enabled: false
+    architecture: "high-availability"
+    replicaCount: 2
+    # dpdbMinAvailable: 1
+    # image: memcached:1.5.7-alpine
+    memcached:
+      maxItemMemory: 3840
+      extraArgs:
+        - -I 32m
+      threads: 32
+    resources: {}
+    #  requests:
+    #    memory: 1Gi
+    #    cpu: 10m
+    #  limits:
+    #    memory: 4Gi
+    #    cpu: 1
+    metrics:
+      enabled: true
+  memcached-blocks-index:
+    # enabled/disabled via the tags.blocks-storage-memcached boolean
+    architecture: "high-availability"
+    replicaCount: 2
+    # dpdbMinAvailable: 1
+    # image: memcached:1.5.7-alpine
+    memcached:
+      maxItemMemory: 3840
+      extraArgs:
+        - -I 32m
+      threads: 32
+    resources:
+      requests:
+        cpu: 5m
+    #  requests:
+    #    memory: 1Gi
+    #    cpu: 10m
+    #  limits:
+    #    memory: 4Gi
+    #    cpu: 1
+    metrics:
+      enabled: true
+    serviceAccount:
+      create: false
+  memcached-blocks:
+    # enabled/disabled via the tags.blocks-storage-memcached boolean
+    architecture: "high-availability"
+    replicaCount: 2
+    # dpdbMinAvailable: 1
+    # image: memcached:1.5.7-alpine
+    memcached:
+      maxItemMemory: 3840
+      extraArgs:
+        - -I 32m
+      threads: 32
+    resources:
+      requests:
+        cpu: 5m
+    #  requests:
+    #    memory: 1Gi
+    #    cpu: 10m
+    #  limits:
+    #    memory: 4Gi
+    #    cpu: 1
+    metrics:
+      enabled: true
+    serviceAccount:
+      create: false
+  memcached-blocks-metadata:
+    # enabled/disabled via the tags.blocks-storage-memcached boolean
+    architecture: "high-availability"
+    replicaCount: 2
+    # dpdbMinAvailable: 1
+    # image: memcached:1.5.7-alpine
+    memcached:
+      maxItemMemory: 3840
+      extraArgs:
+        - -I 32m
+      threads: 32
+    resources:
+      requests:
+        cpu: 5m
+    #  requests:
+    #    memory: 1Gi
+    #    cpu: 10m
+    #  limits:
+    #    memory: 4Gi
+    #    cpu: 1
+    metrics:
+      enabled: true
+    serviceAccount:
+      create: false
+  configsdb_postgresql:
+    enabled: false
+    uri:
+    auth:
+      password:
+      existing_secret:
+        name:
+        key:

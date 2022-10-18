@@ -19,7 +19,6 @@ package validation
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"testing"
 
@@ -30,8 +29,6 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -48,7 +45,6 @@ func TestValidator(t *testing.T) {
 		op            admissionv1.Operation
 		ipamPool      *kubermaticv1.IPAMPool
 		oldIPAMPool   *kubermaticv1.IPAMPool
-		objects       []ctrlruntimeclient.Object
 		expectedError error
 	}{
 		{
@@ -440,7 +436,7 @@ func TestValidator(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name: "not allowed to remove a datacenter pool if it has allocations",
+			name: "allowed to remove a datacenter pool",
 			op:   admissionv1.Update,
 			ipamPool: &kubermaticv1.IPAMPool{
 				ObjectMeta: metav1.ObjectMeta{
@@ -475,51 +471,13 @@ func TestValidator(t *testing.T) {
 					},
 				},
 			},
-			objects: []ctrlruntimeclient.Object{
-				&kubermaticv1.IPAMAllocation{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-pool",
-						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
-						ResourceVersion: "1",
-					},
-					Spec: kubermaticv1.IPAMAllocationSpec{
-						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
-						DC:   "dc",
-						CIDR: "192.168.1.0/28",
-					},
-				},
-				&kubermaticv1.IPAMAllocation{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            "test-pool",
-						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
-						ResourceVersion: "1",
-					},
-					Spec: kubermaticv1.IPAMAllocationSpec{
-						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
-						DC:        "dc2",
-						Addresses: []string{"192.168.1.0-192.168.1.7"},
-					},
-				},
-			},
-			expectedError: errors.New("cannot delete some datacenter IPAMPool because there is existing IPAMAllocation in namespaces (cluster-test-cluster-1)"),
+			expectedError: nil,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			seedClient := ctrlruntimefakeclient.
-				NewClientBuilder().
-				WithScheme(testScheme).
-				WithObjects(tc.objects...).
-				Build()
-
-			validator := NewValidator(
-				func() (*kubermaticv1.Seed, error) {
-					return &kubermaticv1.Seed{}, nil
-				},
-				func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-					return seedClient, nil
-				})
+			validator := NewValidator()
 
 			ctx := context.Background()
 			var err error

@@ -21,6 +21,9 @@ type ExternalClusterStatus struct {
 	// status message
 	StatusMessage string `json:"statusMessage,omitempty"`
 
+	// aks
+	Aks *AKSClusterStatus `json:"aks,omitempty"`
+
 	// state
 	State ExternalClusterState `json:"state,omitempty"`
 }
@@ -29,6 +32,10 @@ type ExternalClusterStatus struct {
 func (m *ExternalClusterStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAks(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateState(formats); err != nil {
 		res = append(res, err)
 	}
@@ -36,6 +43,25 @@ func (m *ExternalClusterStatus) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterStatus) validateAks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Aks) { // not required
+		return nil
+	}
+
+	if m.Aks != nil {
+		if err := m.Aks.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -60,6 +86,10 @@ func (m *ExternalClusterStatus) validateState(formats strfmt.Registry) error {
 func (m *ExternalClusterStatus) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateState(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -67,6 +97,22 @@ func (m *ExternalClusterStatus) ContextValidate(ctx context.Context, formats str
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ExternalClusterStatus) contextValidateAks(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Aks != nil {
+		if err := m.Aks.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("aks")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("aks")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

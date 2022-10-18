@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
@@ -41,6 +41,7 @@ import (
 //  2. Seed's spec.componentsOverrides
 //  3. KubermaticConfiguration's spec.userCluster
 //  4. Constants in pkg/controller/operator/defaults
+//
 // This function assumes that the KubermaticConfiguration has already been defaulted
 // (as the KubermaticConfigurationGetter does that automatically), but the Seed
 // does not yet need to be defaulted (to the values of the KubermaticConfiguration).
@@ -49,7 +50,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// Apply default values to the Seed, just in case.
 	if config != nil {
-		seed, err = defaults.DefaultSeed(seed, config, zap.NewNop().Sugar())
+		seed, err = DefaultSeed(seed, config, zap.NewNop().Sugar())
 		if err != nil {
 			return fmt.Errorf("failed to apply default values to Seed: %w", err)
 		}
@@ -106,7 +107,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	}
 
 	// Ensure provider name matches the given spec
-	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(spec.Cloud)
 	if err != nil {
 		return fmt.Errorf("failed to determine cloud provider: %w", err)
 	}
@@ -137,14 +138,6 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName))
-
-	// Always enable external CCM
-	if spec.Cloud.Anexia != nil || spec.Cloud.Kubevirt != nil {
-		if spec.Features == nil {
-			spec.Features = map[string]bool{}
-		}
-		spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
-	}
 
 	return nil
 }

@@ -58,14 +58,44 @@ func NewDetachSSHKeyFromClusterOK() *DetachSSHKeyFromClusterOK {
 	return &DetachSSHKeyFromClusterOK{}
 }
 
-/* DetachSSHKeyFromClusterOK describes a response with status code 200, with default header values.
+/*
+DetachSSHKeyFromClusterOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DetachSSHKeyFromClusterOK struct {
 }
 
+// IsSuccess returns true when this detach Ssh key from cluster o k response has a 2xx status code
+func (o *DetachSSHKeyFromClusterOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this detach Ssh key from cluster o k response has a 3xx status code
+func (o *DetachSSHKeyFromClusterOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this detach Ssh key from cluster o k response has a 4xx status code
+func (o *DetachSSHKeyFromClusterOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this detach Ssh key from cluster o k response has a 5xx status code
+func (o *DetachSSHKeyFromClusterOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this detach Ssh key from cluster o k response a status code equal to that given
+func (o *DetachSSHKeyFromClusterOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DetachSSHKeyFromClusterOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSshKeyFromClusterOK ", 200)
+}
+
+func (o *DetachSSHKeyFromClusterOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSshKeyFromClusterOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDetachSSHKeyFromClusterUnauthorized() *DetachSSHKeyFromClusterUnauthoriz
 	return &DetachSSHKeyFromClusterUnauthorized{}
 }
 
-/* DetachSSHKeyFromClusterUnauthorized describes a response with status code 401, with default header values.
+/*
+DetachSSHKeyFromClusterUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DetachSSHKeyFromClusterUnauthorized struct {
 }
 
+// IsSuccess returns true when this detach Ssh key from cluster unauthorized response has a 2xx status code
+func (o *DetachSSHKeyFromClusterUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this detach Ssh key from cluster unauthorized response has a 3xx status code
+func (o *DetachSSHKeyFromClusterUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this detach Ssh key from cluster unauthorized response has a 4xx status code
+func (o *DetachSSHKeyFromClusterUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this detach Ssh key from cluster unauthorized response has a 5xx status code
+func (o *DetachSSHKeyFromClusterUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this detach Ssh key from cluster unauthorized response a status code equal to that given
+func (o *DetachSSHKeyFromClusterUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DetachSSHKeyFromClusterUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSshKeyFromClusterUnauthorized ", 401)
+}
+
+func (o *DetachSSHKeyFromClusterUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSshKeyFromClusterUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDetachSSHKeyFromClusterForbidden() *DetachSSHKeyFromClusterForbidden {
 	return &DetachSSHKeyFromClusterForbidden{}
 }
 
-/* DetachSSHKeyFromClusterForbidden describes a response with status code 403, with default header values.
+/*
+DetachSSHKeyFromClusterForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DetachSSHKeyFromClusterForbidden struct {
 }
 
+// IsSuccess returns true when this detach Ssh key from cluster forbidden response has a 2xx status code
+func (o *DetachSSHKeyFromClusterForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this detach Ssh key from cluster forbidden response has a 3xx status code
+func (o *DetachSSHKeyFromClusterForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this detach Ssh key from cluster forbidden response has a 4xx status code
+func (o *DetachSSHKeyFromClusterForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this detach Ssh key from cluster forbidden response has a 5xx status code
+func (o *DetachSSHKeyFromClusterForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this detach Ssh key from cluster forbidden response a status code equal to that given
+func (o *DetachSSHKeyFromClusterForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DetachSSHKeyFromClusterForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSshKeyFromClusterForbidden ", 403)
+}
+
+func (o *DetachSSHKeyFromClusterForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSshKeyFromClusterForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDetachSSHKeyFromClusterDefault(code int) *DetachSSHKeyFromClusterDefault
 	}
 }
 
-/* DetachSSHKeyFromClusterDefault describes a response with status code -1, with default header values.
+/*
+DetachSSHKeyFromClusterDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DetachSSHKeyFromClusterDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this detach SSH key from cluster default response has a 2xx status code
+func (o *DetachSSHKeyFromClusterDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this detach SSH key from cluster default response has a 3xx status code
+func (o *DetachSSHKeyFromClusterDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this detach SSH key from cluster default response has a 4xx status code
+func (o *DetachSSHKeyFromClusterDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this detach SSH key from cluster default response has a 5xx status code
+func (o *DetachSSHKeyFromClusterDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this detach SSH key from cluster default response a status code equal to that given
+func (o *DetachSSHKeyFromClusterDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DetachSSHKeyFromClusterDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSSHKeyFromCluster default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DetachSSHKeyFromClusterDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/sshkeys/{key_id}][%d] detachSSHKeyFromCluster default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DetachSSHKeyFromClusterDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -44,6 +44,8 @@ type ClientService interface {
 
 	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterRoleCreated, error)
 
+	CreateClusterServiceAccount(params *CreateClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterServiceAccountCreated, error)
+
 	CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateCreated, error)
 
 	CreateClusterTemplateInstance(params *CreateClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateInstanceCreated, error)
@@ -73,6 +75,8 @@ type ClientService interface {
 	DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterOK, error)
 
 	DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterRoleOK, error)
+
+	DeleteClusterServiceAccount(params *DeleteClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterServiceAccountOK, error)
 
 	DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterTemplateOK, error)
 
@@ -134,6 +138,8 @@ type ClientService interface {
 
 	GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterRoleOK, error)
 
+	GetClusterServiceAccountKubeconfig(params *GetClusterServiceAccountKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterServiceAccountKubeconfigOK, error)
+
 	GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterTemplateOK, error)
 
 	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesOK, error)
@@ -193,6 +199,8 @@ type ClientService interface {
 	ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesV2OK, error)
 
 	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleV2OK, error)
+
+	ListClusterServiceAccount(params *ListClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterServiceAccountOK, error)
 
 	ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterTemplatesOK, error)
 
@@ -320,7 +328,7 @@ type ClientService interface {
 }
 
 /*
-  AssignSSHKeyToCluster Assigns an existing ssh key to the given cluster
+AssignSSHKeyToCluster Assigns an existing ssh key to the given cluster
 */
 func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AssignSSHKeyToClusterCreated, error) {
 	// TODO: Validate the params before sending
@@ -358,7 +366,7 @@ func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, auth
 }
 
 /*
-  AssignSSHKeyToClusterV2 Assigns an existing ssh key to the given cluster
+AssignSSHKeyToClusterV2 Assigns an existing ssh key to the given cluster
 */
 func (a *Client) AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AssignSSHKeyToClusterV2Created, error) {
 	// TODO: Validate the params before sending
@@ -396,7 +404,7 @@ func (a *Client) AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, 
 }
 
 /*
-  BindUserToClusterRole Binds user to cluster role
+BindUserToClusterRole Binds user to cluster role
 */
 func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -434,7 +442,7 @@ func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, auth
 }
 
 /*
-  BindUserToClusterRoleV2 Binds user to cluster role
+BindUserToClusterRoleV2 Binds user to cluster role
 */
 func (a *Client) BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToClusterRoleV2OK, error) {
 	// TODO: Validate the params before sending
@@ -472,7 +480,7 @@ func (a *Client) BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, 
 }
 
 /*
-  BindUserToRole Binds user to the role
+BindUserToRole Binds user to the role
 */
 func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -510,7 +518,7 @@ func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.C
 }
 
 /*
-  BindUserToRoleV2 Binds user to the role
+BindUserToRoleV2 Binds user to the role
 */
 func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BindUserToRoleV2OK, error) {
 	// TODO: Validate the params before sending
@@ -548,7 +556,7 @@ func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runti
 }
 
 /*
-  CreateCluster creates a cluster for the given project
+CreateCluster creates a cluster for the given project
 */
 func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterCreated, error) {
 	// TODO: Validate the params before sending
@@ -586,7 +594,7 @@ func (a *Client) CreateCluster(params *CreateClusterParams, authInfo runtime.Cli
 }
 
 /*
-  CreateClusterRole Creates cluster role
+CreateClusterRole Creates cluster role
 */
 func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterRoleCreated, error) {
 	// TODO: Validate the params before sending
@@ -624,7 +632,45 @@ func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo run
 }
 
 /*
-  CreateClusterTemplate creates a cluster templates for the given project
+CreateClusterServiceAccount creates a service account in cluster
+*/
+func (a *Client) CreateClusterServiceAccount(params *CreateClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterServiceAccountCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateClusterServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "createClusterServiceAccount",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateClusterServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateClusterServiceAccountCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateClusterServiceAccountDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+CreateClusterTemplate creates a cluster templates for the given project
 */
 func (a *Client) CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateCreated, error) {
 	// TODO: Validate the params before sending
@@ -662,7 +708,7 @@ func (a *Client) CreateClusterTemplate(params *CreateClusterTemplateParams, auth
 }
 
 /*
-  CreateClusterTemplateInstance creates cluster template instance
+CreateClusterTemplateInstance creates cluster template instance
 */
 func (a *Client) CreateClusterTemplateInstance(params *CreateClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterTemplateInstanceCreated, error) {
 	// TODO: Validate the params before sending
@@ -700,7 +746,7 @@ func (a *Client) CreateClusterTemplateInstance(params *CreateClusterTemplateInst
 }
 
 /*
-  CreateClusterV2 creates a cluster for the given project
+CreateClusterV2 creates a cluster for the given project
 */
 func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateClusterV2Created, error) {
 	// TODO: Validate the params before sending
@@ -738,7 +784,7 @@ func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime
 }
 
 /*
-  CreateConstraint creates a given constraint for the specified cluster
+CreateConstraint creates a given constraint for the specified cluster
 */
 func (a *Client) CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateConstraintOK, error) {
 	// TODO: Validate the params before sending
@@ -776,7 +822,7 @@ func (a *Client) CreateConstraint(params *CreateConstraintParams, authInfo runti
 }
 
 /*
-  CreateExternalCluster creates an external cluster for the given project
+CreateExternalCluster creates an external cluster for the given project
 */
 func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalClusterCreated, error) {
 	// TODO: Validate the params before sending
@@ -814,7 +860,7 @@ func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, auth
 }
 
 /*
-  CreateExternalClusterMachineDeployment creates an external cluster machine deployments
+CreateExternalClusterMachineDeployment creates an external cluster machine deployments
 */
 func (a *Client) CreateExternalClusterMachineDeployment(params *CreateExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalClusterMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -852,7 +898,7 @@ func (a *Client) CreateExternalClusterMachineDeployment(params *CreateExternalCl
 }
 
 /*
-  CreateGatekeeperConfig Creates a gatekeeper config for the given cluster
+CreateGatekeeperConfig Creates a gatekeeper config for the given cluster
 */
 func (a *Client) CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGatekeeperConfigCreated, error) {
 	// TODO: Validate the params before sending
@@ -890,7 +936,7 @@ func (a *Client) CreateGatekeeperConfig(params *CreateGatekeeperConfigParams, au
 }
 
 /*
-  CreateGroupProjectBinding creates project group binding
+CreateGroupProjectBinding creates project group binding
 */
 func (a *Client) CreateGroupProjectBinding(params *CreateGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGroupProjectBindingCreated, error) {
 	// TODO: Validate the params before sending
@@ -928,7 +974,7 @@ func (a *Client) CreateGroupProjectBinding(params *CreateGroupProjectBindingPara
 }
 
 /*
-  CreateMachineDeployment Creates a machine deployment that will belong to the given cluster
+CreateMachineDeployment Creates a machine deployment that will belong to the given cluster
 */
 func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateMachineDeploymentCreated, error) {
 	// TODO: Validate the params before sending
@@ -966,7 +1012,7 @@ func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, 
 }
 
 /*
-  CreateNodeDeployment Creates a node deployment that will belong to the given cluster
+CreateNodeDeployment Creates a node deployment that will belong to the given cluster
 */
 func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNodeDeploymentCreated, error) {
 	// TODO: Validate the params before sending
@@ -1004,9 +1050,9 @@ func (a *Client) CreateNodeDeployment(params *CreateNodeDeploymentParams, authIn
 }
 
 /*
-  CreateProject creates a brand new project
+CreateProject creates a brand new project
 
-  Note that this endpoint can be consumed by every authenticated user.
+Note that this endpoint can be consumed by every authenticated user.
 */
 func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateProjectCreated, error) {
 	// TODO: Validate the params before sending
@@ -1044,7 +1090,7 @@ func (a *Client) CreateProject(params *CreateProjectParams, authInfo runtime.Cli
 }
 
 /*
-  CreateRole Creates cluster role
+CreateRole Creates cluster role
 */
 func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRoleCreated, error) {
 	// TODO: Validate the params before sending
@@ -1082,7 +1128,7 @@ func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAut
 }
 
 /*
-  CreateSSHKey adds the given SSH key to the specified project
+CreateSSHKey adds the given SSH key to the specified project
 */
 func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSSHKeyCreated, error) {
 	// TODO: Validate the params before sending
@@ -1120,7 +1166,7 @@ func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.Clien
 }
 
 /*
-  DeleteCluster Deletes the specified cluster
+DeleteCluster Deletes the specified cluster
 */
 func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -1158,7 +1204,7 @@ func (a *Client) DeleteCluster(params *DeleteClusterParams, authInfo runtime.Cli
 }
 
 /*
-  DeleteClusterRole Delete the cluster role with the given name
+DeleteClusterRole Delete the cluster role with the given name
 */
 func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -1196,7 +1242,45 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 }
 
 /*
-  DeleteClusterTemplate deletes cluster template
+DeleteClusterServiceAccount deletes service account in cluster
+*/
+func (a *Client) DeleteClusterServiceAccount(params *DeleteClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterServiceAccountOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteClusterServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "deleteClusterServiceAccount",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteClusterServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteClusterServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteClusterServiceAccountDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+DeleteClusterTemplate deletes cluster template
 */
 func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterTemplateOK, error) {
 	// TODO: Validate the params before sending
@@ -1234,7 +1318,7 @@ func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, auth
 }
 
 /*
-  DeleteClusterV2 Deletes the specified cluster
+DeleteClusterV2 Deletes the specified cluster
 */
 func (a *Client) DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteClusterV2OK, error) {
 	// TODO: Validate the params before sending
@@ -1272,7 +1356,7 @@ func (a *Client) DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime
 }
 
 /*
-  DeleteConstraint deletes a specified constraint for the given cluster
+DeleteConstraint deletes a specified constraint for the given cluster
 */
 func (a *Client) DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteConstraintOK, error) {
 	// TODO: Validate the params before sending
@@ -1310,7 +1394,7 @@ func (a *Client) DeleteConstraint(params *DeleteConstraintParams, authInfo runti
 }
 
 /*
-  DeleteExternalCluster Deletes the specified external cluster
+DeleteExternalCluster Deletes the specified external cluster
 */
 func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -1348,7 +1432,7 @@ func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, auth
 }
 
 /*
-  DeleteExternalClusterMachineDeployment deletes an external cluster machine deployment
+DeleteExternalClusterMachineDeployment deletes an external cluster machine deployment
 */
 func (a *Client) DeleteExternalClusterMachineDeployment(params *DeleteExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteExternalClusterMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -1386,7 +1470,7 @@ func (a *Client) DeleteExternalClusterMachineDeployment(params *DeleteExternalCl
 }
 
 /*
-  DeleteGatekeeperConfig deletes the gatekeeper sync config for the specified cluster
+DeleteGatekeeperConfig deletes the gatekeeper sync config for the specified cluster
 */
 func (a *Client) DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGatekeeperConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -1424,7 +1508,7 @@ func (a *Client) DeleteGatekeeperConfig(params *DeleteGatekeeperConfigParams, au
 }
 
 /*
-  DeleteGroupProjectBinding deletes project group binding
+DeleteGroupProjectBinding deletes project group binding
 */
 func (a *Client) DeleteGroupProjectBinding(params *DeleteGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGroupProjectBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -1462,7 +1546,7 @@ func (a *Client) DeleteGroupProjectBinding(params *DeleteGroupProjectBindingPara
 }
 
 /*
-  DeleteMachineDeployment deletes the given machine deployment that belongs to the cluster
+DeleteMachineDeployment deletes the given machine deployment that belongs to the cluster
 */
 func (a *Client) DeleteMachineDeployment(params *DeleteMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -1500,7 +1584,7 @@ func (a *Client) DeleteMachineDeployment(params *DeleteMachineDeploymentParams, 
 }
 
 /*
-  DeleteMachineDeploymentNode deletes the given node that belongs to the machine deployment
+DeleteMachineDeploymentNode deletes the given node that belongs to the machine deployment
 */
 func (a *Client) DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteMachineDeploymentNodeOK, error) {
 	// TODO: Validate the params before sending
@@ -1538,7 +1622,7 @@ func (a *Client) DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNode
 }
 
 /*
-  DeleteNodeDeployment deletes the given node deployment that belongs to the cluster
+DeleteNodeDeployment deletes the given node deployment that belongs to the cluster
 */
 func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNodeDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -1576,9 +1660,9 @@ func (a *Client) DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authIn
 }
 
 /*
-  DeleteNodeForClusterLegacy deprecateds deletes the given node that belongs to the cluster
+DeleteNodeForClusterLegacy deprecateds deletes the given node that belongs to the cluster
 
-  This endpoint is deprecated, please create a Node Deployment instead.
+This endpoint is deprecated, please create a Node Deployment instead.
 */
 func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNodeForClusterLegacyOK, error) {
 	// TODO: Validate the params before sending
@@ -1616,7 +1700,7 @@ func (a *Client) DeleteNodeForClusterLegacy(params *DeleteNodeForClusterLegacyPa
 }
 
 /*
-  DeleteProject deletes the project with the given ID
+DeleteProject deletes the project with the given ID
 */
 func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -1654,7 +1738,7 @@ func (a *Client) DeleteProject(params *DeleteProjectParams, authInfo runtime.Cli
 }
 
 /*
-  DeleteRole Delete the cluster role with the given name
+DeleteRole Delete the cluster role with the given name
 */
 func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -1692,7 +1776,7 @@ func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAut
 }
 
 /*
-  DeleteSSHKey removes the given SSH key from the system
+DeleteSSHKey removes the given SSH key from the system
 */
 func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSSHKeyOK, error) {
 	// TODO: Validate the params before sending
@@ -1730,7 +1814,7 @@ func (a *Client) DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.Clien
 }
 
 /*
-  DetachSSHKeyFromCluster Unassignes an ssh key from the given cluster
+DetachSSHKeyFromCluster Unassignes an ssh key from the given cluster
 */
 func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DetachSSHKeyFromClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -1768,7 +1852,7 @@ func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, 
 }
 
 /*
-  DetachSSHKeyFromClusterV2 Unassignes an ssh key from the given cluster
+DetachSSHKeyFromClusterV2 Unassignes an ssh key from the given cluster
 */
 func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DetachSSHKeyFromClusterV2OK, error) {
 	// TODO: Validate the params before sending
@@ -1806,7 +1890,7 @@ func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Para
 }
 
 /*
-  ExportClusterTemplate exports cluster template to file
+ExportClusterTemplate exports cluster template to file
 */
 func (a *Client) ExportClusterTemplate(params *ExportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportClusterTemplateOK, error) {
 	// TODO: Validate the params before sending
@@ -1844,7 +1928,7 @@ func (a *Client) ExportClusterTemplate(params *ExportClusterTemplateParams, auth
 }
 
 /*
-  GetAlertmanager gets the alertmanager configuration for the specified cluster
+GetAlertmanager gets the alertmanager configuration for the specified cluster
 */
 func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAlertmanagerOK, error) {
 	// TODO: Validate the params before sending
@@ -1882,7 +1966,7 @@ func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime
 }
 
 /*
-  GetBackupDestinationNames Gets possible backup destination names for a cluster
+GetBackupDestinationNames Gets possible backup destination names for a cluster
 */
 func (a *Client) GetBackupDestinationNames(params *GetBackupDestinationNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetBackupDestinationNamesOK, error) {
 	// TODO: Validate the params before sending
@@ -1920,7 +2004,7 @@ func (a *Client) GetBackupDestinationNames(params *GetBackupDestinationNamesPara
 }
 
 /*
-  GetCluster Gets the cluster with the given name
+GetCluster Gets the cluster with the given name
 */
 func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -1958,7 +2042,7 @@ func (a *Client) GetCluster(params *GetClusterParams, authInfo runtime.ClientAut
 }
 
 /*
-  GetClusterEvents gets the events related to the specified cluster
+GetClusterEvents gets the events related to the specified cluster
 */
 func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsOK, error) {
 	// TODO: Validate the params before sending
@@ -1996,7 +2080,7 @@ func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runti
 }
 
 /*
-  GetClusterEventsV2 gets the events related to the specified cluster
+GetClusterEventsV2 gets the events related to the specified cluster
 */
 func (a *Client) GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterEventsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -2034,7 +2118,7 @@ func (a *Client) GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo r
 }
 
 /*
-  GetClusterHealth Returns the cluster's component health status
+GetClusterHealth Returns the cluster's component health status
 */
 func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterHealthOK, error) {
 	// TODO: Validate the params before sending
@@ -2072,7 +2156,7 @@ func (a *Client) GetClusterHealth(params *GetClusterHealthParams, authInfo runti
 }
 
 /*
-  GetClusterHealthV2 Returns the cluster's component health status
+GetClusterHealthV2 Returns the cluster's component health status
 */
 func (a *Client) GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterHealthV2OK, error) {
 	// TODO: Validate the params before sending
@@ -2110,7 +2194,7 @@ func (a *Client) GetClusterHealthV2(params *GetClusterHealthV2Params, authInfo r
 }
 
 /*
-  GetClusterKubeconfig gets the kubeconfig for the specified cluster
+GetClusterKubeconfig gets the kubeconfig for the specified cluster
 */
 func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterKubeconfigOK, error) {
 	// TODO: Validate the params before sending
@@ -2148,7 +2232,7 @@ func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authIn
 }
 
 /*
-  GetClusterKubeconfigV2 gets the kubeconfig for the specified cluster
+GetClusterKubeconfigV2 gets the kubeconfig for the specified cluster
 */
 func (a *Client) GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterKubeconfigV2OK, error) {
 	// TODO: Validate the params before sending
@@ -2186,7 +2270,7 @@ func (a *Client) GetClusterKubeconfigV2(params *GetClusterKubeconfigV2Params, au
 }
 
 /*
-  GetClusterMetrics Gets cluster metrics
+GetClusterMetrics Gets cluster metrics
 */
 func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterMetricsOK, error) {
 	// TODO: Validate the params before sending
@@ -2224,7 +2308,7 @@ func (a *Client) GetClusterMetrics(params *GetClusterMetricsParams, authInfo run
 }
 
 /*
-  GetClusterMetricsV2 Gets cluster metrics
+GetClusterMetricsV2 Gets cluster metrics
 */
 func (a *Client) GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterMetricsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -2262,7 +2346,7 @@ func (a *Client) GetClusterMetricsV2(params *GetClusterMetricsV2Params, authInfo
 }
 
 /*
-  GetClusterOidc gets the o ID c params for the specified cluster with o ID c authentication
+GetClusterOidc gets the o ID c params for the specified cluster with o ID c authentication
 */
 func (a *Client) GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterOidcOK, error) {
 	// TODO: Validate the params before sending
@@ -2300,7 +2384,7 @@ func (a *Client) GetClusterOidc(params *GetClusterOidcParams, authInfo runtime.C
 }
 
 /*
-  GetClusterRole Gets the cluster role with the given name
+GetClusterRole Gets the cluster role with the given name
 */
 func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -2338,7 +2422,45 @@ func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.C
 }
 
 /*
-  GetClusterTemplate gets cluster template
+GetClusterServiceAccountKubeconfig gets the kubeconfig for the specified service account in cluster
+*/
+func (a *Client) GetClusterServiceAccountKubeconfig(params *GetClusterServiceAccountKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterServiceAccountKubeconfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetClusterServiceAccountKubeconfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "getClusterServiceAccountKubeconfig",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}/kubeconfig",
+		ProducesMediaTypes: []string{"application/octet-stream"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetClusterServiceAccountKubeconfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetClusterServiceAccountKubeconfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterServiceAccountKubeconfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+GetClusterTemplate gets cluster template
 */
 func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterTemplateOK, error) {
 	// TODO: Validate the params before sending
@@ -2376,7 +2498,7 @@ func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo r
 }
 
 /*
-  GetClusterUpgrades Gets possible cluster upgrades
+GetClusterUpgrades Gets possible cluster upgrades
 */
 func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesOK, error) {
 	// TODO: Validate the params before sending
@@ -2414,7 +2536,7 @@ func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo r
 }
 
 /*
-  GetClusterUpgradesV2 Gets possible cluster upgrades
+GetClusterUpgradesV2 Gets possible cluster upgrades
 */
 func (a *Client) GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterUpgradesV2OK, error) {
 	// TODO: Validate the params before sending
@@ -2452,7 +2574,7 @@ func (a *Client) GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authIn
 }
 
 /*
-  GetClusterV2 Gets the cluster with the given name
+GetClusterV2 Gets the cluster with the given name
 */
 func (a *Client) GetClusterV2(params *GetClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetClusterV2OK, error) {
 	// TODO: Validate the params before sending
@@ -2490,7 +2612,7 @@ func (a *Client) GetClusterV2(params *GetClusterV2Params, authInfo runtime.Clien
 }
 
 /*
-  GetConstraint gets an specified constraint for the given cluster
+GetConstraint gets an specified constraint for the given cluster
 */
 func (a *Client) GetConstraint(params *GetConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetConstraintOK, error) {
 	// TODO: Validate the params before sending
@@ -2528,7 +2650,7 @@ func (a *Client) GetConstraint(params *GetConstraintParams, authInfo runtime.Cli
 }
 
 /*
-  GetExternalCluster gets an external cluster for the given project
+GetExternalCluster gets an external cluster for the given project
 */
 func (a *Client) GetExternalCluster(params *GetExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -2566,7 +2688,7 @@ func (a *Client) GetExternalCluster(params *GetExternalClusterParams, authInfo r
 }
 
 /*
-  GetExternalClusterKubeconfig gets the kubeconfig for the specified external cluster
+GetExternalClusterKubeconfig gets the kubeconfig for the specified external cluster
 */
 func (a *Client) GetExternalClusterKubeconfig(params *GetExternalClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterKubeconfigOK, error) {
 	// TODO: Validate the params before sending
@@ -2604,7 +2726,7 @@ func (a *Client) GetExternalClusterKubeconfig(params *GetExternalClusterKubeconf
 }
 
 /*
-  GetExternalClusterMachineDeployment gets an external cluster machine deployments
+GetExternalClusterMachineDeployment gets an external cluster machine deployments
 */
 func (a *Client) GetExternalClusterMachineDeployment(params *GetExternalClusterMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -2642,7 +2764,7 @@ func (a *Client) GetExternalClusterMachineDeployment(params *GetExternalClusterM
 }
 
 /*
-  GetExternalClusterMachineDeploymentUpgrades gets an external cluster machine deployments upgrade versions
+GetExternalClusterMachineDeploymentUpgrades gets an external cluster machine deployments upgrade versions
 */
 func (a *Client) GetExternalClusterMachineDeploymentUpgrades(params *GetExternalClusterMachineDeploymentUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMachineDeploymentUpgradesOK, error) {
 	// TODO: Validate the params before sending
@@ -2680,7 +2802,7 @@ func (a *Client) GetExternalClusterMachineDeploymentUpgrades(params *GetExternal
 }
 
 /*
-  GetExternalClusterMetrics Gets cluster metrics
+GetExternalClusterMetrics Gets cluster metrics
 */
 func (a *Client) GetExternalClusterMetrics(params *GetExternalClusterMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterMetricsOK, error) {
 	// TODO: Validate the params before sending
@@ -2718,7 +2840,7 @@ func (a *Client) GetExternalClusterMetrics(params *GetExternalClusterMetricsPara
 }
 
 /*
-  GetExternalClusterNode gets an external cluster node
+GetExternalClusterNode gets an external cluster node
 */
 func (a *Client) GetExternalClusterNode(params *GetExternalClusterNodeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterNodeOK, error) {
 	// TODO: Validate the params before sending
@@ -2756,7 +2878,7 @@ func (a *Client) GetExternalClusterNode(params *GetExternalClusterNodeParams, au
 }
 
 /*
-  GetExternalClusterUpgrades gets an external cluster upgrades
+GetExternalClusterUpgrades gets an external cluster upgrades
 */
 func (a *Client) GetExternalClusterUpgrades(params *GetExternalClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetExternalClusterUpgradesOK, error) {
 	// TODO: Validate the params before sending
@@ -2794,7 +2916,7 @@ func (a *Client) GetExternalClusterUpgrades(params *GetExternalClusterUpgradesPa
 }
 
 /*
-  GetGatekeeperConfig gets the gatekeeper sync config for the specified cluster
+GetGatekeeperConfig gets the gatekeeper sync config for the specified cluster
 */
 func (a *Client) GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGatekeeperConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -2832,7 +2954,7 @@ func (a *Client) GetGatekeeperConfig(params *GetGatekeeperConfigParams, authInfo
 }
 
 /*
-  GetGroupProjectBinding gets project group binding
+GetGroupProjectBinding gets project group binding
 */
 func (a *Client) GetGroupProjectBinding(params *GetGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetGroupProjectBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -2870,7 +2992,7 @@ func (a *Client) GetGroupProjectBinding(params *GetGroupProjectBindingParams, au
 }
 
 /*
-  GetMachineDeployment gets a machine deployment that is assigned to the given cluster
+GetMachineDeployment gets a machine deployment that is assigned to the given cluster
 */
 func (a *Client) GetMachineDeployment(params *GetMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -2908,7 +3030,7 @@ func (a *Client) GetMachineDeployment(params *GetMachineDeploymentParams, authIn
 }
 
 /*
-  GetNodeDeployment gets a node deployment that is assigned to the given cluster
+GetNodeDeployment gets a node deployment that is assigned to the given cluster
 */
 func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNodeDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -2946,7 +3068,7 @@ func (a *Client) GetNodeDeployment(params *GetNodeDeploymentParams, authInfo run
 }
 
 /*
-  GetOidcClusterKubeconfig gets the kubeconfig for the specified cluster with oidc authentication
+GetOidcClusterKubeconfig gets the kubeconfig for the specified cluster with oidc authentication
 */
 func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOidcClusterKubeconfigOK, error) {
 	// TODO: Validate the params before sending
@@ -2984,7 +3106,7 @@ func (a *Client) GetOidcClusterKubeconfig(params *GetOidcClusterKubeconfigParams
 }
 
 /*
-  GetOidcClusterKubeconfigV2 gets the kubeconfig for the specified cluster with oidc authentication
+GetOidcClusterKubeconfigV2 gets the kubeconfig for the specified cluster with oidc authentication
 */
 func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOidcClusterKubeconfigV2OK, error) {
 	// TODO: Validate the params before sending
@@ -3022,7 +3144,7 @@ func (a *Client) GetOidcClusterKubeconfigV2(params *GetOidcClusterKubeconfigV2Pa
 }
 
 /*
-  GetProject Gets the project with the given ID
+GetProject Gets the project with the given ID
 */
 func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -3060,7 +3182,7 @@ func (a *Client) GetProject(params *GetProjectParams, authInfo runtime.ClientAut
 }
 
 /*
-  GetProjectQuota returns resource quota for a given project
+GetProjectQuota returns resource quota for a given project
 */
 func (a *Client) GetProjectQuota(params *GetProjectQuotaParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetProjectQuotaOK, error) {
 	// TODO: Validate the params before sending
@@ -3098,7 +3220,7 @@ func (a *Client) GetProjectQuota(params *GetProjectQuotaParams, authInfo runtime
 }
 
 /*
-  GetRole Gets the role with the given name
+GetRole Gets the role with the given name
 */
 func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -3136,7 +3258,7 @@ func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoW
 }
 
 /*
-  ImportClusterTemplate imports a cluster templates for the given project
+ImportClusterTemplate imports a cluster templates for the given project
 */
 func (a *Client) ImportClusterTemplate(params *ImportClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ImportClusterTemplateCreated, error) {
 	// TODO: Validate the params before sending
@@ -3174,7 +3296,7 @@ func (a *Client) ImportClusterTemplate(params *ImportClusterTemplateParams, auth
 }
 
 /*
-  ListAKSClusters Lists AKS clusters
+ListAKSClusters Lists AKS clusters
 */
 func (a *Client) ListAKSClusters(params *ListAKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAKSClustersOK, error) {
 	// TODO: Validate the params before sending
@@ -3212,7 +3334,7 @@ func (a *Client) ListAKSClusters(params *ListAKSClustersParams, authInfo runtime
 }
 
 /*
-  ListCNIPluginVersionsForCluster lists c n i plugin versions for a given cluster
+ListCNIPluginVersionsForCluster lists c n i plugin versions for a given cluster
 */
 func (a *Client) ListCNIPluginVersionsForCluster(params *ListCNIPluginVersionsForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListCNIPluginVersionsForClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -3250,7 +3372,7 @@ func (a *Client) ListCNIPluginVersionsForCluster(params *ListCNIPluginVersionsFo
 }
 
 /*
-  ListClusterRole Lists all ClusterRoles
+ListClusterRole Lists all ClusterRoles
 */
 func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -3288,7 +3410,7 @@ func (a *Client) ListClusterRole(params *ListClusterRoleParams, authInfo runtime
 }
 
 /*
-  ListClusterRoleBinding List cluster role binding
+ListClusterRoleBinding List cluster role binding
 */
 func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -3326,7 +3448,7 @@ func (a *Client) ListClusterRoleBinding(params *ListClusterRoleBindingParams, au
 }
 
 /*
-  ListClusterRoleBindingV2 List cluster role binding
+ListClusterRoleBindingV2 List cluster role binding
 */
 func (a *Client) ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
@@ -3364,7 +3486,7 @@ func (a *Client) ListClusterRoleBindingV2(params *ListClusterRoleBindingV2Params
 }
 
 /*
-  ListClusterRoleNames Lists all ClusterRoles
+ListClusterRoleNames Lists all ClusterRoles
 */
 func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesOK, error) {
 	// TODO: Validate the params before sending
@@ -3402,7 +3524,7 @@ func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authIn
 }
 
 /*
-  ListClusterRoleNamesV2 Lists all ClusterRoles
+ListClusterRoleNamesV2 Lists all ClusterRoles
 */
 func (a *Client) ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleNamesV2OK, error) {
 	// TODO: Validate the params before sending
@@ -3440,7 +3562,7 @@ func (a *Client) ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, au
 }
 
 /*
-  ListClusterRoleV2 Lists all ClusterRoles
+ListClusterRoleV2 Lists all ClusterRoles
 */
 func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterRoleV2OK, error) {
 	// TODO: Validate the params before sending
@@ -3478,7 +3600,45 @@ func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo run
 }
 
 /*
-  ListClusterTemplates lists cluster templates for the given project
+ListClusterServiceAccount lists service accounts in cluster
+*/
+func (a *Client) ListClusterServiceAccount(params *ListClusterServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterServiceAccountOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "listClusterServiceAccount",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListClusterServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterServiceAccountDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+ListClusterTemplates lists cluster templates for the given project
 */
 func (a *Client) ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClusterTemplatesOK, error) {
 	// TODO: Validate the params before sending
@@ -3516,7 +3676,7 @@ func (a *Client) ListClusterTemplates(params *ListClusterTemplatesParams, authIn
 }
 
 /*
-  ListClusters lists clusters for the specified project and data center
+ListClusters lists clusters for the specified project and data center
 */
 func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersOK, error) {
 	// TODO: Validate the params before sending
@@ -3554,7 +3714,7 @@ func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.Clien
 }
 
 /*
-  ListClustersForProject lists clusters for the specified project
+ListClustersForProject lists clusters for the specified project
 */
 func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersForProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -3592,7 +3752,7 @@ func (a *Client) ListClustersForProject(params *ListClustersForProjectParams, au
 }
 
 /*
-  ListClustersV2 lists clusters for the specified project if query parameter show dm count is set to true then the endpoint will also return the number of machine deployments of each cluster
+ListClustersV2 lists clusters for the specified project if query parameter show dm count is set to true then the endpoint will also return the number of machine deployments of each cluster
 */
 func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListClustersV2OK, error) {
 	// TODO: Validate the params before sending
@@ -3630,7 +3790,7 @@ func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.C
 }
 
 /*
-  ListConstraints lists constraints for the specified cluster
+ListConstraints lists constraints for the specified cluster
 */
 func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListConstraintsOK, error) {
 	// TODO: Validate the params before sending
@@ -3668,7 +3828,7 @@ func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime
 }
 
 /*
-  ListEKSClusters Lists EKS clusters
+ListEKSClusters Lists EKS clusters
 */
 func (a *Client) ListEKSClusters(params *ListEKSClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListEKSClustersOK, error) {
 	// TODO: Validate the params before sending
@@ -3706,7 +3866,7 @@ func (a *Client) ListEKSClusters(params *ListEKSClustersParams, authInfo runtime
 }
 
 /*
-  ListExternalClusterEvents gets an external cluster events
+ListExternalClusterEvents gets an external cluster events
 */
 func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterEventsOK, error) {
 	// TODO: Validate the params before sending
@@ -3744,7 +3904,7 @@ func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsPara
 }
 
 /*
-  ListExternalClusterMachineDeploymentEvents lists an external cluster machine deployment events
+ListExternalClusterMachineDeploymentEvents lists an external cluster machine deployment events
 */
 func (a *Client) ListExternalClusterMachineDeploymentEvents(params *ListExternalClusterMachineDeploymentEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentEventsOK, error) {
 	// TODO: Validate the params before sending
@@ -3782,7 +3942,7 @@ func (a *Client) ListExternalClusterMachineDeploymentEvents(params *ListExternal
 }
 
 /*
-  ListExternalClusterMachineDeploymentMetrics lists an external cluster machine deployment metrics
+ListExternalClusterMachineDeploymentMetrics lists an external cluster machine deployment metrics
 */
 func (a *Client) ListExternalClusterMachineDeploymentMetrics(params *ListExternalClusterMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentMetricsOK, error) {
 	// TODO: Validate the params before sending
@@ -3820,7 +3980,7 @@ func (a *Client) ListExternalClusterMachineDeploymentMetrics(params *ListExterna
 }
 
 /*
-  ListExternalClusterMachineDeploymentNodes gets an external cluster machine deployment nodes
+ListExternalClusterMachineDeploymentNodes gets an external cluster machine deployment nodes
 */
 func (a *Client) ListExternalClusterMachineDeploymentNodes(params *ListExternalClusterMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentNodesOK, error) {
 	// TODO: Validate the params before sending
@@ -3858,7 +4018,7 @@ func (a *Client) ListExternalClusterMachineDeploymentNodes(params *ListExternalC
 }
 
 /*
-  ListExternalClusterMachineDeployments gets an external cluster machine deployments
+ListExternalClusterMachineDeployments gets an external cluster machine deployments
 */
 func (a *Client) ListExternalClusterMachineDeployments(params *ListExternalClusterMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterMachineDeploymentsOK, error) {
 	// TODO: Validate the params before sending
@@ -3896,7 +4056,7 @@ func (a *Client) ListExternalClusterMachineDeployments(params *ListExternalClust
 }
 
 /*
-  ListExternalClusterNodes gets an external cluster nodes
+ListExternalClusterNodes gets an external cluster nodes
 */
 func (a *Client) ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesOK, error) {
 	// TODO: Validate the params before sending
@@ -3934,7 +4094,7 @@ func (a *Client) ListExternalClusterNodes(params *ListExternalClusterNodesParams
 }
 
 /*
-  ListExternalClusterNodesMetrics gets an external cluster nodes metrics
+ListExternalClusterNodesMetrics gets an external cluster nodes metrics
 */
 func (a *Client) ListExternalClusterNodesMetrics(params *ListExternalClusterNodesMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClusterNodesMetricsOK, error) {
 	// TODO: Validate the params before sending
@@ -3972,7 +4132,7 @@ func (a *Client) ListExternalClusterNodesMetrics(params *ListExternalClusterNode
 }
 
 /*
-  ListExternalClusters lists external clusters for the specified project
+ListExternalClusters lists external clusters for the specified project
 */
 func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListExternalClustersOK, error) {
 	// TODO: Validate the params before sending
@@ -4010,7 +4170,7 @@ func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authIn
 }
 
 /*
-  ListGKEClusters lists g k e clusters
+ListGKEClusters lists g k e clusters
 */
 func (a *Client) ListGKEClusters(params *ListGKEClustersParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGKEClustersOK, error) {
 	// TODO: Validate the params before sending
@@ -4048,7 +4208,7 @@ func (a *Client) ListGKEClusters(params *ListGKEClustersParams, authInfo runtime
 }
 
 /*
-  ListGroupProjectBinding lists project s group bindings
+ListGroupProjectBinding lists project s group bindings
 */
 func (a *Client) ListGroupProjectBinding(params *ListGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGroupProjectBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -4086,7 +4246,7 @@ func (a *Client) ListGroupProjectBinding(params *ListGroupProjectBindingParams, 
 }
 
 /*
-  ListMachineDeploymentNodes lists nodes that belong to the given machine deployment
+ListMachineDeploymentNodes lists nodes that belong to the given machine deployment
 */
 func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesOK, error) {
 	// TODO: Validate the params before sending
@@ -4124,9 +4284,9 @@ func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesPa
 }
 
 /*
-  ListMachineDeploymentNodesEvents lists machine deployment events if query parameter type is set to warning then only warning events are retrieved
+ListMachineDeploymentNodesEvents lists machine deployment events if query parameter type is set to warning then only warning events are retrieved
 
-  If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
+If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
 */
 func (a *Client) ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentNodesEventsOK, error) {
 	// TODO: Validate the params before sending
@@ -4164,7 +4324,7 @@ func (a *Client) ListMachineDeploymentNodesEvents(params *ListMachineDeploymentN
 }
 
 /*
-  ListMachineDeployments Lists machine deployments that belong to the given cluster
+ListMachineDeployments Lists machine deployments that belong to the given cluster
 */
 func (a *Client) ListMachineDeployments(params *ListMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListMachineDeploymentsOK, error) {
 	// TODO: Validate the params before sending
@@ -4202,7 +4362,7 @@ func (a *Client) ListMachineDeployments(params *ListMachineDeploymentsParams, au
 }
 
 /*
-  ListNamespace Lists all namespaces in the cluster
+ListNamespace Lists all namespaces in the cluster
 */
 func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNamespaceOK, error) {
 	// TODO: Validate the params before sending
@@ -4240,7 +4400,7 @@ func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.Cli
 }
 
 /*
-  ListNamespaceV2 Lists all namespaces in the cluster
+ListNamespaceV2 Lists all namespaces in the cluster
 */
 func (a *Client) ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNamespaceV2OK, error) {
 	// TODO: Validate the params before sending
@@ -4278,7 +4438,7 @@ func (a *Client) ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime
 }
 
 /*
-  ListNodeDeploymentNodes lists nodes that belong to the given node deployment
+ListNodeDeploymentNodes lists nodes that belong to the given node deployment
 */
 func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentNodesOK, error) {
 	// TODO: Validate the params before sending
@@ -4316,9 +4476,9 @@ func (a *Client) ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, 
 }
 
 /*
-  ListNodeDeploymentNodesEvents lists node deployment events if query parameter type is set to warning then only warning events are retrieved
+ListNodeDeploymentNodesEvents lists node deployment events if query parameter type is set to warning then only warning events are retrieved
 
-  If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
+If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
 */
 func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentNodesEventsOK, error) {
 	// TODO: Validate the params before sending
@@ -4356,7 +4516,7 @@ func (a *Client) ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEv
 }
 
 /*
-  ListNodeDeployments Lists node deployments that belong to the given cluster
+ListNodeDeployments Lists node deployments that belong to the given cluster
 */
 func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodeDeploymentsOK, error) {
 	// TODO: Validate the params before sending
@@ -4394,7 +4554,7 @@ func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo
 }
 
 /*
-  ListNodesForCluster this endpoint is used for kubeadm cluster
+ListNodesForCluster this endpoint is used for kubeadm cluster
 */
 func (a *Client) ListNodesForCluster(params *ListNodesForClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListNodesForClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -4432,7 +4592,7 @@ func (a *Client) ListNodesForCluster(params *ListNodesForClusterParams, authInfo
 }
 
 /*
-  ListProjects lists projects that an authenticated user is a member of
+ListProjects lists projects that an authenticated user is a member of
 */
 func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListProjectsOK, error) {
 	// TODO: Validate the params before sending
@@ -4470,7 +4630,7 @@ func (a *Client) ListProjects(params *ListProjectsParams, authInfo runtime.Clien
 }
 
 /*
-  ListRole Lists all Roles
+ListRole Lists all Roles
 */
 func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -4508,7 +4668,7 @@ func (a *Client) ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  ListRoleBinding List role binding
+ListRoleBinding List role binding
 */
 func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -4546,7 +4706,7 @@ func (a *Client) ListRoleBinding(params *ListRoleBindingParams, authInfo runtime
 }
 
 /*
-  ListRoleBindingV2 List role binding
+ListRoleBindingV2 List role binding
 */
 func (a *Client) ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
@@ -4584,7 +4744,7 @@ func (a *Client) ListRoleBindingV2(params *ListRoleBindingV2Params, authInfo run
 }
 
 /*
-  ListRoleNames Lists all Role names with namespaces
+ListRoleNames Lists all Role names with namespaces
 */
 func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleNamesOK, error) {
 	// TODO: Validate the params before sending
@@ -4622,7 +4782,7 @@ func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.Cli
 }
 
 /*
-  ListRoleNamesV2 Lists all Role names with namespaces
+ListRoleNamesV2 Lists all Role names with namespaces
 */
 func (a *Client) ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleNamesV2OK, error) {
 	// TODO: Validate the params before sending
@@ -4660,7 +4820,7 @@ func (a *Client) ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime
 }
 
 /*
-  ListRoleV2 Lists all Roles
+ListRoleV2 Lists all Roles
 */
 func (a *Client) ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRoleV2OK, error) {
 	// TODO: Validate the params before sending
@@ -4698,9 +4858,9 @@ func (a *Client) ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAut
 }
 
 /*
-  ListSSHKeys lists SSH keys that belong to the given project
+ListSSHKeys lists SSH keys that belong to the given project
 
-  The returned collection is sorted by creation timestamp.
+The returned collection is sorted by creation timestamp.
 */
 func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysOK, error) {
 	// TODO: Validate the params before sending
@@ -4738,7 +4898,8 @@ func (a *Client) ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientA
 }
 
 /*
-  ListSSHKeysAssignedToCluster Lists ssh keys that are assigned to the cluster
+	ListSSHKeysAssignedToCluster Lists ssh keys that are assigned to the cluster
+
 The returned collection is sorted by creation timestamp.
 */
 func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysAssignedToClusterOK, error) {
@@ -4777,7 +4938,8 @@ func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClust
 }
 
 /*
-  ListSSHKeysAssignedToClusterV2 Lists ssh keys that are assigned to the cluster
+	ListSSHKeysAssignedToClusterV2 Lists ssh keys that are assigned to the cluster
+
 The returned collection is sorted by creation timestamp.
 */
 func (a *Client) ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSSHKeysAssignedToClusterV2OK, error) {
@@ -4816,7 +4978,7 @@ func (a *Client) ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClu
 }
 
 /*
-  PatchCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
+PatchCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
 */
 func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -4854,7 +5016,7 @@ func (a *Client) PatchCluster(params *PatchClusterParams, authInfo runtime.Clien
 }
 
 /*
-  PatchClusterRole Patch the cluster role with the given name
+PatchClusterRole Patch the cluster role with the given name
 */
 func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -4892,7 +5054,7 @@ func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runti
 }
 
 /*
-  PatchClusterV2 patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
+PatchClusterV2 patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
 */
 func (a *Client) PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchClusterV2OK, error) {
 	// TODO: Validate the params before sending
@@ -4930,7 +5092,7 @@ func (a *Client) PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.C
 }
 
 /*
-  PatchConstraint patches a given constraint for the specified cluster
+PatchConstraint patches a given constraint for the specified cluster
 */
 func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchConstraintOK, error) {
 	// TODO: Validate the params before sending
@@ -4968,7 +5130,7 @@ func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime
 }
 
 /*
-  PatchExternalCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
+PatchExternalCluster patches the given cluster using JSON merge patch method https tools ietf org html rfc7396
 */
 func (a *Client) PatchExternalCluster(params *PatchExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -5006,7 +5168,7 @@ func (a *Client) PatchExternalCluster(params *PatchExternalClusterParams, authIn
 }
 
 /*
-  PatchExternalClusterMachineDeployments Patches the given cluster using JSON Merge Patch method
+PatchExternalClusterMachineDeployments Patches the given cluster using JSON Merge Patch method
 */
 func (a *Client) PatchExternalClusterMachineDeployments(params *PatchExternalClusterMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchExternalClusterMachineDeploymentsOK, error) {
 	// TODO: Validate the params before sending
@@ -5044,7 +5206,7 @@ func (a *Client) PatchExternalClusterMachineDeployments(params *PatchExternalClu
 }
 
 /*
-  PatchGatekeeperConfig patches the gatekeeper config for the specified cluster
+PatchGatekeeperConfig patches the gatekeeper config for the specified cluster
 */
 func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGatekeeperConfigOK, error) {
 	// TODO: Validate the params before sending
@@ -5082,7 +5244,7 @@ func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, auth
 }
 
 /*
-  PatchGroupProjectBinding patches project group binding
+PatchGroupProjectBinding patches project group binding
 */
 func (a *Client) PatchGroupProjectBinding(params *PatchGroupProjectBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchGroupProjectBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -5120,7 +5282,8 @@ func (a *Client) PatchGroupProjectBinding(params *PatchGroupProjectBindingParams
 }
 
 /*
-  PatchMachineDeployment Patches a machine deployment that is assigned to the given cluster. Please note that at the moment only
+	PatchMachineDeployment Patches a machine deployment that is assigned to the given cluster. Please note that at the moment only
+
 node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 */
 func (a *Client) PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchMachineDeploymentOK, error) {
@@ -5159,7 +5322,8 @@ func (a *Client) PatchMachineDeployment(params *PatchMachineDeploymentParams, au
 }
 
 /*
-  PatchNodeDeployment Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
+	PatchNodeDeployment Patches a node deployment that is assigned to the given cluster. Please note that at the moment only
+
 node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
 */
 func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchNodeDeploymentOK, error) {
@@ -5198,7 +5362,7 @@ func (a *Client) PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo
 }
 
 /*
-  PatchRole Patch the role with the given name
+PatchRole Patch the role with the given name
 */
 func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchRoleOK, error) {
 	// TODO: Validate the params before sending
@@ -5236,7 +5400,7 @@ func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  ResetAlertmanager resets the alertmanager configuration to default for the specified cluster
+ResetAlertmanager resets the alertmanager configuration to default for the specified cluster
 */
 func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetAlertmanagerOK, error) {
 	// TODO: Validate the params before sending
@@ -5274,7 +5438,7 @@ func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo run
 }
 
 /*
-  RestartMachineDeployment schedules rolling restart of a machine deployment that is assigned to the given cluster
+RestartMachineDeployment schedules rolling restart of a machine deployment that is assigned to the given cluster
 */
 func (a *Client) RestartMachineDeployment(params *RestartMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartMachineDeploymentOK, error) {
 	// TODO: Validate the params before sending
@@ -5312,7 +5476,7 @@ func (a *Client) RestartMachineDeployment(params *RestartMachineDeploymentParams
 }
 
 /*
-  RevokeClusterAdminToken Revokes the current admin token
+RevokeClusterAdminToken Revokes the current admin token
 */
 func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterAdminTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -5350,7 +5514,7 @@ func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, 
 }
 
 /*
-  RevokeClusterAdminTokenV2 Revokes the current admin token
+RevokeClusterAdminTokenV2 Revokes the current admin token
 */
 func (a *Client) RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterAdminTokenV2OK, error) {
 	// TODO: Validate the params before sending
@@ -5388,7 +5552,7 @@ func (a *Client) RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Para
 }
 
 /*
-  RevokeClusterViewerToken Revokes the current viewer token
+RevokeClusterViewerToken Revokes the current viewer token
 */
 func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterViewerTokenOK, error) {
 	// TODO: Validate the params before sending
@@ -5426,7 +5590,7 @@ func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams
 }
 
 /*
-  RevokeClusterViewerTokenV2 Revokes the current viewer token
+RevokeClusterViewerTokenV2 Revokes the current viewer token
 */
 func (a *Client) RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeClusterViewerTokenV2OK, error) {
 	// TODO: Validate the params before sending
@@ -5464,7 +5628,7 @@ func (a *Client) RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Pa
 }
 
 /*
-  UnbindUserFromClusterRoleBinding Unbinds user from cluster role binding
+UnbindUserFromClusterRoleBinding Unbinds user from cluster role binding
 */
 func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromClusterRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -5502,7 +5666,7 @@ func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterR
 }
 
 /*
-  UnbindUserFromClusterRoleBindingV2 Unbinds user from cluster role binding
+UnbindUserFromClusterRoleBindingV2 Unbinds user from cluster role binding
 */
 func (a *Client) UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromClusterRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
@@ -5540,7 +5704,7 @@ func (a *Client) UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromCluste
 }
 
 /*
-  UnbindUserFromRoleBinding Unbinds user from the role binding
+UnbindUserFromRoleBinding Unbinds user from the role binding
 */
 func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromRoleBindingOK, error) {
 	// TODO: Validate the params before sending
@@ -5578,7 +5742,7 @@ func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingPara
 }
 
 /*
-  UnbindUserFromRoleBindingV2 Unbinds user from the role binding
+UnbindUserFromRoleBindingV2 Unbinds user from the role binding
 */
 func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnbindUserFromRoleBindingV2OK, error) {
 	// TODO: Validate the params before sending
@@ -5616,7 +5780,7 @@ func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2
 }
 
 /*
-  UpdateAlertmanager Updates an alertmanager configuration for the given cluster
+UpdateAlertmanager Updates an alertmanager configuration for the given cluster
 */
 func (a *Client) UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateAlertmanagerOK, error) {
 	// TODO: Validate the params before sending
@@ -5654,7 +5818,7 @@ func (a *Client) UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo r
 }
 
 /*
-  UpdateExternalCluster updates an external cluster for the given project
+UpdateExternalCluster updates an external cluster for the given project
 */
 func (a *Client) UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateExternalClusterOK, error) {
 	// TODO: Validate the params before sending
@@ -5692,7 +5856,7 @@ func (a *Client) UpdateExternalCluster(params *UpdateExternalClusterParams, auth
 }
 
 /*
-  UpdateProject Updates the given project
+UpdateProject Updates the given project
 */
 func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateProjectOK, error) {
 	// TODO: Validate the params before sending
@@ -5730,7 +5894,7 @@ func (a *Client) UpdateProject(params *UpdateProjectParams, authInfo runtime.Cli
 }
 
 /*
-  UpgradeClusterNodeDeployments Upgrades node deployments in a cluster
+UpgradeClusterNodeDeployments Upgrades node deployments in a cluster
 */
 func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpgradeClusterNodeDeploymentsOK, error) {
 	// TODO: Validate the params before sending
@@ -5768,7 +5932,7 @@ func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploym
 }
 
 /*
-  UpgradeClusterNodeDeploymentsV2 Upgrades node deployments in a cluster
+UpgradeClusterNodeDeploymentsV2 Upgrades node deployments in a cluster
 */
 func (a *Client) UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeploymentsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpgradeClusterNodeDeploymentsV2OK, error) {
 	// TODO: Validate the params before sending

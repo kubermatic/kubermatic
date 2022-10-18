@@ -58,7 +58,8 @@ func NewListEKSSubnetsNoCredentialsOK() *ListEKSSubnetsNoCredentialsOK {
 	return &ListEKSSubnetsNoCredentialsOK{}
 }
 
-/* ListEKSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
+/*
+ListEKSSubnetsNoCredentialsOK describes a response with status code 200, with default header values.
 
 EKSSubnetList
 */
@@ -66,9 +67,39 @@ type ListEKSSubnetsNoCredentialsOK struct {
 	Payload models.EKSSubnetList
 }
 
+// IsSuccess returns true when this list e k s subnets no credentials o k response has a 2xx status code
+func (o *ListEKSSubnetsNoCredentialsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list e k s subnets no credentials o k response has a 3xx status code
+func (o *ListEKSSubnetsNoCredentialsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s subnets no credentials o k response has a 4xx status code
+func (o *ListEKSSubnetsNoCredentialsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list e k s subnets no credentials o k response has a 5xx status code
+func (o *ListEKSSubnetsNoCredentialsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s subnets no credentials o k response a status code equal to that given
+func (o *ListEKSSubnetsNoCredentialsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListEKSSubnetsNoCredentialsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentialsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListEKSSubnetsNoCredentialsOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentialsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListEKSSubnetsNoCredentialsOK) GetPayload() models.EKSSubnetList {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListEKSSubnetsNoCredentialsUnauthorized() *ListEKSSubnetsNoCredentialsUn
 	return &ListEKSSubnetsNoCredentialsUnauthorized{}
 }
 
-/* ListEKSSubnetsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListEKSSubnetsNoCredentialsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListEKSSubnetsNoCredentialsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list e k s subnets no credentials unauthorized response has a 2xx status code
+func (o *ListEKSSubnetsNoCredentialsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s subnets no credentials unauthorized response has a 3xx status code
+func (o *ListEKSSubnetsNoCredentialsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s subnets no credentials unauthorized response has a 4xx status code
+func (o *ListEKSSubnetsNoCredentialsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s subnets no credentials unauthorized response has a 5xx status code
+func (o *ListEKSSubnetsNoCredentialsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s subnets no credentials unauthorized response a status code equal to that given
+func (o *ListEKSSubnetsNoCredentialsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListEKSSubnetsNoCredentialsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentialsUnauthorized ", 401)
+}
+
+func (o *ListEKSSubnetsNoCredentialsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentialsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListEKSSubnetsNoCredentialsForbidden() *ListEKSSubnetsNoCredentialsForbi
 	return &ListEKSSubnetsNoCredentialsForbidden{}
 }
 
-/* ListEKSSubnetsNoCredentialsForbidden describes a response with status code 403, with default header values.
+/*
+ListEKSSubnetsNoCredentialsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListEKSSubnetsNoCredentialsForbidden struct {
 }
 
+// IsSuccess returns true when this list e k s subnets no credentials forbidden response has a 2xx status code
+func (o *ListEKSSubnetsNoCredentialsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list e k s subnets no credentials forbidden response has a 3xx status code
+func (o *ListEKSSubnetsNoCredentialsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list e k s subnets no credentials forbidden response has a 4xx status code
+func (o *ListEKSSubnetsNoCredentialsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list e k s subnets no credentials forbidden response has a 5xx status code
+func (o *ListEKSSubnetsNoCredentialsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list e k s subnets no credentials forbidden response a status code equal to that given
+func (o *ListEKSSubnetsNoCredentialsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListEKSSubnetsNoCredentialsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentialsForbidden ", 403)
+}
+
+func (o *ListEKSSubnetsNoCredentialsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentialsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListEKSSubnetsNoCredentialsDefault(code int) *ListEKSSubnetsNoCredential
 	}
 }
 
-/* ListEKSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
+/*
+ListEKSSubnetsNoCredentialsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListEKSSubnetsNoCredentialsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list e k s subnets no credentials default response has a 2xx status code
+func (o *ListEKSSubnetsNoCredentialsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list e k s subnets no credentials default response has a 3xx status code
+func (o *ListEKSSubnetsNoCredentialsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list e k s subnets no credentials default response has a 4xx status code
+func (o *ListEKSSubnetsNoCredentialsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list e k s subnets no credentials default response has a 5xx status code
+func (o *ListEKSSubnetsNoCredentialsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list e k s subnets no credentials default response a status code equal to that given
+func (o *ListEKSSubnetsNoCredentialsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListEKSSubnetsNoCredentialsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentials default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListEKSSubnetsNoCredentialsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/subnets][%d] listEKSSubnetsNoCredentials default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListEKSSubnetsNoCredentialsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

@@ -29,7 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -58,7 +58,7 @@ func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.C
 			continue
 		}
 
-		name, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+		name, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 
 		if err != nil {
 			return nil, nil, err

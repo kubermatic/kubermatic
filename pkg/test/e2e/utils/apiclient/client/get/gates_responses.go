@@ -58,7 +58,8 @@ func NewGatesOK() *GatesOK {
 	return &GatesOK{}
 }
 
-/* GatesOK describes a response with status code 200, with default header values.
+/*
+GatesOK describes a response with status code 200, with default header values.
 
 FeatureGates
 */
@@ -66,9 +67,39 @@ type GatesOK struct {
 	Payload *models.FeatureGates
 }
 
+// IsSuccess returns true when this gates o k response has a 2xx status code
+func (o *GatesOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this gates o k response has a 3xx status code
+func (o *GatesOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this gates o k response has a 4xx status code
+func (o *GatesOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this gates o k response has a 5xx status code
+func (o *GatesOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this gates o k response a status code equal to that given
+func (o *GatesOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GatesOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gatesOK  %+v", 200, o.Payload)
 }
+
+func (o *GatesOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gatesOK  %+v", 200, o.Payload)
+}
+
 func (o *GatesOK) GetPayload() *models.FeatureGates {
 	return o.Payload
 }
@@ -90,7 +121,8 @@ func NewGatesUnauthorized() *GatesUnauthorized {
 	return &GatesUnauthorized{}
 }
 
-/* GatesUnauthorized describes a response with status code 401, with default header values.
+/*
+GatesUnauthorized describes a response with status code 401, with default header values.
 
 errorResponse
 */
@@ -98,9 +130,39 @@ type GatesUnauthorized struct {
 	Payload *models.ErrorResponse
 }
 
+// IsSuccess returns true when this gates unauthorized response has a 2xx status code
+func (o *GatesUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this gates unauthorized response has a 3xx status code
+func (o *GatesUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this gates unauthorized response has a 4xx status code
+func (o *GatesUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this gates unauthorized response has a 5xx status code
+func (o *GatesUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this gates unauthorized response a status code equal to that given
+func (o *GatesUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GatesUnauthorized) Error() string {
 	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gatesUnauthorized  %+v", 401, o.Payload)
 }
+
+func (o *GatesUnauthorized) String() string {
+	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gatesUnauthorized  %+v", 401, o.Payload)
+}
+
 func (o *GatesUnauthorized) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -122,7 +184,8 @@ func NewGatesForbidden() *GatesForbidden {
 	return &GatesForbidden{}
 }
 
-/* GatesForbidden describes a response with status code 403, with default header values.
+/*
+GatesForbidden describes a response with status code 403, with default header values.
 
 errorResponse
 */
@@ -130,9 +193,39 @@ type GatesForbidden struct {
 	Payload *models.ErrorResponse
 }
 
+// IsSuccess returns true when this gates forbidden response has a 2xx status code
+func (o *GatesForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this gates forbidden response has a 3xx status code
+func (o *GatesForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this gates forbidden response has a 4xx status code
+func (o *GatesForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this gates forbidden response has a 5xx status code
+func (o *GatesForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this gates forbidden response a status code equal to that given
+func (o *GatesForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GatesForbidden) Error() string {
 	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gatesForbidden  %+v", 403, o.Payload)
 }
+
+func (o *GatesForbidden) String() string {
+	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gatesForbidden  %+v", 403, o.Payload)
+}
+
 func (o *GatesForbidden) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }
@@ -156,7 +249,8 @@ func NewGatesDefault(code int) *GatesDefault {
 	}
 }
 
-/* GatesDefault describes a response with status code -1, with default header values.
+/*
+GatesDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -171,9 +265,39 @@ func (o *GatesDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this gates default response has a 2xx status code
+func (o *GatesDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this gates default response has a 3xx status code
+func (o *GatesDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this gates default response has a 4xx status code
+func (o *GatesDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this gates default response has a 5xx status code
+func (o *GatesDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this gates default response a status code equal to that given
+func (o *GatesDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GatesDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gates default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GatesDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/featuregates][%d] gates default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GatesDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

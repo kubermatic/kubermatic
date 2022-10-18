@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	metallbv1beta1 "go.universe.tf/metallb/api/v1beta1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -37,9 +36,11 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,7 +71,13 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating first IPAM Pool (for metallb addon)...")
-	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "192.168.1.0/28", "range", 8, "metallb")
+	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "metallb", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+		jig.DatacenterName(): {
+			Type:            "range",
+			PoolCIDR:        "192.168.1.0/28",
+			AllocationRange: 8,
+		},
+	})
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -85,7 +92,13 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating second IPAM Pool...")
-	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "192.169.1.0/27", "prefix", 28, "")
+	ipamPool2, err := createNewIPAMPool(ctx, seedClient, "", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+		jig.DatacenterName(): {
+			Type:             "prefix",
+			PoolCIDR:         "192.169.1.0/27",
+			AllocationPrefix: 28,
+		},
+	})
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -135,7 +148,19 @@ func TestIPAM(t *testing.T) {
 	}
 
 	log.Info("Creating third IPAM Pool...")
-	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "193.169.1.0/28", "prefix", 29, "")
+	ipamPool3Datacenters := map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+		jig.DatacenterName(): {
+			Type:             "prefix",
+			PoolCIDR:         "193.169.1.0/28",
+			AllocationPrefix: 29,
+		},
+		jig.DatacenterName() + "-dummy": {
+			Type:            "range",
+			PoolCIDR:        "194.170.1.0/28",
+			AllocationRange: 8,
+		},
+	}
+	ipamPool3, err := createNewIPAMPool(ctx, seedClient, "", ipamPool3Datacenters)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -161,6 +186,20 @@ func TestIPAM(t *testing.T) {
 		DC:   jig.DatacenterName(),
 		CIDR: "193.169.1.8/29",
 	}); err != nil {
+		t.Fatal(err)
+	}
+
+	log.Info("Removing cluster datacenter spec from IPAM pool 3...")
+	delete(ipamPool3Datacenters, jig.DatacenterName())
+	err = updateIPAMPool(ctx, seedClient, ipamPool3.Name, ipamPool3Datacenters)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name); err != nil {
 		t.Fatal(err)
 	}
 
@@ -197,19 +236,14 @@ func TestIPAM(t *testing.T) {
 	log.Info("Deleting second cluster...")
 	cleanupUserCluster2()
 
-	log.Info("Deleting third cluster...")
-	cleanupUserCluster3()
-
 	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name); err != nil {
 		t.Fatal(err)
 	}
-	if err := checkAllocationIsGone(ctx, log, seedClient, userClient2, cluster2, ipamPool3.Name); err != nil {
-		t.Fatal(err)
-	}
+
+	log.Info("Deleting third cluster...")
+	cleanupUserCluster3()
+
 	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name); err != nil {
-		t.Fatal(err)
-	}
-	if err := checkAllocationIsGone(ctx, log, seedClient, userClient3, cluster3, ipamPool3.Name); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -251,12 +285,10 @@ func createUserCluster(
 		return nil, nil, cleanup, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	utilruntime.Must(metallbv1beta1.AddToScheme(clusterClient.Scheme()))
-
 	return cluster, clusterClient, cleanup, err
 }
 
-func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, poolCIDR kubermaticv1.SubnetCIDR, allocationType kubermaticv1.IPAMPoolAllocationType, allocationValue int, ipamPoolName string) (*kubermaticv1.IPAMPool, error) {
+func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, ipamPoolName string, datacenters map[string]kubermaticv1.IPAMPoolDatacenterSettings) (*kubermaticv1.IPAMPool, error) {
 	if ipamPoolName == "" {
 		ipamPoolName = rand.String(10)
 	}
@@ -267,14 +299,7 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 			Labels: map[string]string{},
 		},
 		Spec: kubermaticv1.IPAMPoolSpec{
-			Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-				jig.DatacenterName(): {
-					Type:             allocationType,
-					PoolCIDR:         poolCIDR,
-					AllocationRange:  allocationValue,
-					AllocationPrefix: allocationValue,
-				},
-			},
+			Datacenters: datacenters,
 		},
 	}); err != nil {
 		return nil, err
@@ -286,6 +311,22 @@ func createNewIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client,
 	}
 
 	return ipamPool, nil
+}
+
+func updateIPAMPool(ctx context.Context, seedClient ctrlruntimeclient.Client, ipamPoolName string, datacenters map[string]kubermaticv1.IPAMPoolDatacenterSettings) error {
+	ipamPool := &kubermaticv1.IPAMPool{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamPoolName}, ipamPool); err != nil {
+		return fmt.Errorf("failed to get IPAM pool: %w", err)
+	}
+
+	newIPAMPool := ipamPool.DeepCopy()
+	newIPAMPool.Spec.Datacenters = datacenters
+
+	if err := seedClient.Patch(ctx, newIPAMPool, ctrlruntimeclient.MergeFrom(ipamPool)); err != nil {
+		return fmt.Errorf("failed to update IPAM pool: %w", err)
+	}
+
+	return nil
 }
 
 func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) error {
@@ -331,26 +372,44 @@ func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient
 	}) == nil
 }
 
+type ipAddressPoolV1Beta1 struct {
+	Spec struct {
+		Addresses []string `json:"addresses"`
+	} `json:"spec"`
+}
+
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
 	return wait.PollLog(ctx, log, 20*time.Second, 10*time.Minute, func() (error, error) {
-		metallbIPAddressPool := &metallbv1beta1.IPAddressPool{}
+		// We use an unstructured object instead of using metallb's v1beta1 directly
+		// because Cilium has its own fork of metallb which does not contain v1beta1.
+		metallbIPAddressPool := &unstructured.Unstructured{}
+		metallbIPAddressPool.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "metallb.io",
+			Version: "v1beta1",
+			Kind:    "IPAddressPool",
+		})
 		if err := userClient.Get(ctx, types.NamespacedName{Name: "kkp-managed-pool", Namespace: "metallb-system"}, metallbIPAddressPool); err != nil {
 			return fmt.Errorf("error getting metallb IPAddressPool in user cluster %s: %w", cluster.Name, err), nil
 		}
 
+		pool := &ipAddressPoolV1Beta1{}
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(metallbIPAddressPool.Object, pool); err != nil {
+			return fmt.Errorf("failed to decode metallb IPAddressPool: %w", err), nil
+		}
+
 		switch ipamAllocation.Spec.Type {
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
-			if len(metallbIPAddressPool.Spec.Addresses) != 1 {
+			if len(pool.Spec.Addresses) != 1 {
 				return fmt.Errorf("metallb ip address pool: no single address for IPAM allocation type \"prefix\""), nil
 			}
-			if metallbIPAddressPool.Spec.Addresses[0] != string(ipamAllocation.Spec.CIDR) {
-				return fmt.Errorf("metallb ip address pool: not expected CIDR for IPAM allocation type \"prefix\": \"%s\" (expected \"%s\")", metallbIPAddressPool.Spec.Addresses[0], ipamAllocation.Spec.CIDR), nil
+			if pool.Spec.Addresses[0] != string(ipamAllocation.Spec.CIDR) {
+				return fmt.Errorf("metallb ip address pool: not expected CIDR for IPAM allocation type \"prefix\": \"%s\" (expected \"%s\")", pool.Spec.Addresses[0], ipamAllocation.Spec.CIDR), nil
 			}
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			if len(metallbIPAddressPool.Spec.Addresses) != len(ipamAllocation.Spec.Addresses) {
-				return fmt.Errorf("metallb ip address pool: not expected number of addresses for IPAM allocation type \"range\": %d (expected %d)", len(metallbIPAddressPool.Spec.Addresses), len(ipamAllocation.Spec.Addresses)), nil
+			if len(pool.Spec.Addresses) != len(ipamAllocation.Spec.Addresses) {
+				return fmt.Errorf("metallb ip address pool: not expected number of addresses for IPAM allocation type \"range\": %d (expected %d)", len(pool.Spec.Addresses), len(ipamAllocation.Spec.Addresses)), nil
 			}
-			for i, address := range metallbIPAddressPool.Spec.Addresses {
+			for i, address := range pool.Spec.Addresses {
 				if address != ipamAllocation.Spec.Addresses[i] {
 					return fmt.Errorf("metallb ip address pool: not expected address range: \"%s\" (expected \"%s\")", address, ipamAllocation.Spec.Addresses[i]), nil
 				}

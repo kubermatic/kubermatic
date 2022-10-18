@@ -40,7 +40,7 @@ type ClientService interface {
 }
 
 /*
-  CreateDefaultConstraint Creates default constraint
+CreateDefaultConstraint Creates default constraint
 */
 func (a *Client) CreateDefaultConstraint(params *CreateDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
@@ -78,7 +78,7 @@ func (a *Client) CreateDefaultConstraint(params *CreateDefaultConstraintParams, 
 }
 
 /*
-  GetDefaultConstraint Gets an specified default constraint
+GetDefaultConstraint Gets an specified default constraint
 */
 func (a *Client) GetDefaultConstraint(params *GetDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
@@ -116,7 +116,7 @@ func (a *Client) GetDefaultConstraint(params *GetDefaultConstraintParams, authIn
 }
 
 /*
-  ListDefaultConstraint lists default constraint
+ListDefaultConstraint lists default constraint
 */
 func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending
@@ -154,7 +154,7 @@ func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, auth
 }
 
 /*
-  PatchDefaultConstraint Patch a specified default constraint
+PatchDefaultConstraint Patch a specified default constraint
 */
 func (a *Client) PatchDefaultConstraint(params *PatchDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PatchDefaultConstraintOK, error) {
 	// TODO: Validate the params before sending

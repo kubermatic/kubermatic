@@ -20,12 +20,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	iam "github.com/aws/aws-sdk-go-v2/service/iam"
+	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
 // backfillOwnershipTags migrates existing clusters to the new reconciling.
@@ -72,9 +76,9 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 		}
 
 		if !hasEC2Tag(ec2Tag, group.Tags) {
-			_, err = cs.EC2.CreateTagsWithContext(ctx, &ec2.CreateTagsInput{
-				Resources: []*string{group.GroupId},
-				Tags:      []*ec2.Tag{ec2Tag},
+			_, err = cs.EC2.CreateTags(ctx, &ec2.CreateTagsInput{
+				Resources: []string{pointer.StringDeref(group.GroupId, "")},
+				Tags:      []ec2types.Tag{ec2Tag},
 			})
 			if err != nil {
 				return cluster, fmt.Errorf("failed to tag security group: %w", err)
@@ -97,9 +101,9 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 		}
 
 		if !hasIAMTag(iamTag, profile.Tags) {
-			_, err = cs.IAM.TagInstanceProfileWithContext(ctx, &iam.TagInstanceProfileInput{
+			_, err = cs.IAM.TagInstanceProfile(ctx, &iam.TagInstanceProfileInput{
 				InstanceProfileName: profile.InstanceProfileName,
-				Tags:                []*iam.Tag{iamTag},
+				Tags:                []iamtypes.Tag{iamTag},
 			})
 			if err != nil {
 				return cluster, fmt.Errorf("failed to tag instance profile: %w", err)
@@ -122,9 +126,9 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 		}
 
 		if !hasIAMTag(iamTag, role.Tags) {
-			_, err = cs.IAM.TagRoleWithContext(ctx, &iam.TagRoleInput{
+			_, err = cs.IAM.TagRole(ctx, &iam.TagRoleInput{
 				RoleName: role.RoleName,
-				Tags:     []*iam.Tag{iamTag},
+				Tags:     []iamtypes.Tag{iamTag},
 			})
 			if err != nil {
 				return cluster, fmt.Errorf("failed to tag control plane role: %w", err)

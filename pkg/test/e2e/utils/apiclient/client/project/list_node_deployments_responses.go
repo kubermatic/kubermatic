@@ -58,7 +58,8 @@ func NewListNodeDeploymentsOK() *ListNodeDeploymentsOK {
 	return &ListNodeDeploymentsOK{}
 }
 
-/* ListNodeDeploymentsOK describes a response with status code 200, with default header values.
+/*
+ListNodeDeploymentsOK describes a response with status code 200, with default header values.
 
 NodeDeployment
 */
@@ -66,9 +67,39 @@ type ListNodeDeploymentsOK struct {
 	Payload []*models.NodeDeployment
 }
 
+// IsSuccess returns true when this list node deployments o k response has a 2xx status code
+func (o *ListNodeDeploymentsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list node deployments o k response has a 3xx status code
+func (o *ListNodeDeploymentsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list node deployments o k response has a 4xx status code
+func (o *ListNodeDeploymentsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list node deployments o k response has a 5xx status code
+func (o *ListNodeDeploymentsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list node deployments o k response a status code equal to that given
+func (o *ListNodeDeploymentsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListNodeDeploymentsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsOK  %+v", 200, o.Payload)
 }
+
+func (o *ListNodeDeploymentsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsOK  %+v", 200, o.Payload)
+}
+
 func (o *ListNodeDeploymentsOK) GetPayload() []*models.NodeDeployment {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListNodeDeploymentsUnauthorized() *ListNodeDeploymentsUnauthorized {
 	return &ListNodeDeploymentsUnauthorized{}
 }
 
-/* ListNodeDeploymentsUnauthorized describes a response with status code 401, with default header values.
+/*
+ListNodeDeploymentsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListNodeDeploymentsUnauthorized struct {
 }
 
+// IsSuccess returns true when this list node deployments unauthorized response has a 2xx status code
+func (o *ListNodeDeploymentsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list node deployments unauthorized response has a 3xx status code
+func (o *ListNodeDeploymentsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list node deployments unauthorized response has a 4xx status code
+func (o *ListNodeDeploymentsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list node deployments unauthorized response has a 5xx status code
+func (o *ListNodeDeploymentsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list node deployments unauthorized response a status code equal to that given
+func (o *ListNodeDeploymentsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListNodeDeploymentsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsUnauthorized ", 401)
+}
+
+func (o *ListNodeDeploymentsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListNodeDeploymentsForbidden() *ListNodeDeploymentsForbidden {
 	return &ListNodeDeploymentsForbidden{}
 }
 
-/* ListNodeDeploymentsForbidden describes a response with status code 403, with default header values.
+/*
+ListNodeDeploymentsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListNodeDeploymentsForbidden struct {
 }
 
+// IsSuccess returns true when this list node deployments forbidden response has a 2xx status code
+func (o *ListNodeDeploymentsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list node deployments forbidden response has a 3xx status code
+func (o *ListNodeDeploymentsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list node deployments forbidden response has a 4xx status code
+func (o *ListNodeDeploymentsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list node deployments forbidden response has a 5xx status code
+func (o *ListNodeDeploymentsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list node deployments forbidden response a status code equal to that given
+func (o *ListNodeDeploymentsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListNodeDeploymentsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsForbidden ", 403)
+}
+
+func (o *ListNodeDeploymentsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListNodeDeploymentsDefault(code int) *ListNodeDeploymentsDefault {
 	}
 }
 
-/* ListNodeDeploymentsDefault describes a response with status code -1, with default header values.
+/*
+ListNodeDeploymentsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListNodeDeploymentsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list node deployments default response has a 2xx status code
+func (o *ListNodeDeploymentsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list node deployments default response has a 3xx status code
+func (o *ListNodeDeploymentsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list node deployments default response has a 4xx status code
+func (o *ListNodeDeploymentsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list node deployments default response has a 5xx status code
+func (o *ListNodeDeploymentsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list node deployments default response a status code equal to that given
+func (o *ListNodeDeploymentsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListNodeDeploymentsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeployments default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListNodeDeploymentsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeployments default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListNodeDeploymentsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

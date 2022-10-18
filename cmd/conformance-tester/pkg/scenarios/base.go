@@ -160,7 +160,7 @@ func (s *baseScenario) APIOperatingSystemSpec() (*apimodels.OperatingSystemSpec,
 
 	case providerconfig.OperatingSystemRockyLinux:
 		return &apimodels.OperatingSystemSpec{
-			RockyLinux: &apimodels.RockyLinuxSpec{},
+			Rockylinux: &apimodels.RockyLinuxSpec{},
 		}, nil
 
 	case providerconfig.OperatingSystemAmazonLinux2:
@@ -222,7 +222,31 @@ func (s *baseScenario) SetDualstackEnabled(enabled bool) {
 func createMachineDeployment(replicas int, version *semver.Semver, os providerconfig.OperatingSystem, osSpec interface{}, provider providerconfig.CloudProvider, providerSpec interface{}, dualstack bool) (clusterv1alpha1.MachineDeployment, error) {
 	replicas32 := int32(replicas)
 
-	encodedOSSpec, err := json.Marshal(osSpec)
+	var encodedOSSpec json.RawMessage
+	var err error
+
+	switch osSpec := osSpec.(type) {
+	case *apiv1.OperatingSystemSpec:
+		switch os {
+		case providerconfig.OperatingSystemRHEL:
+			encodedOSSpec, err = json.Marshal(osSpec.RHEL)
+		case providerconfig.OperatingSystemSLES:
+			encodedOSSpec, err = json.Marshal(osSpec.SLES)
+		case providerconfig.OperatingSystemUbuntu:
+			encodedOSSpec, err = json.Marshal(osSpec.Ubuntu)
+		case providerconfig.OperatingSystemFlatcar:
+			encodedOSSpec, err = json.Marshal(osSpec.Flatcar)
+		case providerconfig.OperatingSystemCentOS:
+			encodedOSSpec, err = json.Marshal(osSpec.CentOS)
+		case providerconfig.OperatingSystemRockyLinux:
+			encodedOSSpec, err = json.Marshal(osSpec.RockyLinux)
+		case providerconfig.OperatingSystemAmazonLinux2:
+			encodedOSSpec, err = json.Marshal(osSpec.AmazonLinux)
+		}
+	default:
+		encodedOSSpec, err = json.Marshal(osSpec)
+	}
+
 	if err != nil {
 		return clusterv1alpha1.MachineDeployment{}, err
 	}

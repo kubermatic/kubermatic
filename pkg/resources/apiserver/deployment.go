@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -90,7 +91,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				return nil, err
 			}
 
-			address := data.Cluster().GetAddress()
+			address := data.Cluster().Status.Address
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Labels: podLabels,
@@ -150,7 +151,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			apiserverContainer := &corev1.Container{
 				Name:    resources.ApiserverDeploymentName,
-				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + version.String(),
+				Image:   registry.Must(data.RewriteImage(resources.RegistryK8S + "/kube-apiserver:v" + version.String())),
 				Command: []string{"/usr/local/bin/kube-apiserver"},
 				Env:     envVars,
 				Args:    flags,
@@ -235,7 +236,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
 						Name:    auditLogsSidecarName,
-						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.9.5",
+						Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/fluent/fluent-bit:1.9.5")),
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
 						Args:    []string{"-c", "/etc/fluent-bit/fluent-bit.conf"},
 						VolumeMounts: []corev1.VolumeMount{
@@ -299,7 +300,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	admissionPlugins.Insert(cluster.Spec.AdmissionPlugins...)
 
-	address := data.Cluster().GetAddress()
+	address := data.Cluster().Status.Address
 
 	serviceAccountKeyFile := filepath.Join("/etc/kubernetes/service-account-key", resources.ServiceAccountKeySecretKey)
 	flags := []string{
@@ -394,23 +395,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--api-audiences", strings.Join(audiences, ","),
 	)
 
-	if cluster.Spec.Cloud.GCP != nil {
-		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
-	} else {
-		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
-		// This request fails because of security policies disallow external traffic to the node.
-		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
-		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
-		// and https://kubermatic.slack.com/archives/C01EWQZEW69/p1628769575001400
-		if data.IsKonnectivityEnabled() {
-			flags = append(flags, "--kubelet-preferred-address-types", "InternalIP,ExternalIP")
-		} else {
-			flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
-		}
-	}
+	flags = append(flags, "--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(cluster, data.IsKonnectivityEnabled()))
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
-	if cloudProviderName != "" && cloudProviderName != "external" {
+	if cloudProviderName != "" && cloudProviderName != resources.CloudProviderExternalFlag {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
@@ -510,7 +498,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 			ReadOnly:  true,
 		},
 		{
-			Name:      resources.CloudConfigConfigMapName,
+			Name:      resources.CloudConfigSeedSecretName,
 			MountPath: "/etc/kubernetes/cloud",
 			ReadOnly:  true,
 		},
@@ -630,12 +618,10 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 			},
 		},
 		{
-			Name: resources.CloudConfigConfigMapName,
+			Name: resources.CloudConfigSeedSecretName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.CloudConfigConfigMapName,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.CloudConfigSeedSecretName,
 				},
 			},
 		},
@@ -810,7 +796,7 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
 
-	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().GetAddress().InternalName)...), nil
+	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...), nil
 }
 
 func intPtr(n int32) *int32 {

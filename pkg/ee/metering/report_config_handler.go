@@ -36,13 +36,17 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var ReportTypes = sets.NewString("cluster", "namespace")
 
 // swagger:parameters getMeteringReportConfiguration
 type getMeteringReportConfig struct {
@@ -66,9 +70,10 @@ type createReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule  string `json:"schedule"`
-		Interval  int32  `json:"interval"`
-		Retention *int32 `json:"retention,omitempty"`
+		Schedule  string    `json:"schedule"`
+		Interval  int32     `json:"interval"`
+		Retention *int32    `json:"retention,omitempty"`
+		Types     *[]string `json:"types,omitempty"`
 	}
 }
 
@@ -92,6 +97,18 @@ func (m createReportConfigurationReq) Validate() error {
 		}
 	}
 
+	if m.Body.Types != nil {
+		if len(*m.Body.Types) == 0 {
+			return utilerrors.NewBadRequest("at least one report type is required")
+		}
+
+		for _, reportType := range *m.Body.Types {
+			if !ReportTypes.Has(reportType) {
+				return utilerrors.NewBadRequest("invalid metering type: %s", reportType)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -103,9 +120,10 @@ type updateReportConfigurationReq struct {
 
 	// in: body
 	Body struct {
-		Schedule  string `json:"schedule,omitempty"`
-		Interval  *int32 `json:"interval,omitempty"`
-		Retention *int32 `json:"retention,omitempty"`
+		Schedule  string    `json:"schedule,omitempty"`
+		Interval  *int32    `json:"interval,omitempty"`
+		Retention *int32    `json:"retention,omitempty"`
+		Types     *[]string `json:"types,omitempty"`
 	}
 }
 
@@ -130,6 +148,18 @@ func (m updateReportConfigurationReq) Validate() error {
 	if m.Body.Retention != nil {
 		if *m.Body.Retention < 1 {
 			return utilerrors.NewBadRequest("retention value cannot be smaller than 1.")
+		}
+	}
+
+	if m.Body.Types != nil {
+		if len(*m.Body.Types) == 0 {
+			return utilerrors.NewBadRequest("at least one report type is required")
+		}
+
+		for _, reportType := range *m.Body.Types {
+			if !ReportTypes.Has(reportType) {
+				return utilerrors.NewBadRequest("invalid metering type: %s", reportType)
+			}
 		}
 	}
 
@@ -158,7 +188,7 @@ func DecodeCreateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	return req, nil
@@ -174,7 +204,7 @@ func DecodeUpdateMeteringReportConfigurationReq(r *http.Request) (interface{}, e
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	return req, nil
@@ -206,7 +236,7 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, err
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	for _, seed := range seeds {
@@ -221,6 +251,7 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 				Schedule:  report.Schedule,
 				Interval:  report.Interval,
 				Retention: report.Retention,
+				Types:     report.Types,
 			}, nil
 		}
 	}
@@ -237,7 +268,7 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, err
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
 	var resp []apiv1.MeteringReportConfiguration
@@ -251,6 +282,7 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 				Schedule:  reportConfig.Schedule,
 				Interval:  reportConfig.Interval,
 				Retention: reportConfig.Retention,
+				Types:     reportConfig.Types,
 			})
 		}
 		// Metering configuration is replicated across all seeds.
@@ -262,57 +294,62 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 }
 
 // CreateMeteringReportConfiguration adds new metering report configuration to the existing map.
-func CreateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
+func CreateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter,
+	masterClient ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
 	req, ok := request.(createReportConfigurationReq)
 	if !ok {
-		return utilerrors.NewBadRequest("invalid request")
+		return nil, utilerrors.NewBadRequest("invalid request")
 	}
 
 	if err := req.Validate(); err != nil {
-		return utilerrors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	seeds, err := seedsGetter()
 	if err != nil {
-		return fmt.Errorf("failed listing seeds: %w", err)
+		return nil, fmt.Errorf("failed listing seeds: %w", err)
 	}
 
+	var meteringConf *apiv1.MeteringReportConfiguration
 	for _, seed := range seeds {
-		if err := createMeteringReportConfiguration(ctx, req, seed, masterClient); err != nil {
-			return err
+		if meteringConf, err = createMeteringReportConfiguration(ctx, req, seed, masterClient); err != nil {
+			return meteringConf, err
 		}
 	}
 
-	return nil
+	return meteringConf, nil
 }
 
 // UpdateMeteringReportConfiguration adds new metering report configuration to the existing map.
-func UpdateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
+func UpdateMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter,
+	masterClient ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
 	req, ok := request.(updateReportConfigurationReq)
 	if !ok {
-		return utilerrors.NewBadRequest("invalid request")
+		return nil, utilerrors.NewBadRequest("invalid request")
 	}
 
 	if err := req.Validate(); err != nil {
-		return utilerrors.NewBadRequest(err.Error())
+		return nil, utilerrors.NewBadRequest(err.Error())
 	}
 
 	seeds, err := seedsGetter()
 	if err != nil {
-		return fmt.Errorf("failed listing seeds: %w", err)
+		return nil, fmt.Errorf("failed listing seeds: %w", err)
 	}
 
+	var meteringConf *apiv1.MeteringReportConfiguration
 	for _, seed := range seeds {
-		if err := updateMeteringReportConfiguration(ctx, req, seed, masterClient); err != nil {
-			return err
+		if meteringConf, err = updateMeteringReportConfiguration(ctx, req, seed, masterClient); err != nil {
+			return meteringConf, err
 		}
 	}
 
-	return nil
+	return meteringConf, nil
 }
 
 // DeleteMeteringReportConfiguration removes metering report configuration from the existing map.
-func DeleteMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter, masterClient ctrlruntimeclient.Client) error {
+func DeleteMeteringReportConfiguration(ctx context.Context, request interface{}, seedsGetter provider.SeedsGetter,
+	masterClient ctrlruntimeclient.Client) error {
 	req, ok := request.(deleteMeteringReportConfig)
 	if !ok {
 		return utilerrors.NewBadRequest("invalid request")
@@ -332,9 +369,10 @@ func DeleteMeteringReportConfiguration(ctx context.Context, request interface{},
 	return nil
 }
 
-func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createReportConfigurationReq, seed *kubermaticv1.Seed, masterClient ctrlruntimeclient.Client) error {
+func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createReportConfigurationReq,
+	seed *kubermaticv1.Seed, masterClient ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
 	if seed.Spec.Metering == nil {
-		return fmt.Errorf("metering configuration for %q does not exist", seed.Name)
+		return nil, fmt.Errorf("metering configuration for %q does not exist", seed.Name)
 	}
 
 	if seed.Spec.Metering.ReportConfigurations == nil {
@@ -342,9 +380,14 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 	}
 
 	if _, exists := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]; exists {
-		return utilerrors.New(
+		return nil, utilerrors.New(
 			http.StatusConflict,
 			fmt.Sprintf("report configuration %q already exists", reportCfgReq.Name))
+	}
+
+	if reportCfgReq.Body.Types == nil || len(*reportCfgReq.Body.Types) == 0 {
+		defaultTypes := ReportTypes.List()
+		reportCfgReq.Body.Types = &defaultTypes
 	}
 
 	if reportCfgReq.Body.Retention != nil {
@@ -353,29 +396,39 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 			Interval:  uint32(reportCfgReq.Body.Interval),
 			Schedule:  reportCfgReq.Body.Schedule,
 			Retention: &retention,
+			Types:     *reportCfgReq.Body.Types,
 		}
 	} else {
 		seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name] = &kubermaticv1.MeteringReportConfiguration{
 			Interval:  uint32(reportCfgReq.Body.Interval),
 			Schedule:  reportCfgReq.Body.Schedule,
 			Retention: nil,
+			Types:     *reportCfgReq.Body.Types,
 		}
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
-		return fmt.Errorf("failed to create report configuration %q in seed %q: %w", reportCfgReq.Name, seed.Name, err)
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return nil
+	createdConfig := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]
+	return &apiv1.MeteringReportConfiguration{
+		Name:      reportCfgReq.Name,
+		Schedule:  createdConfig.Schedule,
+		Interval:  createdConfig.Interval,
+		Retention: createdConfig.Retention,
+		Types:     createdConfig.Types,
+	}, nil
 }
 
-func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateReportConfigurationReq, seed *kubermaticv1.Seed, masterClient ctrlruntimeclient.Client) error {
+func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateReportConfigurationReq,
+	seed *kubermaticv1.Seed, masterClient ctrlruntimeclient.Client) (*apiv1.MeteringReportConfiguration, error) {
 	if seed.Spec.Metering == nil || seed.Spec.Metering.ReportConfigurations == nil {
-		return fmt.Errorf("metering report configuration map for %q does not exist", seed.Name)
+		return nil, fmt.Errorf("metering report configuration map for %q does not exist", seed.Name)
 	}
 
 	if _, exists := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]; !exists {
-		return utilerrors.New(
+		return nil, utilerrors.New(
 			http.StatusNotFound,
 			fmt.Sprintf("report configuration %q does not exists", reportCfgReq.Name))
 	}
@@ -397,11 +450,22 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 		reportConfiguration.Retention = &retention
 	}
 
-	if err := masterClient.Update(ctx, seed); err != nil {
-		return fmt.Errorf("failed to update report configuration %q in seed %q: %w", reportCfgReq.Name, seed.Name, err)
+	if reportCfgReq.Body.Types != nil && len(*reportCfgReq.Body.Types) > 0 {
+		reportConfiguration.Types = *reportCfgReq.Body.Types
 	}
 
-	return nil
+	if err := masterClient.Update(ctx, seed); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	updatedConfig := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]
+	return &apiv1.MeteringReportConfiguration{
+		Name:      reportCfgReq.Name,
+		Schedule:  updatedConfig.Schedule,
+		Interval:  updatedConfig.Interval,
+		Retention: updatedConfig.Retention,
+		Types:     updatedConfig.Types,
+	}, nil
 }
 
 func deleteMeteringReportConfiguration(ctx context.Context, reportConfigName string, seed *kubermaticv1.Seed, masterClinet ctrlruntimeclient.Client) error {
@@ -416,7 +480,7 @@ func deleteMeteringReportConfiguration(ctx context.Context, reportConfigName str
 
 	delete(seed.Spec.Metering.ReportConfigurations, reportConfigName)
 	if err := masterClinet.Update(ctx, seed); err != nil {
-		return fmt.Errorf("failed to remove report configuration %q from %q: %w", reportConfigName, seed.Name, err)
+		return common.KubernetesErrorToHTTPError(err)
 	}
 
 	return nil

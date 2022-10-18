@@ -14,7 +14,7 @@ The command which will execute the following tests:
 - Simple LB (Only: AWS & Azure)
   The [Hello Kubernetes](https://kubernetes.io/docs/tasks/access-application-cluster/service-access-application-cluster/#creating-a-service-for-an-application-running-in-two-pods) Pod will be deployed with a Service of type LoadBalancer.
   The test will wait until the LoadBalancer is available and only report a success when the "Hello Kubernetes" Pod could be reached via the LoadBalancer IP(Or DNS).
-- [Kubernetes Conformance tests](https://github.com/kubernetes/community/blob/master/contributors/devel/conformance-tests.md#running-conformance-tests) (First all parallel, afterwards all serial tests)
+- [Kubernetes Conformance tests](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/conformance-tests.md) (First all parallel, afterwards all serial tests)
 
 ## Caveats
 

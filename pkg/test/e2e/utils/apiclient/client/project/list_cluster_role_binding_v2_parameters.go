@@ -52,10 +52,12 @@ func NewListClusterRoleBindingV2ParamsWithHTTPClient(client *http.Client) *ListC
 	}
 }
 
-/* ListClusterRoleBindingV2Params contains all the parameters to send to the API endpoint
-   for the list cluster role binding v2 operation.
+/*
+ListClusterRoleBindingV2Params contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list cluster role binding v2 operation.
+
+	Typically these are written to a http.Request.
 */
 type ListClusterRoleBindingV2Params struct {
 

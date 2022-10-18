@@ -18,23 +18,23 @@ limitations under the License.
 //
 // This spec describes possible operations which can be made against the Kubermatic Kubernetes Platform API.
 //
-//     Schemes: https
-//     Version: 2.21
+//	Schemes: https
+//	Version: 2.22
 //
-//     Consumes:
-//     - application/json
+//	Consumes:
+//	- application/json
 //
-//     Produces:
-//     - application/json
+//	Produces:
+//	- application/json
 //
-//     Security:
-//     - api_key:
+//	Security:
+//	- api_key:
 //
-//     SecurityDefinitions:
-//     api_key:
-//          type: apiKey
-//          name: Authorization
-//          in: header
+//	SecurityDefinitions:
+//	api_key:
+//	     type: apiKey
+//	     name: Authorization
+//	     in: header
 //
 // swagger:meta
 package main
@@ -220,9 +220,9 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 
 	var configGetter provider.KubermaticConfigurationGetter
 	if options.kubermaticConfiguration != nil {
-		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+		configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
 	} else {
-		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(client, options.namespace)
+		configGetter, err = kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(client, options.namespace)
 	}
 	if err != nil {
 		return providers{}, err
@@ -244,7 +244,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions, masterCf
 		return providers{}, errors.New("failed to sync mgr cache")
 	}
 
-	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
+	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 	clusterProviderGetter := clusterProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, seedClientGetter, options)
 
 	presetProvider, err := kubernetesprovider.NewPresetProvider(client)

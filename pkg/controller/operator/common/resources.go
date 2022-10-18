@@ -19,6 +19,7 @@ package common
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
@@ -160,7 +161,7 @@ func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredL
 	}
 }
 
-var versionRegex = regexp.MustCompile(`^(.+)-([0-9]+)-(g[0-9a-f]+)$`)
+var versionRegex = regexp.MustCompile(`^(.+)-([0-9]+)-g[0-9a-f]+$`)
 
 // We compare versions when updating CRDs and this works fine when it comes
 // to "v2.20.1" vs. "v2.20.3". But during development our versions look like
@@ -174,8 +175,33 @@ var versionRegex = regexp.MustCompile(`^(.+)-([0-9]+)-(g[0-9a-f]+)$`)
 func comparableVersionSuffix(version string) string {
 	match := versionRegex.FindStringSubmatch(version)
 	if match == nil {
+		// a plain version number without any suffix needs to be treated special
+		// as otherwise a comparison like "v1.0.0-1-gabcdef > v1.0.0" would not
+		// become true, as semver treats the final tag ("v1.0.0") as the latest
+		// version.
+		parsed, err := semverlib.NewVersion(version)
+		if err != nil {
+			// let the outer version parsing deal with the error
+			return version
+		}
+
+		if parsed.Prerelease() == "" {
+			// Inject zeta as hopefully the highest we ever go in prereleases,
+			// so that "v1.0.0-zeta" > "v1.0.0-beta"
+			return fmt.Sprintf("%s-zeta-0", version)
+		}
+
 		return version
 	}
 
-	return fmt.Sprintf("%s-%09s", match[1], match[2])
+	base := match[1]
+	commits := match[2]
+
+	// a version like "v1.2.3-00007" is not valid, so we must treat
+	// versions without a second segment special
+	if !strings.Contains(base, "-") {
+		return fmt.Sprintf("%s-zeta-%09s", base, commits)
+	}
+
+	return fmt.Sprintf("%s-%09s", base, commits)
 }

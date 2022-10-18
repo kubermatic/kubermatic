@@ -52,10 +52,12 @@ func NewDeleteEtcdBackupConfigParamsWithHTTPClient(client *http.Client) *DeleteE
 	}
 }
 
-/* DeleteEtcdBackupConfigParams contains all the parameters to send to the API endpoint
-   for the delete etcd backup config operation.
+/*
+DeleteEtcdBackupConfigParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the delete etcd backup config operation.
+
+	Typically these are written to a http.Request.
 */
 type DeleteEtcdBackupConfigParams struct {
 

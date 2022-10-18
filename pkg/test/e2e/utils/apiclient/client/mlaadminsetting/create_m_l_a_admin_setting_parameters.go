@@ -54,10 +54,12 @@ func NewCreateMLAAdminSettingParamsWithHTTPClient(client *http.Client) *CreateML
 	}
 }
 
-/* CreateMLAAdminSettingParams contains all the parameters to send to the API endpoint
-   for the create m l a admin setting operation.
+/*
+CreateMLAAdminSettingParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create m l a admin setting operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateMLAAdminSettingParams struct {
 

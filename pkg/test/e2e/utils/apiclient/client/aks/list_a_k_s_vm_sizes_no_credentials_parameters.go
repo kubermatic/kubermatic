@@ -52,10 +52,12 @@ func NewListAKSVMSizesNoCredentialsParamsWithHTTPClient(client *http.Client) *Li
 	}
 }
 
-/* ListAKSVMSizesNoCredentialsParams contains all the parameters to send to the API endpoint
-   for the list a k s VM sizes no credentials operation.
+/*
+ListAKSVMSizesNoCredentialsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list a k s VM sizes no credentials operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAKSVMSizesNoCredentialsParams struct {
 

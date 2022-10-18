@@ -337,10 +337,8 @@ func (r *reconciler) importCluster(ctx context.Context, log *zap.SugaredLogger, 
 	}
 
 	log.Info("Creating kubeone pod to fetch kubeconfig...")
-	if err := r.Create(ctx, generatedPod); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return nil, fmt.Errorf("could not create kubeone pod %s/%s: %w", KubeOneImportPod, generatedPod.Namespace, err)
-		}
+	if err := r.Create(ctx, generatedPod); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return nil, fmt.Errorf("could not create kubeone pod %s/%s: %w", KubeOneImportPod, generatedPod.Namespace, err)
 	}
 
 	// fetch kubeone pod status till its completion
@@ -768,10 +766,8 @@ func (r *reconciler) upgradeCluster(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	log.Info("Creating kubeone pod to upgrade kubeone...")
-	if err := r.Create(ctx, generatedPod); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return nil, err
-		}
+	if err := r.Create(ctx, generatedPod); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return nil, err
 	}
 	log.Info("Waiting kubeone upgrade to complete...")
 
@@ -786,10 +782,8 @@ func (r *reconciler) migrateCluster(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	log.Info("Creating kubeone pod to migrate kubeone...")
-	if err := r.Create(ctx, generatedPod); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return nil, fmt.Errorf("could not create kubeone pod %s/%s to migrate kubeone cluster: %w", generatedPod.Name, generatedPod.Namespace, err)
-		}
+	if err := r.Create(ctx, generatedPod); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return nil, fmt.Errorf("could not create kubeone pod %s/%s to migrate kubeone cluster: %w", generatedPod.Name, generatedPod.Namespace, err)
 	}
 	log.Info("Waiting kubeone container runtime migration to complete...")
 
@@ -813,10 +807,8 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 	kubeOneNamespace := manifestSecret.Namespace
 
 	cm := generateConfigMap(kubeOneNamespace, action)
-	if err := r.Create(ctx, cm); err != nil {
-		if !apierrors.IsAlreadyExists(err) {
-			return nil, fmt.Errorf("failed to create kubeone script configmap: %w", err)
-		}
+	if err := r.Create(ctx, cm); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return nil, fmt.Errorf("failed to create kubeone script configmap: %w", err)
 	}
 
 	envVar := []corev1.EnvVar{}

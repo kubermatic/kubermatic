@@ -24,6 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -82,7 +83,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 type deploymentCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	IsKonnectivityEnabled() bool
 }
 
@@ -119,7 +120,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 				{
 					Name: resources.DNSResolverDeploymentName,
 					// like etcd, this component follows the apiserver version and not the controller-manager version
-					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/" + GetCoreDNSImage(data.Cluster().Status.Versions.Apiserver.Semver()),
+					Image: registry.Must(data.RewriteImage(resources.RegistryK8S + "/" + GetCoreDNSImage(data.Cluster().Status.Versions.Apiserver.Semver()))),
 					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{

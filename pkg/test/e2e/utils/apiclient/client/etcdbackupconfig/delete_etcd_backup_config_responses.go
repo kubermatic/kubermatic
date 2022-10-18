@@ -58,14 +58,44 @@ func NewDeleteEtcdBackupConfigOK() *DeleteEtcdBackupConfigOK {
 	return &DeleteEtcdBackupConfigOK{}
 }
 
-/* DeleteEtcdBackupConfigOK describes a response with status code 200, with default header values.
+/*
+DeleteEtcdBackupConfigOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteEtcdBackupConfigOK struct {
 }
 
+// IsSuccess returns true when this delete etcd backup config o k response has a 2xx status code
+func (o *DeleteEtcdBackupConfigOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete etcd backup config o k response has a 3xx status code
+func (o *DeleteEtcdBackupConfigOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete etcd backup config o k response has a 4xx status code
+func (o *DeleteEtcdBackupConfigOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete etcd backup config o k response has a 5xx status code
+func (o *DeleteEtcdBackupConfigOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete etcd backup config o k response a status code equal to that given
+func (o *DeleteEtcdBackupConfigOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteEtcdBackupConfigOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigOK ", 200)
+}
+
+func (o *DeleteEtcdBackupConfigOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteEtcdBackupConfigUnauthorized() *DeleteEtcdBackupConfigUnauthorized
 	return &DeleteEtcdBackupConfigUnauthorized{}
 }
 
-/* DeleteEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteEtcdBackupConfigUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteEtcdBackupConfigUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete etcd backup config unauthorized response has a 2xx status code
+func (o *DeleteEtcdBackupConfigUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete etcd backup config unauthorized response has a 3xx status code
+func (o *DeleteEtcdBackupConfigUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete etcd backup config unauthorized response has a 4xx status code
+func (o *DeleteEtcdBackupConfigUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete etcd backup config unauthorized response has a 5xx status code
+func (o *DeleteEtcdBackupConfigUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete etcd backup config unauthorized response a status code equal to that given
+func (o *DeleteEtcdBackupConfigUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteEtcdBackupConfigUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigUnauthorized ", 401)
+}
+
+func (o *DeleteEtcdBackupConfigUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteEtcdBackupConfigForbidden() *DeleteEtcdBackupConfigForbidden {
 	return &DeleteEtcdBackupConfigForbidden{}
 }
 
-/* DeleteEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
+/*
+DeleteEtcdBackupConfigForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteEtcdBackupConfigForbidden struct {
 }
 
+// IsSuccess returns true when this delete etcd backup config forbidden response has a 2xx status code
+func (o *DeleteEtcdBackupConfigForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete etcd backup config forbidden response has a 3xx status code
+func (o *DeleteEtcdBackupConfigForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete etcd backup config forbidden response has a 4xx status code
+func (o *DeleteEtcdBackupConfigForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete etcd backup config forbidden response has a 5xx status code
+func (o *DeleteEtcdBackupConfigForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete etcd backup config forbidden response a status code equal to that given
+func (o *DeleteEtcdBackupConfigForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteEtcdBackupConfigForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigForbidden ", 403)
+}
+
+func (o *DeleteEtcdBackupConfigForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfigForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteEtcdBackupConfigDefault(code int) *DeleteEtcdBackupConfigDefault {
 	}
 }
 
-/* DeleteEtcdBackupConfigDefault describes a response with status code -1, with default header values.
+/*
+DeleteEtcdBackupConfigDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteEtcdBackupConfigDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete etcd backup config default response has a 2xx status code
+func (o *DeleteEtcdBackupConfigDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete etcd backup config default response has a 3xx status code
+func (o *DeleteEtcdBackupConfigDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete etcd backup config default response has a 4xx status code
+func (o *DeleteEtcdBackupConfigDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete etcd backup config default response has a 5xx status code
+func (o *DeleteEtcdBackupConfigDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete etcd backup config default response a status code equal to that given
+func (o *DeleteEtcdBackupConfigDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteEtcdBackupConfigDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteEtcdBackupConfigDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_id}][%d] deleteEtcdBackupConfig default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteEtcdBackupConfigDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

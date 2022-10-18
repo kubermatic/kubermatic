@@ -58,7 +58,8 @@ func NewListResourceQuotasOK() *ListResourceQuotasOK {
 	return &ListResourceQuotasOK{}
 }
 
-/* ListResourceQuotasOK describes a response with status code 200, with default header values.
+/*
+ListResourceQuotasOK describes a response with status code 200, with default header values.
 
 ResourceQuota
 */
@@ -66,9 +67,39 @@ type ListResourceQuotasOK struct {
 	Payload []*models.ResourceQuota
 }
 
+// IsSuccess returns true when this list resource quotas o k response has a 2xx status code
+func (o *ListResourceQuotasOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list resource quotas o k response has a 3xx status code
+func (o *ListResourceQuotasOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list resource quotas o k response has a 4xx status code
+func (o *ListResourceQuotasOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list resource quotas o k response has a 5xx status code
+func (o *ListResourceQuotasOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list resource quotas o k response a status code equal to that given
+func (o *ListResourceQuotasOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListResourceQuotasOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotasOK  %+v", 200, o.Payload)
 }
+
+func (o *ListResourceQuotasOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotasOK  %+v", 200, o.Payload)
+}
+
 func (o *ListResourceQuotasOK) GetPayload() []*models.ResourceQuota {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewListResourceQuotasUnauthorized() *ListResourceQuotasUnauthorized {
 	return &ListResourceQuotasUnauthorized{}
 }
 
-/* ListResourceQuotasUnauthorized describes a response with status code 401, with default header values.
+/*
+ListResourceQuotasUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListResourceQuotasUnauthorized struct {
 }
 
+// IsSuccess returns true when this list resource quotas unauthorized response has a 2xx status code
+func (o *ListResourceQuotasUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list resource quotas unauthorized response has a 3xx status code
+func (o *ListResourceQuotasUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list resource quotas unauthorized response has a 4xx status code
+func (o *ListResourceQuotasUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list resource quotas unauthorized response has a 5xx status code
+func (o *ListResourceQuotasUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list resource quotas unauthorized response a status code equal to that given
+func (o *ListResourceQuotasUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListResourceQuotasUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotasUnauthorized ", 401)
+}
+
+func (o *ListResourceQuotasUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotasUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewListResourceQuotasForbidden() *ListResourceQuotasForbidden {
 	return &ListResourceQuotasForbidden{}
 }
 
-/* ListResourceQuotasForbidden describes a response with status code 403, with default header values.
+/*
+ListResourceQuotasForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListResourceQuotasForbidden struct {
 }
 
+// IsSuccess returns true when this list resource quotas forbidden response has a 2xx status code
+func (o *ListResourceQuotasForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list resource quotas forbidden response has a 3xx status code
+func (o *ListResourceQuotasForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list resource quotas forbidden response has a 4xx status code
+func (o *ListResourceQuotasForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list resource quotas forbidden response has a 5xx status code
+func (o *ListResourceQuotasForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list resource quotas forbidden response a status code equal to that given
+func (o *ListResourceQuotasForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListResourceQuotasForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotasForbidden ", 403)
+}
+
+func (o *ListResourceQuotasForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotasForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewListResourceQuotasDefault(code int) *ListResourceQuotasDefault {
 	}
 }
 
-/* ListResourceQuotasDefault describes a response with status code -1, with default header values.
+/*
+ListResourceQuotasDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *ListResourceQuotasDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list resource quotas default response has a 2xx status code
+func (o *ListResourceQuotasDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list resource quotas default response has a 3xx status code
+func (o *ListResourceQuotasDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list resource quotas default response has a 4xx status code
+func (o *ListResourceQuotasDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list resource quotas default response has a 5xx status code
+func (o *ListResourceQuotasDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list resource quotas default response a status code equal to that given
+func (o *ListResourceQuotasDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListResourceQuotasDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotas default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListResourceQuotasDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/quotas][%d] listResourceQuotas default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListResourceQuotasDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

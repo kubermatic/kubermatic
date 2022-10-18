@@ -58,7 +58,8 @@ func NewGetAdminsOK() *GetAdminsOK {
 	return &GetAdminsOK{}
 }
 
-/* GetAdminsOK describes a response with status code 200, with default header values.
+/*
+GetAdminsOK describes a response with status code 200, with default header values.
 
 Admin
 */
@@ -66,9 +67,39 @@ type GetAdminsOK struct {
 	Payload []*models.Admin
 }
 
+// IsSuccess returns true when this get admins o k response has a 2xx status code
+func (o *GetAdminsOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this get admins o k response has a 3xx status code
+func (o *GetAdminsOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get admins o k response has a 4xx status code
+func (o *GetAdminsOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get admins o k response has a 5xx status code
+func (o *GetAdminsOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get admins o k response a status code equal to that given
+func (o *GetAdminsOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *GetAdminsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsOK  %+v", 200, o.Payload)
 }
+
+func (o *GetAdminsOK) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsOK  %+v", 200, o.Payload)
+}
+
 func (o *GetAdminsOK) GetPayload() []*models.Admin {
 	return o.Payload
 }
@@ -88,14 +119,44 @@ func NewGetAdminsUnauthorized() *GetAdminsUnauthorized {
 	return &GetAdminsUnauthorized{}
 }
 
-/* GetAdminsUnauthorized describes a response with status code 401, with default header values.
+/*
+GetAdminsUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetAdminsUnauthorized struct {
 }
 
+// IsSuccess returns true when this get admins unauthorized response has a 2xx status code
+func (o *GetAdminsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get admins unauthorized response has a 3xx status code
+func (o *GetAdminsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get admins unauthorized response has a 4xx status code
+func (o *GetAdminsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get admins unauthorized response has a 5xx status code
+func (o *GetAdminsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get admins unauthorized response a status code equal to that given
+func (o *GetAdminsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *GetAdminsUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsUnauthorized ", 401)
+}
+
+func (o *GetAdminsUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsUnauthorized ", 401)
 }
 
@@ -109,14 +170,44 @@ func NewGetAdminsForbidden() *GetAdminsForbidden {
 	return &GetAdminsForbidden{}
 }
 
-/* GetAdminsForbidden describes a response with status code 403, with default header values.
+/*
+GetAdminsForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type GetAdminsForbidden struct {
 }
 
+// IsSuccess returns true when this get admins forbidden response has a 2xx status code
+func (o *GetAdminsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get admins forbidden response has a 3xx status code
+func (o *GetAdminsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get admins forbidden response has a 4xx status code
+func (o *GetAdminsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get admins forbidden response has a 5xx status code
+func (o *GetAdminsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get admins forbidden response a status code equal to that given
+func (o *GetAdminsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *GetAdminsForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsForbidden ", 403)
+}
+
+func (o *GetAdminsForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdminsForbidden ", 403)
 }
 
@@ -132,7 +223,8 @@ func NewGetAdminsDefault(code int) *GetAdminsDefault {
 	}
 }
 
-/* GetAdminsDefault describes a response with status code -1, with default header values.
+/*
+GetAdminsDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -147,9 +239,39 @@ func (o *GetAdminsDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this get admins default response has a 2xx status code
+func (o *GetAdminsDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this get admins default response has a 3xx status code
+func (o *GetAdminsDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this get admins default response has a 4xx status code
+func (o *GetAdminsDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this get admins default response has a 5xx status code
+func (o *GetAdminsDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this get admins default response a status code equal to that given
+func (o *GetAdminsDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *GetAdminsDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdmins default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *GetAdminsDefault) String() string {
+	return fmt.Sprintf("[GET /api/v1/admin][%d] getAdmins default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *GetAdminsDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

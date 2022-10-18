@@ -58,7 +58,8 @@ func NewListVersionsByCNIPluginOK() *ListVersionsByCNIPluginOK {
 	return &ListVersionsByCNIPluginOK{}
 }
 
-/* ListVersionsByCNIPluginOK describes a response with status code 200, with default header values.
+/*
+ListVersionsByCNIPluginOK describes a response with status code 200, with default header values.
 
 CNIVersions
 */
@@ -66,9 +67,39 @@ type ListVersionsByCNIPluginOK struct {
 	Payload *models.CNIVersions
 }
 
+// IsSuccess returns true when this list versions by c n i plugin o k response has a 2xx status code
+func (o *ListVersionsByCNIPluginOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this list versions by c n i plugin o k response has a 3xx status code
+func (o *ListVersionsByCNIPluginOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list versions by c n i plugin o k response has a 4xx status code
+func (o *ListVersionsByCNIPluginOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this list versions by c n i plugin o k response has a 5xx status code
+func (o *ListVersionsByCNIPluginOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list versions by c n i plugin o k response a status code equal to that given
+func (o *ListVersionsByCNIPluginOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *ListVersionsByCNIPluginOK) Error() string {
 	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPluginOK  %+v", 200, o.Payload)
 }
+
+func (o *ListVersionsByCNIPluginOK) String() string {
+	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPluginOK  %+v", 200, o.Payload)
+}
+
 func (o *ListVersionsByCNIPluginOK) GetPayload() *models.CNIVersions {
 	return o.Payload
 }
@@ -90,14 +121,44 @@ func NewListVersionsByCNIPluginUnauthorized() *ListVersionsByCNIPluginUnauthoriz
 	return &ListVersionsByCNIPluginUnauthorized{}
 }
 
-/* ListVersionsByCNIPluginUnauthorized describes a response with status code 401, with default header values.
+/*
+ListVersionsByCNIPluginUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListVersionsByCNIPluginUnauthorized struct {
 }
 
+// IsSuccess returns true when this list versions by c n i plugin unauthorized response has a 2xx status code
+func (o *ListVersionsByCNIPluginUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list versions by c n i plugin unauthorized response has a 3xx status code
+func (o *ListVersionsByCNIPluginUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list versions by c n i plugin unauthorized response has a 4xx status code
+func (o *ListVersionsByCNIPluginUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list versions by c n i plugin unauthorized response has a 5xx status code
+func (o *ListVersionsByCNIPluginUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list versions by c n i plugin unauthorized response a status code equal to that given
+func (o *ListVersionsByCNIPluginUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *ListVersionsByCNIPluginUnauthorized) Error() string {
+	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPluginUnauthorized ", 401)
+}
+
+func (o *ListVersionsByCNIPluginUnauthorized) String() string {
 	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPluginUnauthorized ", 401)
 }
 
@@ -111,14 +172,44 @@ func NewListVersionsByCNIPluginForbidden() *ListVersionsByCNIPluginForbidden {
 	return &ListVersionsByCNIPluginForbidden{}
 }
 
-/* ListVersionsByCNIPluginForbidden describes a response with status code 403, with default header values.
+/*
+ListVersionsByCNIPluginForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type ListVersionsByCNIPluginForbidden struct {
 }
 
+// IsSuccess returns true when this list versions by c n i plugin forbidden response has a 2xx status code
+func (o *ListVersionsByCNIPluginForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this list versions by c n i plugin forbidden response has a 3xx status code
+func (o *ListVersionsByCNIPluginForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this list versions by c n i plugin forbidden response has a 4xx status code
+func (o *ListVersionsByCNIPluginForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this list versions by c n i plugin forbidden response has a 5xx status code
+func (o *ListVersionsByCNIPluginForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this list versions by c n i plugin forbidden response a status code equal to that given
+func (o *ListVersionsByCNIPluginForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *ListVersionsByCNIPluginForbidden) Error() string {
+	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPluginForbidden ", 403)
+}
+
+func (o *ListVersionsByCNIPluginForbidden) String() string {
 	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPluginForbidden ", 403)
 }
 
@@ -134,7 +225,8 @@ func NewListVersionsByCNIPluginDefault(code int) *ListVersionsByCNIPluginDefault
 	}
 }
 
-/* ListVersionsByCNIPluginDefault describes a response with status code -1, with default header values.
+/*
+ListVersionsByCNIPluginDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -149,9 +241,39 @@ func (o *ListVersionsByCNIPluginDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this list versions by c n i plugin default response has a 2xx status code
+func (o *ListVersionsByCNIPluginDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this list versions by c n i plugin default response has a 3xx status code
+func (o *ListVersionsByCNIPluginDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this list versions by c n i plugin default response has a 4xx status code
+func (o *ListVersionsByCNIPluginDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this list versions by c n i plugin default response has a 5xx status code
+func (o *ListVersionsByCNIPluginDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this list versions by c n i plugin default response a status code equal to that given
+func (o *ListVersionsByCNIPluginDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *ListVersionsByCNIPluginDefault) Error() string {
 	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPlugin default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *ListVersionsByCNIPluginDefault) String() string {
+	return fmt.Sprintf("[GET /api/v2/cni/{cni_plugin_type}/versions][%d] listVersionsByCNIPlugin default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *ListVersionsByCNIPluginDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

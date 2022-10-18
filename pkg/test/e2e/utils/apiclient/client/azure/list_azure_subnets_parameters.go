@@ -52,10 +52,12 @@ func NewListAzureSubnetsParamsWithHTTPClient(client *http.Client) *ListAzureSubn
 	}
 }
 
-/* ListAzureSubnetsParams contains all the parameters to send to the API endpoint
-   for the list azure subnets operation.
+/*
+ListAzureSubnetsParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list azure subnets operation.
+
+	Typically these are written to a http.Request.
 */
 type ListAzureSubnetsParams struct {
 

@@ -107,7 +107,7 @@ spec:
         effect: NoSchedule
       containers:
       - name: cloud-node-manager
-        image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes/azure-cloud-node-manager:{{ $version }}
+        image: {{ Image (print "mcr.microsoft.com/oss/kubernetes/azure-cloud-node-manager:" $version) }}
         imagePullPolicy: IfNotPresent
         command:
         - cloud-node-manager

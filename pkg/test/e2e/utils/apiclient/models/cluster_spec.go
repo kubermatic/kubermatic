@@ -57,6 +57,9 @@ type ClusterSpec struct {
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 
+	// api server allowed IP ranges
+	APIServerAllowedIPRanges *NetworkRanges `json:"apiServerAllowedIPRanges,omitempty"`
+
 	// audit logging
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 
@@ -71,6 +74,9 @@ type ClusterSpec struct {
 
 	// event rate limit config
 	EventRateLimitConfig *EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
+
+	// expose strategy
+	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 
 	// kubernetes dashboard
 	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
@@ -102,6 +108,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateAPIServerAllowedIPRanges(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateAuditLogging(formats); err != nil {
 		res = append(res, err)
 	}
@@ -119,6 +129,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateEventRateLimitConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateExposeStrategy(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -177,6 +191,25 @@ func (m *ClusterSpec) validateMachineNetworks(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateAPIServerAllowedIPRanges(formats strfmt.Registry) error {
+	if swag.IsZero(m.APIServerAllowedIPRanges) { // not required
+		return nil
+	}
+
+	if m.APIServerAllowedIPRanges != nil {
+		if err := m.APIServerAllowedIPRanges.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("apiServerAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("apiServerAllowedIPRanges")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -272,6 +305,23 @@ func (m *ClusterSpec) validateEventRateLimitConfig(formats strfmt.Registry) erro
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateExposeStrategy(formats strfmt.Registry) error {
+	if swag.IsZero(m.ExposeStrategy) { // not required
+		return nil
+	}
+
+	if err := m.ExposeStrategy.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("exposeStrategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("exposeStrategy")
+		}
+		return err
 	}
 
 	return nil
@@ -416,6 +466,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateAPIServerAllowedIPRanges(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateAuditLogging(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -433,6 +487,10 @@ func (m *ClusterSpec) ContextValidate(ctx context.Context, formats strfmt.Regist
 	}
 
 	if err := m.contextValidateEventRateLimitConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateExposeStrategy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -485,6 +543,22 @@ func (m *ClusterSpec) contextValidateMachineNetworks(ctx context.Context, format
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateAPIServerAllowedIPRanges(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.APIServerAllowedIPRanges != nil {
+		if err := m.APIServerAllowedIPRanges.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("apiServerAllowedIPRanges")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("apiServerAllowedIPRanges")
+			}
+			return err
+		}
 	}
 
 	return nil
@@ -565,6 +639,20 @@ func (m *ClusterSpec) contextValidateEventRateLimitConfig(ctx context.Context, f
 			}
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) contextValidateExposeStrategy(ctx context.Context, formats strfmt.Registry) error {
+
+	if err := m.ExposeStrategy.ContextValidate(ctx, formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("exposeStrategy")
+		} else if ce, ok := err.(*errors.CompositeError); ok {
+			return ce.ValidateName("exposeStrategy")
+		}
+		return err
 	}
 
 	return nil

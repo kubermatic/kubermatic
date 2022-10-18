@@ -117,7 +117,7 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
-	if cluster.GetAddress().ExternalName == "" {
+	if cluster.Status.Address.ExternalName == "" {
 		log.Debug("Skipping cluster reconciling because it has no external name yet")
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
@@ -368,7 +368,7 @@ func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
 	return nil
 }
 
-func (r *datasourceGrafanaController) cleanUpMlaGatewayHealthStatus(ctx context.Context, cluster *kubermaticv1.Cluster, resourceDeletionErr error) error {
+func (r *datasourceGrafanaController) cleanUpMLAGatewayHealthStatus(ctx context.Context, cluster *kubermaticv1.Cluster, resourceDeletionErr error) error {
 	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Remove the health status in Cluster CR
 		c.Status.ExtendedHealth.MLAGateway = nil
@@ -398,7 +398,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluste
 			// If any resources could not be deleted (configmap, secret,.. not only deployment)
 			// The status will be kubermaticv1.HealthStatusDown until everything is cleaned up.
 			// Then the status will be removed
-			if errH := r.cleanUpMlaGatewayHealthStatus(ctx, cluster, err); errH != nil {
+			if errH := r.cleanUpMLAGatewayHealthStatus(ctx, cluster, err); errH != nil {
 				return fmt.Errorf("failed to update mlaGateway status in cluster: %w", errH)
 			}
 			if err != nil && !apierrors.IsNotFound(err) {

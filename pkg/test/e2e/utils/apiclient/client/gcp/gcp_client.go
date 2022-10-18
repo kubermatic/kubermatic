@@ -62,7 +62,7 @@ type ClientService interface {
 }
 
 /*
-  ListGCPDiskTypes Lists disk types from GCP
+ListGCPDiskTypes Lists disk types from GCP
 */
 func (a *Client) ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesOK, error) {
 	// TODO: Validate the params before sending
@@ -100,7 +100,7 @@ func (a *Client) ListGCPDiskTypes(params *ListGCPDiskTypesParams, authInfo runti
 }
 
 /*
-  ListGCPDiskTypesNoCredentials Lists disk types from GCP
+ListGCPDiskTypesNoCredentials Lists disk types from GCP
 */
 func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -138,7 +138,7 @@ func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredent
 }
 
 /*
-  ListGCPDiskTypesNoCredentialsV2 Lists disk types from GCP
+ListGCPDiskTypesNoCredentialsV2 Lists disk types from GCP
 */
 func (a *Client) ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPDiskTypesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -176,7 +176,7 @@ func (a *Client) ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCrede
 }
 
 /*
-  ListGCPNetworks Lists networks from GCP
+ListGCPNetworks Lists networks from GCP
 */
 func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksOK, error) {
 	// TODO: Validate the params before sending
@@ -214,7 +214,7 @@ func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime
 }
 
 /*
-  ListGCPNetworksNoCredentials Lists available GCP networks
+ListGCPNetworksNoCredentials Lists available GCP networks
 */
 func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -252,7 +252,7 @@ func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentia
 }
 
 /*
-  ListGCPNetworksNoCredentialsV2 Lists available GCP networks
+ListGCPNetworksNoCredentialsV2 Lists available GCP networks
 */
 func (a *Client) ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPNetworksNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -290,7 +290,7 @@ func (a *Client) ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredent
 }
 
 /*
-  ListGCPSizes Lists machine sizes from GCP
+ListGCPSizes Lists machine sizes from GCP
 */
 func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesOK, error) {
 	// TODO: Validate the params before sending
@@ -328,7 +328,7 @@ func (a *Client) ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.Clien
 }
 
 /*
-  ListGCPSizesNoCredentials Lists machine sizes from GCP
+ListGCPSizesNoCredentials Lists machine sizes from GCP
 */
 func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -366,7 +366,7 @@ func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsPara
 }
 
 /*
-  ListGCPSizesNoCredentialsV2 Lists machine sizes from GCP
+ListGCPSizesNoCredentialsV2 Lists machine sizes from GCP
 */
 func (a *Client) ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSizesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -404,7 +404,7 @@ func (a *Client) ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2
 }
 
 /*
-  ListGCPSubnetworks Lists subnetworks from GCP
+ListGCPSubnetworks Lists subnetworks from GCP
 */
 func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksOK, error) {
 	// TODO: Validate the params before sending
@@ -442,7 +442,7 @@ func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo r
 }
 
 /*
-  ListGCPSubnetworksNoCredentials Lists available GCP subnetworks
+ListGCPSubnetworksNoCredentials Lists available GCP subnetworks
 */
 func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -480,7 +480,7 @@ func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCre
 }
 
 /*
-  ListGCPSubnetworksNoCredentialsV2 Lists available GCP subnetworks
+ListGCPSubnetworksNoCredentialsV2 Lists available GCP subnetworks
 */
 func (a *Client) ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPSubnetworksNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending
@@ -518,7 +518,7 @@ func (a *Client) ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoC
 }
 
 /*
-  ListGCPZones Lists available GCP zones
+ListGCPZones Lists available GCP zones
 */
 func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesOK, error) {
 	// TODO: Validate the params before sending
@@ -556,7 +556,7 @@ func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.Clien
 }
 
 /*
-  ListGCPZonesNoCredentials Lists available GCP zones
+ListGCPZonesNoCredentials Lists available GCP zones
 */
 func (a *Client) ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesNoCredentialsOK, error) {
 	// TODO: Validate the params before sending
@@ -594,7 +594,7 @@ func (a *Client) ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsPara
 }
 
 /*
-  ListGCPZonesNoCredentialsV2 Lists available GCP zones
+ListGCPZonesNoCredentialsV2 Lists available GCP zones
 */
 func (a *Client) ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGCPZonesNoCredentialsV2OK, error) {
 	// TODO: Validate the params before sending

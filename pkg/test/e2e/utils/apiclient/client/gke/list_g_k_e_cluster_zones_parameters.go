@@ -52,10 +52,12 @@ func NewListGKEClusterZonesParamsWithHTTPClient(client *http.Client) *ListGKEClu
 	}
 }
 
-/* ListGKEClusterZonesParams contains all the parameters to send to the API endpoint
-   for the list g k e cluster zones operation.
+/*
+ListGKEClusterZonesParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the list g k e cluster zones operation.
+
+	Typically these are written to a http.Request.
 */
 type ListGKEClusterZonesParams struct {
 

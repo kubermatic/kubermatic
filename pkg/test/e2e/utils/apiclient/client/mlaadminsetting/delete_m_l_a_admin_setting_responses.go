@@ -58,14 +58,44 @@ func NewDeleteMLAAdminSettingOK() *DeleteMLAAdminSettingOK {
 	return &DeleteMLAAdminSettingOK{}
 }
 
-/* DeleteMLAAdminSettingOK describes a response with status code 200, with default header values.
+/*
+DeleteMLAAdminSettingOK describes a response with status code 200, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteMLAAdminSettingOK struct {
 }
 
+// IsSuccess returns true when this delete m l a admin setting o k response has a 2xx status code
+func (o *DeleteMLAAdminSettingOK) IsSuccess() bool {
+	return true
+}
+
+// IsRedirect returns true when this delete m l a admin setting o k response has a 3xx status code
+func (o *DeleteMLAAdminSettingOK) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete m l a admin setting o k response has a 4xx status code
+func (o *DeleteMLAAdminSettingOK) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete m l a admin setting o k response has a 5xx status code
+func (o *DeleteMLAAdminSettingOK) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete m l a admin setting o k response a status code equal to that given
+func (o *DeleteMLAAdminSettingOK) IsCode(code int) bool {
+	return code == 200
+}
+
 func (o *DeleteMLAAdminSettingOK) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSettingOK ", 200)
+}
+
+func (o *DeleteMLAAdminSettingOK) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSettingOK ", 200)
 }
 
@@ -79,14 +109,44 @@ func NewDeleteMLAAdminSettingUnauthorized() *DeleteMLAAdminSettingUnauthorized {
 	return &DeleteMLAAdminSettingUnauthorized{}
 }
 
-/* DeleteMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
+/*
+DeleteMLAAdminSettingUnauthorized describes a response with status code 401, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteMLAAdminSettingUnauthorized struct {
 }
 
+// IsSuccess returns true when this delete m l a admin setting unauthorized response has a 2xx status code
+func (o *DeleteMLAAdminSettingUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete m l a admin setting unauthorized response has a 3xx status code
+func (o *DeleteMLAAdminSettingUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete m l a admin setting unauthorized response has a 4xx status code
+func (o *DeleteMLAAdminSettingUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete m l a admin setting unauthorized response has a 5xx status code
+func (o *DeleteMLAAdminSettingUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete m l a admin setting unauthorized response a status code equal to that given
+func (o *DeleteMLAAdminSettingUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
 func (o *DeleteMLAAdminSettingUnauthorized) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSettingUnauthorized ", 401)
+}
+
+func (o *DeleteMLAAdminSettingUnauthorized) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSettingUnauthorized ", 401)
 }
 
@@ -100,14 +160,44 @@ func NewDeleteMLAAdminSettingForbidden() *DeleteMLAAdminSettingForbidden {
 	return &DeleteMLAAdminSettingForbidden{}
 }
 
-/* DeleteMLAAdminSettingForbidden describes a response with status code 403, with default header values.
+/*
+DeleteMLAAdminSettingForbidden describes a response with status code 403, with default header values.
 
 EmptyResponse is a empty response
 */
 type DeleteMLAAdminSettingForbidden struct {
 }
 
+// IsSuccess returns true when this delete m l a admin setting forbidden response has a 2xx status code
+func (o *DeleteMLAAdminSettingForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete m l a admin setting forbidden response has a 3xx status code
+func (o *DeleteMLAAdminSettingForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete m l a admin setting forbidden response has a 4xx status code
+func (o *DeleteMLAAdminSettingForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete m l a admin setting forbidden response has a 5xx status code
+func (o *DeleteMLAAdminSettingForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete m l a admin setting forbidden response a status code equal to that given
+func (o *DeleteMLAAdminSettingForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
 func (o *DeleteMLAAdminSettingForbidden) Error() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSettingForbidden ", 403)
+}
+
+func (o *DeleteMLAAdminSettingForbidden) String() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSettingForbidden ", 403)
 }
 
@@ -123,7 +213,8 @@ func NewDeleteMLAAdminSettingDefault(code int) *DeleteMLAAdminSettingDefault {
 	}
 }
 
-/* DeleteMLAAdminSettingDefault describes a response with status code -1, with default header values.
+/*
+DeleteMLAAdminSettingDefault describes a response with status code -1, with default header values.
 
 errorResponse
 */
@@ -138,9 +229,39 @@ func (o *DeleteMLAAdminSettingDefault) Code() int {
 	return o._statusCode
 }
 
+// IsSuccess returns true when this delete m l a admin setting default response has a 2xx status code
+func (o *DeleteMLAAdminSettingDefault) IsSuccess() bool {
+	return o._statusCode/100 == 2
+}
+
+// IsRedirect returns true when this delete m l a admin setting default response has a 3xx status code
+func (o *DeleteMLAAdminSettingDefault) IsRedirect() bool {
+	return o._statusCode/100 == 3
+}
+
+// IsClientError returns true when this delete m l a admin setting default response has a 4xx status code
+func (o *DeleteMLAAdminSettingDefault) IsClientError() bool {
+	return o._statusCode/100 == 4
+}
+
+// IsServerError returns true when this delete m l a admin setting default response has a 5xx status code
+func (o *DeleteMLAAdminSettingDefault) IsServerError() bool {
+	return o._statusCode/100 == 5
+}
+
+// IsCode returns true when this delete m l a admin setting default response a status code equal to that given
+func (o *DeleteMLAAdminSettingDefault) IsCode(code int) bool {
+	return o._statusCode == code
+}
+
 func (o *DeleteMLAAdminSettingDefault) Error() string {
 	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSetting default  %+v", o._statusCode, o.Payload)
 }
+
+func (o *DeleteMLAAdminSettingDefault) String() string {
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/mlaadminsetting][%d] deleteMLAAdminSetting default  %+v", o._statusCode, o.Payload)
+}
+
 func (o *DeleteMLAAdminSettingDefault) GetPayload() *models.ErrorResponse {
 	return o.Payload
 }

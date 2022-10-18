@@ -54,10 +54,12 @@ func NewUpdateApplicationInstallationParamsWithHTTPClient(client *http.Client) *
 	}
 }
 
-/* UpdateApplicationInstallationParams contains all the parameters to send to the API endpoint
-   for the update application installation operation.
+/*
+UpdateApplicationInstallationParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the update application installation operation.
+
+	Typically these are written to a http.Request.
 */
 type UpdateApplicationInstallationParams struct {
 

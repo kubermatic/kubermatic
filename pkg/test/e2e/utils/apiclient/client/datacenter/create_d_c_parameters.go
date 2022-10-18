@@ -52,10 +52,12 @@ func NewCreateDCParamsWithHTTPClient(client *http.Client) *CreateDCParams {
 	}
 }
 
-/* CreateDCParams contains all the parameters to send to the API endpoint
-   for the create d c operation.
+/*
+CreateDCParams contains all the parameters to send to the API endpoint
 
-   Typically these are written to a http.Request.
+	for the create d c operation.
+
+	Typically these are written to a http.Request.
 */
 type CreateDCParams struct {
 
