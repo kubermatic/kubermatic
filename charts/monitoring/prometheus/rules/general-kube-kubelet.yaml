@@ -61,17 +61,10 @@ groups:
         annotations:
           message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close to the limit of 110.
           runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubelettoomanypods
-        expr:  |
-          count by(cluster, node) (
-          (kube_pod_status_phase{job="kube-state-metrics",phase="Running"} == 1) * on(instance,pod,namespace,cluster) group_left(node) topk by(instance,pod,namespace,cluster) (1, kube_pod_info{job="kube-state-metrics"})
-          )
-          /
-          max by(cluster, node) (
-          kube_node_status_capacity{job="kube-state-metrics",resource="pods"} != 1
-          ) > 0.95 
+        expr: kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
         for: 15m
         labels:
-          severity: info
+          severity: warning
           resource: '{{ $labels.instance }}'
           service: kubelet
       - alert: KubeletClientErrors
@@ -144,76 +137,3 @@ groups:
         for: 1h
         labels:
           severity: warning
-      - alert: KubeContainerWaiting
-        annotations:
-          message: pod/{{ $labels.pod }} in namespace {{ $labels.namespace }} on container {{ $labels.container}} has been in waiting state for longer than 1 hour.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubecontainerwaiting "
-          summary: Pod container waiting longer than 1 hour
-        expr: sum by (namespace, pod, container, cluster) (kube_pod_container_status_waiting_reason{job="kube-state-metrics"}) > 0
-        for: 1h
-        labels:
-          severity: warning
-		      resource: {{ $labels.pod }} in namespace {{ $labels.namespace }} on container {{ $labels.container}}
-		      service: KubeContainer   
-      - alert: KubeHpaReplicasMismatch
-        annotations:
-          message: HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler  }} has not matched the desired number of replicas for longer than 15 minutes.
-          runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubehpareplicasmismatch
-          summary: HPA has not matched descired number of replicas.
-        expr: | 
-          (kube_horizontalpodautoscaler_status_desired_replicas{job="kube-state-metrics"}
-          !=
-          kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics"})
-          and
-          kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics"}
-          >
-          kube_horizontalpodautoscaler_spec_min_replicas{job="kube-state-metrics"})
-          and
-          (kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics"}
-          <
-          kube_horizontalpodautoscaler_spec_max_replicas{job="kube-state-metrics"})
-          and
-          changes(kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics"}[15m]) == 0
-        for: 15m
-        labels:
-          severity: warning
-		      resource: {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler  }}
-		      service: KubeHpaReplicas
-	  - alert: KubeHpaMaxedOut
-      annotations:
-        message: HPA {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler  }} has been running at max replicas for longer than 15 minutes.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubehpamaxedout
-        summary: HPA is running at max replicas
-      expr: |
-        kube_horizontalpodautoscaler_status_current_replicas{job="kube-state-metrics"}
-        ==
-        kube_horizontalpodautoscaler_spec_max_replicas{job="kube-state-metrics"}
-      for: 15m
-      labels:
-        severity: warning
-		    resource: {{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler  }}
-		    service: KubeHpa
-    - alert: KubeletPlegDurationHigh
-      annotations:
-        message: The Kubelet Pod Lifecycle Event Generator has a 99th percentile duration of {{ $value }} seconds on node {{ $labels.node }}.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletplegdurationhigh
-        summary: Kubelet Pod Lifecycle Event Generator is taking too long to relist.
-      expr: |
-        node_quantile:kubelet_pleg_relist_duration_seconds:histogram_quantile{quantile="0.99"} >= 10
-      for: 5m
-      labels:
-        severity: warning
-		    resource: {{ $value }} seconds on node {{ $labels.node }}
-		    service: KubeletPlegDuration
-    - alert: KubeletPodStartUpLatencyHigh
-      annotations:
-        message: Kubelet Pod startup 99th percentile latency is {{ $value }} seconds on node {{ $labels.node }}.
-        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubeletpodstartuplatencyhigh
-        summary: Kubelet Pod startup latency is too high.
-      expr: |
-         histogram_quantile(0.99, sum(rate(kubelet_pod_worker_duration_seconds_bucket{job="kubelet"}[5m])) by (cluster, instance, le)) * on(cluster, instance) group_left(node) kubelet_node_name{job="kubelet"} > 60
-      for: 15m
-      labels:
-        severity: warning
-		    resource: {{ $value }} seconds on node {{ $labels.node }}
-		    service: KubeletPodStartUpLatency
