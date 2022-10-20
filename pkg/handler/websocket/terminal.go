@@ -85,13 +85,13 @@ type TerminalSession struct {
 //
 // OP          DIRECTION  FIELD(S) USED  DESCRIPTION
 // ---------------------------------------------------------------------
-// stdin       fe->be     Data           Keystrokes/paste buffer
-// resize      fe->be     Rows, Cols     New terminal size
-// refresh     fe->be                    Signal to extend expiration time
-// stdout      be->fe     Data           Output from the process
+// stdin       fe->be     Data           Keystrokes/paste buffer.
+// resize      fe->be     Rows, Cols     New terminal size.
+// refresh     fe->be                    Signal to extend expiration time.
+// stdout      be->fe     Data           Output from the process.
 // toast       be->fe     Data           OOB message to be shown to the user.
-// msg         be->fe     Data           Any necessary message from the backend to the frontend
-// expiration  be->fe     Data           Expiration timestamp in seconds
+// msg         be->fe     Data           Any necessary message from the backend to the frontend.
+// expiration  be->fe     Data           Expiration timestamp in seconds.
 type TerminalMessage struct {
 	Op, Data   string
 	Rows, Cols uint16
@@ -214,7 +214,7 @@ func expirationCheckRoutine(ctx context.Context, clusterClient ctrlruntimeclient
 		expirationTime := time.Unix(expirationTimestamp, 0)
 		remainingExpirationTime := time.Until(expirationTime)
 		if remainingExpirationTime < remainingExpirationTimeForWarning {
-			websocketConn.WriteJSON(TerminalMessage{
+			_ = websocketConn.WriteJSON(TerminalMessage{
 				Op:   "expiration",
 				Data: expirationTimestampStr,
 			})
