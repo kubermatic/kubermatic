@@ -9,6 +9,22 @@
 - [v2.20.6](#v2206)
 - [v2.20.7](#v2207)
 - [v2.20.8](#v2208)
+- [v2.20.9](#v2209)
+
+## [v2.20.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.9)
+
+### Bugfixes
+
+- Fixes Openstack `api/v1/providers/openstack/tenants` API endpoint for some cases where "couldn't get projects: couldn't get tenants for region XX: couldn't get identity endpoint: No suitable endpoint could be found in the service catalog." was wrongly returned ([#10968](https://github.com/kubermatic/kubermatic/issues/10968))
+- Fix Seed-Proxy ServiceAccount token not being generated ([#11190](https://github.com/kubermatic/kubermatic/issues/11190))
+
+### Misc
+
+- Set PriorityClassName of konnectivity-agent and openvpn-client to system-cluster-critical ([#11140](https://github.com/kubermatic/kubermatic/issues/11140))
+
+### Updates
+
+- Update konnectivity to v0.0.33 ([#11080](https://github.com/kubermatic/kubermatic/issues/11080))
 
 ## [v2.20.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.8)
 

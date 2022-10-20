@@ -2,6 +2,36 @@
 
 - [v2.21.0](#v2210)
 - [v2.21.1](#v2211)
+- [v2.21.2](#v2212)
+
+## [v2.21.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.2)
+
+### Bugfixes
+
+- Fix wrong quota filtering when VirtualMachineInstancePreset.spec.cpu has no quantity but only other fields ([#11046](https://github.com/kubermatic/kubermatic/issues/11046))
+- Fix API error in extended disk configuration for provider Anexia ([#11050](https://github.com/kubermatic/kubermatic/issues/11050))
+- Fix setting exposeStrategy via KKP cluster API endpoint ([#11061](https://github.com/kubermatic/kubermatic/issues/11061))
+- Fix `--config` flag not being validated in `mirror-images` command in the KKP installer ([#11146](https://github.com/kubermatic/kubermatic/issues/11146))
+- `kubermatic-installer mirror-images` correctly picks up konnectivity and Kubernetes dashboard images ([#11148](https://github.com/kubermatic/kubermatic/issues/11148))
+- Fix Seed-Proxy ServiceAccount token not being generated ([#11190](https://github.com/kubermatic/kubermatic/issues/11190))
+- Fix `convert-kubeconfig` installer command not generating a SA token ([#11197](https://github.com/kubermatic/kubermatic/issues/11197))
+- installer subcommand `mirror-images` correctly mirrors image `kubernetesui/metrics-scraper` now ([#11208](https://github.com/kubermatic/kubermatic/issues/11208))
+- Prevent index out-of-bounds issue when querying GKE external cluster status ([#11213](https://github.com/kubermatic/kubermatic/issues/11213))
+
+### Misc
+
+- Added support for GroupProjectBindings in MLA Grafana ([#11076](https://github.com/kubermatic/kubermatic/issues/11076))
+- Do not require addons flags in `kubermatic-installer mirror-images` and fall back to default addons image ([#11135](https://github.com/kubermatic/kubermatic/issues/11135))
+- Set PriorityClassName of konnectivity-agent and openvpn-client to system-cluster-critical ([#11140](https://github.com/kubermatic/kubermatic/issues/11140))
+
+### Updates
+
+- Upgrade to cilium v1.12.2 and v1.11.9 ([#11013](https://github.com/kubermatic/kubermatic/issues/11013))
+- Add support for Ubuntu 22.04 ([#11072](https://github.com/kubermatic/kubermatic/issues/11072))
+- Update konnectivity to v0.0.33 ([#11080](https://github.com/kubermatic/kubermatic/issues/11080))
+- Upgrade to machine-controller v1.54.2 ([#11090](https://github.com/kubermatic/kubermatic/issues/11090))
+- Upgrade to operating-system-manager v1.1.1 ([#11090](https://github.com/kubermatic/kubermatic/issues/11090))
+
 
 ## [v2.21.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.1)
 
