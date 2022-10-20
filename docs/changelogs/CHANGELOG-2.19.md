@@ -19,7 +19,7 @@
 
 - Set PriorityClassName of konnectivity-agent and openvpn-client to system-cluster-critical ([#11140](https://github.com/kubermatic/kubermatic/issues/11140))
 
-### Update
+### Updates
 
 - Upgrade konnectivity version to v0.0.33 ([#11080](https://github.com/kubermatic/kubermatic/issues/11080))
 

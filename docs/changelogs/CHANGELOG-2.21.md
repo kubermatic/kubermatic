@@ -28,7 +28,6 @@
 
 - Upgrade to cilium v1.12.2 and v1.11.9 ([#11013](https://github.com/kubermatic/kubermatic/issues/11013))
 - Add support for Ubuntu 22.04 ([#11072](https://github.com/kubermatic/kubermatic/issues/11072))
-- Update to machine-controller v1.54.1 ([#11072](https://github.com/kubermatic/kubermatic/issues/11072))
 - Update konnectivity to v0.0.33 ([#11080](https://github.com/kubermatic/kubermatic/issues/11080))
 - Upgrade to machine-controller v1.54.2 ([#11090](https://github.com/kubermatic/kubermatic/issues/11090))
 - Upgrade to operating-system-manager v1.1.1 ([#11090](https://github.com/kubermatic/kubermatic/issues/11090))
