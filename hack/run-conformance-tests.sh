@@ -64,8 +64,8 @@ alibaba)
   ;;
 
 aws)
-  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$(vault kv get -field=accessKeyID dev/e2e-aws)}"
-  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$(vault kv get -field=secretAccessKey dev/e2e-aws)}"
+  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)}"
+  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)}"
   extraArgs="-aws-access-key-id=$AWS_ACCESS_KEY_ID
       -aws-secret-access-key=$AWS_SECRET_ACCESS_KEY"
   ;;
