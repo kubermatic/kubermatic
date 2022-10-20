@@ -46,8 +46,8 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 
-export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
-export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
+export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
+export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
 
 export AZURE_TENANT_ID="${AZURE_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
 export AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
