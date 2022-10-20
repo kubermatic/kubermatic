@@ -21,6 +21,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -39,18 +40,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	END_OF_TRANSMISSION    = "\u0004"
-	timeout                = 2 * time.Minute
-	webTerminalStorage     = "web-terminal-storage"
-	podLifetime            = 30 * time.Minute
-	expirationTimestampKey = "ExpirationTimestamp"
+	END_OF_TRANSMISSION               = "\u0004"
+	timeout                           = 2 * time.Minute
+	webTerminalStorage                = "web-terminal-storage"
+	podLifetime                       = 30 * time.Minute
+	remainingExpirationTimeForWarning = 5 * time.Minute // should be lesser than "podLifetime"
+	expirationCheckInterval           = 1 * time.Minute // should be lesser than "remainingExpirationTimeForWarning"
+	expirationTimestampKey            = "ExpirationTimestamp"
 )
 
 type TerminalConnStatus string
@@ -74,19 +76,25 @@ type TerminalSession struct {
 	websocketConn *websocket.Conn
 	sizeChan      chan remotecommand.TerminalSize
 	doneChan      chan struct{}
+
+	userEmailID   string
+	clusterClient ctrlruntimeclient.Client
 }
 
 // TerminalMessage is the messaging protocol between ShellController and TerminalSession.
 //
-// OP      DIRECTION  FIELD(S) USED  DESCRIPTION
+// OP          DIRECTION  FIELD(S) USED  DESCRIPTION
 // ---------------------------------------------------------------------
-// stdin   fe->be     Data           Keystrokes/paste buffer
-// resize fe->be      Rows, Cols     New terminal size
-// stdout  be->fe     Data           Output from the process
-// toast   be->fe     Data           OOB message to be shown to the user.
+// stdin       fe->be     Data           Keystrokes/paste buffer
+// resize      fe->be     Rows, Cols     New terminal size
+// refresh     fe->be                    Signal to extend expiration time
+// stdout      be->fe     Data           Output from the process
+// toast       be->fe     Data           OOB message to be shown to the user.
+// msg         be->fe     Data           Any necessary message from the backend to the frontend
+// expiration  be->fe     Data           Expiration timestamp in seconds
 type TerminalMessage struct {
-	Op, Data, SessionID string
-	Rows, Cols          uint16
+	Op, Data   string
+	Rows, Cols uint16
 }
 
 // TerminalSize handles pty->process resize events.
@@ -100,7 +108,7 @@ func (t TerminalSession) Next() *remotecommand.TerminalSize {
 	}
 }
 
-// Read handles pty->process messages (stdin, resize).
+// Read handles pty->process messages (stdin, resize, refresh).
 // Called in a loop from remotecommand as long as the process is running.
 func (t TerminalSession) Read(p []byte) (int, error) {
 	_, m, err := t.websocketConn.ReadMessage()
@@ -120,6 +128,8 @@ func (t TerminalSession) Read(p []byte) (int, error) {
 	case "resize":
 		t.sizeChan <- remotecommand.TerminalSize{Width: msg.Cols, Height: msg.Rows}
 		return 0, nil
+	case "refresh":
+		return 0, t.extendExpirationTime(context.Background())
 	default:
 		return copy(p, END_OF_TRANSMISSION), fmt.Errorf("unknown message type '%s'", msg.Op)
 	}
@@ -160,8 +170,56 @@ func (t TerminalSession) Toast(p string) error {
 	return nil
 }
 
+func (t TerminalSession) extendExpirationTime(ctx context.Context) error {
+	return t.clusterClient.Update(ctx,
+		genWebTerminalConfigMap(
+			appName(t.userEmailID),
+		)) // regenerate the configmap to extend the expiration period
+}
+
 func appName(userEmailID string) string {
 	return fmt.Sprintf("webterminal-%s", userEmailID)
+}
+
+func expirationCheckRoutine(ctx context.Context, clusterClient ctrlruntimeclient.Client, userEmailID string, websocketConn *websocket.Conn) {
+	for {
+		time.Sleep(expirationCheckInterval)
+
+		webTerminalConfigMap := &corev1.ConfigMap{}
+		if err := clusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{
+			Namespace: metav1.NamespaceSystem,
+			Name:      appName(userEmailID),
+		}, webTerminalConfigMap); err != nil {
+			log.Logger.Debug(err)
+			continue
+		}
+
+		if webTerminalConfigMap.Data == nil {
+			log.Logger.Debug(errors.New("no data set for webterminal configmap"))
+			break
+		}
+
+		expirationTimestampStr, isExpirationSet := webTerminalConfigMap.Data[expirationTimestampKey]
+		if !isExpirationSet {
+			log.Logger.Debug(errors.New("no expiration set in the webterminal configmap"))
+			break
+		}
+
+		expirationTimestamp, err := strconv.ParseInt(expirationTimestampStr, 10, 64)
+		if err != nil {
+			log.Logger.Debug(errors.New("invalid expiration timestamp in the webterminal configmap"))
+			break
+		}
+
+		expirationTime := time.Unix(expirationTimestamp, 0)
+		remainingExpirationTime := time.Until(expirationTime)
+		if remainingExpirationTime < remainingExpirationTimeForWarning {
+			websocketConn.WriteJSON(TerminalMessage{
+				Op:   "expiration",
+				Data: expirationTimestampStr,
+			})
+		}
+	}
 }
 
 // startProcess is called by terminal session creation.
@@ -219,6 +277,8 @@ func startProcess(ctx context.Context, client ctrlruntimeclient.Client, k8sClien
 	}) {
 		return fmt.Errorf("the WEB terminal Pod is not ready")
 	}
+
+	go expirationCheckRoutine(ctx, client, userEmailID, websocketConn)
 
 	req := k8sClient.CoreV1().RESTClient().Post().
 		Resource("pods").
@@ -350,7 +410,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 }
 
 // Terminal is called for any new websocket connection.
-func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *restclient.Config, userEmailID string) {
+func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.Client, k8sClient kubernetes.Interface, cfg *rest.Config, userEmailID string) {
 	if err := startProcess(
 		ctx,
 		client,
@@ -360,6 +420,8 @@ func Terminal(ctx context.Context, ws *websocket.Conn, client ctrlruntimeclient.
 		[]string{"bash", "-c", "cd /data/terminal && /bin/bash"},
 		TerminalSession{
 			websocketConn: ws,
+			userEmailID:   userEmailID,
+			clusterClient: client,
 		},
 		ws); err != nil {
 		log.Logger.Debug(err)
