@@ -137,6 +137,7 @@ func (j *MachineJig) WithAWS(instanceType string, spotMaxPriceUSD *string) *Mach
 	}
 
 	if spotMaxPriceUSD != nil {
+		cfg.IsSpotInstance = pointer.Bool(true)
 		cfg.SpotInstanceConfig = &awstypes.SpotInstanceConfig{
 			MaxPrice: providerconfig.ConfigVarString{Value: *spotMaxPriceUSD},
 		}
