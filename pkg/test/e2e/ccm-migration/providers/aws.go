@@ -199,7 +199,7 @@ func (c *AWSCredentialsType) GenerateProviderSpec(ctx context.Context, cluster *
 		},
 		Cloud: apiv1.NodeCloudSpec{
 			AWS: &apiv1.AWSNodeSpec{
-				InstanceType:         "t2.medium",
+				InstanceType:         "t3.small",
 				VolumeType:           "gp2",
 				VolumeSize:           100,
 				AvailabilityZone:     *subnet.AvailabilityZone,

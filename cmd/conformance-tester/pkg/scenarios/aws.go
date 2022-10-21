@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	awsInstanceType = "t3.medium"
+	awsInstanceType = "t3.small"
 	awsVolumeType   = "gp2"
 	awsVolumeSize   = 100
 )
