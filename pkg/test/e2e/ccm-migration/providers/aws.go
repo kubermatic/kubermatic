@@ -38,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -198,11 +199,13 @@ func (c *AWSCredentialsType) GenerateProviderSpec(ctx context.Context, cluster *
 		},
 		Cloud: apiv1.NodeCloudSpec{
 			AWS: &apiv1.AWSNodeSpec{
-				InstanceType:     "t2.medium",
-				VolumeType:       "gp2",
-				VolumeSize:       100,
-				AvailabilityZone: *subnet.AvailabilityZone,
-				SubnetID:         *subnet.SubnetId,
+				InstanceType:         "t2.medium",
+				VolumeType:           "gp2",
+				VolumeSize:           100,
+				AvailabilityZone:     *subnet.AvailabilityZone,
+				SubnetID:             *subnet.SubnetId,
+				IsSpotInstance:       pointer.Bool(true),
+				SpotInstanceMaxPrice: pointer.String("0.5"), // USD
 			},
 		},
 	}

@@ -209,16 +209,15 @@ var _ clusterSpec = aws{}
 func (a aws) NodeSpec() models.NodeCloudSpec {
 	return models.NodeCloudSpec{
 		Aws: &models.AWSNodeSpec{
-			AMI:                           "",
-			AssignPublicIP:                true,
-			AvailabilityZone:              "eu-central-1b",
-			InstanceType:                  pointer.String("t3a.small"),
-			IsSpotInstance:                false,
-			SpotInstanceMaxPrice:          "",
-			SpotInstancePersistentRequest: false,
-			SubnetID:                      "subnet-0373d73f016db25c7",
-			VolumeSize:                    pointer.Int32(64),
-			VolumeType:                    pointer.String("standard"),
+			AMI:                  "",
+			AssignPublicIP:       true,
+			AvailabilityZone:     "eu-central-1b",
+			InstanceType:         pointer.String("t3a.small"),
+			IsSpotInstance:       true,
+			SpotInstanceMaxPrice: "0.5",
+			SubnetID:             "subnet-0373d73f016db25c7",
+			VolumeSize:           pointer.Int32(64),
+			VolumeType:           pointer.String("standard"),
 		},
 	}
 }

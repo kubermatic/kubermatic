@@ -131,10 +131,18 @@ func (j *MachineJig) WithClusterClient(client ctrlruntimeclient.Client) *Machine
 	return j
 }
 
-func (j *MachineJig) WithAWS(instanceType string) *MachineJig {
-	return j.WithProviderSpec(awstypes.RawConfig{
+func (j *MachineJig) WithAWS(instanceType string, spotMaxPriceUSD *string) *MachineJig {
+	cfg := awstypes.RawConfig{
 		InstanceType: providerconfig.ConfigVarString{Value: instanceType},
-	})
+	}
+
+	if spotMaxPriceUSD != nil {
+		cfg.SpotInstanceConfig = &awstypes.SpotInstanceConfig{
+			MaxPrice: providerconfig.ConfigVarString{Value: *spotMaxPriceUSD},
+		}
+	}
+
+	return j.WithProviderSpec(cfg)
 }
 
 func (j *MachineJig) WithHetzner(instanceSize string) *MachineJig {

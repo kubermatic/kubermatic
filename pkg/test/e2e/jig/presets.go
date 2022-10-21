@@ -96,7 +96,7 @@ func (j *TestJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.D
 	return errors.New("no cluster created yet")
 }
 
-func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, accessKeyID, secretAccessKey string, replicas int) *TestJig {
+func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, accessKeyID, secretAccessKey string, replicas int, spotMaxPriceUSD *string) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
@@ -114,7 +114,7 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, acce
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithAWS("t3.small")
+		WithAWS("t3.small", spotMaxPriceUSD)
 
 	return &TestJig{
 		ProjectJig: projectJig,
