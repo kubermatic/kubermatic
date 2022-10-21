@@ -53,7 +53,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -88,7 +88,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -124,7 +124,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -166,7 +166,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -207,7 +207,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -402,7 +402,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
