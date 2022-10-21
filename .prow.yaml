@@ -223,7 +223,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -264,7 +264,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -305,7 +305,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
@@ -346,7 +346,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -388,7 +388,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"
