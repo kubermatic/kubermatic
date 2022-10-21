@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	awsInstanceType = "t2.medium"
+	awsInstanceType = "t3.small"
 	awsVolumeType   = "gp2"
 	awsVolumeSize   = 100
 )
@@ -156,11 +156,13 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, replicas int, secrets
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Aws: &apimodels.AWSNodeSpec{
-							InstanceType:     &instanceType,
-							VolumeType:       &volumeType,
-							VolumeSize:       &volumeSize,
-							AvailabilityZone: subnets[0].AvailabilityZone,
-							SubnetID:         subnets[0].ID,
+							InstanceType:         &instanceType,
+							VolumeType:           &volumeType,
+							VolumeSize:           &volumeSize,
+							AvailabilityZone:     subnets[0].AvailabilityZone,
+							SubnetID:             subnets[0].ID,
+							IsSpotInstance:       true,
+							SpotInstanceMaxPrice: "0.5", // USD
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -175,11 +177,13 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, replicas int, secrets
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Aws: &apimodels.AWSNodeSpec{
-							InstanceType:     &instanceType,
-							VolumeType:       &volumeType,
-							VolumeSize:       &volumeSize,
-							AvailabilityZone: subnets[1].AvailabilityZone,
-							SubnetID:         subnets[1].ID,
+							InstanceType:         &instanceType,
+							VolumeType:           &volumeType,
+							VolumeSize:           &volumeSize,
+							AvailabilityZone:     subnets[1].AvailabilityZone,
+							SubnetID:             subnets[1].ID,
+							IsSpotInstance:       true,
+							SpotInstanceMaxPrice: "0.5", // USD
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -194,11 +198,13 @@ func (s *awsScenario) NodeDeployments(ctx context.Context, replicas int, secrets
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Aws: &apimodels.AWSNodeSpec{
-							InstanceType:     &instanceType,
-							VolumeType:       &volumeType,
-							VolumeSize:       &volumeSize,
-							AvailabilityZone: subnets[2].AvailabilityZone,
-							SubnetID:         subnets[2].ID,
+							InstanceType:         &instanceType,
+							VolumeType:           &volumeType,
+							VolumeSize:           &volumeSize,
+							AvailabilityZone:     subnets[2].AvailabilityZone,
+							SubnetID:             subnets[2].ID,
+							IsSpotInstance:       true,
+							SpotInstanceMaxPrice: "0.5", // USD
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
@@ -279,11 +285,13 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			OperatingSystem: *osSpec,
 			Cloud: apiv1.NodeCloudSpec{
 				AWS: &apiv1.AWSNodeSpec{
-					InstanceType:     awsInstanceType,
-					VolumeType:       awsVolumeType,
-					VolumeSize:       awsVolumeSize,
-					AvailabilityZone: *subnet.AvailabilityZone,
-					SubnetID:         *subnet.SubnetId,
+					InstanceType:         awsInstanceType,
+					VolumeType:           awsVolumeType,
+					VolumeSize:           awsVolumeSize,
+					AvailabilityZone:     *subnet.AvailabilityZone,
+					SubnetID:             *subnet.SubnetId,
+					IsSpotInstance:       pointer.Bool(true),
+					SpotInstanceMaxPrice: pointer.String("0.5"), // USD
 				},
 			},
 		}
