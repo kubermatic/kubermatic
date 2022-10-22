@@ -43,6 +43,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -84,6 +85,19 @@ func init() {
 }
 
 func TestCCMMigration(t *testing.T) {
+	switch kubermaticv1.ProviderType(options.provider) {
+	case kubermaticv1.AWSCloudProvider:
+		runtime.Must(options.awsCredentials.Parse())
+	case kubermaticv1.AzureCloudProvider:
+		runtime.Must(options.azureCredentials.Parse())
+	case kubermaticv1.OpenstackCloudProvider:
+		runtime.Must(options.osCredentials.Parse())
+	case kubermaticv1.VSphereCloudProvider:
+		runtime.Must(options.vsphereCredentials.Parse())
+	default:
+		t.Fatalf("Unknown provider %q", options.provider)
+	}
+
 	ctx := context.Background()
 	seedClient, _, _ := e2eutils.GetClientsOrDie()
 	log := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
