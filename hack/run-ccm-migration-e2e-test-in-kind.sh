@@ -54,21 +54,21 @@ PROVIDER_TO_TEST="${PROVIDER}"
 TIMEOUT=30m
 
 case "$PROVIDER_TO_TEST" in
-  openstack)
-    EXTRA_ARGS="-openstack-kkp-datacenter=syseleven-dbl1"
-    ;;
-  vsphere)
-    EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
-    ;;
-  azure)
-    TIMEOUT=45m
-    EXTRA_ARGS="-azure-kkp-datacenter=azure-westeurope"
-    ;;
-  aws)
-    # default version is 1.23, but AWS CCM requires 1.24, so we must explicitly
-    # ask for a 1.24.x cluster
-    EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-central-1a -cluster-version=1.24"
-    ;;
+openstack)
+  EXTRA_ARGS="-openstack-kkp-datacenter=syseleven-dbl1"
+  ;;
+vsphere)
+  EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
+  ;;
+azure)
+  TIMEOUT=45m
+  EXTRA_ARGS="-azure-kkp-datacenter=azure-westeurope"
+  ;;
+aws)
+  # default version is 1.23, but AWS CCM requires 1.24, so we must explicitly
+  # ask for a 1.24.x cluster
+  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-central-1a -cluster-version=1.24"
+  ;;
 esac
 
 # run tests

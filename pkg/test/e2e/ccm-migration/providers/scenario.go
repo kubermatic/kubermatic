@@ -26,12 +26,12 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type failer struct {
+type errorPrinter struct {
 	err error
 }
 
-func (f *failer) Errorf(format string, args ...interface{}) {
-	f.err = fmt.Errorf(format, args...)
+func (p *errorPrinter) Errorf(format string, args ...interface{}) {
+	p.err = fmt.Errorf(format, args...)
 }
 
 type TestScenario interface {
@@ -67,8 +67,8 @@ func (s *commmonScenario) Cleanup(ctx context.Context, cluster *kubermaticv1.Clu
 		return fmt.Errorf("failed to skip node evictions: %w", err)
 	}
 
-	f := failer{}
-	s.testJig.Cleanup(ctx, &f, true)
+	p := errorPrinter{}
+	s.testJig.Cleanup(ctx, &p, true)
 
-	return f.err
+	return p.err
 }
