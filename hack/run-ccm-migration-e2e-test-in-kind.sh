@@ -61,6 +61,7 @@ case "$PROVIDER_TO_TEST" in
     EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
     ;;
   azure)
+    TIMEOUT=45m
     EXTRA_ARGS="-azure-kkp-datacenter=azure-westeurope"
     ;;
   aws)
@@ -79,6 +80,6 @@ echodate "Running CCM tests..."
 go_test ccm_migration_${PROVIDER_TO_TEST} \
   -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
   -v \
-  -timeout 30m \
+  -timeout $TIMEOUT \
   -kubeconfig "${HOME}/.kube/config" \
   -provider "$PROVIDER_TO_TEST"

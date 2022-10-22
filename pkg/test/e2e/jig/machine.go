@@ -631,7 +631,14 @@ func (j *MachineJig) enrichAzureProviderSpec(cluster *kubermaticv1.Cluster, data
 		azureConfig.LoadBalancerSku.Value = string(cluster.Spec.Cloud.Azure.LoadBalancerSKU)
 	}
 
-	azureConfig.Tags = j.clusterTags(cluster)
+	azureConfig.Tags = map[string]string{
+		"KubernetesCluster": cluster.Name,
+		"system-cluster":    cluster.Name,
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		azureConfig.Tags["system-project"] = projectID
+	}
 
 	return azureConfig, nil
 }
