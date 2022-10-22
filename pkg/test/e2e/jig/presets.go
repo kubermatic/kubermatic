@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"testing"
 	"time"
 
 	"go.uber.org/zap"
@@ -58,7 +57,11 @@ func (j *TestJig) Setup(ctx context.Context, waitMode MachineWaitMode) (*kuberma
 	return project, cluster, nil
 }
 
-func (j *TestJig) Cleanup(ctx context.Context, t *testing.T, synchronous bool) {
+type Failer interface {
+	Errorf(format string, args ...interface{})
+}
+
+func (j *TestJig) Cleanup(ctx context.Context, t Failer, synchronous bool) {
 	if j.ClusterJig != nil {
 		if err := j.ClusterJig.Delete(ctx, synchronous); err != nil {
 			t.Errorf("Failed to delete cluster: %v", err)

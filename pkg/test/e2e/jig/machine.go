@@ -31,6 +31,7 @@ import (
 	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	evictiontypes "github.com/kubermatic/machine-controller/pkg/node/eviction/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -47,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -287,14 +289,14 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 
 	if waitMode == WaitForReadyNodes || waitMode == WaitForReadyPods {
 		j.log.Info("Waiting for nodes to become ready...")
-		if err = j.waitForReadyNodes(ctx, clusterClient); err != nil {
+		if err = j.WaitForReadyNodes(ctx, clusterClient); err != nil {
 			return fmt.Errorf("failed to wait: %w", err)
 		}
 	}
 
 	if waitMode == WaitForReadyPods {
 		j.log.Info("Waiting for pods to become ready...")
-		if err = j.waitForReadyPods(ctx, clusterClient); err != nil {
+		if err = j.WaitForReadyPods(ctx, clusterClient); err != nil {
 			return fmt.Errorf("failed to wait: %w", err)
 		}
 	}
@@ -302,7 +304,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 	return nil
 }
 
-func (j *MachineJig) waitForReadyNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
+func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
 	return wait.PollLog(ctx, j.log, 10*time.Second, 15*time.Minute, func() (error, error) {
 		nodeList := corev1.NodeList{}
 		err := clusterClient.List(ctx, &nodeList)
@@ -327,7 +329,7 @@ func (j *MachineJig) waitForReadyNodes(ctx context.Context, clusterClient ctrlru
 	})
 }
 
-func (j *MachineJig) waitForReadyPods(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
+func (j *MachineJig) WaitForReadyPods(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
 	return wait.PollLog(ctx, j.log, 5*time.Second, 5*time.Minute, func() (error, error) {
 		pods := corev1.PodList{}
 		if err := clusterClient.List(ctx, &pods); err != nil {
@@ -351,6 +353,36 @@ func (j *MachineJig) waitForReadyPods(ctx context.Context, clusterClient ctrlrun
 
 		return nil, nil
 	})
+}
+
+func (j *MachineJig) SkipEvictionForAllNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
+	nodes := &corev1.NodeList{}
+	if err := clusterClient.List(ctx, nodes); err != nil {
+		return fmt.Errorf("failed to list user cluster nodes: %w", err)
+	}
+
+	for _, node := range nodes.Items {
+		nodeKey := ctrlruntimeclient.ObjectKey{Name: node.Name}
+		j.log.Debugw("Marking node with skip-eviction...", "node", node.Name)
+
+		retErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			n := corev1.Node{}
+			if err := clusterClient.Get(ctx, nodeKey, &n); err != nil {
+				return err
+			}
+
+			if n.Annotations == nil {
+				n.Annotations = map[string]string{}
+			}
+			n.Annotations[evictiontypes.SkipEvictionAnnotationKey] = "true"
+			return clusterClient.Update(ctx, &n)
+		})
+		if retErr != nil {
+			return fmt.Errorf("failed to annotate node %s: %w", node.Name, retErr)
+		}
+	}
+
+	return nil
 }
 
 func podIsReadyOrCompleted(pod *corev1.Pod) bool {

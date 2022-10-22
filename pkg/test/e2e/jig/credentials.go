@@ -146,27 +146,27 @@ func (c *OpenstackCredentials) Parse() (err error) {
 		return errors.New("no -openstack-kkp-datacenter flag given")
 	}
 
-	if c.Username, err = env("OS_E2E_USERNAME"); err != nil {
+	if c.Username, err = env("OS_USERNAME"); err != nil {
 		return err
 	}
 
-	if c.Password, err = env("OS_E2E_PASSWORD"); err != nil {
+	if c.Password, err = env("OS_PASSWORD"); err != nil {
 		return err
 	}
 
-	if c.Tenant, err = env("OS_E2E_TENANT"); err != nil {
+	if c.Tenant, err = env("OS_TENANT_ID"); err != nil {
 		return err
 	}
 
-	if c.Domain, err = env("OS_E2E_DOMAIN"); err != nil {
+	if c.Domain, err = env("OS_DOMAIN"); err != nil {
 		return err
 	}
 
-	if c.FloatingIPPool, err = env("OS_E2E_FLOATINGIPPOOL"); err != nil {
+	if c.FloatingIPPool, err = env("OS_FLOATING_IP_POOL"); err != nil {
 		return err
 	}
 
-	if c.Network, err = env("OS_E2E_NETWORK"); err != nil {
+	if c.Network, err = env("OS_NETWORK_NAME"); err != nil {
 		return err
 	}
 
