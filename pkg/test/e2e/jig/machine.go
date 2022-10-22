@@ -713,7 +713,14 @@ func (j *MachineJig) enrichOpenstackProviderSpec(cluster *kubermaticv1.Cluster, 
 		openstackConfig.TrustDevicePath.Value = datacenter.TrustDevicePath
 	}
 
-	openstackConfig.Tags = j.clusterTags(cluster)
+	openstackConfig.Tags = map[string]string{
+		"KubernetesCluster": cluster.Name,
+		"system-cluster":    cluster.Name,
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		openstackConfig.Tags["system-project"] = projectID
+	}
 
 	return openstackConfig, nil
 }
