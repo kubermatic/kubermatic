@@ -43,6 +43,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -138,7 +139,7 @@ func setupClusterByProvider(t *testing.T, ctx context.Context, log *zap.SugaredL
 	}
 
 	scenario.ClusterJig().
-		WithName("ccmmigration").
+		WithName("ccmmig-" + rand.String(5)).
 		WithVersion(version.String()).
 		WithFeatures(map[string]bool{
 			kubermaticv1.ClusterFeatureExternalCloudProvider: false,
