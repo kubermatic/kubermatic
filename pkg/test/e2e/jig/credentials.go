@@ -154,7 +154,7 @@ func (c *OpenstackCredentials) Parse() (err error) {
 		return err
 	}
 
-	if c.Tenant, err = env("OS_TENANT_ID"); err != nil {
+	if c.Tenant, err = env("OS_TENANT_NAME"); err != nil {
 		return err
 	}
 
