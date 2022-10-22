@@ -359,6 +359,8 @@ check_all_deployments_ready() {
 }
 
 check_seed_ready() {
+  kubectl --namespace "$1" get seed "$2" --output json | jq '.status'
+  kubectl --namespace "$1" get pods
   status="$(kubectl --namespace "$1" get seed "$2" --output json | jq -r '.status.conditions.ResourcesReconciled.status')"
   if [ "$status" != "True" ]; then
     echodate "Seed does not yet have ResourcesReconciled=True condition."

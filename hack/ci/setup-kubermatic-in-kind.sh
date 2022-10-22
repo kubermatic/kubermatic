@@ -239,15 +239,3 @@ sleep 5
 echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
-
-echodate "Waiting for VPA to be ready..."
-retry 8 check_all_deployments_ready kube-system
-echodate "VPA is ready."
-
-appendTrap cleanup_kubermatic_clusters_in_kind EXIT
-
-TEST_NAME="Expose Dex and Kubermatic API"
-echodate "Exposing Dex and Kubermatic API to localhost..."
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null &
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null &
-echodate "Finished exposing components"
