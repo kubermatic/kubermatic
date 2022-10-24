@@ -31,7 +31,6 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -150,12 +149,7 @@ func setupClusterByProvider(t *testing.T, ctx context.Context, log *zap.SugaredL
 		return nil, nil, nil, err
 	}
 
-	clusterClientProvider, err := clusterclient.NewExternal(seedClient)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	userClient, err := clusterClientProvider.GetClient(ctx, cluster)
+	userClient, err := scenario.ClusterJig().ClusterClient(ctx)
 	if err != nil {
 		return nil, nil, nil, err
 	}
