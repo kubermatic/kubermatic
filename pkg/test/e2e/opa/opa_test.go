@@ -51,7 +51,7 @@ import (
 var (
 	credentials jig.HetznerCredentials
 
-	logOptions            = log.NewDefaultOptions()
+	logOptions            = utils.DefaultLogOptions
 	ctKind                = "RequiredLabels"
 	defaultConstraintName = "testconstraint"
 

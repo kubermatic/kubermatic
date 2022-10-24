@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -36,7 +37,7 @@ import (
 var (
 	credentials jig.BYOCredentials
 
-	logOptions  = log.NewDefaultOptions()
+	logOptions  = utils.DefaultLogOptions
 	skipCleanup = false
 )
 

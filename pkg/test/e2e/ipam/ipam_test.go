@@ -45,7 +45,7 @@ import (
 
 var (
 	credentials jig.HetznerCredentials
-	logOptions  = log.NewDefaultOptions()
+	logOptions  = utils.DefaultLogOptions
 )
 
 func init() {
