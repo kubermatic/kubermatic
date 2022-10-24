@@ -34,6 +34,7 @@ kubermatic)
 
 usercluster-mla)
   export VAULT_VALUES_FIELD=europe-west3-c-mla-values.yaml
+  NO_DOCKER_IMAGES=true ./hack/ci/push-images.sh
   ;;
 
 esac
