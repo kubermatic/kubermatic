@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -39,10 +38,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -55,15 +57,10 @@ type testOptions struct {
 
 	provider string
 
-	vsphereSeedDatacenter string
-	osSeedDatacenter      string
-	azureSeedDatacenter   string
-	awsSeedDatacenter     string
-
-	osCredentials      providers.OpenstackCredentialsType
-	vSphereCredentials providers.VsphereCredentialsType
-	azureCredentials   providers.AzureCredentialsType
-	awsCredentials     providers.AWSCredentialsType
+	osCredentials      jig.OpenstackCredentials
+	vsphereCredentials jig.VSphereCredentials
+	azureCredentials   jig.AzureCredentials
+	awsCredentials     jig.AWSCredentials
 }
 
 func (o testOptions) KubernetesVersion() semver.Semver {
@@ -81,163 +78,93 @@ func init() {
 	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
 	flag.StringVar(&options.kubernetesRelease, "cluster-version", "", "Kubernetes version or release for the usercluster")
 
-	flag.StringVar(&options.osSeedDatacenter, "openstack-seed-datacenter", "", "openstack datacenter")
-	flag.StringVar(&options.vsphereSeedDatacenter, "vsphere-seed-datacenter", "", "vsphere seed datacenter")
-	flag.StringVar(&options.azureSeedDatacenter, "azure-seed-datacenter", "", "azure seed datacenter")
-	flag.StringVar(&options.awsSeedDatacenter, "aws-seed-datacenter", "", "aws seed datacenter")
-
-	flag.StringVar(&options.osCredentials.Username, "openstack-username", "", "openstack username")
-	flag.StringVar(&options.osCredentials.Password, "openstack-password", "", "openstack password")
-	flag.StringVar(&options.osCredentials.Tenant, "openstack-tenant", "", "openstack tenant")
-	flag.StringVar(&options.osCredentials.Domain, "openstack-domain", "", "openstack domain")
-	flag.StringVar(&options.osCredentials.FloatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
-	flag.StringVar(&options.osCredentials.Network, "openstack-network", "", "openstack network")
-
-	flag.StringVar(&options.vSphereCredentials.Username, "vsphere-username", "", "vsphere username")
-	flag.StringVar(&options.vSphereCredentials.Password, "vsphere-password", "", "vsphere password")
-
-	flag.StringVar(&options.azureCredentials.TenantID, "azure-tenant-id", "", "azure tenant id")
-	flag.StringVar(&options.azureCredentials.SubscriptionID, "azure-subscription-id", "", "azure subscription id")
-	flag.StringVar(&options.azureCredentials.ClientID, "azure-client-id", "", "azure client id")
-	flag.StringVar(&options.azureCredentials.ClientSecret, "azure-client-secret", "", "azure client secret")
-
-	flag.StringVar(&options.awsCredentials.AccessKeyID, "aws-access-key-id", "", "AWS access key ID")
-	flag.StringVar(&options.awsCredentials.SecretAccessKey, "aws-secret-access-key", "", "AWS secret access key")
-
+	options.awsCredentials.AddFlags(flag.CommandLine)
+	options.azureCredentials.AddFlags(flag.CommandLine)
+	options.osCredentials.AddFlags(flag.CommandLine)
+	options.vsphereCredentials.AddFlags(flag.CommandLine)
 	options.logOptions.AddFlags(flag.CommandLine)
 }
 
 func TestCCMMigration(t *testing.T) {
-	ctx := context.Background()
-	seedClient, _, _ := e2eutils.GetClientsOrDie()
-
-	clusterClientProvider, err := clusterclient.NewExternal(seedClient)
-	if err != nil {
-		t.Fatalf("Failed to create cluster cluster provider: %v", err)
+	switch kubermaticv1.ProviderType(options.provider) {
+	case kubermaticv1.AWSCloudProvider:
+		runtime.Must(options.awsCredentials.Parse())
+	case kubermaticv1.AzureCloudProvider:
+		runtime.Must(options.azureCredentials.Parse())
+	case kubermaticv1.OpenstackCloudProvider:
+		runtime.Must(options.osCredentials.Parse())
+	case kubermaticv1.VSphereCloudProvider:
+		runtime.Must(options.vsphereCredentials.Parse())
+	default:
+		t.Fatalf("Unknown provider %q", options.provider)
 	}
 
+	ctx := context.Background()
+	seedClient, _, _ := e2eutils.GetClientsOrDie()
+	log := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
+
 	// prepare cluster
-	clusterJig, cluster, userClient, err := setupClusterByProvider(t, ctx, seedClient, clusterClientProvider, options)
+	scenario, cluster, userClient, err := setupClusterByProvider(t, ctx, log, seedClient, options)
 	if err != nil {
 		t.Fatalf("Failed to setup preconditions: %v", err)
 	}
 
 	// run tests
-	if err := testBody(t, ctx, clusterJig, cluster, userClient); err != nil {
+	if err := testBody(t, ctx, log, seedClient, scenario, cluster, userClient); err != nil {
 		t.Error(err)
 	}
 
 	// cleanup
-	if err := clusterJig.Cleanup(ctx, userClient); err != nil {
+	if err := scenario.Cleanup(ctx, cluster, userClient); err != nil {
 		t.Error(err)
 	}
 }
 
-func setupClusterByProvider(t *testing.T, ctx context.Context, seedClient ctrlruntimeclient.Client, clientProvider *clusterclient.Provider, options testOptions) (providers.ClusterJigInterface, *kubermaticv1.Cluster, ctrlruntimeclient.Client, error) {
-	var clusterJig providers.ClusterJigInterface
+func setupClusterByProvider(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, options testOptions) (providers.TestScenario, *kubermaticv1.Cluster, ctrlruntimeclient.Client, error) {
+	var scenario providers.TestScenario
 
-	logger := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
 	version := options.KubernetesVersion()
 
 	switch kubermaticv1.ProviderType(options.provider) {
 	case kubermaticv1.OpenstackCloudProvider:
-		clusterJig = providers.NewClusterJigOpenstack(seedClient, logger, version, options.osSeedDatacenter, options.osCredentials)
+		scenario = providers.NewOpenstackScenario(log, seedClient, options.osCredentials)
 	case kubermaticv1.VSphereCloudProvider:
-		clusterJig = providers.NewClusterJigVsphere(seedClient, logger, version, options.vsphereSeedDatacenter, options.vSphereCredentials)
+		scenario = providers.NewVSphereScenario(log, seedClient, options.vsphereCredentials)
 	case kubermaticv1.AzureCloudProvider:
-		clusterJig = providers.NewClusterJigAzure(seedClient, logger, version, options.azureSeedDatacenter, options.azureCredentials)
+		scenario = providers.NewAzureScenario(log, seedClient, options.azureCredentials)
 	case kubermaticv1.AWSCloudProvider:
-		clusterJig = providers.NewClusterJigAWS(seedClient, logger, version, options.awsSeedDatacenter, options.awsCredentials)
+		scenario = providers.NewAWSScenario(log, seedClient, options.awsCredentials)
 	default:
 		return nil, nil, nil, errors.New("provider not supported for CCM tests")
 	}
 
-	cluster := &kubermaticv1.Cluster{}
-	userClient, err := setupAndGetUserClient(t, ctx, clusterJig, cluster, clientProvider)
+	scenario.ClusterJig().
+		WithName("ccmmig-" + rand.String(5)).
+		WithVersion(version.String()).
+		WithFeatures(map[string]bool{
+			kubermaticv1.ClusterFeatureExternalCloudProvider: false,
+		})
 
-	return clusterJig, cluster, userClient, err
+	cluster, err := scenario.Setup(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	clusterClientProvider, err := clusterclient.NewExternal(seedClient)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	userClient, err := clusterClientProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return scenario, cluster, userClient, err
 }
 
-func setupAndGetUserClient(t *testing.T, ctx context.Context, clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, clusterClientProvider *clusterclient.Provider) (ctrlruntimeclient.Client, error) {
-	logger := clusterJig.Log()
-
-	logger.Info("Setting up cluster...")
-	if err := clusterJig.Setup(ctx); err != nil {
-		return nil, fmt.Errorf("failed to create user cluster: %w", err)
-	}
-
-	logger = logger.With("cluster", clusterJig.Name())
-	logger.Info("Cluster has been created.")
-	if err := clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster); err != nil {
-		return nil, fmt.Errorf("failed to get the cluster we just created: %w", err)
-	}
-
-	logger.Info("Giving KKP some time to reconcile...")
-	time.Sleep(30 * time.Second)
-
-	logger.Info("Waiting for user cluster to become available...")
-	var userClient ctrlruntimeclient.Client
-	err := wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
-		if err := clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster); err != nil {
-			return false, err
-		}
-
-		var err error
-		userClient, err = clusterClientProvider.GetClient(ctx, cluster)
-		if err != nil {
-			logger.Debugw("User cluster not ready yet", zap.Error(err))
-		}
-
-		return err == nil, nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to check cluster readiness: %w", err)
-	}
-	logger.Info("Cluster is available.")
-
-	if err := clusterv1alpha1.AddToScheme(userClient.Scheme()); err != nil {
-		return nil, fmt.Errorf("failed to setup scheme: %w", err)
-	}
-
-	logger.Info("Creating MachineDeployment...")
-	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
-		err := clusterJig.CreateMachineDeployment(ctx, userClient)
-		if err != nil {
-			logger.Errorw("MachineDeployment creation failed", zap.Error(err))
-		}
-
-		return err == nil, nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create MachineDeployment: %w", err)
-	}
-	logger.Info("MachineDeployment created.")
-
-	logger.Info("Waiting for node(s) to be ready...")
-	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
-		ready, err := clusterJig.WaitForNodeToBeReady(ctx, userClient)
-		if err != nil {
-			logger.Errorw("Failed to check node readiness", zap.Error(err))
-		}
-		return ready, nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to wait for Nodes: %w", err)
-	}
-	logger.Info("Node(s) are ready.")
-
-	return userClient, nil
-}
-
-func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) error {
-	seedClient := clusterJig.Seed()
-	logger := clusterJig.Log()
-
-	logger.Info("Enabling externalCloudProvider feature...")
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster); err != nil {
-		return fmt.Errorf("failed to get cluster: %w", err)
-	}
-
+func testBody(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, scenario providers.TestScenario, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) error {
+	log.Info("Enabling externalCloudProvider feature...")
 	newCluster := cluster.DeepCopy()
 	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 	newCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] = true
@@ -246,7 +173,7 @@ func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJig
 		return fmt.Errorf("failed to patch cluster: %w", err)
 	}
 
-	logger.Info("Asserting the annotations existence in the cluster...")
+	log.Info("Asserting the annotations existence in the cluster...")
 	err := wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		annotatedCluster := &kubermaticv1.Cluster{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, annotatedCluster); err != nil {
@@ -262,7 +189,7 @@ func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJig
 		return fmt.Errorf("failed to wait for annotations to appear: %w", err)
 	}
 
-	logger.Info("Checking the -node-external-cloud-provider flag in the machine-controller webhook Pod...")
+	log.Info("Checking the -node-external-cloud-provider flag in the machine-controller webhook Pod...")
 	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		machineControllerWebhookPods := &corev1.PodList{}
 		if err := seedClient.List(ctx, machineControllerWebhookPods, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
@@ -284,7 +211,7 @@ func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJig
 		return fmt.Errorf("failed to wait for flag in Pod: %w", err)
 	}
 
-	logger.Info("Rotating all the machines...")
+	log.Info("Rotating all the machines...")
 	machines := &clusterv1alpha1.MachineList{}
 	if err := userClient.List(ctx, machines); err != nil {
 		return fmt.Errorf("failed to list machines: %w", err)
@@ -296,10 +223,10 @@ func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJig
 		}
 	}
 
-	logger.Info("Waiting for the complete cluster migration...")
+	log.Info("Waiting for the complete cluster migration...")
 	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		migratingCluster := &kubermaticv1.Cluster{}
-		if err := seedClient.Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, migratingCluster); err != nil {
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, migratingCluster); err != nil {
 			return false, err
 		}
 		return kubermaticv1helper.CCMMigrationCompleted(migratingCluster), nil
@@ -308,21 +235,14 @@ func testBody(t *testing.T, ctx context.Context, clusterJig providers.ClusterJig
 		return fmt.Errorf("failed to wait for migration to finish: %w", err)
 	}
 
-	logger.Info("Waiting for node(s) to come up again...")
-	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
-		ready, err := clusterJig.WaitForNodeToBeReady(ctx, userClient)
-		if err != nil {
-			return false, nil
-		}
-		return ready, nil
-	})
-	if err != nil {
+	log.Info("Waiting for node(s) to come up again...")
+	if err := scenario.MachineJig().WaitForReadyNodes(ctx, userClient); err != nil {
 		return fmt.Errorf("failed to wait for nodes: %w", err)
 	}
 
-	logger.Info("Checking that all the needed components are up and running...")
+	log.Info("Checking that all the needed components are up and running...")
 	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
-		return clusterJig.CheckComponents(ctx, userClient)
+		return scenario.CheckComponents(ctx, cluster, userClient)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to wait for components: %w", err)

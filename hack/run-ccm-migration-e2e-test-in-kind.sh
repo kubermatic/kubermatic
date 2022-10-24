@@ -53,43 +53,23 @@ pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 PROVIDER_TO_TEST="${PROVIDER}"
 TIMEOUT=30m
 
-if [[ "$PROVIDER_TO_TEST" == "openstack" ]]; then
-  EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
-    -openstack-tenant=${OS_TENANT_NAME}
-    -openstack-username=${OS_USERNAME}
-    -openstack-password=${OS_PASSWORD}
-    -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
-    -openstack-network=${OS_NETWORK_NAME}
-    -openstack-seed-datacenter=syseleven-dbl1
-    "
-fi
-
-if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
-  EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
-    -vsphere-username=${VSPHERE_E2E_USERNAME}
-    -vsphere-password=${VSPHERE_E2E_PASSWORD}
-    "
-fi
-
-if [[ "$PROVIDER_TO_TEST" == "azure" ]]; then
+case "$PROVIDER_TO_TEST" in
+openstack)
+  EXTRA_ARGS="-openstack-kkp-datacenter=syseleven-dbl1"
+  ;;
+vsphere)
+  EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
+  ;;
+azure)
   TIMEOUT=45m
-  EXTRA_ARGS="-azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
-    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
-    -azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
-    -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
-    -azure-seed-datacenter=azure-westeurope
-    "
-fi
-
-if [[ "$PROVIDER_TO_TEST" == "aws" ]]; then
+  EXTRA_ARGS="-azure-kkp-datacenter=azure-westeurope"
+  ;;
+aws)
   # default version is 1.23, but AWS CCM requires 1.24, so we must explicitly
   # ask for a 1.24.x cluster
-  EXTRA_ARGS="-aws-access-key-id=$AWS_E2E_TESTS_KEY_ID
-    -aws-secret-access-key=$AWS_E2E_TESTS_SECRET
-    -aws-seed-datacenter=aws-eu-central-1a
-    -cluster-version=1.24
-    "
-fi
+  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-central-1a -cluster-version=1.24"
+  ;;
+esac
 
 # run tests
 echodate "Running CCM tests..."
@@ -100,6 +80,6 @@ echodate "Running CCM tests..."
 go_test ccm_migration_${PROVIDER_TO_TEST} \
   -tags=e2e ./pkg/test/e2e/ccm-migration $EXTRA_ARGS \
   -v \
-  -timeout 30m \
+  -timeout $TIMEOUT \
   -kubeconfig "${HOME}/.kube/config" \
   -provider "$PROVIDER_TO_TEST"

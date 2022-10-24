@@ -207,6 +207,6 @@ echodate "Running tests..."
 
 go_test expose_strategy_e2e -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
   -cluster-version "${USER_CLUSTER_KUBERNETES_VERSION:-}" \
-  -datacenter byo-kubernetes
+  -byo-kkp-datacenter byo-kubernetes
 
 echodate "Done."

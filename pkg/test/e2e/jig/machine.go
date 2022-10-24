@@ -27,7 +27,11 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
+	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
+	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	evictiontypes "github.com/kubermatic/machine-controller/pkg/node/eviction/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -44,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -146,9 +151,29 @@ func (j *MachineJig) WithAWS(instanceType string, spotMaxPriceUSD *string) *Mach
 	return j.WithProviderSpec(cfg)
 }
 
+func (j *MachineJig) WithAzure(vmSize string) *MachineJig {
+	return j.WithProviderSpec(azuretypes.RawConfig{
+		VMSize: providerconfig.ConfigVarString{Value: vmSize},
+	})
+}
+
 func (j *MachineJig) WithHetzner(instanceSize string) *MachineJig {
 	return j.WithProviderSpec(hetznertypes.RawConfig{
 		ServerType: providerconfig.ConfigVarString{Value: instanceSize},
+	})
+}
+
+func (j *MachineJig) WithOpenstack(flavor string) *MachineJig {
+	return j.WithProviderSpec(openstacktypes.RawConfig{
+		Flavor: providerconfig.ConfigVarString{Value: flavor},
+	})
+}
+
+func (j *MachineJig) WithVSphere(cpus int, memory int, diskSizeGB int) *MachineJig {
+	return j.WithProviderSpec(vspheretypes.RawConfig{
+		CPUs:       int32(cpus),
+		MemoryMB:   int64(memory),
+		DiskSizeGB: pointer.Int64(int64(diskSizeGB)),
 	})
 }
 
@@ -160,7 +185,7 @@ const (
 	WaitForReadyPods  MachineWaitMode = "pods"
 )
 
-func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error {
+func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datacenterName string) error {
 	j.log.Infow("Creating MachineDeployment...", "name", j.name, "replicas", j.replicas)
 
 	cluster, err := j.getCluster(ctx)
@@ -178,12 +203,12 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 		return fmt.Errorf("failed to determine operating system: %w", err)
 	}
 
-	_, datacenter, err := Seed(ctx, j.client)
+	_, datacenter, err := Seed(ctx, j.client, datacenterName)
 	if err != nil {
 		return fmt.Errorf("failed to determine target datacenter: %w", err)
 	}
 
-	providerSpec, err := j.enrichProviderSpec(cluster, provider, datacenter)
+	providerSpec, err := j.enrichProviderSpec(cluster, provider, datacenter, os)
 	if err != nil {
 		return fmt.Errorf("failed to apply cluster information to the provider spec: %w", err)
 	}
@@ -264,14 +289,14 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 
 	if waitMode == WaitForReadyNodes || waitMode == WaitForReadyPods {
 		j.log.Info("Waiting for nodes to become ready...")
-		if err = j.waitForReadyNodes(ctx, clusterClient); err != nil {
+		if err = j.WaitForReadyNodes(ctx, clusterClient); err != nil {
 			return fmt.Errorf("failed to wait: %w", err)
 		}
 	}
 
 	if waitMode == WaitForReadyPods {
 		j.log.Info("Waiting for pods to become ready...")
-		if err = j.waitForReadyPods(ctx, clusterClient); err != nil {
+		if err = j.WaitForReadyPods(ctx, clusterClient); err != nil {
 			return fmt.Errorf("failed to wait: %w", err)
 		}
 	}
@@ -279,7 +304,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode) error
 	return nil
 }
 
-func (j *MachineJig) waitForReadyNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
+func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
 	return wait.PollLog(ctx, j.log, 10*time.Second, 15*time.Minute, func() (error, error) {
 		nodeList := corev1.NodeList{}
 		err := clusterClient.List(ctx, &nodeList)
@@ -304,7 +329,7 @@ func (j *MachineJig) waitForReadyNodes(ctx context.Context, clusterClient ctrlru
 	})
 }
 
-func (j *MachineJig) waitForReadyPods(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
+func (j *MachineJig) WaitForReadyPods(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
 	return wait.PollLog(ctx, j.log, 5*time.Second, 5*time.Minute, func() (error, error) {
 		pods := corev1.PodList{}
 		if err := clusterClient.List(ctx, &pods); err != nil {
@@ -328,6 +353,36 @@ func (j *MachineJig) waitForReadyPods(ctx context.Context, clusterClient ctrlrun
 
 		return nil, nil
 	})
+}
+
+func (j *MachineJig) SkipEvictionForAllNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
+	nodes := &corev1.NodeList{}
+	if err := clusterClient.List(ctx, nodes); err != nil {
+		return fmt.Errorf("failed to list user cluster nodes: %w", err)
+	}
+
+	for _, node := range nodes.Items {
+		nodeKey := ctrlruntimeclient.ObjectKey{Name: node.Name}
+		j.log.Debugw("Marking node with skip-eviction...", "node", node.Name)
+
+		retErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			n := corev1.Node{}
+			if err := clusterClient.Get(ctx, nodeKey, &n); err != nil {
+				return err
+			}
+
+			if n.Annotations == nil {
+				n.Annotations = map[string]string{}
+			}
+			n.Annotations[evictiontypes.SkipEvictionAnnotationKey] = "true"
+			return clusterClient.Update(ctx, &n)
+		})
+		if retErr != nil {
+			return fmt.Errorf("failed to annotate node %s: %w", node.Name, retErr)
+		}
+	}
+
+	return nil
 }
 
 func podIsReadyOrCompleted(pod *corev1.Pod) bool {
@@ -468,12 +523,18 @@ func (j *MachineJig) clusterTags(cluster *kubermaticv1.Cluster) map[string]strin
 	}
 }
 
-func (j *MachineJig) enrichProviderSpec(cluster *kubermaticv1.Cluster, provider providerconfig.CloudProvider, datacenter *kubermaticv1.Datacenter) (interface{}, error) {
+func (j *MachineJig) enrichProviderSpec(cluster *kubermaticv1.Cluster, provider providerconfig.CloudProvider, datacenter *kubermaticv1.Datacenter, os providerconfig.OperatingSystem) (interface{}, error) {
 	switch provider {
 	case providerconfig.CloudProviderAWS:
 		return j.enrichAWSProviderSpec(cluster, datacenter.Spec.AWS)
+	case providerconfig.CloudProviderAzure:
+		return j.enrichAzureProviderSpec(cluster, datacenter.Spec.Azure)
 	case providerconfig.CloudProviderHetzner:
 		return j.enrichHetznerProviderSpec(datacenter.Spec.Hetzner)
+	case providerconfig.CloudProviderOpenstack:
+		return j.enrichOpenstackProviderSpec(cluster, datacenter.Spec.Openstack, os)
+	case providerconfig.CloudProviderVsphere:
+		return j.enrichVSphereProviderSpec(cluster, datacenter.Spec.VSphere, os)
 	default:
 		return nil, fmt.Errorf("don't know how to handle %q provider specs", provider)
 	}
@@ -524,6 +585,64 @@ func (j *MachineJig) enrichAWSProviderSpec(cluster *kubermaticv1.Cluster, datace
 	return awsConfig, nil
 }
 
+func (j *MachineJig) enrichAzureProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAzure) (interface{}, error) {
+	azureConfig, ok := j.providerSpec.(azuretypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses Azure, but given provider spec was %T", j.providerSpec)
+	}
+
+	if azureConfig.AssignAvailabilitySet == nil {
+		azureConfig.AssignAvailabilitySet = cluster.Spec.Cloud.Azure.AssignAvailabilitySet
+	}
+
+	if azureConfig.AvailabilitySet.Value == "" {
+		azureConfig.AvailabilitySet.Value = cluster.Spec.Cloud.Azure.AvailabilitySet
+	}
+
+	if azureConfig.Location.Value == "" {
+		azureConfig.Location.Value = datacenter.Location
+	}
+
+	if azureConfig.ResourceGroup.Value == "" {
+		azureConfig.ResourceGroup.Value = cluster.Spec.Cloud.Azure.ResourceGroup
+	}
+
+	if azureConfig.VNetResourceGroup.Value == "" {
+		azureConfig.VNetResourceGroup.Value = cluster.Spec.Cloud.Azure.VNetResourceGroup
+	}
+
+	if azureConfig.VNetName.Value == "" {
+		azureConfig.VNetName.Value = cluster.Spec.Cloud.Azure.VNetName
+	}
+
+	if azureConfig.SubnetName.Value == "" {
+		azureConfig.SubnetName.Value = cluster.Spec.Cloud.Azure.SubnetName
+	}
+
+	if azureConfig.RouteTableName.Value == "" {
+		azureConfig.RouteTableName.Value = cluster.Spec.Cloud.Azure.RouteTableName
+	}
+
+	if azureConfig.SecurityGroupName.Value == "" {
+		azureConfig.SecurityGroupName.Value = cluster.Spec.Cloud.Azure.SecurityGroup
+	}
+
+	if azureConfig.LoadBalancerSku.Value == "" {
+		azureConfig.LoadBalancerSku.Value = string(cluster.Spec.Cloud.Azure.LoadBalancerSKU)
+	}
+
+	azureConfig.Tags = map[string]string{
+		"KubernetesCluster": cluster.Name,
+		"system-cluster":    cluster.Name,
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		azureConfig.Tags["system-project"] = projectID
+	}
+
+	return azureConfig, nil
+}
+
 func (j *MachineJig) enrichHetznerProviderSpec(datacenter *kubermaticv1.DatacenterSpecHetzner) (interface{}, error) {
 	hetznerConfig, ok := j.providerSpec.(hetznertypes.RawConfig)
 	if !ok {
@@ -547,4 +666,123 @@ func (j *MachineJig) enrichHetznerProviderSpec(datacenter *kubermaticv1.Datacent
 	}
 
 	return hetznerConfig, nil
+}
+
+func (j *MachineJig) enrichOpenstackProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecOpenstack, os providerconfig.OperatingSystem) (interface{}, error) {
+	openstackConfig, ok := j.providerSpec.(openstacktypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses Openstack, but given provider spec was %T", j.providerSpec)
+	}
+
+	image, ok := datacenter.Images[os]
+	if !ok {
+		return nil, fmt.Errorf("no disk image configured for operating system %q", os)
+	}
+
+	openstackConfig.Image.Value = image
+
+	if openstackConfig.AvailabilityZone.Value == "" {
+		openstackConfig.AvailabilityZone.Value = datacenter.AvailabilityZone
+	}
+
+	if openstackConfig.Region.Value == "" {
+		openstackConfig.Region.Value = datacenter.Region
+	}
+
+	if openstackConfig.IdentityEndpoint.Value == "" {
+		openstackConfig.IdentityEndpoint.Value = datacenter.AuthURL
+	}
+
+	if openstackConfig.FloatingIPPool.Value == "" {
+		openstackConfig.FloatingIPPool.Value = cluster.Spec.Cloud.Openstack.FloatingIPPool
+	}
+
+	if openstackConfig.Network.Value == "" {
+		openstackConfig.Network.Value = cluster.Spec.Cloud.Openstack.Network
+	}
+
+	if openstackConfig.Subnet.Value == "" {
+		openstackConfig.Subnet.Value = cluster.Spec.Cloud.Openstack.SubnetID
+	}
+
+	if len(openstackConfig.SecurityGroups) == 0 {
+		openstackConfig.SecurityGroups = []providerconfig.ConfigVarString{{Value: cluster.Spec.Cloud.Openstack.SecurityGroups}}
+	}
+
+	if openstackConfig.TrustDevicePath.Value == nil {
+		openstackConfig.TrustDevicePath.Value = datacenter.TrustDevicePath
+	}
+
+	openstackConfig.Tags = map[string]string{
+		"KubernetesCluster": cluster.Name,
+		"system-cluster":    cluster.Name,
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		openstackConfig.Tags["system-project"] = projectID
+	}
+
+	return openstackConfig, nil
+}
+
+func (j *MachineJig) enrichVSphereProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecVSphere, os providerconfig.OperatingSystem) (interface{}, error) {
+	vsphereConfig, ok := j.providerSpec.(vspheretypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses VSphere, but given provider spec was %T", j.providerSpec)
+	}
+
+	template, ok := datacenter.Templates[os]
+	if !ok {
+		return nil, fmt.Errorf("no VM template configured for operating system %q", os)
+	}
+
+	vsphereConfig.TemplateVMName.Value = template
+
+	var datastore = ""
+	// If `DatastoreCluster` is not specified we use either the Datastore
+	// specified at `Cluster` or the one specified at `Datacenter` level.
+	if cluster.Spec.Cloud.VSphere.DatastoreCluster == "" {
+		datastore = cluster.Spec.Cloud.VSphere.Datastore
+		if datastore == "" {
+			datastore = datacenter.DefaultDatastore
+		}
+	}
+
+	if vsphereConfig.Datastore.Value == "" {
+		vsphereConfig.Datastore.Value = datastore
+	}
+
+	if vsphereConfig.Folder.Value == "" {
+		vsphereConfig.Folder.Value = fmt.Sprintf("%s/%s", datacenter.RootPath, cluster.Name)
+	}
+
+	if vsphereConfig.Datacenter.Value == "" {
+		vsphereConfig.Datacenter.Value = datacenter.Datacenter
+	}
+
+	if vsphereConfig.Cluster.Value == "" {
+		vsphereConfig.Cluster.Value = datacenter.Cluster
+	}
+
+	if vsphereConfig.AllowInsecure.Value == nil {
+		vsphereConfig.AllowInsecure.Value = pointer.Bool(datacenter.AllowInsecure)
+	}
+
+	if vsphereConfig.VMNetName.Value == "" {
+		vsphereConfig.VMNetName.Value = cluster.Spec.Cloud.VSphere.VMNetName
+	}
+
+	if vsphereConfig.DatastoreCluster.Value == "" {
+		vsphereConfig.DatastoreCluster.Value = cluster.Spec.Cloud.VSphere.DatastoreCluster
+	}
+
+	if vsphereConfig.Folder.Value == "" {
+		vsphereConfig.Folder.Value = cluster.Spec.Cloud.VSphere.Folder
+	}
+
+	if vsphereConfig.ResourcePool.Value == "" {
+		vsphereConfig.ResourcePool.Value = cluster.Spec.Cloud.VSphere.ResourcePool
+	}
+
+	return vsphereConfig, nil
 }
