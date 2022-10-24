@@ -184,6 +184,8 @@ copy_crds_to_chart
 set_crds_version_annotation
 
 # install dependencies and Kubermatic Operator into cluster
+TEST_NAME="Installing KKP into kind"
+
 ./_build/kubermatic-installer deploy kubermatic-master \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
@@ -198,6 +200,7 @@ retry 10 check_all_deployments_ready kubermatic
 
 echodate "Finished installing Kubermatic"
 
+TEST_NAME="Setting up KKP Seed"
 echodate "Installing Seed..."
 
 # master&seed are the same cluster, but we still want to test that the

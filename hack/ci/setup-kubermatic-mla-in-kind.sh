@@ -144,6 +144,8 @@ copy_crds_to_chart
 set_crds_version_annotation
 
 # install dependencies and Kubermatic Operator into cluster
+TEST_NAME="Installing KKP into kind"
+
 ./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
@@ -158,6 +160,7 @@ retry 10 check_all_deployments_ready kubermatic
 
 echodate "Finished installing Kubermatic"
 
+TEST_NAME="Setting up KKP Seed"
 echodate "Installing Seed..."
 SEED_MANIFEST="$(mktemp)"
 SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
