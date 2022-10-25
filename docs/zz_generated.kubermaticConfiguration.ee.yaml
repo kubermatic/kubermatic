@@ -17,7 +17,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
-    dockerRepository: quay.io/kubermatic/kubermatic-ee
+    dockerRepository: quay.io/kubermatic/dashboard-ee
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600

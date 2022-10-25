@@ -242,11 +242,16 @@ func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName 
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
+			tag := versions.UI
+			if cfg.Spec.UI.DockerTag != "" {
+				tag = cfg.Spec.UI.DockerTag
+			}
+
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "api",
-					Image:   cfg.Spec.API.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.API.DockerRepository + ":" + tag,
 					Command: []string{"kubermatic-api"},
 					Args:    args,
 					Env:     common.ProxyEnvironmentVars(cfg),
