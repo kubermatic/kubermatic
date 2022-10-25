@@ -201,7 +201,7 @@ sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
 sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
 
 retry 8 kubectl apply --filename $SEED_MANIFEST
-retry 5 check_seed_ready kubermatic "$SEED_NAME"
+retry 8 check_seed_ready kubermatic "$SEED_NAME"
 echodate "Finished installing Seed"
 
 sleep 5
