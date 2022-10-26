@@ -211,6 +211,7 @@ func (j *MachineJig) WithGCP(machineType string, diskSize int, preemtible bool) 
 	return j.WithProviderSpec(gcptypes.RawConfig{
 		MachineType: providerconfig.ConfigVarString{Value: machineType},
 		DiskSize:    int64(diskSize),
+		DiskType:    providerconfig.ConfigVarString{Value: "pd-standard"},
 		Preemptible: providerconfig.ConfigVarBool{Value: &preemtible},
 	})
 }
@@ -874,6 +875,14 @@ func (j *MachineJig) enrichGCPProviderSpec(cluster *kubermaticv1.Cluster, datace
 
 	if gcpConfig.Zone.Value == "" {
 		gcpConfig.Zone.Value = datacenter.Region + "-" + datacenter.ZoneSuffixes[0]
+	}
+
+	if gcpConfig.Network.Value == "" {
+		gcpConfig.Network.Value = cluster.Spec.Cloud.GCP.Network
+	}
+
+	if gcpConfig.Subnetwork.Value == "" {
+		gcpConfig.Subnetwork.Value = cluster.Spec.Cloud.GCP.Subnetwork
 	}
 
 	gcpConfig.Tags = []string{
