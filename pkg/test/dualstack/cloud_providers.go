@@ -109,6 +109,7 @@ func newOpenstackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLo
 		c.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
 			CIDRBlocks: []string{"0.0.0.0/0", "::/0"},
 		}
+		c.Cloud.Openstack.SecurityGroups = "default"
 		return c
 	})
 
