@@ -34,7 +34,7 @@ spec:
   {{- end }}
 {{- end }}
 
-{{- if and (index .Cluster.Network.IPAMAllocations "metallb-ipv4") (index .Cluster.Network.IPAMAllocations "metallb-ipv6") }}
+{{- if and (index .Cluster.Network.IPAMAllocations "metallb-ipv4").Type (index .Cluster.Network.IPAMAllocations "metallb-ipv6").Type }}
 ---
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
