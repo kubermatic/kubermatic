@@ -166,9 +166,7 @@ func (c *OpenstackCredentials) Parse() (err error) {
 		return err
 	}
 
-	if c.Network, err = env("OS_NETWORK_NAME"); err != nil {
-		return err
-	}
+	c.Network, _ = env("OS_NETWORK_NAME")
 
 	return nil
 }

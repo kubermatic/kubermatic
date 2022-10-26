@@ -542,8 +542,18 @@ func (j *MachineJig) getClusterClient(ctx context.Context, cluster *kubermaticv1
 		ClusterClient(ctx)
 }
 
+// determineCloudProvider determines the machine-controller (!) provider type
+// based on the given cluster. Note that the MC potentially uses different
+// provider names than KKP ("gcp" vs. "gce" for example).
 func (j *MachineJig) determineCloudProvider(cluster *kubermaticv1.Cluster) (providerconfig.CloudProvider, error) {
-	provider := providerconfig.CloudProvider(cluster.Spec.Cloud.ProviderName)
+	name := cluster.Spec.Cloud.ProviderName
+
+	// machine-controller uses "gce" and names it "google", KKP calls it consistently "gcp"
+	if name == string(kubermaticv1.GCPCloudProvider) {
+		name = string(providerconfig.CloudProviderGoogle)
+	}
+
+	provider := providerconfig.CloudProvider(name)
 
 	for _, allowed := range providerconfig.AllCloudProviders {
 		if allowed == provider {

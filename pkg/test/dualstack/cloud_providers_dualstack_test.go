@@ -370,6 +370,7 @@ func TestNewClusters(t *testing.T) {
 			// customize the default cluster config to be suitable for dualstack networking
 			testJig.ClusterJig.
 				WithName(clusterName).
+				WithHumanReadableName(fmt.Sprintf("Dualstack E2E (%s, %s, %s)", test.cloudProvider, test.cni, test.ipFamily)).
 				WithKonnectivity(true).
 				WithCNIPlugin(cnis[test.cni]).
 				WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {

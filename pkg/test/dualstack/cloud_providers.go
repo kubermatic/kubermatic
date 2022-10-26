@@ -106,7 +106,9 @@ func newOpenstackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLo
 	jig.MachineJig.WithOpenstack("l1c.small")
 	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
 		c.Cloud.Openstack.NodePortsAllowedIPRange = "0.0.0.0/0"
-		c.Cloud.Openstack.NodePortsAllowedIPRanges.CIDRBlocks = []string{"0.0.0.0/0", "::/0"}
+		c.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+			CIDRBlocks: []string{"0.0.0.0/0", "::/0"},
+		}
 		return c
 	})
 
