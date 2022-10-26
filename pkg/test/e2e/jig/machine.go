@@ -574,6 +574,12 @@ func (j *MachineJig) enrichProviderSpec(cluster *kubermaticv1.Cluster, provider 
 		return j.enrichOpenstackProviderSpec(cluster, datacenter.Spec.Openstack, os)
 	case providerconfig.CloudProviderVsphere:
 		return j.enrichVSphereProviderSpec(cluster, datacenter.Spec.VSphere, os)
+	case providerconfig.CloudProviderGoogle:
+		return j.enrichGCPProviderSpec(cluster, datacenter.Spec.GCP, os)
+	case providerconfig.CloudProviderDigitalocean:
+		return j.enrichDigitaloceanProviderSpec(cluster, datacenter.Spec.Digitalocean, os)
+	case providerconfig.CloudProviderPacket:
+		return j.enrichEquinixMetalProviderSpec(cluster, datacenter.Spec.Packet, os)
 	default:
 		return nil, fmt.Errorf("don't know how to handle %q provider specs", provider)
 	}
@@ -824,4 +830,90 @@ func (j *MachineJig) enrichVSphereProviderSpec(cluster *kubermaticv1.Cluster, da
 	}
 
 	return vsphereConfig, nil
+}
+
+func (j *MachineJig) enrichGCPProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecGCP, os providerconfig.OperatingSystem) (interface{}, error) {
+	gcpConfig, ok := j.providerSpec.(gcptypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses GCP, but given provider spec was %T", j.providerSpec)
+	}
+
+	if gcpConfig.Regional.Value == nil {
+		gcpConfig.Regional.Value = &datacenter.Regional
+	}
+
+	if gcpConfig.Zone.Value == "" {
+		gcpConfig.Zone.Value = datacenter.Region + "-" + datacenter.ZoneSuffixes[0]
+	}
+
+	gcpConfig.Tags = []string{
+		fmt.Sprintf("kubernetes-cluster-%s", cluster.Name),
+		fmt.Sprintf("system-cluster-%s", cluster.Name),
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		gcpConfig.Tags = append(gcpConfig.Tags, fmt.Sprintf("system-project-%s", projectID))
+	}
+
+	return gcpConfig, nil
+}
+
+func (j *MachineJig) enrichDigitaloceanProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecDigitalocean, os providerconfig.OperatingSystem) (interface{}, error) {
+	doConfig, ok := j.providerSpec.(digitaloceantypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses Digitalocean, but given provider spec was %T", j.providerSpec)
+	}
+
+	if doConfig.Region.Value == "" {
+		doConfig.Region.Value = datacenter.Region
+	}
+
+	tags := []string{
+		"kubernetes",
+		fmt.Sprintf("kubernetes-cluster-%s", cluster.Name),
+		fmt.Sprintf("system-cluster-%s", cluster.Name),
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		tags = append(tags, fmt.Sprintf("system-project-%s", projectID))
+	}
+
+	for _, tag := range tags {
+		doConfig.Tags = append(doConfig.Tags, providerconfig.ConfigVarString{Value: tag})
+	}
+
+	return doConfig, nil
+}
+
+func (j *MachineJig) enrichEquinixMetalProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecPacket, os providerconfig.OperatingSystem) (interface{}, error) {
+	emConfig, ok := j.providerSpec.(equinixmetaltypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses Equinix Metal (Packet), but given provider spec was %T", j.providerSpec)
+	}
+
+	if emConfig.Metro.Value == "" {
+		emConfig.Metro.Value = datacenter.Metro
+	}
+
+	if len(emConfig.Facilities) == 0 {
+		for _, facility := range datacenter.Facilities {
+			emConfig.Facilities = append(emConfig.Facilities, providerconfig.ConfigVarString{Value: facility})
+		}
+	}
+
+	tags := []string{
+		"kubernetes",
+		fmt.Sprintf("kubernetes-cluster-%s", cluster.Name),
+		fmt.Sprintf("system/cluster:%s", cluster.Name),
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		tags = append(tags, fmt.Sprintf("system/project:%s", projectID))
+	}
+
+	for _, tag := range tags {
+		emConfig.Tags = append(emConfig.Tags, providerconfig.ConfigVarString{Value: tag})
+	}
+
+	return emConfig, nil
 }
