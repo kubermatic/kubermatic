@@ -28,6 +28,9 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
+	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	equinixmetaltypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
+	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
@@ -78,6 +81,20 @@ func NewMachineJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger, clus
 		name:     "e2e-workers",
 		osSpec:   ubuntu.Config{},
 		replicas: 1,
+	}
+}
+
+func (j *MachineJig) Clone() *MachineJig {
+	return &MachineJig{
+		client:        j.client,
+		log:           j.log,
+		cluster:       j.cluster,
+		clusterJig:    j.clusterJig,
+		name:          j.name,
+		replicas:      j.replicas,
+		osSpec:        j.osSpec,
+		providerSpec:  j.providerSpec,
+		clusterClient: j.clusterClient,
 	}
 }
 
@@ -174,6 +191,28 @@ func (j *MachineJig) WithVSphere(cpus int, memory int, diskSizeGB int) *MachineJ
 		CPUs:       int32(cpus),
 		MemoryMB:   int64(memory),
 		DiskSizeGB: pointer.Int64(int64(diskSizeGB)),
+	})
+}
+
+func (j *MachineJig) WithGCP(machineType string, diskSize int, preemtible bool) *MachineJig {
+	return j.WithProviderSpec(gcptypes.RawConfig{
+		MachineType: providerconfig.ConfigVarString{Value: machineType},
+		DiskSize:    int64(diskSize),
+		Preemptible: providerconfig.ConfigVarBool{Value: &preemtible},
+	})
+}
+
+func (j *MachineJig) WithDigitalocean(size string) *MachineJig {
+	return j.WithProviderSpec(digitaloceantypes.RawConfig{
+		Size:       providerconfig.ConfigVarString{Value: size},
+		Backups:    providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
+		Monitoring: providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
+	})
+}
+
+func (j *MachineJig) WithEquinixMetal(instanceType string) *MachineJig {
+	return j.WithProviderSpec(equinixmetaltypes.RawConfig{
+		InstanceType: providerconfig.ConfigVarString{Value: instanceType},
 	})
 }
 

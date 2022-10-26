@@ -200,6 +200,77 @@ func (c *VSphereCredentials) Parse() (err error) {
 	return nil
 }
 
+type GCPCredentials struct {
+	CommonCredentials
+
+	ServiceAccount string
+}
+
+func (c *GCPCredentials) AddFlags(fs *flag.FlagSet) {
+	flag.StringVar(&c.KKPDatacenter, "gcp-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for GCP clusters")
+}
+
+func (c *GCPCredentials) Parse() (err error) {
+	if c.KKPDatacenter == "" {
+		return errors.New("no -gcp-kkp-datacenter flag given")
+	}
+
+	if c.ServiceAccount, err = env("GOOGLE_SERVICE_ACCOUNT"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type DigitaloceanCredentials struct {
+	CommonCredentials
+
+	Token string
+}
+
+func (c *DigitaloceanCredentials) AddFlags(fs *flag.FlagSet) {
+	flag.StringVar(&c.KKPDatacenter, "digitalocean-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Digitalocean clusters")
+}
+
+func (c *DigitaloceanCredentials) Parse() (err error) {
+	if c.KKPDatacenter == "" {
+		return errors.New("no -digitalocean-kkp-datacenter flag given")
+	}
+
+	if c.Token, err = env("DO_TOKEN"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type EquinixMetalCredentials struct {
+	CommonCredentials
+
+	APIKey    string
+	ProjectID string
+}
+
+func (c *EquinixMetalCredentials) AddFlags(fs *flag.FlagSet) {
+	flag.StringVar(&c.KKPDatacenter, "equinix-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for EquinixMetal clusters")
+}
+
+func (c *EquinixMetalCredentials) Parse() (err error) {
+	if c.KKPDatacenter == "" {
+		return errors.New("no -equinix-kkp-datacenter flag given")
+	}
+
+	if c.APIKey, err = env("METAL_AUTH_TOKEN"); err != nil {
+		return err
+	}
+
+	if c.ProjectID, err = env("METAL_PROJECT_ID"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type BYOCredentials struct {
 	CommonCredentials
 }

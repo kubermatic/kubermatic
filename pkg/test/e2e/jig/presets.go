@@ -25,6 +25,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test"
 
 	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -231,6 +232,85 @@ func NewVSphereCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
 		WithVSphere(2, 4096, 10)
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+		MachineJig: machineJig,
+	}
+}
+
+func NewDigitaloceanCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials DigitaloceanCredentials, replicas int) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: credentials.KKPDatacenter,
+			ProviderName:   string(kubermaticv1.DigitaloceanCloudProvider),
+			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+				Token: credentials.Token,
+			},
+		})
+
+	machineJig := NewMachineJig(client, log, nil).
+		WithClusterJig(clusterJig).
+		WithReplicas(replicas).
+		WithDigitalocean("c-2")
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+		MachineJig: machineJig,
+	}
+}
+
+func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials GCPCredentials, replicas int) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: credentials.KKPDatacenter,
+			ProviderName:   string(kubermaticv1.GCPCloudProvider),
+			GCP: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount: test.SafeBase64Encoding(credentials.ServiceAccount),
+			},
+		})
+
+	machineJig := NewMachineJig(client, log, nil).
+		WithClusterJig(clusterJig).
+		WithReplicas(replicas).
+		WithGCP("e2-small", 25, false)
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+		MachineJig: machineJig,
+	}
+}
+
+func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials EquinixMetalCredentials, replicas int) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: credentials.KKPDatacenter,
+			ProviderName:   string(kubermaticv1.PacketCloudProvider),
+			Packet: &kubermaticv1.PacketCloudSpec{
+				APIKey:    credentials.APIKey,
+				ProjectID: credentials.ProjectID,
+			},
+		})
+
+	machineJig := NewMachineJig(client, log, nil).
+		WithClusterJig(clusterJig).
+		WithReplicas(replicas).
+		WithEquinixMetal("c3.small.x86")
 
 	return &TestJig{
 		ProjectJig: projectJig,

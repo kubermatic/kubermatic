@@ -1,5 +1,3 @@
-//go:build dualstack
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -19,472 +17,105 @@ limitations under the License.
 package dualstack
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"os"
 
-	"k8c.io/kubermatic/v2/pkg/test"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	"go.uber.org/zap"
+
+	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 
 	"k8s.io/utils/pointer"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type clusterNetworkingConfig models.ClusterNetworkingConfig
+var (
+	azureCredentials        jig.AzureCredentials
+	gcpCredentials          jig.GCPCredentials
+	awsCredentials          jig.AWSCredentials
+	openstackCredentials    jig.OpenstackCredentials
+	hetznerCredentials      jig.HetznerCredentials
+	digitaloceanCredentials jig.DigitaloceanCredentials
+	equinixMetalCredentials jig.EquinixMetalCredentials
+	vsphereCredentials      jig.VSphereCredentials
+)
 
-func defaultClusterNetworkingConfig() clusterNetworkingConfig {
-	c := models.ClusterNetworkingConfig{
-		NodeCIDRMaskSizeIPV4: 24,
-		NodeCIDRMaskSizeIPV6: 64,
-		ProxyMode:            "ebpf",
-		IPFamily:             "IPv4+IPv6",
-		Pods: &models.NetworkRanges{
-			CIDRBlocks: []string{"172.25.0.0/16", "fd01::/48"},
-		},
-		Services: &models.NetworkRanges{
-			CIDRBlocks: []string{"10.240.16.0/20", "fd02::/120"},
-		},
-		KonnectivityEnabled: true,
+func addRHELSubscriptionInfo(osSpec interface{}) interface{} {
+	rhelSpec, ok := osSpec.(rhel.Config)
+	if !ok {
+		panic(fmt.Sprintf("Expected RHEL os Spec, but got %T", osSpec))
 	}
 
-	return clusterNetworkingConfig(c)
+	rhelSpec.RHELSubscriptionManagerUser = os.Getenv("OS_RHEL_USERNAME")
+	rhelSpec.RHELSubscriptionManagerPassword = os.Getenv("OS_RHEL_PASSWORD")
+	rhelSpec.RHSMOfflineToken = os.Getenv("OS_RHEL_OFFLINE_TOKEN")
+
+	return rhelSpec
 }
 
-func (c clusterNetworkingConfig) WithProxyMode(proxyMode string) clusterNetworkingConfig {
-	c.ProxyMode = proxyMode
-	return c
+type CreateJigFunc func(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig
+
+func newAWSTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	jig := jig.NewAWSCluster(seedClient, log, awsCredentials, 1, pointer.String("0.5"))
+	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+		// c.Cloud.AWS.
+		// 		SubnetID:             "subnet-0373d73f016db25c7",
+		return c
+	})
+
+	return jig
 }
 
-type createMachineDeploymentParams project.CreateMachineDeploymentParams
-
-func defaultCreateMachineDeploymentParams() createMachineDeploymentParams {
-	md := project.CreateMachineDeploymentParams{
-		Body: &models.NodeDeployment{
-			Name: "name",
-			Spec: &models.NodeDeploymentSpec{
-				Replicas: pointer.Int32(1),
-				Template: &models.NodeSpec{
-					SSHUserName:     "root",
-					Cloud:           nil, // must fill in later
-					OperatingSystem: nil, // must fill in later
-				},
-			},
-		},
-		ClusterID:  "clusterID",
-		ProjectID:  "projectID",
-		Context:    context.Background(),
-		HTTPClient: http.DefaultClient,
-	}
-	return createMachineDeploymentParams(md)
+func newAzureTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	return jig.NewAzureCluster(seedClient, log, azureCredentials, 1)
 }
 
-func (md createMachineDeploymentParams) WithName(name string) createMachineDeploymentParams {
-	md.Body.Name = name
-	return md
+func newDigitaloceanTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	return jig.NewDigitaloceanCluster(seedClient, log, digitaloceanCredentials, 1)
 }
 
-func (md createMachineDeploymentParams) WithClusterID(clusterID string) createMachineDeploymentParams {
-	md.ClusterID = clusterID
-	return md
+func newEquinixMetalTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	return jig.NewEquinixMetalCluster(seedClient, log, equinixMetalCredentials, 1)
 }
 
-func (md createMachineDeploymentParams) WithProjectID(projectID string) createMachineDeploymentParams {
-	md.ProjectID = projectID
-	return md
+func newGCPTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	jig := jig.NewGCPCluster(seedClient, log, gcpCredentials, 1)
+	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+		c.Cloud.GCP.Network = "global/networks/dualstack"
+		c.Cloud.GCP.Subnetwork = "projects/kubermatic-dev/regions/europe-west3/subnetworks/dualstack-europe-west3"
+		return c
+	})
+
+	return jig
 }
 
-func (md createMachineDeploymentParams) WithOS(os models.OperatingSystemSpec) createMachineDeploymentParams {
-	md.Body.Spec.Template.OperatingSystem = &os
-	return md
+func newHetznerTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	return jig.NewHetznerCluster(seedClient, log, hetznerCredentials, 1)
 }
 
-func (md createMachineDeploymentParams) WithNodeSpec(nodeSpec models.NodeCloudSpec) createMachineDeploymentParams {
-	md.Body.Spec.Template.Cloud = &nodeSpec
-	return md
+func newOpenstackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	jig := jig.NewOpenstackCluster(seedClient, log, openstackCredentials, 1)
+	jig.MachineJig.WithOpenstack("l1c.small")
+	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+		c.Cloud.Openstack.NodePortsAllowedIPRange = "0.0.0.0/0"
+		c.Cloud.Openstack.NodePortsAllowedIPRanges.CIDRBlocks = []string{"0.0.0.0/0", "::/0"}
+		return c
+	})
+
+	return jig
 }
 
-type createClusterRequest models.CreateClusterSpec
+func newVSphereTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	jig := jig.NewVSphereCluster(seedClient, log, vsphereCredentials, 1)
+	jig.MachineJig.WithProviderSpec(vspheretypes.RawConfig{
+		CPUs:           2,
+		MemoryMB:       4096,
+		DiskSizeGB:     pointer.Int64(10),
+		TemplateVMName: providerconfigtypes.ConfigVarString{Value: "kkp-ubuntu-22.04"},
+	})
 
-func defaultClusterRequest() createClusterRequest {
-	netConfig := models.ClusterNetworkingConfig(defaultClusterNetworkingConfig())
-	clusterSpec := models.CreateClusterSpec{}
-	clusterSpec.Cluster = &models.Cluster{
-		Type: "kubernetes",
-		Name: "test-default-azure-cluster",
-		Spec: &models.ClusterSpec{
-			Cloud: &models.CloudSpec{
-				DatacenterName: "azure-westeurope",
-				Azure: &models.AzureCloudSpec{
-					ClientID:        os.Getenv("AZURE_CLIENT_ID"),
-					ClientSecret:    os.Getenv("AZURE_CLIENT_SECRET"),
-					SubscriptionID:  os.Getenv("AZURE_SUBSCRIPTION_ID"),
-					TenantID:        os.Getenv("AZURE_TENANT_ID"),
-					LoadBalancerSKU: "standard",
-				},
-			},
-			CniPlugin: &models.CNIPluginSettings{
-				Version: "v1.11",
-				Type:    "cilium",
-			},
-			ClusterNetwork: &netConfig,
-			Version:        models.Semver(utils.KubernetesVersion()),
-		},
-	}
-
-	return createClusterRequest(clusterSpec)
-}
-
-func (c createClusterRequest) WithCNI(cni models.CNIPluginSettings) createClusterRequest {
-	c.Cluster.Spec.CniPlugin = &cni
-	return c
-}
-
-func (c createClusterRequest) WithOS(os models.OperatingSystemSpec) createClusterRequest {
-	c.NodeDeployment.Spec.Template.OperatingSystem = &os
-	return c
-}
-
-func (c createClusterRequest) WithNode(node models.NodeCloudSpec) createClusterRequest {
-	c.NodeDeployment.Spec.Template.Cloud = &node
-	return c
-}
-
-func (c createClusterRequest) WithCloud(cloud models.CloudSpec) createClusterRequest {
-	c.Cluster.Spec.Cloud = &cloud
-	return c
-}
-
-func (c createClusterRequest) WithName(name string) createClusterRequest {
-	c.Cluster.Name = name
-	return c
-}
-
-func (c createClusterRequest) WithNetworkConfig(netConfig models.ClusterNetworkingConfig) createClusterRequest {
-	c.Cluster.Spec.ClusterNetwork = &netConfig
-	return c
-}
-
-// cloud providers
-
-type clusterSpec interface {
-	NodeSpec() models.NodeCloudSpec
-	CloudSpec() models.CloudSpec
-}
-
-type azure struct{}
-
-var _ clusterSpec = azure{}
-
-func (a azure) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Azure: &models.AzureNodeSpec{
-			AssignAvailabilitySet: true,
-			AssignPublicIP:        true,
-			DataDiskSize:          int32(30),
-			OSDiskSize:            70,
-			Size:                  pointer.String("Standard_B2s"),
-		},
-	}
-}
-
-func (a azure) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "azure-westeurope",
-		Azure: &models.AzureCloudSpec{
-			ClientID:        os.Getenv("AZURE_CLIENT_ID"),
-			ClientSecret:    os.Getenv("AZURE_CLIENT_SECRET"),
-			SubscriptionID:  os.Getenv("AZURE_SUBSCRIPTION_ID"),
-			TenantID:        os.Getenv("AZURE_TENANT_ID"),
-			LoadBalancerSKU: "standard",
-		},
-	}
-}
-
-type aws struct{}
-
-var _ clusterSpec = aws{}
-
-func (a aws) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Aws: &models.AWSNodeSpec{
-			AMI:                  "",
-			AssignPublicIP:       true,
-			AvailabilityZone:     "eu-central-1b",
-			InstanceType:         pointer.String("t3a.small"),
-			IsSpotInstance:       true,
-			SpotInstanceMaxPrice: "0.5",
-			SubnetID:             "subnet-0373d73f016db25c7",
-			VolumeSize:           pointer.Int32(64),
-			VolumeType:           pointer.String("standard"),
-		},
-	}
-}
-
-func (a aws) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "aws-eu-central-1a",
-		Aws: &models.AWSCloudSpec{
-			AccessKeyID:             os.Getenv("AWS_ACCESS_KEY_ID"),
-			ControlPlaneRoleARN:     "",
-			InstanceProfileName:     "",
-			NodePortsAllowedIPRange: "0.0.0.0/0",
-			RouteTableID:            "",
-			SecretAccessKey:         os.Getenv("AWS_SECRET_ACCESS_KEY"),
-			SecurityGroupID:         "",
-			VPCID:                   "vpc-05dba8c3284fc2836",
-		},
-	}
-}
-
-type gcp struct{}
-
-var _ clusterSpec = gcp{}
-
-func (a gcp) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Gcp: &models.GCPNodeSpec{
-			DiskSize:    25,
-			DiskType:    "pd-standard",
-			MachineType: "e2-highcpu-2",
-			Preemptible: false,
-			Zone:        "europe-west3-a",
-		},
-	}
-}
-
-func (a gcp) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "gcp-westeurope",
-		Gcp: &models.GCPCloudSpec{
-			Network:        "global/networks/dualstack",
-			ServiceAccount: test.SafeBase64Encoding(os.Getenv("GOOGLE_SERVICE_ACCOUNT")),
-			Subnetwork:     "projects/kubermatic-dev/regions/europe-west3/subnetworks/dualstack-europe-west3",
-		},
-	}
-}
-
-type openstack struct{}
-
-var _ clusterSpec = openstack{}
-
-// getImage returns image name for given OS name.
-// We need this because OpenStack NodeSpec requires
-// image specified.
-func (a openstack) getImage(osName string) string {
-	switch osName {
-	case Ubuntu:
-		return "kubermatic-ubuntu"
-	case CentOS:
-		return "machine-controller-e2e-centos"
-	case Flatcar:
-		return "Flatcar Stable (2022-08-05)"
-	case RHEL:
-		return "kubermatic-e2e-rhel"
-	default:
-		return fmt.Sprintf("unknown os: %s", osName)
-	}
-}
-
-func addRHELSubscriptionInfo(o models.OperatingSystemSpec) models.OperatingSystemSpec {
-	o.Rhel.RHELSubscriptionManagerUser = os.Getenv("OS_RHEL_USERNAME")
-	o.Rhel.RHELSubscriptionManagerPassword = os.Getenv("OS_RHEL_PASSWORD")
-	o.Rhel.RHSMOfflineToken = os.Getenv("OS_RHEL_OFFLINE_TOKEN")
-	return o
-}
-
-func (a openstack) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Openstack: &models.OpenstackNodeSpec{
-			AvailabilityZone:          "fes1",
-			Flavor:                    pointer.String("l1c.small"),
-			Image:                     pointer.String("kubermatic-ubuntu"),
-			InstanceReadyCheckPeriod:  "5s",
-			InstanceReadyCheckTimeout: "120s",
-			RootDiskSizeGB:            0,
-			Tags:                      nil,
-			UseFloatingIP:             true,
-		},
-	}
-}
-
-func (a openstack) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "syseleven-fes1",
-		Openstack: &models.OpenstackCloudSpec{
-			ApplicationCredentialID:     "",
-			ApplicationCredentialSecret: "",
-			Domain:                      os.Getenv("OS_USER_DOMAIN_NAME"),
-			FloatingIPPool:              os.Getenv("OS_FLOATING_IP_POOL"),
-			IPV6SubnetID:                "",
-			IPV6SubnetPool:              "",
-			Network:                     "",
-			NodePortsAllowedIPRange:     "0.0.0.0/0",
-			Password:                    os.Getenv("OS_PASSWORD"),
-			Project:                     os.Getenv("OS_PROJECT_NAME"),
-			ProjectID:                   "",
-			RouterID:                    "",
-			SecurityGroups:              "default",
-			SubnetID:                    "",
-			Token:                       "",
-			UseOctavia:                  false,
-			UseToken:                    false,
-			Username:                    os.Getenv("OS_USERNAME"),
-			CredentialsReference:        nil,
-			NodePortsAllowedIPRanges: &models.NetworkRanges{
-				CIDRBlocks: []string{
-					"0.0.0.0/0",
-					"::/0",
-				},
-			},
-		},
-	}
-}
-
-type hetzner struct{}
-
-var _ clusterSpec = hetzner{}
-
-func (a hetzner) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Hetzner: &models.HetznerNodeSpec{
-			Type: pointer.String("cx21"),
-		},
-	}
-}
-
-func (a hetzner) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "hetzner-nbg1",
-		Hetzner: &models.HetznerCloudSpec{
-			Token: os.Getenv("HETZNER_TOKEN"),
-		},
-	}
-}
-
-type do struct{}
-
-var _ clusterSpec = do{}
-
-func (a do) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Digitalocean: &models.DigitaloceanNodeSpec{
-			Backups:    false,
-			Monitoring: false,
-			Size:       pointer.String("c-2"),
-		},
-	}
-}
-
-func (a do) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "do-fra1",
-		Digitalocean: &models.DigitaloceanCloudSpec{
-			Token: os.Getenv("DO_TOKEN"),
-		},
-	}
-}
-
-type equinix struct{}
-
-var _ clusterSpec = equinix{}
-
-func (a equinix) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Packet: &models.PacketNodeSpec{
-			InstanceType: pointer.String("c3.small.x86"),
-		},
-	}
-}
-
-func (a equinix) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "packet-am",
-		Packet: &models.PacketCloudSpec{
-			APIKey:    os.Getenv("METAL_AUTH_TOKEN"),
-			ProjectID: os.Getenv("METAL_PROJECT_ID"),
-		},
-	}
-}
-
-type vsphere struct{}
-
-var _ clusterSpec = vsphere{}
-
-func (a vsphere) NodeSpec() models.NodeCloudSpec {
-	return models.NodeCloudSpec{
-		Vsphere: &models.VSphereNodeSpec{
-			Template:   "kkp-ubuntu-22.04",
-			CPUs:       2,
-			Memory:     4096,
-			DiskSizeGB: 10,
-		},
-	}
-}
-
-func (a vsphere) CloudSpec() models.CloudSpec {
-	return models.CloudSpec{
-		DatacenterName: "vsphere-ger",
-		Vsphere: &models.VSphereCloudSpec{
-			Username: os.Getenv("VSPHERE_USERNAME"),
-			Password: os.Getenv("VSPHERE_PASSWORD"),
-			InfraManagementUser: &models.VSphereCredentials{
-				Username: os.Getenv("VSPHERE_USERNAME"),
-				Password: os.Getenv("VSPHERE_PASSWORD"),
-			},
-		},
-	}
-}
-
-// operating systems
-
-func ubuntu() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Ubuntu: &models.UbuntuSpec{},
-	}
-}
-
-func rhel() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Rhel: &models.RHELSpec{},
-	}
-}
-
-func sles() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Sles: &models.SLESSpec{},
-	}
-}
-
-func centos() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Centos: &models.CentOSSpec{},
-	}
-}
-
-func flatcar() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Flatcar: &models.FlatcarSpec{},
-	}
-}
-
-func rockyLinux() models.OperatingSystemSpec {
-	return models.OperatingSystemSpec{
-		Rockylinux: &models.RockyLinuxSpec{},
-	}
-}
-
-// cnis
-
-func cilium() models.CNIPluginSettings {
-	return models.CNIPluginSettings{
-		Type: "cilium",
-	}
-}
-
-func canal() models.CNIPluginSettings {
-	return models.CNIPluginSettings{
-		Type: "canal",
-	}
+	return jig
 }
