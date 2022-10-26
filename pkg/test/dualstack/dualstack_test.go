@@ -41,16 +41,16 @@ import (
 )
 
 var (
-	logOptions = log.NewDefaultOptions()
+	logOptions              = log.NewDefaultOptions()
+	enabledOperatingSystems = sets.NewString()
+	enabledCNIs             = sets.NewString()
+	enabledProviders        = sets.NewString()
 
-	userconfig              string
-	ipFamily                string
-	enabledOperatingSystems sets.String
-	enabledCNIs             sets.String
-	enabledProviders        sets.String
-	skipNodes               bool
-	skipHostNetworkPods     bool
-	skipEgressConnectivity  bool
+	userconfig             string
+	ipFamily               string
+	skipNodes              bool
+	skipHostNetworkPods    bool
+	skipEgressConnectivity bool
 )
 
 func init() {
