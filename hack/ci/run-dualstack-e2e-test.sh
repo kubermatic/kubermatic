@@ -79,7 +79,7 @@ go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -
   -os "${OSNAMES:-all}" \
   -aws-kkp-datacenter aws-eu-central-1a \
   -azure-kkp-datacenter azure-westeurope \
-  -digitalocean-kkp-datacenter aws-eu-central-1a \
+  -digitalocean-kkp-datacenter do-fra1 \
   -equinix-kkp-datacenter packet-am \
   -gcp-kkp-datacenter gcp-westeurope \
   -hetzner-kkp-datacenter hetzner-nbg1 \
