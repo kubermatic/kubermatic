@@ -360,10 +360,11 @@ func TestNewClusters(t *testing.T) {
 			testLog := log.With("provider", test.cloudProvider, "cni", test.cni, "ipfamily", test.ipFamily)
 
 			jigCreator := cloudProviderJiggers[test.cloudProvider]
-			clusterName := fmt.Sprintf("ds-%s-%s", testName, rand.String(4))
+			clusterName := fmt.Sprintf("dualstack-e2e-%s", rand.String(5))
 			clusterName = strings.ReplaceAll(strings.ToLower(clusterName), "+", "-")
 
 			// setup a test jig for the given provider, using the default e2e test settings
+			testLog = testLog.With("cluster", clusterName)
 			testJig := jigCreator(seedClient, testLog)
 
 			// customize the default cluster config to be suitable for dualstack networking
