@@ -28,6 +28,7 @@ trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
+export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
 
@@ -35,8 +36,6 @@ source hack/ci/setup-kind-cluster.sh
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
 source hack/ci/setup-kubermatic-in-kind.sh
-
-export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
@@ -74,9 +73,17 @@ export VSPHERE_E2E_PASSWORD="${VSPHERE_E2E_PASSWORD:-$(vault kv get -field=passw
 echodate "Successfully got secrets from Vault"
 echodate "Running dualstack tests..."
 
-go_test dualstack_e2e -race -timeout 90m -tags dualstack -v ./pkg/test/dualstack \
+go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -v ./pkg/test/dualstack \
   -cni "${CNI:-}" \
   -provider "${PROVIDER:-}" \
-  -os "${OSNAMES:-all}"
+  -os "${OSNAMES:-all}" \
+  -aws-kkp-datacenter aws-eu-central-1a \
+  -azure-kkp-datacenter azure-westeurope \
+  -digitalocean-kkp-datacenter aws-eu-central-1a \
+  -equinix-kkp-datacenter packet-am \
+  -gcp-kkp-datacenter gcp-westeurope \
+  -hetzner-kkp-datacenter hetzner-nbg1 \
+  -openstack-kkp-datacenter syseleven-fes1 \
+  -vsphere-kkp-datacenter vsphere-ger
 
 echodate "Dualstack tests done."

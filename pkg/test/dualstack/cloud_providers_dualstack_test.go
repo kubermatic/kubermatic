@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -61,6 +62,10 @@ type testCase struct {
 	skipNodes              bool
 	skipHostNetworkPods    bool
 	skipEgressConnectivity bool
+}
+
+func (t *testCase) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
+	return log.With("provider", t.cloudProvider, "cni", t.cni, "ipfamily", t.ipFamily)
 }
 
 var (
@@ -284,28 +289,22 @@ func stringToOSSet(os sets.String) []providerconfig.OperatingSystem {
 	return result
 }
 
-// TestNewClusters creates clusters and runs dualstack tests against them.
-func TestNewClusters(t *testing.T) {
-	ctx := context.Background()
-	log := log.NewFromOptions(logOptions).Sugar()
+// removeDisabledTests removes tests with criteria that are not enabled via
+// CLI flags and also adjusts the list of OS's per test to match what is
+// enabled via CLI.
+func removeDisabledTests(allTests []testCase, log *zap.SugaredLogger) []testCase {
+	result := []testCase{}
 
-	seedClient, _, _, err := utils.GetClients()
-	if err != nil {
-		t.Fatalf("Failed to get client for seed cluster: %v", err)
-	}
+	for _, test := range allTests {
+		testLog := test.Log(log)
 
-	for i := range tests {
-		test := tests[i] // use a loop-local variable because parts of this loop are run concurrently
-		name := fmt.Sprintf("c-%s-%s-%s", test.cloudProvider, test.cni, test.ipFamily)
-		testLog := log.With("test", name)
-
-		if !enabledCNIs.Has(test.cni) {
-			testLog.Info("Skipping test because CNI is not enabled.")
+		if !isAll(enabledCNIs) && !enabledCNIs.Has(test.cni) {
+			testLog.Info("Skipping scenario because CNI is not enabled.")
 			continue
 		}
 
 		if !isAll(enabledProviders) && !enabledProviders.Has(string(test.cloudProvider)) {
-			testLog.Info("Skipping test because cloud provider is not enabled.")
+			testLog.Info("Skipping scenario because cloud provider is not enabled.")
 			continue
 		}
 
@@ -318,17 +317,51 @@ func TestNewClusters(t *testing.T) {
 		}
 
 		if len(operatingSystems) == 0 {
-			testLog.Info("Skipping test because no OS specified to test")
+			testLog.Info("Skipping scenario because no OS specified to test.")
 			continue
 		}
 
-		testLog.Infow("Testing operating systems", "os", osToStringSet(operatingSystems).List())
+		result = append(result, testCase{
+			cloudProvider:          test.cloudProvider,
+			operatingSystems:       operatingSystems, // NB: here we override the OS list
+			cni:                    test.cni,
+			ipFamily:               test.ipFamily,
+			skipNodes:              test.skipNodes,
+			skipHostNetworkPods:    test.skipHostNetworkPods,
+			skipEgressConnectivity: test.skipEgressConnectivity,
+		})
+	}
 
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+	for _, test := range result {
+		test.Log(log).Info("Enabled scenario")
+	}
+
+	return result
+}
+
+// TestNewClusters creates clusters and runs dualstack tests against them.
+func TestNewClusters(t *testing.T) {
+	ctx := context.Background()
+	log := log.NewFromOptions(logOptions).Sugar()
+
+	parseProviderCredentials(t)
+
+	seedClient, _, _, err := utils.GetClients()
+	if err != nil {
+		t.Fatalf("Failed to get client for seed cluster: %v", err)
+	}
+
+	filteredTests := removeDisabledTests(tests, log)
+
+	for _, test := range filteredTests {
+		testName := fmt.Sprintf("%s-%s-%s", test.cloudProvider, test.cni, test.ipFamily)
+
+		t.Run(testName, func(t *testing.T) {
+			testLog := log.With("provider", test.cloudProvider, "cni", test.cni, "ipfamily", test.ipFamily)
 
 			jigCreator := cloudProviderJiggers[test.cloudProvider]
-			clusterName := fmt.Sprintf("%s-%s", name, rand.String(4))
+			clusterName := fmt.Sprintf("ds-%s-%s", testName, rand.String(4))
+			clusterName = strings.ReplaceAll(strings.ToLower(clusterName), "+", "-")
 
 			// setup a test jig for the given provider, using the default e2e test settings
 			testJig := jigCreator(seedClient, testLog)
@@ -360,10 +393,13 @@ func TestNewClusters(t *testing.T) {
 			// create the project and cluster (waits until the control plane is healthy, the WaitForNothing
 			// has no effect since no machines are being created)
 			_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+			if err != nil {
+				t.Fatalf("Failed to create cluster: %v", err)
+			}
 			defer testJig.Cleanup(ctx, t, true)
 
 			// create a MachineDeployment with 1 replica each per operating system, do not yet wait for anything
-			for _, osName := range operatingSystems {
+			for _, osName := range test.operatingSystems {
 				osSpec := osSpecs[osName]
 
 				if osName == providerconfig.OperatingSystemRHEL {
@@ -371,8 +407,15 @@ func TestNewClusters(t *testing.T) {
 				}
 
 				osMachineJig := machineJig.Clone()
-				osMachineJig.WithName(fmt.Sprintf("md-%s", osName)).WithOSSpec(osSpec)
+				osMachineJig.
+					WithName(fmt.Sprintf("md-%s", osName)).
+					WithOSSpec(osSpec).
+					WithNetworkConfig(&providerconfig.NetworkConfig{
+						IPFamily: "IPv4+IPv6",
+					})
 
+				// no need to keep track of machine cleanups, as KKP will delete all machines in the
+				// cluster when the cluster itself is being deleted
 				if err := osMachineJig.Create(ctx, jig.WaitForNothing, cluster.Spec.Cloud.DatacenterName); err != nil {
 					t.Fatalf("Failed to create machine deployment: %v", err)
 				}
@@ -385,7 +428,7 @@ func TestNewClusters(t *testing.T) {
 
 			// now we wait for all nodes to become ready; we cheat a bit and abuse a MachineJig
 			testLog.Info("Waiting for all nodes to be ready...")
-			if err := machineJig.WithReplicas(len(operatingSystems)).WaitForReadyNodes(ctx, userclusterClient); err != nil {
+			if err := machineJig.WithReplicas(len(test.operatingSystems)).WaitForReadyNodes(ctx, userclusterClient); err != nil {
 				t.Fatalf("Not all nodes did get ready: %v", err)
 			}
 			testLog.Info("All nodes are ready.")
@@ -418,7 +461,7 @@ func waitForPods(t *testing.T, ctx context.Context, log *zap.SugaredLogger, clie
 	}
 	l := labels.NewSelector().Add(*r)
 
-	return wait.PollLog(ctx, log, 30*time.Second, 15*time.Minute, func() (error, error) {
+	return wait.PollImmediateLog(ctx, log, 10*time.Second, 15*time.Minute, func() (error, error) {
 		pods := corev1.PodList{}
 		err := client.List(ctx, &pods, &ctrlruntimeclient.ListOptions{
 			Namespace:     namespace,
@@ -464,4 +507,54 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) error {
 	}
 
 	return nil
+}
+
+func parseProviderCredentials(t *testing.T) {
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AWSCloudProvider)) {
+		if err := awsCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get aws credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AzureCloudProvider)) {
+		if err := azureCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get azure credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.DigitaloceanCloudProvider)) {
+		if err := digitaloceanCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get digitalocean credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.PacketCloudProvider)) {
+		if err := equinixMetalCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get equinixMetal credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.GCPCloudProvider)) {
+		if err := gcpCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get gcp credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.HetznerCloudProvider)) {
+		if err := hetznerCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get hetzner credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.OpenstackCloudProvider)) {
+		if err := openstackCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get openstack credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.VSphereCloudProvider)) {
+		if err := vsphereCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get vsphere credentials: %v", err)
+		}
+	}
 }

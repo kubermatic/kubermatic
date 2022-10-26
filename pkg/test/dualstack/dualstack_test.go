@@ -316,7 +316,7 @@ func egressValidatorPod(ipVersion int) *corev1.Pod {
 					Command: []string{
 						"/bin/ash",
 						"-c",
-						"sleep 1000000000",
+						"while true; do sleep 1; done",
 					},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{

@@ -37,9 +37,11 @@ import (
 	evictiontypes "github.com/kubermatic/machine-controller/pkg/node/eviction/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
 	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
+	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
 	"k8c.io/operating-system-manager/pkg/providerconfig/sles"
@@ -70,6 +72,7 @@ type MachineJig struct {
 	replicas      int
 	osSpec        interface{}
 	providerSpec  interface{}
+	networkConfig *providerconfig.NetworkConfig
 	clusterClient ctrlruntimeclient.Client
 }
 
@@ -127,6 +130,11 @@ func (j *MachineJig) WithOSSpec(spec interface{}) *MachineJig {
 	return j
 }
 
+func (j *MachineJig) WithNetworkConfig(cfg *providerconfig.NetworkConfig) *MachineJig {
+	j.networkConfig = cfg
+	return j
+}
+
 func (j *MachineJig) WithUbuntu() *MachineJig {
 	return j.WithOSSpec(ubuntu.Config{})
 }
@@ -143,6 +151,11 @@ func (j *MachineJig) WithRHEL() *MachineJig {
 // Do not use pointers.
 func (j *MachineJig) WithProviderSpec(spec interface{}) *MachineJig {
 	j.providerSpec = spec
+	return j
+}
+
+func (j *MachineJig) WithProviderPatch(patcher func(providerSpec interface{}) interface{}) *MachineJig {
+	j.providerSpec = patcher(j.providerSpec)
 	return j
 }
 
@@ -271,6 +284,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 		OperatingSystemSpec: runtime.RawExtension{
 			Raw: encodedOSSpec,
 		},
+		Network: j.networkConfig,
 	}
 
 	encodedConfig, err := json.Marshal(cfg)
@@ -352,16 +366,17 @@ func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlru
 		}
 
 		readyNodeCount := 0
+		unready := sets.NewString()
 		for _, node := range nodeList.Items {
-			for _, c := range node.Status.Conditions {
-				if c.Type == corev1.NodeReady {
-					readyNodeCount++
-				}
+			if kubernetes.IsNodeReady(&node) {
+				readyNodeCount++
+			} else {
+				unready.Insert(node.Name)
 			}
 		}
 
 		if readyNodeCount != j.replicas {
-			return fmt.Errorf("%d of %d nodes are ready", readyNodeCount, j.replicas), nil
+			return fmt.Errorf("%d of %d nodes are ready (unready: %v)", readyNodeCount, j.replicas, unready.List()), nil
 		}
 
 		return nil, nil
@@ -516,7 +531,12 @@ func (j *MachineJig) getClusterClient(ctx context.Context, cluster *kubermaticv1
 
 	projectName := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 
-	return NewClusterJig(j.client, j.log).
+	clusterJig := j.clusterJig
+	if clusterJig == nil {
+		clusterJig = NewClusterJig(j.client, j.log)
+	}
+
+	return clusterJig.
 		WithExistingCluster(cluster.Name).
 		WithProjectName(projectName).
 		ClusterClient(ctx)
@@ -548,18 +568,11 @@ func (j *MachineJig) determineOperatingSystem() (providerconfig.OperatingSystem,
 		return providerconfig.OperatingSystemUbuntu, nil
 	case amzn2.Config:
 		return providerconfig.OperatingSystemAmazonLinux2, nil
+	case flatcar.Config:
+		return providerconfig.OperatingSystemFlatcar, nil
 	}
 
 	return "", errors.New("cannot determine OS from the given osSpec")
-}
-
-func (j *MachineJig) clusterTags(cluster *kubermaticv1.Cluster) map[string]string {
-	name := cluster.Name
-
-	return map[string]string{
-		"kubernetes.io/cluster/" + name: "",
-		"system/cluster":                name,
-	}
 }
 
 func (j *MachineJig) enrichProviderSpec(cluster *kubermaticv1.Cluster, provider providerconfig.CloudProvider, datacenter *kubermaticv1.Datacenter, os providerconfig.OperatingSystem) (interface{}, error) {
@@ -625,7 +638,14 @@ func (j *MachineJig) enrichAWSProviderSpec(cluster *kubermaticv1.Cluster, datace
 		}}
 	}
 
-	awsConfig.Tags = j.clusterTags(cluster)
+	awsConfig.Tags = map[string]string{
+		"kubernetes.io/cluster/" + cluster.Name: "",
+		"system/cluster":                        cluster.Name,
+	}
+
+	if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
+		awsConfig.Tags["system/project"] = projectID
+	}
 
 	return awsConfig, nil
 }

@@ -22,6 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
+	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -33,13 +34,13 @@ import (
 )
 
 var (
-	azureCredentials        jig.AzureCredentials
-	gcpCredentials          jig.GCPCredentials
 	awsCredentials          jig.AWSCredentials
-	openstackCredentials    jig.OpenstackCredentials
-	hetznerCredentials      jig.HetznerCredentials
+	azureCredentials        jig.AzureCredentials
 	digitaloceanCredentials jig.DigitaloceanCredentials
 	equinixMetalCredentials jig.EquinixMetalCredentials
+	gcpCredentials          jig.GCPCredentials
+	hetznerCredentials      jig.HetznerCredentials
+	openstackCredentials    jig.OpenstackCredentials
 	vsphereCredentials      jig.VSphereCredentials
 )
 
@@ -61,9 +62,13 @@ type CreateJigFunc func(seedClient ctrlruntimeclient.Client, log *zap.SugaredLog
 func newAWSTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
 	jig := jig.NewAWSCluster(seedClient, log, awsCredentials, 1, pointer.String("0.5"))
 	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-		// c.Cloud.AWS.
-		// 		SubnetID:             "subnet-0373d73f016db25c7",
+		c.Cloud.AWS.NodePortsAllowedIPRange = "0.0.0.0/0"
 		return c
+	})
+	jig.MachineJig.WithProviderPatch(func(providerSpec interface{}) interface{} {
+		awsSpec := providerSpec.(awstypes.RawConfig)
+		awsSpec.AssignPublicIP = pointer.Bool(true)
+		return awsSpec
 	})
 
 	return jig
