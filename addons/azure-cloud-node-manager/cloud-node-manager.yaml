@@ -21,13 +21,16 @@
 {{ $version = "v1.0.19"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.22" }}
-{{ $version = "v1.1.15"}}
+{{ $version = "v1.1.24"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
-{{ $version = "v1.23.12"}}
+{{ $version = "v1.23.21"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.24" }}
-{{ $version = "v1.24.0"}}
+{{ $version = "v1.24.8"}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.25" }}
+{{ $version = "v1.25.2"}}
 {{ end }}
 {{ if not (eq $version "UNSUPPORTED") }}
 apiVersion: v1

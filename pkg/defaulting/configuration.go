@@ -216,7 +216,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.23.12"),
+		Default: semver.NewSemverOrDie("v1.24.6"),
 		Versions: []semver.Semver{
 			// Kubernetes 1.22
 			newSemver("v1.22.5"),
@@ -230,6 +230,8 @@ var (
 			// Kubernetes 1.24
 			newSemver("v1.24.3"),
 			newSemver("v1.24.6"),
+			// Kubernetes 1.25
+			newSemver("v1.25.2"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -297,6 +299,17 @@ var (
 				To:        "1.24.6",
 				Automatic: pointer.BoolPtr(true),
 			},
+			{
+				// Allow to next minor release
+				From: "1.24.*",
+				To:   "1.25.*",
+			},
+			// ======= 1.25 =======
+			{
+				// Allow to change to any patch version
+				From: "1.25.*",
+				To:   "1.25.*",
+			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
 			{
@@ -331,6 +344,27 @@ var (
 				Provider:  kubermaticv1.AWSCloudProvider,
 				Version:   "< 1.24.0",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
+
+			// GCE clusters do not support Kubernetes 1.25 currently because
+			// CSIMigration is enforced and we don't yet deploy the GCP CSI driver.
+			{
+				Provider:  kubermaticv1.GCPCloudProvider,
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.AlwaysCondition,
+				Operation: kubermaticv1.SupportOperation,
+			},
+			{
+				Provider:  kubermaticv1.GCPCloudProvider,
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.AlwaysCondition,
+				Operation: kubermaticv1.CreateOperation,
+			},
+			{
+				Provider:  kubermaticv1.GCPCloudProvider,
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.AlwaysCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
 		},

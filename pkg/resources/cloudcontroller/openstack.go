@@ -133,8 +133,10 @@ func getOSVersion(version semver.Semver) (string, error) {
 	case v123:
 		return "1.23.4", nil
 	case v124:
+		return "1.24.3", nil
+	case v125:
 		fallthrough
 	default:
-		return v1240, nil
+		return "1.25.0", nil
 	}
 }

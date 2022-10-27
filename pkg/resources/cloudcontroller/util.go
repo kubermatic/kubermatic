@@ -27,8 +27,7 @@ const (
 	v122 = "1.22"
 	v123 = "1.23"
 	v124 = "1.24"
-
-	v1240 = "1.24.0"
+	v125 = "1.25"
 )
 
 func getVolumes(isKonnectivityEnabled bool, mountCloudConfig bool) []corev1.Volume {

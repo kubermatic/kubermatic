@@ -192,6 +192,8 @@ func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
 		return "v2.5.1", nil
 	case "1.24":
 		return "v2.6.0", nil
+	case "1.25":
+		return "v2.7.0", nil
 	default:
 		return "", fmt.Errorf("no compatible version defined for Kubernetes %q", clusterVersion.MajorMinor())
 	}

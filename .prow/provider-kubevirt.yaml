@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-kubevirt-centos-1.24
+  - name: pre-kubermatic-e2e-kubevirt-centos-1.25
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -34,7 +34,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.24"
+              value: "1.25"
             - name: PROVIDER
               value: "kubevirt"
             - name: DISTRIBUTIONS
@@ -58,7 +58,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-kubevirt-ubuntu-1.24
+  - name: pre-kubermatic-e2e-kubevirt-ubuntu-1.25
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -79,7 +79,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.24"
+              value: "1.25"
             - name: PROVIDER
               value: "kubevirt"
             - name: DISTRIBUTIONS
