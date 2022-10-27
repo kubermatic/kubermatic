@@ -83,6 +83,9 @@ spec:
                   type: boolean
                 enableOIDCKubeconfig:
                   type: boolean
+                enableWebTerminal:
+                  description: EnableWebTerminal enables the Web Terminal feature for the user clusters.
+                  type: boolean
                 machineDeploymentVMResourceQuota:
                   properties:
                     enableGPU:
@@ -143,6 +146,7 @@ spec:
                 - enableDashboard
                 - enableExternalClusterImport
                 - enableOIDCKubeconfig
+                - enableWebTerminal
                 - machineDeploymentVMResourceQuota
                 - mlaAlertmanagerPrefix
                 - mlaGrafanaPrefix

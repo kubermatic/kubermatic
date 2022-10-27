@@ -1319,6 +1319,7 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 			DisplayAPIDocs:        false,
 			DisplayTermsOfService: false,
 			EnableDashboard:       true,
+			EnableWebTerminal:     false,
 			EnableOIDCKubeconfig:  false,
 		},
 	}
