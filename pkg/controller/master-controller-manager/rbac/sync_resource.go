@@ -1242,17 +1242,17 @@ func (c *resourcesController) ensureRBACForEtcdLauncher(ctx context.Context, cli
 	if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, metaObject, kubermaticv1.EtcdRestoreKindName); err != nil {
 		return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
 	}
-	if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, cluster, "Secret"); err != nil {
-		return fmt.Errorf("failed to sync etcd restore RBAC RoleBinding for %s resource for %s cluster provider: %w", rmapping, c.providerName, err)
+	if err := c.ensureRBACRoleForEtcdLauncher(ctx, metaObject, "secrets", "", "Secret"); err != nil {
+		return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider in namespace %s: %w", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, metaObject, "Secret"); err != nil {
+		return fmt.Errorf("failed to sync etcd restore RBAC RoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
 	}
 	if err := c.ensureRBACRoleForEtcdLauncher(ctx, cluster, "pods", "", "Pod"); err != nil {
 		return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider: %w", rmapping, c.providerName, err)
 	}
 	if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, cluster, "Pod"); err != nil {
 		return fmt.Errorf("failed to sync etcd restore RBAC RoleBinding for %s resource for %s cluster provider: %w", rmapping, c.providerName, err)
-	}
-	if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, metaObject, "Secret"); err != nil {
-		return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
 	}
 	if err := c.ensureRBACRoleForEtcdLauncher(ctx, metaObject, "statefulsets", "apps", "StatefulSet"); err != nil {
 		return fmt.Errorf("failed to sync etcd launcher RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
