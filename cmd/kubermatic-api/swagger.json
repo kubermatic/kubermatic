@@ -33512,6 +33512,11 @@
           "type": "boolean",
           "x-go-name": "EnableOIDCKubeconfig"
         },
+        "enableWebTerminal": {
+          "description": "EnableWebTerminal enables the Web Terminal feature for the user clusters.",
+          "type": "boolean",
+          "x-go-name": "EnableWebTerminal"
+        },
         "machineDeploymentVMResourceQuota": {
           "$ref": "#/definitions/MachineDeploymentVMResourceQuota"
         },
