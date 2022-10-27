@@ -253,6 +253,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/kubermatic-operator \
     charts/logging \
     charts/minio \
+    charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
     charts/oauth \
@@ -290,6 +291,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/kubermatic-operator \
     charts/logging \
     charts/minio \
+    charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
     charts/oauth \
