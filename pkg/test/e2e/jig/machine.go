@@ -359,7 +359,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 }
 
 func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
-	return wait.PollLog(ctx, j.log, 10*time.Second, 15*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, j.log, 30*time.Second, 30*time.Minute, func() (error, error) {
 		nodeList := corev1.NodeList{}
 		err := clusterClient.List(ctx, &nodeList)
 		if err != nil {
@@ -385,7 +385,7 @@ func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlru
 }
 
 func (j *MachineJig) WaitForReadyPods(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
-	return wait.PollLog(ctx, j.log, 5*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, j.log, 10*time.Second, 15*time.Minute, func() (error, error) {
 		pods := corev1.PodList{}
 		if err := clusterClient.List(ctx, &pods); err != nil {
 			return fmt.Errorf("failed to list pods: %w", err), nil

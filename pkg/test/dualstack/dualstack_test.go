@@ -218,7 +218,7 @@ func validateEgressConnectivity(t *testing.T, ctx context.Context, log *zap.Suga
 		}
 	}()
 
-	err := wait.PollLog(ctx, log, 10*time.Second, 2*time.Minute, func() (error, error) {
+	err := wait.PollLog(ctx, log, 10*time.Second, 5*time.Minute, func() (error, error) {
 		d := &appsv1.DaemonSet{}
 		if err := userclusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(ds), d); err != nil {
 			return fmt.Errorf("failed to get DaemonSet: %w", err), nil
