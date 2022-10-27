@@ -19,26 +19,26 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-# function cleanup() {
-#   if [[ -n "${TMP:-}" ]]; then
-#     rm -rf "${TMP}"
-#   fi
-# }
-# trap cleanup EXIT SIGINT SIGTERM
+function cleanup() {
+  if [[ -n "${TMP:-}" ]]; then
+    rm -rf "${TMP}"
+  fi
+}
+trap cleanup EXIT SIGINT SIGTERM
 
-# export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-# export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
-# export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
-# export WITH_WORKERS=1
-# source hack/ci/setup-kind-cluster.sh
+export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
+export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
+export WITH_WORKERS=1
+source hack/ci/setup-kind-cluster.sh
 
-# # gather the logs of all things in the Kubermatic namespace
-# protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
-# source hack/ci/setup-kubermatic-in-kind.sh
+source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Getting secrets from Vault"
-# retry 5 vault_ci_login
+retry 5 vault_ci_login
 
 export AWS_E2E_TESTS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
 export AWS_E2E_TESTS_SECRET=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
