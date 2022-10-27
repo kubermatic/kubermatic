@@ -84,6 +84,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
+				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Project:  "some-project",
 					Username: "some-user",
@@ -99,6 +100,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
+				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					ProjectID: "some-project",
 					Username:  "some-user",
@@ -114,6 +116,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "",
+				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Project:  "some-project",
 					Username: "some-user",
@@ -129,6 +132,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
+				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Project:        "some-project",
 					Username:       "some-user",
@@ -143,6 +147,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
+				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 					Token: "a-token",
 				},
@@ -160,7 +165,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				ProviderName:   "openstack",
+				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Project:        "some-project",
 					Username:       "some-user",
@@ -175,7 +180,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				ProviderName:   "closedstack",
+				ProviderName:   "closedstack", // *giggle*
 				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					Project:        "some-project",
 					Username:       "some-user",
