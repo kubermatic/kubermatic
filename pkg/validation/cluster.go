@@ -589,12 +589,12 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 func validateDatacenterMatchesProvider(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) error {
 	clusterCloudProvider, err := kubermaticv1helper.ClusterCloudProviderName(spec)
 	if err != nil {
-		return fmt.Errorf("could not determine cluster cloud provider: %v", err)
+		return fmt.Errorf("could not determine cluster cloud provider: %w", err)
 	}
 
 	dcCloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
 	if err != nil {
-		return fmt.Errorf("could not determine datacenter cloud provider: %v", err)
+		return fmt.Errorf("could not determine datacenter cloud provider: %w", err)
 	}
 
 	if clusterCloudProvider != dcCloudProvider {
