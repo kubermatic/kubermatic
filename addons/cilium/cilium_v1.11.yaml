@@ -479,7 +479,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cilium-agent
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-agent
@@ -598,7 +598,7 @@ spec:
       # Required to mount cgroup2 filesystem on the underlying Kubernetes node.
       # We use nsenter command with host's cgroup and mount namespaces enabled.
       - name: mount-cgroup
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9"
         imagePullPolicy: IfNotPresent
         env:
         - name: CGROUP_ROOT
@@ -625,7 +625,7 @@ spec:
         securityContext:
           privileged: true
       - name: apply-sysctl-overwrites
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9"
         imagePullPolicy: IfNotPresent
         env:
         - name: BIN_PATH
@@ -651,7 +651,7 @@ spec:
         securityContext:
           privileged: true
       - name: clean-cilium-state
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9@sha256:a732e57cb4881abe4783562bbba0045209ef85542372b44ce61584c887c49878"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.9"
         imagePullPolicy: IfNotPresent
         command:
         - /init-container.sh
@@ -807,7 +807,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cilium-operator
-        image: "{{ Registry "quay.io" }}/cilium/operator-generic:v1.11.6@sha256:9f6063c7bcaede801a39315ec7c166309f6a6783e98665f6693939cf1701bc17"
+        image: "{{ Registry "quay.io" }}/cilium/operator-generic:v1.11.6"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-operator-generic
