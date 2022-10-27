@@ -43,6 +43,9 @@ retry 5 vault_ci_login
 export AWS_E2E_TESTS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
 export AWS_E2E_TESTS_SECRET=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
 
+export ALIBABA_ACCESS_KEY_ID="${ALIBABA_ACCESS_KEY_ID:-$(vault kv get -field=AccessKeyId dev/e2e-alibaba)}"
+export ALIBABA_ACCESS_KEY_SECRET="${ALIBABA_ACCESS_KEY_SECRET:-$(vault kv get -field=AccessKeySecret dev/e2e-alibaba)}"
+
 export AZURE_E2E_TESTS_TENANT_ID="${AZURE_E2E_TESTS_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
 export AZURE_E2E_TESTS_SUBSCRIPTION_ID="${AZURE_E2E_TESTS_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
 export AZURE_E2E_TESTS_CLIENT_ID="${AZURE_E2E_TESTS_CLIENT_ID:-$(vault kv get -field=clientID dev/e2e-azure)}"
@@ -77,6 +80,7 @@ go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -
   -cni "${CNI:-}" \
   -provider "${PROVIDER:-}" \
   -os "${OSNAMES:-all}" \
+  -alibaba-kkp-datacenter alibaba-eu-central-1a \
   -aws-kkp-datacenter aws-eu-central-1a \
   -azure-kkp-datacenter azure-westeurope \
   -digitalocean-kkp-datacenter do-fra1 \

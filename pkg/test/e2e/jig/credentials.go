@@ -36,6 +36,33 @@ func env(key string) (string, error) {
 	return value, nil
 }
 
+type AlibabaCredentials struct {
+	CommonCredentials
+
+	AccessKeyID     string
+	AccessKeySecret string
+}
+
+func (c *AlibabaCredentials) AddFlags(fs *flag.FlagSet) {
+	flag.StringVar(&c.KKPDatacenter, "alibaba-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Alibaba clusters")
+}
+
+func (c *AlibabaCredentials) Parse() (err error) {
+	if c.KKPDatacenter == "" {
+		return errors.New("no -alibaba-kkp-datacenter flag given")
+	}
+
+	if c.AccessKeyID, err = env("ALIBABA_ACCESS_KEY_ID"); err != nil {
+		return err
+	}
+
+	if c.AccessKeySecret, err = env("ALIBABA_ACCESS_KEY_SECRET"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type AWSCredentials struct {
 	CommonCredentials
 

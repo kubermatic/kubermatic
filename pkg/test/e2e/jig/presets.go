@@ -100,6 +100,33 @@ func (j *TestJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.D
 	return errors.New("no cluster created yet")
 }
 
+func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AlibabaCredentials, replicas int, spotMaxPriceUSD *string) *TestJig {
+	projectJig := NewProjectJig(client, log)
+
+	clusterJig := NewClusterJig(client, log).
+		WithHumanReadableName("e2e test cluster").
+		WithSSHKeyAgent(false).
+		WithCloudSpec(&kubermaticv1.CloudSpec{
+			DatacenterName: credentials.KKPDatacenter,
+			ProviderName:   string(kubermaticv1.AlibabaCloudProvider),
+			Alibaba: &kubermaticv1.AlibabaCloudSpec{
+				AccessKeyID:     credentials.AccessKeyID,
+				AccessKeySecret: credentials.AccessKeySecret,
+			},
+		})
+
+	machineJig := NewMachineJig(client, log, nil).
+		WithClusterJig(clusterJig).
+		WithReplicas(replicas).
+		WithAlibaba("ecs.ic5.large", 40)
+
+	return &TestJig{
+		ProjectJig: projectJig,
+		ClusterJig: clusterJig,
+		MachineJig: machineJig,
+	}
+}
+
 func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AWSCredentials, replicas int, spotMaxPriceUSD *string) *TestJig {
 	projectJig := NewProjectJig(client, log)
 

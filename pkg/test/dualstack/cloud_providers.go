@@ -22,6 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
+	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -34,6 +35,7 @@ import (
 )
 
 var (
+	alibabaCredentials      jig.AlibabaCredentials
 	awsCredentials          jig.AWSCredentials
 	azureCredentials        jig.AzureCredentials
 	digitaloceanCredentials jig.DigitaloceanCredentials
@@ -58,6 +60,17 @@ func addRHELSubscriptionInfo(osSpec interface{}) interface{} {
 }
 
 type CreateJigFunc func(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig
+
+func newAlibabaTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	jig := jig.NewAlibabaCluster(seedClient, log, alibabaCredentials, 1, pointer.String("0.5"))
+	jig.MachineJig.WithProviderPatch(func(providerSpec interface{}) interface{} {
+		alibabaSpec := providerSpec.(alibabatypes.RawConfig)
+		alibabaSpec.VSwitchID = providerconfigtypes.ConfigVarString{Value: "vsw-gw876svgsv52bk0c95krn"}
+		return alibabaSpec
+	})
+
+	return jig
+}
 
 func newAWSTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
 	jig := jig.NewAWSCluster(seedClient, log, awsCredentials, 1, pointer.String("0.5"))

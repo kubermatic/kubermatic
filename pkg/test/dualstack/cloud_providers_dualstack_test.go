@@ -73,50 +73,44 @@ var (
 		providerconfig.OperatingSystemCentOS:     centos.Config{},
 		providerconfig.OperatingSystemFlatcar:    flatcar.Config{},
 		providerconfig.OperatingSystemRHEL:       rhel.Config{},
+		providerconfig.OperatingSystemRockyLinux: rockylinux.Config{},
 		providerconfig.OperatingSystemSLES:       sles.Config{},
 		providerconfig.OperatingSystemUbuntu:     ubuntu.Config{},
-		providerconfig.OperatingSystemRockyLinux: rockylinux.Config{},
 	}
 
 	cloudProviderJiggers = map[kubermaticv1.ProviderType]CreateJigFunc{
-		kubermaticv1.AzureCloudProvider:        newAzureTestJig,
-		kubermaticv1.GCPCloudProvider:          newGCPTestJig,
+		kubermaticv1.AlibabaCloudProvider:      newAlibabaTestJig,
 		kubermaticv1.AWSCloudProvider:          newAWSTestJig,
-		kubermaticv1.OpenstackCloudProvider:    newOpenstackTestJig,
-		kubermaticv1.HetznerCloudProvider:      newHetznerTestJig,
+		kubermaticv1.AzureCloudProvider:        newAzureTestJig,
 		kubermaticv1.DigitaloceanCloudProvider: newDigitaloceanTestJig,
+		kubermaticv1.GCPCloudProvider:          newGCPTestJig,
+		kubermaticv1.HetznerCloudProvider:      newHetznerTestJig,
+		kubermaticv1.OpenstackCloudProvider:    newOpenstackTestJig,
 		kubermaticv1.PacketCloudProvider:       newEquinixMetalTestJig,
 		kubermaticv1.VSphereCloudProvider:      newVSphereTestJig,
 	}
 
 	cnis = map[string]*kubermaticv1.CNIPluginSettings{
-		CiliumCNI: {
-			Type: "cilium",
-		},
 		CanalCNI: {
 			Type: "canal",
+		},
+		CiliumCNI: {
+			Type: "cilium",
 		},
 	}
 
 	tests = []testCase{
 		{
-			cloudProvider: kubermaticv1.AzureCloudProvider,
+			cloudProvider: kubermaticv1.AlibabaCloudProvider,
 			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRHEL,
-				providerconfig.OperatingSystemRockyLinux,
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:      CiliumCNI,
 			ipFamily: util.DualStack,
 		},
 		{
-			cloudProvider: kubermaticv1.AzureCloudProvider,
+			cloudProvider: kubermaticv1.AlibabaCloudProvider,
 			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemCentOS,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRHEL,
-				providerconfig.OperatingSystemRockyLinux,
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:      CanalCNI,
@@ -147,6 +141,29 @@ var (
 			ipFamily:            util.DualStack,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.AzureCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemRockyLinux,
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:      CiliumCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.AzureCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemCentOS,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemRockyLinux,
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:      CanalCNI,
+			ipFamily: util.DualStack,
 		},
 		{
 			cloudProvider: kubermaticv1.GCPCloudProvider,
@@ -512,6 +529,12 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) error {
 }
 
 func parseProviderCredentials(t *testing.T) {
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AlibabaCloudProvider)) {
+		if err := alibabaCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get alibaba credentials: %v", err)
+		}
+	}
+
 	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AWSCloudProvider)) {
 		if err := awsCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get aws credentials: %v", err)

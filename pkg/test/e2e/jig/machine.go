@@ -26,6 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
@@ -164,6 +165,15 @@ func (j *MachineJig) WithProviderPatch(patcher func(providerSpec interface{}) in
 func (j *MachineJig) WithClusterClient(client ctrlruntimeclient.Client) *MachineJig {
 	j.clusterClient = client
 	return j
+}
+
+func (j *MachineJig) WithAlibaba(instanceType string, diskSizeGB int) *MachineJig {
+	return j.WithProviderSpec(alibabatypes.RawConfig{
+		InstanceType:            providerconfig.ConfigVarString{Value: instanceType},
+		DiskSize:                providerconfig.ConfigVarString{Value: fmt.Sprintf("%d", diskSizeGB)},
+		DiskType:                providerconfig.ConfigVarString{Value: "cloud"},
+		InternetMaxBandwidthOut: providerconfig.ConfigVarString{Value: "10"},
+	})
 }
 
 func (j *MachineJig) WithAWS(instanceType string, spotMaxPriceUSD *string) *MachineJig {
@@ -586,8 +596,16 @@ func (j *MachineJig) determineOperatingSystem() (providerconfig.OperatingSystem,
 	return "", errors.New("cannot determine OS from the given osSpec")
 }
 
+// enrichProviderSpec takes the providerSpec (i.e. the machine config from the testcase, usually set
+// by one of the preset functions, for AWS this might be instance type + disk size) and fills in the
+// other required fields (for AWS for example the VPCID or instance profile name) based on the datacenter
+// (static configuration) and the cluster object (dynamic infos that some providers write into the spec).
+// The result is the providerSpec being ready to be marshalled into a MachineSpec to ultimately create
+// the MachineDeployment.
 func (j *MachineJig) enrichProviderSpec(cluster *kubermaticv1.Cluster, provider providerconfig.CloudProvider, datacenter *kubermaticv1.Datacenter, os providerconfig.OperatingSystem) (interface{}, error) {
 	switch provider {
+	case providerconfig.CloudProviderAlibaba:
+		return j.enrichAlibabaProviderSpec(cluster, datacenter.Spec.Alibaba)
 	case providerconfig.CloudProviderAWS:
 		return j.enrichAWSProviderSpec(cluster, datacenter.Spec.AWS)
 	case providerconfig.CloudProviderAzure:
@@ -607,6 +625,35 @@ func (j *MachineJig) enrichProviderSpec(cluster *kubermaticv1.Cluster, provider 
 	default:
 		return nil, fmt.Errorf("don't know how to handle %q provider specs", provider)
 	}
+}
+
+func (j *MachineJig) enrichAlibabaProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAlibaba) (interface{}, error) {
+	alibabaConfig, ok := j.providerSpec.(alibabatypes.RawConfig)
+	if !ok {
+		return nil, fmt.Errorf("cluster uses Alibaba, but given provider spec was %T", j.providerSpec)
+	}
+
+	if alibabaConfig.DiskType.Value == "" {
+		alibabaConfig.DiskType.Value = "cloud"
+	}
+
+	if alibabaConfig.DiskSize.Value == "" {
+		alibabaConfig.DiskSize.Value = "40"
+	}
+
+	if alibabaConfig.InternetMaxBandwidthOut.Value == "" {
+		alibabaConfig.InternetMaxBandwidthOut.Value = "10"
+	}
+
+	if alibabaConfig.RegionID.Value == "" {
+		alibabaConfig.RegionID.Value = datacenter.Region
+	}
+
+	if alibabaConfig.ZoneID.Value == "" {
+		alibabaConfig.ZoneID.Value = fmt.Sprintf("%sa", alibabaConfig.RegionID.Value)
+	}
+
+	return alibabaConfig, nil
 }
 
 func (j *MachineJig) enrichAWSProviderSpec(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAWS) (interface{}, error) {
