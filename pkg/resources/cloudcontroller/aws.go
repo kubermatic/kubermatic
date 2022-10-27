@@ -147,6 +147,6 @@ func getAWSCCMVersion(version semver.Semver) string {
 		fallthrough
 	//	By default return latest version
 	default:
-		return "v1.25.0"
+		return "v1.25.1"
 	}
 }
