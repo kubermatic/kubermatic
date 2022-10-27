@@ -23,22 +23,8 @@ spec:
     disable: true
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
-    apiserverReplicas: 2
-  api:
-    replicas: 1
-    debugLog: true
-    accessibleAddons:
-      - hubble
+    apiserverReplicas: 1
   featureGates:
     EtcdLauncher: true
-    # VPA won't do anything useful due to missing Prometheus, but we can
-    # at least ensure we deploy a working set of Deployments.
-    VerticalPodAutoscaler: false
     KonnectivityService: true
-  ui:
-    replicas: 0
-  # Dex integration
-  auth:
-    tokenIssuer: "http://dex.oauth:5556/dex"
-    issuerRedirectURL: "http://localhost:8000"
-    serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"
+    HeadlessInstallation: true
