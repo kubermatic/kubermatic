@@ -54,10 +54,10 @@ data:
   config.yaml: |
     peer-service: unix:///var/run/cilium/hubble.sock
     listen-address: :4245
-    dial-timeout: 
-    retry-timeout: 
-    sort-buffer-len-max: 
-    sort-buffer-drain-timeout: 
+    dial-timeout:
+    retry-timeout:
+    sort-buffer-len-max:
+    sort-buffer-drain-timeout:
     tls-client-cert-file: /var/lib/hubble-relay/tls/client.crt
     tls-client-key-file: /var/lib/hubble-relay/tls/client.key
     tls-hubble-server-ca-files: /var/lib/hubble-relay/tls/hubble-server-ca.crt
@@ -317,7 +317,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
         - name: hubble-relay
-          image: "quay.io/cilium/hubble-relay:v1.11.0@sha256:306ce38354a0a892b0c175ae7013cf178a46b79f51c52adb5465d87f14df0838"
+          image: "quay.io/cilium/hubble-relay:v1.11.0"
           imagePullPolicy: IfNotPresent
           command:
             - hubble-relay
@@ -400,13 +400,13 @@ spec:
       serviceAccountName: "hubble-ui"
       containers:
         - name: frontend
-          image: "quay.io/cilium/hubble-ui:v0.8.3@sha256:018ed122968de658d8874e2982fa6b3a8ae64b43d2356c05f977004176a89310"
+          image: "quay.io/cilium/hubble-ui:v0.8.3"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
         - name: backend
-          image: "quay.io/cilium/hubble-ui-backend:v0.8.3@sha256:13a16ed3ae9749682c817d3b834b2f2de901da6fb41de7753d7dce16650982b3"
+          image: "quay.io/cilium/hubble-ui-backend:v0.8.3"
           imagePullPolicy: IfNotPresent
           env:
             - name: EVENTS_SERVER_PORT
@@ -418,7 +418,7 @@ spec:
               containerPort: 8090
           volumeMounts:
         - name: proxy
-          image: "docker.io/envoyproxy/envoy:v1.18.4@sha256:e5c2bb2870d0e59ce917a5100311813b4ede96ce4eb0c6bfa879e3fbe3e83935"
+          image: "docker.io/envoyproxy/envoy:v1.18.4"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
