@@ -88,6 +88,6 @@ go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -
   -gcp-kkp-datacenter gcp-westeurope \
   -hetzner-kkp-datacenter hetzner-nbg1 \
   -openstack-kkp-datacenter syseleven-fes1 \
-  -vsphere-kkp-datacenter vsphere-hamburg
+  -vsphere-kkp-datacenter vsphere-ger
 
 echodate "Dualstack tests done."

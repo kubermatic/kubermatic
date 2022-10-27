@@ -1,3 +1,5 @@
+//go:build dualstack
+
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -47,6 +49,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 const (
@@ -358,7 +361,7 @@ func removeDisabledTests(allTests []testCase, log *zap.SugaredLogger) []testCase
 
 // TestNewClusters creates clusters and runs dualstack tests against them.
 func TestNewClusters(t *testing.T) {
-	ctx := context.Background()
+	ctx := signals.SetupSignalHandler()
 	log := log.NewFromOptions(logOptions).Sugar()
 
 	parseProviderCredentials(t)
@@ -415,7 +418,10 @@ func TestNewClusters(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create cluster: %v", err)
 			}
-			defer testJig.Cleanup(ctx, t, true)
+
+			// The cleanup uses a background context so that when the tests are cancelled,
+			// the cleanup is *not* interrupted, otherwise on CI we leak lots of cloud resources.
+			defer testJig.Cleanup(context.Background(), t, true)
 
 			// create a MachineDeployment with 1 replica each per operating system, do not yet wait for anything
 			for _, osName := range test.operatingSystems {

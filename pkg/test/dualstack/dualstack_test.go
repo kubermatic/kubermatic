@@ -1,3 +1,5 @@
+//go:build dualstack
+
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -28,6 +30,7 @@ import (
 	"go.uber.org/zap"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,7 +44,7 @@ import (
 )
 
 var (
-	logOptions              = log.NewDefaultOptions()
+	logOptions              = utils.DefaultLogOptions
 	enabledOperatingSystems = sets.NewString()
 	enabledCNIs             = sets.NewString()
 	enabledProviders        = sets.NewString()
@@ -63,13 +66,14 @@ func init() {
 	flag.BoolVar(&skipHostNetworkPods, "skip-host-network-pods", false, "If true, skips host network pods IP test")
 	flag.BoolVar(&skipEgressConnectivity, "skip-egress-connectivity", false, "If true, skips egress connectivity test")
 
-	azureCredentials.AddFlags(flag.CommandLine)
-	gcpCredentials.AddFlags(flag.CommandLine)
+	alibabaCredentials.AddFlags(flag.CommandLine)
 	awsCredentials.AddFlags(flag.CommandLine)
-	openstackCredentials.AddFlags(flag.CommandLine)
-	hetznerCredentials.AddFlags(flag.CommandLine)
+	azureCredentials.AddFlags(flag.CommandLine)
 	digitaloceanCredentials.AddFlags(flag.CommandLine)
 	equinixMetalCredentials.AddFlags(flag.CommandLine)
+	gcpCredentials.AddFlags(flag.CommandLine)
+	hetznerCredentials.AddFlags(flag.CommandLine)
+	openstackCredentials.AddFlags(flag.CommandLine)
 	vsphereCredentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
