@@ -639,7 +639,9 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 			gatekeeper.ConstraintTemplatePodStatusCRDCreator(),
 			gatekeeper.MutatorPodStatusCRDCreator(),
 			gatekeeper.AssignCRDCreator(),
-			gatekeeper.AssignMetadataCRDCreator())
+			gatekeeper.AssignMetadataCRDCreator(),
+			gatekeeper.ModifySetCRDCreator(),
+			gatekeeper.ProviderCRDCreator())
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {

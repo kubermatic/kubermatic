@@ -128,6 +128,14 @@ func GetResourcesToRemoveOnDelete() []ctrlruntimeclient.Object {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resources.GatekeeperAssignMetadataCRDName,
 		}})
+	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resources.GatekeeperModifySetCRDName,
+		}})
+	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resources.GatekeeperProviderCRDName,
+		}})
 	// Namespace
 	toRemove = append(toRemove, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

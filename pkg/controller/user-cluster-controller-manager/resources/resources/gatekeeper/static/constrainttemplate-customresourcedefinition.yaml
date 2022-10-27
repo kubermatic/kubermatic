@@ -1,4 +1,4 @@
-# Source:  https://github.com/open-policy-agent/gatekeeper/blob/v3.5.2/charts/gatekeeper/crds/constrainttemplate-customresourcedefinition.yaml
+# Source:  https://github.com/open-policy-agent/gatekeeper/blob/v3.7.2/charts/gatekeeper/crds/constrainttemplate-customresourcedefinition.yaml
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -32,7 +32,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ConstraintTemplateSpec defines the desired state of ConstraintTemplate
+              description: ConstraintTemplateSpec defines the desired state of ConstraintTemplate.
               properties:
                 crd:
                   properties:
@@ -48,6 +48,8 @@ spec:
                               type: array
                           type: object
                         validation:
+                          default:
+                            legacySchema: false
                           properties:
                             legacySchema:
                               default: false
@@ -73,7 +75,7 @@ spec:
                   type: array
               type: object
             status:
-              description: ConstraintTemplateStatus defines the observed state of ConstraintTemplate
+              description: ConstraintTemplateStatus defines the observed state of ConstraintTemplate.
               properties:
                 byPod:
                   items:
@@ -125,7 +127,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ConstraintTemplateSpec defines the desired state of ConstraintTemplate
+              description: ConstraintTemplateSpec defines the desired state of ConstraintTemplate.
               properties:
                 crd:
                   properties:
@@ -141,6 +143,8 @@ spec:
                               type: array
                           type: object
                         validation:
+                          default:
+                            legacySchema: true
                           properties:
                             legacySchema:
                               default: true
@@ -166,7 +170,7 @@ spec:
                   type: array
               type: object
             status:
-              description: ConstraintTemplateStatus defines the observed state of ConstraintTemplate
+              description: ConstraintTemplateStatus defines the observed state of ConstraintTemplate.
               properties:
                 byPod:
                   items:
@@ -218,7 +222,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ConstraintTemplateSpec defines the desired state of ConstraintTemplate
+              description: ConstraintTemplateSpec defines the desired state of ConstraintTemplate.
               properties:
                 crd:
                   properties:
@@ -234,6 +238,8 @@ spec:
                               type: array
                           type: object
                         validation:
+                          default:
+                            legacySchema: true
                           properties:
                             legacySchema:
                               default: true
@@ -259,7 +265,7 @@ spec:
                   type: array
               type: object
             status:
-              description: ConstraintTemplateStatus defines the observed state of ConstraintTemplate
+              description: ConstraintTemplateStatus defines the observed state of ConstraintTemplate.
               properties:
                 byPod:
                   items:
