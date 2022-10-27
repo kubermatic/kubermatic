@@ -260,6 +260,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ce.yaml \
+    charts/values.example.mla.yaml \
     charts/kubermatic.example.ce.yaml \
     charts/seed.example.yaml \
     LICENSE \
@@ -298,6 +299,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ee.yaml \
+    charts/values.example.mla.yaml \
     charts/kubermatic.example.ee.yaml \
     charts/seed.example.yaml \
     LICENSE \
