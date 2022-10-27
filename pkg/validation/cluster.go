@@ -179,7 +179,11 @@ func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec,
 		allErrs = append(allErrs, errs...)
 	}
 
-	if cloudProvider != nil {
+	// The cloudProvider is built based on the *datacenter*, but does not necessarily match the CloudSpec.
+	// To prevent a cloud provider to accidentally access nil fields, we check here again that the datacenter
+	// type, providerName and provider data all match before calling the provider's validation logic.
+	// No error needs to be reported here if there's a mismatch, as ValidateClusterSpec() already reported one.
+	if cloudProvider != nil && validateDatacenterMatchesProvider(spec.Cloud, dc) == nil {
 		if err := cloudProvider.ValidateCloudSpec(ctx, spec.Cloud); err != nil {
 			// Just using spec.Cloud for the error leads to a Go-representation of the struct being printed in
 			// the error message, which looks awful an is not helpful. However any other encoding (e.g. JSON)
@@ -582,6 +586,28 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
+func validateDatacenterMatchesProvider(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) error {
+	clusterCloudProvider, err := kubermaticv1helper.ClusterCloudProviderName(spec)
+	if err != nil {
+		return fmt.Errorf("could not determine cluster cloud provider: %w", err)
+	}
+
+	dcCloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
+	if err != nil {
+		return fmt.Errorf("could not determine datacenter cloud provider: %w", err)
+	}
+
+	if clusterCloudProvider != dcCloudProvider {
+		return fmt.Errorf("expected datacenter provider to be %q, but got %q", clusterCloudProvider, dcCloudProvider)
+	}
+
+	if spec.ProviderName != dcCloudProvider {
+		return fmt.Errorf("expected providerName to be %q, but got %q", dcCloudProvider, spec.ProviderName)
+	}
+
+	return nil
+}
+
 // ValidateCloudSpec validates if the cloud spec is valid
 // If this is not called from within another validation
 // routine, parentFieldPath can be nil.
@@ -607,20 +633,8 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	}
 
 	if dc != nil {
-		clusterCloudProvider, err := kubermaticv1helper.ClusterCloudProviderName(spec)
-		if err != nil {
-			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("could not determine cluster cloud provider: %v", err)))
-		}
-
-		dcCloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
-		if err != nil {
-			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("could not determine datacenter cloud provider: %v", err)))
-		}
-
-		// this should never happen, unless the caller did the wrong thing
-		// (i.e. user input should never lead to this place)
-		if clusterCloudProvider != dcCloudProvider {
-			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, fmt.Sprintf("expected datacenter provider to be %q, but got %q", clusterCloudProvider, dcCloudProvider)))
+		if err := validateDatacenterMatchesProvider(spec, dc); err != nil {
+			allErrs = append(allErrs, field.Invalid(parentFieldPath, nil, err.Error()))
 		}
 	}
 
