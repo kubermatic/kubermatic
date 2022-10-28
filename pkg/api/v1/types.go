@@ -1976,11 +1976,17 @@ type KubevirtNodeSpec struct {
 	// SecondaryDisks contains list of secondary-disks
 	SecondaryDisks []SecondaryDisks `json:"secondaryDisks"`
 	// PodAffinityPreset describes pod affinity scheduling rules
+	//
+	// Deprecated: in favor of topology spread constraints
 	PodAffinityPreset string `json:"podAffinityPreset"`
 	// PodAntiAffinityPreset describes pod anti-affinity scheduling rules
+	//
+	// Deprecated: in favor of topology spread constraints
 	PodAntiAffinityPreset string `json:"podAntiAffinityPreset"`
 	// NodeAffinityPreset describes node affinity scheduling rules
 	NodeAffinityPreset NodeAffinityPreset `json:"nodeAffinityPreset"`
+	// TopologySpreadConstraints describes topology spread constraints for VMs.
+	TopologySpreadConstraints []TopologySpreadConstraint `json:"topologySpreadConstraints"`
 }
 
 type SecondaryDisks struct {
@@ -1992,6 +1998,16 @@ type NodeAffinityPreset struct {
 	Type   string
 	Key    string
 	Values []string
+}
+
+type TopologySpreadConstraint struct {
+	// MaxSkew describes the degree to which VMs may be unevenly distributed.
+	MaxSkew int `json:"maxSkew"`
+	// TopologyKey is the key of infra-node labels.
+	TopologyKey string `json:"topologyKey"`
+	// WhenUnsatisfiable indicates how to deal with a VM if it doesn't satisfy
+	// the spread constraint.
+	WhenUnsatisfiable string `json:"whenUnsatisfiable"`
 }
 
 func (spec *KubevirtNodeSpec) MarshalJSON() ([]byte, error) {
@@ -2024,17 +2040,18 @@ func (spec *KubevirtNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		FlavorName                  string             `json:"flavorName"`
-		FlavorProfile               string             `json:"flavorProfile"`
-		CPUs                        string             `json:"cpus"`
-		Memory                      string             `json:"memory"`
-		PrimaryDiskOSImage          string             `json:"primaryDiskOSImage"`
-		PrimaryDiskStorageClassName string             `json:"primaryDiskStorageClassName"`
-		PrimaryDiskSize             string             `json:"primaryDiskSize"`
-		SecondaryDisks              []SecondaryDisks   `json:"secondaryDisks"`
-		PodAffinityPreset           string             `json:"podAffinityPreset"`
-		PodAntiAffinityPreset       string             `json:"podAntiAffinityPreset"`
-		NodeAffinityPreset          NodeAffinityPreset `json:"nodeAffinityPreset"`
+		FlavorName                  string                     `json:"flavorName"`
+		FlavorProfile               string                     `json:"flavorProfile"`
+		CPUs                        string                     `json:"cpus"`
+		Memory                      string                     `json:"memory"`
+		PrimaryDiskOSImage          string                     `json:"primaryDiskOSImage"`
+		PrimaryDiskStorageClassName string                     `json:"primaryDiskStorageClassName"`
+		PrimaryDiskSize             string                     `json:"primaryDiskSize"`
+		SecondaryDisks              []SecondaryDisks           `json:"secondaryDisks"`
+		PodAffinityPreset           string                     `json:"podAffinityPreset"`
+		PodAntiAffinityPreset       string                     `json:"podAntiAffinityPreset"`
+		NodeAffinityPreset          NodeAffinityPreset         `json:"nodeAffinityPreset"`
+		TopologySpreadConstraints   []TopologySpreadConstraint `json:"topologySpreadConstraints"`
 	}{
 		FlavorName:                  spec.FlavorName,
 		FlavorProfile:               spec.FlavorProfile,
@@ -2047,6 +2064,7 @@ func (spec *KubevirtNodeSpec) MarshalJSON() ([]byte, error) {
 		PodAffinityPreset:           spec.PodAffinityPreset,
 		PodAntiAffinityPreset:       spec.PodAntiAffinityPreset,
 		NodeAffinityPreset:          spec.NodeAffinityPreset,
+		TopologySpreadConstraints:   spec.TopologySpreadConstraints,
 	}
 
 	return json.Marshal(&res)

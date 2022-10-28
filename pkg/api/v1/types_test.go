@@ -641,7 +641,7 @@ func TestKubevirtNodeSpec_MarshalJSON(t *testing.T) {
 				PrimaryDiskStorageClassName: "test-sc",
 				PrimaryDiskSize:             "1",
 			},
-			"{\"flavorName\":\"\",\"flavorProfile\":\"\",\"cpus\":\"1\",\"memory\":\"1\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"\",\"Key\":\"\",\"Values\":null}}",
+			"{\"flavorName\":\"\",\"flavorProfile\":\"\",\"cpus\":\"1\",\"memory\":\"1\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"\",\"Key\":\"\",\"Values\":null},\"topologySpreadConstraints\":null}",
 		},
 		{
 			"case 8: should marshal when instance type is provided with vm-flavor",
@@ -651,7 +651,7 @@ func TestKubevirtNodeSpec_MarshalJSON(t *testing.T) {
 				PrimaryDiskStorageClassName: "test-sc",
 				PrimaryDiskSize:             "1",
 			},
-			"{\"flavorName\":\"test-flavor\",\"flavorProfile\":\"\",\"cpus\":\"\",\"memory\":\"\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"\",\"Key\":\"\",\"Values\":null}}",
+			"{\"flavorName\":\"test-flavor\",\"flavorProfile\":\"\",\"cpus\":\"\",\"memory\":\"\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"\",\"Key\":\"\",\"Values\":null},\"topologySpreadConstraints\":null}",
 		},
 		{
 			"case 9: should marshal when instance type is provided with affinity",
@@ -661,15 +661,30 @@ func TestKubevirtNodeSpec_MarshalJSON(t *testing.T) {
 				PrimaryDiskOSImage:          "test-url",
 				PrimaryDiskStorageClassName: "test-sc",
 				PrimaryDiskSize:             "1",
-				PodAffinityPreset:           "soft",
-				PodAntiAffinityPreset:       "soft",
 				NodeAffinityPreset: apiv1.NodeAffinityPreset{
 					Type:   "soft",
 					Key:    "foo",
 					Values: []string{"bar"},
 				},
 			},
-			"{\"flavorName\":\"\",\"flavorProfile\":\"\",\"cpus\":\"1\",\"memory\":\"1\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"soft\",\"podAntiAffinityPreset\":\"soft\",\"nodeAffinityPreset\":{\"Type\":\"soft\",\"Key\":\"foo\",\"Values\":[\"bar\"]}}",
+			"{\"flavorName\":\"\",\"flavorProfile\":\"\",\"cpus\":\"1\",\"memory\":\"1\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"soft\",\"Key\":\"foo\",\"Values\":[\"bar\"]},\"topologySpreadConstraints\":null}",
+		},
+		{
+			"case 10: should marshal when instance type is provided with topology constraint",
+			&apiv1.KubevirtNodeSpec{
+				CPUs:                        "1",
+				Memory:                      "1",
+				PrimaryDiskOSImage:          "test-url",
+				PrimaryDiskStorageClassName: "test-sc",
+				PrimaryDiskSize:             "1",
+				NodeAffinityPreset: apiv1.NodeAffinityPreset{
+					Type:   "soft",
+					Key:    "foo",
+					Values: []string{"bar"},
+				},
+				TopologySpreadConstraints: []apiv1.TopologySpreadConstraint{{MaxSkew: 1, TopologyKey: "zone", WhenUnsatisfiable: "ScheduleAnyway"}},
+			},
+			"{\"flavorName\":\"\",\"flavorProfile\":\"\",\"cpus\":\"1\",\"memory\":\"1\",\"primaryDiskOSImage\":\"test-url\",\"primaryDiskStorageClassName\":\"test-sc\",\"primaryDiskSize\":\"1\",\"secondaryDisks\":null,\"podAffinityPreset\":\"\",\"podAntiAffinityPreset\":\"\",\"nodeAffinityPreset\":{\"Type\":\"soft\",\"Key\":\"foo\",\"Values\":[\"bar\"]},\"topologySpreadConstraints\":[{\"maxSkew\":1,\"topologyKey\":\"zone\",\"whenUnsatisfiable\":\"ScheduleAnyway\"}]}",
 		},
 	}
 

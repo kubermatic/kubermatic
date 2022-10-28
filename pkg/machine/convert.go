@@ -18,6 +18,7 @@ package machine
 
 import (
 	"fmt"
+	"strconv"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
@@ -308,8 +309,8 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			PrimaryDiskOSImage:          config.VirtualMachine.Template.PrimaryDisk.OsImage.Value,
 			PrimaryDiskStorageClassName: config.VirtualMachine.Template.PrimaryDisk.StorageClassName.Value,
 			PrimaryDiskSize:             config.VirtualMachine.Template.PrimaryDisk.Size.Value,
-			PodAffinityPreset:           config.Affinity.PodAffinityPreset.Value,
-			PodAntiAffinityPreset:       config.Affinity.PodAntiAffinityPreset.Value,
+			PodAffinityPreset:           config.Affinity.PodAffinityPreset.Value,     //nolint:staticcheck
+			PodAntiAffinityPreset:       config.Affinity.PodAntiAffinityPreset.Value, //nolint:staticcheck
 			NodeAffinityPreset: apiv1.NodeAffinityPreset{
 				Type: config.Affinity.NodeAffinityPreset.Type.Value,
 				Key:  config.Affinity.NodeAffinityPreset.Key.Value,
@@ -323,6 +324,19 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		cloudSpec.Kubevirt.NodeAffinityPreset.Values = make([]string, 0, len(config.Affinity.NodeAffinityPreset.Values))
 		for _, np := range config.Affinity.NodeAffinityPreset.Values {
 			cloudSpec.Kubevirt.NodeAffinityPreset.Values = append(cloudSpec.Kubevirt.NodeAffinityPreset.Values, np.Value)
+		}
+		cloudSpec.Kubevirt.TopologySpreadConstraints = make([]apiv1.TopologySpreadConstraint, 0, len(config.TopologySpreadConstraints))
+		for _, tsc := range config.TopologySpreadConstraints {
+			maxSkew, err := strconv.ParseInt(tsc.MaxSkew.Value, 10, 32)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse kubevirt config: %w", err)
+			}
+			constraint := apiv1.TopologySpreadConstraint{
+				MaxSkew:           int(maxSkew),
+				TopologyKey:       tsc.TopologyKey.Value,
+				WhenUnsatisfiable: tsc.WhenUnsatisfiable.Value,
+			}
+			cloudSpec.Kubevirt.TopologySpreadConstraints = append(cloudSpec.Kubevirt.TopologySpreadConstraints, constraint)
 		}
 	case providerconfig.CloudProviderAlibaba:
 		config := &alibaba.RawConfig{}

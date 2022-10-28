@@ -29950,12 +29950,12 @@
           "$ref": "#/definitions/NodeAffinityPreset"
         },
         "podAffinityPreset": {
-          "description": "PodAffinityPreset describes pod affinity scheduling rules",
+          "description": "PodAffinityPreset describes pod affinity scheduling rules\n\nDeprecated: in favor of topology spread constraints",
           "type": "string",
           "x-go-name": "PodAffinityPreset"
         },
         "podAntiAffinityPreset": {
-          "description": "PodAntiAffinityPreset describes pod anti-affinity scheduling rules",
+          "description": "PodAntiAffinityPreset describes pod anti-affinity scheduling rules\n\nDeprecated: in favor of topology spread constraints",
           "type": "string",
           "x-go-name": "PodAntiAffinityPreset"
         },
@@ -29981,6 +29981,14 @@
             "$ref": "#/definitions/SecondaryDisks"
           },
           "x-go-name": "SecondaryDisks"
+        },
+        "topologySpreadConstraints": {
+          "description": "TopologySpreadConstraints describes topology spread constraints for VMs.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TopologySpreadConstraint"
+          },
+          "x-go-name": "TopologySpreadConstraints"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -33717,6 +33725,28 @@
       "description": "+kubebuilder:validation:Enum=helm",
       "type": "string",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+    },
+    "TopologySpreadConstraint": {
+      "type": "object",
+      "properties": {
+        "maxSkew": {
+          "description": "MaxSkew describes the degree to which VMs may be unevenly distributed.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxSkew"
+        },
+        "topologyKey": {
+          "description": "TopologyKey is the key of infra-node labels.",
+          "type": "string",
+          "x-go-name": "TopologyKey"
+        },
+        "whenUnsatisfiable": {
+          "description": "WhenUnsatisfiable indicates how to deal with a VM if it doesn't satisfy\nthe spread constraint.",
+          "type": "string",
+          "x-go-name": "WhenUnsatisfiable"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Trace": {
       "type": "object",
