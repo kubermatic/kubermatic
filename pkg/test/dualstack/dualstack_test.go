@@ -26,14 +26,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	"go.uber.org/zap"
+
+	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -41,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	netutils "k8s.io/utils/net"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
