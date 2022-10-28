@@ -439,6 +439,9 @@ set_helm_charts_version() {
 
   while IFS= read -r -d '' chartFile; do
     chart="$(basename $(dirname "$chartFile"))"
+    if [ "$chart" = "mla-secrets" ]; then
+      continue
+    fi
 
     yq --inplace ".version = \"$version\"" "$chartFile"
     if [ "$chart" = "kubermatic-operator" ]; then
