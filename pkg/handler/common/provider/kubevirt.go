@@ -44,37 +44,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var NewKubeVirtClient = func(kubeconfig string) (ctrlruntimeclient.Client, error) {
-	config, err := base64.StdEncoding.DecodeString(kubeconfig)
-	if err != nil {
-		// should not happen, always sent base64 encoded
-		return nil, err
-	}
-
-	clientConfig, err := clientcmd.RESTConfigFromKubeConfig(config)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := ctrlruntimeclient.New(clientConfig, ctrlruntimeclient.Options{})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := kubevirtv1.AddToScheme(client.Scheme()); err != nil {
-		return nil, err
-	}
-
-	if err := kvinstancetypev1alpha1.AddToScheme(client.Scheme()); err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
+var NewKubeVirtClient = kubevirt.NewClient
 
 func getKvKubeConfigFromCredentials(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
 	userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (string, error) {
@@ -117,7 +90,7 @@ func kubeVirtPresets(ctx context.Context, client ctrlruntimeclient.Client, kubec
 }
 
 func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (apiv2.VirtualMachineInstancePresetList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +157,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 }
 
 func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +220,7 @@ func newAPIVirtualMachineInstancePreset(vmiPreset *kubevirtv1.VirtualMachineInst
 }
 
 func KubeVirtStorageClasses(ctx context.Context, kubeconfig string) (apiv2.StorageClassList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +385,7 @@ func newAPIPreference(w preferenceWrapper) (*apiv2.VirtualMachinePreference, err
 // - concatenated with kubermatic standard from yaml manifests
 // The list is filtered based on the Resource Quota.
 func KubeVirtInstancetypes(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (*apiv2.VirtualMachineInstancetypeList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -485,7 +458,7 @@ func kubeVirtPreferences(ctx context.Context, client ctrlruntimeclient.Client, k
 // - concatenated with kubermatic standard from yaml manifests.
 // No filtering due to quota is needed.
 func KubeVirtPreferences(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (*apiv2.VirtualMachinePreferenceList, error) {
-	client, err := NewKubeVirtClient(kubeconfig)
+	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
 	}

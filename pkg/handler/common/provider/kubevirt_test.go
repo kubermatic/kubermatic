@@ -176,18 +176,13 @@ func instancetypeName(cpu uint32, memory string) string {
 	return fmt.Sprintf("cpu-%d-memory-%s", cpu, memory)
 }
 
-func getQuantity(q string) *resource.Quantity {
-	res := resource.MustParse(q)
-	return &res
-}
-
 func getInstancetypeSpec(cpu uint32, memory string) kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec {
 	return kvinstancetypev1alpha1.VirtualMachineInstancetypeSpec{
 		CPU: kvinstancetypev1alpha1.CPUInstancetype{
 			Guest: cpu,
 		},
 		Memory: kvinstancetypev1alpha1.MemoryInstancetype{
-			Guest: *getQuantity(memory),
+			Guest: resource.MustParse(memory),
 		},
 	}
 }

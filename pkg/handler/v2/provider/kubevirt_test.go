@@ -33,6 +33,7 @@ import (
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -168,8 +169,10 @@ var (
 )
 
 func setFakeNewKubeVirtClient(objects []ctrlruntimeclient.Object) {
-	providercommon.NewKubeVirtClient = func(kubeconfig string) (ctrlruntimeclient.Client, error) {
-		return fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objects...).Build(), nil
+	providercommon.NewKubeVirtClient = func(kubeconfig string, options kubevirt.ClientOptions) (*kubevirt.Client, error) {
+		return &kubevirt.Client{
+			Client: fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(objects...).Build(),
+		}, nil
 	}
 }
 

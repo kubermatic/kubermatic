@@ -26,7 +26,6 @@ package machine
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -312,7 +311,7 @@ func getKubeVirtResourceRequirements(ctx context.Context,
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
 		}
-		preset, err := provider.KubeVirtVMIPreset(ctx, base64.StdEncoding.EncodeToString([]byte(kubeconfig)), flavor)
+		preset, err := provider.KubeVirtVMIPreset(ctx, kubeconfig, flavor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt VMI Preset, error: %w", err)
 		}

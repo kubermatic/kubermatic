@@ -30,7 +30,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NamespaceCreator(name string) reconciling.NamedNamespaceCreatorGetter {
+func namespaceCreator(name string) reconciling.NamedNamespaceCreatorGetter {
 	return func() (string, reconciling.NamespaceCreator) {
 		return name, func(n *corev1.Namespace) (*corev1.Namespace, error) {
 			return n, nil
@@ -48,7 +48,7 @@ func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.
 	}
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
-		NamespaceCreator(name),
+		namespaceCreator(name),
 	}
 
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", client); err != nil {

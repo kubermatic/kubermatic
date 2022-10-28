@@ -26,13 +26,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	InfraStorageClassAnnotation = "kubevirt-initialization.k8c.io/initialize-sc"
-
 	csiServiceAccountNamespace = metav1.NamespaceDefault
 	csiResourceName            = "kubevirt-csi"
 )
@@ -107,7 +104,7 @@ func csiRoleBindingCreator(name, namespace string) reconciling.NamedRoleBindingC
 }
 
 // reconcileCSIRoleRoleBinding reconciles the Role and RoleBinding needed by CSI driver.
-func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client ctrlruntimeclient.Client, restConfig *restclient.Config) error {
+func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
 	roleCreators := []reconciling.NamedRoleCreatorGetter{
 		csiRoleCreator(csiResourceName),
 	}
@@ -125,8 +122,9 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 	return nil
 }
 
+// EnsureCSIInfraTokenAccess generates a service account token for KubeVirt CSI access.
 func EnsureCSIInfraTokenAccess(ctx context.Context, infraKubeconfig string) ([]byte, error) {
-	client, restConfig, err := NewClientWithRestConfig(infraKubeconfig)
+	client, err := NewClient(infraKubeconfig, ClientOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +132,7 @@ func EnsureCSIInfraTokenAccess(ctx context.Context, infraKubeconfig string) ([]b
 	saCreators := []reconciling.NamedServiceAccountCreatorGetter{
 		csiServiceAccountCreator(csiResourceName),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, csiServiceAccountNamespace, client); err != nil {
+	if err = reconciling.ReconcileServiceAccounts(ctx, saCreators, csiServiceAccountNamespace, client); err != nil {
 		return nil, err
 	}
 
@@ -151,7 +149,7 @@ func EnsureCSIInfraTokenAccess(ctx context.Context, infraKubeconfig string) ([]b
 		seCreators := []reconciling.NamedSecretCreatorGetter{
 			csiSecretTokenCreator(csiResourceName),
 		}
-		if err := reconciling.ReconcileSecrets(ctx, seCreators, csiServiceAccountNamespace, client); err != nil {
+		if err = reconciling.ReconcileSecrets(ctx, seCreators, csiServiceAccountNamespace, client); err != nil {
 			return nil, err
 		}
 	} else {
@@ -169,7 +167,7 @@ func EnsureCSIInfraTokenAccess(ctx context.Context, infraKubeconfig string) ([]b
 		token = s.Data["token"]
 	}
 
-	csiKubeconfig, err := generateKubeconfigWithToken(restConfig, &sa, string(token))
+	csiKubeconfig, err := generateKubeconfigWithToken(client.RestConfig, &sa, string(token))
 	if err != nil {
 		return nil, err
 	}

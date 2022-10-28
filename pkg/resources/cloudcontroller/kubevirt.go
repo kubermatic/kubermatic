@@ -76,7 +76,7 @@ func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDe
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled(), false), []corev1.Volume{
 				{
 					Name: resources.CloudConfigSeedSecretName,
