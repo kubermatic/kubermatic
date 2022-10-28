@@ -51,7 +51,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		// scenario 2
 		{
 			name:             "scenario 2: user gets existing global settings",
-			expectedResponse: `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"defaultNodeCount":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true,"enableDashboard":false,"enableWebTerminal":false"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true,"cleanupOptions":{"enabled":true,"enforced":true},"opaOptions":{"enabled":true,"enforced":true},"mlaOptions":{"loggingEnabled":true,"loggingEnforced":true,"monitoringEnabled":true,"monitoringEnforced":true},"mlaAlertmanagerPrefix":"","mlaGrafanaPrefix":""}`,
+			expectedResponse: `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"defaultNodeCount":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true,"enableDashboard":false,"enableWebTerminal":false,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true,"cleanupOptions":{"enabled":true,"enforced":true},"opaOptions":{"enabled":true,"enforced":true},"mlaOptions":{"loggingEnabled":true,"loggingEnforced":true,"monitoringEnabled":true,"monitoringEnforced":true},"mlaAlertmanagerPrefix":"","mlaGrafanaPrefix":""}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true),
 				test.GenDefaultGlobalSettings()},

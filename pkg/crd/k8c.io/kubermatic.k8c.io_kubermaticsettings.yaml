@@ -157,7 +157,6 @@ spec:
                 - enableExternalClusterImport
                 - enableOIDCKubeconfig
                 - enableWebTerminal
-                - machineDeploymentVMResourceQuota
                 - mlaAlertmanagerPrefix
                 - mlaGrafanaPrefix
                 - restrictProjectCreation
