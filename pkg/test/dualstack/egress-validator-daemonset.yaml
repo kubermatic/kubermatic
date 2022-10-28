@@ -35,7 +35,7 @@ spec:
           command:
             - /bin/ash
             - -c
-            - sleep 1000000000
+            - while true; do sleep 1; done
           readinessProbe:
             timeoutSeconds: 7
             exec:
@@ -86,7 +86,7 @@ spec:
           command:
             - /bin/ash
             - -c
-            - sleep 1000000000
+            - while true; do sleep 1; done
           readinessProbe:
             timeoutSeconds: 7
             exec:

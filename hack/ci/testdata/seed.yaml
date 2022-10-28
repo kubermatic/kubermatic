@@ -180,9 +180,12 @@ spec:
             - 37.123.105.117
           enforceFloatingIP: true
           images:
-            centos: "CentOS 8 (2021-07-05)"
-            ubuntu: "kubermatic-ubuntu"
-            flatcar: "Flatcar Stable (2022-08-05)"
+            centos: kubermatic-e2e-centos
+            coreos: kubermatic-e2e-coreos
+            flatcar: Flatcar Stable (2022-10-19)
+            rhel: kubermatic-e2e-rhel
+            rockylinux: rockylinux-8
+            ubuntu: Ubuntu Focal 20.04 (2022-10-26)
           nodeSizeRequirements:
             minimumMemory: 0
             minimumVCPUs: 0

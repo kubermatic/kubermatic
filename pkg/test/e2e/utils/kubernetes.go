@@ -165,7 +165,10 @@ func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error
 		return nil, nil, nil, err
 	}
 
-	config := ctrlruntime.GetConfigOrDie()
+	config, err := ctrlruntime.GetConfig()
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get kube config: %w", err)
+	}
 	mapper, err := apiutil.NewDynamicRESTMapper(config)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create dynamic REST mapper: %w", err)
