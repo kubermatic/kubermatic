@@ -91,8 +91,7 @@ used to run the conformance-tester for a given cloud provider.
 
 ## run-dualstack-e2e-test.sh
 
-This script is used as a postsubmit job and updates the dev master
-cluster after every commit to main.
+TBD
 
 ## run-e2e-tests.sh
 
@@ -166,17 +165,6 @@ This script should be sourced, not called, so callers get the variables
 it sets.
 
 ## setup-kubermatic-mla-in-kind.sh
-
-This script creates a local kind cluster, compiles the KKP binaries,
-creates all Docker images and loads them into the kind cluster,
-then installs KKP using the KKP installer + operator and sets up a
-single shared master/seed system.
-This serves as the precursor for all other tests.
-
-This script should be sourced, not called, so callers get the variables
-it sets.
-
-## setup-mla.sh
 
 This script creates a local kind cluster, compiles the KKP binaries,
 creates all Docker images and loads them into the kind cluster,

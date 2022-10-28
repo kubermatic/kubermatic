@@ -41,6 +41,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
@@ -58,7 +59,7 @@ import (
 var (
 	userconfig  string
 	credentials jig.AWSCredentials
-	logOptions  = log.NewDefaultOptions()
+	logOptions  = utils.DefaultLogOptions
 )
 
 const (

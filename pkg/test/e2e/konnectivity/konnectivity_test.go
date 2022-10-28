@@ -61,7 +61,7 @@ import (
 
 var (
 	credentials jig.AWSCredentials
-	logOptions  = log.NewDefaultOptions()
+	logOptions  = utils.DefaultLogOptions
 )
 
 const (

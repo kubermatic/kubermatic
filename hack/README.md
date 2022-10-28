@@ -74,10 +74,6 @@ to prewarm a local Docker registry, for example in offline setups.
 
 TBD
 
-## run-api-tests.sh
-
-TBD
-
 ## run-ccm-migration-e2e-test-in-kind.sh
 
 This script sets up a local KKP installation in kind, deploys a

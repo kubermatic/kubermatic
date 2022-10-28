@@ -45,7 +45,7 @@ import (
 )
 
 var (
-	logOptions  = log.NewDefaultOptions()
+	logOptions  = utils.DefaultLogOptions
 	credentials jig.BYOCredentials
 )
 

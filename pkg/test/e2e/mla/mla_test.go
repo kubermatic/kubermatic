@@ -69,7 +69,7 @@ alertmanager_config: |
 
 var (
 	credentials jig.HetznerCredentials
-	logOptions  = log.NewDefaultOptions()
+	logOptions  = utils.DefaultLogOptions
 )
 
 func init() {

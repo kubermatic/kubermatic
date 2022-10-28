@@ -28,7 +28,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/gorilla/websocket"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -432,81 +431,6 @@ func (r *TestClient) ListCredentials(providerName, datacenter string) ([]string,
 	names = append(names, credentialsResponse.Payload.Names...)
 
 	return names, nil
-}
-
-// CreateAWSCluster creates cluster for AWS provider.
-func (r *TestClient) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone, proxyMode string, replicas int32, konnectivityEnabled bool, cniSettings *models.CNIPluginSettings) (*apiv1.Cluster, error) {
-	_, err := semverlib.NewVersion(version)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse version %s: %w", version, err)
-	}
-
-	clusterSpec := &models.CreateClusterSpec{}
-	clusterSpec.Cluster = &models.Cluster{
-		Type: "kubernetes",
-		Name: name,
-		Spec: &models.ClusterSpec{
-			Cloud: &models.CloudSpec{
-				DatacenterName: location,
-				Aws: &models.AWSCloudSpec{
-					SecretAccessKey: secretAccessKey,
-					AccessKeyID:     accessKeyID,
-				},
-			},
-			Version:   models.Semver(version),
-			CniPlugin: cniSettings,
-			ClusterNetwork: &models.ClusterNetworkingConfig{
-				ProxyMode: proxyMode,
-			},
-		},
-	}
-
-	if konnectivityEnabled {
-		clusterSpec.Cluster.Spec.ClusterNetwork = &models.ClusterNetworkingConfig{
-			KonnectivityEnabled: true,
-		}
-	}
-
-	if replicas > 0 {
-		instanceType := "t3.small"
-		volumeSize := int32(25)
-		volumeType := "standard"
-
-		clusterSpec.NodeDeployment = &models.NodeDeployment{
-			Spec: &models.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &models.NodeSpec{
-					Cloud: &models.NodeCloudSpec{
-						Aws: &models.AWSNodeSpec{
-							AvailabilityZone: availabilityZone,
-							InstanceType:     &instanceType,
-							VolumeSize:       &volumeSize,
-							VolumeType:       &volumeType,
-						},
-					},
-					OperatingSystem: &models.OperatingSystemSpec{
-						Ubuntu: &models.UbuntuSpec{
-							DistUpgradeOnBoot: false,
-						},
-					},
-				},
-			},
-		}
-	}
-
-	r.test.Logf("Creating AWS cluster %q (%s, %d nodes)...", name, version, replicas)
-
-	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
-	SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-
-	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-
-	r.test.Log("Cluster created successfully.")
-
-	return convertCluster(clusterResponse.Payload)
 }
 
 // CreateKubevirtCluster creates cluster for Kubevirt provider.
@@ -1631,38 +1555,6 @@ func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, v
 	}, nil
 }
 
-// CreateClusterTemplate method creates cluster template instance object.
-func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string, replicas int64) (*apiv2.ClusterTemplateInstance, error) {
-	params := &project.CreateClusterTemplateInstanceParams{
-		Body: project.CreateClusterTemplateInstanceBody{
-			Replicas: replicas,
-		},
-		ProjectID:         projectID,
-		ClusterTemplateID: templateID,
-	}
-
-	SetupRetryParams(r.test, params, Backoff{
-		Duration: 1 * time.Second,
-		Steps:    4,
-		Factor:   1.5,
-	})
-
-	instance, err := r.client.Project.CreateClusterTemplateInstance(params, r.bearerToken)
-	if err != nil {
-		return nil, err
-	}
-
-	return &apiv2.ClusterTemplateInstance{
-		Name: instance.Payload.Name,
-		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
-			ProjectID:           instance.Payload.Spec.ProjectID,
-			ClusterTemplateID:   instance.Payload.Spec.ClusterTemplateID,
-			ClusterTemplateName: instance.Payload.Spec.ClusterTemplateName,
-			Replicas:            instance.Payload.Spec.Replicas,
-		},
-	}, nil
-}
-
 // ListClusters method lists user clusters.
 func (r *TestClient) ListClusters(projectID string, showDeploymentMachineCount bool) ([]*apiv1.Cluster, error) {
 	params := &project.ListClustersV2Params{
@@ -1731,24 +1623,6 @@ func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSi
 	}
 
 	return sizesResponse.Payload, nil
-}
-
-func (r *TestClient) ConnectClusterTerminal(token, clusterID, projectID string) (*websocket.Conn, error) {
-	endpoint, err := APIEndpoint()
-	if err != nil {
-		return nil, err
-	}
-
-	endpoint = strings.Replace(endpoint, "http", "ws", 1)
-	endpoint = fmt.Sprintf("%s/api/v1/ws/projects/%s/clusters/%s/terminal", endpoint, projectID, clusterID)
-
-	header := http.Header{}
-	header.Add("authorization", fmt.Sprintf("Bearer %s", token))
-
-	conn, resp, err := websocket.DefaultDialer.Dial(endpoint, header)
-	defer resp.Body.Close()
-
-	return conn, err
 }
 
 func (r *TestClient) CreateGroupProjectBinding(group, role, projectID string) (*apiv2.GroupProjectBinding, error) {
