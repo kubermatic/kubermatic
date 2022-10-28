@@ -40,7 +40,6 @@ type SettingSpec struct {
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig,omitempty"`
 
 	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
-	// +optional
 	EnableWebTerminal bool `json:"enableWebTerminal,omitempty"`
 
 	// mla alertmanager prefix
