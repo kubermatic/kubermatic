@@ -84,6 +84,7 @@ spec:
                 enableOIDCKubeconfig:
                   type: boolean
                 enableWebTerminal:
+                  default: false
                   description: EnableWebTerminal enables the Web Terminal feature for the user clusters.
                   type: boolean
                 machineDeploymentVMResourceQuota:

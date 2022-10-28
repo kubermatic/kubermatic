@@ -50,8 +50,12 @@ type SettingSpec struct {
 	DisplayTermsOfService bool `json:"displayTermsOfService"`
 	// EnableDashboard enables the link to the Kubernetes dashboard for a user cluster.
 	EnableDashboard bool `json:"enableDashboard"`
+
+	// +kubebuilder:default=false
+
 	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
-	EnableWebTerminal    bool `json:"enableWebTerminal"`
+	EnableWebTerminal bool `json:"enableWebTerminal"`
+
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
 	// UserProjectsLimit is the maximum number of projects a user can create.
 	UserProjectsLimit           int64 `json:"userProjectsLimit"`
