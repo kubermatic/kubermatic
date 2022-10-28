@@ -90,13 +90,15 @@ func RuntimeFromYaml(client ctrlruntimeclient.Client, manifestFsGetter ManifestF
 	for _, f := range files {
 		manifest, err := manifestFs.Fs.ReadFile(path.Join(manifestFs.Dir, f.Name()))
 		if err != nil {
-			kubermaticlog.Logger.Errorf("Could not read the content of the manifest file %v [skipping it] - %v", path.Join(manifestFs.Dir, f.Name()), err)
+			kubermaticlog.Logger.Errorf("Could not read the content of the manifest file %v [skipping it] - %v",
+				path.Join(manifestFs.Dir, f.Name()), err)
 			continue
 		}
 		obj, _, err := decode(manifest, nil, nil)
 		// Skip and log but continue with others
 		if err != nil {
-			kubermaticlog.Logger.Errorf("Skipping manifest %v as an error occurred reading it [skipping it]- %v", path.Join(manifestFs.Dir, f.Name()), err)
+			kubermaticlog.Logger.Errorf("Skipping manifest %v as an error occurred reading it [skipping it]- %v",
+				path.Join(manifestFs.Dir, f.Name()), err)
 			continue
 		}
 		objects = append(objects, obj)
