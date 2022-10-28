@@ -79,7 +79,7 @@ func prefixError(prefix string, e error) error {
 }
 
 func ValidateIapBlockSecret(value string, path string) error {
-	if value == "" || isBlockSecret(value) {
+	if value == "" || !isBlockSecret(value) {
 		secret, err := randomString()
 		if err == nil {
 			return fmt.Errorf("%s must be a non-empty secret of 16, 24 or 32 characters, for example: %s", path, secret)
