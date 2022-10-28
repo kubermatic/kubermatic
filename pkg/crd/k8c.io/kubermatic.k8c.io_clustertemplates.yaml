@@ -57,6 +57,16 @@ spec:
                   items:
                     type: string
                   type: array
+                apiServerAllowedIPRanges:
+                  description: 'Optional: APIServerAllowedIPRanges is a list of IP ranges allowed to access the API server. Applicable only if the expose strategy of the cluster is LoadBalancer. If not configured, access to the API server is unrestricted.'
+                  properties:
+                    cidrBlocks:
+                      items:
+                        type: string
+                      type: array
+                  required:
+                    - cidrBlocks
+                  type: object
                 applicationSettings:
                   description: 'Optional: ApplicationSettings contains the settings relative to the application feature.'
                   properties:

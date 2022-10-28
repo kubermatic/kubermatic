@@ -28,9 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -159,6 +157,17 @@ func (r *Reconciler) reconcileSeedProxy(ctx context.Context, seed *kubermaticv1.
 		return fmt.Errorf("failed to ensure ServiceAccount: %w", err)
 	}
 
+	// Since Kubernetes 1.24, the LegacyServiceAccountTokenNoAutoGeneration was enabled
+	// by default. To ensure the old behaviour, KKP has to create the token secrets
+	// itself and wait for Kubernetes to fill in the token details.
+	// On clusters using older Kubernetes versions, this code will create a second Secret
+	// (next to the auto-generated one) and will use the token from it, ignoring the
+	// auto-generated Secret entirely.
+	log.Debug("reconciling Secrets...")
+	if err := r.reconcileSeedSecrets(ctx, seed, client, log); err != nil {
+		return fmt.Errorf("failed to ensure Secret: %w", err)
+	}
+
 	log.Debug("reconciling RBAC...")
 	if err := r.reconcileSeedRBAC(ctx, seed, client, log); err != nil {
 		return fmt.Errorf("failed to ensure RBAC: %w", err)
@@ -167,11 +176,11 @@ func (r *Reconciler) reconcileSeedProxy(ctx context.Context, seed *kubermaticv1.
 	log.Debug("fetching ServiceAccount details from seed cluster...")
 	serviceAccountSecret, err := r.fetchServiceAccountSecret(ctx, seed, client, log)
 	if err != nil {
-		return fmt.Errorf("failed to fetch ServiceAccount: %w", err)
+		return fmt.Errorf("failed to fetch ServiceAccount Secret: %w", err)
 	}
 
 	if err := r.reconcileMaster(ctx, seed, cfg, serviceAccountSecret, log); err != nil {
-		return fmt.Errorf("failed to reconcile master: %w", err)
+		return fmt.Errorf("failed to reconcile master cluster: %w", err)
 	}
 
 	return nil
@@ -186,8 +195,16 @@ func (r *Reconciler) reconcileSeedServiceAccounts(ctx context.Context, seed *kub
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", seed.Namespace, err)
 	}
 
-	if err := r.deleteResource(ctx, client, SeedServiceAccountName, metav1.NamespaceSystem, &corev1.ServiceAccount{}); err != nil {
-		return fmt.Errorf("failed to cleanup ServiceAccount: %w", err)
+	return nil
+}
+
+func (r *Reconciler) reconcileSeedSecrets(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	creators := []reconciling.NamedSecretCreatorGetter{
+		seedSecretCreator(seed),
+	}
+
+	if err := reconciling.ReconcileSecrets(ctx, creators, seed.Namespace, client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets in the namespace %s: %w", seed.Namespace, err)
 	}
 
 	return nil
@@ -202,10 +219,6 @@ func (r *Reconciler) reconcileSeedRoles(ctx context.Context, seed *kubermaticv1.
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", SeedMonitoringNamespace, err)
 	}
 
-	if err := r.deleteResource(ctx, client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.Role{}); err != nil {
-		return fmt.Errorf("failed to cleanup Role: %w", err)
-	}
-
 	return nil
 }
 
@@ -216,10 +229,6 @@ func (r *Reconciler) reconcileSeedRoleBindings(ctx context.Context, seed *kuberm
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, SeedMonitoringNamespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace %s: %w", SeedMonitoringNamespace, err)
-	}
-
-	if err := r.deleteResource(ctx, client, "seed-proxy", SeedMonitoringNamespace, &rbacv1.RoleBinding{}); err != nil {
-		return fmt.Errorf("failed to cleanup RoleBinding: %w", err)
 	}
 
 	return nil
@@ -250,28 +259,14 @@ func (r *Reconciler) reconcileSeedRBAC(ctx context.Context, seed *kubermaticv1.S
 }
 
 func (r *Reconciler) fetchServiceAccountSecret(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) (*corev1.Secret, error) {
-	sa := &corev1.ServiceAccount{}
+	secret := &corev1.Secret{}
 	name := types.NamespacedName{
 		Namespace: seed.Namespace,
-		Name:      SeedServiceAccountName,
-	}
-
-	if err := client.Get(ctx, name, sa); err != nil {
-		return nil, fmt.Errorf("could not find ServiceAccount '%s'", name)
-	}
-
-	if len(sa.Secrets) == 0 {
-		return nil, fmt.Errorf("no Secret associated with ServiceAccount '%s'", name)
-	}
-
-	secret := &corev1.Secret{}
-	name = types.NamespacedName{
-		Namespace: seed.Namespace,
-		Name:      sa.Secrets[0].Name,
+		Name:      SeedSecretName,
 	}
 
 	if err := client.Get(ctx, name, secret); err != nil {
-		return nil, fmt.Errorf("could not find Secret '%s'", name)
+		return nil, fmt.Errorf("failed to retrieve token secret: %w", err)
 	}
 
 	return secret, nil
@@ -326,7 +321,7 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 	}
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(seed, secret, registry.GetOverwriteFunc(config.Spec.UserCluster.OverwriteRegistry)),
+		masterDeploymentCreator(seed, secret, registry.GetImageRewriterFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r.Client); err != nil {
@@ -365,24 +360,6 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %w", MasterGrafanaNamespace, err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) deleteResource(ctx context.Context, client ctrlruntimeclient.Client, name string, namespace string, obj ctrlruntimeclient.Object) error {
-	key := types.NamespacedName{Name: name, Namespace: namespace}
-
-	if err := client.Get(ctx, key, obj); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to probe for %s: %w", key, err)
-		}
-
-		return nil
-	}
-
-	if err := client.Delete(ctx, obj); err != nil {
-		return fmt.Errorf("failed to delete %s: %w", key, err)
 	}
 
 	return nil

@@ -29,7 +29,7 @@ PPROF_PORT=${PPROF_PORT:-6600}
 # Deploy a user-cluster/ipam-controller for which we actuallly
 # have a pushed image
 echodate "Compiling seed-controller-manager..."
-export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"
+export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/main)}"
 make seed-controller-manager
 
 CTRL_EXTRA_ARGS=""

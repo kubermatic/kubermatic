@@ -22,6 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -85,7 +86,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:         ccmContainerName,
-					Image:        data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
+					Image:        registry.Must(data.RewriteImage(resources.RegistryDocker + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version)),
 					Command:      []string{"/bin/openstack-cloud-controller-manager"},
 					Args:         getOSFlags(data),
 					Env:          getEnvVars(),
@@ -132,8 +133,10 @@ func getOSVersion(version semver.Semver) (string, error) {
 	case v123:
 		return "1.23.4", nil
 	case v124:
+		return "1.24.3", nil
+	case v125:
 		fallthrough
 	default:
-		return v1240, nil
+		return "1.25.0", nil
 	}
 }

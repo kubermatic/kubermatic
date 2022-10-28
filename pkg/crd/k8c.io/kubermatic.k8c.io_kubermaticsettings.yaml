@@ -83,6 +83,9 @@ spec:
                   type: boolean
                 enableOIDCKubeconfig:
                   type: boolean
+                enableWebTerminal:
+                  description: EnableWebTerminal enables the Web Terminal feature for the user clusters.
+                  type: boolean
                 machineDeploymentVMResourceQuota:
                   description: MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
                   properties:
@@ -153,6 +156,8 @@ spec:
                 - enableDashboard
                 - enableExternalClusterImport
                 - enableOIDCKubeconfig
+                - enableWebTerminal
+                - machineDeploymentVMResourceQuota
                 - mlaAlertmanagerPrefix
                 - mlaGrafanaPrefix
                 - restrictProjectCreation

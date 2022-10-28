@@ -38,7 +38,7 @@ var (
 	deploymentMaxUnavailable       = intstr.FromString("25%")
 )
 
-func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
+func OperatorDeploymentCreator(imageRewriter registry.ImageRewriter, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OperatorDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = &deploymentReplicas
@@ -86,7 +86,7 @@ func OperatorDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc,
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-operator",
-					Image:   registryWithOverwrite(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
+					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kinvolk/flatcar-linux-update-operator:v0.7.3")),
 					Command: []string{"/bin/update-operator"},
 					Env:     env,
 				},

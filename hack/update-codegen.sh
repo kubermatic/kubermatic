@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.19-node-18-1 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.19-node-18-2 containerize ./hack/update-codegen.sh
 
 echodate "Running go generate"
 go generate ./pkg/...
@@ -56,7 +56,7 @@ locationMap='{
   "kubermaticconfigurations.kubermatic.k8c.io": "master,seed",
   "kubermaticsettings.kubermatic.k8c.io": "master",
   "mlaadminsettings.kubermatic.k8c.io": "seed",
-  "presets.kubermatic.k8c.io": "master",
+  "presets.kubermatic.k8c.io": "master,seed",
   "projects.kubermatic.k8c.io": "master,seed",
   "resourcequotas.kubermatic.k8c.io": "master",
   "rulegroups.kubermatic.k8c.io": "master",

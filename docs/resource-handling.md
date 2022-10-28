@@ -81,8 +81,8 @@ For this we created the typed `Reconcile*` functions.
 ## ReconcileSecrets aka "Reduce the type casting"
 
 To avoid certain boilerplate code we introduced typed `Reconcile*` functions.
-Those functions are being generated using `go generate`: https://github.com/kubermatic/kubermatic/tree/master/codegen/reconcile
-The result is written into: https://github.com/kubermatic/kubermatic/blob/master/pkg/resources/reconciling/zz_generated_reconcile.go
+Those functions are being generated using `go generate`: https://github.com/kubermatic/kubermatic/tree/main/codegen/reconcile
+The result is written into: https://github.com/kubermatic/kubermatic/blob/main/pkg/resources/reconciling/zz_generated_reconcile.go
 
 `ReconcileSecrets` is a typed convenience function around `EnsureNamedObject`.
 It offers:
@@ -238,7 +238,7 @@ func WrappedMyWonderfulMyNewTypeCreator(create MyNewTypeCreator) MyNewTypeCreato
 As mentioned [above](#reconcilesecrets-aka-reduce-the-type-casting), all typed reconcile functions are being created using code generation.
 To add a new type, the type must be added to the code generation first.
 
-Extend the `Resources` slice with the additional item in the [code](https://github.com/kubermatic/kubermatic/blob/master/codegen/reconcile/main.go):
+Extend the `Resources` slice with the additional item in the [code](https://github.com/kubermatic/kubermatic/blob/main/codegen/reconcile/main.go):
 ```go
 		Resources: []reconcileFunctionData{
 			{

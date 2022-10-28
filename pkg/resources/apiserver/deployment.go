@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -150,7 +151,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			apiserverContainer := &corev1.Container{
 				Name:    resources.ApiserverDeploymentName,
-				Image:   data.ImageRegistry(resources.RegistryK8S) + "/kube-apiserver:v" + version.String(),
+				Image:   registry.Must(data.RewriteImage(resources.RegistryK8S + "/kube-apiserver:v" + version.String())),
 				Command: []string{"/usr/local/bin/kube-apiserver"},
 				Env:     envVars,
 				Args:    flags,
@@ -235,7 +236,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
 						Name:    auditLogsSidecarName,
-						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.9.5",
+						Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/fluent/fluent-bit:1.9.5")),
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
 						Args:    []string{"-c", "/etc/fluent-bit/fluent-bit.conf"},
 						VolumeMounts: []corev1.VolumeMount{

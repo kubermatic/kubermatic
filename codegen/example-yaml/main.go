@@ -324,7 +324,7 @@ func createExampleApplicationDefinition() *appskubermaticv1.ApplicationDefinitio
 							Git: &appskubermaticv1.GitSource{
 								Remote: "https://git.example.com/repo || git@example.com/repo",
 								Ref: appskubermaticv1.GitReference{
-									Branch: "master",
+									Branch: "main",
 									Commit: "8061ceb738db42fe82b4c305b7aa5459d926d03e",
 									Tag:    "v1.2.3",
 								},

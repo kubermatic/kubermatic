@@ -47,6 +47,12 @@ var (
 
 	//go:embed static/assignmetadata-customresourcedefinition.yaml
 	assignMetadataYAML string
+
+	//go:embed static/modifyset-customresourcedefinition.yaml
+	modifySetYAML string
+
+	//go:embed static/provider-customresourcedefinition.yaml
+	providerYAML string
 )
 
 // ConfigCRDCreator returns the gatekeeper config CRD definition.
@@ -184,6 +190,48 @@ func AssignMetadataCRDCreator() reconciling.NamedCustomResourceDefinitionCreator
 		return resources.GatekeeperAssignMetadataCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(assignMetadataYAML), &fileCRD)
+			if err != nil {
+				return nil, err
+			}
+
+			crd.Labels = fileCRD.Labels
+			crd.Annotations = fileCRD.Annotations
+			crd.Spec = fileCRD.Spec
+
+			// reconcile fails if conversion is not set as it's set by default to None
+			crd.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+
+			return crd, nil
+		}
+	}
+}
+
+func ModifySetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+		return resources.GatekeeperModifySetCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			var fileCRD *apiextensionsv1.CustomResourceDefinition
+			err := yaml.UnmarshalStrict([]byte(modifySetYAML), &fileCRD)
+			if err != nil {
+				return nil, err
+			}
+
+			crd.Labels = fileCRD.Labels
+			crd.Annotations = fileCRD.Annotations
+			crd.Spec = fileCRD.Spec
+
+			// reconcile fails if conversion is not set as it's set by default to None
+			crd.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+
+			return crd, nil
+		}
+	}
+}
+
+func ProviderCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+		return resources.GatekeeperProviderCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			var fileCRD *apiextensionsv1.CustomResourceDefinition
+			err := yaml.UnmarshalStrict([]byte(providerYAML), &fileCRD)
 			if err != nil {
 				return nil, err
 			}

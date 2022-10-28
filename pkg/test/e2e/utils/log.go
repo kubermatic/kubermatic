@@ -17,20 +17,10 @@ limitations under the License.
 package utils
 
 import (
-	"github.com/onsi/ginkgo"
-	"go.uber.org/zap"
-
 	"k8c.io/kubermatic/v2/pkg/log"
-
-	ctrlruntimelogzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var DefaultLogOptions = log.Options{
 	Debug:  false,
 	Format: log.FormatConsole,
-}
-
-// CreateGinkgoLogger creates a new Logger that dumps its output to GinkgoWriter.
-func CreateGinkgoLogger(debug bool) *zap.SugaredLogger {
-	return ctrlruntimelogzap.NewRaw(ctrlruntimelogzap.UseDevMode(debug), ctrlruntimelogzap.WriteTo(ginkgo.GinkgoWriter)).Sugar()
 }

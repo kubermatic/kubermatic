@@ -202,7 +202,8 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: "Tunneling",
+				ExposeStrategy:    "NodePort",
+				CloudProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1772,6 +1773,7 @@ func TestHandle(t *testing.T) {
 type rawClusterGen struct {
 	Name                  string
 	Namespace             string
+	CloudProviderName     string
 	Labels                map[string]string
 	ExposeStrategy        string
 	EnableUserSSHKey      *bool
@@ -1823,6 +1825,10 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			ComponentsOverride:    r.ComponentSettings,
 			CNIPlugin:             r.CNIPlugin,
 		},
+	}
+
+	if r.CloudProviderName != "" {
+		c.Spec.Cloud.ProviderName = r.CloudProviderName
 	}
 
 	return c

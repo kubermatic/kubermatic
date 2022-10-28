@@ -32,7 +32,7 @@ var (
 	// to v2.34.0-912-dd79178e to v3.0.1).
 	// Also this value does not necessarily reflect the current release branch,
 	// as releases are tagged on the release branch and on those tags are not
-	// visible from the master branch.
+	// visible from the main branch.
 	gitVersion string
 
 	// kubermaticDockerTag is a magic variable containing the tag / git commit hash
@@ -72,7 +72,7 @@ func NewFakeVersions() Versions {
 		Kubermatic:        "v0.0.0-test",
 		UI:                "v1.1.1-test",
 		VPA:               "0.5.0",
-		Envoy:             "v1.16.0",
+		Envoy:             "v1.17.1",
 		KubermaticEdition: edition.KubermaticEdition,
 	}
 }

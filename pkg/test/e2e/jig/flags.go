@@ -39,7 +39,6 @@ import (
 var (
 	kkpNamespace = "kubermatic"
 	buildID      string
-	datacenter   string
 	project      string
 	version      string
 
@@ -50,7 +49,6 @@ var (
 func AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&buildID, "build-id", buildID, "unique identifier for this test (defaults to $BUILD_ID)")
 	flag.StringVar(&kkpNamespace, "namespace", kkpNamespace, "namespace where KKP is installed into")
-	flag.StringVar(&datacenter, "datacenter", datacenter, "KKP datacenter to use (must match whatever is used in the tests to run)")
 	flag.StringVar(&project, "project", project, "KKP project to use (if not given, a new project might be created)")
 	flag.StringVar(&version, "cluster-version", version, "Kubernetes version of the new user cluster (defaults to $VERSION_TO_TEST or the default version compiled into KKP)")
 }
@@ -110,13 +108,9 @@ func ClusterSemver(log *zap.SugaredLogger) semver.Semver {
 	return *semver.NewSemverOrDie(ClusterVersion(log))
 }
 
-func DatacenterName() string {
-	return datacenter
-}
-
-func Seed(ctx context.Context, client ctrlruntimeclient.Client) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+func Seed(ctx context.Context, client ctrlruntimeclient.Client, datacenter string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
 	if datacenter == "" {
-		return nil, nil, errors.New("no -datacenter given, cannot determine Seed")
+		return nil, nil, errors.New("no datacenter given, cannot determine Seed")
 	}
 
 	seedsGetter, err := seedsGetterFactory(ctx, client, kkpNamespace)

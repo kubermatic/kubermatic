@@ -243,6 +243,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
     --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/values.example.mla.yaml|examples/values.example.mla.yaml|' \
     --transform='flags=r;s|charts/kubermatic.example.ce.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
     _build/kubermatic-installer* \
@@ -252,12 +253,14 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/kubermatic-operator \
     charts/logging \
     charts/minio \
+    charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
     charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ce.yaml \
+    charts/values.example.mla.yaml \
     charts/kubermatic.example.ce.yaml \
     charts/seed.example.yaml \
     LICENSE \
@@ -278,6 +281,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
     --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/values.example.mla.yaml|examples/values.example.mla.yaml|' \
     --transform='flags=r;s|charts/kubermatic.example.ee.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
     --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
@@ -288,12 +292,14 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/kubermatic-operator \
     charts/logging \
     charts/minio \
+    charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
     charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ee.yaml \
+    charts/values.example.mla.yaml \
     charts/kubermatic.example.ee.yaml \
     charts/seed.example.yaml \
     LICENSE \

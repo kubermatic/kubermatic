@@ -23,10 +23,13 @@
 {{ $version = "v1.22.0"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
-{{ $version = "v1.23.0"}}
+{{ $version = "v1.23.4"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.24" }}
-{{ $version = "v1.24.0"}}
+{{ $version = "v1.24.3"}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.25" }}
+{{ $version = "v1.25.0"}}
 {{ end }}
 {{ if not (eq $version "UNSUPPORTED") }}
 ---
@@ -56,7 +59,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-attacher:v3.4.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.4.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -69,7 +72,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-provisioner:v3.1.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.1.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -83,7 +86,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-snapshotter:v5.0.1'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v5.0.1" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -96,7 +99,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: csi-resizer
-          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-resizer:v1.4.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.4.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -110,7 +113,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
-          image: '{{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.6.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.6.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
           env:
@@ -120,7 +123,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: cinder-csi-plugin
-          image: '{{ Registry "docker.io" }}/k8scloudprovider/cinder-csi-plugin:{{ $version }}'
+          image: '{{ Image (print "k8scloudprovider/cinder-csi-plugin:" $version) }}'
           args:
             - /bin/cinder-csi-plugin
             - "--nodeid=$(NODE_ID)"

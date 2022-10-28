@@ -40,7 +40,7 @@ import (
 )
 
 // cronJobCreator returns the func to create/update the metering report cronjob.
-func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.WithOverwriteFunc, namespace string) reconciling.NamedCronJobCreatorGetter {
+func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.ImageRewriter, namespace string) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			var args []string

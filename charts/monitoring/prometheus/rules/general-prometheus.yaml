@@ -19,7 +19,7 @@ groups:
       - alert: PromScrapeFailed
         annotations:
           message: Prometheus failed to scrape a target {{ $labels.job }} / {{ $labels.instance }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-promscrapefailed
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promscrapefailed
         expr: up != 1
         for: 15m
         labels:
@@ -29,7 +29,7 @@ groups:
       - alert: PromBadConfig
         annotations:
           message: Prometheus failed to reload config.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-prombadconfig
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-prombadconfig
         expr: prometheus_config_last_reload_successful{job="prometheus"} == 0
         for: 15m
         labels:
@@ -39,7 +39,7 @@ groups:
       - alert: PromAlertmanagerBadConfig
         annotations:
           message: Alertmanager failed to reload config.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-promalertmanagerbadconfig
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promalertmanagerbadconfig
         expr: alertmanager_config_last_reload_successful{job="alertmanager"} == 0
         for: 10m
         labels:
@@ -49,7 +49,7 @@ groups:
       - alert: PromAlertsFailed
         annotations:
           message: Alertmanager failed to send an alert.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-promalertsfailed
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promalertsfailed
         expr: sum(increase(alertmanager_notifications_failed_total{job="alertmanager"}[5m])) by (namespace) > 0
         for: 5m
         labels:
@@ -59,7 +59,7 @@ groups:
       - alert: PromRemoteStorageFailures
         annotations:
           message: Prometheus failed to send {{ printf "%.1f" $value }}% samples.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-promremotestoragefailures
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promremotestoragefailures
         expr: |
           (rate(prometheus_remote_storage_failed_samples_total{job="prometheus"}[1m]) * 100)
             /
@@ -73,7 +73,7 @@ groups:
       - alert: PromRuleFailures
         annotations:
           message: Prometheus failed to evaluate {{ printf "%.1f" $value }} rules/sec.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-promrulefailures
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promrulefailures
         expr: rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) > 0
         for: 15m
         labels:

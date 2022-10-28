@@ -22,6 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -85,7 +86,7 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:         ccmContainerName,
-					Image:        data.ImageRegistry(resources.RegistryMCR) + "/oss/kubernetes/azure-cloud-controller-manager:v" + version,
+					Image:        registry.Must(data.RewriteImage(resources.RegistryMCR + "/oss/kubernetes/azure-cloud-controller-manager:v" + version)),
 					Command:      []string{"cloud-controller-manager"},
 					Args:         getAzureFlags(data),
 					Env:          getEnvVars(),
@@ -133,7 +134,7 @@ func getAzureVersion(version semver.Semver) (string, error) {
 	case v124:
 		fallthrough
 	default:
-		return v1240, nil
+		return "1.24.0", nil
 	}
 }
 

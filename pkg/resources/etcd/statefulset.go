@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,7 +62,7 @@ var (
 type etcdStatefulSetCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	EtcdDiskSize() resource.Quantity
 	EtcdLauncherImage() string
 	EtcdLauncherTag() string
@@ -224,7 +225,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				{
 					Name: resources.EtcdStatefulSetName,
 
-					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + imageTag,
+					Image:           registry.Must(data.RewriteImage(resources.RegistryGCR + "/etcd-development/etcd:" + imageTag)),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         etcdStartCmd,
 					Env:             etcdEnv,

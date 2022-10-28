@@ -42,7 +42,7 @@ const (
 )
 
 // ReconcilePrometheus reconciles the prometheus instance used as a datasource for metering.
-func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, getRegistry registry.WithOverwriteFunc, seed *kubermaticv1.Seed) error {
+func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) error {
 	seedOwner := common.OwnershipModifierFactory(seed, scheme)
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{

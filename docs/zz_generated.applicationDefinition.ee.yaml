@@ -73,7 +73,7 @@ spec:
             # For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance
             ref:
               # Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.
-              branch: master
+              branch: main
               # Commit SHA in a Branch to checkout.
 
               # It must be used in conjunction with branch field.

@@ -158,6 +158,11 @@ type ClusterSpec struct {
 	// ExposeStrategy is the strategy used to expose a cluster control plane.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy"`
 
+	// Optional: APIServerAllowedIPRanges is a list of IP ranges allowed to access the API server.
+	// Applicable only if the expose strategy of the cluster is LoadBalancer.
+	// If not configured, access to the API server is unrestricted.
+	APIServerAllowedIPRanges *NetworkRanges `json:"apiServerAllowedIPRanges,omitempty"`
+
 	// Optional: Component specific overrides that allow customization of control plane components.
 	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
 

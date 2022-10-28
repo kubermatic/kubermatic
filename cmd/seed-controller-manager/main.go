@@ -196,10 +196,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	var clientProvider *client.Provider
-	if !isInternalConfig(cfg) {
-		clientProvider, err = client.NewExternal(mgr.GetClient())
-	} else {
+	if isInternalConfig(cfg) {
 		clientProvider, err = client.NewInternal(mgr.GetClient())
+	} else {
+		clientProvider, err = client.NewExternal(mgr.GetClient())
 	}
 	if err != nil {
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))

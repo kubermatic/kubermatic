@@ -42,7 +42,7 @@ spec:
     spec:
       serviceAccount: heapster
       containers:
-      - image: '{{ Registry "gcr.io" }}/google_containers/heapster-amd64:v1.5.2'
+      - image: '{{ Image "gcr.io/google_containers/heapster-amd64:v1.5.2" }}'
         name: heapster
         livenessProbe:
           httpGet:

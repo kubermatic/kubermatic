@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
+	k8sdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -151,13 +152,14 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
 	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
+	deploymentCreators = append(deploymentCreators, k8sdashboard.DeploymentCreator(templateData.RewriteImage))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, registry.GetOverwriteFunc(templateData.OverwriteRegistry)))
+		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
 	}
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
@@ -165,9 +167,9 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	var daemonsetCreators []reconciling.NamedDaemonSetCreatorGetter
 	daemonsetCreators = append(daemonsetCreators, usersshkeys.DaemonSetCreator(
 		kubermaticVersions,
-		templateData.ImageRegistry,
+		templateData.RewriteImage,
 	))
-	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.ImageRegistry))
+	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()

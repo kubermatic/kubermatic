@@ -50,7 +50,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-provisioner
-          image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/csi-provisioner:v3.1.0
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-provisioner:v3.1.0" }}
           args:
             - "--feature-gates=Topology=true"
             - "--csi-address=$(ADDRESS)"
@@ -74,7 +74,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-attacher
-          image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/csi-attacher:v3.4.0
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-attacher:v3.4.0" }}
           args:
             - "-v=2"
             - "-csi-address=$(ADDRESS)"
@@ -95,7 +95,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-snapshotter
-          image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/csi-snapshotter:v5.0.1
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-snapshotter:v5.0.1" }}
           args:
             - "-csi-address=$(ADDRESS)"
             - "-leader-election"
@@ -114,7 +114,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-resizer
-          image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/csi-resizer:v1.4.0
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-resizer:v1.4.0" }}
           args:
             - "-csi-address=$(ADDRESS)"
             - "-v=2"
@@ -136,7 +136,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: liveness-probe
-          image: {{ Registry "mcr.microsoft.com" }}/oss/kubernetes-csi/livenessprobe:v2.6.0
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/livenessprobe:v2.6.0" }}
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
@@ -152,7 +152,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: azuredisk
-          image: {{ Registry "mcr.microsoft.com" }}/k8s/csi/azuredisk-csi:v{{ $version }}
+          image: {{ Image (print "mcr.microsoft.com/k8s/csi/azuredisk-csi:v" $version) }}
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"

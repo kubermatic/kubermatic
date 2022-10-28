@@ -141,14 +141,14 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 	}
 
 	depCreators := []reconciling.NamedDeploymentCreatorGetter{
-		resources.OperatorDeploymentCreator(registry.GetOverwriteFunc(r.overwriteRegistry), r.updateWindow),
+		resources.OperatorDeploymentCreator(registry.GetImageRewriterFunc(r.overwriteRegistry), r.updateWindow),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
 	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		resources.AgentDaemonSetCreator(registry.GetOverwriteFunc(r.overwriteRegistry)),
+		resources.AgentDaemonSetCreator(registry.GetImageRewriterFunc(r.overwriteRegistry)),
 	}
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)

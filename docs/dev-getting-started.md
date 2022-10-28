@@ -79,3 +79,13 @@ scheduler-77c956dbf6-c7cgh                    2/2       Running   0          57m
 * The controller will now run. It does run in foreground, this means that it will block the
   terminal window which is why it is suggested to use a dedicated terminal. You can stop the
   controller by pressing `ctrl + c`.
+
+
+## Pausing resource updates
+
+If you ever have to change something on a KKP-managed resource manually, you can annotate that resource with
+`hacking.k8c.io/pause: "true"`. This will prevent Kubermatic controllers from modifying the resource (but not
+protect it from being deleted).
+
+Great for development and debugging, but really bad to find this in production - so please never use that
+outside development.

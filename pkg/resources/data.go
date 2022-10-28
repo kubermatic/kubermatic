@@ -27,7 +27,6 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/distribution/distribution/v3/reference"
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -38,6 +37,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -258,7 +258,7 @@ func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 }
 
 func (d *TemplateData) EtcdLauncherImage() string {
-	return d.parseImage(d.etcdLauncherImage)
+	return registry.Must(d.RewriteImage(d.etcdLauncherImage))
 }
 
 func (d *TemplateData) EtcdLauncherTag() string {
@@ -368,12 +368,20 @@ func (d *TemplateData) ProviderName() string {
 	return p
 }
 
-// ImageRegistry returns the image registry to use or the passed in default if no override is specified.
-func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
-	if d.OverwriteRegistry != "" {
-		return d.OverwriteRegistry
-	}
-	return defaultRegistry
+// GetLegacyOverwriteRegistry should not be used by new code, rather the
+// ImageRewriter() should be used instead.
+func (d *TemplateData) GetLegacyOverwriteRegistry() string {
+	return d.OverwriteRegistry
+}
+
+// ImageRewriter returns a Docker image rewriter.
+func (d *TemplateData) ImageRewriter() registry.ImageRewriter {
+	return registry.GetImageRewriterFunc(d.OverwriteRegistry)
+}
+
+// RewriteImage rewrites a Docker image to apply a custom registry if specified.
+func (d *TemplateData) RewriteImage(image string) (string, error) {
+	return d.ImageRewriter()(image)
 }
 
 // GetRootCA returns the root CA of the cluster.
@@ -453,22 +461,7 @@ func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 }
 
 func (d *TemplateData) KubermaticAPIImage() string {
-	return d.parseImage(d.kubermaticImage)
-}
-
-func (d *TemplateData) parseImage(image string) string {
-	named, _ := reference.ParseNormalizedNamed(image)
-	domain := reference.Domain(named)
-	remainder := reference.Path(named)
-
-	if d.OverwriteRegistry != "" {
-		domain = d.OverwriteRegistry
-	}
-	if domain == "" {
-		domain = RegistryDocker
-	}
-
-	return domain + "/" + remainder
+	return registry.Must(d.RewriteImage(d.kubermaticImage))
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {
@@ -476,7 +469,7 @@ func (d *TemplateData) KubermaticDockerTag() string {
 }
 
 func (d *TemplateData) DNATControllerImage() string {
-	return d.parseImage(d.dnatControllerImage)
+	return registry.Must(d.RewriteImage(d.dnatControllerImage))
 }
 
 func (d *TemplateData) BackupSchedule() time.Duration {

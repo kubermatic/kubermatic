@@ -18,7 +18,7 @@ groups:
       - alert: CadvisorDown
         annotations:
           message: Cadvisor has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat-sheets/alerting-runbook/#alert-cadvisordown
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cadvisordown
         expr: absent(up{job="cadvisor"} == 1)
         for: 15m
         labels:

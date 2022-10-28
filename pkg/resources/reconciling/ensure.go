@@ -34,6 +34,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	// ResourceReconciliationPausedAnnotation is the name of the annotation to set to "true" to stop any
+	// automation from modifying it.
+	// This is only meant for development and should never be used in a production(-like) system.
+	ResourceReconciliationPausedAnnotation = "hacking.k8c.io/pause"
+)
+
 //go:generate go run ../../../codegen/reconcile/main.go
 
 // ObjectCreator defines an interface to create/update a ctrlruntimeclient.Object.
@@ -88,6 +95,14 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 			return fmt.Errorf("failed to get Object(%T): %w", existingObject, err)
 		}
 		exists = false
+	}
+
+	if exists {
+		annotations := existingObject.GetAnnotations()
+		if v, ok := annotations[ResourceReconciliationPausedAnnotation]; ok && v == "true" {
+			objectLogger(existingObject).Warn("not touching paused resource")
+			return nil
+		}
 	}
 
 	// Object does not exist in lister -> Create the Object

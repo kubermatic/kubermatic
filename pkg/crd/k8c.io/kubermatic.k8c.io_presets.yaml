@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
-    kubermatic.k8c.io/location: master
+    kubermatic.k8c.io/location: master,seed
   creationTimestamp: null
   name: presets.kubermatic.k8c.io
 spec:

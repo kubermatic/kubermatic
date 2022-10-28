@@ -41,7 +41,6 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -749,6 +748,13 @@ type GKEVMReq struct {
 	Zone string
 }
 
+// GKEProjectVMReq represents a request for GKE VM information in a project.
+// swagger:parameters listProjectGKEImages listProjectGKEVMSizes listProjectGKEDiskTypes
+type GKEProjectVMReq struct {
+	common.ProjectReq
+	GKEVMReq
+}
+
 // GKEVersionsReq represent a request for GKE versions.
 // swagger:parameters listGKEVersions
 type GKEVersionsReq struct {
@@ -769,8 +775,36 @@ type GKEVersionsReq struct {
 	ReleaseChannel string
 }
 
-func GKEVersionsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// GKEProjectVersionsReq represents a request for GKE versions in a project.
+// swagger:parameters listProjectGKEVersions
+type GKEProjectVersionsReq struct {
+	common.ProjectReq
+	GKEVersionsReq
+}
+
+func GKEVersionsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var (
+			req       GKEVersionsReq
+			projectID string
+		)
+
+		if !withProject {
+			verReq, ok := request.(GKEVersionsReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = verReq
+		} else {
+			projectReq, ok := request.(GKEProjectVersionsReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.GKEVersionsReq
+		}
+
 		req, ok := request.(GKEVersionsReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
@@ -782,7 +816,7 @@ func GKEVersionsEndpoint(presetProvider provider.PresetProvider, userInfoGetter 
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
-			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential, projectID)
 			if err != nil {
 				return nil, err
 			}
@@ -850,6 +884,23 @@ func DecodeGKEVMReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+func DecodeGKEProjectVMReq(c context.Context, r *http.Request) (interface{}, error) {
+	vmReq, err := DecodeGKEVMReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return GKEProjectVMReq{
+		GKEVMReq:   vmReq.(GKEVMReq),
+		ProjectReq: projectReq.(common.ProjectReq),
+	}, nil
+}
+
 func DecodeGKEVersionsReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GKEVersionsReq
 
@@ -866,8 +917,25 @@ func DecodeGKEVersionsReq(c context.Context, r *http.Request) (interface{}, erro
 	return req, nil
 }
 
-func DecodeGKEClusterListReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req GKEClusterListReq
+func DecodeGKEProjectVersionsReq(c context.Context, r *http.Request) (interface{}, error) {
+	versionsReq, err := DecodeGKEVersionsReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	return GKEProjectVersionsReq{
+		GKEVersionsReq: versionsReq.(GKEVersionsReq),
+		ProjectReq:     projectReq.(common.ProjectReq),
+	}, nil
+}
+
+func DecodeGKEProjectCommonReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GKEProjectCommonReq
 
 	commonReq, err := DecodeGKECommonReq(c, r)
 	if err != nil {
@@ -883,12 +951,6 @@ func DecodeGKEClusterListReq(c context.Context, r *http.Request) (interface{}, e
 	return req, nil
 }
 
-// GKETypesReq represent a request for GKE types.
-// swagger:parameters validateGKECredentials
-type GKETypesReq struct {
-	GKECommonReq
-}
-
 func DecodeGKECommonReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req GKECommonReq
 
@@ -898,21 +960,14 @@ func DecodeGKECommonReq(c context.Context, r *http.Request) (interface{}, error)
 	return req, nil
 }
 
-func DecodeGKETypesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req GKETypesReq
-
-	commonReq, err := DecodeGKECommonReq(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.GKECommonReq = commonReq.(GKECommonReq)
-
-	return req, nil
-}
-
-func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider) endpoint.Endpoint {
+func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, presetProvider provider.PresetProvider, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GKEClusterListReq)
+		var (
+			req       GKEProjectCommonReq
+			projectID string
+		)
+
+		req, ok := request.(GKEProjectCommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
 		}
@@ -923,7 +978,7 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
-			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential, projectID)
 			if err != nil {
 				return nil, err
 			}
@@ -932,12 +987,29 @@ func GKEClustersEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider
 	}
 }
 
-func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GKEVMReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       GKEVMReq
+			projectID string
+		)
+
+		if !withProject {
+			vmReq, ok := request.(GKEVMReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = vmReq
+		} else {
+			projectReq, ok := request.(GKEProjectVMReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.GKEVMReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
@@ -945,7 +1017,7 @@ func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
-			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential, projectID)
 			if err != nil {
 				return nil, err
 			}
@@ -954,8 +1026,29 @@ func GKEImagesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pr
 	}
 }
 
-func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		var (
+			req       GKECommonReq
+			projectID string
+		)
+
+		if !withProject {
+			commonReq, ok := request.(GKECommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = commonReq
+		} else {
+			projectReq, ok := request.(GKEProjectCommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.GKECommonReq
+		}
+
 		req, ok := request.(GKECommonReq)
 		if !ok {
 			return nil, utilerrors.NewBadRequest("invalid request")
@@ -967,7 +1060,7 @@ func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pro
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
-			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential, projectID)
 			if err != nil {
 				return nil, err
 			}
@@ -977,6 +1070,7 @@ func GKEZonesEndpoint(presetProvider provider.PresetProvider, userInfoGetter pro
 }
 
 // GKECommonReq represent a request with common parameters for GKE.
+// swagger:parameters validateGKECredentials
 type GKECommonReq struct {
 	// The plain GCP service account
 	// in: header
@@ -989,26 +1083,43 @@ type GKECommonReq struct {
 }
 
 // GKEClusterListReq represent a request for GKE cluster list.
-// swagger:parameters listGKEClusters
-type GKEClusterListReq struct {
+// swagger:parameters listGKEClusters validateProjectGKECredentials listProjectGKEZones
+type GKEProjectCommonReq struct {
 	common.ProjectReq
 	GKECommonReq
 }
 
-func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GKEValidateCredentialsEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		var err error
-		req, ok := request.(GKETypesReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       GKECommonReq
+			projectID string
+			err       error
+		)
+
+		if !withProject {
+			commonReq, ok := request.(GKECommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = commonReq
+		} else {
+			projectReq, ok := request.(GKEProjectCommonReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.GKECommonReq
 		}
+
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
 		}
 
 		sa := req.ServiceAccount
 		if len(req.Credential) > 0 {
-			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential, projectID)
 			if err != nil {
 				return nil, err
 			}
@@ -1025,12 +1136,13 @@ func getSAFromPreset(ctx context.Context,
 	userInfoGetter provider.UserInfoGetter,
 	presetProvider provider.PresetProvider,
 	presetName string,
+	projectID string,
 ) (string, error) {
-	userInfo, err := userInfoGetter(ctx, "")
+	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return "", common.KubernetesErrorToHTTPError(err)
 	}
-	preset, err := presetProvider.GetPreset(ctx, userInfo, pointer.String(""), presetName)
+	preset, err := presetProvider.GetPreset(ctx, userInfo, &projectID, presetName)
 	if err != nil {
 		return "", utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", presetName, userInfo.Email))
 	}
@@ -1087,11 +1199,27 @@ func ListGKEVersions(ctx context.Context, sa, zone, mode, releaseChannel string)
 	return versions, err
 }
 
-func GKEVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GKEVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GKEVMReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       GKEVMReq
+			projectID string
+		)
+
+		if !withProject {
+			vmReq, ok := request.(GKEVMReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = vmReq
+		} else {
+			projectReq, ok := request.(GKEProjectVMReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.GKEVMReq
 		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
@@ -1100,7 +1228,7 @@ func GKEVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter p
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
-			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential, projectID)
 			if err != nil {
 				return nil, err
 			}
@@ -1109,11 +1237,27 @@ func GKEVMSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter p
 	}
 }
 
-func GKEDiskTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GKEDiskTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, withProject bool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(GKEVMReq)
-		if !ok {
-			return nil, utilerrors.NewBadRequest("invalid request")
+		var (
+			req       GKEVMReq
+			projectID string
+		)
+
+		if !withProject {
+			vmReq, ok := request.(GKEVMReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+			req = vmReq
+		} else {
+			projectReq, ok := request.(GKEProjectVMReq)
+			if !ok {
+				return nil, utilerrors.NewBadRequest("invalid request")
+			}
+
+			projectID = projectReq.GetProjectID()
+			req = projectReq.GKEVMReq
 		}
 		if err := req.Validate(); err != nil {
 			return nil, utilerrors.NewBadRequest(err.Error())
@@ -1122,7 +1266,7 @@ func GKEDiskTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter
 		sa := req.ServiceAccount
 		var err error
 		if len(req.Credential) > 0 {
-			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential)
+			sa, err = getSAFromPreset(ctx, userInfoGetter, presetProvider, req.Credential, projectID)
 			if err != nil {
 				return nil, err
 			}

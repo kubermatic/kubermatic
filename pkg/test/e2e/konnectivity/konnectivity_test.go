@@ -60,9 +60,8 @@ import (
 )
 
 var (
-	accessKeyID     string
-	secretAccessKey string
-	logOptions      = log.NewDefaultOptions()
+	credentials jig.AWSCredentials
+	logOptions  = utils.DefaultLogOptions
 )
 
 const (
@@ -72,6 +71,7 @@ const (
 )
 
 func init() {
+	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -79,6 +79,10 @@ func init() {
 func TestKonnectivity(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
+
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("Failed to get credentials: %v", err)
+	}
 
 	config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
 	if err != nil {
@@ -88,16 +92,6 @@ func TestKonnectivity(t *testing.T) {
 	seedClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
 		t.Fatalf("Failed to build ctrlruntime client: %v", err)
-	}
-
-	accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
-	if accessKeyID == "" {
-		t.Fatal("AWS_ACCESS_KEY_ID not set")
-	}
-
-	secretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	if secretAccessKey == "" {
-		t.Fatal("AWS_SECRET_ACCESS_KEY not set")
 	}
 
 	cluster, userClusterClient, restConfig, cleanup, logger, err := createUserCluster(ctx, t, logger, seedClient)
@@ -364,7 +358,7 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, *rest.Config, func(), *zap.SugaredLogger, error) {
-	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 1)
+	testJig := jig.NewAWSCluster(masterClient, log, credentials, 1, pointer.String("0.5"))
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.WithKonnectivity(true).WithTestName("konnectivity")
 

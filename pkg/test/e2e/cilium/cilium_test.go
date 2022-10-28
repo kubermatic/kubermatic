@@ -41,6 +41,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
@@ -51,14 +52,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	userconfig      string
-	accessKeyID     string
-	secretAccessKey string
-	logOptions      = log.NewDefaultOptions()
+	userconfig  string
+	credentials jig.AWSCredentials
+	logOptions  = utils.DefaultLogOptions
 )
 
 const (
@@ -68,6 +69,7 @@ const (
 
 func init() {
 	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
+	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -98,14 +100,8 @@ func TestInExistingCluster(t *testing.T) {
 func TestCiliumClusters(t *testing.T) {
 	logger := log.NewFromOptions(logOptions).Sugar()
 
-	accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
-	if accessKeyID == "" {
-		t.Fatalf("AWS_ACCESS_KEY_ID not set")
-	}
-
-	secretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
-	if secretAccessKey == "" {
-		t.Fatalf("AWS_SECRET_ACCESS_KEY not set")
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("Failed to get credentials: %v", err)
 	}
 
 	config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
@@ -441,7 +437,7 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	testJig := jig.NewAWSCluster(masterClient, log, accessKeyID, secretAccessKey, 2)
+	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, pointer.String("0.5"))
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("cilium").

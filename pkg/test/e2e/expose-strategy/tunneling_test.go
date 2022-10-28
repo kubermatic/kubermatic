@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -34,12 +35,15 @@ import (
 
 // Options holds the e2e test options.
 var (
-	logOptions  = log.NewDefaultOptions()
+	credentials jig.BYOCredentials
+
+	logOptions  = utils.DefaultLogOptions
 	skipCleanup = false
 )
 
 func init() {
 	flag.BoolVar(&skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
+	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -48,13 +52,17 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("Failed to get credentials: %v", err)
+	}
+
 	seedClient, restConfig, seedConfig, err := e2eutils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
 	// create test environment
-	testJig := jig.NewBYOCluster(seedClient, logger)
+	testJig := jig.NewBYOCluster(seedClient, logger, credentials)
 	testJig.ClusterJig.
 		WithTestName("expose-strategy").
 		WithExposeStrategy(kubermaticv1.ExposeStrategyTunneling).
@@ -73,7 +81,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		Log:       logger,
 		Client:    seedClient,
 		Namespace: cluster.Status.NamespaceName,
-		Versions:  kubermatic.NewDefaultVersions(),
+		Versions:  kubermatic.NewFakeVersions(),
 	}
 	if err := agentConfig.DeployAgentPod(ctx); err != nil {
 		t.Fatalf("Failed to deploy agent: %v", err)
@@ -92,14 +100,14 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 	}
 
 	t.Run("Testing SNI when Kubeconfig is used e.g. Kubelet", func(t *testing.T) {
-		if !client.QueryApiserverVersion("", false, jig.ClusterSemver(logger), 5, 4) {
-			t.Fatal("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
+		if err := client.VerifyApiserverVersion(ctx, "", false, jig.ClusterSemver(logger)); err != nil {
+			t.Fatalf("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy, but: %v", err)
 		}
 	})
 
 	t.Run("Tunneling requests using HTTP/2 CONNECT when no SNI is present e.g. pods relying on kubernetes service in default namespace", func(t *testing.T) {
-		if !client.QueryApiserverVersion(agentConfig.GetKASHostPort(), true, jig.ClusterSemver(logger), 5, 4) {
-			t.Fatal("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy")
+		if err := client.VerifyApiserverVersion(ctx, agentConfig.GetKASHostPort(), true, jig.ClusterSemver(logger)); err != nil {
+			t.Fatalf("Apiserver should be reachable passing from the SNI entrypoint in nodeport proxy, but: %v", err)
 		}
 	})
 

@@ -45,7 +45,8 @@ import (
 )
 
 var (
-	logOptions = log.NewDefaultOptions()
+	logOptions  = utils.DefaultLogOptions
+	credentials jig.BYOCredentials
 )
 
 const (
@@ -56,6 +57,7 @@ const (
 )
 
 func init() {
+	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
@@ -64,13 +66,17 @@ func TestBackup(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("Failed to get credentials: %v", err)
+	}
+
 	client, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
 	// create test environment
-	testJig := jig.NewBYOCluster(client, logger)
+	testJig := jig.NewBYOCluster(client, logger, credentials)
 	testJig.ClusterJig.WithTestName("etcd-backup")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
@@ -146,10 +152,10 @@ func TestScaling(t *testing.T) {
 	}
 
 	// create test environment
-	testJig := jig.NewBYOClusterWithFeatures(client, logger, map[string]bool{
+	testJig := jig.NewBYOCluster(client, logger, credentials)
+	testJig.ClusterJig.WithTestName("etcd-scaling").WithFeatures(map[string]bool{
 		kubermaticv1.ClusterFeatureEtcdLauncher: true,
 	})
-	testJig.ClusterJig.WithTestName("etcd-scaling")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
@@ -192,10 +198,10 @@ func TestRecovery(t *testing.T) {
 	}
 
 	// create test environment
-	testJig := jig.NewBYOClusterWithFeatures(client, logger, map[string]bool{
+	testJig := jig.NewBYOCluster(client, logger, credentials)
+	testJig.ClusterJig.WithTestName("etcd-recovery").WithFeatures(map[string]bool{
 		kubermaticv1.ClusterFeatureEtcdLauncher: true,
 	})
-	testJig.ClusterJig.WithTestName("etcd-recovery")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)

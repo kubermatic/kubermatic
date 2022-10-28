@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.14-1
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.16-2
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -68,7 +68,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.14-1
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.16-2
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -107,7 +107,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.14-1
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.16-2
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -135,7 +135,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws: "true"
+      preset-aws-e2e-kkp: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-vault: "true"

@@ -166,14 +166,9 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 		absName := path.Join(reportsDir, f.Name())
 		individualReportFiles = append(individualReportFiles, absName)
 
-		b, err := os.ReadFile(absName)
+		suite, err := parseGinkgoJUnitReport(absName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read file '%s': %w", absName, err)
-		}
-
-		suite := &reporters.JUnitTestSuite{}
-		if err := xml.Unmarshal(b, suite); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal report file '%s': %w", absName, err)
 		}
 
 		AppendReport(resultSuite, suite)
@@ -186,6 +181,51 @@ func collectReports(name, reportsDir string) (*reporters.JUnitTestSuite, error) 
 	}
 
 	return resultSuite, nil
+}
+
+// JUnitTestSuites is copied from Ginkgo 2.x because KKP otherwise
+// depends on Ginkgo 1.x for now. Once we migrate everything, this
+// struct can be removed.
+// Source: https://github.com/onsi/ginkgo/blob/9c9f45ef886e23dcb006aa245f67e91140e1e60e/reporters/junit_report.go#L24-L39
+type JUnitTestSuites struct {
+	XMLName    xml.Name                   `xml:"testsuites"`
+	Tests      int                        `xml:"tests,attr"`
+	Disabled   int                        `xml:"disabled,attr"`
+	Errors     int                        `xml:"errors,attr"`
+	Failures   int                        `xml:"failures,attr"`
+	Time       float64                    `xml:"time,attr"`
+	TestSuites []reporters.JUnitTestSuite `xml:"testsuite"`
+}
+
+func parseGinkgoJUnitReport(junitFile string) (*reporters.JUnitTestSuite, error) {
+	b, err := os.ReadFile(junitFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	// Ginkgo 1.x creates reports that only have a <testsuite> element at their root.
+	// Ginkgo 2.x (Kubernetes 1.25+) creates reports that have a <testsuites>
+	// element at the root, containing a single <testsuite> child.
+	// As we have other dependencies on Ginkgo, this code cannot rely on
+	// reporters.JUnitTestSuites (plural) and instead uses a copy.
+
+	// try the 2.x version first
+	suites := &JUnitTestSuites{}
+	if err := xml.Unmarshal(b, suites); err == nil {
+		if count := len(suites.TestSuites); count != 1 {
+			return nil, fmt.Errorf("expected exactly one <testsuite> element in the report, but found %d", count)
+		}
+
+		return &suites.TestSuites[0], nil
+	}
+
+	// not a 2.x, so maybe it's a 1.x file
+	suite := &reporters.JUnitTestSuite{}
+	if err := xml.Unmarshal(b, suite); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal: %w", err)
+	}
+
+	return suite, nil
 }
 
 // AppendReport appends a reporters.JUnitTestSuite to another.

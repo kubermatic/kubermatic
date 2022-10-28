@@ -121,4 +121,4 @@ No alternate native solution supported by the k8s community is available.
 [kubernetes_konnectivity_doc]: https://kubernetes.io/docs/tasks/extend-kubernetes/setup-konnectivity/
 [kubernetes_service_account]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-token-volume-projection
 [issue_6191]: https://github.com/kubermatic/kubermatic/issues/6191
-[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/master/tutorials-howtos/networking/expose-strategies/
+[k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/main/tutorials-howtos/networking/expose-strategies/
