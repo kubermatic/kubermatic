@@ -76,10 +76,11 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx context.Context, use
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, region, settings.Spec.MachineDeploymentVMResourceQuota)
+	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	return ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, region, filter)
 }
 
-func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.AlibabaInstanceTypeList, error) {
+func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region string, machineFilter kubermaticv1.MachineFlavorFilter) (apiv1.AlibabaInstanceTypeList, error) {
 	// Alibaba has way too many instance types that are not all available in each region
 	// recommendedInstanceFamilies are those families that are recommended in this document:
 	// https://www.alibabacloud.com/help/doc-detail/25378.htm?spm=a2c63.p38356.b99.47.7acf342enhNVmo
@@ -103,7 +104,7 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %v", err))
 	}
 
-	if quota.EnableGPU {
+	if machineFilter.EnableGPU {
 		recommendedInstanceFamilies.Insert(gpuInstanceFamilies.List()...)
 	}
 
@@ -134,10 +135,10 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 		}
 	}
 
-	return filterByQuota(instanceTypes, quota), nil
+	return filterMachineFlavorsForAlibaba(instanceTypes, machineFilter), nil
 }
 
-func filterByQuota(instances apiv1.AlibabaInstanceTypeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.AlibabaInstanceTypeList {
+func filterMachineFlavorsForAlibaba(instances apiv1.AlibabaInstanceTypeList, filter kubermaticv1.MachineFlavorFilter) apiv1.AlibabaInstanceTypeList {
 	filteredRecords := apiv1.AlibabaInstanceTypeList{}
 
 	// Range over the records and apply all the filters to each record.
@@ -145,10 +146,10 @@ func filterByQuota(instances apiv1.AlibabaInstanceTypeList, quota kubermaticv1.M
 	for _, r := range instances {
 		keep := true
 
-		if !handlercommon.FilterCPU(r.CPUCoreCount, quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(r.CPUCoreCount, filter.MinCPU, filter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(int(r.MemorySize), quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(int(r.MemorySize), filter.MinRAM, filter.MaxRAM) {
 			keep = false
 		}
 

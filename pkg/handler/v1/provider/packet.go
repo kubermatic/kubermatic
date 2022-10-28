@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -43,6 +44,9 @@ type PacketSizesReq struct {
 	// in: header
 	// name: Credential
 	Credential string `json:"credential"`
+	// in: header
+	// DatacenterName datacenter name
+	DatacenterName string
 }
 
 // PacketSizesNoCredentialsReq represent a request for Packet sizes EP
@@ -57,6 +61,7 @@ func DecodePacketSizesReq(_ context.Context, r *http.Request) (interface{}, erro
 	req.APIKey = r.Header.Get("apiKey")
 	req.ProjectID = r.Header.Get("projectID")
 	req.Credential = r.Header.Get("credential")
+	req.DatacenterName = r.Header.Get("DatacenterName")
 
 	return req, nil
 }
@@ -73,7 +78,7 @@ func DecodePacketSizesNoCredentialsReq(c context.Context, r *http.Request) (inte
 	return req, nil
 }
 
-func PacketSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func PacketSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PacketSizesReq)
 
@@ -100,13 +105,23 @@ func PacketSizesEndpoint(presetProvider provider.PresetProvider, userInfoGetter 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return providercommon.PacketSizes(apiKey, projectID, settings.Spec.MachineDeploymentVMResourceQuota)
+		filter := *settings.Spec.MachineDeploymentVMResourceQuota
+		datacenterName := req.DatacenterName
+		if datacenterName != "" {
+			_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+			if err != nil {
+				return nil, fmt.Errorf("error getting dc: %w", err)
+			}
+
+			filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		}
+		return providercommon.PacketSizes(apiKey, projectID, filter)
 	}
 }
 
-func PacketSizesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func PacketSizesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PacketSizesNoCredentialsReq)
-		return providercommon.PacketSizesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, settingsProvider, req.ProjectID, req.ClusterID)
+		return providercommon.PacketSizesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, settingsProvider, req.ProjectID, req.ClusterID)
 	}
 }

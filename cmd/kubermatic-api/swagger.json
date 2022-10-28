@@ -6926,6 +6926,11 @@
             "type": "string",
             "name": "Region",
             "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
           }
         ],
         "responses": {
@@ -7121,6 +7126,11 @@
             "description": "architecture query parameter. Supports: arm64 and x64 types.",
             "name": "architecture",
             "in": "query"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
           }
         ],
         "responses": {
@@ -7400,6 +7410,11 @@
             "type": "string",
             "name": "Credential",
             "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
           }
         ],
         "responses": {
@@ -7437,6 +7452,11 @@
           {
             "type": "string",
             "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
             "in": "header"
           }
         ],
@@ -7549,6 +7569,11 @@
           {
             "type": "string",
             "name": "Zone",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
             "in": "header"
           }
         ],
@@ -7682,6 +7707,11 @@
           {
             "type": "string",
             "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
             "in": "header"
           }
         ],
@@ -8260,6 +8290,11 @@
             "type": "string",
             "x-go-name": "Credential",
             "name": "credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
             "in": "header"
           }
         ],
@@ -14430,6 +14465,11 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
           }
         ],
         "responses": {
@@ -14556,6 +14596,11 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
           }
         ],
         "responses": {
@@ -20549,6 +20594,11 @@
             "type": "string",
             "name": "Credential",
             "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
           }
         ],
         "responses": {
@@ -20650,6 +20700,11 @@
           {
             "type": "string",
             "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
             "in": "header"
           }
         ],
@@ -26280,6 +26335,9 @@
           "type": "string",
           "x-go-name": "Location"
         },
+        "machineFlavorFilter": {
+          "$ref": "#/definitions/MachineFlavorFilter"
+        },
         "node": {
           "$ref": "#/definitions/NodeSettings"
         },
@@ -30128,15 +30186,16 @@
       },
       "x-go-package": "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
     },
-    "MachineDeploymentVMResourceQuota": {
+    "MachineFlavorFilter": {
       "type": "object",
       "properties": {
         "enableGPU": {
+          "description": "Include VMs with GPU",
           "type": "boolean",
           "x-go-name": "EnableGPU"
         },
         "maxCPU": {
-          "description": "Maximal number of vCPU",
+          "description": "Maximum number of vCPU",
           "type": "integer",
           "format": "int64",
           "x-go-name": "MaxCPU"
@@ -30148,13 +30207,13 @@
           "x-go-name": "MaxRAM"
         },
         "minCPU": {
-          "description": "Minimal number of vCPU",
+          "description": "Minimum number of vCPU",
           "type": "integer",
           "format": "int64",
           "x-go-name": "MinCPU"
         },
         "minRAM": {
-          "description": "Minimal RAM size in GB",
+          "description": "Minimum RAM size in GB",
           "type": "integer",
           "format": "int64",
           "x-go-name": "MinRAM"
@@ -33518,7 +33577,7 @@
           "x-go-name": "EnableWebTerminal"
         },
         "machineDeploymentVMResourceQuota": {
-          "$ref": "#/definitions/MachineDeploymentVMResourceQuota"
+          "$ref": "#/definitions/MachineFlavorFilter"
         },
         "mlaAlertmanagerPrefix": {
           "type": "string",

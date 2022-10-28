@@ -150,6 +150,13 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						RequiredEmails:                 []string{},
 						DefaultOperatingSystemProfiles: operatingSystemProfileList,
+						MachineFlavorFilter: &kubermaticv1.MachineFlavorFilter{
+							MinCPU:    0,
+							MaxCPU:    0,
+							MinRAM:    0,
+							MaxRAM:    0,
+							EnableGPU: false,
+						},
 						AWS: &kubermaticv1.DatacenterSpecAWS{
 							Images: imageList,
 						},

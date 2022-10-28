@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID, zone string) (interface{}, error) {
+func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID, zone string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
@@ -64,7 +64,21 @@ func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter p
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return ListGCPSizes(ctx, settings.Spec.MachineDeploymentVMResourceQuota, sa, zone)
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	if datacenter.Spec.GCP == nil {
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
+	}
+
+	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	return ListGCPSizes(ctx, filter, sa, zone)
 }
 
 func GCPZoneWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
@@ -279,7 +293,7 @@ func ListGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacent
 	return zones, err
 }
 
-func ListGCPSizes(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, sa, zone string) (apiv1.GCPMachineSizeList, error) {
+func ListGCPSizes(ctx context.Context, machineFilter kubermaticv1.MachineFlavorFilter, sa, zone string) (apiv1.GCPMachineSizeList, error) {
 	sizes := apiv1.GCPMachineSizeList{}
 
 	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
@@ -301,7 +315,7 @@ func ListGCPSizes(ctx context.Context, quota kubermaticv1.MachineDeploymentVMRes
 		return nil
 	})
 
-	return filterGCPByQuota(sizes, quota), err
+	return filterGCPByQuota(sizes, machineFilter), err
 }
 
 func GetGCPInstanceSize(ctx context.Context, machineType, sa, zone string) (*apiv1.GCPMachineSize, error) {
@@ -322,7 +336,7 @@ func GetGCPInstanceSize(ctx context.Context, machineType, sa, zone string) (*api
 	}, nil
 }
 
-func filterGCPByQuota(instances apiv1.GCPMachineSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.GCPMachineSizeList {
+func filterGCPByQuota(instances apiv1.GCPMachineSizeList, machineFilter kubermaticv1.MachineFlavorFilter) apiv1.GCPMachineSizeList {
 	filteredRecords := apiv1.GCPMachineSizeList{}
 
 	// Range over the records and apply all the filters to each record.
@@ -330,10 +344,10 @@ func filterGCPByQuota(instances apiv1.GCPMachineSizeList, quota kubermaticv1.Mac
 	for _, r := range instances {
 		keep := true
 
-		if !handlercommon.FilterCPU(int(r.VCPUs), quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(int(r.VCPUs), machineFilter.MinCPU, machineFilter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(int(r.Memory/1024), quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(int(r.Memory/1024), machineFilter.MinRAM, machineFilter.MaxRAM) {
 			keep = false
 		}
 

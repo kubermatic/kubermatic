@@ -70,6 +70,9 @@ type ListAzureSizesParams struct {
 	// Credential.
 	Credential *string
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// Location.
 	Location *string
 
@@ -165,6 +168,17 @@ func (o *ListAzureSizesParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
+// WithDatacenterName adds the datacenterName to the list azure sizes params
+func (o *ListAzureSizesParams) WithDatacenterName(datacenterName *string) *ListAzureSizesParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list azure sizes params
+func (o *ListAzureSizesParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithLocation adds the location to the list azure sizes params
 func (o *ListAzureSizesParams) WithLocation(location *string) *ListAzureSizesParams {
 	o.SetLocation(location)
@@ -226,6 +240,14 @@ func (o *ListAzureSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 
 		// header param Credential
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
 	}

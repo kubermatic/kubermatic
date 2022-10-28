@@ -26,6 +26,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -44,9 +45,21 @@ type GCPZoneReq struct {
 	DC string `json:"dc"`
 }
 
-// GCPTypesReq represent a request for GCP machine or disk types.
-// swagger:parameters listGCPDiskTypes listGCPSizes
-type GCPTypesReq struct {
+// GCPMachineTypesReq represent a request for GCP machine types.
+// swagger:parameters listGCPSizes
+type GCPMachineTypesReq struct {
+	GCPCommonReq
+	// in: header
+	// name: Zone
+	Zone string
+	// in: header
+	// DatacenterName datacenter name
+	DatacenterName string
+}
+
+// GCPDiskTypesReq represent a request for GCP disk types.
+// swagger:parameters listGCPDiskTypes
+type GCPDiskTypesReq struct {
 	GCPCommonReq
 	// in: header
 	// name: Zone
@@ -93,8 +106,22 @@ type GCPSubnetworksNoCredentialReq struct {
 	Network string
 }
 
-func DecodeGCPTypesReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req GCPTypesReq
+func DecodeGCPMachineTypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPMachineTypesReq
+
+	commonReq, err := DecodeGCPCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GCPCommonReq = commonReq.(GCPCommonReq)
+	req.Zone = r.Header.Get("Zone")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
+	return req, nil
+}
+
+func DecodeGCPDiskTypesReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GCPDiskTypesReq
 
 	commonReq, err := DecodeGCPCommonReq(c, r)
 	if err != nil {
@@ -180,7 +207,7 @@ func DecodeGCPSubnetworksNoCredentialReq(c context.Context, r *http.Request) (in
 
 func GCPDiskTypesEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GCPTypesReq)
+		req := request.(GCPDiskTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
@@ -208,9 +235,9 @@ func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.Project
 	}
 }
 
-func GCPSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func GCPSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GCPTypesReq)
+		req := request.(GCPMachineTypesReq)
 
 		zone := req.Zone
 		sa := req.ServiceAccount
@@ -233,14 +260,23 @@ func GCPSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return providercommon.ListGCPSizes(ctx, settings.Spec.MachineDeploymentVMResourceQuota, sa, zone)
+		filter := *settings.Spec.MachineDeploymentVMResourceQuota
+		datacenterName := req.DatacenterName
+		if datacenterName != "" {
+			_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+			if err != nil {
+				return nil, fmt.Errorf("error getting dc: %w", err)
+			}
+			filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		}
+		return providercommon.ListGCPSizes(ctx, filter, sa, zone)
 	}
 }
 
-func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesNoCredentialReq)
-		return providercommon.GCPSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, settingsProvider, req.ProjectID, req.ClusterID, req.Zone)
+		return providercommon.GCPSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, settingsProvider, req.ProjectID, req.ClusterID, req.Zone)
 	}
 }
 

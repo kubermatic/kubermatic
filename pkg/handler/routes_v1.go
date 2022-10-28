@@ -772,7 +772,7 @@ func (r Routing) listAWSSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSSizeEndpoint(r.settingsProvider)),
+		)(provider.AWSSizeEndpoint(r.settingsProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAWSSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -861,7 +861,7 @@ func (r Routing) listGCPDiskTypes() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPDiskTypesEndpoint(r.presetProvider, r.userInfoGetter)),
-		provider.DecodeGCPTypesReq,
+		provider.DecodeGCPDiskTypesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -882,8 +882,8 @@ func (r Routing) listGCPSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.GCPSizeEndpoint(r.presetProvider, r.userInfoGetter, r.settingsProvider)),
-		provider.DecodeGCPTypesReq,
+		)(provider.GCPSizeEndpoint(r.presetProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
+		provider.DecodeGCPMachineTypesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -970,7 +970,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.DigitaloceanSizeEndpoint(r.presetProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.DigitaloceanSizeEndpoint(r.presetProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
 		provider.DecodeDoSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -992,7 +992,7 @@ func (r Routing) listAzureSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AzureSizeEndpoint(r.presetProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.AzureSizeEndpoint(r.presetProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
 		provider.DecodeAzureSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1102,7 +1102,7 @@ func (r Routing) listPacketSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.PacketSizesEndpoint(r.presetProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.PacketSizesEndpoint(r.presetProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
 		provider.DecodePacketSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1126,7 +1126,7 @@ func (r Routing) listPacketSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.PacketSizesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.PacketSizesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodePacketSizesNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1258,7 +1258,7 @@ func (r Routing) listHetznerSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.HetznerSizeEndpoint(r.presetProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.HetznerSizeEndpoint(r.presetProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
 		provider.DecodeHetznerSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1280,8 +1280,8 @@ func (r Routing) listAlibabaInstanceTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AlibabaInstanceTypesEndpoint(r.presetProvider, r.userInfoGetter, r.settingsProvider)),
-		provider.DecodeAlibabaReq,
+		)(provider.AlibabaInstanceTypesEndpoint(r.presetProvider, r.userInfoGetter, r.seedsGetter, r.settingsProvider)),
+		provider.DecodeAlibabaInstanceTypesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2792,7 +2792,7 @@ func (r Routing) listGCPSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.GCPSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.GCPSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeGCPTypesNoCredentialReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2912,7 +2912,7 @@ func (r Routing) listHetznerSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.HetznerSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.HetznerSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeHetznerSizesNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2936,7 +2936,7 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.DigitaloceanSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.settingsProvider)),
+		)(provider.DigitaloceanSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeDoSizesNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

@@ -61,6 +61,9 @@ ListAWSSizesParams contains all the parameters to send to the API endpoint
 */
 type ListAWSSizesParams struct {
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// Region.
 	Region *string
 
@@ -123,6 +126,17 @@ func (o *ListAWSSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDatacenterName adds the datacenterName to the list a w s sizes params
+func (o *ListAWSSizesParams) WithDatacenterName(datacenterName *string) *ListAWSSizesParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list a w s sizes params
+func (o *ListAWSSizesParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithRegion adds the region to the list a w s sizes params
 func (o *ListAWSSizesParams) WithRegion(region *string) *ListAWSSizesParams {
 	o.SetRegion(region)
@@ -152,6 +166,14 @@ func (o *ListAWSSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 	var res []error
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+	}
 
 	if o.Region != nil {
 

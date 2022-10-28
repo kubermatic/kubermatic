@@ -108,6 +108,9 @@ type DatacenterSpec struct {
 
 	// DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
 	DefaultOperatingSystemProfiles kubermaticv1.OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
+
+	// MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+	MachineFlavorFilter *kubermaticv1.MachineFlavorFilter `json:"machineFlavorFilter,omitempty"`
 }
 
 // DatacenterList represents a list of datacenters

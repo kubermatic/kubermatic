@@ -243,6 +243,39 @@ spec:
                                   - None
                                 type: string
                             type: object
+                          machineFlavorFilter:
+                            description: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+                            properties:
+                              enableGPU:
+                                description: Include VMs with GPU
+                                type: boolean
+                              maxCPU:
+                                default: 0
+                                description: Maximum number of vCPU
+                                minimum: 0
+                                type: integer
+                              maxRAM:
+                                default: 0
+                                description: Maximum RAM size in GB
+                                minimum: 0
+                                type: integer
+                              minCPU:
+                                default: 0
+                                description: Minimum number of vCPU
+                                minimum: 0
+                                type: integer
+                              minRAM:
+                                default: 0
+                                description: Minimum RAM size in GB
+                                minimum: 0
+                                type: integer
+                            required:
+                              - enableGPU
+                              - maxCPU
+                              - maxRAM
+                              - minCPU
+                              - minRAM
+                            type: object
                           nutanix:
                             description: Nutanix is experimental and unsupported
                             properties:

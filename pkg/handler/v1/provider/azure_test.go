@@ -94,6 +94,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			req.Header.Add("ClientSecret", tc.secret)
 			req.Header.Add("TenantID", testID)
 			req.Header.Add("Location", tc.location)
+			req.Header.Add("DatacenterName", datacenterName)
 
 			providercommon.NewAzureClientSet = MockNewSizeClient
 

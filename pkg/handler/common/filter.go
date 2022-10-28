@@ -16,7 +16,11 @@ limitations under the License.
 
 package common
 
-import "math"
+import (
+	"math"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+)
 
 // Filter is a CPU filter function applied to a single record.
 type Filter func(record, min, max int) bool
@@ -49,4 +53,14 @@ func FilterGPU(record int, enableGPU bool) bool {
 	}
 
 	return true
+}
+
+func DetermineMachineFlavorFilter(globalMachineFilter, seedMachineFilter *kubermaticv1.MachineFlavorFilter) kubermaticv1.MachineFlavorFilter {
+	var filter kubermaticv1.MachineFlavorFilter
+	if seedMachineFilter != nil {
+		filter = *seedMachineFilter
+	} else if globalMachineFilter != nil {
+		filter = *globalMachineFilter
+	}
+	return filter
 }

@@ -30,6 +30,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -41,7 +42,7 @@ type plansRoot struct {
 	Plans []packngo.Plan `json:"plans"`
 }
 
-func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
+func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
@@ -66,10 +67,25 @@ func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return PacketSizes(apiKey, projectID, settings.Spec.MachineDeploymentVMResourceQuota)
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	if datacenter.Spec.Packet == nil {
+		return nil, utilerrors.NewNotFound("cloud spec (dc) for ", clusterID)
+	}
+
+	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+
+	return PacketSizes(apiKey, projectID, filter)
 }
 
-func PacketSizes(apiKey, projectID string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.PacketSizeList, error) {
+func PacketSizes(apiKey, projectID string, machineFilter kubermaticv1.MachineFlavorFilter) (apiv1.PacketSizeList, error) {
 	sizes := apiv1.PacketSizeList{}
 	root := new(plansRoot)
 
@@ -97,7 +113,7 @@ func PacketSizes(apiKey, projectID string, quota kubermaticv1.MachineDeploymentV
 		sizes = append(sizes, toPacketSize(plan))
 	}
 
-	return filterPacketByQuota(sizes, quota), nil
+	return filterMachineFlavorsForPacket(sizes, machineFilter), nil
 }
 
 func DescribePacketSize(apiKey, projectID, instanceType string) (packngo.Plan, error) {
@@ -132,7 +148,7 @@ func DescribePacketSize(apiKey, projectID, instanceType string) (packngo.Plan, e
 	return plan, fmt.Errorf("packet instanceType:%s not found", instanceType)
 }
 
-func filterPacketByQuota(instances apiv1.PacketSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.PacketSizeList {
+func filterMachineFlavorsForPacket(instances apiv1.PacketSizeList, machineFilter kubermaticv1.MachineFlavorFilter) apiv1.PacketSizeList {
 	filteredRecords := apiv1.PacketSizeList{}
 
 	// Range over the records and apply all the filters to each record.
@@ -143,11 +159,11 @@ func filterPacketByQuota(instances apiv1.PacketSizeList, quota kubermaticv1.Mach
 		memoryGB := strings.TrimSuffix(r.Memory, "GB")
 		memory, err := strconv.Atoi(memoryGB)
 		if err == nil {
-			if !handlercommon.FilterCPU(r.CPUs[0].Count, quota.MinCPU, quota.MaxCPU) {
+			if !handlercommon.FilterCPU(r.CPUs[0].Count, machineFilter.MinCPU, machineFilter.MaxCPU) {
 				keep = false
 			}
 
-			if !handlercommon.FilterMemory(memory, quota.MinRAM, quota.MaxRAM) {
+			if !handlercommon.FilterMemory(memory, machineFilter.MinRAM, machineFilter.MaxRAM) {
 				keep = false
 			}
 

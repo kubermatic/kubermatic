@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -31,14 +32,14 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func DigitaloceanSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func DigitaloceanSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesNoCredentialsReq)
-		return providercommon.DigitaloceanSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, settingsProvider, req.ProjectID, req.ClusterID)
+		return providercommon.DigitaloceanSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, settingsProvider, req.ProjectID, req.ClusterID)
 	}
 }
 
-func DigitaloceanSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+func DigitaloceanSizeEndpoint(presetProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DoSizesReq)
 
@@ -63,7 +64,16 @@ func DigitaloceanSizeEndpoint(presetProvider provider.PresetProvider, userInfoGe
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return providercommon.DigitaloceanSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, token)
+		filter := *settings.Spec.MachineDeploymentVMResourceQuota
+		datacenterName := req.DatacenterName
+		if datacenterName != "" {
+			_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+			if err != nil {
+				return nil, fmt.Errorf("error getting dc: %w", err)
+			}
+			filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+		}
+		return providercommon.DigitaloceanSize(ctx, filter, token)
 	}
 }
 
@@ -94,6 +104,9 @@ type DoSizesReq struct {
 	// in: header
 	// Credential predefined Kubermatic credential name from the presets
 	Credential string
+	// in: header
+	// DatacenterName datacenter name
+	DatacenterName string
 }
 
 func DecodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -101,5 +114,7 @@ func DecodeDoSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 
 	req.DoToken = r.Header.Get("DoToken")
 	req.Credential = r.Header.Get("Credential")
+	req.DatacenterName = r.Header.Get("DatacenterName")
+
 	return req, nil
 }

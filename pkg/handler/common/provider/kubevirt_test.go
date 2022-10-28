@@ -34,7 +34,7 @@ func Test_filterInstancetypes(t *testing.T) {
 	tests := []struct {
 		name          string
 		instancetypes *apiv2.VirtualMachineInstancetypeList
-		quota         kubermaticv1.MachineDeploymentVMResourceQuota
+		quota         kubermaticv1.MachineFlavorFilter
 		want          *apiv2.VirtualMachineInstancetypeList
 	}{
 		{
@@ -49,7 +49,7 @@ func Test_filterInstancetypes(t *testing.T) {
 				addInstanceType(apiv2.InstancetypeCustom, 2, "2Gi").     // filtered out due to memory
 				addInstanceType(apiv2.InstancetypeCustom, 2, "6Gi").     // filtered out due to memory
 				toApiWithoutError(),
-			quota: kubermaticv1.MachineDeploymentVMResourceQuota{
+			quota: kubermaticv1.MachineFlavorFilter{
 				MinCPU: 2,
 				MaxCPU: 4,
 				MinRAM: 3,
@@ -68,7 +68,7 @@ func Test_filterInstancetypes(t *testing.T) {
 				addInstanceType(apiv2.InstancetypeCustom, 2, "4Mi").     // filtered out due to memory
 				addInstanceType(apiv2.InstancetypeKubermatic, 3, "4Ti"). // filtered out due to memory
 				toApiWithoutError(),
-			quota: kubermaticv1.MachineDeploymentVMResourceQuota{
+			quota: kubermaticv1.MachineFlavorFilter{
 				MinCPU: 2,
 				MaxCPU: 4,
 				MinRAM: 3,
@@ -85,7 +85,7 @@ func Test_filterInstancetypes(t *testing.T) {
 				addInstanceType(apiv2.InstancetypeCustom, 2, "2Gi").     // filtered out due to memory
 				addInstanceType(apiv2.InstancetypeKubermatic, 2, "6Gi"). // filtered out due to memory
 				toApiWithoutError(),
-			quota: kubermaticv1.MachineDeploymentVMResourceQuota{
+			quota: kubermaticv1.MachineFlavorFilter{
 				MinCPU: 2,
 				MaxCPU: 4,
 				MinRAM: 3,
@@ -102,7 +102,7 @@ func Test_filterInstancetypes(t *testing.T) {
 				addInstanceType(apiv2.InstancetypeCustom, 4, "4Gi").     // ok
 				addInstanceType(apiv2.InstancetypeKubermatic, 4, "4Gi"). // ok
 				toApiWithoutError(),
-			quota: kubermaticv1.MachineDeploymentVMResourceQuota{
+			quota: kubermaticv1.MachineFlavorFilter{
 				MinCPU: 2,
 				MaxCPU: 4,
 				MinRAM: 3,

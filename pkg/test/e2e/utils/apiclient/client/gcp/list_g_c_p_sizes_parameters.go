@@ -64,6 +64,9 @@ type ListGCPSizesParams struct {
 	// Credential.
 	Credential *string
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// ServiceAccount.
 	ServiceAccount *string
 
@@ -134,6 +137,17 @@ func (o *ListGCPSizesParams) SetCredential(credential *string) {
 	o.Credential = credential
 }
 
+// WithDatacenterName adds the datacenterName to the list g c p sizes params
+func (o *ListGCPSizesParams) WithDatacenterName(datacenterName *string) *ListGCPSizesParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list g c p sizes params
+func (o *ListGCPSizesParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithServiceAccount adds the serviceAccount to the list g c p sizes params
 func (o *ListGCPSizesParams) WithServiceAccount(serviceAccount *string) *ListGCPSizesParams {
 	o.SetServiceAccount(serviceAccount)
@@ -168,6 +182,14 @@ func (o *ListGCPSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 
 		// header param Credential
 		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
 			return err
 		}
 	}

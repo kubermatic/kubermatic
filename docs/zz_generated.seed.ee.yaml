@@ -127,6 +127,18 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
+        # MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+        machineFlavorFilter:
+          # Include VMs with GPU
+          enableGPU: false
+          # Maximum number of vCPU
+          maxCPU: 0
+          # Maximum RAM size in GB
+          maxRAM: 0
+          # Minimum number of vCPU
+          minCPU: 0
+          # Minimum RAM size in GB
+          minRAM: 0
         # Nutanix is experimental and unsupported
         nutanix:
           # Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)

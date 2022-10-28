@@ -89,7 +89,7 @@ func kubeVirtPresets(ctx context.Context, client ctrlruntimeclient.Client, kubec
 	return vmiPresets, nil
 }
 
-func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (apiv2.VirtualMachineInstancePresetList, error) {
+func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, datacenterName string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) (apiv2.VirtualMachineInstancePresetList, error) {
 	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
@@ -128,7 +128,22 @@ func KubeVirtVMIPresets(ctx context.Context, kubeconfig string, cluster *kuberma
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	return filterVMIPresets(res, settings.Spec.MachineDeploymentVMResourceQuota), nil
+
+	filter := *settings.Spec.MachineDeploymentVMResourceQuota
+	if datacenterName != "" {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %w", err)
+		}
+		filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	}
+
+	return filterVMIPresets(res, filter), nil
 }
 
 func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter {
@@ -141,8 +156,8 @@ func presetCreator(preset *kubevirtv1.VirtualMachineInstancePreset) reconciling.
 	}
 }
 
-func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string, settingsProvider provider.SettingsProvider) (interface{}, error) {
+func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	projectID, clusterID, datacenterName string, settingsProvider provider.SettingsProvider) (interface{}, error) {
 	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, err
@@ -153,7 +168,7 @@ func KubeVirtVMIPresetsWithClusterCredentialsEndpoint(ctx context.Context, userI
 		return nil, err
 	}
 
-	return KubeVirtVMIPresets(ctx, kvKubeconfig, cluster, settingsProvider)
+	return KubeVirtVMIPresets(ctx, kvKubeconfig, datacenterName, cluster, settingsProvider, userInfoGetter, seedsGetter)
 }
 
 func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevirtv1.VirtualMachineInstancePreset, error) {
@@ -176,8 +191,8 @@ func KubeVirtVMIPreset(ctx context.Context, kubeconfig, flavor string) (*kubevir
 	return nil, fmt.Errorf("KubeVirt VMI preset %q not found", flavor)
 }
 
-func KubeVirtInstancetypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	projectID, clusterID string, settingsProvider provider.SettingsProvider) (interface{}, error) {
+func KubeVirtInstancetypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	projectID, clusterID, datacenterName string, settingsProvider provider.SettingsProvider) (interface{}, error) {
 	kvKubeconfig, err := getKvKubeConfigFromCredentials(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, err
@@ -188,7 +203,7 @@ func KubeVirtInstancetypesWithClusterCredentialsEndpoint(ctx context.Context, us
 		return nil, err
 	}
 
-	return KubeVirtInstancetypes(ctx, kvKubeconfig, cluster, settingsProvider)
+	return KubeVirtInstancetypes(ctx, kvKubeconfig, datacenterName, cluster, settingsProvider, userInfoGetter, seedsGetter)
 }
 
 func KubeVirtPreferencesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -238,7 +253,7 @@ func KubeVirtStorageClassesWithClusterCredentialsEndpoint(ctx context.Context, u
 	return KubeVirtStorageClasses(ctx, kvKubeconfig)
 }
 
-func filterVMIPresets(vmiPresets apiv2.VirtualMachineInstancePresetList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv2.VirtualMachineInstancePresetList {
+func filterVMIPresets(vmiPresets apiv2.VirtualMachineInstancePresetList, machineFilter kubermaticv1.MachineFlavorFilter) apiv2.VirtualMachineInstancePresetList {
 	filteredVMIPresets := apiv2.VirtualMachineInstancePresetList{}
 
 	// Range over the records and apply all the filters to each record.
@@ -256,7 +271,7 @@ func filterVMIPresets(vmiPresets apiv2.VirtualMachineInstancePresetList, quota k
 			continue
 		}
 
-		if handlercommon.FilterCPU(int(cpu.AsApproximateFloat64()), quota.MinCPU, quota.MaxCPU) && handlercommon.FilterMemory(int(memory.Value()/(1<<30)), quota.MinRAM, quota.MaxRAM) {
+		if handlercommon.FilterCPU(int(cpu.AsApproximateFloat64()), machineFilter.MinCPU, machineFilter.MaxCPU) && handlercommon.FilterMemory(int(memory.Value()/(1<<30)), machineFilter.MinRAM, machineFilter.MaxRAM) {
 			filteredVMIPresets = append(filteredVMIPresets, vmiPreset)
 		}
 	}
@@ -384,7 +399,7 @@ func newAPIPreference(w preferenceWrapper) (*apiv2.VirtualMachinePreference, err
 // - custom (cluster-wide)
 // - concatenated with kubermatic standard from yaml manifests
 // The list is filtered based on the Resource Quota.
-func KubeVirtInstancetypes(ctx context.Context, kubeconfig string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider) (*apiv2.VirtualMachineInstancetypeList, error) {
+func KubeVirtInstancetypes(ctx context.Context, kubeconfig string, datacenterName string, cluster *kubermaticv1.Cluster, settingsProvider provider.SettingsProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) (*apiv2.VirtualMachineInstancetypeList, error) {
 	client, err := NewKubeVirtClient(kubeconfig, kubevirt.ClientOptions{})
 	if err != nil {
 		return nil, err
@@ -420,7 +435,21 @@ func KubeVirtInstancetypes(ctx context.Context, kubeconfig string, cluster *kube
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return filterInstancetypes(res, settings.Spec.MachineDeploymentVMResourceQuota), nil
+	filter := *settings.Spec.MachineDeploymentVMResourceQuota
+	if datacenterName != "" {
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting dc: %w", err)
+		}
+		filter = handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	}
+
+	return filterInstancetypes(res, filter), nil
 }
 
 // kubeVirtPreferences returns the kvinstancetypev1alpha1.VirtualMachinePreference:
@@ -511,7 +540,7 @@ func preferenceCreator(w preferenceWrapper) reconciling.NamedKvInstancetypeV1alp
 	}
 }
 
-func filterInstancetypes(instancetypes *apiv2.VirtualMachineInstancetypeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) *apiv2.VirtualMachineInstancetypeList {
+func filterInstancetypes(instancetypes *apiv2.VirtualMachineInstancetypeList, machineFilter kubermaticv1.MachineFlavorFilter) *apiv2.VirtualMachineInstancetypeList {
 	filtered := &apiv2.VirtualMachineInstancetypeList{}
 
 	// Range over the records and apply all the filters to each record.
@@ -524,7 +553,7 @@ func filterInstancetypes(instancetypes *apiv2.VirtualMachineInstancetypeList, qu
 				continue
 			}
 
-			if handlercommon.FilterCPU(int(spec.CPU.Guest), quota.MinCPU, quota.MaxCPU) && handlercommon.FilterMemory(int(spec.Memory.Guest.Value()/(1<<30)), quota.MinRAM, quota.MaxRAM) {
+			if handlercommon.FilterCPU(int(spec.CPU.Guest), machineFilter.MinCPU, machineFilter.MaxCPU) && handlercommon.FilterMemory(int(spec.Memory.Guest.Value()/(1<<30)), machineFilter.MinRAM, machineFilter.MaxRAM) {
 				if filtered.Instancetypes == nil {
 					filtered.Instancetypes = make(map[apiv2.VirtualMachineInstancetypeCategory][]apiv2.VirtualMachineInstancetype, 0)
 				}

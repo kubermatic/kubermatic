@@ -61,6 +61,9 @@ ListPacketSizesParams contains all the parameters to send to the API endpoint
 */
 type ListPacketSizesParams struct {
 
+	// DatacenterName.
+	DatacenterName *string
+
 	// APIKey.
 	APIKey *string
 
@@ -123,6 +126,17 @@ func (o *ListPacketSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithDatacenterName adds the datacenterName to the list packet sizes params
+func (o *ListPacketSizesParams) WithDatacenterName(datacenterName *string) *ListPacketSizesParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list packet sizes params
+func (o *ListPacketSizesParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
 // WithAPIKey adds the aPIKey to the list packet sizes params
 func (o *ListPacketSizesParams) WithAPIKey(aPIKey *string) *ListPacketSizesParams {
 	o.SetAPIKey(aPIKey)
@@ -163,6 +177,14 @@ func (o *ListPacketSizesParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		return err
 	}
 	var res []error
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+	}
 
 	if o.APIKey != nil {
 

@@ -76,3 +76,32 @@ const (
 	InitialMachineDeploymentRequestAnnotation        = "kubermatic.io/initial-machinedeployment-request"
 	InitialApplicationInstallationsRequestAnnotation = "kubermatic.io/initial-application-installations-request"
 )
+
+type MachineFlavorFilter struct {
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum:=0
+
+	// Minimum number of vCPU
+	MinCPU int `json:"minCPU"`
+
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum:=0
+
+	// Maximum number of vCPU
+	MaxCPU int `json:"maxCPU"`
+
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum:=0
+
+	// Minimum RAM size in GB
+	MinRAM int `json:"minRAM"`
+
+	// +kubebuilder:default=0
+	// +kubebuilder:validation:Minimum:=0
+
+	// Maximum RAM size in GB
+	MaxRAM int `json:"maxRAM"`
+
+	// Include VMs with GPU
+	EnableGPU bool `json:"enableGPU"` //nolint:tagliatelle
+}

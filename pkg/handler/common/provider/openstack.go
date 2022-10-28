@@ -66,7 +66,8 @@ func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGe
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return GetOpenstackSizes(creds, datacenter, settings.Spec.MachineDeploymentVMResourceQuota, caBundle)
+	filter := handlercommon.DetermineMachineFlavorFilter(datacenter.Spec.MachineFlavorFilter, settings.Spec.MachineDeploymentVMResourceQuota)
+	return GetOpenstackSizes(creds, datacenter, filter, caBundle)
 }
 
 func OpenstackTenantWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
@@ -299,7 +300,7 @@ func GetOpenstackProjects(userInfo *provider.UserInfo, seedsGetter provider.Seed
 }
 
 func GetOpenstackSizes(credentials *resources.OpenstackCredentials, datacenter *kubermaticv1.Datacenter,
-	quota kubermaticv1.MachineDeploymentVMResourceQuota, caBundle *x509.CertPool) ([]apiv1.OpenstackSize, error) {
+	machineFilter kubermaticv1.MachineFlavorFilter, caBundle *x509.CertPool) ([]apiv1.OpenstackSize, error) {
 	flavors, err := openstack.GetFlavors(datacenter.Spec.Openstack.AuthURL,
 		datacenter.Spec.Openstack.Region, credentials, caBundle)
 	if err != nil {
@@ -324,7 +325,7 @@ func GetOpenstackSizes(credentials *resources.OpenstackCredentials, datacenter *
 		}
 	}
 
-	return filterOpenStackByQuota(apiSizes, quota), nil
+	return filterMachineFlavorsForOpenstack(apiSizes, machineFilter), nil
 }
 
 func GetOpenStackFlavorSize(credentials *resources.OpenstackCredentials, authURL, region string,
@@ -351,7 +352,7 @@ func GetOpenStackFlavorSize(credentials *resources.OpenstackCredentials, authURL
 	return nil, fmt.Errorf("cannot find openstack flavor %q size", flavorName)
 }
 
-func filterOpenStackByQuota(instances []apiv1.OpenstackSize, quota kubermaticv1.MachineDeploymentVMResourceQuota) []apiv1.OpenstackSize {
+func filterMachineFlavorsForOpenstack(instances []apiv1.OpenstackSize, machineFilter kubermaticv1.MachineFlavorFilter) []apiv1.OpenstackSize {
 	var filteredRecords []apiv1.OpenstackSize
 
 	filteredRecords = make([]apiv1.OpenstackSize, 0)
@@ -360,10 +361,10 @@ func filterOpenStackByQuota(instances []apiv1.OpenstackSize, quota kubermaticv1.
 	for _, r := range instances {
 		keep := true
 
-		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+		if !handlercommon.FilterCPU(r.VCPUs, machineFilter.MinCPU, machineFilter.MaxCPU) {
 			keep = false
 		}
-		if !handlercommon.FilterMemory(r.Memory/1024, quota.MinRAM, quota.MaxRAM) {
+		if !handlercommon.FilterMemory(r.Memory/1024, machineFilter.MinRAM, machineFilter.MaxRAM) {
 			keep = false
 		}
 

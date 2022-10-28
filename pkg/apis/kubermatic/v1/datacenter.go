@@ -429,6 +429,9 @@ type DatacenterSpec struct {
 
 	// DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
 	DefaultOperatingSystemProfiles OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
+
+	// MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+	MachineFlavorFilter *MachineFlavorFilter `json:"machineFlavorFilter,omitempty"`
 }
 
 var (

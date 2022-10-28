@@ -77,6 +77,9 @@ type DatacenterSpec struct {
 	// kubevirt
 	Kubevirt *DatacenterSpecKubevirt `json:"kubevirt,omitempty"`
 
+	// machine flavor filter
+	MachineFlavorFilter *MachineFlavorFilter `json:"machineFlavorFilter,omitempty"`
+
 	// node
 	Node *NodeSettings `json:"node,omitempty"`
 
@@ -136,6 +139,10 @@ func (m *DatacenterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubevirt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMachineFlavorFilter(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -344,6 +351,25 @@ func (m *DatacenterSpec) validateKubevirt(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *DatacenterSpec) validateMachineFlavorFilter(formats strfmt.Registry) error {
+	if swag.IsZero(m.MachineFlavorFilter) { // not required
+		return nil
+	}
+
+	if m.MachineFlavorFilter != nil {
+		if err := m.MachineFlavorFilter.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("machineFlavorFilter")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("machineFlavorFilter")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *DatacenterSpec) validateNode(formats strfmt.Registry) error {
 	if swag.IsZero(m.Node) { // not required
 		return nil
@@ -517,6 +543,10 @@ func (m *DatacenterSpec) ContextValidate(ctx context.Context, formats strfmt.Reg
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateMachineFlavorFilter(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateNode(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -687,6 +717,22 @@ func (m *DatacenterSpec) contextValidateKubevirt(ctx context.Context, formats st
 				return ve.ValidateName("kubevirt")
 			} else if ce, ok := err.(*errors.CompositeError); ok {
 				return ce.ValidateName("kubevirt")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpec) contextValidateMachineFlavorFilter(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.MachineFlavorFilter != nil {
+		if err := m.MachineFlavorFilter.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("machineFlavorFilter")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("machineFlavorFilter")
 			}
 			return err
 		}
