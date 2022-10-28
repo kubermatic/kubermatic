@@ -482,7 +482,7 @@ func TestNewClusters(t *testing.T) {
 func waitForPods(t *testing.T, ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
 	r, err := labels.NewRequirement(key, selection.In, names)
 	if err != nil {
-		return fmt.Errorf("failed to build requirement: %v", err)
+		return fmt.Errorf("failed to build requirement: %w", err)
 	}
 	l := labels.NewSelector().Add(*r)
 
