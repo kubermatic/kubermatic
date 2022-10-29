@@ -40,31 +40,8 @@ fi
 # NB: The CE requires Seeds to be named this way
 export SEED_NAME=kubermatic
 
-# This defines the Kubermatic API endpoint the e2e tests will communicate with.
-# The api service is kubectl-proxied later on.
-export KUBERMATIC_API_ENDPOINT="http://localhost:8080"
-
-# Tell the conformance tester what dummy account we configure for the e2e tests.
-export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
-export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
-export KUBERMATIC_OIDC_PASSWORD="password"
-
 # Set docker config
 echo "$IMAGE_PULL_SECRET_DATA" | base64 -d > /config.json
-
-# The alias makes it easier to access the port-forwarded Dex inside the Kind cluster;
-# the token issuer cannot be localhost:5556, because pods inside the cluster would not
-# find Dex anymore. As this script can be run multiple times in the same CI job,
-# we must make sure to only add the alias once.
-if ! grep oauth /etc/hosts > /dev/null; then
-  echodate "Setting dex.oauth alias in /etc/hosts"
-  # The container runtime allows us to change the content but not to change the inode
-  # which is what sed -i does, so write to a tempfile and write the tempfiles content back.
-  temp_hosts="$(mktemp)"
-  sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
-  cat $temp_hosts > /etc/hosts
-  echodate "Set dex.oauth alias in /etc/hosts"
-fi
 
 # Build binaries and load the Docker images into the kind cluster
 echodate "Building binaries for $KUBERMATIC_VERSION"

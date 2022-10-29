@@ -39,8 +39,6 @@ presubmits:
               value: ubuntu
             - name: PROVIDER
               value: "azure"
-            - name: SETUP_MODE
-              value: "kube"
             - name: DEFAULT_TIMEOUT_MINUTES
               value: "20"
             - name: SERVICE_ACCOUNT_KEY

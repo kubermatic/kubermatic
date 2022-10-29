@@ -63,7 +63,7 @@ Thanks for taking the time to join our community and start contributing!
 ```
 ├── addons    # Default Kubernetes addons
 ├── charts    # The Helm charts we use to deploy
-├── cmd       # Various Kubermatic binaries for the API, controller-managers etc.
+├── cmd       # Various Kubermatic binaries for the controller-managers, operator etc.
 ├── codegen   # Helper programs to generate Go code and Helm charts
 ├── docs      # Some basic developer-oriented documentation
 ├── hack      # scripts for development and CI
@@ -98,12 +98,6 @@ Afterwards, you can start your local user-cluster-controller-manager.
 ```sh
 # Using a kubeconfig, which points to the seed-cluster
 ./hack/run-user-cluster-controller-manager.sh
-```
-
-##### kubermatic-api
-
-```bash
-./hack/run-api.sh
 ```
 
 ##### seed-controller-manager

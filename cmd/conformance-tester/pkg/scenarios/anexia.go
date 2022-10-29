@@ -29,7 +29,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/utils/pointer"
 )
@@ -57,23 +56,6 @@ func (s *anexiaScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bo
 	return true
 }
 
-func (s *anexiaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	return &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				ContainerRuntime: s.containerRuntime,
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.Anexia.KKPDatacenter,
-					Anexia: &apimodels.AnexiaCloudSpec{
-						Token: secrets.Anexia.Token,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
-}
-
 func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
@@ -85,62 +67,6 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 		},
 		Version: s.version,
 	}
-}
-
-func (s *anexiaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
-	replicas := int32(num)
-
-	osSpec, err := s.APIOperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Anexia: &apimodels.AnexiaNodeSpec{
-							DiskSize:   nodeDiskSize,
-							CPUs:       pointer.Int64(nodeCpu),
-							Memory:     pointer.Int64(nodeMemory),
-							TemplateID: &secrets.Anexia.TemplateID,
-							VlanID:     &secrets.Anexia.VlanID,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Anexia: &apimodels.AnexiaNodeSpec{
-							Disks: []*apimodels.AnexiaDiskConfig{
-								{
-									Size: pointer.Int64(nodeDiskSize),
-								},
-							},
-							CPUs:       pointer.Int64(nodeCpu),
-							Memory:     pointer.Int64(nodeMemory),
-							TemplateID: &secrets.Anexia.TemplateID,
-							VlanID:     &secrets.Anexia.VlanID,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-	}, nil
 }
 
 func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {

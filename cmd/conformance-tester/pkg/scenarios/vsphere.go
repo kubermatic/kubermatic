@@ -25,7 +25,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/utils/pointer"
 )
@@ -35,36 +34,6 @@ type vSphereScenario struct {
 
 	customFolder     bool
 	datastoreCluster bool
-}
-
-func (s *vSphereScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	spec := &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				ContainerRuntime: s.containerRuntime,
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.VSphere.KKPDatacenter,
-					Vsphere: &apimodels.VSphereCloudSpec{
-						Username:  secrets.VSphere.Username,
-						Password:  secrets.VSphere.Password,
-						Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
-
-	if s.customFolder {
-		spec.Cluster.Spec.Cloud.Vsphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.VSphere.RootPath)
-	}
-
-	if s.datastoreCluster {
-		spec.Cluster.Spec.Cloud.Vsphere.DatastoreCluster = "dsc-1"
-		spec.Cluster.Spec.Cloud.Vsphere.Datastore = ""
-	}
-
-	return spec
 }
 
 func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -91,36 +60,6 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 
 	return spec
-}
-
-func (s *vSphereScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	replicas := int32(num)
-
-	osSpec, err := s.APIOperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Vsphere: &apimodels.VSphereNodeSpec{
-							Template: s.datacenter.Spec.VSphere.Templates[s.operatingSystem],
-							CPUs:     2,
-							Memory:   4096,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-	}, nil
 }
 
 func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {

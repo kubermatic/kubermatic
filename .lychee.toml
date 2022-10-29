@@ -22,7 +22,6 @@ exclude = [
 exclude_path = [
   'pkg/crd/k8c.io',
   'pkg/resources/test/fixtures',
-  'pkg/test/e2e/utils/apiclient',
 ]
 
 # Log checked links.

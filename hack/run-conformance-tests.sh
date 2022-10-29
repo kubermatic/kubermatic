@@ -163,9 +163,6 @@ if [ -n "${SEED_NAME:-}" ]; then
   extraArgs="$extraArgs -kubermatic-seed-cluster=$SEED_NAME"
 fi
 
-endpoint="${KUBERMATIC_API_ENDPOINT:-https://dev.kubermatic.io}"
-oidcToken="${KUBEMATIC_OIDC_TOKEN:-}"
-
 # allow to transport additional env variables into the container
 # to not reveal credentials as CLI flags; set a dummy value to
 # keep the `docker run` command easier to write
@@ -191,8 +188,6 @@ if [ -n "${NO_DOCKER:-}" ]; then
     -log-format=console \
     -kubeconfig=$KUBECONFIG \
     -reports-root=reports \
-    -kubermatic-endpoint="$endpoint" \
-    -kubermatic-oidc-token="$oidcToken" \
     -kubermatic-delete-cluster=true \
     -providers="$provider" \
     -distributions="flatcar" \
@@ -223,8 +218,6 @@ else
     -kubeconfig=/kubeconfig \
     -reports-root=/reports \
     -log-directory=/reports \
-    -kubermatic-endpoint="$endpoint" \
-    -kubermatic-oidc-token="$oidcToken" \
     -kubermatic-delete-cluster=true \
     -providers="$provider" \
     -distributions="flatcar" \

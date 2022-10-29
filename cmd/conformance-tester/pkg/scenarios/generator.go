@@ -184,11 +184,7 @@ func providerScenario(
 	case providerconfig.CloudProviderAnexia:
 		return &anexiaScenario{baseScenario: base}, nil
 	case providerconfig.CloudProviderAWS:
-		scenario := &awsScenario{baseScenario: base}
-		scenario.kubermaticClient = opts.KubermaticClient
-		scenario.kubermaticAuthenticator = opts.KubermaticAuthenticator
-
-		return scenario, nil
+		return &awsScenario{baseScenario: base}, nil
 	case providerconfig.CloudProviderAzure:
 		return &azureScenario{baseScenario: base}, nil
 	case providerconfig.CloudProviderDigitalocean:

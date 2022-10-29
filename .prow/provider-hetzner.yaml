@@ -39,8 +39,6 @@ presubmits:
               value: "hetzner"
             - name: DISTRIBUTIONS
               value: ubuntu
-            - name: SETUP_MODE
-              value: "kube"
             - name: DEFAULT_TIMEOUT_MINUTES
               value: "20"
             - name: SERVICE_ACCOUNT_KEY

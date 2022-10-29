@@ -59,14 +59,6 @@ type TestRunner struct {
 	createdProject bool
 }
 
-func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
-	return &TestRunner{
-		log:       log,
-		opts:      opts,
-		kkpClient: clients.NewAPIClient(opts),
-	}
-}
-
 func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	return &TestRunner{
 		log:       log,

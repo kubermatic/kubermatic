@@ -39,8 +39,6 @@ presubmits:
               value: "kubevirt"
             - name: DISTRIBUTIONS
               value: centos
-            - name: SETUP_MODE
-              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -84,8 +82,6 @@ presubmits:
               value: "kubevirt"
             - name: DISTRIBUTIONS
               value: ubuntu
-            - name: SETUP_MODE
-              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

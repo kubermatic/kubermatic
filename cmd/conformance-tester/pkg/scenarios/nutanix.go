@@ -25,7 +25,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/utils/pointer"
 )
@@ -38,34 +37,6 @@ const (
 
 type nutanixScenario struct {
 	baseScenario
-}
-
-func (s *nutanixScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	spec := &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				ContainerRuntime: s.containerRuntime,
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.Nutanix.KKPDatacenter,
-					Nutanix: &apimodels.NutanixCloudSpec{
-						Username: secrets.Nutanix.Username,
-						Password: secrets.Nutanix.Password,
-						Csi: &apimodels.NutanixCSIConfig{
-							Endpoint: secrets.Nutanix.CSIEndpoint,
-							Password: secrets.Nutanix.CSIPassword,
-							Username: secrets.Nutanix.CSIUsername,
-						},
-						ProxyURL:    secrets.Nutanix.ProxyURL,
-						ClusterName: secrets.Nutanix.ClusterName,
-						ProjectName: secrets.Nutanix.ProjectName,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
-
-	return spec
 }
 
 func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -88,38 +59,6 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 		},
 		Version: s.version,
 	}
-}
-
-func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
-	replicas := int32(num)
-
-	osSpec, err := s.APIOperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Nutanix: &apimodels.NutanixNodeSpec{
-							SubnetName: secrets.Nutanix.SubnetName,
-							ImageName:  s.datacenter.Spec.Nutanix.Images[s.operatingSystem],
-							CPUs:       nutanixCPUs,
-							MemoryMB:   nutanixMemoryMB,
-							DiskSize:   nutanixDiskSize,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-	}, nil
 }
 
 func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {

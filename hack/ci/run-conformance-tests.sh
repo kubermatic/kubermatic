@@ -123,22 +123,18 @@ function copy_junit {
 appendTrap copy_junit EXIT
 
 timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
-  -client="${SETUP_MODE:-api}" \
   -name-prefix="kkp-$BUILD_ID" \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \
-  -kubermatic-endpoint="$KUBERMATIC_API_ENDPOINT" \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
   -reports-root="$ARTIFACTS/conformance" \
   -log-directory="$ARTIFACTS/logs" \
-  -create-oidc-token=true \
   -releases="${RELEASES_TO_TEST:-}" \
   -providers=$provider \
   -node-ssh-pub-key="$E2E_SSH_PUBKEY" \
   -distributions="${DISTRIBUTIONS:-}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS:-}" \
-  -dex-helm-values-file="$KUBERMATIC_DEX_VALUES_FILE" \
   -exclude-tests="${EXCLUDE_TESTS:-}" \
   -enable-psp=${KUBERMATIC_PSP_ENABLED:-false} \
   -enable-osm=${KUBERMATIC_OSM_ENABLED:-true} \
