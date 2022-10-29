@@ -58,7 +58,6 @@ func init() {
 // kube-apiserver *before* the admission webhook is called. So for example this function
 // ensures that an empty nodeport range fails, but in reality, this never happens
 // because of the mutating webhook.
-//
 func TestHandle(t *testing.T) {
 	seed := kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1811,6 +1810,7 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
 					Token: "thisis.reallyreallyfake",
 				},
