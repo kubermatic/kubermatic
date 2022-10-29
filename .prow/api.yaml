@@ -29,6 +29,7 @@ presubmits:
       preset-gce: "true"
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
+      preset-repo-ssh: "true"
       preset-goproxy: "true"
     spec:
       containers:

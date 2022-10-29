@@ -549,7 +549,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 
 	configCopy.Spec.Auth = auth
 
-	if err := defaultDockerRepo(&configCopy.Spec.API.DockerRepository, DefaultKubermaticImage, "api.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&configCopy.Spec.API.DockerRepository, DefaultDashboardImage, "api.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
 
