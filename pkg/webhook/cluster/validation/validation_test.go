@@ -58,7 +58,6 @@ func init() {
 // kube-apiserver *before* the admission webhook is called. So for example this function
 // ensures that an empty nodeport range fails, but in reality, this never happens
 // because of the mutating webhook.
-//
 func TestHandle(t *testing.T) {
 	seed := kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
@@ -203,7 +202,8 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: "Tunneling",
+				ExposeStrategy:    "NodePort",
+				CloudProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1773,6 +1773,7 @@ func TestHandle(t *testing.T) {
 type rawClusterGen struct {
 	Name                  string
 	Namespace             string
+	CloudProviderName     string
 	Labels                map[string]string
 	ExposeStrategy        string
 	EnableUserSSHKey      *bool
@@ -1809,6 +1810,7 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
 					Token: "thisis.reallyreallyfake",
 				},
@@ -1822,6 +1824,10 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			ComponentsOverride:    r.ComponentSettings,
 			CNIPlugin:             r.CNIPlugin,
 		},
+	}
+
+	if r.CloudProviderName != "" {
+		c.Spec.Cloud.ProviderName = r.CloudProviderName
 	}
 
 	return c

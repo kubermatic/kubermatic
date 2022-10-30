@@ -760,6 +760,7 @@ func (r rawTemplateGen) Build() kubermaticv1.ClusterTemplate {
 			Version:           *version,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
 					Token: "thisis.reallyreallyfake",
 				},
