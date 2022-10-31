@@ -494,17 +494,34 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addon Addon) error {
 		return fmt.Errorf("failed to get current cluster: %w", err)
 	}
 
-	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(j.client, KubermaticNamespace())
+	addonResource, err := genAddonResource(cluster, addon.Name, addon.Variables, addon.Labels)
 	if err != nil {
-		return fmt.Errorf("failed to create configGetter: %w", err)
+		return fmt.Errorf("failed to create addon resource: %w", err)
 	}
 
-	addonProvider := kubernetes.NewAddonProvider(j.client, nil, configGetter)
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, addon.Name, addon.Variables, addon.Labels); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
-		return fmt.Errorf("failed to ensure addon: %w", err)
+	return ctrlruntimeclient.IgnoreAlreadyExists(j.client.Create(ctx, addonResource))
+}
+
+func genAddonResource(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
+	if cluster.Status.NamespaceName == "" {
+		return nil, errors.New("cluster has no namespace name assigned yet")
 	}
 
-	return nil
+	if labels == nil {
+		labels = map[string]string{}
+	}
+
+	return &kubermaticv1.Addon{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      addonName,
+			Namespace: cluster.Status.NamespaceName,
+			Labels:    labels,
+		},
+		Spec: kubermaticv1.AddonSpec{
+			Name:      addonName,
+			Variables: variables,
+		},
+	}, nil
 }
 
 func (j *ClusterJig) applyPreset(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
