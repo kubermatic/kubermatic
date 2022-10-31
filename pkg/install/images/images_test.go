@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func xxxTestRetagImageForAllVersions(t *testing.T) {
+func TestRetagImageForAllVersions(t *testing.T) {
 	log := logrus.New()
 
 	config, err := defaulting.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
