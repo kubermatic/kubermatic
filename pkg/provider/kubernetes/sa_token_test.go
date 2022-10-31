@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -69,7 +68,7 @@ func TestCreateToken(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			fakeClient := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 			tokenGenerator := &fakeJWTTokenGenerator{}
-			token, err := tokenGenerator.Generate(serviceaccount.Claims(tc.saEmail, tc.projectToSync, tc.tokenID))
+			token, err := tokenGenerator.Generate(Claims(tc.saEmail, tc.projectToSync, tc.tokenID))
 			if err != nil {
 				t.Fatalf("unable to generate token, err = %v", err)
 			}

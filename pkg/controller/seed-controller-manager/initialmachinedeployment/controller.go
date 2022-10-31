@@ -28,7 +28,6 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -212,11 +211,11 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, log *za
 		return fmt.Errorf("failed to get SSH keys: %w", err)
 	}
 
-	data := common.CredentialsData{
-		Ctx:               ctx,
-		KubermaticCluster: cluster,
-		Client:            r,
-	}
+	data := resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithCluster(cluster).
+		WithClient(r).
+		Build()
 
 	machineDeployment, err := machineresource.Deployment(cluster, nodeDeployment, datacenter, sshKeys, data)
 	if err != nil {

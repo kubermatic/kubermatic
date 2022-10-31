@@ -30,7 +30,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,12 +44,34 @@ const (
 	TestFakeFinalizer = "test.kubermatic.k8c.io/dummy"
 )
 
+// CustomTokenClaim represents authenticated user.
+type CustomTokenClaim struct {
+	Email     string `json:"email,omitempty"`
+	ProjectID string `json:"project_id,omitempty"`
+	TokenID   string `json:"token_id,omitempty"`
+}
+
 type fakeJWTTokenGenerator struct {
 }
 
 // Generate generates new fake token.
-func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
+func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *CustomTokenClaim) (string, error) {
 	return TestFakeToken, nil
+}
+
+func Claims(email, projectID, tokenID string) (*jwt.Claims, *CustomTokenClaim) {
+	sc := &jwt.Claims{
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		Expiry:    jwt.NewNumericDate(time.Now().AddDate(3, 0, 0)),
+	}
+	pc := &CustomTokenClaim{
+		Email:     email,
+		ProjectID: projectID,
+		TokenID:   tokenID,
+	}
+
+	return sc, pc
 }
 
 func createAuthenitactedUser() *kubermaticv1.User {
