@@ -117,6 +117,15 @@ logging)
   deploy "promtail" "logging" charts/logging/promtail/
   ;;
 
+usercluster-mla)
+  echodate "Running Kubermatic Installer for UserCluster MLA..."
+  ./_build/kubermatic-installer deploy usercluster-mla \
+    --config "$KUBERMATIC_CONFIG" \
+    --helm-values "$VALUES_FILE" \
+    --mla-include-iap \
+    --timeout=30m
+  ;;
+
 kubermatic)
   if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
     export IMAGE_PULL_SECRET_CONTENT="$(cat $IMAGE_PULL_SECRET)"

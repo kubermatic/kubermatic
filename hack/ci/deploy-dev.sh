@@ -24,10 +24,20 @@ source hack/lib.sh
 
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
+export VAULT_VALUES_FIELD=europe-west3-c-values.yaml
 
-if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
+# per-stack customizations
+case ${DEPLOY_STACK} in
+kubermatic)
   ./hack/ci/push-images.sh
-fi
+  ;;
+
+usercluster-mla)
+  export VAULT_VALUES_FIELD=europe-west3-c-mla-values.yaml
+  NO_DOCKER_IMAGES=true ./hack/ci/push-images.sh
+  ;;
+
+esac
 
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
@@ -38,7 +48,7 @@ export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
 
 # deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
-vault kv get -field=europe-west3-c-values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
+vault kv get -field=${VAULT_VALUES_FIELD} dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
 vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${IMAGE_PULL_SECRET}
 vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
 echodate "Successfully got secrets for dev from Vault"
