@@ -97,8 +97,8 @@ const (
 
 type reconciler struct {
 	ctrlruntimeclient.Client
-	log *zap.SugaredLogger
-	kubernetesprovider.ImpersonationClient
+
+	log               *zap.SugaredLogger
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
@@ -112,10 +112,9 @@ func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger) error {
 	reconciler := &reconciler{
-		Client:              mgr.GetClient(),
-		log:                 log.Named(ControllerName),
-		ImpersonationClient: kubernetesprovider.NewImpersonationClient(mgr.GetConfig(), mgr.GetRESTMapper()).CreateImpersonatedClient,
-		secretKeySelector:   provider.SecretKeySelectorValueFuncFactory(ctx, mgr.GetClient()),
+		Client:            mgr.GetClient(),
+		log:               log.Named(ControllerName),
+		secretKeySelector: provider.SecretKeySelectorValueFuncFactory(ctx, mgr.GetClient()),
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -274,7 +273,10 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		return err
 	}
 
-	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(r.ImpersonationClient, r.Client)
+	// This does not provide an ImpersonationClient, as impersonating is not meaningful inside
+	// of a controller and we know that no functions that require impersonation are being called
+	// from the externalClusterProvider instance.
+	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(nil, r.Client)
 	if err != nil {
 		return nil
 	}
