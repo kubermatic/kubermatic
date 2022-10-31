@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
@@ -251,7 +250,7 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
 
-		if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
+		if err := validateServiceAccountKey(config.Spec.Auth.ServiceAccountKey); err != nil {
 			failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
 		}
 
@@ -262,6 +261,16 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 	}
 
 	return failures
+}
+
+func validateServiceAccountKey(privateKey string) error {
+	if len(privateKey) == 0 {
+		return errors.New("the signing key cannot be empty")
+	}
+	if len(privateKey) < 32 {
+		return errors.New("the signing key is too short, use 32 bytes or longer")
+	}
+	return nil
 }
 
 func validateRandomSecret(config *kubermaticv1.KubermaticConfiguration, value string, path string, failures []error) []error {
