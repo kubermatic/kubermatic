@@ -26,7 +26,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -129,8 +128,8 @@ func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermati
 func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
 	toDelete := &unstructured.Unstructured{}
 	toDelete.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   constrainthandler.ConstraintsGroup,
-		Version: constrainthandler.ConstraintsVersion,
+		Group:   "constraints.gatekeeper.sh",
+		Version: "v1beta1",
 		Kind:    constraint.Spec.ConstraintType,
 	})
 	toDelete.SetName(constraint.Name)

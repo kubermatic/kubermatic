@@ -17,10 +17,6 @@ limitations under the License.
 package label
 
 import (
-	"context"
-
-	"github.com/go-kit/kit/endpoint"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
@@ -41,19 +37,6 @@ var systemLabels apiv1.ResourceLabelMap = map[apiv1.ResourceType]apiv1.LabelKeyL
 		kubermaticv1.IsCredentialPresetLabelKey,
 	},
 	NodeDeploymentResourceType: {},
-}
-
-// ListSystemLabels defines an endpoint to get list of system labels.
-func ListSystemLabels() endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return &systemLabels, nil
-	}
-}
-
-// GetSystemLabels returns restricted system labels object. We do not want anyone to modify original object outside of
-// this package. That is why only getter is exposed.
-func GetSystemLabels() apiv1.ResourceLabelMap {
-	return systemLabels
 }
 
 // FilterLabels removes system labels from the provided labels map.
