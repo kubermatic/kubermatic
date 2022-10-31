@@ -34,7 +34,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -129,61 +128,6 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 		State:         ConvertStatus(gkeCluster.Status),
 		StatusMessage: GetStatusMessage(gkeCluster),
 	}, nil
-}
-
-func ListClusters(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, projectID, sa string) (apiv2.GKEClusterList, error) {
-	clusters := apiv2.GKEClusterList{}
-
-	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	clusterList, err := clusterProvider.List(ctx, project)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	gkeExternalClusterNames := sets.NewString()
-	for _, externalCluster := range clusterList.Items {
-		cloud := externalCluster.Spec.CloudSpec
-		if cloud.GKE != nil {
-			gkeExternalClusterNames.Insert(cloud.GKE.Name)
-		}
-	}
-
-	gkeExternalCluster := make(map[string]sets.String)
-	for _, externalCluster := range clusterList.Items {
-		cloud := externalCluster.Spec.CloudSpec
-		if cloud.GKE != nil {
-			zone := cloud.GKE.Zone
-			if _, ok := gkeExternalCluster[zone]; !ok {
-				gkeExternalCluster[zone] = make(sets.String)
-			}
-			gkeExternalCluster[zone] = gkeExternalCluster[zone].Insert(cloud.GKE.Name)
-		}
-	}
-
-	svc, gkeProject, err := ConnectToContainerService(ctx, sa)
-	if err != nil {
-		return clusters, err
-	}
-
-	req := svc.Projects.Zones.Clusters.List(gkeProject, allZones)
-	resp, err := req.Context(ctx).Do()
-	if err != nil {
-		return clusters, fmt.Errorf("clusters list project=%v: %w", project, DecodeError(err))
-	}
-	for _, f := range resp.Clusters {
-		var imported bool
-		if clusterSet, ok := gkeExternalCluster[f.Zone]; ok {
-			if clusterSet.Has(f.Name) {
-				imported = true
-			}
-		}
-		clusters = append(clusters, apiv2.GKECluster{Name: f.Name, Zone: f.Zone, IsImported: imported})
-	}
-	return clusters, nil
 }
 
 func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVersion, error) {

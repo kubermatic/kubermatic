@@ -25,11 +25,11 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -71,14 +71,12 @@ func (j *ProjectJig) Project(ctx context.Context) (*kubermaticv1.Project, error)
 		return nil, errors.New("no project created yet")
 	}
 
-	projectProvider, err := kubernetes.NewPrivilegedProjectProvider(j.client)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create project provider: %w", err)
+	project := &kubermaticv1.Project{}
+	if err := j.client.Get(ctx, types.NamespacedName{Name: j.projectName}, project); err != nil {
+		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
 
-	return projectProvider.GetUnsecured(ctx, j.projectName, &provider.ProjectGetOptions{
-		IncludeUninitialized: true,
-	})
+	return project, nil
 }
 
 func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermaticv1.Project, error) {
@@ -86,14 +84,14 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 		return j.Project(ctx)
 	}
 
-	projectProvider, err := kubernetes.NewProjectProvider(nil, j.client)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create project provider: %w", err)
-	}
+	projectName := rand.String(10)
 
 	j.log.Infow("Creating project...", "humanname", j.humanReadableName)
-	project, err := projectProvider.New(ctx, j.humanReadableName, nil)
-	if err != nil {
+	project := &kubermaticv1.Project{}
+	project.Name = projectName
+	project.Spec.Name = j.humanReadableName
+
+	if err := j.client.Create(ctx, project); err != nil {
 		return nil, err
 	}
 
@@ -105,23 +103,17 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 	if waitForActive {
 		log.Info("Waiting for project to become active...")
 
-		projectProvider, err := kubernetes.NewPrivilegedProjectProvider(j.client)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create project provider: %w", err)
-		}
-
-		err = wait.PollLog(ctx, j.log, 2*time.Second, 30*time.Second, func() (transient error, terminal error) {
-			project, err = projectProvider.GetUnsecured(ctx, j.projectName, &provider.ProjectGetOptions{
-				IncludeUninitialized: true,
-			})
-
-			if err != nil {
+		err := wait.PollLog(ctx, j.log, 2*time.Second, 30*time.Second, func() (transient error, terminal error) {
+			p := &kubermaticv1.Project{}
+			if err := j.client.Get(ctx, types.NamespacedName{Name: projectName}, p); err != nil {
 				return err, nil
 			}
 
-			if project.Status.Phase != kubermaticv1.ProjectActive {
+			if p.Status.Phase != kubermaticv1.ProjectActive {
 				return errors.New("project is not active"), nil
 			}
+
+			project = p
 
 			return nil, nil
 		})
@@ -142,23 +134,20 @@ func (j *ProjectJig) Delete(ctx context.Context, synchronous bool) error {
 	log := j.log.With("project", j.projectName)
 	log.Info("Deleting project...")
 
-	projectProvider, err := kubernetes.NewPrivilegedProjectProvider(j.client)
-	if err != nil {
-		return fmt.Errorf("failed to create project provider: %w", err)
-	}
+	project := &kubermaticv1.Project{}
+	project.Name = j.projectName
 
-	if err := projectProvider.DeleteUnsecured(ctx, j.projectName); err != nil {
+	if err := j.client.Delete(ctx, project); err != nil {
 		return fmt.Errorf("failed to delete project: %w", err)
 	}
 
 	if synchronous {
 		log.Info("Waiting for project to be gone...")
 
-		err = wait.PollLog(ctx, log, 5*time.Second, 10*time.Minute, func() (transient error, terminal error) {
-			_, err := projectProvider.GetUnsecured(ctx, j.projectName, &provider.ProjectGetOptions{
-				IncludeUninitialized: true,
-			})
+		err := wait.PollLog(ctx, log, 5*time.Second, 10*time.Minute, func() (transient error, terminal error) {
+			project := &kubermaticv1.Project{}
 
+			err := j.client.Get(ctx, types.NamespacedName{Name: j.projectName}, project)
 			if err == nil {
 				return errors.New("project still exists"), nil
 			}
