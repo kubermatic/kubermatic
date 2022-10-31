@@ -268,7 +268,7 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 			continue
 		}
 
-		if sets.NewString(key.Spec.Clusters...).Has(cluster.Name) {
+		if !sets.NewString(key.Spec.Clusters...).Has(cluster.Name) {
 			continue
 		}
 
