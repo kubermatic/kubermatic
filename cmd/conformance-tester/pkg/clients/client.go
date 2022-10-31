@@ -28,6 +28,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Client represents a client that can talk to a KKP system.
+// This interface and the single KubeClient implementation are
+// vestigial from the pre-2.22 era where tests could also be
+// run using the KKP REST API.
 type Client interface {
 	Setup(ctx context.Context, log *zap.SugaredLogger) error
 	CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error)

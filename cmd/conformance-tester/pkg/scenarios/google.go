@@ -29,7 +29,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 type googleScenario struct {
@@ -49,25 +48,6 @@ func (s *googleScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bo
 	return true
 }
 
-func (s *googleScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	return &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				ContainerRuntime: s.containerRuntime,
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.GCP.KKPDatacenter,
-					Gcp: &apimodels.GCPCloudSpec{
-						ServiceAccount: base64.StdEncoding.EncodeToString([]byte(secrets.GCP.ServiceAccount)),
-						Network:        secrets.GCP.Network,
-						Subnetwork:     secrets.GCP.Subnetwork,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
-}
-
 func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
@@ -81,41 +61,6 @@ func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 		},
 		Version: s.version,
 	}
-}
-
-func (s *googleScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
-	replicas := int32(num)
-
-	osSpec, err := s.APIOperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Gcp: &apimodels.GCPNodeSpec{
-							Zone:        s.getZone(),
-							MachineType: "n1-standard-2",
-							DiskType:    "pd-standard",
-							DiskSize:    50,
-							Preemptible: false,
-							Labels: map[string]string{
-								"kubernetes-cluster": "my-cluster",
-							},
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-	}, nil
 }
 
 func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {

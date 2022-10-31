@@ -25,7 +25,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 const (
@@ -34,24 +33,6 @@ const (
 
 type packetScenario struct {
 	baseScenario
-}
-
-func (s *packetScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	return &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				ContainerRuntime: s.containerRuntime,
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.Packet.KKPDatacenter,
-					Packet: &apimodels.PacketCloudSpec{
-						APIKey:    secrets.Packet.APIKey,
-						ProjectID: secrets.Packet.ProjectID,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
 }
 
 func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -66,35 +47,6 @@ func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 		},
 		Version: s.version,
 	}
-}
-
-func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	instanceType := packetInstanceType
-	replicas := int32(num)
-
-	osSpec, err := s.APIOperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Packet: &apimodels.PacketNodeSpec{
-							InstanceType: &instanceType,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-	}, nil
 }
 
 func (s *packetScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {

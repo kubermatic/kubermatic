@@ -26,7 +26,6 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/go-openapi/runtime"
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -36,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
-	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -94,15 +92,9 @@ type Options struct {
 	ClusterParallelCount         int
 	HomeDir                      string
 	ExistingClusterLabel         string
-	CreateOIDCToken              bool
-	DexHelmValuesFile            string
 	KubermaticNamespace          string
-	KubermaticEndpoint           string
 	KubermaticSeedName           string
 	KubermaticProject            string
-	KubermaticOIDCToken          string
-	KubermaticClient             *apiclient.KubermaticKubernetesPlatformAPI
-	KubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	KubermaticConfiguration      *kubermaticv1.KubermaticConfiguration
 	PushgatewayEndpoint          string
 
@@ -151,12 +143,9 @@ func (o *Options) AddFlags() {
 	flag.Var(flagopts.SetFlag(o.ExcludeTests), "exclude-tests", "Run all the tests except the ones in this comma-separated list (cannot be used in conjunction with -tests)")
 	flag.Var(flagopts.SetFlag(o.ScenarioOptions), "scenario-options", "Comma-separated list of additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&o.RepoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
-	flag.StringVar(&o.KubermaticEndpoint, "kubermatic-endpoint", "http://localhost:8080", "scheme://host[:port] of the Kubermatic API endpoint to talk to")
 	flag.StringVar(&o.KubermaticProject, "kubermatic-project", "", "Kubermatic project to use; leave empty to create a new one")
-	flag.StringVar(&o.KubermaticOIDCToken, "kubermatic-oidc-token", "", "Token to authenticate against the Kubermatic API")
 	flag.StringVar(&o.KubermaticSeedName, "kubermatic-seed-cluster", o.KubermaticSeedName, "Seed cluster name to create test cluster in")
 	flag.StringVar(&o.KubermaticNamespace, "kubermatic-namespace", o.KubermaticNamespace, "Namespace where Kubermatic is installed to")
-	flag.BoolVar(&o.CreateOIDCToken, "create-oidc-token", false, "Whether to create a OIDC token. If false, -kubermatic-project-id and -kubermatic-oidc-token must be set")
 	flag.IntVar(&o.NodeCount, "kubermatic-nodes", 3, "number of worker nodes")
 	flag.IntVar(&o.ClusterParallelCount, "kubermatic-parallel-clusters", 1, "number of clusters to test in parallel")
 	flag.StringVar(&o.ReportsRoot, "reports-root", "/opt/reports", "Root for reports")
@@ -172,7 +161,6 @@ func (o *Options) AddFlags() {
 	flag.BoolVar(&o.OperatingSystemManagerEnabled, "enable-osm", true, "When set, enables Operating System Manager in the user cluster")
 	flag.BoolVar(&o.DualStackEnabled, "enable-dualstack", false, "When set, enables dualstack (IPv4+IPv6 networking) in the user cluster")
 	flag.BoolVar(&o.KonnectivityEnabled, "enable-konnectivity", false, "When set, enables Konnectivity (proxy service for control plane communication) in the user cluster. When set to false, OpenVPN is used")
-	flag.StringVar(&o.DexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&o.PushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 	o.Secrets.AddFlags()
 }

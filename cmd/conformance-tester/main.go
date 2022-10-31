@@ -77,7 +77,6 @@ func main() {
 
 	// say hello
 	cli.Hello(log, "Conformance Tests", true, nil)
-	log.Infow("Kubermatic API Endpoint", "endpoint", opts.KubermaticEndpoint)
 	log.Infow("Runner configuration",
 		"providers", opts.Providers.List(),
 		"operatingsystems", opts.Distributions.List(),
@@ -102,16 +101,9 @@ func main() {
 	opts.PublicKeys = append(opts.PublicKeys, dynamicSSHPublicKey)
 	opts.HomeDir = homeDir
 
-	// setup test runner, choose between API-based or Kubernetes-based implementations
-	var testRunner *runner.TestRunner
-	if opts.Client == "kube" {
-		testRunner = runner.NewKubeRunner(opts, log)
-	} else {
-		testRunner = runner.NewAPIRunner(opts, log)
-	}
-
 	// setup runner and KKP clients
 	log.Info("Preparing project...")
+	testRunner := runner.NewKubeRunner(opts, log)
 	if err := testRunner.Setup(rootCtx); err != nil {
 		log.Fatalw("Failed to setup runner", zap.Error(err))
 	}

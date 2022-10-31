@@ -25,7 +25,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 const (
@@ -37,28 +36,6 @@ const (
 
 type openStackScenario struct {
 	baseScenario
-}
-
-func (s *openStackScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	return &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				ContainerRuntime: s.containerRuntime,
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.OpenStack.KKPDatacenter,
-					Openstack: &apimodels.OpenstackCloudSpec{
-						Domain:         secrets.OpenStack.Domain,
-						Project:        secrets.OpenStack.Project,
-						ProjectID:      secrets.OpenStack.ProjectID,
-						Username:       secrets.OpenStack.Username,
-						Password:       secrets.OpenStack.Password,
-						FloatingIPPool: openStackFloatingIPPool,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
 }
 
 func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -77,39 +54,6 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 		},
 		Version: s.version,
 	}
-}
-
-func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	flavor := openStackFlavor
-	replicas := int32(num)
-	image := s.datacenter.Spec.Openstack.Images[s.operatingSystem]
-
-	osSpec, err := s.APIOperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Openstack: &apimodels.OpenstackNodeSpec{
-							Flavor:                    &flavor,
-							Image:                     &image,
-							InstanceReadyCheckPeriod:  openStackInstanceReadyCheckPeriod,
-							InstanceReadyCheckTimeout: openStackInstanceReadyCheckTimeout,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-	}, nil
 }
 
 func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {

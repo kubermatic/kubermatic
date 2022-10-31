@@ -40,8 +40,6 @@ presubmits:
               value: "gce"
             - name: DISTRIBUTIONS
               value: ubuntu
-            - name: SETUP_MODE
-              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -89,8 +87,6 @@ presubmits:
               value: "true"
             - name: EXCLUDE_TESTS
               value: "all"
-            - name: SETUP_MODE
-              value: "kube"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

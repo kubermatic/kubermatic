@@ -31,7 +31,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -53,14 +52,10 @@ type Scenario interface {
 	IsValid(opts *types.Options, log *zap.SugaredLogger) bool
 
 	// these are implemented per provider
-
-	APIOperatingSystemSpec() (*apimodels.OperatingSystemSpec, error)
 	OperatingSystemSpec() (*apiv1.OperatingSystemSpec, error)
 
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
-	APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec
 	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error)
-	NodeDeployments(ctx context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error)
 
 	SetDualstackEnabled(bool)
 }
@@ -126,51 +121,6 @@ func (s *baseScenario) createMachineDeployment(replicas int, providerSpec interf
 	}
 
 	return createMachineDeployment(replicas, &s.version, s.operatingSystem, osSpec, s.cloudProvider, providerSpec, s.dualstackEnabled)
-}
-
-func (s *baseScenario) APIOperatingSystemSpec() (*apimodels.OperatingSystemSpec, error) {
-	switch s.operatingSystem {
-	case providerconfig.OperatingSystemUbuntu:
-		return &apimodels.OperatingSystemSpec{
-			Ubuntu: &apimodels.UbuntuSpec{},
-		}, nil
-
-	case providerconfig.OperatingSystemCentOS:
-		return &apimodels.OperatingSystemSpec{
-			Centos: &apimodels.CentOSSpec{},
-		}, nil
-
-	case providerconfig.OperatingSystemSLES:
-		return &apimodels.OperatingSystemSpec{
-			Sles: &apimodels.SLESSpec{},
-		}, nil
-
-	case providerconfig.OperatingSystemRHEL:
-		return &apimodels.OperatingSystemSpec{
-			Rhel: &apimodels.RHELSpec{},
-		}, nil
-
-	case providerconfig.OperatingSystemFlatcar:
-		return &apimodels.OperatingSystemSpec{
-			Flatcar: &apimodels.FlatcarSpec{
-				// Otherwise the nodes restart directly after creation - bad for tests
-				DisableAutoUpdate: true,
-			},
-		}, nil
-
-	case providerconfig.OperatingSystemRockyLinux:
-		return &apimodels.OperatingSystemSpec{
-			Rockylinux: &apimodels.RockyLinuxSpec{},
-		}, nil
-
-	case providerconfig.OperatingSystemAmazonLinux2:
-		return &apimodels.OperatingSystemSpec{
-			Amzn2: &apimodels.AmazonLinuxSpec{},
-		}, nil
-
-	default:
-		return nil, errors.New("cannot create API OS spec based on the scenario: unknown OS")
-	}
 }
 
 func (s *baseScenario) OperatingSystemSpec() (*apiv1.OperatingSystemSpec, error) {

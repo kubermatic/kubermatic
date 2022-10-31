@@ -25,7 +25,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/machine"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/utils/pointer"
 )
@@ -42,32 +41,6 @@ const (
 
 type vmwareCloudDirectorScenario struct {
 	baseScenario
-}
-
-func (s *vmwareCloudDirectorScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	spec := &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				ContainerRuntime: s.containerRuntime,
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
-					Vmwareclouddirector: &apimodels.VMwareCloudDirectorCloudSpec{
-						Username:     secrets.VMwareCloudDirector.Username,
-						Password:     secrets.VMwareCloudDirector.Password,
-						Organization: secrets.VMwareCloudDirector.Organization,
-						VDC:          secrets.VMwareCloudDirector.VDC,
-						OVDCNetwork:  secrets.VMwareCloudDirector.OVDCNetwork,
-						Csi: &apimodels.VMwareCloudDirectorCSIConfig{
-							StorageProfile: vmwareCloudDirectorStorageProfile,
-						},
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
-
-	return spec
 }
 
 func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -90,40 +63,6 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 	}
 
 	return spec
-}
-
-func (s *vmwareCloudDirectorScenario) NodeDeployments(_ context.Context, num int, _ types.Secrets) ([]apimodels.NodeDeployment, error) {
-	replicas := int32(num)
-
-	osSpec, err := s.APIOperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Vmwareclouddirector: &apimodels.VMwareCloudDirectorNodeSpec{
-							Template:         s.datacenter.Spec.VMwareCloudDirector.Templates[s.operatingSystem],
-							Catalog:          vmwareCloudDirectorCatalog,
-							CPUs:             vmwareCloudDirectorCPUs,
-							CPUCores:         vmwareCloudDirectorCPUCores,
-							MemoryMB:         vmwareCloudDirectoMemoryMB,
-							DiskSizeGB:       vmwareCloudDirectoDiskSize,
-							IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: osSpec,
-				},
-			},
-		},
-	}, nil
 }
 
 func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {

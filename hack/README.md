@@ -17,11 +17,6 @@ Generate test coverage statistics for Go packages.
 
     --html      Additionally create HTML report and open it in browser
 
-## gen-api-client.sh
-
-Generates the KKP API Swagger spec and client. The generated client is then
-used in the api-e2e tests and published into https://github.com/kubermatic/go-kubermatic
-
 ## lib.sh
 
 Contains commonly used functions for the other scripts.
@@ -70,10 +65,6 @@ registry.
 The purpose of this is to mirror all images used in a KKP setup
 to prewarm a local Docker registry, for example in offline setups.
 
-## run-api.sh
-
-TBD
-
 ## run-ccm-migration-e2e-test-in-kind.sh
 
 This script sets up a local KKP installation in kind, deploys a
@@ -105,10 +96,6 @@ To disable the Docker container, set the variable `NO_DOCKER=true`.
 In this mode, you need to have the kube-test binaries and all other
 dependencies installed locally on your machine, but it makes testing
 against a local KKP setup much easier.
-
-## run-dashboard-and-api.sh
-
-TBD
 
 ## run-expose-strategy-e2e-test-in-kind.sh
 
@@ -185,15 +172,7 @@ TBD
 
 TBD
 
-## update-swagger.sh
-
-TBD
-
 ## update-velero-crds.sh
-
-TBD
-
-## verify-api-client.sh
 
 TBD
 
@@ -235,10 +214,6 @@ Go and YAML files. This script is not part of the pre-verify Prowjob.
 TBD
 
 ## verify-spelling.sh
-
-TBD
-
-## verify-swagger.sh
 
 TBD
 

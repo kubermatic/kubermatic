@@ -25,8 +25,6 @@ All providers have custom quotas. Hitting the quota is fairly easy when testing 
 The tester needs either a predefined login token (e.g. from copying the token cookie from your local KKP setup, after
 logging in) or username/password to perform the login itself.
 
-The tester by default uses dev.kubermatic.io as the seed, but this can be changed via `KUBERMATIC_API_ENDPOINT`.
-
 Depending on the cloud provider, additional credentials must be provided. See the `hack/run-conformance-tests.sh`
 script for more information.
 
@@ -42,30 +40,6 @@ Run `./hack/run-conformance-tests.sh -help` for more information.
 ./hack/run-conformance-tests.sh \
   -kubermatic-project-id=YOUR_PROJECT_ID_HERE \
   -kubermatic-oidc-token=OIDC_TOKEN_HERE \
-  -versions=v1.19.0
-```
-
-### With Login
-
-For this to work, the tester needs to create a client to communicate with Dex. The configuration for this
-client happens by reading a Helm values.yaml file, usually the file used to install the `oauth` chart. In
-addition, you need to specify the username (`KUBERMATIC_OIDC_LOGIN`) and password (`KUBERMATIC_OIDC_PASSWORD`)
-as environment variables.
-
-As the tests themselves run inside a Docker container, pay attention to the path you configure for
-`-dex-helm-values-file`. It's recommended to copy the file into the KKP repository root, so it becomes
-available automatically.
-
-```bash
-export KUBERMATIC_OIDC_LOGIN=testuser@example.com
-export KUBERMATIC_OIDC_PASSWORD=testpassword
-
-cp /your/oauth-helm-values.yaml oauth.yaml
-
-./hack/run-conformance-tests.sh \
-  -kubermatic-project-id=YOUR_PROJECT_ID_HERE \
-  -kubermatic-oidc-token=OIDC_TOKEN_HERE \
-  -dex-helm-values-file=oauth.yaml \
   -versions=v1.19.0
 ```
 

@@ -42,8 +42,6 @@ presubmits:
           value: flatcar
         - name: KUBERMATIC_OSM_ENABLED
           value: "false"
-        - name: SETUP_MODE
-          value: "kube"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY

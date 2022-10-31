@@ -53,7 +53,7 @@ presubmits:
 
   - name: pre-kubermatic-dualstack-e2e-canal
     optional: true
-    # run_if_changed: ".*(cilium|canal|dualstack|api|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow|go.mod|proxy|network).*"
+    # run_if_changed: ".*(cilium|canal|dualstack|addon|defaults|cni|validation|operator|provider|machine|webhook|crd|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
