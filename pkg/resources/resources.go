@@ -618,8 +618,10 @@ rm ${SSH_ASKPASS} -f
 )
 
 const (
-	AWSAccessKeyID     = "accessKeyId"
-	AWSSecretAccessKey = "secretAccessKey"
+	AWSAccessKeyID          = "accessKeyId"
+	AWSSecretAccessKey      = "secretAccessKey"
+	AWSAssumeRoleARN        = "assumeRoleARN"
+	AWSAssumeRoleExternalID = "assumeRoleExternalID"
 
 	AzureTenantID       = "tenantID"
 	AzureSubscriptionID = "subscriptionID"

@@ -380,8 +380,10 @@ func (s GKE) IsValid() bool {
 type EKS struct {
 	ProviderPreset `json:",inline"`
 
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
+	AccessKeyID          string `json:"accessKeyID"`
+	SecretAccessKey      string `json:"secretAccessKey"`
+	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 }
 
 func (s EKS) IsValid() bool {

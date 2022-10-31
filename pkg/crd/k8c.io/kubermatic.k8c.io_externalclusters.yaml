@@ -114,6 +114,12 @@ spec:
                         accessKeyID:
                           description: 'AccessKeyID: AWS Access key ID Can be read from `credentialsReference` instead.'
                           type: string
+                        assumeRoleARN:
+                          description: 'AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
+                          type: string
+                        assumeRoleExternalID:
+                          description: 'AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem". required: false'
+                          type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
                           properties:
