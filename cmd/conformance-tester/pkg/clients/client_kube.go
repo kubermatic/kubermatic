@@ -184,7 +184,6 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
-	cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = c.opts.PspEnabled
 	cluster.Spec.EnableOperatingSystemManager = pointer.Bool(c.opts.OperatingSystemManagerEnabled)
 	cluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(c.opts.KonnectivityEnabled)
 
