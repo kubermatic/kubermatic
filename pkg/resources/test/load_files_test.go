@@ -125,6 +125,12 @@ var (
 				ControlPlaneRoleARN:  "aws-role-arn",
 			},
 		},
+		"gcp": {
+			ProviderName: string(kubermaticv1.GCPCloudProvider),
+			GCP: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount: "eyJ0aGlzaXMiOiJqc29uIn0=",
+			},
+		},
 		"openstack": {
 			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
@@ -586,6 +592,13 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.CloudConfigSeedSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.GoogleServiceAccountSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
