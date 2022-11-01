@@ -17,10 +17,13 @@ limitations under the License.
 package validation
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"net"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
@@ -118,6 +121,12 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 			if dcConfig.AllocationRange > numberOfPoolSubnetIPs {
 				return errors.New("allocation range cannot be greater than the pool subnet possible number of IP addresses")
 			}
+
+			for _, rangeToExclude := range dcConfig.ExcludeRanges {
+				if err := validateRange(rangeToExclude); err != nil {
+					return err
+				}
+			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			if dcConfig.AllocationPrefix < poolPrefix {
 				return errors.New("allocation prefix cannot be smaller than the pool subnet mask size")
@@ -125,6 +134,43 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 			if dcConfig.AllocationPrefix > bits {
 				return errors.New("invalid allocation prefix for IP version")
 			}
+
+			for _, subnetCIDRToExclude := range dcConfig.ExcludePrefixes {
+				_, subnet, err := net.ParseCIDR(string(subnetCIDRToExclude))
+				if err != nil {
+					return fmt.Errorf("invalid CIDR for subnet to exclude: %w", err)
+				}
+				subnetPrefix, _ := subnet.Mask.Size()
+				if dcConfig.AllocationPrefix != subnetPrefix {
+					return fmt.Errorf("invalid length for subnet to exclude \"%s\": must be the same as the pool allocation prefix (%d)", subnetCIDRToExclude, subnetPrefix)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateRange(r string) error {
+	splittedRange := strings.Split(r, "-")
+	if len(splittedRange) != 1 && len(splittedRange) != 2 {
+		return fmt.Errorf("invalid format for range: \"%s\" (format should be \"{first_ip}-{last_ip}\" or single \"{ip}\")", r)
+	}
+	var firstIP, lastIP net.IP
+	firstIP = net.ParseIP(splittedRange[0])
+	if firstIP == nil {
+		return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splittedRange[0], r)
+	}
+	if len(splittedRange) == 2 {
+		lastIP = net.ParseIP(splittedRange[1])
+		if lastIP == nil {
+			return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splittedRange[1], r)
+		}
+		if (firstIP.To4() == nil && lastIP.To4() != nil) || (firstIP.To4() != nil && lastIP.To4() == nil) {
+			return fmt.Errorf("different IP versions for range \"%s\"", r)
+		}
+		if bytes.Compare(lastIP, firstIP) < 0 {
+			return fmt.Errorf("invalid range order for \"%s\"", r)
 		}
 	}
 

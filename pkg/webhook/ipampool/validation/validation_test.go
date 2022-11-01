@@ -19,6 +19,7 @@ package validation
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"testing"
 
@@ -89,6 +90,7 @@ func TestValidator(t *testing.T) {
 							Type:            "range",
 							PoolCIDR:        "192.168.1.0/28",
 							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.1", "192.168.1.2-192.168.1.10", "192.168.1.11-192.168.1.11"},
 						},
 					},
 				},
@@ -183,6 +185,7 @@ func TestValidator(t *testing.T) {
 							Type:             "prefix",
 							PoolCIDR:         "192.168.1.0/28",
 							AllocationPrefix: 29,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.1.8/29"},
 						},
 					},
 				},
@@ -472,6 +475,146 @@ func TestValidator(t *testing.T) {
 				},
 			},
 			expectedError: nil,
+		},
+		{
+			name: "exclude range: invalid format",
+			op:   admissionv1.Create,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.1-192.168.1.2-192.168.1.3"},
+						},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("invalid format for range: \"%s\" (format should be \"{first_ip}-{last_ip}\" or single \"{ip}\")", "192.168.1.1-192.168.1.2-192.168.1.3"),
+		},
+		{
+			name: "exclude range: invalid first ip",
+			op:   admissionv1.Create,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.x-192.168.1.255"},
+						},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", "192.168.1.x", "192.168.1.x-192.168.1.255"),
+		},
+		{
+			name: "exclude range: invalid last ip",
+			op:   admissionv1.Create,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.0->192.168.1.10"},
+						},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", ">192.168.1.10", "192.168.1.0->192.168.1.10"),
+		},
+		{
+			name: "exclude range: different IP versions",
+			op:   admissionv1.Create,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.0-2001:0db8:85a3:0000:0000:8a2e:0370:7334"},
+						},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("different IP versions for range \"%s\"", "192.168.1.0-2001:0db8:85a3:0000:0000:8a2e:0370:7334"),
+		},
+		{
+			name: "exclude range: invalid range order",
+			op:   admissionv1.Create,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.10-192.168.1.9"},
+						},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("invalid range order for \"%s\"", "192.168.1.10-192.168.1.9"),
+		},
+		{
+			name: "exclude prefix: invalid CIDR",
+			op:   admissionv1.Create,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 29,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.1.8"},
+						},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("invalid CIDR for subnet to exclude: %w", &net.ParseError{Type: "CIDR address", Text: "192.168.1.8"}),
+		},
+		{
+			name: "exclude prefix: invalid length for subnet",
+			op:   admissionv1.Create,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 29,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.1.8/30"},
+						},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("invalid length for subnet to exclude \"%s\": must be the same as the pool allocation prefix (%d)", "192.168.1.8/30", 30),
 		},
 	}
 
