@@ -633,6 +633,7 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 	var featureFlags []string
 	gte23, _ := semverlib.NewConstraint(">= 1.23.0")
+	lt25, _ := semverlib.NewConstraint("< 1.25.0")
 	ccm := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
 	curVersion := cluster.Status.Versions.ControlPlane
@@ -680,7 +681,13 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		case cluster.Spec.Cloud.AWS != nil:
 			featureFlags = append(featureFlags, "CSIMigrationAWS=false")
 		case cluster.Spec.Cloud.GCP != nil:
-			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
+			// Starting with Kubernetes 1.25, we deploy the external CSI Driver,
+			// but importantly not the External CCM. For this reason beginning
+			// with 1.25 we do not disabble the CSI migration feature gate anymore
+			// (in fact, in 1.25 it's hardcoded to true anyway).
+			if lt25.Check(curVersion.Semver()) {
+				featureFlags = append(featureFlags, "CSIMigrationGCE=false")
+			}
 		case cluster.Spec.Cloud.VSphere != nil:
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=false")
 		case cluster.Spec.Cloud.Azure != nil:
