@@ -27,5 +27,9 @@ metadata:
   name: cloud-sa
   namespace: kube-system
 data:
-  cloud-sa.json: {{ .Credentials.GCP.ServiceAccount | b64enc | quote }}
+  # Note that this does *NOT* base64 encode the ServiceAccount, as it would be
+  # normal for a Kubernetes Secret. This is because in the Credentials object
+  # the value is already base64 encoded, but the GCP CSI driver needs them as
+  # plain JSON.
+  cloud-sa.json: {{ .Credentials.GCP.ServiceAccount | quote }}
 ---
