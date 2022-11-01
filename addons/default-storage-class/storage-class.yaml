@@ -133,6 +133,22 @@ provisioner: kubernetes.io/cinder
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "gcp" }}
+# CSI Driver-enabled StorageClass is based on
+# https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver/tree/31a8f87f161e4e22908703cd47b911c6afa29dcc/examples/kubernetes
+{{ if gt .Cluster.Version.Minor 24 }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    storageclass.beta.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
+  name: csi-gce-pd
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-ssd
+volumeBindingMode: WaitForFirstConsumer
+{{ else }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -144,6 +160,7 @@ metadata:
 provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-ssd
+{{ end }}
 {{ end }}
 
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
