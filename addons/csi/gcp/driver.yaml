@@ -614,6 +614,9 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: csi-gce-pd-controller
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: csi-gce-pd-controller-sa
       volumes:
       - emptyDir: {}
@@ -681,6 +684,9 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: csi-gce-pd-node
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: csi-gce-pd-node-sa
       tolerations:
       - operator: Exists

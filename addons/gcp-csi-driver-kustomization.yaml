@@ -20,3 +20,20 @@ resources:
   - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver.git/deploy/kubernetes/base/node_linux
 transformers:
   - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver.git/deploy/kubernetes/images/stable-1-24
+patches:
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/securityContext
+        value:
+          seccompProfile:
+            type: RuntimeDefault
+    target:
+      kind: DaemonSet
+  - patch: |-
+      - op: add
+        path: /spec/template/spec/securityContext
+        value:
+          seccompProfile:
+            type: RuntimeDefault
+    target:
+      kind: Deployment
