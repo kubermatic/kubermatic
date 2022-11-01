@@ -17,8 +17,11 @@ limitations under the License.
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // HTTPError represents an HTTP server error.
@@ -43,6 +46,21 @@ func NewWithDetails(code int, msg string, details []string) HTTPError {
 		msg:     msg,
 		details: details,
 	}
+}
+
+// NewFromKubernetesError constructs HTTPError only if the given err is of type *StatusError.
+// Otherwise unmodified err will be returned to the caller.
+func NewFromKubernetesError(err error) error {
+	var errStatus *apierrors.StatusError
+
+	if errors.As(err, &errStatus) {
+		httpCode := errStatus.Status().Code
+		httpMessage := errStatus.Status().Message
+
+		return New(int(httpCode), httpMessage)
+	}
+
+	return err
 }
 
 // Error implements the error interface.
