@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,17 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+# This file was generated, DO NOT EDIT.
+# Run `make gcp-csi-driver` instead.
 
-dqreplacement='"{{ Image \1 }}"'
-sqreplacement=$'\'{{ Image "\1" }}\''
-replacement='{{ Image "\1" }}'
+# GCP is the only provider where the CSI driver is deployed into
+# all 1.25+ clusters (and is not tied to the CCM/CSI migration, because
+# the GCP CCM is not yet integrated into KKP).
 
-for registry in docker.io quay.io public.ecr.aws k8s.gcr.io; do
-  sed -i "s/\(\"$registry.*\"\)/$dqreplacement/g" $@
-  sed -i "s/\('$registry.*'\)/$sqreplacement/g" $@
-
-  # the space makes it so that this does not match the
-  # output of the previous two sed invocations
-  sed -i "s/ \($registry.*\)/ $replacement/g" $@
-done
+{{ if eq .Cluster.CloudProviderName "gcp" }}
+{{ if gt .Cluster.Version.Minor 24 }}
