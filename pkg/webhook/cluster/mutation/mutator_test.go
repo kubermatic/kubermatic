@@ -693,6 +693,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
+				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
 			),
 		},
