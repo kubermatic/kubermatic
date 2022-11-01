@@ -63,10 +63,20 @@ type IPAMPoolDatacenterSettings struct {
 	// Used when "type=prefix".
 	AllocationPrefix int `json:"allocationPrefix,omitempty"`
 
+	// ExcludePrefixes is used to exclude particular subnets for the allocation.
+	// NOTE: must be the same length as allocationPrefix.
+	// Used when "type=prefix".
+	ExcludePrefixes []SubnetCIDR `json:"excludePrefixes,omitempty"`
+
 	// +kubebuilder:validation:Minimum:=1
 	// AllocationRange is the range for the allocation.
 	// Used when "type=range".
 	AllocationRange int `json:"allocationRange,omitempty"`
+
+	// ExcludeRanges is used to exclude particular IPs or IP ranges for the allocation.
+	// Examples: "192.168.1.100-192.168.1.110", "192.168.1.255".
+	// Used when "type=range".
+	ExcludeRanges []string `json:"excludeRanges,omitempty"`
 }
 
 // +kubebuilder:validation:Pattern="((^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))/([0-9]|[1-2][0-9]|3[0-2])$)|(^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))/([0-9]|[0-9][0-9]|1[0-1][0-9]|12[0-8])$))"
