@@ -31,6 +31,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+// These tests do not just verify that the Docker images can be extracted
+// properly, but also that all addons can be processed for each cluster
+// combination (i.e. there are no broken Go templates).
+// When working on this test, remember that it also tests pkg/addon/'s
+// ParseFromFolder().
+
 func TestRetagImageForAllVersions(t *testing.T) {
 	log := logrus.New()
 
