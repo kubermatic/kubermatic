@@ -50,6 +50,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
 	awsdata "k8c.io/kubermatic/v2/pkg/provider/cloud/aws/data"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -651,22 +652,22 @@ func getDigitalOceanResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of digitalOcean \"size\" field: %w", err)
 	}
 
-	godosize, err := provider.DescribeDigitaloceanSize(ctx, token, sizeName)
+	dropletSize, err := digitalocean.DescribeDropletSize(ctx, token, sizeName)
 	if err != nil {
 		return nil, err
 	}
 
 	// parse the DigitalOcean resource requests
 	// memory is in MB and storage is in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(godosize.Vcpus))
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(dropletSize.Vcpus))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
 	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", godosize.Memory))
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", dropletSize.Memory))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
 	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", godosize.Disk))
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", dropletSize.Disk))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}

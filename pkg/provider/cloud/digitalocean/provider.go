@@ -19,6 +19,7 @@ package digitalocean
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/digitalocean/godo"
 	"golang.org/x/oauth2"
@@ -45,11 +46,15 @@ func (do *digitalocean) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1
 	return nil
 }
 
-func ValidateCredentials(ctx context.Context, token string) error {
+func getClient(ctx context.Context, token string) *godo.Client {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	client := godo.NewClient(oauth2.NewClient(ctx, static))
 
-	_, _, err := client.Regions.List(ctx, nil)
+	return client
+}
+
+func ValidateCredentials(ctx context.Context, token string) error {
+	_, _, err := getClient(ctx, token).Regions.List(ctx, nil)
 	return err
 }
 
@@ -90,4 +95,21 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return accessToken, nil
+}
+
+func DescribeDropletSize(ctx context.Context, token, sizeName string) (godo.Size, error) {
+	size := godo.Size{}
+
+	sizes, _, err := getClient(ctx, token).Sizes.List(ctx, &godo.ListOptions{PerPage: 1000})
+	if err != nil {
+		return size, fmt.Errorf("failed to list droplet sizes: %w", err)
+	}
+
+	for _, godosize := range sizes {
+		if godosize.Slug == sizeName {
+			return godosize, nil
+		}
+	}
+
+	return size, fmt.Errorf("droplet size %q not found", sizeName)
 }
