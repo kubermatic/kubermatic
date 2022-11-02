@@ -24,7 +24,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -94,7 +93,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			clusterTemplateLabelSelector := ctrlruntimeclient.MatchingLabels{kubernetes.ClusterTemplateInstanceLabelKey: tc.namespacedName.Name}
+			clusterTemplateLabelSelector := ctrlruntimeclient.MatchingLabels{kubermaticv1.ClusterTemplateInstanceLabelKey: tc.namespacedName.Name}
 			clusters := &kubermaticv1.ClusterList{}
 			err = tc.seedClient.List(ctx, clusters, clusterTemplateLabelSelector)
 
@@ -158,7 +157,7 @@ func genCluster(name, userEmail string, instance kubermaticv1.ClusterTemplateIns
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
-			Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: instance.Spec.ProjectID, kubernetes.ClusterTemplateInstanceLabelKey: instance.Name},
+			Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: instance.Spec.ProjectID, kubermaticv1.ClusterTemplateInstanceLabelKey: instance.Name},
 			ResourceVersion: "1",
 			Annotations:     map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},

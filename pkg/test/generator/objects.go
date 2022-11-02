@@ -648,7 +648,7 @@ func GenClusterTemplateInstance(projectID, templateID, owner string, replicas in
 	return &kubermaticv1.ClusterTemplateInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s-%s", projectID, templateID),
-			Labels:      map[string]string{kubernetes.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
+			Labels:      map[string]string{kubermaticv1.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
 			Annotations: map[string]string{kubermaticv1.ClusterTemplateInstanceOwnerAnnotationKey: owner},
 		},
 		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
