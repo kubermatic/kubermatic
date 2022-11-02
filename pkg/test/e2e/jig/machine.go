@@ -192,8 +192,10 @@ func (j *MachineJig) WithAWS(instanceType string, spotMaxPriceUSD *string) *Mach
 }
 
 func (j *MachineJig) WithAzure(vmSize string) *MachineJig {
+	t := true
 	return j.WithProviderSpec(azuretypes.RawConfig{
-		VMSize: providerconfig.ConfigVarString{Value: vmSize},
+		VMSize:         providerconfig.ConfigVarString{Value: vmSize},
+		AssignPublicIP: providerconfig.ConfigVarBool{Value: &t},
 	})
 }
 
