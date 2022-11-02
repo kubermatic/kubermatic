@@ -25,11 +25,12 @@ import (
 	"strings"
 
 	"github.com/packethost/packngo"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
