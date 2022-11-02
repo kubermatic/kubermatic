@@ -473,7 +473,7 @@ func TestGetCredentialsForCluster(t *testing.T) {
 		want    *resources.OpenstackCredentials
 		wantErr bool
 	}{
-		// there are 3 kinds of auth mode for openstack which are mutualy exclusive
+		// there are 3 kinds of auth mode for openstack which are mutually exclusive
 		//   * domain + token
 		//   * ApplicationCredential (ApplicationCredentialID and ApplicationCredentialSecret)
 		//   * domain + user (ie  Username, Password, (Project or Tenant) and (ProjectID or tenantID))
