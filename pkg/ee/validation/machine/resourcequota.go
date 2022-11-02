@@ -119,11 +119,11 @@ func NewResourceDetailsFromCapacity(cap *provider.NodeCapacity) (*ResourceDetail
 	}
 
 	if cap.Memory == nil {
-		return nil, errors.New("CPUs must not be nil")
+		return nil, errors.New("memory must not be nil")
 	}
 
 	if cap.Storage == nil {
-		return nil, errors.New("CPUs must not be nil")
+		return nil, errors.New("storage must not be nil")
 	}
 
 	return &ResourceDetails{
