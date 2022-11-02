@@ -26,14 +26,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,7 +49,6 @@ type ClusterJig struct {
 	// user-controller parameters
 	projectName  string
 	spec         *kubermaticv1.ClusterSpec
-	generateName string
 	desiredName  string
 	ownerEmail   string
 	labels       map[string]string
@@ -110,13 +107,6 @@ func (j *ClusterJig) WithTestName(name string) *ClusterJig {
 
 func (j *ClusterJig) WithName(name string) *ClusterJig {
 	j.desiredName = name
-	j.generateName = ""
-	return j
-}
-
-func (j *ClusterJig) WithGenerateName(prefix string) *ClusterJig {
-	j.desiredName = ""
-	j.generateName = prefix
 	return j
 }
 
@@ -209,33 +199,28 @@ func (j *ClusterJig) Cluster(ctx context.Context) (*kubermaticv1.Cluster, error)
 		return nil, errors.New("no cluster created yet")
 	}
 
-	clusterProvider, err := j.getClusterProvider()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster provider: %w", err)
+	cluster := &kubermaticv1.Cluster{}
+	if err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, cluster); err != nil {
+		return nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
-	project, err := j.getProject(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get project: %w", err)
-	}
-
-	return clusterProvider.GetUnsecured(ctx, project, j.clusterName, nil)
+	return cluster, nil
 }
 
 func (j *ClusterJig) ClusterClient(ctx context.Context) (ctrlruntimeclient.Client, error) {
-	clusterProvider, err := j.getClusterProvider()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster provider: %w", err)
-	}
-
 	cluster, err := j.Cluster(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current cluster: %w", err)
 	}
 
+	provider, err := client.NewExternal(j.client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client provider: %w", err)
+	}
+
 	var clusterClient ctrlruntimeclient.Client
 	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func() (transient error, terminal error) {
-		clusterClient, transient = clusterProvider.GetAdminClientForUserCluster(ctx, cluster)
+		clusterClient, transient = provider.GetClient(ctx, cluster)
 		return transient, nil
 	})
 	if err != nil {
@@ -246,19 +231,19 @@ func (j *ClusterJig) ClusterClient(ctx context.Context) (ctrlruntimeclient.Clien
 }
 
 func (j *ClusterJig) ClusterRESTConfig(ctx context.Context) (*rest.Config, error) {
-	clusterProvider, err := j.getClusterProvider()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster provider: %w", err)
-	}
-
 	cluster, err := j.Cluster(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current cluster: %w", err)
 	}
 
+	provider, err := client.NewExternal(j.client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create client provider: %w", err)
+	}
+
 	var clusterClient *rest.Config
 	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func() (transient error, terminal error) {
-		clusterClient, transient = clusterProvider.GetAdminClientConfigForUserCluster(ctx, cluster)
+		clusterClient, transient = provider.GetClientConfig(ctx, cluster)
 		return transient, nil
 	})
 	if err != nil {
@@ -282,48 +267,33 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		return nil, fmt.Errorf("failed to get parent project: %w", err)
 	}
 
-	clusterProvider, err := j.getClusterProvider()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster provider: %w", err)
-	}
-
-	cluster := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: j.generateName,
-			Name:         j.desiredName,
-			Labels:       j.labels,
-		},
-		Spec: *j.spec,
-	}
-
-	// Normally this label is injected by the cluster provider, but if
-	// you're applying a preset first, the code for takinng the information
-	// and putting it into a credential Secret will refuse to work properly
-	// if the label isn't set yet. So this is kind of a workaround.
-	cluster.Labels[kubermaticv1.ProjectIDLabelKey] = project.Name
-
+	var preset *kubermaticv1.Preset
 	if j.presetSecret != "" {
-		cluster, err = j.applyPreset(ctx, cluster)
-		if err != nil {
-			return nil, fmt.Errorf("failed to apply preset: %w", err)
+		preset = &kubermaticv1.Preset{}
+		if err := j.client.Get(ctx, types.NamespacedName{Name: j.presetSecret}, preset); err != nil {
+			return nil, fmt.Errorf("failed to get preset %q: %w", j.presetSecret, err)
 		}
 	}
 
 	j.log.Infow("Creating cluster...",
 		"humanname", j.spec.HumanReadableName,
-		"version", cluster.Spec.Version,
-		"provider", cluster.Spec.Cloud.ProviderName,
-		"datacenter", cluster.Spec.Cloud.DatacenterName,
+		"version", j.spec.Version,
+		"provider", j.spec.Cloud.ProviderName,
+		"datacenter", j.spec.Cloud.DatacenterName,
 	)
-	cluster, err = clusterProvider.NewUnsecured(ctx, project, cluster, j.ownerEmail)
-	if err != nil {
+
+	creators := []reconciling.NamedKubermaticV1ClusterCreatorGetter{
+		j.clusterCreatorGetter(project, preset),
+	}
+
+	if err := reconciling.ReconcileKubermaticV1Clusters(ctx, creators, "", j.client); err != nil {
 		return nil, err
 	}
 
-	log := j.log.With("cluster", cluster.Name)
+	log := j.log.With("cluster", j.desiredName)
 
 	log.Info("Cluster created successfully.")
-	j.clusterName = cluster.Name
+	j.clusterName = j.desiredName
 
 	if waitForHealthy {
 		log.Info("Waiting for cluster to become healthy...")
@@ -336,12 +306,37 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		return nil, fmt.Errorf("failed to ensure addons: %w", err)
 	}
 
-	// update our local cluster variable with the newly reconciled address values
-	if err := j.client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
-		return nil, fmt.Errorf("failed to retrieve cluster: %w", err)
-	}
+	return j.Cluster(ctx)
+}
 
-	return cluster, nil
+func (j *ClusterJig) clusterCreatorGetter(project *kubermaticv1.Project, preset *kubermaticv1.Preset) reconciling.NamedKubermaticV1ClusterCreatorGetter {
+	return func() (string, reconciling.KubermaticV1ClusterCreator) {
+		return j.desiredName, func(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+			cluster.Labels = j.labels
+			cluster.Labels[kubermaticv1.ProjectIDLabelKey] = project.Name
+			cluster.Spec = *j.spec
+
+			if preset != nil {
+				switch cluster.Spec.Cloud.ProviderName {
+				case string(kubermaticv1.AWSCloudProvider):
+					cluster.Spec.Cloud.AWS.AccessKeyID = preset.Spec.AWS.AccessKeyID
+					cluster.Spec.Cloud.AWS.SecretAccessKey = preset.Spec.AWS.SecretAccessKey
+					cluster.Spec.Cloud.AWS.VPCID = preset.Spec.AWS.VPCID
+					cluster.Spec.Cloud.AWS.SecurityGroupID = preset.Spec.AWS.SecurityGroupID
+					cluster.Spec.Cloud.AWS.InstanceProfileName = preset.Spec.AWS.InstanceProfileName
+
+				case string(kubermaticv1.HetznerCloudProvider):
+					cluster.Spec.Cloud.Hetzner.Token = preset.Spec.Hetzner.Token
+					cluster.Spec.Cloud.Hetzner.Network = preset.Spec.Hetzner.Network
+
+				default:
+					return nil, fmt.Errorf("provider %q is not yet supported, please implement", cluster.Spec.Cloud.ProviderName)
+				}
+			}
+
+			return cluster, nil
+		}
+	}
 }
 
 func (j *ClusterJig) WaitForClusterNamespace(ctx context.Context, timeout time.Duration) error {
@@ -432,34 +427,22 @@ func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
 	log := j.log.With("cluster", j.clusterName)
 	log.Info("Deleting cluster...")
 
-	clusterProvider, err := j.getClusterProvider()
-	if err != nil {
-		return fmt.Errorf("failed to create cluster provider: %w", err)
-	}
-
-	if err := clusterProvider.DeleteUnsecured(ctx, cluster); err != nil {
+	if err := j.client.Delete(ctx, cluster); err != nil {
 		return fmt.Errorf("failed to delete cluster: %w", err)
 	}
 
 	if synchronous {
 		log.Info("Waiting for cluster to be gone...")
 
-		project, err := j.getProject(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get project: %w", err)
-		}
-
-		err = wait.PollLog(ctx, log, 10*time.Second, 10*time.Minute, func() (transient error, terminal error) {
-			_, err := clusterProvider.GetUnsecured(ctx, project, j.clusterName, nil)
+		err = wait.PollLog(ctx, log, 20*time.Second, 10*time.Minute, func() (transient error, terminal error) {
+			c := &kubermaticv1.Cluster{}
+			err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, c)
 
 			if err == nil {
 				return errors.New("cluster still exists"), nil
 			}
-			if !apierrors.IsNotFound(err) {
-				return nil, err
-			}
 
-			return nil, nil
+			return nil, ctrlruntimeclient.IgnoreNotFound(err)
 		})
 
 		if err != nil {
@@ -494,65 +477,34 @@ func (j *ClusterJig) EnsureAddon(ctx context.Context, addon Addon) error {
 		return fmt.Errorf("failed to get current cluster: %w", err)
 	}
 
-	configGetter, err := kubernetes.DynamicKubermaticConfigurationGetterFactory(j.client, KubermaticNamespace())
+	addonResource, err := genAddonResource(cluster, addon.Name, addon.Variables, addon.Labels)
 	if err != nil {
-		return fmt.Errorf("failed to create configGetter: %w", err)
+		return fmt.Errorf("failed to create addon resource: %w", err)
 	}
 
-	addonProvider := kubernetes.NewAddonProvider(j.client, nil, configGetter)
-	if _, err = addonProvider.NewUnsecured(ctx, cluster, addon.Name, addon.Variables, addon.Labels); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
-		return fmt.Errorf("failed to ensure addon: %w", err)
-	}
-
-	return nil
+	return ctrlruntimeclient.IgnoreAlreadyExists(j.client.Create(ctx, addonResource))
 }
 
-func (j *ClusterJig) applyPreset(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	preset := kubermaticv1.Preset{}
-	key := types.NamespacedName{Name: j.presetSecret}
-	if err := j.client.Get(ctx, key, &preset); err != nil {
-		return nil, fmt.Errorf("failed to get preset %q: %w", j.presetSecret, err)
+func genAddonResource(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
+	if cluster.Status.NamespaceName == "" {
+		return nil, errors.New("cluster has no namespace name assigned yet")
 	}
 
-	switch cluster.Spec.Cloud.ProviderName {
-	case string(kubermaticv1.AWSCloudProvider):
-		cluster.Spec.Cloud.AWS.AccessKeyID = preset.Spec.AWS.AccessKeyID
-		cluster.Spec.Cloud.AWS.SecretAccessKey = preset.Spec.AWS.SecretAccessKey
-		cluster.Spec.Cloud.AWS.VPCID = preset.Spec.AWS.VPCID
-		cluster.Spec.Cloud.AWS.SecurityGroupID = preset.Spec.AWS.SecurityGroupID
-		cluster.Spec.Cloud.AWS.InstanceProfileName = preset.Spec.AWS.InstanceProfileName
-
-	case string(kubermaticv1.HetznerCloudProvider):
-		cluster.Spec.Cloud.Hetzner.Token = preset.Spec.Hetzner.Token
-		cluster.Spec.Cloud.Hetzner.Network = preset.Spec.Hetzner.Network
-
-	default:
-		return nil, fmt.Errorf("provider %q is not yet supported, please implement", cluster.Spec.Cloud.ProviderName)
+	if labels == nil {
+		labels = map[string]string{}
 	}
 
-	return cluster, nil
-}
-
-func (j *ClusterJig) getClusterProvider() (*kubernetes.ClusterProvider, error) {
-	userClusterConnectionProvider, err := client.NewExternal(j.client)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create userClusterConnectionProvider: %w", err)
-	}
-
-	clusterProvider := kubernetes.NewClusterProvider(
-		nil,
-		nil,
-		userClusterConnectionProvider,
-		"",
-		nil,
-		j.client,
-		nil,
-		false,
-		j.versions,
-		nil,
-	)
-
-	return clusterProvider, nil
+	return &kubermaticv1.Addon{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      addonName,
+			Namespace: cluster.Status.NamespaceName,
+			Labels:    labels,
+		},
+		Spec: kubermaticv1.AddonSpec{
+			Name:      addonName,
+			Variables: variables,
+		},
+	}, nil
 }
 
 func (j *ClusterJig) getProject(ctx context.Context) (*kubermaticv1.Project, error) {
@@ -560,10 +512,10 @@ func (j *ClusterJig) getProject(ctx context.Context) (*kubermaticv1.Project, err
 		return nil, errors.New("no parent project specified")
 	}
 
-	projectProvider, err := kubernetes.NewPrivilegedProjectProvider(j.client)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create project provider: %w", err)
+	project := &kubermaticv1.Project{}
+	if err := j.client.Get(ctx, types.NamespacedName{Name: j.projectName}, project); err != nil {
+		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
 
-	return projectProvider.GetUnsecured(ctx, j.projectName, &provider.ProjectGetOptions{IncludeUninitialized: true})
+	return project, nil
 }

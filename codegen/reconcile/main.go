@@ -208,6 +208,11 @@ func main() {
 				APIVersionPrefix: "KubermaticV1",
 			},
 			{
+				ResourceName:     "Cluster",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
 				ResourceName:     "ClusterTemplate",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",

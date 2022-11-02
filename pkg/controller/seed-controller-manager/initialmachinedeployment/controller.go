@@ -29,7 +29,6 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	machineresource "k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -37,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -252,22 +252,27 @@ func (r *Reconciler) getTargetDatacenter(cluster *kubermaticv1.Cluster) (*kuberm
 }
 
 func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.UserSSHKey, error) {
-	var keys []*kubermaticv1.UserSSHKey
-
 	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if projectID == "" {
 		return nil, fmt.Errorf("cluster does not have a %q label", kubermaticv1.ProjectIDLabelKey)
 	}
 
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: projectID}, project); err != nil {
-		return nil, fmt.Errorf("failed to get owning project %q: %w", projectID, err)
+	allKeys := &kubermaticv1.UserSSHKeyList{}
+	if err := r.List(ctx, allKeys); err != nil {
+		return nil, fmt.Errorf("failed to list UserSSHKeys: %w", err)
 	}
 
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(nil, r)
-	keys, err := sshKeyProvider.List(ctx, project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get SSH keys: %w", err)
+	keys := []*kubermaticv1.UserSSHKey{}
+	for i, key := range allKeys.Items {
+		if key.Spec.Project != projectID {
+			continue
+		}
+
+		if !sets.NewString(key.Spec.Clusters...).Has(cluster.Name) {
+			continue
+		}
+
+		keys = append(keys, &allKeys.Items[i])
 	}
 
 	return keys, nil
