@@ -30,6 +30,10 @@ type AWSCloudSpec struct {
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
 
+	// DisableIAMReconciling is used to disable reconciliation for IAM related configuration. This is useful in air-gapped
+	// setups where access to IAM service is not possible.
+	DisableIAMReconciling bool `json:"disableIAMReconciling,omitempty"`
+
 	// instance profile name
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 

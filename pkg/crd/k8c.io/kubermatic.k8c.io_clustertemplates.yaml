@@ -299,6 +299,11 @@ spec:
                             type: string
                         type: object
                         x-kubernetes-map-type: atomic
+                      disableIAMReconciling:
+                        description: DisableIAMReconciling is used to disable reconciliation
+                          for IAM related configuration. This is useful in air-gapped
+                          setups where access to IAM service is not possible.
+                        type: boolean
                       instanceProfileName:
                         type: string
                       nodePortsAllowedIPRange:

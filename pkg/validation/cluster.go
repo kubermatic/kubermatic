@@ -714,6 +714,14 @@ func validateAWSCloudSpec(spec *kubermaticv1.AWSCloudSpec) error {
 		return err
 	}
 
+	if spec.DisableIAMReconciling && spec.ControlPlaneRoleARN == "" {
+		return fmt.Errorf("roleARN is required when IAM reconciling is disabled")
+	}
+
+	if spec.DisableIAMReconciling && spec.InstanceProfileName == "" {
+		return fmt.Errorf("instanceProfileName is required when IAM reconciling is disabled")
+	}
+
 	return nil
 }
 
