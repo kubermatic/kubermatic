@@ -103,16 +103,16 @@ require (
 )
 
 replace (
-	k8s.io/api => k8s.io/api v0.25.0
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.25.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.25.0
-	k8s.io/client-go => k8s.io/client-go v0.25.0
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.25.0
-	k8s.io/code-generator => k8s.io/code-generator v0.25.0
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.25.0
-	k8s.io/kubectl => k8s.io/kubectl v0.25.0
-	k8s.io/kubelet => k8s.io/kubelet v0.25.0
-	k8s.io/metrics => k8s.io/metrics v0.25.0
+	k8s.io/api => k8s.io/api v0.25.3
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.25.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.25.3
+	k8s.io/client-go => k8s.io/client-go v0.25.3
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.25.3
+	k8s.io/code-generator => k8s.io/code-generator v0.25.3
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.25.3
+	k8s.io/kubectl => k8s.io/kubectl v0.25.3
+	k8s.io/kubelet => k8s.io/kubelet v0.25.3
+	k8s.io/metrics => k8s.io/metrics v0.25.3
 )
 
 // overrides required for OPA constraints
@@ -213,7 +213,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/cel-go v0.12.4 // indirect
+	github.com/google/cel-go v0.12.5 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.1-0.20210504230335-f78f29fc09ea // indirect
