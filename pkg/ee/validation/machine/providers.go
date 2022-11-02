@@ -52,6 +52,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -568,27 +569,12 @@ func getHetznerResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of hetzner \"token\" field: %w", err)
 	}
 
-	serverType, err := provider.GetHetznerServerType(ctx, token, serverTypeName)
+	serverType, err := hetzner.GetServerType(ctx, token, serverTypeName)
 	if err != nil {
 		return nil, err
 	}
 
-	// parse the Hetzner resource requests
-	// memory is in GB and storage is in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(serverType.Cores))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", serverType.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
-	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", serverType.Disk))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
-	}
-
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(serverType.VCPUs, serverType.Memory, serverType.Storage), nil
 }
 
 func getNutanixResourceRequirements(ctx context.Context,

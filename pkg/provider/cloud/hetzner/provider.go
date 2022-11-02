@@ -19,9 +19,12 @@ package hetzner
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -110,4 +113,42 @@ func ValidateCredentials(ctx context.Context, token string) error {
 	opts.PerPage = 1
 	_, _, err := client.Location.List(timeout, opts)
 	return err
+}
+
+type ServerType struct {
+	VCPUs   resource.Quantity
+	Memory  resource.Quantity
+	Storage resource.Quantity
+}
+
+func GetServerType(ctx context.Context, token string, serverTypeName string) (*ServerType, error) {
+	if token == "" {
+		return nil, fmt.Errorf("hetzner token cannot be empty")
+	}
+
+	hClient := hcloud.NewClient(hcloud.WithToken(token))
+
+	serverType, _, err := hClient.ServerType.Get(ctx, serverTypeName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server type %q: %w", serverTypeName, err)
+	}
+
+	cpus, err := resource.ParseQuantity(strconv.Itoa(serverType.Cores))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine cpu to quantity: %w", err)
+	}
+	memory, err := resource.ParseQuantity(fmt.Sprintf("%fG", serverType.Memory))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine memory to quantity: %w", err)
+	}
+	storage, err := resource.ParseQuantity(fmt.Sprintf("%dG", serverType.Disk))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine storage to quantity: %w", err)
+	}
+
+	return &ServerType{
+		VCPUs:   cpus,
+		Memory:  memory,
+		Storage: storage,
+	}, err
 }
