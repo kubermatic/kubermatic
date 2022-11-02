@@ -25,7 +25,6 @@ source hack/lib.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
-export KUBERMATIC_YAML="hack/ci/testdata/kubermatic_headless.yaml"
 
 TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
