@@ -44,15 +44,15 @@ func GetInstanceSize(instanceType string) (*provider.NodeCapacity, error) {
 
 	for _, i := range *data {
 		if strings.EqualFold(i.InstanceType, instanceType) {
-			cap := provider.NewNodeCapacity()
-			cap.WithCPUCount(i.VCPU)
-			cap.WithGPUCount(i.GPU)
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(i.VCPU)
+			capacity.WithGPUCount(i.GPU)
 
-			if err := cap.WithMemory(int(i.Memory), "G"); err != nil {
+			if err := capacity.WithMemory(int(i.Memory), "G"); err != nil {
 				return nil, fmt.Errorf("error parsing machine GPU quantity: %w", err)
 			}
 
-			return cap, nil
+			return capacity, nil
 		}
 	}
 

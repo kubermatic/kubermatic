@@ -188,12 +188,12 @@ func DescribeSize(apiKey, projectID, instanceType string) (*provider.NodeCapacit
 				}
 			}
 
-			cap := provider.NewNodeCapacity()
-			cap.WithCPUCount(totalCPUs)
-			cap.Memory = &memReq
-			cap.Storage = &storageReq
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(totalCPUs)
+			capacity.Memory = &memReq
+			capacity.Storage = &storageReq
 
-			return cap, nil
+			return capacity, nil
 		}
 	}
 

@@ -84,18 +84,18 @@ func GetVMSize(ctx context.Context, credentials Credentials, location, vmName st
 
 		for _, size := range page.Value {
 			if strings.EqualFold(*size.Name, vmName) {
-				cap := provider.NewNodeCapacity()
-				cap.WithCPUCount(int(*size.NumberOfCores))
+				capacity := provider.NewNodeCapacity()
+				capacity.WithCPUCount(int(*size.NumberOfCores))
 
-				if err := cap.WithMemory(int(*size.MemoryInMB), "M"); err != nil {
+				if err := capacity.WithMemory(int(*size.MemoryInMB), "M"); err != nil {
 					return nil, fmt.Errorf("error parsing machine memory: %w", err)
 				}
 
-				if err := cap.WithStorage(int(*size.ResourceDiskSizeInMB), "M"); err != nil {
+				if err := capacity.WithStorage(int(*size.ResourceDiskSizeInMB), "M"); err != nil {
 					return nil, fmt.Errorf("error parsing machine disk size: %w", err)
 				}
 
-				return cap, nil
+				return capacity, nil
 			}
 		}
 	}

@@ -945,19 +945,18 @@ func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region
 
 	for _, flavor := range flavors {
 		if strings.EqualFold(flavor.Name, flavorName) {
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(flavor.VCPUs)
 
-			cap := provider.NewNodeCapacity()
-			cap.WithCPUCount(flavor.VCPUs)
-
-			if err := cap.WithMemory(flavor.RAM, "M"); err != nil {
+			if err := capacity.WithMemory(flavor.RAM, "M"); err != nil {
 				return nil, fmt.Errorf("failed to parse memory size: %w", err)
 			}
 
-			if err := cap.WithStorage(flavor.Disk, "G"); err != nil {
+			if err := capacity.WithStorage(flavor.Disk, "G"); err != nil {
 				return nil, fmt.Errorf("failed to parse disk size: %w", err)
 			}
 
-			return cap, nil
+			return capacity, nil
 		}
 	}
 

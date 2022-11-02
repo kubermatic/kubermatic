@@ -109,7 +109,7 @@ func DescribeFlavor(ctx context.Context, kubeconfig, flavor string) (*provider.N
 func vmiPresetToNodeCapacity(preset kubevirtv1.VirtualMachineInstancePreset) (*provider.NodeCapacity, error) {
 	spec := preset.Spec
 	resources := spec.Domain.Resources
-	cap := provider.NewNodeCapacity()
+	capacity := provider.NewNodeCapacity()
 
 	// get CPU count
 	if isCPUSpecified(spec.Domain.CPU) {
@@ -130,14 +130,14 @@ func vmiPresetToNodeCapacity(preset kubevirtv1.VirtualMachineInstancePreset) (*p
 			sockets = 1
 		}
 
-		cap.WithCPUCount(int(cores * threads * sockets))
+		capacity.WithCPUCount(int(cores * threads * sockets))
 	} else {
 		if cpu := resources.Requests.Cpu(); !cpu.IsZero() {
-			cap.WithCPUCount(int(cpu.Value()))
+			capacity.WithCPUCount(int(cpu.Value()))
 		}
 
 		if cpu := resources.Limits.Cpu(); !cpu.IsZero() {
-			cap.WithCPUCount(int(cpu.Value()))
+			capacity.WithCPUCount(int(cpu.Value()))
 		}
 	}
 
@@ -147,14 +147,14 @@ func vmiPresetToNodeCapacity(preset kubevirtv1.VirtualMachineInstancePreset) (*p
 	}
 
 	if memory := resources.Requests.Memory(); !memory.IsZero() {
-		cap.Memory = memory
+		capacity.Memory = memory
 	}
 
 	if memory := resources.Limits.Memory(); !memory.IsZero() {
-		cap.Memory = memory
+		capacity.Memory = memory
 	}
 
-	return cap, nil
+	return capacity, nil
 }
 
 func isCPUSpecified(cpu *kubevirtv1.CPU) bool {

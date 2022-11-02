@@ -105,18 +105,18 @@ func DescribeDropletSize(ctx context.Context, token, sizeName string) (*provider
 
 	for _, godosize := range sizes {
 		if godosize.Slug == sizeName {
-			cap := provider.NewNodeCapacity()
-			cap.WithCPUCount(godosize.Vcpus)
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(godosize.Vcpus)
 
-			if err := cap.WithMemory(godosize.Memory, "M"); err != nil {
+			if err := capacity.WithMemory(godosize.Memory, "M"); err != nil {
 				return nil, fmt.Errorf("failed to parse memory size: %w", err)
 			}
 
-			if err := cap.WithStorage(godosize.Disk, "G"); err != nil {
+			if err := capacity.WithStorage(godosize.Disk, "G"); err != nil {
 				return nil, fmt.Errorf("failed to parse disk size: %w", err)
 			}
 
-			return cap, nil
+			return capacity, nil
 		}
 	}
 

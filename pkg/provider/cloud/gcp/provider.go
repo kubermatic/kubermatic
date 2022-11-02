@@ -312,12 +312,12 @@ func GetMachineSize(ctx context.Context, machineType, sa, zone string) (*provide
 		return nil, fmt.Errorf("failed to get GCP machine size: %w", err)
 	}
 
-	cap := provider.NewNodeCapacity()
-	cap.WithCPUCount(int(m.GuestCpus))
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(m.GuestCpus))
 
-	if err := cap.WithMemory(int(m.MemoryMb), "M"); err != nil {
+	if err := capacity.WithMemory(int(m.MemoryMb), "M"); err != nil {
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	return cap, nil
+	return capacity, nil
 }

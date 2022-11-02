@@ -125,16 +125,16 @@ func GetServerType(ctx context.Context, token string, serverTypeName string) (*p
 		return nil, fmt.Errorf("failed to get server type %q: %w", serverTypeName, err)
 	}
 
-	cap := provider.NewNodeCapacity()
-	cap.WithCPUCount(serverType.Cores)
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(serverType.Cores)
 
-	if err := cap.WithMemory(int(serverType.Memory), "G"); err != nil {
+	if err := capacity.WithMemory(int(serverType.Memory), "G"); err != nil {
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	if err := cap.WithStorage(int(serverType.Disk), "G"); err != nil {
+	if err := capacity.WithStorage(serverType.Disk, "G"); err != nil {
 		return nil, fmt.Errorf("failed to parse disk size: %w", err)
 	}
 
-	return cap, err
+	return capacity, err
 }

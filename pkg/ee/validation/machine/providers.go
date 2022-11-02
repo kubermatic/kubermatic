@@ -184,7 +184,7 @@ func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 		return nil, fmt.Errorf("error getting GCP zone from machine config: %w", err)
 	}
 
-	cap, err := gcp.GetMachineSize(ctx, machineType, serviceAccount, zone)
+	capacity, err := gcp.GetMachineSize(ctx, machineType, serviceAccount, zone)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP machine size data %w", err)
 	}
@@ -195,9 +195,9 @@ func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
-	cap.Storage = &storageReq
+	capacity.Storage = &storageReq
 
-	return NewResourceDetailsFromCapacity(cap)
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
 func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
@@ -283,12 +283,12 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config: %w", err)
 		}
-		cap, err := kubevirt.DescribeFlavor(ctx, kubeconfig, flavor)
+		capacity, err := kubevirt.DescribeFlavor(ctx, kubeconfig, flavor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt VMI Preset: %w", err)
 		}
-		cpuReq = *cap.CPUCores
-		memReq = *cap.Memory
+		cpuReq = *capacity.CPUCores
+		memReq = *capacity.Memory
 	} else {
 		cpu, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.CPUs)
 		if err != nil {
@@ -341,18 +341,18 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 		return nil, fmt.Errorf("failed to get vsphere raw config: %w", err)
 	}
 
-	cap := provider.NewNodeCapacity()
-	cap.WithCPUCount(int(rawConfig.CPUs))
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(rawConfig.CPUs))
 
-	if err := cap.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
+	if err := capacity.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	if err := cap.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
+	if err := capacity.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
 		return nil, fmt.Errorf("failed to parse disk size: %w", err)
 	}
 
-	return NewResourceDetailsFromCapacity(cap)
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
 func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
@@ -506,12 +506,12 @@ func getHetznerResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of hetzner \"token\" field: %w", err)
 	}
 
-	cap, err := hetzner.GetServerType(ctx, token, serverTypeName)
+	capacity, err := hetzner.GetServerType(ctx, token, serverTypeName)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewResourceDetailsFromCapacity(cap)
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
 func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
@@ -530,18 +530,18 @@ func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimec
 		totalCPUCores = rawConfig.CPUs
 	}
 
-	cap := provider.NewNodeCapacity()
-	cap.WithCPUCount(int(totalCPUCores))
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(totalCPUCores))
 
-	if err := cap.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
+	if err := capacity.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	if err := cap.WithStorage(int(*rawConfig.DiskSize), "G"); err != nil {
+	if err := capacity.WithStorage(int(*rawConfig.DiskSize), "G"); err != nil {
 		return nil, fmt.Errorf("failed to parse disk size: %w", err)
 	}
 
-	return NewResourceDetailsFromCapacity(cap)
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
 func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
@@ -560,12 +560,12 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 		return nil, fmt.Errorf("failed to get the value of digitalOcean \"size\" field: %w", err)
 	}
 
-	cap, err := digitalocean.DescribeDropletSize(ctx, token, sizeName)
+	capacity, err := digitalocean.DescribeDropletSize(ctx, token, sizeName)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewResourceDetailsFromCapacity(cap)
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
 func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
@@ -584,18 +584,18 @@ func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient 
 		totalCPUCores = rawConfig.CPUs
 	}
 
-	cap := provider.NewNodeCapacity()
-	cap.WithCPUCount(int(totalCPUCores))
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(totalCPUCores))
 
-	if err := cap.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
+	if err := capacity.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	if err := cap.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
+	if err := capacity.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
 		return nil, fmt.Errorf("failed to parse disk size: %w", err)
 	}
 
-	return NewResourceDetailsFromCapacity(cap)
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
 func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {

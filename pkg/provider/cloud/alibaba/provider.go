@@ -136,12 +136,12 @@ func DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType str
 
 	instance := instanceTypes.InstanceTypes.InstanceType[0]
 
-	cap := provider.NewNodeCapacity()
-	cap.WithCPUCount(instance.CpuCoreCount)
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(instance.CpuCoreCount)
 
-	if err := cap.WithMemory(int(instance.MemorySize), "G"); err != nil {
+	if err := capacity.WithMemory(int(instance.MemorySize), "G"); err != nil {
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	return cap, nil
+	return capacity, nil
 }

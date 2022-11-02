@@ -113,23 +113,23 @@ func NewResourceDetails(cpu resource.Quantity, mem resource.Quantity, storage re
 	}
 }
 
-func NewResourceDetailsFromCapacity(cap *provider.NodeCapacity) (*ResourceDetails, error) {
-	if cap.CPUCores == nil {
+func NewResourceDetailsFromCapacity(capacity *provider.NodeCapacity) (*ResourceDetails, error) {
+	if capacity.CPUCores == nil {
 		return nil, errors.New("CPUs must not be nil")
 	}
 
-	if cap.Memory == nil {
+	if capacity.Memory == nil {
 		return nil, errors.New("memory must not be nil")
 	}
 
-	if cap.Storage == nil {
+	if capacity.Storage == nil {
 		return nil, errors.New("storage must not be nil")
 	}
 
 	return &ResourceDetails{
-		cpu:     *cap.CPUCores,
-		mem:     *cap.Memory,
-		storage: *cap.Storage,
+		cpu:     *capacity.CPUCores,
+		mem:     *capacity.Memory,
+		storage: *capacity.Storage,
 	}, nil
 }
 
