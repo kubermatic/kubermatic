@@ -30,33 +30,33 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.16-2
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: RELEASES_TO_TEST
-          value: "1.25"
-        - name: PROVIDER
-          value: "anexia"
-        - name: DISTRIBUTIONS
-          value: flatcar
-        - name: KUBERMATIC_OSM_ENABLED
-          value: "false"
-        - name: DEFAULT_TIMEOUT_MINUTES
-          value: "20"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 6Gi
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: RELEASES_TO_TEST
+              value: "1.25"
+            - name: PROVIDER
+              value: "anexia"
+            - name: DISTRIBUTIONS
+              value: flatcar
+            - name: KUBERMATIC_OSM_ENABLED
+              value: "false"
+            - name: DEFAULT_TIMEOUT_MINUTES
+              value: "20"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 6Gi
