@@ -22,9 +22,9 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -48,7 +48,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	seedNamespace := "namespace"
-	clusterNamespace := test.GenDefaultCluster().Status.NamespaceName
+	clusterNamespace := generator.GenDefaultCluster().Status.NamespaceName
 
 	testCases := []struct {
 		name                 string
@@ -144,7 +144,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func genConstraint(name, namespace, kind string, label, deleted bool) *kubermaticv1.Constraint {
-	constraint := test.GenConstraint(name, namespace, kind)
+	constraint := generator.GenConstraint(name, namespace, kind)
 	if label {
 		if constraint.Labels != nil {
 			constraint.Labels[Key] = constraint.Name
@@ -161,7 +161,7 @@ func genConstraint(name, namespace, kind string, label, deleted bool) *kubermati
 }
 
 func genCluster(opaEnabled bool) *kubermaticv1.Cluster {
-	cluster := test.GenDefaultCluster()
+	cluster := generator.GenDefaultCluster()
 	cluster.Spec.OPAIntegration = &kubermaticv1.OPAIntegrationSettings{
 		Enabled: opaEnabled,
 	}

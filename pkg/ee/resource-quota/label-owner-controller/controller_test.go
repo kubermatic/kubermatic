@@ -29,9 +29,9 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,13 +60,13 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: reconcile labels and owner ref",
 			requestName: rqName,
 			expectedLabels: map[string]string{
-				kubermaticv1.ResourceQuotaSubjectNameLabelKey: test.GenDefaultProject().Name,
+				kubermaticv1.ResourceQuotaSubjectNameLabelKey: generator.GenDefaultProject().Name,
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 			},
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme).
-				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), test.GenTestSeed(), test.GenDefaultProject()).
+				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), generator.GenTestSeed(), generator.GenDefaultProject()).
 				Build(),
 		},
 		{
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme).
-				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), test.GenTestSeed()).
+				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), generator.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -128,7 +128,7 @@ func genResourceQuota(name string, localUsage kubermaticv1.ResourceDetails) *kub
 	rq.Name = name
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
 		Subject: kubermaticv1.Subject{
-			Name: test.GenDefaultProject().Name,
+			Name: generator.GenDefaultProject().Name,
 			Kind: kubermaticv1.ProjectSubjectKind,
 		},
 	}

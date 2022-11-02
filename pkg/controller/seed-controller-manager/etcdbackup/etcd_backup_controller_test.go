@@ -27,7 +27,6 @@ import (
 	"github.com/go-test/deep"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -35,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -161,7 +161,7 @@ func genBackupJob(t *testing.T, backupName string, jobName string) *batchv1.Job 
 		recorder: record.NewFakeRecorder(10),
 		clock:    clock.RealClock{},
 		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return test.GenTestSeed(), nil
+			return generator.GenTestSeed(), nil
 		},
 		configGetter: configGetter,
 	}
@@ -192,7 +192,7 @@ func genBackupDeleteJob(t *testing.T, backupName string, jobName string) *batchv
 		recorder: record.NewFakeRecorder(10),
 		clock:    clock.RealClock{},
 		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return test.GenTestSeed(), nil
+			return generator.GenTestSeed(), nil
 		},
 		configGetter: configGetter,
 	}
@@ -442,7 +442,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 				clock:               clock,
 				randStringGenerator: constRandStringGenerator("xxxx"),
 				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return test.GenTestSeed(), nil
+					return generator.GenTestSeed(), nil
 				},
 			}
 
@@ -641,7 +641,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				recorder: record.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return test.GenTestSeed(), nil
+					return generator.GenTestSeed(), nil
 				},
 				configGetter: getConfigGetter(t, storeContainer, nil),
 			}
@@ -956,7 +956,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				recorder: record.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return test.GenTestSeed(), nil
+					return generator.GenTestSeed(), nil
 				},
 				configGetter: getConfigGetter(t, nil, deleteContainer),
 			}
@@ -1223,7 +1223,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				recorder: record.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return test.GenTestSeed(), nil
+					return generator.GenTestSeed(), nil
 				},
 				configGetter: getConfigGetter(t, nil, deleteContainer),
 			}
@@ -1520,7 +1520,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				recorder: record.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return test.GenTestSeed(), nil
+					return generator.GenTestSeed(), nil
 				},
 				configGetter: getConfigGetter(t, nil, deleteContainer),
 			}
@@ -1649,7 +1649,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				clock:    clocktesting.NewFakeClock(time.Unix(60, 0).UTC()),
 				caBundle: certificates.NewFakeCABundle(),
 				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return test.GenTestSeed(addSeedDestinations), nil
+					return generator.GenTestSeed(addSeedDestinations), nil
 				},
 				randStringGenerator: constRandStringGenerator("bob"),
 				configGetter:        getConfigGetter(t, storeContainer, deleteContainer),

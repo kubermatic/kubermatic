@@ -23,12 +23,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -129,7 +129,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		caBundle:             certificates.NewFakeCABundle(),
 		configGetter:         configGetter,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return test.GenTestSeed(), nil
+			return generator.GenTestSeed(), nil
 		},
 	}
 

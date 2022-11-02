@@ -27,9 +27,10 @@ import (
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +50,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	if err := test.RegisterScheme(test.SchemeBuilder); err != nil {
+	if err := generator.RegisterScheme(test.GatekeeperSchemeBuilder); err != nil {
 		t.Fatal(err)
 	}
 
@@ -67,13 +68,13 @@ func TestReconcile(t *testing.T) {
 				Namespace: "namespace",
 				Name:      constraintName,
 			},
-			expectedConstraint: test.GenDefaultAPIConstraint(constraintName, kind),
+			expectedConstraint: generator.GenDefaultAPIConstraint(constraintName, kind),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
 					func() ctrlruntimeclient.Object {
-						c := test.GenConstraint(constraintName, "namespace", kind)
+						c := generator.GenConstraint(constraintName, "namespace", kind)
 						c.Spec.Parameters = map[string]json.RawMessage{
 							"rawJSON": []byte(`"{\"labels\":[\"gatekeeper\",\"opa\"]}"`),
 						}
@@ -96,7 +97,7 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
 					c.Finalizers = []string{kubermaticv1.GatekeeperConstraintCleanupFinalizer}
@@ -124,7 +125,7 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
 					c.Finalizers = []string{kubermaticv1.GatekeeperConstraintCleanupFinalizer}
@@ -142,11 +143,11 @@ func TestReconcile(t *testing.T) {
 				Namespace: "namespace",
 				Name:      constraintName,
 			},
-			expectedConstraint: test.GenDefaultAPIConstraint(constraintName, kind),
+			expectedConstraint: generator.GenDefaultAPIConstraint(constraintName, kind),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(test.GenConstraint(constraintName, "namespace", kind)).
+				WithObjects(generator.GenConstraint(constraintName, "namespace", kind)).
 				Build(),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -164,7 +165,7 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
 				}()).
@@ -185,7 +186,7 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
 				}()).

@@ -22,11 +22,11 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,7 +44,7 @@ func TestReconcile(t *testing.T) {
 		t.Fatalf("failed to build worker-name selector: %v", err)
 	}
 	seedNamespace := "namespace"
-	projectName := test.GenDefaultProject().Name
+	projectName := generator.GenDefaultProject().Name
 
 	testCases := []struct {
 		name                 string
@@ -59,21 +59,21 @@ func TestReconcile(t *testing.T) {
 				Name: "my-first-project-ID-ctID2",
 			},
 			expectedClusters: []*kubermaticv1.Cluster{
-				genCluster("ct2-0", "bob@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
-				genCluster("ct2-1", "bob@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
-				genCluster("ct2-2", "bob@acme.com", *test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-0", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-1", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-2", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
 			},
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
-					test.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
-					test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
-					test.GenClusterTemplateInstance(projectName, "ctID1", "bob@acme.com", 2),
-					test.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3),
-					test.GenClusterTemplateInstance(projectName, "ctID3", "bob@acme.com", 10),
+					generator.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, generator.GenDefaultAPIUser().Email),
+					generator.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+					generator.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+					generator.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+					generator.GenClusterTemplateInstance(projectName, "ctID1", "bob@acme.com", 2),
+					generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3),
+					generator.GenClusterTemplateInstance(projectName, "ctID3", "bob@acme.com", 10),
 				).
 				Build(),
 		},
