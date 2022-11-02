@@ -47,6 +47,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -531,30 +532,27 @@ func getAlibabaResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of alibaba \"disk\" from machine config, error: %w", err)
 	}
 
-	instTypes, err := provider.DescribeAlibabaInstanceTypes(accessKeyID, accessKeySecret, region, instanceType)
+	instType, err := alibaba.DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType)
 	if err != nil {
 		return nil, err
 	}
-	ecsInstanceType := instTypes.InstanceTypes.InstanceType
-	if len(ecsInstanceType) > 0 {
-		// parse the Alibaba resource requests
-		// memory is in GB and storage is in GB
-		cpuReq, err := resource.ParseQuantity(strconv.Itoa(ecsInstanceType[0].CpuCoreCount))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
-		}
-		memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", ecsInstanceType[0].MemorySize))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
-		}
-		storageReq, err := resource.ParseQuantity(fmt.Sprintf("%sG", disk))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
-		}
-		return NewResourceDetails(cpuReq, memReq, storageReq), nil
+
+	// parse the Alibaba resource requests
+	// memory is in GB and storage is in GB
+	cpuReq, err := resource.ParseQuantity(strconv.Itoa(instType.CpuCoreCount))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine cpu request to quantity, error: %w", err)
+	}
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", instType.MemorySize))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine memory request to quantity, error: %w", err)
+	}
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%sG", disk))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine storage request to quantity, error: %w", err)
 	}
 
-	return nil, nil
+	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
 func getHetznerResourceRequirements(ctx context.Context,

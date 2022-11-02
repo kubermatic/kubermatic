@@ -114,3 +114,25 @@ func ValidateCredentials(region, accessKeyID, accessKeySecret string) error {
 	_, err = client.DescribeZones(requestZones)
 	return err
 }
+
+func DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType string) (*ecs.InstanceType, error) {
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return nil, err
+	}
+
+	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
+	instanceTypes := []string{instanceType}
+	requestInstanceTypes.InstanceTypes = &instanceTypes
+
+	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list instance types: %w", err)
+	}
+
+	if len(instTypes.InstanceTypes.InstanceType) == 0 {
+		return nil, fmt.Errorf("unknown instance type %q", instanceType)
+	}
+
+	return &instTypes.InstanceTypes.InstanceType[0], nil
+}
