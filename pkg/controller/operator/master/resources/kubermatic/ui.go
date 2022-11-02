@@ -47,8 +47,8 @@ func UIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kub
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsNonRoot: pointer.BoolPtr(true),
-				RunAsUser:    pointer.Int64Ptr(65534),
+				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64(65534),
 			}
 
 			tag := versions.UI

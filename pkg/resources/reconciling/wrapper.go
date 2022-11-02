@@ -138,10 +138,10 @@ func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, erro
 
 	for idx, vol := range newPodSpec.Volumes {
 		if vol.VolumeSource.Secret != nil && vol.VolumeSource.Secret.DefaultMode == nil {
-			newPodSpec.Volumes[idx].Secret.DefaultMode = utilpointer.Int32Ptr(corev1.SecretVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].Secret.DefaultMode = utilpointer.Int32(corev1.SecretVolumeSourceDefaultMode)
 		}
 		if vol.VolumeSource.ConfigMap != nil && vol.VolumeSource.ConfigMap.DefaultMode == nil {
-			newPodSpec.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32(corev1.ConfigMapVolumeSourceDefaultMode)
 		}
 	}
 

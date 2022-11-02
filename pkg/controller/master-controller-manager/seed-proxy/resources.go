@@ -237,7 +237,7 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret, ima
 			d.Labels = labels()
 			d.Labels[ManagedByLabel] = ControllerName
 
-			d.Spec.Replicas = pointer.Int32Ptr(1)
+			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: labels(),
 			}
