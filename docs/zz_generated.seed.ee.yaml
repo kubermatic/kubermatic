@@ -127,6 +127,32 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
+          # Images represents standard VM Image sources.
+          images:
+            # EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
+            enableCustomImages: false
+            # HTTP source for standard images.
+            http:
+              # Optional: ImageCloning represents options for kubevirt disk-image cloning.
+              imageCloning:
+                # Enable allows you to enable/disable cloning of standard images. When this option is enabled,
+                # downloading images from the http source destination will happen only once. Later,
+                # Machine Controller will clone the disks using DataVolumes with the cloning source.
+                enable: false
+                # StorageClass represents storage-class for DataVolumes of standard images.
+                storageClass: ""
+              # OperatingSystems represents list of supported operating-systems with their URLs.
+              operatingSystems:
+                centos:
+                  <<version>>: <<url>>
+                flatcar:
+                  <<version>>: <<url>>
+                rhel:
+                  <<version>>: <<url>>
+                rockylinux:
+                  <<version>>: <<url>>
+                ubuntu:
+                  <<version>>: <<url>>
         # MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU

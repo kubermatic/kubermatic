@@ -115,10 +115,19 @@ func main() {
 func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
-
+	kubevirtHTTPSource := kubermaticv1.HTTPSource{
+		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
+		ImageCloning: kubermaticv1.ImageCloning{
+			Enable:       false,
+			StorageClass: "",
+		},
+	}
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
 		imageList[operatingSystem] = ""
 		operatingSystemProfileList[operatingSystem] = ""
+	}
+	for supportedOS := range kubermaticv1.SupportedKubeVirtOS {
+		kubevirtHTTPSource.OperatingSystems[supportedOS] = map[string]string{"<<version>>": "<<url>>"}
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{
@@ -185,6 +194,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
 							DNSPolicy: "",
 							DNSConfig: &corev1.PodDNSConfig{},
+							Images:    kubermaticv1.ImageSources{HTTP: &kubevirtHTTPSource},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
 						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},

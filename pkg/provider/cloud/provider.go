@@ -78,7 +78,7 @@ func Provider(
 		return fake.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.Kubevirt != nil {
-		return kubevirt.NewCloudProvider(secretKeyGetter), nil
+		return kubevirt.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Alibaba != nil {
 		return alibaba.NewCloudProvider(datacenter, secretKeyGetter)
