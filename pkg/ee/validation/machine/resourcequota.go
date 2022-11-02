@@ -26,12 +26,14 @@ package machine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -109,6 +111,26 @@ func NewResourceDetails(cpu resource.Quantity, mem resource.Quantity, storage re
 		mem:     mem,
 		storage: storage,
 	}
+}
+
+func NewResourceDetailsFromCapacity(cap *provider.NodeCapacity) (*ResourceDetails, error) {
+	if cap.CPUCores == nil {
+		return nil, errors.New("CPUs must not be nil")
+	}
+
+	if cap.Memory == nil {
+		return nil, errors.New("CPUs must not be nil")
+	}
+
+	if cap.Storage == nil {
+		return nil, errors.New("CPUs must not be nil")
+	}
+
+	return &ResourceDetails{
+		cpu:     *cap.CPUCores,
+		mem:     *cap.Memory,
+		storage: *cap.Storage,
+	}, nil
 }
 
 func (r *ResourceDetails) Cpu() *resource.Quantity {

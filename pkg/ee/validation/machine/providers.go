@@ -52,6 +52,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -165,7 +166,7 @@ func getAWSResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(*instanceSize.CPUCores, *instanceSize.Memory, *instanceSize.Storage), nil
+	return NewResourceDetailsFromCapacity(instanceSize)
 }
 
 func getGCPResourceRequirements(ctx context.Context,
@@ -203,8 +204,9 @@ func getGCPResourceRequirements(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
+	cap.Storage = &storageReq
 
-	return NewResourceDetails(*cap.CPUCores, *cap.Memory, storageReq), nil
+	return NewResourceDetailsFromCapacity(cap)
 }
 
 func getAzureResourceRequirements(ctx context.Context,
@@ -268,8 +270,9 @@ func getAzureResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}
 	storageReq.Add(osDiskStorageReq)
+	vmSize.Storage = &storageReq
 
-	return NewResourceDetails(*vmSize.CPUCores, *vmSize.Memory, storageReq), nil
+	return NewResourceDetailsFromCapacity(vmSize)
 }
 
 func getKubeVirtResourceRequirements(ctx context.Context,
@@ -423,7 +426,7 @@ func getOpenstackResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of openstack \"token\" field: %w", err)
 	}
 
-	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
+	flavorName, err := configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of openstack \"flavor\" field: %w", err)
 	}
@@ -435,27 +438,13 @@ func getOpenstackResourceRequirements(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of openstack \"region\" field: %w", err)
 	}
-	flavorSize, err := provider.GetOpenStackFlavorSize(creds, identityEndpoint, region, caBundle.CertPool(), flavor)
+
+	flavor, err := openstack.DescribeFlavor(creds, identityEndpoint, region, caBundle.CertPool(), flavorName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of openstack \"flavorSize\" field: %w", err)
 	}
 
-	// parse the Openstack resource requests
-	// memory is in MB and storage is in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(flavorSize.VCPUs))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", flavorSize.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
-	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", flavorSize.Disk))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
-	}
-
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetailsFromCapacity(flavor)
 }
 
 // Get the Project name from config or env var. If not defined fallback to tenant name.
@@ -528,7 +517,7 @@ func getAlibabaResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(*capacity.CPUCores, *capacity.Memory, *capacity.Storage), nil
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
 func getHetznerResourceRequirements(ctx context.Context,
@@ -555,7 +544,7 @@ func getHetznerResourceRequirements(ctx context.Context,
 		return nil, err
 	}
 
-	return NewResourceDetails(*cap.CPUCores, *cap.Memory, *cap.Storage), nil
+	return NewResourceDetailsFromCapacity(cap)
 }
 
 func getNutanixResourceRequirements(ctx context.Context,
@@ -617,7 +606,7 @@ func getDigitalOceanResourceRequirements(ctx context.Context,
 		return nil, err
 	}
 
-	return NewResourceDetails(*cap.CPUCores, *cap.Memory, *cap.Storage), nil
+	return NewResourceDetailsFromCapacity(cap)
 }
 
 func getVMwareCloudDirectorResourceRequirements(ctx context.Context,
@@ -709,5 +698,5 @@ func getPacketResourceRequirements(ctx context.Context,
 		return nil, err
 	}
 
-	return NewResourceDetails(*capacity.CPUCores, *capacity.Memory, *capacity.Storage), nil
+	return NewResourceDetailsFromCapacity(capacity)
 }
