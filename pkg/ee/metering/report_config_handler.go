@@ -36,7 +36,6 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
@@ -236,7 +235,7 @@ func GetMeteringReportConfiguration(seedsGetter provider.SeedsGetter, request in
 
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 
 	for _, seed := range seeds {
@@ -268,7 +267,7 @@ func ListMeteringReportConfigurations(seedsGetter provider.SeedsGetter) ([]apiv1
 
 	seeds, err := seedsGetter()
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 
 	var resp []apiv1.MeteringReportConfiguration
@@ -408,7 +407,7 @@ func createMeteringReportConfiguration(ctx context.Context, reportCfgReq createR
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 
 	createdConfig := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]
@@ -455,7 +454,7 @@ func updateMeteringReportConfiguration(ctx context.Context, reportCfgReq updateR
 	}
 
 	if err := masterClient.Update(ctx, seed); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 
 	updatedConfig := seed.Spec.Metering.ReportConfigurations[reportCfgReq.Name]
@@ -480,7 +479,7 @@ func deleteMeteringReportConfiguration(ctx context.Context, reportConfigName str
 
 	delete(seed.Spec.Metering.ReportConfigurations, reportConfigName)
 	if err := masterClinet.Update(ctx, seed); err != nil {
-		return common.KubernetesErrorToHTTPError(err)
+		return utilerrors.NewFromKubernetesError(err)
 	}
 
 	return nil
