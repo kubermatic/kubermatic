@@ -38,7 +38,6 @@ require (
 	github.com/gobuffalo/flect v0.3.0
 	github.com/google/go-cmp v0.5.9
 	github.com/gophercloud/gophercloud v1.0.0
-	github.com/gorilla/mux v1.8.0
 	github.com/hetznercloud/hcloud-go v1.35.3
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
@@ -222,6 +221,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.6.0 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
