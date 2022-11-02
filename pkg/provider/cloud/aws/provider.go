@@ -198,7 +198,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	// We create a dedicated role for the control plane.
-	if force || cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
+	if !cluster.Spec.Cloud.AWS.DisableIAMReconciling && (force || cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "") {
 		cluster, err = reconcileControlPlaneRole(ctx, client.IAM, cluster, update)
 		if err != nil {
 			return nil, err
@@ -206,7 +206,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	// instance profile and role for worker nodes
-	if force || cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
+	if !cluster.Spec.Cloud.AWS.DisableIAMReconciling && (force || cluster.Spec.Cloud.AWS.InstanceProfileName == "") {
 		cluster, err = reconcileWorkerInstanceProfile(ctx, client.IAM, cluster, update)
 		if err != nil {
 			return nil, err

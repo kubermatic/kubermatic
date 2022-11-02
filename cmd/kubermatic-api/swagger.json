@@ -22023,6 +22023,11 @@
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
+        "disableIAMReconciling": {
+          "description": "DisableIAMReconciling is used to disable reconciliation for IAM related configuration. This is useful in air-gapped\nsetups where access to IAM service is not possible.",
+          "type": "boolean",
+          "x-go-name": "DisableIAMReconciling"
+        },
         "instanceProfileName": {
           "type": "string",
           "x-go-name": "InstanceProfileName"
