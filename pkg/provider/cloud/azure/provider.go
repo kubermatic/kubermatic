@@ -117,7 +117,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 		return nil, err
 	}
 
-	clientSet, err := GetClientSet(cluster.Spec.Cloud, credentials)
+	clientSet, err := GetClientSet(credentials)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (a *Azure) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Clus
 		return nil, err
 	}
 
-	clientSet, err := GetClientSet(cluster.Spec.Cloud, credentials)
+	clientSet, err := GetClientSet(credentials)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +308,7 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 	}
 
 	if cloud.Azure.ResourceGroup != "" {
-		rgClient, err := getGroupsClient(cloud, credential, credentials.SubscriptionID)
+		rgClient, err := getGroupsClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
@@ -324,7 +324,7 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 	}
 
 	if cloud.Azure.VNetName != "" {
-		vnetClient, err := getNetworksClient(cloud, credential, credentials.SubscriptionID)
+		vnetClient, err := getNetworksClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
@@ -335,7 +335,7 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 	}
 
 	if cloud.Azure.SubnetName != "" {
-		subnetClient, err := getSubnetsClient(cloud, credential, credentials.SubscriptionID)
+		subnetClient, err := getSubnetsClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
@@ -346,7 +346,7 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 	}
 
 	if cloud.Azure.RouteTableName != "" {
-		routeTablesClient, err := getRouteTablesClient(cloud, credential, credentials.SubscriptionID)
+		routeTablesClient, err := getRouteTablesClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
@@ -357,7 +357,7 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 	}
 
 	if cloud.Azure.SecurityGroup != "" {
-		sgClient, err := getSecurityGroupsClient(cloud, credential, credentials.SubscriptionID)
+		sgClient, err := getSecurityGroupsClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
@@ -386,7 +386,7 @@ func (a *Azure) AddICMPRulesIfRequired(ctx context.Context, cluster *kubermaticv
 		return err
 	}
 
-	sgClient, err := getSecurityGroupsClient(cluster.Spec.Cloud, credential, credentials.SubscriptionID)
+	sgClient, err := getSecurityGroupsClient(credential, credentials.SubscriptionID)
 	if err != nil {
 		return fmt.Errorf("failed to get security group client: %w", err)
 	}

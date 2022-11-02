@@ -17,8 +17,11 @@ limitations under the License.
 package azure
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
@@ -56,4 +59,44 @@ func hasOwnershipTag(tags map[string]*string, cluster *kubermaticv1.Cluster) boo
 	}
 
 	return false
+}
+
+type VMSize struct {
+	NumberOfCores        int
+	ResourceDiskSizeInMB int
+	MemoryInMB           int
+}
+
+func GetVMSize(ctx context.Context, credentials Credentials, location, vmName string) (*VMSize, error) {
+	credential, err := credentials.ToAzureCredential()
+	if err != nil {
+		return nil, fmt.Errorf("invalid credentials: %w", err)
+	}
+
+	sizesClient, err := getSizesClient(credential, credentials.SubscriptionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for size client: %w", err)
+	}
+
+	// get all available VM size types for given location
+	pager := sizesClient.NewListPager(location, nil)
+
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list sizes: %w", err)
+		}
+
+		for _, size := range page.Value {
+			if strings.EqualFold(*size.Name, vmName) {
+				return &VMSize{
+					NumberOfCores:        int(*size.NumberOfCores),
+					ResourceDiskSizeInMB: int(*size.ResourceDiskSizeInMB),
+					MemoryInMB:           int(*size.MemoryInMB),
+				}, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("could not find Azure VM size %q", vmName)
 }
