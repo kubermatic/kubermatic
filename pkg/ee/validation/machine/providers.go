@@ -48,6 +48,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
+	awsdata "k8c.io/kubermatic/v2/pkg/provider/cloud/aws/data"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -150,27 +151,18 @@ func getAWSResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error getting AWS instance type from machine config: %w", err)
 	}
 
-	awsSize, err := provider.GetAWSInstance(instanceType)
+	instanceSize, err := awsdata.GetInstanceSize(instanceType)
 	if err != nil {
 		return nil, fmt.Errorf("error getting AWS instance type data: %w", err)
 	}
 
 	// parse the AWS resource requests
-	// memory and storage are given in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(awsSize.VCPUs))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", awsSize.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
-	}
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(instanceSize.VCPUs, instanceSize.Memory, storageReq), nil
 }
 
 func getGCPResourceRequirements(ctx context.Context,
