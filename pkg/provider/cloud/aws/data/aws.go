@@ -18,11 +18,10 @@ package data
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	ec2 "github.com/cristim/ec2-instances-info"
-	"k8s.io/apimachinery/pkg/api/resource"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 var data *ec2.InstanceData
@@ -37,39 +36,22 @@ func init() {
 	}
 }
 
-type InstanceSize struct {
-	Memory resource.Quantity
-	VCPUs  resource.Quantity
-	GPUs   resource.Quantity
-}
-
-func GetInstanceSize(instanceType string) (*InstanceSize, error) {
+func GetInstanceSize(instanceType string) (*provider.NodeCapacity, error) {
 	if data == nil {
 		return nil, fmt.Errorf("AWS instance type data not initialized")
 	}
 
 	for _, i := range *data {
 		if strings.EqualFold(i.InstanceType, instanceType) {
-			vcpus, err := resource.ParseQuantity(strconv.Itoa(i.VCPU))
-			if err != nil {
-				return nil, fmt.Errorf("error parsing machine CPU quantity: %w", err)
-			}
+			cap := provider.NewNodeCapacity()
+			cap.WithCPUCount(i.VCPU)
+			cap.WithGPUCount(i.GPU)
 
-			gpus, err := resource.ParseQuantity(strconv.Itoa(i.GPU))
-			if err != nil {
+			if err := cap.WithMemory(int(i.Memory), "G"); err != nil {
 				return nil, fmt.Errorf("error parsing machine GPU quantity: %w", err)
 			}
 
-			memory, err := resource.ParseQuantity(fmt.Sprintf("%fG", i.Memory))
-			if err != nil {
-				return nil, fmt.Errorf("error parsing machine memory quantity: %w", err)
-			}
-
-			return &InstanceSize{
-				Memory: memory,
-				VCPUs:  vcpus,
-				GPUs:   gpus,
-			}, nil
+			return cap, nil
 		}
 	}
 

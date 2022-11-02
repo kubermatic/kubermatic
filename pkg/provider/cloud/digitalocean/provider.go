@@ -97,19 +97,28 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	return accessToken, nil
 }
 
-func DescribeDropletSize(ctx context.Context, token, sizeName string) (godo.Size, error) {
-	size := godo.Size{}
-
+func DescribeDropletSize(ctx context.Context, token, sizeName string) (*provider.NodeCapacity, error) {
 	sizes, _, err := getClient(ctx, token).Sizes.List(ctx, &godo.ListOptions{PerPage: 1000})
 	if err != nil {
-		return size, fmt.Errorf("failed to list droplet sizes: %w", err)
+		return nil, fmt.Errorf("failed to list droplet sizes: %w", err)
 	}
 
 	for _, godosize := range sizes {
 		if godosize.Slug == sizeName {
-			return godosize, nil
+			cap := provider.NewNodeCapacity()
+			cap.WithCPUCount(godosize.Vcpus)
+
+			if err := cap.WithMemory(godosize.Memory, "M"); err != nil {
+				return nil, fmt.Errorf("failed to parse memory size: %w", err)
+			}
+
+			if err := cap.WithStorage(godosize.Disk, "G"); err != nil {
+				return nil, fmt.Errorf("failed to parse disk size: %w", err)
+			}
+
+			return cap, nil
 		}
 	}
 
-	return size, fmt.Errorf("droplet size %q not found", sizeName)
+	return nil, fmt.Errorf("droplet size %q not found", sizeName)
 }

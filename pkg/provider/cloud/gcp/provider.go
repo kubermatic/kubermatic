@@ -24,14 +24,12 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strconv"
 
 	"go.uber.org/zap"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -302,12 +300,7 @@ func ToGCPSubnetworkAPIModel(subnetwork *compute.Subnetwork) apiv1.GCPSubnetwork
 	return net
 }
 
-type MachineSize struct {
-	VCPUs  resource.Quantity
-	Memory resource.Quantity
-}
-
-func GetMachineSize(ctx context.Context, machineType, sa, zone string) (*MachineSize, error) {
+func GetMachineSize(ctx context.Context, machineType, sa, zone string) (*provider.NodeCapacity, error) {
 	computeService, project, err := ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return nil, err
@@ -319,17 +312,12 @@ func GetMachineSize(ctx context.Context, machineType, sa, zone string) (*Machine
 		return nil, fmt.Errorf("failed to get GCP machine size: %w", err)
 	}
 
-	cpus, err := resource.ParseQuantity(strconv.FormatInt(m.GuestCpus, 10))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu size to quantity: %w", err)
-	}
-	memory, err := resource.ParseQuantity(fmt.Sprintf("%dM", m.MemoryMb))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory size to quantity: %w", err)
+	cap := provider.NewNodeCapacity()
+	cap.WithCPUCount(int(m.GuestCpus))
+
+	if err := cap.WithMemory(int(m.MemoryMb), "M"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	return &MachineSize{
-		VCPUs:  cpus,
-		Memory: memory,
-	}, nil
+	return cap, nil
 }

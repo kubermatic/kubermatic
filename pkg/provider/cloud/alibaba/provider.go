@@ -115,24 +115,33 @@ func ValidateCredentials(region, accessKeyID, accessKeySecret string) error {
 	return err
 }
 
-func DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType string) (*ecs.InstanceType, error) {
+func DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType string) (*provider.NodeCapacity, error) {
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
 	if err != nil {
 		return nil, err
 	}
 
 	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
-	instanceTypes := []string{instanceType}
-	requestInstanceTypes.InstanceTypes = &instanceTypes
+	filter := []string{instanceType}
+	requestInstanceTypes.InstanceTypes = &filter
 
-	instTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
+	instanceTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list instance types: %w", err)
 	}
 
-	if len(instTypes.InstanceTypes.InstanceType) == 0 {
+	if len(instanceTypes.InstanceTypes.InstanceType) == 0 {
 		return nil, fmt.Errorf("unknown instance type %q", instanceType)
 	}
 
-	return &instTypes.InstanceTypes.InstanceType[0], nil
+	instance := instanceTypes.InstanceTypes.InstanceType[0]
+
+	cap := provider.NewNodeCapacity()
+	cap.WithCPUCount(instance.CpuCoreCount)
+
+	if err := cap.WithMemory(int(instance.MemorySize), "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
+	}
+
+	return cap, nil
 }

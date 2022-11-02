@@ -28,7 +28,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
@@ -53,6 +52,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -160,13 +160,12 @@ func getAWSResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error getting AWS instance type data: %w", err)
 	}
 
-	// parse the AWS resource requests
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
-	if err != nil {
+	// overwrite the reported disk size with the configured one
+	if err := instanceSize.WithStorage(int(rawConfig.DiskSize), "G"); err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(instanceSize.VCPUs, instanceSize.Memory, storageReq), nil
+	return NewResourceDetails(*instanceSize.CPUCores, *instanceSize.Memory, *instanceSize.Storage), nil
 }
 
 func getGCPResourceRequirements(ctx context.Context,
@@ -193,7 +192,7 @@ func getGCPResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error getting GCP zone from machine config: %w", err)
 	}
 
-	machineSize, err := gcp.GetMachineSize(ctx, machineType, serviceAccount, zone)
+	cap, err := gcp.GetMachineSize(ctx, machineType, serviceAccount, zone)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP machine size data %w", err)
 	}
@@ -205,7 +204,7 @@ func getGCPResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(machineSize.VCPUs, machineSize.Memory, storageReq), nil
+	return NewResourceDetails(*cap.CPUCores, *cap.Memory, storageReq), nil
 }
 
 func getAzureResourceRequirements(ctx context.Context,
@@ -259,17 +258,6 @@ func getAzureResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get Azure VM size: %w", err)
 	}
 
-	// parse the Azure resource requests
-	// memory is given in MB and storage in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(vmSize.NumberOfCores))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", vmSize.MemoryInMB))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
-	}
-
 	// Azure allows for setting os and data disk size separately
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DataDiskSize))
 	if err != nil {
@@ -281,7 +269,7 @@ func getAzureResourceRequirements(ctx context.Context,
 	}
 	storageReq.Add(osDiskStorageReq)
 
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(*vmSize.CPUCores, *vmSize.Memory, storageReq), nil
 }
 
 func getKubeVirtResourceRequirements(ctx context.Context,
@@ -526,28 +514,21 @@ func getAlibabaResourceRequirements(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of alibaba \"disk\" from machine config: %w", err)
 	}
+	diskGB, err := strconv.ParseInt(disk, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("invalid disk size %q: %w", disk, err)
+	}
 
-	instType, err := alibaba.DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType)
+	capacity, err := alibaba.DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType)
 	if err != nil {
 		return nil, err
 	}
 
-	// parse the Alibaba resource requests
-	// memory is in GB and storage is in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(instType.CpuCoreCount))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", instType.MemorySize))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
-	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%sG", disk))
-	if err != nil {
+	if err := capacity.WithStorage(int(diskGB), "G"); err != nil {
 		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(*capacity.CPUCores, *capacity.Memory, *capacity.Storage), nil
 }
 
 func getHetznerResourceRequirements(ctx context.Context,
@@ -569,12 +550,12 @@ func getHetznerResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of hetzner \"token\" field: %w", err)
 	}
 
-	serverType, err := hetzner.GetServerType(ctx, token, serverTypeName)
+	cap, err := hetzner.GetServerType(ctx, token, serverTypeName)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewResourceDetails(serverType.VCPUs, serverType.Memory, serverType.Storage), nil
+	return NewResourceDetails(*cap.CPUCores, *cap.Memory, *cap.Storage), nil
 }
 
 func getNutanixResourceRequirements(ctx context.Context,
@@ -631,26 +612,12 @@ func getDigitalOceanResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of digitalOcean \"size\" field: %w", err)
 	}
 
-	dropletSize, err := digitalocean.DescribeDropletSize(ctx, token, sizeName)
+	cap, err := digitalocean.DescribeDropletSize(ctx, token, sizeName)
 	if err != nil {
 		return nil, err
 	}
 
-	// parse the DigitalOcean resource requests
-	// memory is in MB and storage is in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(dropletSize.Vcpus))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", dropletSize.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
-	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", dropletSize.Disk))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
-	}
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(*cap.CPUCores, *cap.Memory, *cap.Storage), nil
 }
 
 func getVMwareCloudDirectorResourceRequirements(ctx context.Context,
@@ -737,45 +704,10 @@ func getPacketResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("failed to get the value of packet \"instanceType\": %w", err)
 	}
 
-	plan, err := provider.DescribePacketSize(token, projectID, instanceType)
+	capacity, err := packet.DescribeSize(token, projectID, instanceType)
 	if err != nil {
 		return nil, err
 	}
 
-	var totalCPUs int
-	for _, cpu := range plan.Specs.Cpus {
-		totalCPUs += cpu.Count
-	}
-	cpuReq, err := resource.ParseQuantity(fmt.Sprintf("%d", totalCPUs))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-
-	var storageReq, memReq resource.Quantity
-	for _, drive := range plan.Specs.Drives {
-		if drive.Size != "" && drive.Count != 0 {
-			// trimming "B" as quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'.
-			storage, err := resource.ParseQuantity(strings.TrimSuffix(drive.Size, "B"))
-			if err != nil {
-				fmt.Println("error parsing machine storage request to quantity: %w", err)
-			}
-			// total storage for each types = drive count *drive Size.
-			strDrive := strconv.FormatInt(storage.Value()*int64(drive.Count), 10)
-			totalStorage, err := resource.ParseQuantity(strDrive)
-			if err != nil {
-				return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
-			}
-			// Adding storage value for all storage types like "SSD", "NVME".
-			storageReq.Add(totalStorage)
-		}
-	}
-
-	if plan.Specs.Memory.Total != "" {
-		memReq, err = resource.ParseQuantity(strings.TrimSuffix(plan.Specs.Memory.Total, "B"))
-		if err != nil {
-			return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
-		}
-	}
-
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(*capacity.CPUCores, *capacity.Memory, *capacity.Storage), nil
 }

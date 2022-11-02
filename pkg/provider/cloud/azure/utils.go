@@ -26,6 +26,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func ignoreNotFound(err error) error {
@@ -61,13 +62,7 @@ func hasOwnershipTag(tags map[string]*string, cluster *kubermaticv1.Cluster) boo
 	return false
 }
 
-type VMSize struct {
-	NumberOfCores        int
-	ResourceDiskSizeInMB int
-	MemoryInMB           int
-}
-
-func GetVMSize(ctx context.Context, credentials Credentials, location, vmName string) (*VMSize, error) {
+func GetVMSize(ctx context.Context, credentials Credentials, location, vmName string) (*provider.NodeCapacity, error) {
 	credential, err := credentials.ToAzureCredential()
 	if err != nil {
 		return nil, fmt.Errorf("invalid credentials: %w", err)
@@ -89,11 +84,18 @@ func GetVMSize(ctx context.Context, credentials Credentials, location, vmName st
 
 		for _, size := range page.Value {
 			if strings.EqualFold(*size.Name, vmName) {
-				return &VMSize{
-					NumberOfCores:        int(*size.NumberOfCores),
-					ResourceDiskSizeInMB: int(*size.ResourceDiskSizeInMB),
-					MemoryInMB:           int(*size.MemoryInMB),
-				}, nil
+				cap := provider.NewNodeCapacity()
+				cap.WithCPUCount(int(*size.NumberOfCores))
+
+				if err := cap.WithMemory(int(*size.MemoryInMB), "M"); err != nil {
+					return nil, fmt.Errorf("error parsing machine memory: %w", err)
+				}
+
+				if err := cap.WithStorage(int(*size.ResourceDiskSizeInMB), "M"); err != nil {
+					return nil, fmt.Errorf("error parsing machine disk size: %w", err)
+				}
+
+				return cap, nil
 			}
 		}
 	}
