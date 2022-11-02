@@ -51,6 +51,7 @@ import (
 	awsdata "k8c.io/kubermatic/v2/pkg/provider/cloud/aws/data"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -191,27 +192,19 @@ func getGCPResourceRequirements(ctx context.Context,
 		return nil, fmt.Errorf("error getting GCP zone from machine config: %w", err)
 	}
 
-	machineSize, err := provider.GetGCPInstanceSize(ctx, machineType, serviceAccount, zone)
+	machineSize, err := gcp.GetMachineSize(ctx, machineType, serviceAccount, zone)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP machine size data %w", err)
 	}
 
 	// parse the GCP resource requests
 	// memory is given in MB and storage in GB
-	cpuReq, err := resource.ParseQuantity(strconv.FormatInt(machineSize.VCPUs, 10))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", machineSize.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
-	}
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetails(machineSize.VCPUs, machineSize.Memory, storageReq), nil
 }
 
 func getAzureResourceRequirements(ctx context.Context,
