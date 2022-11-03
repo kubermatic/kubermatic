@@ -81,7 +81,12 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 }
 
 func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+	user, ok := obj.(*kubermaticv1.User)
+	if !ok {
+		return errors.New("object is not a User")
+	}
+
+	return validation.ValidateUserDelete(ctx, user, v.client)
 }
 
 func (v *validator) validateProjectRelationship(ctx context.Context, user *kubermaticv1.User, oldUser *kubermaticv1.User) *field.Error {

@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -24,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func ValidateUser(u *kubermaticv1.User) field.ErrorList {
@@ -84,4 +86,33 @@ func ValidateUserUpdate(oldUser, newUser *kubermaticv1.User) field.ErrorList {
 	}
 
 	return allErrs
+}
+
+func ValidateUserDelete(ctx context.Context, user *kubermaticv1.User, client ctrlruntimeclient.Client) error {
+	projects, err := kubermaticv1helper.GetUserOwnedProjects(ctx, client, user.Name)
+	if err != nil {
+		return err
+	}
+
+	for _, project := range projects {
+		// if project has multiple owner users
+		if len(project.OwnerReferences) > 1 {
+			continue
+		}
+
+		// project has single owner user then check if project has resources
+		hasClusters, err := kubermaticv1helper.HasClusters(ctx, client, project.Name)
+		if err != nil {
+			return err
+		}
+		hasExtClusters, err := kubermaticv1helper.HasExternalClusters(ctx, client, project.Name)
+		if err != nil {
+			return err
+		}
+		if hasClusters || hasExtClusters {
+			return fmt.Errorf("operation not permitted!: user project %s has resources, clusters or externalclusters", project.Name)
+		}
+	}
+
+	return nil
 }
