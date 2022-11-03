@@ -75,9 +75,11 @@ type AKSCredentials struct {
 }
 
 type EKSCredential struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	Region          string
+	AccessKeyID          string
+	SecretAccessKey      string
+	Region               string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }
 
 type DigitaloceanCredentials struct {

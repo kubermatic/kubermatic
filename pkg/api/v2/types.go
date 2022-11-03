@@ -639,10 +639,12 @@ type GKECloudSpec struct {
 }
 
 type EKSCloudSpec struct {
-	Name            string `json:"name"`
-	AccessKeyID     string `json:"accessKeyID,omitempty" required:"true"`
-	SecretAccessKey string `json:"secretAccessKey,omitempty" required:"true"`
-	Region          string `json:"region" required:"true"`
+	Name                 string `json:"name"`
+	AccessKeyID          string `json:"accessKeyID,omitempty" required:"true"`
+	SecretAccessKey      string `json:"secretAccessKey,omitempty" required:"true"`
+	Region               string `json:"region" required:"true"`
+	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 }
 
 type EKSClusterSpec struct {

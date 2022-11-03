@@ -182,6 +182,10 @@ spec:
                   properties:
                     accessKeyID:
                       type: string
+                    assumeRoleARN:
+                      type: string
+                    assumeRoleExternalID:
+                      type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
                       type: string
