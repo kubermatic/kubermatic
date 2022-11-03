@@ -15,6 +15,31 @@
 groups:
   - name: blackbox-exporter
     rules:
+      - alert: HttpProbeFailed
+        annotations:
+          message: Probing the blackbox-exporter target {{ $labels.instance }} failed.
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpprobefailed
+        expr: probe_success != 1
+        for: 5m
+        labels:
+          severity: warning
+          resource: "{{ $labels.instance }}"
+          service: blackbox-exporter
+
+      - alert: HttpProbeSlow
+        annotations:
+          message: "{{ $labels.instance }} takes {{ $value }} seconds to respond."
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpprobeslow
+        expr: sum by (instance) (probe_http_duration_seconds) > 3
+        for: 15m
+        labels:
+          severity: warning
+          resource: "{{ $labels.instance }}"
+          service: blackbox-exporter
+        runbook:
+          steps:
+            - Check the target system's resource usage for anomalias.
+            - Check if the target application has been recently rescheduled and is still settling.    
       - alert: HttpCertExpiresSoon
         annotations:
           message: The certificate for {{ $labels.instance }} expires in less than 3 days.
