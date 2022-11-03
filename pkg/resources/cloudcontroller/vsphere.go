@@ -77,7 +77,7 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			version := getVSphereCCMVersion(data.Cluster().Status.Versions.ControlPlane)
 			container := getVSphereCCMContainer(version, data)
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				container,

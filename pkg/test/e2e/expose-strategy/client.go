@@ -141,7 +141,7 @@ func newClientPod(ns string) *corev1.Pod {
 				},
 			},
 			SecurityContext:               &corev1.PodSecurityContext{},
-			TerminationGracePeriodSeconds: pointer.Int64(0),
+			TerminationGracePeriodSeconds: pointer.Int64Ptr(0),
 			Volumes: []corev1.Volume{
 				{
 					Name: resources.AdminKubeconfigSecretName,

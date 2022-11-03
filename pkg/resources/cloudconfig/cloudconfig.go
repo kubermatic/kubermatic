@@ -43,7 +43,6 @@ func CloudConfig(
 	cloud := cluster.Spec.Cloud
 	switch {
 	case cloud.AWS != nil:
-		DualstackIPFamilies := []string{"ipv6", "ipv4"}
 		awsCloudConfig := &aws.CloudConfig{
 			// Dummy AZ, so that K8S can extract the region from it.
 			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1199
@@ -58,10 +57,6 @@ func CloudConfig(
 				RoleARN:                     cloud.AWS.ControlPlaneRoleARN,
 			},
 		}
-		if cluster.IsDualStack() {
-			awsCloudConfig.Global.NodeIPFamilies = DualstackIPFamilies
-		}
-
 		cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)
 		if err != nil {
 			return cloudConfig, err

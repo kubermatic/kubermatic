@@ -42,7 +42,7 @@ func TestNewTemplateData(t *testing.T) {
 		Spec: kubermaticv1.ClusterSpec{
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				IPVS: &kubermaticv1.IPVSConfiguration{
-					StrictArp: pointer.Bool(true),
+					StrictArp: pointer.BoolPtr(true),
 				},
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{

@@ -127,7 +127,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                resources.IPVSProxyMode,
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,

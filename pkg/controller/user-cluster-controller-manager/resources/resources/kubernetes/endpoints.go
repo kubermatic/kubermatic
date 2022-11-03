@@ -77,7 +77,7 @@ func EndpointSliceCreator(clusterAddress *kubermaticv1.ClusterAddress) reconcili
 						clusterAddress.IP,
 					},
 					Conditions: discoveryv1.EndpointConditions{
-						Ready: pointer.Bool(true),
+						Ready: pointer.BoolPtr(true),
 					},
 				},
 			}
@@ -85,7 +85,7 @@ func EndpointSliceCreator(clusterAddress *kubermaticv1.ClusterAddress) reconcili
 			es.Ports = []discoveryv1.EndpointPort{
 				{
 					Name:     pointer.String("https"),
-					Port:     pointer.Int32(clusterAddress.Port),
+					Port:     pointer.Int32Ptr(clusterAddress.Port),
 					Protocol: &protoTCP,
 				},
 			}

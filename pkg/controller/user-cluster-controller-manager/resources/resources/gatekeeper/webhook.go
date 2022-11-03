@@ -47,7 +47,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
-					TimeoutSeconds:          pointer.Int32(int32(timeout)),
+					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
 					MatchPolicy:             &matchPolicyExact,
 					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -67,8 +67,8 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      resources.GatekeeperWebhookServiceName,
 							Namespace: resources.GatekeeperNamespace,
-							Path:      pointer.String("/v1/admit"),
-							Port:      pointer.Int32(443),
+							Path:      pointer.StringPtr("/v1/admit"),
+							Port:      pointer.Int32Ptr(443),
 						},
 					},
 					Rules: []admissionregistrationv1.RuleWithOperations{
@@ -92,7 +92,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
-					TimeoutSeconds:          pointer.Int32(int32(timeout)),
+					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
 					MatchPolicy:             &matchPolicyExact,
 					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -112,8 +112,8 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      resources.GatekeeperWebhookServiceName,
 							Namespace: resources.GatekeeperNamespace,
-							Path:      pointer.String("/v1/admitlabel"),
-							Port:      pointer.Int32(443),
+							Path:      pointer.StringPtr("/v1/admitlabel"),
+							Port:      pointer.Int32Ptr(443),
 						},
 					},
 					Rules: []admissionregistrationv1.RuleWithOperations{
@@ -161,7 +161,7 @@ func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingW
 					FailurePolicy:           &failurePolicyIgnore,
 					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffectsNone,
-					TimeoutSeconds:          pointer.Int32(int32(timeout)),
+					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
 					MatchPolicy:             &matchPolicyExact,
 					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -181,8 +181,8 @@ func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingW
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      resources.GatekeeperWebhookServiceName,
 							Namespace: resources.GatekeeperNamespace,
-							Path:      pointer.String("/v1/mutate"),
-							Port:      pointer.Int32(443),
+							Path:      pointer.StringPtr("/v1/mutate"),
+							Port:      pointer.Int32Ptr(443),
 						},
 					},
 					Rules: []admissionregistrationv1.RuleWithOperations{

@@ -77,17 +77,17 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
 			}
-			deployment.Spec.Replicas = pointer.Int32(2)
+			deployment.Spec.Replicas = pointer.Int32Ptr(2)
 			if replicas != nil {
 				deployment.Spec.Replicas = replicas
 			}
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
 			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterPrometheusServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsUser:    pointer.Int64(65534),
-				RunAsGroup:   pointer.Int64(65534),
-				FSGroup:      pointer.Int64(65534),
-				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64Ptr(65534),
+				RunAsGroup:   pointer.Int64Ptr(65534),
+				FSGroup:      pointer.Int64Ptr(65534),
+				RunAsNonRoot: pointer.BoolPtr(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -216,7 +216,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.UserClusterPrometheusCertificatesSecretName,
-							DefaultMode: pointer.Int32(0400),
+							DefaultMode: pointer.Int32Ptr(0400),
 						},
 					},
 				},

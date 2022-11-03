@@ -47,7 +47,7 @@ const (
 func EnvoyDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32(3)
+			d.Spec.Replicas = pointer.Int32Ptr(3)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: EnvoyDeploymentName,
@@ -238,7 +238,7 @@ func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return UpdaterDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Replicas = pointer.Int32Ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: UpdaterDeploymentName,

@@ -122,9 +122,9 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 	if len(existingContainers) == 1 && existingContainers[0].SecurityContext != nil {
 		securityContext = existingContainers[0].SecurityContext
 	}
-	securityContext.RunAsUser = pointer.Int64(1001)
-	securityContext.ReadOnlyRootFilesystem = pointer.Bool(true)
-	securityContext.AllowPrivilegeEscalation = pointer.Bool(false)
+	securityContext.RunAsUser = pointer.Int64Ptr(1001)
+	securityContext.ReadOnlyRootFilesystem = pointer.BoolPtr(true)
+	securityContext.AllowPrivilegeEscalation = pointer.BoolPtr(false)
 
 	tag, err := getDashboardVersion(data.Cluster().Status.Versions.ControlPlane)
 	if err != nil {

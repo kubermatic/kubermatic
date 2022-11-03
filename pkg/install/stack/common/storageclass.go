@@ -112,7 +112,7 @@ var (
 
 			// see https://github.com/digitalocean/csi-digitalocean/blob/master/deploy/kubernetes/releases/csi-digitalocean-v1.3.0.yaml
 			s.Provisioner = "dobs.csi.digitalocean.com"
-			s.AllowVolumeExpansion = pointer.Bool(true)
+			s.AllowVolumeExpansion = pointer.BoolPtr(true)
 
 			return s, nil
 		},

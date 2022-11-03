@@ -130,7 +130,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -156,7 +156,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -182,7 +182,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -209,7 +209,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -234,7 +234,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -259,7 +259,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -284,7 +284,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -313,7 +313,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -342,7 +342,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -371,7 +371,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -400,8 +400,8 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.EBPFProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-					KonnectivityEnabled:      pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					KonnectivityEnabled:      pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -430,8 +430,8 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.EBPFProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-					KonnectivityEnabled:      pointer.Bool(false),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					KonnectivityEnabled:      pointer.BoolPtr(false),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -460,8 +460,8 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.EBPFProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-					KonnectivityEnabled:      pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					KonnectivityEnabled:      pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -491,8 +491,8 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/120"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-					KonnectivityEnabled:      pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					KonnectivityEnabled:      pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -522,8 +522,8 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/120"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-					KonnectivityEnabled:      pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+					KonnectivityEnabled:      pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -547,13 +547,13 @@ func TestHandle(t *testing.T) {
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
 				ExposeStrategy:   "NodePort",
-				EnableUserSSHKey: pointer.Bool(true),
+				EnableUserSSHKey: pointer.BoolPtr(true),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -568,7 +568,7 @@ func TestHandle(t *testing.T) {
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
 				ExposeStrategy:   "NodePort",
-				EnableUserSSHKey: pointer.Bool(false),
+				EnableUserSSHKey: pointer.BoolPtr(false),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -599,7 +599,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -625,7 +625,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -651,7 +651,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -672,7 +672,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -698,7 +698,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -719,7 +719,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -744,7 +744,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -764,7 +764,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -789,7 +789,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -809,7 +809,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -834,7 +834,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -859,7 +859,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -884,7 +884,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -904,7 +904,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -929,7 +929,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -953,7 +953,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -982,7 +982,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1006,7 +1006,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1035,7 +1035,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1059,7 +1059,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1088,7 +1088,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1112,7 +1112,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1141,7 +1141,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1165,7 +1165,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1195,7 +1195,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1219,7 +1219,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1248,7 +1248,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1272,7 +1272,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCilium,
@@ -1302,7 +1302,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1326,7 +1326,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCilium,
@@ -1355,7 +1355,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1379,7 +1379,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1408,7 +1408,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1433,7 +1433,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1463,7 +1463,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -1483,7 +1483,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1512,7 +1512,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1536,7 +1536,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -1558,7 +1558,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1587,7 +1587,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1611,7 +1611,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -1640,7 +1640,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -1666,7 +1666,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -1692,7 +1692,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
@@ -1713,7 +1713,7 @@ func TestHandle(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,

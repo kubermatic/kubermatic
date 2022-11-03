@@ -294,7 +294,7 @@ func createClusterObject(version semverlib.Version, cloudSpec kubermaticv1.Cloud
 				},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                resources.IPVSProxyMode,
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,

@@ -220,12 +220,12 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 			specClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{}
 		}
 		if specClusterNetwork.IPVS.StrictArp == nil {
-			specClusterNetwork.IPVS.StrictArp = pointer.Bool(true)
+			specClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
 		}
 	}
 
 	if specClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		specClusterNetwork.NodeLocalDNSCacheEnabled = pointer.Bool(resources.DefaultNodeLocalDNSCacheEnabled)
+		specClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(resources.DefaultNodeLocalDNSCacheEnabled)
 	}
 
 	if specClusterNetwork.DNSDomain == "" {

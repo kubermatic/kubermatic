@@ -209,8 +209,8 @@ func getContainers(clusterVersion *semverlib.Version, imageRewriter registry.Ima
 				FailureThreshold: 3,
 			},
 			SecurityContext: &corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   pointer.Bool(true),
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
+				AllowPrivilegeEscalation: pointer.BoolPtr(false),
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"NET_BIND_SERVICE",

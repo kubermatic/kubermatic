@@ -57,7 +57,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(3),
+					TimeoutSeconds:          pointer.Int32Ptr(3),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: triple.EncodeCertPEM(caCert),
 						URL:      &url,

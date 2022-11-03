@@ -98,7 +98,7 @@ func (n *Nutanix) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSp
 	// default csi
 	if spec.Nutanix.CSI != nil {
 		if spec.Nutanix.CSI.Port == nil {
-			spec.Nutanix.CSI.Port = pointer.Int32(9440)
+			spec.Nutanix.CSI.Port = pointer.Int32Ptr(9440)
 		}
 	}
 

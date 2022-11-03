@@ -88,11 +88,11 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 	}
 
 	if settings.ControllerManager.Replicas == nil {
-		settings.ControllerManager.Replicas = pointer.Int32(DefaultControllerManagerReplicas)
+		settings.ControllerManager.Replicas = pointer.Int32Ptr(DefaultControllerManagerReplicas)
 	}
 
 	if settings.Scheduler.Replicas == nil {
-		settings.Scheduler.Replicas = pointer.Int32(DefaultSchedulerReplicas)
+		settings.Scheduler.Replicas = pointer.Int32Ptr(DefaultSchedulerReplicas)
 	}
 
 	if settings.Etcd.DiskSize == nil {

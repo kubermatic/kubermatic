@@ -109,10 +109,10 @@ func getContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
-				RunAsUser:                pointer.Int64(1001),
-				RunAsGroup:               pointer.Int64(2001),
-				ReadOnlyRootFilesystem:   pointer.Bool(true),
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				RunAsUser:                pointer.Int64Ptr(1001),
+				RunAsGroup:               pointer.Int64Ptr(2001),
+				ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
+				AllowPrivilegeEscalation: pointer.BoolPtr(false),
 			},
 		},
 	}

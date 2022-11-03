@@ -130,7 +130,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			enableUserSSHKeyAgent := data.Cluster().Spec.EnableUserSSHKeyAgent
 			if enableUserSSHKeyAgent == nil {
-				enableUserSSHKeyAgent = pointer.Bool(true)
+				enableUserSSHKeyAgent = pointer.BoolPtr(true)
 			}
 
 			address := data.Cluster().Status.Address

@@ -130,11 +130,11 @@ func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter regist
 									ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 										Audience:          resources.KonnectivityClusterRoleBindingUsername,
 										Path:              resources.KonnectivityAgentToken,
-										ExpirationSeconds: pointer.Int64(3600),
+										ExpirationSeconds: pointer.Int64Ptr(3600),
 									},
 								},
 							},
-							DefaultMode: pointer.Int32(420),
+							DefaultMode: pointer.Int32Ptr(420),
 						},
 					},
 				},

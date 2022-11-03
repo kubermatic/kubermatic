@@ -388,7 +388,7 @@ func createKubermaticIPv6Subnet(netClient *gophercloud.ServiceClient, clusterNam
 		NetworkID:       networkID,
 		IPVersion:       gophercloud.IPv6,
 		GatewayIP:       nil,
-		EnableDHCP:      pointer.Bool(true),
+		EnableDHCP:      pointer.BoolPtr(true),
 		IPv6AddressMode: "dhcpv6-stateless",
 		IPv6RAMode:      "dhcpv6-stateless",
 	}
@@ -405,7 +405,7 @@ func createKubermaticIPv6Subnet(netClient *gophercloud.ServiceClient, clusterNam
 
 	// if IPv6 subnet pool name is not provided - look for the default IPv6 subnet pool
 	if subnetPoolID == "" {
-		pools, err := getAllSubnetPools(netClient, subnetpools.ListOpts{IPVersion: 6, IsDefault: pointer.Bool(true)})
+		pools, err := getAllSubnetPools(netClient, subnetpools.ListOpts{IPVersion: 6, IsDefault: pointer.BoolPtr(true)})
 		if err != nil {
 			return nil, err
 		}

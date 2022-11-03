@@ -353,13 +353,13 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 			},
 			Version:               version,
 			HumanReadableName:     name,
-			EnableUserSSHKeyAgent: pointer.Bool(false),
+			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 			ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				DNSDomain: "cluster.local",
 				ProxyMode: "ipvs",
 				IPVS: &kubermaticv1.IPVSConfiguration{
-					StrictArp: pointer.Bool(true),
+					StrictArp: pointer.BoolPtr(true),
 				},
 				IPFamily: kubermaticv1.IPFamilyIPv4,
 				Pods: kubermaticv1.NetworkRanges{
@@ -619,7 +619,7 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 					Name:              "gatekeeper",
 				},
 			},
-			Synced: pointer.Bool(true),
+			Synced: pointer.BoolPtr(true),
 		},
 	}
 }

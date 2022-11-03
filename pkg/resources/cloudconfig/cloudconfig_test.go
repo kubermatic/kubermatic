@@ -247,7 +247,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
-							UseOctavia: pointer.Bool(true),
+							UseOctavia: pointer.BoolPtr(true),
 						},
 					},
 				},
@@ -266,7 +266,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				LoadBalancer: openstack.LoadBalancerOpts{
 					LBVersion:  "v2",
 					LBMethod:   "ROUND_ROBIN",
-					UseOctavia: pointer.Bool(true),
+					UseOctavia: pointer.BoolPtr(true),
 				},
 				BlockStorage: openstack.BlockStorageOpts{
 					BSVersion: "auto",
@@ -291,7 +291,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
-						UseOctavia: pointer.Bool(false),
+						UseOctavia: pointer.BoolPtr(false),
 					},
 				},
 			},
@@ -299,7 +299,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				LoadBalancer: openstack.LoadBalancerOpts{
 					LBVersion:  "v2",
 					LBMethod:   "ROUND_ROBIN",
-					UseOctavia: pointer.Bool(false),
+					UseOctavia: pointer.BoolPtr(false),
 				},
 				BlockStorage: openstack.BlockStorageOpts{
 					BSVersion: "auto",
@@ -313,7 +313,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
 						Openstack: &kubermaticv1.OpenstackCloudSpec{
-							UseOctavia: pointer.Bool(false),
+							UseOctavia: pointer.BoolPtr(false),
 						},
 					},
 				},
@@ -326,7 +326,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
-						UseOctavia: pointer.Bool(true),
+						UseOctavia: pointer.BoolPtr(true),
 					},
 				},
 			},
@@ -334,7 +334,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				LoadBalancer: openstack.LoadBalancerOpts{
 					LBVersion:  "v2",
 					LBMethod:   "ROUND_ROBIN",
-					UseOctavia: pointer.Bool(false),
+					UseOctavia: pointer.BoolPtr(false),
 				},
 				BlockStorage: openstack.BlockStorageOpts{
 					BSVersion: "auto",

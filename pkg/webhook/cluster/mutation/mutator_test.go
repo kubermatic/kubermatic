@@ -132,7 +132,7 @@ func TestMutator(t *testing.T) {
 					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 			}.Do(),
 			defaultClusterTemplate: &kubermaticv1.ClusterTemplate{
@@ -143,7 +143,7 @@ func TestMutator(t *testing.T) {
 					ComponentsOverride: kubermaticv1.ComponentSettings{
 						Apiserver: kubermaticv1.APIServerSettings{
 							DeploymentSettings: kubermaticv1.DeploymentSettings{
-								Replicas: pointer.Int32(2),
+								Replicas: pointer.Int32Ptr(2),
 								Resources: &corev1.ResourceRequirements{
 									Requests: map[corev1.ResourceName]resource.Quantity{
 										"memory": resource.MustParse("500M"),
@@ -157,12 +157,12 @@ func TestMutator(t *testing.T) {
 									},
 								},
 							},
-							EndpointReconcilingDisabled: pointer.Bool(true),
+							EndpointReconcilingDisabled: pointer.BoolPtr(true),
 							NodePortRange:               "30000-32768",
 						},
 						ControllerManager: kubermaticv1.ControllerSettings{
 							DeploymentSettings: kubermaticv1.DeploymentSettings{
-								Replicas: pointer.Int32(2),
+								Replicas: pointer.Int32Ptr(2),
 								Resources: &corev1.ResourceRequirements{
 									Requests: map[corev1.ResourceName]resource.Quantity{
 										"memory": resource.MustParse("500M"),
@@ -177,14 +177,14 @@ func TestMutator(t *testing.T) {
 								},
 							},
 							LeaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-								LeaseDurationSeconds: pointer.Int32(10),
-								RenewDeadlineSeconds: pointer.Int32(5),
-								RetryPeriodSeconds:   pointer.Int32(2),
+								LeaseDurationSeconds: pointer.Int32Ptr(10),
+								RenewDeadlineSeconds: pointer.Int32Ptr(5),
+								RetryPeriodSeconds:   pointer.Int32Ptr(2),
 							},
 						},
 						Scheduler: kubermaticv1.ControllerSettings{
 							DeploymentSettings: kubermaticv1.DeploymentSettings{
-								Replicas: pointer.Int32(2),
+								Replicas: pointer.Int32Ptr(2),
 								Resources: &corev1.ResourceRequirements{
 									Requests: map[corev1.ResourceName]resource.Quantity{
 										"memory": resource.MustParse("500M"),
@@ -199,13 +199,13 @@ func TestMutator(t *testing.T) {
 								},
 							},
 							LeaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-								LeaseDurationSeconds: pointer.Int32(10),
-								RenewDeadlineSeconds: pointer.Int32(5),
-								RetryPeriodSeconds:   pointer.Int32(2),
+								LeaseDurationSeconds: pointer.Int32Ptr(10),
+								RenewDeadlineSeconds: pointer.Int32Ptr(5),
+								RetryPeriodSeconds:   pointer.Int32Ptr(2),
 							},
 						},
 						Etcd: kubermaticv1.EtcdStatefulSetSettings{
-							ClusterSize:  pointer.Int32(7),
+							ClusterSize:  pointer.Int32Ptr(7),
 							StorageClass: "fast-storage",
 							DiskSize:     &oneGB,
 							Resources: &corev1.ResourceRequirements{
@@ -279,7 +279,7 @@ func TestMutator(t *testing.T) {
 						Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 						DNSDomain:                "example.local",
 						ProxyMode:                resources.EBPFProxyMode,
-						NodeLocalDNSCacheEnabled: pointer.Bool(true),
+						NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 					},
 				},
 			},
@@ -324,8 +324,8 @@ func TestMutator(t *testing.T) {
 					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.Bool(true)},
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				Features: map[string]bool{
 					kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -359,7 +359,7 @@ func TestMutator(t *testing.T) {
 					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 			}.Do(),
 			wantAllowed: true,
@@ -448,8 +448,8 @@ func TestMutator(t *testing.T) {
 					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPVSProxyMode,
-					IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.Bool(true)},
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					IPVS:                     &kubermaticv1.IPVSConfiguration{StrictArp: pointer.BoolPtr(true)},
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				Features: map[string]bool{
 					kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -481,7 +481,7 @@ func TestMutator(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				Features: map[string]bool{
 					kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -503,7 +503,7 @@ func TestMutator(t *testing.T) {
 					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				Features: map[string]bool{
 					kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -535,7 +535,7 @@ func TestMutator(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -562,7 +562,7 @@ func TestMutator(t *testing.T) {
 					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -595,7 +595,7 @@ func TestMutator(t *testing.T) {
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -622,7 +622,7 @@ func TestMutator(t *testing.T) {
 					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
 					DNSDomain:                "example.local",
 					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+					NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -711,7 +711,7 @@ func TestMutator(t *testing.T) {
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					ProxyMode: resources.IPVSProxyMode,
 					IPVS: &kubermaticv1.IPVSConfiguration{
-						StrictArp: pointer.Bool(false),
+						StrictArp: pointer.BoolPtr(false),
 					},
 				},
 				Features: map[string]bool{
