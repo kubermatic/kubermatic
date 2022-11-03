@@ -87,7 +87,7 @@ func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDae
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "node-cache",
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.21.1", resources.RegistryK8S))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.22.13", resources.RegistryK8S))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",
