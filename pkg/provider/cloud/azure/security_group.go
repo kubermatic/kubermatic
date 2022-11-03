@@ -314,11 +314,11 @@ func compareSecurityRules(a []*armnetwork.SecurityRule, b []*armnetwork.Security
 		if *rule.Name != *ruleB.Name || rule.Properties.Direction != ruleB.Properties.Direction ||
 			rule.Properties.Protocol != ruleB.Properties.Protocol ||
 			rule.Properties.Access != ruleB.Properties.Access ||
-			!isEqualStringPtr(rule.Properties.SourceAddressPrefix, ruleB.Properties.SourceAddressPrefix) ||
-			!isEqualStringPtr(rule.Properties.SourcePortRange, ruleB.Properties.SourcePortRange) ||
-			!isEqualStringPtr(rule.Properties.DestinationPortRange, ruleB.Properties.DestinationPortRange) ||
-			!isEqualStringPtr(rule.Properties.DestinationAddressPrefix, ruleB.Properties.DestinationAddressPrefix) ||
-			!isEqualInt32Ptr(rule.Properties.Priority, ruleB.Properties.Priority) {
+			!isEqualString(rule.Properties.SourceAddressPrefix, ruleB.Properties.SourceAddressPrefix) ||
+			!isEqualString(rule.Properties.SourcePortRange, ruleB.Properties.SourcePortRange) ||
+			!isEqualString(rule.Properties.DestinationPortRange, ruleB.Properties.DestinationPortRange) ||
+			!isEqualString(rule.Properties.DestinationAddressPrefix, ruleB.Properties.DestinationAddressPrefix) ||
+			!isEqualInt32(rule.Properties.Priority, ruleB.Properties.Priority) {
 			return false
 		}
 	}
@@ -326,10 +326,10 @@ func compareSecurityRules(a []*armnetwork.SecurityRule, b []*armnetwork.Security
 	return true
 }
 
-func isEqualStringPtr(s1 *string, s2 *string) bool {
+func isEqualString(s1 *string, s2 *string) bool {
 	return s1 == nil && s2 == nil || (s1 != nil && s2 != nil && *s1 == *s2)
 }
 
-func isEqualInt32Ptr(s1 *int32, s2 *int32) bool {
+func isEqualInt32(s1 *int32, s2 *int32) bool {
 	return s1 == nil && s2 == nil || (s1 != nil && s2 != nil && *s1 == *s2)
 }

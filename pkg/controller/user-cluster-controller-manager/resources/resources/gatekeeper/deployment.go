@@ -101,7 +101,7 @@ func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.Ima
 				Labels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
 			}
 
-			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
+			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
@@ -161,10 +161,10 @@ func AuditDeploymentCreator(registryWithOverwrite registry.ImageRewriter, resour
 				Labels: resources.BaseAppLabels(auditName, gatekeeperAuditLabels),
 			}
 
-			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
+			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(true)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(true)
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
@@ -259,16 +259,16 @@ func getControllerContainers(enableMutation bool, imageRewriter registry.ImageRe
 			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: pointer.BoolPtr(false),
+			AllowPrivilegeEscalation: pointer.Bool(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"all",
 				},
 			},
-			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
-			RunAsGroup:             pointer.Int64Ptr(999),
-			RunAsNonRoot:           pointer.BoolPtr(true),
-			RunAsUser:              pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.Bool(true),
+			RunAsGroup:             pointer.Int64(999),
+			RunAsNonRoot:           pointer.Bool(true),
+			RunAsUser:              pointer.Int64(1000),
 		},
 	}}
 }
@@ -334,16 +334,16 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: pointer.BoolPtr(false),
+			AllowPrivilegeEscalation: pointer.Bool(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"all",
 				},
 			},
-			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
-			RunAsGroup:             pointer.Int64Ptr(999),
-			RunAsNonRoot:           pointer.BoolPtr(true),
-			RunAsUser:              pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.Bool(true),
+			RunAsGroup:             pointer.Int64(999),
+			RunAsNonRoot:           pointer.Bool(true),
+			RunAsUser:              pointer.Int64(1000),
 		},
 	}}
 }

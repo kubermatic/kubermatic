@@ -45,13 +45,13 @@ func ValidatingSnapshotWebhookConfigurationCreator(caCert *x509.Certificate, nam
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffect,
-					TimeoutSeconds:          pointer.Int32Ptr(2),
+					TimeoutSeconds:          pointer.Int32(2),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						Service: &admissionregistrationv1.ServiceReference{
 							Namespace: namespace,
 							Name:      resources.CSISnapshotValidationWebhookName,
 							Path:      pointer.String("/volumesnapshot"),
-							Port:      pointer.Int32Ptr(443),
+							Port:      pointer.Int32(443),
 						},
 						CABundle: triple.EncodeCertPEM(caCert),
 					},

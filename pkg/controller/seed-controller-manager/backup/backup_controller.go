@@ -400,9 +400,9 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster, cleanupContainer 
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:          utilpointer.Int32Ptr(10),
-			Completions:           utilpointer.Int32Ptr(1),
-			Parallelism:           utilpointer.Int32Ptr(1),
+			BackoffLimit:          utilpointer.Int32(10),
+			Completions:           utilpointer.Int32(1),
+			Parallelism:           utilpointer.Int32(1),
 			ActiveDeadlineSeconds: resources.Int64(30 * 60 * 60),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
@@ -445,8 +445,8 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster, storeContainer *core
 			// Spec
 			cronJob.Spec.Schedule = r.backupScheduleString
 			cronJob.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			cronJob.Spec.Suspend = utilpointer.BoolPtr(false)
-			cronJob.Spec.SuccessfulJobsHistoryLimit = utilpointer.Int32Ptr(0)
+			cronJob.Spec.Suspend = utilpointer.Bool(false)
+			cronJob.Spec.SuccessfulJobsHistoryLimit = utilpointer.Int32(0)
 
 			endpoints := etcd.GetClientEndpoints(cluster.Status.NamespaceName)
 			image := r.backupContainerImage

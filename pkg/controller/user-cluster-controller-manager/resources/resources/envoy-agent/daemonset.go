@@ -93,7 +93,7 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 				HostNetwork:                   true,
 				Volumes:                       getVolumes(),
 				RestartPolicy:                 corev1.RestartPolicyAlways,
-				TerminationGracePeriodSeconds: utilpointer.Int64Ptr(30),
+				TerminationGracePeriodSeconds: utilpointer.Int64(30),
 				SecurityContext: &corev1.PodSecurityContext{
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
@@ -202,7 +202,7 @@ func getVolumes() []corev1.Volume {
 			Name: "config-volume",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode),
+					DefaultMode: utilpointer.Int32(corev1.ConfigMapVolumeSourceDefaultMode),
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.EnvoyAgentConfigMapName,
 					},

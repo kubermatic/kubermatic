@@ -163,12 +163,12 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Azure: &kubermaticv1.DatacenterSpecAzure{},
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							Images:               imageList,
-							ManageSecurityGroups: pointer.BoolPtr(true),
-							UseOctavia:           pointer.BoolPtr(true),
+							ManageSecurityGroups: pointer.Bool(true),
+							UseOctavia:           pointer.Bool(true),
 							DNSServers:           []string{},
-							TrustDevicePath:      pointer.BoolPtr(false),
+							TrustDevicePath:      pointer.Bool(false),
 							EnabledFlavors:       []string{},
-							IPv6Enabled:          pointer.BoolPtr(false),
+							IPv6Enabled:          pointer.Bool(false),
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
@@ -178,7 +178,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{
 							Templates:           imageList,
 							InfraManagementUser: &kubermaticv1.VSphereCredentials{},
-							IPv6Enabled:         pointer.BoolPtr(false),
+							IPv6Enabled:         pointer.Bool(false),
 						},
 						GCP: &kubermaticv1.DatacenterSpecGCP{
 							ZoneSuffixes: []string{},
@@ -269,11 +269,11 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 	setUpdateDefaults := func(cfg *kubermaticv1.KubermaticVersioningConfiguration) {
 		if len(cfg.Updates) > 0 {
 			if cfg.Updates[0].Automatic == nil {
-				cfg.Updates[0].Automatic = pointer.BoolPtr(false)
+				cfg.Updates[0].Automatic = pointer.Bool(false)
 			}
 
 			if cfg.Updates[0].AutomaticNodeUpdate == nil {
-				cfg.Updates[0].AutomaticNodeUpdate = pointer.BoolPtr(false)
+				cfg.Updates[0].AutomaticNodeUpdate = pointer.Bool(false)
 			}
 		}
 	}

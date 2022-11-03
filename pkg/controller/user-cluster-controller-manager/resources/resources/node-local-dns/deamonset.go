@@ -69,7 +69,7 @@ func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDae
 			}
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
-			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)
+			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(0)
 			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
 				{
 					Effect:   corev1.TaintEffectNoSchedule,
@@ -145,7 +145,7 @@ func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDae
 					},
 
 					SecurityContext: &corev1.SecurityContext{
-						Privileged: pointer.BoolPtr(true),
+						Privileged: pointer.Bool(true),
 					},
 				},
 			}

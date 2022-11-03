@@ -52,10 +52,10 @@ floating-network-id = {{ .LoadBalancer.FloatingNetworkID | iniEscape }}
 lb-method = {{ default "ROUND_ROBIN" .LoadBalancer.LBMethod | iniEscape }}
 lb-provider = {{ .LoadBalancer.LBProvider | iniEscape }}
 {{- if .LoadBalancer.UseOctavia }}
-use-octavia = {{ .LoadBalancer.UseOctavia | boolPtr }}
+use-octavia = {{ .LoadBalancer.UseOctavia | Bool }}
 {{- end }}
 {{- if .LoadBalancer.EnableIngressHostname }}
-enable-ingress-hostname = {{ .LoadBalancer.EnableIngressHostname | boolPtr }}
+enable-ingress-hostname = {{ .LoadBalancer.EnableIngressHostname | Bool }}
 {{- if .LoadBalancer.IngressHostnameSuffix }}
 ingress-hostname-suffix = {{ .LoadBalancer.IngressHostnameSuffix | strPtr | iniEscape }}
 {{- end }}
@@ -137,7 +137,7 @@ type CloudConfig struct {
 func CloudConfigToString(c *CloudConfig) (string, error) {
 	funcMap := sprig.TxtFuncMap()
 	funcMap["iniEscape"] = ini.Escape
-	funcMap["boolPtr"] = func(b *bool) string { return strconv.FormatBool(*b) }
+	funcMap["Bool"] = func(b *bool) string { return strconv.FormatBool(*b) }
 	funcMap["strPtr"] = func(s *string) string { return *s }
 
 	tpl, err := template.New("cloud-config").Funcs(funcMap).Parse(cloudConfigTpl)
