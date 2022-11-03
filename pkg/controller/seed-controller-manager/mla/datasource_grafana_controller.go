@@ -408,15 +408,15 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluste
 		// that's mostly means that Grafana organization doesn't exists anymore
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(alertmanagerType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				err, pointer.StringDeref(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				err, pointer.StringDeref(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				err, pointer.StringDeref(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
 	if cluster.DeletionTimestamp.IsZero() && cluster.Status.NamespaceName != "" {
