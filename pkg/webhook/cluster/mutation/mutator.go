@@ -145,7 +145,7 @@ func (m *Mutator) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, con
 		switch {
 		case newCluster.Spec.Cloud.Openstack != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
-			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.BoolPtr(true)
+			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.Bool(true)
 
 		case newCluster.Spec.Cloud.VSphere != nil:
 			addCCMCSIMigrationAnnotations(newCluster)

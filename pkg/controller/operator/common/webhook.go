@@ -381,14 +381,14 @@ func SeedAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.Kubermat
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32Ptr(30),
+					TimeoutSeconds:          pointer.Int32(30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-seed"),
-							Port:      pointer.Int32Ptr(443),
+							Path:      pointer.String("/validate-kubermatic-k8c-io-v1-seed"),
+							Port:      pointer.Int32(443),
 						},
 					},
 					NamespaceSelector: &metav1.LabelSelector{
@@ -442,14 +442,14 @@ func KubermaticConfigurationAdmissionWebhookCreator(ctx context.Context, cfg *ku
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32Ptr(30),
+					TimeoutSeconds:          pointer.Int32(30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8c-io-v1-kubermaticconfiguration"),
-							Port:      pointer.Int32Ptr(443),
+							Path:      pointer.String("/validate-kubermatic-k8c-io-v1-kubermaticconfiguration"),
+							Port:      pointer.Int32(443),
 						},
 					},
 					NamespaceSelector: &metav1.LabelSelector{
@@ -499,14 +499,14 @@ func ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx context.Cont
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32Ptr(30),
+					TimeoutSeconds:          pointer.Int32(30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-application-definition"),
-							Port:      pointer.Int32Ptr(443),
+							Path:      pointer.String("/validate-application-definition"),
+							Port:      pointer.Int32(443),
 						},
 					},
 					ObjectSelector:    &metav1.LabelSelector{},

@@ -308,7 +308,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(0644),
+							DefaultMode: pointer.Int32(0644),
 						},
 					},
 				}},
@@ -320,7 +320,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				},
@@ -334,7 +334,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: pointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				}},
@@ -358,7 +358,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: pointer.Int32Ptr(0644),
+							DefaultMode: pointer.Int32(0644),
 						},
 					},
 				}},
@@ -370,7 +370,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: pointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				},
@@ -384,7 +384,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: pointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				}},

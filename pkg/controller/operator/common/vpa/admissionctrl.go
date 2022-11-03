@@ -60,7 +60,7 @@ func AdmissionControllerServiceAccountCreator() reconciling.NamedServiceAccountC
 func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return AdmissionControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32Ptr(1)
+			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: appPodLabels(AdmissionControllerName),
 			}

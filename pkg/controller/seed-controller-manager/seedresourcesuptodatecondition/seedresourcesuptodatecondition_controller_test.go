@@ -69,7 +69,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas:   1,
@@ -83,7 +83,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.DeploymentStatus{
 				UpdatedReplicas:   2,
@@ -97,7 +97,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas:   2,
@@ -111,7 +111,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.DeploymentStatus{
 				UpdatedReplicas:   2,

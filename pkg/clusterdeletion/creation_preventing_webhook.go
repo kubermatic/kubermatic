@@ -49,7 +49,7 @@ func creationPreventingWebhook(apiGroup string, resources []string) reconciling.
 				// Must be a domain with at least three segments separated by dots
 				vwc.Webhooks[0].Name = "kubernetes.cluster.cleanup"
 				vwc.Webhooks[0].ClientConfig = admissionregistrationv1.WebhookClientConfig{
-					URL: utilpointer.StringPtr("https://127.0.0.1:1"),
+					URL: utilpointer.String("https://127.0.0.1:1"),
 				}
 				vwc.Webhooks[0].Rules = []admissionregistrationv1.RuleWithOperations{
 					{

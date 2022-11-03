@@ -1121,9 +1121,9 @@ func (r *Reconciler) jobBase(backupConfig *kubermaticv1.EtcdBackupConfig, cluste
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:          utilpointer.Int32Ptr(3),
-			Completions:           utilpointer.Int32Ptr(1),
-			Parallelism:           utilpointer.Int32Ptr(1),
+			BackoffLimit:          utilpointer.Int32(3),
+			Completions:           utilpointer.Int32(1),
+			Parallelism:           utilpointer.Int32(1),
 			ActiveDeadlineSeconds: resources.Int64(2 * 60),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{

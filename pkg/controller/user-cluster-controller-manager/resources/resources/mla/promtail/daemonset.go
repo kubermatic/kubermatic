@@ -84,8 +84,8 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 			ds.Spec.Template.ObjectMeta.Labels = controllerLabels
 			ds.Spec.Template.Spec.ServiceAccountName = resources.PromtailServiceAccountName
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsUser:  pointer.Int64Ptr(0),
-				RunAsGroup: pointer.Int64Ptr(0),
+				RunAsUser:  pointer.Int64(0),
+				RunAsGroup: pointer.Int64(0),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -101,7 +101,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 						fmt.Sprintf("sysctl -w fs.inotify.max_user_instances=%d", inotifyMaxUserInstances),
 					},
 					SecurityContext: &corev1.SecurityContext{
-						Privileged: pointer.BoolPtr(true),
+						Privileged: pointer.Bool(true),
 					},
 				},
 			}
@@ -155,13 +155,13 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
-						AllowPrivilegeEscalation: pointer.BoolPtr(false),
+						AllowPrivilegeEscalation: pointer.Bool(false),
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
 								"all",
 							},
 						},
-						ReadOnlyRootFilesystem: pointer.BoolPtr(true),
+						ReadOnlyRootFilesystem: pointer.Bool(true),
 					},
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -214,7 +214,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.PromtailCertificatesSecretName,
-							DefaultMode: pointer.Int32Ptr(0400),
+							DefaultMode: pointer.Int32(0400),
 						},
 					},
 				},
