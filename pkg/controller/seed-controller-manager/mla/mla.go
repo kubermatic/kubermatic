@@ -187,6 +187,10 @@ func getDatasourceUIDForCluster(datasourceType string, cluster *kubermaticv1.Clu
 	return fmt.Sprintf("%s-%s", datasourceType, cluster.Name)
 }
 
+func getAlertmanagerDatasourceNameForCluster(cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("Alertmanager %s", cluster.Spec.HumanReadableName)
+}
+
 func getLokiDatasourceNameForCluster(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("Loki %s", cluster.Spec.HumanReadableName)
 }

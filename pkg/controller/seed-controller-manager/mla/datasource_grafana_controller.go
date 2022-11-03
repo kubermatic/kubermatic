@@ -49,8 +49,9 @@ import (
 )
 
 const (
-	PrometheusType = "prometheus"
-	lokiType       = "loki"
+	PrometheusType   = "prometheus"
+	lokiType         = "loki"
+	alertmanagerType = "alertmanager"
 )
 
 // datasourceGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -255,6 +256,22 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		return nil, fmt.Errorf("failed to reconcile Services in namespace %s: %w", "mla", err)
 	}
 
+	alertmanagerDS := grafanasdk.Datasource{
+		OrgID:  org.ID,
+		UID:    getDatasourceUIDForCluster(alertmanagerType, cluster),
+		Name:   getAlertmanagerDatasourceNameForCluster(cluster),
+		Type:   alertmanagerType,
+		Access: "proxy",
+		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
+		JSONData: map[string]interface{}{
+			"handleGrafanaManagedAlerts": true,
+			"implementation":             "cortex",
+		},
+	}
+	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled, alertmanagerDS, grafanaClient); err != nil {
+		return nil, fmt.Errorf("failed to ensure Grafana Alertmanager Datasources: %w", err)
+	}
+
 	lokiDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
 		UID:    getDatasourceUIDForCluster(lokiType, cluster),
@@ -262,6 +279,9 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		Type:   lokiType,
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
+		JSONData: map[string]interface{}{
+			"alertmanagerUid": getDatasourceUIDForCluster(alertmanagerType, cluster),
+		},
 	}
 	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS, grafanaClient); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
@@ -274,6 +294,10 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		Type:   PrometheusType,
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
+		JSONData: map[string]interface{}{
+			"alertmanagerUid": getDatasourceUIDForCluster(alertmanagerType, cluster),
+			"httpMethod":      "POST",
+		},
 	}
 	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled, prometheusDS, grafanaClient); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
@@ -382,6 +406,10 @@ func (r *datasourceGrafanaController) cleanUpMLAGatewayHealthStatus(ctx context.
 func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster, grafanaClient *grafanasdk.Client) error {
 	if grafanaClient != nil {
 		// that's mostly means that Grafana organization doesn't exists anymore
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(alertmanagerType, cluster)); err != nil {
+			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
+				err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+		}
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))

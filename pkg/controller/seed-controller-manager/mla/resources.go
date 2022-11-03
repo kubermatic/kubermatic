@@ -111,6 +111,16 @@ http {
 	  auth_basic off;
 	}
 
+	# Alertmanager Alerts
+	location ~ /api/prom/alertmanager/.* {
+	  proxy_pass      http://cortex-alertmanager.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
+	}
+	
+	# Alertmanager Config
+	location = /api/prom/api/v1/alerts {
+	  proxy_pass      http://cortex-alertmanager.{{ .Namespace }}.svc.cluster.local:8080/api/v1/alerts;
+	}
+
 	# Loki
 	location ~ /loki/api/.* {
 {{ if .LokiReadLimit }}
@@ -119,12 +129,22 @@ http {
 	  proxy_pass       http://loki-distributed-query-frontend.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
 
+	# Loki Ruler
+	location ~ /prometheus/.* {
+	  proxy_pass       http://loki-distributed-ruler.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
+	}
+
 	# Cortex
 	location ~ /api/prom/.* {
 {{ if .CortexReadLimit }}
       limit_req zone=cortex_read_limit{{ if .CortexReadLimitBurst }} burst={{ .CortexReadLimitBurst }} nodelay{{ end }};
 {{ end }}
 	  proxy_pass       http://cortex-query-frontend.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
+	}
+
+	# Cortex Ruler, alternative for /api/v1/rules which is also used by loki)
+	location = /api/prom/api/v1/rules {
+	  proxy_pass       http://cortex-ruler.{{ .Namespace }}.svc.cluster.local:8080/prometheus/api/v1/rules;
 	}
   }
 }
