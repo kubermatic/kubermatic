@@ -124,8 +124,6 @@ func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1
 
 func getVSphereCCMVersion(version semver.Semver) string {
 	switch version.MajorMinor() {
-	case v121:
-		return "1.21.3"
 	case v122:
 		return "1.22.6"
 	case v123:

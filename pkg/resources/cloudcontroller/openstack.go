@@ -126,8 +126,6 @@ func getOSFlags(data *resources.TemplateData) []string {
 
 func getOSVersion(version semver.Semver) (string, error) {
 	switch version.MajorMinor() {
-	case v121:
-		return "1.21.0", nil
 	case v122:
 		return "1.22.0", nil
 	case v123:
