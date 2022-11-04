@@ -28,6 +28,8 @@ const (
 )
 
 const (
+	ClusterTemplateLabelKey                  = "template-id"
+	ClusterTemplateInstanceLabelKey          = "template-instance-id"
 	ClusterTemplateScopeLabelKey             = "scope"
 	ClusterTemplateUserAnnotationKey         = "user"
 	ClusterTemplateProjectLabelKey           = "project-id"

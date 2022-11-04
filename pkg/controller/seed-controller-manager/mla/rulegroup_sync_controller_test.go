@@ -24,8 +24,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -134,7 +134,7 @@ func generateMLARuleGroup(name, namespace string, ruleGroupType kubermaticv1.Rul
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
 			RuleGroupType: ruleGroupType,
-			Data:          test.GenerateTestRuleGroupData(name),
+			Data:          generator.GenerateTestRuleGroupData(name),
 		},
 	}
 	if deleted {

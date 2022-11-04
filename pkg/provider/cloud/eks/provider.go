@@ -33,7 +33,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
@@ -46,6 +45,14 @@ import (
 
 const (
 	EKSNodeGroupStatus = "ACTIVE"
+
+	ARM64Architecture = "arm64"
+	X64Architecture   = "x64"
+
+	// The architecture of the machine image.
+	// Used for EKS api endpoints.
+	EKSARM64Architecture  = "arm64"
+	EKSX86_64Architecture = "x86_64"
 )
 
 type EKSCredentials struct {
@@ -331,9 +338,9 @@ func CreateNodeGroup(ctx context.Context,
 	switch {
 	case len(eksMDCloudSpec.AmiType) > 0:
 		amiType = eksMDCloudSpec.AmiType
-	case eksMDCloudSpec.Architecture == handlercommon.EKSARM64Architecture:
+	case eksMDCloudSpec.Architecture == EKSARM64Architecture:
 		amiType = string(ekstypes.AMITypesAl2Arm64)
-	case eksMDCloudSpec.Architecture == handlercommon.EKSX86_64Architecture:
+	case eksMDCloudSpec.Architecture == EKSX86_64Architecture:
 		amiType = string(ekstypes.AMITypesAl2X8664)
 	}
 

@@ -25,7 +25,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
@@ -288,12 +287,10 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	}
 	authToken := ""
 	if spec.UseToken {
-		t := ctx.Value(middleware.RawTokenContextKey)
-		token, ok := t.(string)
-		if !ok || token == "" {
+		if spec.Token == "" {
 			return false, fmt.Errorf("failed to get authentication token")
 		}
-		authToken = token
+		authToken = spec.Token
 	}
 
 	// move credentials into dedicated Secret

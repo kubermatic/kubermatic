@@ -28,9 +28,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -90,7 +90,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						MetricsRuleGroupConfigEndpoint+defaultNamespace,
-						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
+						bytes.NewBuffer(generator.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
 			},
@@ -118,7 +118,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						LogRuleGroupConfigEndpoint+defaultNamespace,
-						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
+						bytes.NewBuffer(generator.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
 			},
@@ -205,7 +205,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 }
 
 func generateRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType, deleted bool) *kubermaticv1.RuleGroup {
-	group := test.GenRuleGroup(name, clusterName, ruleGroupType, false)
+	group := generator.GenRuleGroup(name, clusterName, ruleGroupType, false)
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		group.DeletionTimestamp = &deleteTime

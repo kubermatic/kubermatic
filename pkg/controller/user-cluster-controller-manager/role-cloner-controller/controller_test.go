@@ -22,7 +22,7 @@ import (
 	"sort"
 	"testing"
 
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +61,7 @@ func TestReconcile(t *testing.T) {
 						Name:              "view",
 						Namespace:         "kube-system",
 						Finalizers:        []string{cleanupFinalizer},
-						Labels:            map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:            map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 						DeletionTimestamp: &nowTime,
 					},
 				},
@@ -69,14 +69,14 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 				},
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 				},
 				&corev1.Namespace{
@@ -100,21 +100,21 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{cleanupFinalizer},
-						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:     map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 				},
 			},
@@ -122,7 +122,7 @@ func TestReconcile(t *testing.T) {
 				&rbacv1.Role{ObjectMeta: metav1.ObjectMeta{
 					Name:      "view",
 					Namespace: "kube-system",
-					Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+					Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 				}},
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{Name: "default"},
@@ -145,7 +145,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{cleanupFinalizer},
-						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:     map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -159,7 +159,7 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -173,7 +173,7 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -190,7 +190,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{cleanupFinalizer},
-						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:     map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -204,14 +204,14 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 				},
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 				},
 				&corev1.Namespace{
@@ -235,7 +235,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{cleanupFinalizer},
-						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:     map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -249,7 +249,7 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:    map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -266,7 +266,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{cleanupFinalizer},
-						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+						Labels:     map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -321,7 +321,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			existingRoleList := &rbacv1.RoleList{}
-			if err := r.client.List(ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
+			if err := r.client.List(ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue}); err != nil {
 				t.Fatalf("failed to get role: %v", err)
 			}
 

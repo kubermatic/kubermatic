@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package test
+package generator
 
 import (
 	"crypto/sha256"
@@ -648,7 +648,7 @@ func GenClusterTemplateInstance(projectID, templateID, owner string, replicas in
 	return &kubermaticv1.ClusterTemplateInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        fmt.Sprintf("%s-%s", projectID, templateID),
-			Labels:      map[string]string{kubernetes.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
+			Labels:      map[string]string{kubermaticv1.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
 			Annotations: map[string]string{kubermaticv1.ClusterTemplateInstanceOwnerAnnotationKey: owner},
 		},
 		Spec: kubermaticv1.ClusterTemplateInstanceSpec{

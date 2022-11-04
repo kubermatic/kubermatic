@@ -21,7 +21,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
@@ -63,8 +62,8 @@ func ValidateUserCreate(user *kubermaticv1.User) field.ErrorList {
 	allErrs := ValidateUser(user)
 
 	if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
-		if _, exists := user.Labels[kubernetes.ServiceAccountLabelGroup]; !exists {
-			allErrs = append(allErrs, field.Required(field.NewPath("metadata", "labels"), fmt.Sprintf("service accounts must define their group using a %q label", kubernetes.ServiceAccountLabelGroup)))
+		if _, exists := user.Labels[kubermaticv1.ServiceAccountInitialGroupLabel]; !exists {
+			allErrs = append(allErrs, field.Required(field.NewPath("metadata", "labels"), fmt.Sprintf("service accounts must define their group using a %q label", kubermaticv1.ServiceAccountInitialGroupLabel)))
 		}
 	}
 

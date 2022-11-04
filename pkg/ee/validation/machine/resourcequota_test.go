@@ -32,8 +32,8 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/machine"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -85,7 +85,7 @@ func TestResourceQuotaValidation(t *testing.T) {
 }
 
 func genFakeMachine(cpu, memory, storage string) *clusterv1alpha1.Machine {
-	return test.GenTestMachine("fake",
+	return generator.GenTestMachine("fake",
 		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s"}}`, cpu, memory, storage),
 		nil, nil)
 }

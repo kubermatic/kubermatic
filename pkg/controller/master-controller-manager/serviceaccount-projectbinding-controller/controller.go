@@ -27,7 +27,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -195,7 +194,7 @@ func (r *reconcileServiceAccountProjectBinding) reconcile(ctx context.Context, l
 	// is valid for all UserProjectBindings, not just those created for service
 	// account Users.
 
-	group, hasGroupLabel := user.Labels[serviceaccount.ServiceAccountLabelGroup]
+	group, hasGroupLabel := user.Labels[kubermaticv1.ServiceAccountInitialGroupLabel]
 	if hasGroupLabel {
 		binding.Spec.Group = group
 	}
@@ -206,7 +205,7 @@ func (r *reconcileServiceAccountProjectBinding) reconcile(ctx context.Context, l
 
 	// remove labelGroup from the User object
 	if hasGroupLabel {
-		delete(user.Labels, serviceaccount.ServiceAccountLabelGroup)
+		delete(user.Labels, kubermaticv1.ServiceAccountInitialGroupLabel)
 		if err := r.Update(ctx, user); err != nil {
 			return fmt.Errorf("failed to remove label from User: %w", err)
 		}
@@ -244,9 +243,9 @@ func (r *reconcileServiceAccountProjectBinding) ensureOwnerReference(ctx context
 }
 
 func (r *reconcileServiceAccountProjectBinding) createBinding(ctx context.Context, sa *kubermaticv1.User, projectName string) (*kubermaticv1.UserProjectBinding, error) {
-	group, ok := sa.Labels[serviceaccount.ServiceAccountLabelGroup]
+	group, ok := sa.Labels[kubermaticv1.ServiceAccountInitialGroupLabel]
 	if !ok {
-		return nil, fmt.Errorf("label %s not found", serviceaccount.ServiceAccountLabelGroup)
+		return nil, fmt.Errorf("label %s not found", kubermaticv1.ServiceAccountInitialGroupLabel)
 	}
 
 	binding := &kubermaticv1.UserProjectBinding{
