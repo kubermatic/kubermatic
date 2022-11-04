@@ -71,6 +71,9 @@ linters:
 # NOTE: Do not use commas in the exclude patterns, or else the regex will be
 # split and you will be sad: https://github.com/golangci/golangci-lint/issues/665
 issues:
+  # defaults to 3, which often needlessly hides issues and forces
+  # to re-run the linter across the entire repo many times
+  max-same-issues: 50
   exclude:
   # gocyclo
   - cyclomatic complexity [0-9]+ of func `main` is high

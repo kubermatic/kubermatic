@@ -19,6 +19,7 @@ package hetzner
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -110,4 +111,30 @@ func ValidateCredentials(ctx context.Context, token string) error {
 	opts.PerPage = 1
 	_, _, err := client.Location.List(timeout, opts)
 	return err
+}
+
+func GetServerType(ctx context.Context, token string, serverTypeName string) (*provider.NodeCapacity, error) {
+	if token == "" {
+		return nil, fmt.Errorf("hetzner token cannot be empty")
+	}
+
+	hClient := hcloud.NewClient(hcloud.WithToken(token))
+
+	serverType, _, err := hClient.ServerType.Get(ctx, serverTypeName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get server type %q: %w", serverTypeName, err)
+	}
+
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(serverType.Cores)
+
+	if err := capacity.WithMemory(int(serverType.Memory), "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
+	}
+
+	if err := capacity.WithStorage(serverType.Disk, "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse disk size: %w", err)
+	}
+
+	return capacity, err
 }

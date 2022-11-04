@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -28,6 +29,7 @@ import (
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -201,4 +203,48 @@ type PrivilegedExternalClusterProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resources
 	GetMasterClient() ctrlruntimeclient.Client
+}
+
+// NodeCapacity represents the size of a cluster node in a Kubernetes cluster.
+type NodeCapacity struct {
+	CPUCores *resource.Quantity
+	GPUs     *resource.Quantity
+	Memory   *resource.Quantity
+	Storage  *resource.Quantity
+}
+
+func NewNodeCapacity() *NodeCapacity {
+	return &NodeCapacity{}
+}
+
+func (c *NodeCapacity) WithCPUCount(cpus int) {
+	quantity, _ := resource.ParseQuantity(strconv.Itoa(cpus))
+	c.CPUCores = &quantity
+}
+
+func (c *NodeCapacity) WithGPUCount(gpus int) {
+	quantity, _ := resource.ParseQuantity(strconv.Itoa(gpus))
+	c.GPUs = &quantity
+}
+
+func (c *NodeCapacity) WithMemory(value int, unit string) error {
+	quantity, err := resource.ParseQuantity(fmt.Sprintf("%d%s", value, unit))
+	if err != nil {
+		return err
+	}
+
+	c.Memory = &quantity
+
+	return nil
+}
+
+func (c *NodeCapacity) WithStorage(value int, unit string) error {
+	quantity, err := resource.ParseQuantity(fmt.Sprintf("%d%s", value, unit))
+	if err != nil {
+		return err
+	}
+
+	c.Storage = &quantity
+
+	return nil
 }

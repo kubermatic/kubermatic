@@ -17,12 +17,16 @@ limitations under the License.
 package azure
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 func ignoreNotFound(err error) error {
@@ -56,4 +60,45 @@ func hasOwnershipTag(tags map[string]*string, cluster *kubermaticv1.Cluster) boo
 	}
 
 	return false
+}
+
+func GetVMSize(ctx context.Context, credentials Credentials, location, vmName string) (*provider.NodeCapacity, error) {
+	credential, err := credentials.ToAzureCredential()
+	if err != nil {
+		return nil, fmt.Errorf("invalid credentials: %w", err)
+	}
+
+	sizesClient, err := getSizesClient(credential, credentials.SubscriptionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for size client: %w", err)
+	}
+
+	// get all available VM size types for given location
+	pager := sizesClient.NewListPager(location, nil)
+
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list sizes: %w", err)
+		}
+
+		for _, size := range page.Value {
+			if strings.EqualFold(*size.Name, vmName) {
+				capacity := provider.NewNodeCapacity()
+				capacity.WithCPUCount(int(*size.NumberOfCores))
+
+				if err := capacity.WithMemory(int(*size.MemoryInMB), "M"); err != nil {
+					return nil, fmt.Errorf("error parsing machine memory: %w", err)
+				}
+
+				if err := capacity.WithStorage(int(*size.ResourceDiskSizeInMB), "M"); err != nil {
+					return nil, fmt.Errorf("error parsing machine disk size: %w", err)
+				}
+
+				return capacity, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("could not find Azure VM size %q", vmName)
 }

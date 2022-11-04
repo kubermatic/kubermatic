@@ -19,12 +19,18 @@ package packet
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/packethost/packngo"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
@@ -116,4 +122,80 @@ func ValidateCredentials(apiKey, projectID string) error {
 	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
 	_, _, err := client.Projects.Get(projectID, nil)
 	return err
+}
+
+// Used to decode response object.
+type plansRoot struct {
+	Plans []packngo.Plan `json:"plans"`
+}
+
+func DescribeSize(apiKey, projectID, instanceType string) (*provider.NodeCapacity, error) {
+	if len(apiKey) == 0 {
+		return nil, fmt.Errorf("missing required parameter: apiKey")
+	}
+
+	if len(projectID) == 0 {
+		return nil, fmt.Errorf("missing required parameter: projectID")
+	}
+
+	packetclient := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
+	req, err := packetclient.NewRequest(http.MethodGet, "/projects/"+projectID+"/plans", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	root := new(plansRoot)
+	_, err = packetclient.Do(req, root)
+	if err != nil {
+		return nil, err
+	}
+
+	plans := root.Plans
+	for _, currentPlan := range plans {
+		if currentPlan.Slug == instanceType {
+			var totalCPUs int
+			for _, cpu := range currentPlan.Specs.Cpus {
+				totalCPUs += cpu.Count
+			}
+
+			var storageReq, memReq resource.Quantity
+			for _, drive := range currentPlan.Specs.Drives {
+				if drive.Size == "" || drive.Count == 0 {
+					continue
+				}
+
+				// trimming "B" as quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'.
+				storage, err := resource.ParseQuantity(strings.TrimSuffix(drive.Size, "B"))
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse plan disk size %q: %w", drive.Size, err)
+				}
+
+				// total storage for each types = drive count *drive Size.
+				strDrive := strconv.FormatInt(storage.Value()*int64(drive.Count), 10)
+				totalStorage, err := resource.ParseQuantity(strDrive)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+				}
+
+				// Adding storage value for all storage types like "SSD", "NVME".
+				storageReq.Add(totalStorage)
+			}
+
+			if currentPlan.Specs.Memory.Total != "" {
+				memReq, err = resource.ParseQuantity(strings.TrimSuffix(currentPlan.Specs.Memory.Total, "B"))
+				if err != nil {
+					return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+				}
+			}
+
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(totalCPUs)
+			capacity.Memory = &memReq
+			capacity.Storage = &storageReq
+
+			return capacity, nil
+		}
+	}
+
+	return nil, fmt.Errorf("instance type %q not found", instanceType)
 }

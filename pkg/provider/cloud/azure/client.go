@@ -91,42 +91,38 @@ type ClientSet struct {
 }
 
 // GetClientSet returns a ClientSet using the passed credentials as authorization.
-func GetClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
-	return getClientSet(cloud, credentials)
-}
-
-func getClientSet(cloud kubermaticv1.CloudSpec, credentials Credentials) (*ClientSet, error) {
+func GetClientSet(credentials Credentials) (*ClientSet, error) {
 	credential, err := credentials.ToAzureCredential()
 	if err != nil {
 		return nil, err
 	}
 
-	groupsClient, err := getGroupsClient(cloud, credential, credentials.SubscriptionID)
+	groupsClient, err := getGroupsClient(credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	networksClient, err := getNetworksClient(cloud, credential, credentials.SubscriptionID)
+	networksClient, err := getNetworksClient(credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	subnetsClient, err := getSubnetsClient(cloud, credential, credentials.SubscriptionID)
+	subnetsClient, err := getSubnetsClient(credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	routeTablesClient, err := getRouteTablesClient(cloud, credential, credentials.SubscriptionID)
+	routeTablesClient, err := getRouteTablesClient(credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	securityGroupsClient, err := getSecurityGroupsClient(cloud, credential, credentials.SubscriptionID)
+	securityGroupsClient, err := getSecurityGroupsClient(credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
 
-	availabilitySetsClient, err := getAvailabilitySetClient(cloud, credential, credentials.SubscriptionID)
+	availabilitySetsClient, err := getAvailabilitySetClient(credential, credentials.SubscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -208,56 +204,30 @@ func ValidateCredentials(ctx context.Context, credentials *azidentity.ClientSecr
 	return err
 }
 
-func getGroupsClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
-	groupsClient, err := armresources.NewResourceGroupsClient(subscriptionID, credentials, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return groupsClient, nil
+func getGroupsClient(credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
+	return armresources.NewResourceGroupsClient(subscriptionID, credentials, nil)
 }
 
-func getNetworksClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.VirtualNetworksClient, error) {
-	networksClient, err := armnetwork.NewVirtualNetworksClient(subscriptionID, credentials, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return networksClient, nil
+func getNetworksClient(credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.VirtualNetworksClient, error) {
+	return armnetwork.NewVirtualNetworksClient(subscriptionID, credentials, nil)
 }
 
-func getSubnetsClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.SubnetsClient, error) {
-	subnetsClient, err := armnetwork.NewSubnetsClient(subscriptionID, credentials, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return subnetsClient, nil
+func getSubnetsClient(credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.SubnetsClient, error) {
+	return armnetwork.NewSubnetsClient(subscriptionID, credentials, nil)
 }
 
-func getRouteTablesClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.RouteTablesClient, error) {
-	routeTablesClient, err := armnetwork.NewRouteTablesClient(subscriptionID, credentials, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return routeTablesClient, nil
+func getRouteTablesClient(credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.RouteTablesClient, error) {
+	return armnetwork.NewRouteTablesClient(subscriptionID, credentials, nil)
 }
 
-func getSecurityGroupsClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.SecurityGroupsClient, error) {
-	securityGroupsClient, err := armnetwork.NewSecurityGroupsClient(subscriptionID, credentials, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return securityGroupsClient, nil
+func getSecurityGroupsClient(credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armnetwork.SecurityGroupsClient, error) {
+	return armnetwork.NewSecurityGroupsClient(subscriptionID, credentials, nil)
 }
 
-func getAvailabilitySetClient(cloud kubermaticv1.CloudSpec, credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armcompute.AvailabilitySetsClient, error) {
-	asClient, err := armcompute.NewAvailabilitySetsClient(subscriptionID, credentials, nil)
-	if err != nil {
-		return nil, err
-	}
+func getAvailabilitySetClient(credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armcompute.AvailabilitySetsClient, error) {
+	return armcompute.NewAvailabilitySetsClient(subscriptionID, credentials, nil)
+}
 
-	return asClient, nil
+func getSizesClient(credentials *azidentity.ClientSecretCredential, subscriptionID string) (*armcompute.VirtualMachineSizesClient, error) {
+	return armcompute.NewVirtualMachineSizesClient(subscriptionID, credentials, nil)
 }
