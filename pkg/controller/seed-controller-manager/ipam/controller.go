@@ -214,6 +214,22 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Context, ipamPoolName, dc string, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings) (sets.String, error) {
 	dcIPAMPoolUsageMap := sets.NewString()
 
+	// Check for exclusions in the configuration to mark them as "not free"
+	switch dcIPAMPoolCfg.Type {
+	case kubermaticv1.IPAMPoolAllocationTypeRange:
+		ipsToExclude, err := getIPsFromAddressRanges(dcIPAMPoolCfg.ExcludeRanges)
+		if err != nil {
+			return nil, err
+		}
+		for _, ipToExclude := range ipsToExclude {
+			dcIPAMPoolUsageMap.Insert(ipToExclude)
+		}
+	case kubermaticv1.IPAMPoolAllocationTypePrefix:
+		for _, subnetCIDRToExclude := range dcIPAMPoolCfg.ExcludePrefixes {
+			dcIPAMPoolUsageMap.Insert(string(subnetCIDRToExclude))
+		}
+	}
+
 	// List all IPAM allocations
 	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
 	err := r.Client.List(ctx, ipamAllocationList)
@@ -231,7 +247,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 
 		switch ipamAllocation.Spec.Type {
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			currentAllocatedIPs, err := getUsedIPsFromAddressRanges(ipamAllocation.Spec.Addresses)
+			currentAllocatedIPs, err := getIPsFromAddressRanges(ipamAllocation.Spec.Addresses)
 			if err != nil {
 				return nil, err
 			}

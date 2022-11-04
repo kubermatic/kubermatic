@@ -25,29 +25,33 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func getUsedIPsFromAddressRanges(addressRanges []string) ([]string, error) {
-	usedIPs := []string{}
+func getIPsFromAddressRanges(addressRanges []string) ([]string, error) {
+	ips := []string{}
 
 	for _, addressRange := range addressRanges {
 		ipRange := strings.SplitN(addressRange, "-", 2)
-		if len(ipRange) != 2 {
+		if len(ipRange) != 2 && len(ipRange) != 1 {
 			return nil, errors.New("wrong ip range format")
 		}
 		firstIP := net.ParseIP(ipRange[0])
 		if firstIP == nil {
 			return nil, errors.New("wrong ip format")
 		}
-		lastIP := net.ParseIP(ipRange[1])
-		if lastIP == nil {
-			return nil, errors.New("wrong ip format")
+		if len(ipRange) == 2 {
+			lastIP := net.ParseIP(ipRange[1])
+			if lastIP == nil {
+				return nil, errors.New("wrong ip format")
+			}
+			for ip := firstIP; !ip.Equal(lastIP); ip = incIP(ip) {
+				ips = append(ips, ip.String())
+			}
+			ips = append(ips, lastIP.String())
+		} else {
+			ips = append(ips, firstIP.String())
 		}
-		for ip := firstIP; !ip.Equal(lastIP); ip = incIP(ip) {
-			usedIPs = append(usedIPs, ip.String())
-		}
-		usedIPs = append(usedIPs, lastIP.String())
 	}
 
-	return usedIPs, nil
+	return ips, nil
 }
 
 func checkRangeAllocation(ips []string, poolCIDR string, allocationRange int) error {
