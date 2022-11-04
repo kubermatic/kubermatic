@@ -30,6 +30,8 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -46,6 +48,7 @@ func TestValidator(t *testing.T) {
 		op            admissionv1.Operation
 		ipamPool      *kubermaticv1.IPAMPool
 		oldIPAMPool   *kubermaticv1.IPAMPool
+		objects       []ctrlruntimeclient.Object
 		expectedError error
 	}{
 		{
@@ -616,11 +619,411 @@ func TestValidator(t *testing.T) {
 			},
 			expectedError: fmt.Errorf("invalid length for subnet to exclude \"%s\": must be the same as the pool allocation prefix (%d)", "192.168.1.8/30", 30),
 		},
+		{
+			name: "updated range exclusions: no new exclusions",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.2-192.168.1.10"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.1", "192.168.1.2-192.168.1.10", "192.168.1.11-192.168.1.11"},
+						},
+					},
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			name: "added range exclusions: no conflict with allocations",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.6-192.168.1.7", "192.168.1.10-192.168.1.11", "192.168.1.13-192.168.1.13", "192.168.1.14"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            kubermaticv1.IPAMPoolAllocationTypeRange,
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.6", "192.168.1.7-192.168.1.7"},
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "dc",
+						Addresses: []string{"192.168.1.0-192.168.1.5", "192.168.1.8-192.168.1.9"},
+					},
+				},
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "dc2",
+						Addresses: []string{"192.168.1.0-192.168.1.5", "192.168.1.8-192.168.1.9"},
+					},
+				},
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool-2",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "dc",
+						Addresses: []string{"192.168.1.0-192.168.1.7"},
+					},
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			name: "added range exclusions: conflict with allocation, case 1",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.6"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            kubermaticv1.IPAMPoolAllocationTypeRange,
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{},
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "dc",
+						Addresses: []string{"192.168.1.0-192.168.1.7"},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("failed to add exclusion: there is an conflicted allocation in IPAM pool \"%s\" and datacenter \"%s\"", "test-pool", "dc"),
+		},
+		{
+			name: "added range exclusions: conflict with allocation, case 2",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.6-192.168.1.8"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            kubermaticv1.IPAMPoolAllocationTypeRange,
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+							ExcludeRanges:   []string{"192.168.1.6"},
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "dc",
+						Addresses: []string{"192.168.1.0-192.168.1.5", "192.168.1.7-192.168.1.8"},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("failed to add exclusion: there is an conflicted allocation in IPAM pool \"%s\" and datacenter \"%s\"", "test-pool", "dc"),
+		},
+		{
+			name: "added range exclusions: conflict with allocation, case 3",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 7,
+							ExcludeRanges:   []string{"192.168.1.6-192.168.1.8"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            kubermaticv1.IPAMPoolAllocationTypeRange,
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 7,
+							ExcludeRanges:   []string{"192.168.1.0", "192.168.1.6-192.168.1.7"},
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "dc",
+						Addresses: []string{"192.168.1.1-192.168.1.5", "192.168.1.8-192.168.1.9"},
+					},
+				},
+			},
+			expectedError: fmt.Errorf("failed to add exclusion: there is an conflicted allocation in IPAM pool \"%s\" and datacenter \"%s\"", "test-pool", "dc"),
+		},
+		{
+			name: "updated prefix exclusions: no new exclusions",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 30,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.0.0/30"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 30,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.0.0/30", "192.168.0.4/30"},
+						},
+					},
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			name: "added prefix exclusions: no conflict with allocations",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 30,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.0.0/30", "192.168.0.8/30"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             kubermaticv1.IPAMPoolAllocationTypePrefix,
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 30,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.0.0/30"},
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
+						DC:   "dc",
+						CIDR: "192.168.0.4/30",
+					},
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			name: "added prefix exclusions: conflict with allocation",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 30,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.0.0/30", "192.168.0.4/30"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             kubermaticv1.IPAMPoolAllocationTypePrefix,
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 30,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.0.0/30"},
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
+						DC:   "dc",
+						CIDR: "192.168.0.4/30",
+					},
+				},
+			},
+			expectedError: fmt.Errorf("failed to add exclusion: there is an conflicted allocation in IPAM pool \"%s\" and datacenter \"%s\"", "test-pool", "dc"),
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			validator := NewValidator()
+			seedClient := ctrlruntimefakeclient.
+				NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(tc.objects...).
+				Build()
+
+			validator := NewValidator(
+				func() (*kubermaticv1.Seed, error) {
+					return &kubermaticv1.Seed{}, nil
+				},
+				func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+					return seedClient, nil
+				})
 
 			ctx := context.Background()
 			var err error
