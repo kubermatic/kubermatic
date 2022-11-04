@@ -92,8 +92,8 @@ func ValidateUserUpdate(oldUser, newUser *kubermaticv1.User) field.ErrorList {
 func ValidateUserDelete(ctx context.Context,
 	user *kubermaticv1.User,
 	client ctrlruntimeclient.Client,
-	seedClientGetter provider.SeedClientGetter,
-	namespace string) error {
+	seedsGetter provider.SeedsGetter,
+	seedClientGetter provider.SeedClientGetter) error {
 	projects, err := kubermaticv1helper.GetUserOwnedProjects(ctx, client, user.Name)
 	if err != nil {
 		return err
@@ -117,15 +117,12 @@ func ValidateUserDelete(ctx context.Context,
 		}
 
 		// if project has clusters on any seed
-		listOpts := &ctrlruntimeclient.ListOptions{
-			Namespace: namespace,
-		}
-		seeds := &kubermaticv1.SeedList{}
-		if err := client.List(ctx, seeds, listOpts); err != nil {
+		seeds, err := seedsGetter()
+		if err != nil {
 			return fmt.Errorf("failed to list the seeds: %w", err)
 		}
-		for _, seed := range seeds.Items {
-			seedClient, err := seedClientGetter(&seed)
+		for _, seed := range seeds {
+			seedClient, err := seedClientGetter(seed)
 			if err != nil {
 				return fmt.Errorf("failed to get Seed client: %w", err)
 			}

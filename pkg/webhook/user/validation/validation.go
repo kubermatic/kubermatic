@@ -35,18 +35,18 @@ import (
 // validator for validating Kubermatic User CRD.
 type validator struct {
 	client           ctrlruntimeclient.Client
+	seedsGetter      provider.SeedsGetter
 	seedClientGetter provider.SeedClientGetter
-	namespace        string
 }
 
 // NewValidator returns a new user validator.
 func NewValidator(client ctrlruntimeclient.Client,
-	seedClientGetter provider.SeedClientGetter,
-	namespace string) *validator {
+	seedsGetter provider.SeedsGetter,
+	seedClientGetter provider.SeedClientGetter) *validator {
 	return &validator{
 		client:           client,
+		seedsGetter:      seedsGetter,
 		seedClientGetter: seedClientGetter,
-		namespace:        namespace,
 	}
 }
 
@@ -93,7 +93,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 		return errors.New("object is not a User")
 	}
 
-	return validation.ValidateUserDelete(ctx, user, v.client, v.seedClientGetter, v.namespace)
+	return validation.ValidateUserDelete(ctx, user, v.client, v.seedsGetter, v.seedClientGetter)
 }
 
 func (v *validator) validateProjectRelationship(ctx context.Context, user *kubermaticv1.User, oldUser *kubermaticv1.User) *field.Error {
