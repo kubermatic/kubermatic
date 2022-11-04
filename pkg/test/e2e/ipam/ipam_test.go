@@ -77,7 +77,7 @@ func TestIPAM(t *testing.T) {
 	ipamPool1, err := createNewIPAMPool(ctx, seedClient, "metallb", map[string]kubermaticv1.IPAMPoolDatacenterSettings{
 		credentials.KKPDatacenter: {
 			Type:            "range",
-			PoolCIDR:        "192.168.1.0/28",
+			PoolCIDR:        "192.168.1.0/27",
 			AllocationRange: 8,
 			ExcludeRanges:   []string{"192.168.1.3", "192.168.1.5-192.168.1.5", "192.168.1.8-192.168.1.10"},
 		},
