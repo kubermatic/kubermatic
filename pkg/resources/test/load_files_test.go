@@ -74,6 +74,9 @@ var (
 		{
 			Version: semverlib.MustParse("1.24.0"),
 		},
+		{
+			Version: semverlib.MustParse("1.25.0"),
+		},
 	}
 
 	featureSets = []map[string]bool{
@@ -123,6 +126,12 @@ var (
 				SecurityGroupID:      "aws-security-group",
 				VPCID:                "aws-vpn-id",
 				ControlPlaneRoleARN:  "aws-role-arn",
+			},
+		},
+		"gcp": {
+			ProviderName: string(kubermaticv1.GCPCloudProvider),
+			GCP: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount: "eyJ0aGlzaXMiOiJqc29uIn0=",
 			},
 		},
 		"openstack": {
@@ -586,6 +595,13 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.CloudConfigSeedSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.GoogleServiceAccountSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},

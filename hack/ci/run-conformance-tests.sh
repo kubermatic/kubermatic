@@ -136,6 +136,5 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -distributions="${DISTRIBUTIONS:-}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS:-}" \
   -exclude-tests="${EXCLUDE_TESTS:-}" \
-  -enable-psp=${KUBERMATIC_PSP_ENABLED:-false} \
   -enable-osm=${KUBERMATIC_OSM_ENABLED:-true} \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"
