@@ -123,7 +123,7 @@ usercluster-mla)
     --config "$KUBERMATIC_CONFIG" \
     --helm-values "$VALUES_FILE" \
     --mla-include-iap \
-    --timeout=30m
+    --helm-timeout=30m
   ;;
 
 kubermatic)
