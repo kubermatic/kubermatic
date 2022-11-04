@@ -55,7 +55,7 @@ const (
 )
 
 func getMeteringImage(overwriter registry.ImageRewriter) string {
-	return registry.Must(overwriter(resources.RegistryQuay + "/kubermatic/metering:v1.0.0"))
+	return registry.Must(overwriter(resources.RegistryQuay + "/kubermatic/metering:v1.0.1"))
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
