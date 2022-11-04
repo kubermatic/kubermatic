@@ -22,6 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/webhook/util"
 
@@ -33,13 +34,19 @@ import (
 
 // validator for validating Kubermatic User CRD.
 type validator struct {
-	client ctrlruntimeclient.Client
+	client           ctrlruntimeclient.Client
+	seedClientGetter provider.SeedClientGetter
+	namespace        string
 }
 
 // NewValidator returns a new user validator.
-func NewValidator(client ctrlruntimeclient.Client) *validator {
+func NewValidator(client ctrlruntimeclient.Client,
+	seedClientGetter provider.SeedClientGetter,
+	namespace string) *validator {
 	return &validator{
-		client: client,
+		client:           client,
+		seedClientGetter: seedClientGetter,
+		namespace:        namespace,
 	}
 }
 
@@ -86,7 +93,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 		return errors.New("object is not a User")
 	}
 
-	return validation.ValidateUserDelete(ctx, user, v.client)
+	return validation.ValidateUserDelete(ctx, user, v.client, v.seedClientGetter, v.namespace)
 }
 
 func (v *validator) validateProjectRelationship(ctx context.Context, user *kubermaticv1.User, oldUser *kubermaticv1.User) *field.Error {

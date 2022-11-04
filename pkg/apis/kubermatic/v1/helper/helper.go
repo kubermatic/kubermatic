@@ -355,36 +355,20 @@ func UpdateResourceQuotaStatus(ctx context.Context, client ctrlruntimeclient.Cli
 	})
 }
 
-func HasClusters(ctx context.Context, client ctrlruntimeclient.Client, projectName string) (bool, error) {
+func HasClusters(ctx context.Context, client ctrlruntimeclient.Client, projectID string) (bool, error) {
 	clusterList := &kubermaticv1.ClusterList{}
-	if err := client.List(ctx, clusterList); err != nil {
+	if err := client.List(ctx, clusterList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
 		return false, fmt.Errorf("failed to list clusters: %w", err)
 	}
 
-	for _, cluster := range clusterList.Items {
-		if val, ok := cluster.ObjectMeta.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
-			if val == projectName {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
+	return len(clusterList.Items) > 0, nil
 }
 
-func HasExternalClusters(ctx context.Context, client ctrlruntimeclient.Client, projectName string) (bool, error) {
+func HasExternalClusters(ctx context.Context, client ctrlruntimeclient.Client, projectID string) (bool, error) {
 	extClusterList := &kubermaticv1.ExternalClusterList{}
-	if err := client.List(ctx, extClusterList); err != nil {
+	if err := client.List(ctx, extClusterList, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
 		return false, fmt.Errorf("failed to list external clusters: %w", err)
 	}
 
-	for _, extCluster := range extClusterList.Items {
-		if val, ok := extCluster.ObjectMeta.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
-			if val == projectName {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
+	return len(extClusterList.Items) > 0, nil
 }
