@@ -229,20 +229,6 @@ var (
 			newSemver("v1.25.2"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.22 =======
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2021-3711 (fixed >= 1.22.4)
-				// - CVE-2021-3712 (fixed >= 1.22.4)
-				// - CVE-2021-33910 (fixed >= 1.22.4)
-				// - CVE-2021-44716 (fixed >= 1.22.5)
-				// - CVE-2021-44717 (fixed >= 1.22.5)
-				// - CVE-2022-3172 (fixed >= 1.22.14)
-				// - CVE-2021-25749 (fixed >= 1.22.14)
-				From:      ">= 1.22.0, < 1.22.15",
-				To:        "1.22.15",
-				Automatic: pointer.Bool(true),
-			},
 			{
 				// Allow to next minor release
 				From: "1.22.*",
