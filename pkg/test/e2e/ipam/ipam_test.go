@@ -79,6 +79,7 @@ func TestIPAM(t *testing.T) {
 			Type:            "range",
 			PoolCIDR:        "192.168.1.0/28",
 			AllocationRange: 8,
+			ExcludeRanges:   []string{"192.168.1.3", "192.168.1.5-192.168.1.5", "192.168.1.8-192.168.1.10"},
 		},
 	})
 	if err != nil {
@@ -89,7 +90,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        credentials.KKPDatacenter,
-		Addresses: []string{"192.168.1.0-192.168.1.7"},
+		Addresses: []string{"192.168.1.0-192.168.1.2", "192.168.1.4-192.168.1.4", "192.168.1.6-192.168.1.7", "192.168.1.11-192.168.1.12"},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +100,8 @@ func TestIPAM(t *testing.T) {
 		credentials.KKPDatacenter: {
 			Type:             "prefix",
 			PoolCIDR:         "192.169.1.0/27",
-			AllocationPrefix: 28,
+			AllocationPrefix: 29,
+			ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.169.1.0/29", "192.169.1.24/29"},
 		},
 	})
 	if err != nil {
@@ -110,7 +112,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient1, cluster1, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   credentials.KKPDatacenter,
-		CIDR: "192.169.1.0/28",
+		CIDR: "192.169.1.8/29",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +127,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        credentials.KKPDatacenter,
-		Addresses: []string{"192.168.1.8-192.168.1.15"},
+		Addresses: []string{"192.168.1.13-192.168.1.20"},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +136,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient2, cluster2, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   credentials.KKPDatacenter,
-		CIDR: "192.169.1.16/28",
+		CIDR: "192.169.1.16/29",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +212,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool1.Name, kubermaticv1.IPAMAllocationSpec{
 		Type:      "range",
 		DC:        credentials.KKPDatacenter,
-		Addresses: []string{"192.168.1.0-192.168.1.7"},
+		Addresses: []string{"192.168.1.0-192.168.1.2", "192.168.1.4-192.168.1.4", "192.168.1.6-192.168.1.7", "192.168.1.11-192.168.1.12"},
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -219,7 +221,7 @@ func TestIPAM(t *testing.T) {
 	if err := checkAllocation(ctx, log, seedClient, userClient3, cluster3, ipamPool2.Name, kubermaticv1.IPAMAllocationSpec{
 		Type: "prefix",
 		DC:   credentials.KKPDatacenter,
-		CIDR: "192.169.1.0/28",
+		CIDR: "192.169.1.8/29",
 	}); err != nil {
 		t.Fatal(err)
 	}
