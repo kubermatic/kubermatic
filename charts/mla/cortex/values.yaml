@@ -1560,207 +1560,209 @@ cortex:
         name: "cortex-runtime-config"
     extraPorts: []
     env: []
-  # chunk caching
+
+# subcharts of cortex chart start here
+# chunk caching
+memcached:
+  enabled: false
+  architecture: "high-availability"
+  replicaCount: 2
+  pdbMinAvailable: 1
   memcached:
-    enabled: false
-    architecture: "high-availability"
-    replicaCount: 2
-    pdbMinAvailable: 1
-    memcached:
-      maxItemMemory: 3840
-      extraArgs:
-        - -I 32m
-      threads: 32
-    resources: {}
-    #  requests:
-    #    memory: 1Gi
-    #    cpu: 10m
-    #  limits:
-    #    memory: 4Gi
-    #    cpu: 1
-    metrics:
-      enabled: true
-    # tolerations: {}
-    # - key: "dedicated"
-    #   operator: "Equal"
-    #   value: "cortex-memcached"
-    #   effect: "NoSchedule"
-    # affinity: {}
-    #   nodeAffinity:
-    #     requiredDuringSchedulingIgnoredDuringExecution:
-    #         nodeSelectorTerms:
-    #         - matchExpressions:
-    #           - key: dedicated
-    #             operator: In
-    #             values:
-    #             - cortex-memcached
-  # index read caching
-  memcached-index-read:
-    enabled: false
-    architecture: "high-availability"
-    replicaCount: 2
-    # pdbMinAvailable: 1
-    # image: memcached:1.5.7-alpine
-    memcached:
-      maxItemMemory: 3840
-      extraArgs:
-        - -I 32m
-      threads: 32
-    resources: {}
-    #  requests:
-    #    memory: 1Gi
-    #    cpu: 10m
-    #  limits:
-    #    memory: 4Gi
-    #    cpu: 1
-    metrics:
-      enabled: true
-    # tolerations: []
-    # - key: "dedicated"
-    #   operator: "Equal"
-    #   value: "cortex-memcached"
-    #   effect: "NoSchedule"
-    # affinity: {}
-    #   nodeAffinity:
-    #     requiredDuringSchedulingIgnoredDuringExecution:
-    #         nodeSelectorTerms:
-    #         - matchExpressions:
-    #           - key: dedicated
-    #             operator: In
-    #             values:
-    #             - cortex-memcached
-  # index write caching
-  memcached-index-write:
-    enabled: false
-    architecture: "high-availability"
-    replicaCount: 2
-    # dpdbMinAvailable: 1
-    # image: memcached:1.5.7-alpine
-    memcached:
-      maxItemMemory: 3840
-      extraArgs:
-        - -I 32m
-      threads: 32
-    resources: {}
-    #  requests:
-    #    memory: 1Gi
-    #    cpu: 10m
-    #  limits:
-    #    memory: 4Gi
-    #    cpu: 1
-    metrics:
-      enabled: true
-    # tolerations: []
-    # - key: "dedicated"
-    #   operator: "Equal"
-    #   value: "cortex-memcached"
-    #   effect: "NoSchedule"
-    # affinity: {}
-    #   nodeAffinity:
-    #     requiredDuringSchedulingIgnoredDuringExecution:
-    #         nodeSelectorTerms:
-    #         - matchExpressions:
-    #           - key: dedicated
-    #             operator: In
-    #             values:
-    #             - cortex-memcached
-  memcached-frontend:
-    enabled: false
-    architecture: "high-availability"
-    replicaCount: 2
-    # dpdbMinAvailable: 1
-    # image: memcached:1.5.7-alpine
-    memcached:
-      maxItemMemory: 3840
-      extraArgs:
-        - -I 32m
-      threads: 32
-    resources: {}
-    #  requests:
-    #    memory: 1Gi
-    #    cpu: 10m
-    #  limits:
-    #    memory: 4Gi
-    #    cpu: 1
-    metrics:
-      enabled: true
-  memcached-blocks-index:
-    # enabled/disabled via the tags.blocks-storage-memcached boolean
-    architecture: "high-availability"
-    replicaCount: 2
-    # dpdbMinAvailable: 1
-    # image: memcached:1.5.7-alpine
-    memcached:
-      maxItemMemory: 3840
-      extraArgs:
-        - -I 32m
-      threads: 32
-    resources:
-      requests:
-        cpu: 5m
-    #  requests:
-    #    memory: 1Gi
-    #    cpu: 10m
-    #  limits:
-    #    memory: 4Gi
-    #    cpu: 1
-    metrics:
-      enabled: true
-    serviceAccount:
-      create: false
-  memcached-blocks:
-    # enabled/disabled via the tags.blocks-storage-memcached boolean
-    architecture: "high-availability"
-    replicaCount: 2
-    # dpdbMinAvailable: 1
-    # image: memcached:1.5.7-alpine
-    memcached:
-      maxItemMemory: 3840
-      extraArgs:
-        - -I 32m
-      threads: 32
-    resources:
-      requests:
-        cpu: 5m
-    #  requests:
-    #    memory: 1Gi
-    #    cpu: 10m
-    #  limits:
-    #    memory: 4Gi
-    #    cpu: 1
-    metrics:
-      enabled: true
-    serviceAccount:
-      create: false
-  memcached-blocks-metadata:
-    # enabled/disabled via the tags.blocks-storage-memcached boolean
-    architecture: "high-availability"
-    replicaCount: 2
-    # dpdbMinAvailable: 1
-    # image: memcached:1.5.7-alpine
-    memcached:
-      maxItemMemory: 3840
-      extraArgs:
-        - -I 32m
-      threads: 32
-    resources:
-      requests:
-        cpu: 5m
-    #  requests:
-    #    memory: 1Gi
-    #    cpu: 10m
-    #  limits:
-    #    memory: 4Gi
-    #    cpu: 1
-    metrics:
-      enabled: true
-    serviceAccount:
-      create: false
-  configsdb_postgresql:
-    enabled: false
-    uri:
-    auth:
-      password:
-      existing_secret:
-        name:
-        key:
+    maxItemMemory: 3840
+    extraArgs:
+      - -I 32m
+    threads: 32
+  resources: {}
+  #  requests:
+  #    memory: 1Gi
+  #    cpu: 10m
+  #  limits:
+  #    memory: 4Gi
+  #    cpu: 1
+  metrics:
+    enabled: true
+  # tolerations: {}
+  # - key: "dedicated"
+  #   operator: "Equal"
+  #   value: "cortex-memcached"
+  #   effect: "NoSchedule"
+  # affinity: {}
+  #   nodeAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #         nodeSelectorTerms:
+  #         - matchExpressions:
+  #           - key: dedicated
+  #             operator: In
+  #             values:
+  #             - cortex-memcached
+# index read caching
+memcached-index-read:
+  enabled: false
+  architecture: "high-availability"
+  replicaCount: 2
+  # pdbMinAvailable: 1
+  # image: memcached:1.5.7-alpine
+  memcached:
+    maxItemMemory: 3840
+    extraArgs:
+      - -I 32m
+    threads: 32
+  resources: {}
+  #  requests:
+  #    memory: 1Gi
+  #    cpu: 10m
+  #  limits:
+  #    memory: 4Gi
+  #    cpu: 1
+  metrics:
+    enabled: true
+  # tolerations: []
+  # - key: "dedicated"
+  #   operator: "Equal"
+  #   value: "cortex-memcached"
+  #   effect: "NoSchedule"
+  # affinity: {}
+  #   nodeAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #         nodeSelectorTerms:
+  #         - matchExpressions:
+  #           - key: dedicated
+  #             operator: In
+  #             values:
+  #             - cortex-memcached
+# index write caching
+memcached-index-write:
+  enabled: false
+  architecture: "high-availability"
+  replicaCount: 2
+  # dpdbMinAvailable: 1
+  # image: memcached:1.5.7-alpine
+  memcached:
+    maxItemMemory: 3840
+    extraArgs:
+      - -I 32m
+    threads: 32
+  resources: {}
+  #  requests:
+  #    memory: 1Gi
+  #    cpu: 10m
+  #  limits:
+  #    memory: 4Gi
+  #    cpu: 1
+  metrics:
+    enabled: true
+  # tolerations: []
+  # - key: "dedicated"
+  #   operator: "Equal"
+  #   value: "cortex-memcached"
+  #   effect: "NoSchedule"
+  # affinity: {}
+  #   nodeAffinity:
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+  #         nodeSelectorTerms:
+  #         - matchExpressions:
+  #           - key: dedicated
+  #             operator: In
+  #             values:
+  #             - cortex-memcached
+memcached-frontend:
+  enabled: false
+  architecture: "high-availability"
+  replicaCount: 2
+  # dpdbMinAvailable: 1
+  # image: memcached:1.5.7-alpine
+  memcached:
+    maxItemMemory: 3840
+    extraArgs:
+      - -I 32m
+    threads: 32
+  resources: {}
+  #  requests:
+  #    memory: 1Gi
+  #    cpu: 10m
+  #  limits:
+  #    memory: 4Gi
+  #    cpu: 1
+  metrics:
+    enabled: true
+memcached-blocks-index:
+  # enabled/disabled via the tags.blocks-storage-memcached boolean
+  architecture: "high-availability"
+  replicaCount: 2
+  # dpdbMinAvailable: 1
+  # image: memcached:1.5.7-alpine
+  memcached:
+    maxItemMemory: 3840
+    extraArgs:
+      - -I 32m
+    threads: 32
+  resources:
+    requests:
+      cpu: 5m
+  #  requests:
+  #    memory: 1Gi
+  #    cpu: 10m
+  #  limits:
+  #    memory: 4Gi
+  #    cpu: 1
+  metrics:
+    enabled: true
+  serviceAccount:
+    create: false
+memcached-blocks:
+  # enabled/disabled via the tags.blocks-storage-memcached boolean
+  architecture: "high-availability"
+  replicaCount: 2
+  # dpdbMinAvailable: 1
+  # image: memcached:1.5.7-alpine
+  memcached:
+    maxItemMemory: 3840
+    extraArgs:
+      - -I 32m
+    threads: 32
+  resources:
+    requests:
+      cpu: 5m
+  #  requests:
+  #    memory: 1Gi
+  #    cpu: 10m
+  #  limits:
+  #    memory: 4Gi
+  #    cpu: 1
+  metrics:
+    enabled: true
+  serviceAccount:
+    create: false
+memcached-blocks-metadata:
+  # enabled/disabled via the tags.blocks-storage-memcached boolean
+  architecture: "high-availability"
+  replicaCount: 2
+  # dpdbMinAvailable: 1
+  # image: memcached:1.5.7-alpine
+  memcached:
+    maxItemMemory: 3840
+    extraArgs:
+      - -I 32m
+    threads: 32
+  resources:
+    requests:
+      cpu: 5m
+  #  requests:
+  #    memory: 1Gi
+  #    cpu: 10m
+  #  limits:
+  #    memory: 4Gi
+  #    cpu: 1
+  metrics:
+    enabled: true
+  serviceAccount:
+    create: false
+configsdb_postgresql:
+  enabled: false
+  uri:
+  auth:
+    password:
+    existing_secret:
+      name:
+      key:
