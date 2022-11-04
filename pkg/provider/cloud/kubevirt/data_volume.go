@@ -74,7 +74,7 @@ func createPreAllocatedDataVolume(dv kubermaticv1.PreAllocatedDataVolume, namesp
 				},
 			},
 			PVC: &corev1.PersistentVolumeClaimSpec{
-				StorageClassName: utilpointer.StringPtr(dv.StorageClass),
+				StorageClassName: utilpointer.String(dv.StorageClass),
 				AccessModes: []corev1.PersistentVolumeAccessMode{
 					"ReadWriteOnce",
 				},

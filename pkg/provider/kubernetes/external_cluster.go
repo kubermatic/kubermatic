@@ -26,11 +26,11 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
@@ -273,7 +273,7 @@ func (p *ExternalClusterProvider) VersionsEndpoint(ctx context.Context, configGe
 func (p *ExternalClusterProvider) ValidateKubeconfig(ctx context.Context, kubeconfig []byte) error {
 	cfg, err := clientcmd.Load(kubeconfig)
 	if err != nil {
-		return common.KubernetesErrorToHTTPError(err)
+		return utilerrors.NewFromKubernetesError(err)
 	}
 
 	cli, err := p.GenerateClient(cfg)
@@ -386,7 +386,7 @@ func (p *ExternalClusterProvider) GetProviderPoolNodes(ctx context.Context,
 ) ([]corev1.Node, error) {
 	nodes, err := p.ListNodes(ctx, cluster)
 	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
+		return nil, utilerrors.NewFromKubernetesError(err)
 	}
 
 	var clusterNodes []corev1.Node

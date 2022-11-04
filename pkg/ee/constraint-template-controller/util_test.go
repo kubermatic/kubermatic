@@ -30,8 +30,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eectcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -131,7 +131,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 }
 
 func genCluster(name string, labels map[string]string, bringYourOwnProvider bool) *kubermaticv1.Cluster {
-	cluster := test.GenDefaultCluster()
+	cluster := generator.GenDefaultCluster()
 
 	cluster.Name = name
 	cluster.Labels = labels
@@ -145,7 +145,7 @@ func genCluster(name string, labels map[string]string, bringYourOwnProvider bool
 }
 
 func genConstraintTemplateWithSelector(selector kubermaticv1.ConstraintTemplateSelector) *kubermaticv1.ConstraintTemplate {
-	ct := test.GenConstraintTemplate("ct1")
+	ct := generator.GenConstraintTemplate("ct1")
 	ct.Spec.Selector = selector
 	return ct
 }

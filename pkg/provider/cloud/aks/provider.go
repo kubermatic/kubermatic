@@ -30,7 +30,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
-	"github.com/Azure/go-autorest/autorest/to"
 	semverlib "github.com/Masterminds/semver/v3"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -44,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/pointer"
 )
 
 func GetLocations(ctx context.Context, cred resources.AKSCredentials) (apiv2.AKSLocationList, error) {
@@ -58,7 +58,7 @@ func GetLocations(ctx context.Context, cred resources.AKSCredentials) (apiv2.AKS
 	}
 
 	pager := client.NewListLocationsPager(cred.SubscriptionID, &armsubscriptions.ClientListLocationsOptions{
-		IncludeExtendedLocations: to.BoolPtr(false),
+		IncludeExtendedLocations: pointer.Bool(false),
 	})
 	for pager.More() {
 		nextResult, err := pager.NextPage(ctx)
@@ -452,7 +452,7 @@ func ListAzureResourceGroups(ctx context.Context, cred *resources.AKSCredentials
 		if nextResult.Value != nil {
 			for _, rg := range nextResult.Value {
 				resourceGroupList = append(resourceGroupList, apiv2.AzureResourceGroup{
-					Name: to.String(rg.Name),
+					Name: pointer.StringDeref(rg.Name, ""),
 				})
 			}
 		}

@@ -515,18 +515,6 @@ spec:
         operation: UPGRADE
         provider: aws
         version: < 1.24.0
-      - condition: always
-        operation: SUPPORT
-        provider: gcp
-        version: '>= 1.25.0'
-      - condition: always
-        operation: CREATE
-        provider: gcp
-        version: '>= 1.25.0'
-      - condition: always
-        operation: UPGRADE
-        provider: gcp
-        version: '>= 1.25.0'
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
     # Each update may optionally be configured to be 'automatic: true', in which case the

@@ -68,7 +68,6 @@ type Options struct {
 	OperatingSystemManagerEnabled bool
 	DualStackEnabled              bool
 	KonnectivityEnabled           bool
-	PspEnabled                    bool
 	ScenarioOptions               sets.String
 
 	// additional settings
@@ -157,7 +156,6 @@ func (o *Options) AddFlags() {
 	flag.BoolVar(&o.DeleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.BoolVar(&o.WaitForClusterDeletion, "wait-for-cluster-deletion", true, "wait for the cluster deletion to have finished")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubKeyPath, "path to a public key which gets deployed onto every node")
-	flag.BoolVar(&o.PspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.BoolVar(&o.OperatingSystemManagerEnabled, "enable-osm", true, "When set, enables Operating System Manager in the user cluster")
 	flag.BoolVar(&o.DualStackEnabled, "enable-dualstack", false, "When set, enables dualstack (IPv4+IPv6 networking) in the user cluster")
 	flag.BoolVar(&o.KonnectivityEnabled, "enable-konnectivity", false, "When set, enables Konnectivity (proxy service for control plane communication) in the user cluster. When set to false, OpenVPN is used")

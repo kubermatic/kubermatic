@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -55,7 +56,7 @@ const (
 )
 
 func getMeteringImage(overwriter registry.ImageRewriter) string {
-	return registry.Must(overwriter(resources.RegistryQuay + "/kubermatic/metering:v1.0.0"))
+	return registry.Must(overwriter(resources.RegistryQuay + "/kubermatic/metering:v1.0.1"))
 }
 
 // ReconcileMeteringResources reconciles the metering related resources.
@@ -239,4 +240,24 @@ func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key t
 	}
 
 	return client.Delete(ctx, obj)
+}
+
+func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client) (*minio.Client, string, error) {
+	var s3secret corev1.Secret
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: SecretName, Namespace: seed.Namespace}, &s3secret); err != nil {
+		return nil, "", err
+	}
+
+	s3endpoint := string(s3secret.Data[Endpoint])
+	s3accessKeyID := string(s3secret.Data[AccessKey])
+	s3secretAccessKey := string(s3secret.Data[SecretKey])
+
+	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, nil)
+	if err != nil {
+		return nil, "", err
+	}
+
+	s3bucket := string(s3secret.Data[Bucket])
+
+	return mc, s3bucket, nil
 }

@@ -69,7 +69,7 @@ func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDae
 			}
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
-			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)
+			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(0)
 			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
 				{
 					Effect:   corev1.TaintEffectNoSchedule,
@@ -87,7 +87,7 @@ func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDae
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "node-cache",
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.21.1", resources.RegistryK8S))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.22.13", resources.RegistryK8S))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",
@@ -145,7 +145,7 @@ func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDae
 					},
 
 					SecurityContext: &corev1.SecurityContext{
-						Privileged: pointer.BoolPtr(true),
+						Privileged: pointer.Bool(true),
 					},
 				},
 			}

@@ -34,13 +34,13 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -73,6 +73,9 @@ var (
 		},
 		{
 			Version: semverlib.MustParse("1.24.0"),
+		},
+		{
+			Version: semverlib.MustParse("1.25.0"),
 		},
 	}
 
@@ -123,6 +126,12 @@ var (
 				SecurityGroupID:      "aws-security-group",
 				VPCID:                "aws-vpn-id",
 				ControlPlaneRoleARN:  "aws-role-arn",
+			},
+		},
+		"gcp": {
+			ProviderName: string(kubermaticv1.GCPCloudProvider),
+			GCP: &kubermaticv1.GCPCloudSpec{
+				ServiceAccount: "eyJ0aGlzaXMiOiJqc29uIn0=",
 			},
 		},
 		"openstack": {
@@ -294,7 +303,7 @@ func createClusterObject(version semverlib.Version, cloudSpec kubermaticv1.Cloud
 				},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                resources.IPVSProxyMode,
-				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+				NodeLocalDNSCacheEnabled: pointer.Bool(true),
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -589,6 +598,13 @@ func TestLoadFiles(t *testing.T) {
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.GoogleServiceAccountSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
 							&corev1.ConfigMap{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
@@ -857,7 +873,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data, test.GenTestSeed()) {
+	for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data, generator.GenTestSeed()) {
 		name, create := creatorGetter()
 		res, err := create(&kubermaticv1.EtcdBackupConfig{})
 		if err != nil {

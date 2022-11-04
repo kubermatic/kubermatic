@@ -114,3 +114,34 @@ func ValidateCredentials(region, accessKeyID, accessKeySecret string) error {
 	_, err = client.DescribeZones(requestZones)
 	return err
 }
+
+func DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType string) (*provider.NodeCapacity, error) {
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return nil, err
+	}
+
+	requestInstanceTypes := ecs.CreateDescribeInstanceTypesRequest()
+	filter := []string{instanceType}
+	requestInstanceTypes.InstanceTypes = &filter
+
+	instanceTypes, err := client.DescribeInstanceTypes(requestInstanceTypes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list instance types: %w", err)
+	}
+
+	if len(instanceTypes.InstanceTypes.InstanceType) == 0 {
+		return nil, fmt.Errorf("unknown instance type %q", instanceType)
+	}
+
+	instance := instanceTypes.InstanceTypes.InstanceType[0]
+
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(instance.CpuCoreCount)
+
+	if err := capacity.WithMemory(int(instance.MemorySize), "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
+	}
+
+	return capacity, nil
+}

@@ -24,7 +24,6 @@ import (
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -104,7 +103,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clusterRole *rbacv1.ClusterRole) error {
-	if clusterRole.Labels[handlercommon.UserClusterComponentKey] == handlercommon.UserClusterRoleComponentValue {
+	if clusterRole.Labels[userclustercontrollermanager.UserClusterComponentKey] == userclustercontrollermanager.UserClusterRoleComponentValue {
 		return nil
 	}
 
@@ -113,9 +112,9 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		clusterRole.Labels = map[string]string{}
 	}
 
-	clusterRole.Labels[handlercommon.UserClusterComponentKey] = handlercommon.UserClusterRoleComponentValue
+	clusterRole.Labels[userclustercontrollermanager.UserClusterComponentKey] = userclustercontrollermanager.UserClusterRoleComponentValue
 
-	log.Infow("Labeling ClusterRole", "label", handlercommon.UserClusterComponentKey, "value", handlercommon.UserClusterRoleComponentValue)
+	log.Infow("Labeling ClusterRole", "label", userclustercontrollermanager.UserClusterComponentKey, "value", userclustercontrollermanager.UserClusterRoleComponentValue)
 
 	if err := r.client.Patch(ctx, clusterRole, ctrlruntimeclient.MergeFrom(oldClusterRole)); err != nil {
 		return fmt.Errorf("failed to update cluster role: %w", err)

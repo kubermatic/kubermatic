@@ -30,6 +30,12 @@ const (
 
 	// UserKindName represents "Kind" defined in Kubernetes.
 	UserKindName = "User"
+
+	// ServiceAccountInitialGroupLabel is the name of the label on a KKP User object
+	// that contains the initial group for a ServiceAccount. If a User is
+	// a ServiceAccount, the the serviceaccount-projectbinding-controller will
+	// create a matching ProjectBinding for the User.
+	ServiceAccountInitialGroupLabel = "initialGroup"
 )
 
 // +kubebuilder:resource:scope=Cluster

@@ -211,7 +211,7 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 	status, err := grafanaClient.CreateOrg(ctx, expected)
 	if err != nil {
 		return expected, fmt.Errorf("unable to add organization: %w (status: %s, message: %s)",
-			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 	}
 	if status.OrgID == nil {
 		// possibly organization already exists
@@ -271,7 +271,7 @@ func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.
 			// if we failed at this moment and the project would be renamed quickly, that organization will be orphaned and we will never remove it.
 			if status, err := grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
 				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
-					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 			}
 			return 0, err
 		}
@@ -293,7 +293,7 @@ func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.
 			// revert org creation, if deletion failed, we can't do much about it
 			if status, err := grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
 				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
-					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 			}
 			return 0, err
 		}
@@ -303,7 +303,7 @@ func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.
 	if !reflect.DeepEqual(org, expected) {
 		if status, err := grafanaClient.UpdateOrg(ctx, expected, uint(id)); err != nil {
 			return 0, fmt.Errorf("unable to update organization: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
 		}
 	}
 	return org.ID, nil

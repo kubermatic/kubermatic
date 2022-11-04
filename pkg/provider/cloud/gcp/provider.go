@@ -299,3 +299,25 @@ func ToGCPSubnetworkAPIModel(subnetwork *compute.Subnetwork) apiv1.GCPSubnetwork
 
 	return net
 }
+
+func GetMachineSize(ctx context.Context, machineType, sa, zone string) (*provider.NodeCapacity, error) {
+	computeService, project, err := ConnectToComputeService(ctx, sa)
+	if err != nil {
+		return nil, err
+	}
+
+	req := computeService.MachineTypes.Get(project, zone, machineType)
+	m, err := req.Do()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get GCP machine size: %w", err)
+	}
+
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(m.GuestCpus))
+
+	if err := capacity.WithMemory(int(m.MemoryMb), "M"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
+	}
+
+	return capacity, nil
+}

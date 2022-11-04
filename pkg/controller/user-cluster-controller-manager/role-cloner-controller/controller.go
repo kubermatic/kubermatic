@@ -23,7 +23,6 @@ import (
 	"go.uber.org/zap"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -76,7 +75,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 	// enqueues the roles from kube-system namespace and special label component=userClusterRole.
 	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
-		if err := r.client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		if err := r.client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %w", err))
 			return []reconcile.Request{}
 		}

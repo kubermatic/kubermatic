@@ -31,9 +31,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,7 +52,7 @@ func TestReconcile(t *testing.T) {
 	}{
 		{
 			name:     "scenario 1: calculate resource usage from one machine",
-			cluster:  test.GenDefaultCluster(),
+			cluster:  generator.GenDefaultCluster(),
 			machines: []*clusterv1alpha1.Machine{genFakeMachine("m1", "5", "5G", "10G")},
 			expectedResourceUsage: &kubermaticv1.ResourceDetails{
 				CPU:     getQuantity("5"),
@@ -63,7 +63,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "scenario 2: set proper resource usage",
 			cluster: func() *kubermaticv1.Cluster {
-				c := test.GenDefaultCluster()
+				c := generator.GenDefaultCluster()
 				c.Status.ResourceUsage = kubermaticv1.NewResourceDetails(resource.MustParse("2"), resource.MustParse("1G"), resource.MustParse("2G"))
 				return c
 			}(),
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 3: calculate proper resource usage from 2 machines",
-			cluster: test.GenDefaultCluster(),
+			cluster: generator.GenDefaultCluster(),
 			machines: []*clusterv1alpha1.Machine{
 				genFakeMachine("m1", "5", "5G", "10G"),
 				genFakeMachine("m2", "2", "3G", "5G")},
@@ -89,7 +89,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "scenario 4: set zero usage if no machines",
 			cluster: func() *kubermaticv1.Cluster {
-				c := test.GenDefaultCluster()
+				c := generator.GenDefaultCluster()
 				c.Status.ResourceUsage = kubermaticv1.NewResourceDetails(resource.MustParse("2"), resource.MustParse("1G"), resource.MustParse("2G"))
 				return c
 			}(),
@@ -152,7 +152,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func genFakeMachine(name, cpu, memory, storage string) *clusterv1alpha1.Machine {
-	return test.GenTestMachine(name,
+	return generator.GenTestMachine(name,
 		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s"}}`, cpu, memory, storage),
 		nil, nil)
 }

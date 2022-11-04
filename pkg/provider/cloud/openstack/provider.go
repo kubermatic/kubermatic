@@ -936,3 +936,29 @@ func ValidateCredentials(authURL, region string, credentials *resources.Openstac
 
 	return err
 }
+
+func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region string, caBundle *x509.CertPool, flavorName string) (*provider.NodeCapacity, error) {
+	flavors, err := GetFlavors(authURL, region, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, flavor := range flavors {
+		if strings.EqualFold(flavor.Name, flavorName) {
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(flavor.VCPUs)
+
+			if err := capacity.WithMemory(flavor.RAM, "M"); err != nil {
+				return nil, fmt.Errorf("failed to parse memory size: %w", err)
+			}
+
+			if err := capacity.WithStorage(flavor.Disk, "G"); err != nil {
+				return nil, fmt.Errorf("failed to parse disk size: %w", err)
+			}
+
+			return capacity, nil
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find flavor %q", flavorName)
+}

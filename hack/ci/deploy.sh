@@ -119,11 +119,18 @@ logging)
 
 usercluster-mla)
   echodate "Running Kubermatic Installer for UserCluster MLA..."
-  ./_build/kubermatic-installer deploy usercluster-mla \
-    --config "$KUBERMATIC_CONFIG" \
-    --helm-values "$VALUES_FILE" \
-    --mla-include-iap \
-    --timeout=30m
+  if [[ $VALUES_FILE == *"europe"* ]]; then
+    ./_build/kubermatic-installer deploy usercluster-mla \
+      --config "$KUBERMATIC_CONFIG" \
+      --helm-values "$VALUES_FILE" \
+      --mla-include-iap \
+      --helm-timeout=30m
+  else
+    ./_build/kubermatic-installer deploy usercluster-mla \
+      --config "$KUBERMATIC_CONFIG" \
+      --helm-values "$VALUES_FILE" \
+      --helm-timeout=30m
+  fi
   ;;
 
 kubermatic)

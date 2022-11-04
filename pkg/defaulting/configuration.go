@@ -238,7 +238,7 @@ var (
 				// Auto-upgrade unsupported clusters.
 				From:      "1.21.*",
 				To:        "1.22.12",
-				Automatic: pointer.BoolPtr(true),
+				Automatic: pointer.Bool(true),
 			},
 
 			// ======= 1.22 =======
@@ -258,7 +258,7 @@ var (
 				// - CVE-2021-25749 (fixed >= 1.22.14)
 				From:      ">= 1.22.0, < 1.22.15",
 				To:        "1.22.15",
-				Automatic: pointer.BoolPtr(true),
+				Automatic: pointer.Bool(true),
 			},
 			{
 				// Allow to next minor release
@@ -278,7 +278,7 @@ var (
 				// - CVE-2021-25749 (fixed >= 1.23.11)
 				From:      ">= 1.23.0, < 1.23.12",
 				To:        "1.23.12",
-				Automatic: pointer.BoolPtr(true),
+				Automatic: pointer.Bool(true),
 			},
 			{
 				// Allow to next minor release
@@ -297,7 +297,7 @@ var (
 				// - CVE-2021-25749 (fixed >= 1.24.5)
 				From:      ">= 1.24.0, < 1.24.6",
 				To:        "1.24.6",
-				Automatic: pointer.BoolPtr(true),
+				Automatic: pointer.Bool(true),
 			},
 			{
 				// Allow to next minor release
@@ -344,27 +344,6 @@ var (
 				Provider:  kubermaticv1.AWSCloudProvider,
 				Version:   "< 1.24.0",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-
-			// GCE clusters do not support Kubernetes 1.25 currently because
-			// CSIMigration is enforced and we don't yet deploy the GCP CSI driver.
-			{
-				Provider:  kubermaticv1.GCPCloudProvider,
-				Version:   ">= 1.25.0",
-				Condition: kubermaticv1.AlwaysCondition,
-				Operation: kubermaticv1.SupportOperation,
-			},
-			{
-				Provider:  kubermaticv1.GCPCloudProvider,
-				Version:   ">= 1.25.0",
-				Condition: kubermaticv1.AlwaysCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  kubermaticv1.GCPCloudProvider,
-				Version:   ">= 1.25.0",
-				Condition: kubermaticv1.AlwaysCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
 		},
@@ -424,37 +403,37 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.SeedController.Replicas == nil {
-		configCopy.Spec.SeedController.Replicas = pointer.Int32Ptr(DefaultSeedControllerMgrReplicas)
+		configCopy.Spec.SeedController.Replicas = pointer.Int32(DefaultSeedControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)
 	}
 
 	if configCopy.Spec.Webhook.Replicas == nil {
-		configCopy.Spec.Webhook.Replicas = pointer.Int32Ptr(DefaultWebhookReplicas)
+		configCopy.Spec.Webhook.Replicas = pointer.Int32(DefaultWebhookReplicas)
 		logger.Debugw("Defaulting field", "field", "webhook.replicas", "value", *configCopy.Spec.Webhook.Replicas)
 	}
 
 	if configCopy.Spec.Webhook.PProfEndpoint == nil {
-		configCopy.Spec.Webhook.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		configCopy.Spec.Webhook.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "webhook.pprofEndpoint", "value", *configCopy.Spec.Webhook.PProfEndpoint)
 	}
 
 	if configCopy.Spec.API.PProfEndpoint == nil {
-		configCopy.Spec.API.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		configCopy.Spec.API.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *configCopy.Spec.API.PProfEndpoint)
 	}
 
 	if configCopy.Spec.SeedController.PProfEndpoint == nil {
-		configCopy.Spec.SeedController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		configCopy.Spec.SeedController.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "seedController.pprofEndpoint", "value", *configCopy.Spec.SeedController.PProfEndpoint)
 	}
 
 	if configCopy.Spec.MasterController.PProfEndpoint == nil {
-		configCopy.Spec.MasterController.PProfEndpoint = pointer.StringPtr(DefaultPProfEndpoint)
+		configCopy.Spec.MasterController.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *configCopy.Spec.MasterController.PProfEndpoint)
 	}
 
 	if configCopy.Spec.MasterController.Replicas == nil {
-		configCopy.Spec.MasterController.Replicas = pointer.Int32Ptr(DefaultMasterControllerMgrReplicas)
+		configCopy.Spec.MasterController.Replicas = pointer.Int32(DefaultMasterControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *configCopy.Spec.MasterController.Replicas)
 	}
 
@@ -464,7 +443,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.UserCluster.APIServerReplicas == nil {
-		configCopy.Spec.UserCluster.APIServerReplicas = pointer.Int32Ptr(DefaultAPIServerReplicas)
+		configCopy.Spec.UserCluster.APIServerReplicas = pointer.Int32(DefaultAPIServerReplicas)
 		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *configCopy.Spec.UserCluster.APIServerReplicas)
 	}
 
@@ -475,7 +454,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.API.Replicas == nil {
-		configCopy.Spec.API.Replicas = pointer.Int32Ptr(DefaultAPIReplicas)
+		configCopy.Spec.API.Replicas = pointer.Int32(DefaultAPIReplicas)
 		logger.Debugw("Defaulting field", "field", "api.replicas", "value", *configCopy.Spec.API.Replicas)
 	}
 
@@ -513,7 +492,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.UI.Replicas == nil {
-		configCopy.Spec.UI.Replicas = pointer.Int32Ptr(DefaultUIReplicas)
+		configCopy.Spec.UI.Replicas = pointer.Int32(DefaultUIReplicas)
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *configCopy.Spec.UI.Replicas)
 	}
 

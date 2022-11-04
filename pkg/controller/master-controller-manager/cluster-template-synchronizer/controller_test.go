@@ -22,9 +22,9 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 			expectedClusterTemplate: generateClusterTemplate(clusterTemplateName, false),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateClusterTemplate(clusterTemplateName, false), test.GenTestSeed()).
+				WithObjects(generateClusterTemplate(clusterTemplateName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -69,11 +69,11 @@ func TestReconcile(t *testing.T) {
 			expectedClusterTemplate: nil,
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateClusterTemplate(clusterTemplateName, true), test.GenTestSeed()).
+				WithObjects(generateClusterTemplate(clusterTemplateName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateClusterTemplate(clusterTemplateName, false), test.GenTestSeed()).
+				WithObjects(generateClusterTemplate(clusterTemplateName, false), generator.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -124,7 +124,7 @@ func generateClusterTemplate(name string, deleted bool) *kubermaticv1.ClusterTem
 			Name: name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud: test.GenDefaultCluster().Spec.Cloud,
+			Cloud: generator.GenDefaultCluster().Spec.Cloud,
 		},
 	}
 	if deleted {

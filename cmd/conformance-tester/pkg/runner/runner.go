@@ -140,7 +140,6 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	fmt.Printf("  OSM Enabled.........: %v\n", r.opts.OperatingSystemManagerEnabled)
 	fmt.Printf("  Dualstack Enabled...: %v\n", r.opts.DualStackEnabled)
 	fmt.Printf("  Konnectivity Enabled: %v\n", r.opts.KonnectivityEnabled)
-	fmt.Printf("  PSP Enabled.........: %v\n", r.opts.PspEnabled)
 	fmt.Printf("  Enabled Tests.......: %v\n", r.opts.Tests.List())
 	fmt.Printf("  Scenario Options....: %v\n", r.opts.ScenarioOptions.List())
 	fmt.Println("")

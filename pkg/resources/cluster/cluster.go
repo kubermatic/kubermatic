@@ -38,7 +38,7 @@ import (
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster.
 // The ClusterTemplate can be nil.
 func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, dc *kubermaticv1.Datacenter, config *kubermaticv1.KubermaticConfiguration, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool, features features.FeatureGate) (*kubermaticv1.ClusterSpec, error) {
-	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
+	var userSSHKeysAgentEnabled = pointer.Bool(true)
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
 		userSSHKeysAgentEnabled = apiCluster.Spec.EnableUserSSHKeyAgent
 	}
@@ -50,7 +50,7 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 	}
 
 	// Enable OSM by default.
-	var osmEnabled = pointer.BoolPtr(true)
+	var osmEnabled = pointer.Bool(true)
 	if apiCluster.Spec.EnableOperatingSystemManager != nil {
 		osmEnabled = apiCluster.Spec.EnableOperatingSystemManager
 	}

@@ -71,6 +71,9 @@ linters:
 # NOTE: Do not use commas in the exclude patterns, or else the regex will be
 # split and you will be sad: https://github.com/golangci/golangci-lint/issues/665
 issues:
+  # defaults to 3, which often needlessly hides issues and forces
+  # to re-run the linter across the entire repo many times
+  max-same-issues: 50
   exclude:
   # gocyclo
   - cyclomatic complexity [0-9]+ of func `main` is high
@@ -80,7 +83,6 @@ issues:
   - cyclomatic complexity [0-9]+ of func `initTestEndpoint` is high
   - cyclomatic complexity [0-9]+ of func `\(\*Provider\)\.InitializeCloudProvider` is high
   - cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.ensureResourcesAreDeployed` is high
-  - cyclomatic complexity [0-9]+ of func `GetAPIV2NodeCloudSpec` is high
   - cyclomatic complexity [0-9]+ of func `TestKonnectivity` is high
   - cyclomatic complexity [0-9]+ of func `validateOpenStackCloudSpec` is high
   # gocritic

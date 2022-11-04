@@ -63,6 +63,17 @@ aws-ebs-csi-driver:
 	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
 	sed -i 's/k8s.gcr.io/{{ Registry "registry.k8s.io" }}/g' $(OUTPUT_FILE)
 
+.PHONY: gcp-csi-driver
+gcp-csi-driver: OUTPUT_FILE=csi/gcp/driver.yaml
+gcp-csi-driver:
+	mkdir -p csi/gcp
+	cp gcp-csi-driver-kustomization.yaml csi/gcp/kustomization.yaml
+	cat csi/gcp/_header.txt > $(OUTPUT_FILE)
+	kubectl kustomize csi/gcp/ >> $(OUTPUT_FILE)
+	cat csi/gcp/_footer.txt >> $(OUTPUT_FILE)
+	rm csi/gcp/kustomization.yaml
+	./templatify-images.sh $(OUTPUT_FILE)
+
 .PHONY: metallb
 metallb: OUTPUT_FILE=metallb/00_metallb.yaml
 metallb:

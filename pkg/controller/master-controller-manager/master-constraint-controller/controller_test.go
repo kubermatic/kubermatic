@@ -22,9 +22,9 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +60,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genConstraint(constraintName, "namespace", kind, false), test.GenTestSeed()).
+				WithObjects(genConstraint(constraintName, "namespace", kind, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -77,7 +77,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genConstraint(constraintName, "namespace", kind, true), test.GenTestSeed()).
+				WithObjects(genConstraint(constraintName, "namespace", kind, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -130,7 +130,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func genConstraint(name, namespace, kind string, deleted bool) *kubermaticv1.Constraint {
-	constraint := test.GenConstraint(name, namespace, kind)
+	constraint := generator.GenConstraint(name, namespace, kind)
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		constraint.DeletionTimestamp = &deleteTime

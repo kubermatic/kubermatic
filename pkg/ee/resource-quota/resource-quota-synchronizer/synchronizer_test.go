@@ -30,9 +30,9 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -66,7 +66,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme).
-				WithObjects(genResourceQuota(rqName, false), test.GenTestSeed()).
+				WithObjects(genResourceQuota(rqName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -80,7 +80,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme).
-				WithObjects(genResourceQuota(rqName, true), test.GenTestSeed()).
+				WithObjects(genResourceQuota(rqName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().

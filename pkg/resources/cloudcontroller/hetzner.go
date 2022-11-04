@@ -75,7 +75,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				network = data.DC().Spec.Hetzner.Network
 			}
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), false)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{

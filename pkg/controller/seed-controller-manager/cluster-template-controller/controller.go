@@ -25,7 +25,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
@@ -262,7 +261,7 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 		newCluster.Labels[kubermaticv1.WorkerNameLabelKey] = workerName
 	}
 	newCluster.Labels[kubermaticv1.ProjectIDLabelKey] = instance.Spec.ProjectID
-	newCluster.Labels[kubernetesprovider.ClusterTemplateInstanceLabelKey] = instance.Name
+	newCluster.Labels[kubermaticv1.ClusterTemplateInstanceLabelKey] = instance.Name
 	newCluster.Spec = template.Spec
 
 	newCluster.Spec.HumanReadableName = fmt.Sprintf("%s-%s", newCluster.Spec.HumanReadableName, name)

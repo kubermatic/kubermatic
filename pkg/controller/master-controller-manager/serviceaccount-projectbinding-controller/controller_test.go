@@ -25,9 +25,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -110,7 +109,7 @@ func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 }
 
 func genSABinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
-	binding := test.GenBinding(projectID, email, group)
+	binding := generator.GenBinding(projectID, email, group)
 	binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
 	binding.Spec.Group = fmt.Sprintf("%s-%s", group, projectID)
 	return binding
@@ -139,7 +138,7 @@ func genProject(name string) *kubermaticv1.Project {
 
 func genServiceAccount(id, group, projectName string) *kubermaticv1.User {
 	user := &kubermaticv1.User{}
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
+	user.Labels = map[string]string{kubermaticv1.ServiceAccountInitialGroupLabel: fmt.Sprintf("%s-%s", group, projectName)}
 	user.Name = kubermaticv1helper.EnsureProjectServiceAccountPrefix(id)
 	user.Spec.Email = fmt.Sprintf("%s@sa.kubermatic.io", user.Name)
 	user.Spec.Project = projectName

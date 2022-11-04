@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
@@ -49,7 +49,7 @@ func TestReconcile(t *testing.T) {
 				Name: "view",
 			}},
 			requestName:    "view",
-			expectedLabels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+			expectedLabels: map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 		},
 		{
 			name: "label added to edit cluster role",
@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 				Name: "edit",
 			}},
 			requestName:    "edit",
-			expectedLabels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+			expectedLabels: map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 		},
 		{
 			name: "label added to admin cluster role",
@@ -65,7 +65,7 @@ func TestReconcile(t *testing.T) {
 				Name: "admin",
 			}},
 			requestName:    "admin",
-			expectedLabels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+			expectedLabels: map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 		},
 	}
 

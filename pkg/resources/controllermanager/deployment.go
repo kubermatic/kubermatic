@@ -443,19 +443,19 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 
 func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {
 	if cloudSpec.AWS != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.Openstack != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.VSphere != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.Azure != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.GCP != nil {
-		return utilpointer.BoolPtr(true)
+		return utilpointer.Bool(true)
 	}
 	return nil
 }

@@ -23,9 +23,9 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 			expectedApplicationDefinition: generateApplicationDef(applicationDefinitionName, false),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateApplicationDef(applicationDefinitionName, false), test.GenTestSeed()).
+				WithObjects(generateApplicationDef(applicationDefinitionName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -71,11 +71,11 @@ func TestReconcile(t *testing.T) {
 			expectedApplicationDefinition: nil,
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateApplicationDef(applicationDefinitionName, true), test.GenTestSeed()).
+				WithObjects(generateApplicationDef(applicationDefinitionName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateApplicationDef(applicationDefinitionName, false), test.GenTestSeed()).
+				WithObjects(generateApplicationDef(applicationDefinitionName, false), generator.GenTestSeed()).
 				Build(),
 		},
 	}

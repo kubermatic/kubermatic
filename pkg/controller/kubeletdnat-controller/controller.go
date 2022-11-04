@@ -25,6 +25,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -165,7 +166,7 @@ func (r *Reconciler) syncDnatRules(ctx context.Context) error {
 	if !equality.Semantic.DeepEqual(actualRules, desiredRules) || !haveJump || !haveMasquerade {
 		// Need to update chain in kernel.
 		r.log.Infow("Updating iptables chain in kernel", "rules-count", len(desiredRules))
-		if err := r.applyDNATRules(desiredRules, haveJump, haveMasquerade); err != nil {
+		if err := r.applyDNATRules(ctx, desiredRules, haveJump, haveMasquerade); err != nil {
 			return fmt.Errorf("failed to apply iptable rules: %w", err)
 		}
 	}
@@ -245,7 +246,7 @@ func (r *Reconciler) getRulesForNode(node corev1.Node) ([]*dnatRule, error) {
 // applyRules creates a iptables-save file and pipes it to stdin of
 // a iptables-restore process for atomically setting new rules.
 // This function replaces a complete chain (removing all pre-existing rules).
-func (r *Reconciler) applyDNATRules(rules []string, haveJump, haveMasquerade bool) error {
+func (r *Reconciler) applyDNATRules(ctx context.Context, rules []string, haveJump, haveMasquerade bool) error {
 	restore := []string{
 		"*nat",
 		fmt.Sprintf(":%s - [0:0]", r.nodeTranslationChainName)}
@@ -263,7 +264,7 @@ func (r *Reconciler) applyDNATRules(rules []string, haveJump, haveMasquerade boo
 	restore = append(restore, rules...)
 	restore = append(restore, "COMMIT")
 
-	return execRestore(restore)
+	return execRestore(ctx, restore)
 }
 
 func execSave() ([]string, error) {
@@ -275,28 +276,33 @@ func execSave() ([]string, error) {
 	return strings.Split(string(out), "\n"), err
 }
 
-func execRestore(rules []string) error {
-	cmd := exec.Command("iptables-restore", []string{"--noflush", "-v", "-T", "nat"}...)
+func execRestore(ctx context.Context, rules []string) error {
+	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(timeoutCtx, "iptables-restore", []string{"--noflush", "-v", "-T", "nat"}...)
 
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return err
 	}
-	if _, err := io.WriteString(stdin, strings.Join(rules, "\n")+"\n"); err != nil {
-		return fmt.Errorf("failed to write to iptables-restore stdin: %w", err)
-	}
-	if err := stdin.Close(); err != nil {
-		return fmt.Errorf("failed to close iptables-restore stdin: %w", err)
-	}
+
+	// if input is bigger than OS' pipe buffer size, the write call blocks indefinitely
+	go func() {
+		// ignore errors here, since it would likely lead to either the command to time out or to fail
+		_, _ = io.WriteString(stdin, strings.Join(rules, "\n")+"\n")
+		stdin.Close()
+	}()
 
 	out, err := cmd.CombinedOutput()
-	if err == nil {
-		return nil
+	if err != nil {
+		if len(out) > 0 {
+			return fmt.Errorf("iptables-restore failed: %w (output: %s)", err, string(out))
+		}
+		return fmt.Errorf("iptables-restore failed: %w", err)
 	}
-	if len(out) > 0 {
-		return fmt.Errorf("iptables-restore failed: %w (output: %s)", err, string(out))
-	}
-	return fmt.Errorf("iptables-restore failed: %w", err)
+
+	return nil
 }
 
 // GetMatchArgs returns iptables arguments to match for the
