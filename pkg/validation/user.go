@@ -112,7 +112,7 @@ func ValidateUserDelete(ctx context.Context,
 			return err
 		}
 		if hasExtClusters {
-			return fmt.Errorf("operation not permitted!: user project %s has resources, clusters or externalclusters", project.Name)
+			return fmt.Errorf("operation not permitted!: user project %s has resources i.e., externalclusters", project.Name)
 		}
 
 		// if project has clusters on any seed
@@ -130,7 +130,7 @@ func ValidateUserDelete(ctx context.Context,
 				return err
 			}
 			if hasClusters {
-				return fmt.Errorf("operation not permitted!: user project %s has resources, clusters or externalclusters", project.Name)
+				return fmt.Errorf("operation not permitted!: user project %s has resources i.e., clusters", project.Name)
 			}
 		}
 	}
