@@ -63,9 +63,9 @@ type IPAMPoolDatacenterSettings struct {
 	// Used when "type=prefix".
 	AllocationPrefix int `json:"allocationPrefix,omitempty"`
 
-	// ExcludePrefixes is used to exclude particular subnets for the allocation.
+	// Optional: ExcludePrefixes is used to exclude particular subnets for the allocation.
 	// NOTE: must be the same length as allocationPrefix.
-	// Used when "type=prefix".
+	// Can be used when "type=prefix".
 	ExcludePrefixes []SubnetCIDR `json:"excludePrefixes,omitempty"`
 
 	// +kubebuilder:validation:Minimum:=1
@@ -73,9 +73,9 @@ type IPAMPoolDatacenterSettings struct {
 	// Used when "type=range".
 	AllocationRange int `json:"allocationRange,omitempty"`
 
-	// ExcludeRanges is used to exclude particular IPs or IP ranges for the allocation.
+	// Optional: ExcludeRanges is used to exclude particular IPs or IP ranges for the allocation.
 	// Examples: "192.168.1.100-192.168.1.110", "192.168.1.255".
-	// Used when "type=range".
+	// Can be used when "type=range".
 	ExcludeRanges []string `json:"excludeRanges,omitempty"`
 }
 
