@@ -192,32 +192,6 @@ type MLA struct {
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled"`
 }
 
-// ClusterTemplate represents a ClusterTemplate object
-// swagger:model ClusterTemplate
-type ClusterTemplate struct {
-	apiv1.ObjectMeta
-
-	Name string `json:"name"`
-	ID   string `json:"id,omitempty"`
-
-	ProjectID      string                         `json:"projectID,omitempty"`
-	User           string                         `json:"user,omitempty"`
-	Scope          string                         `json:"scope"`
-	UserSSHKeys    []ClusterTemplateSSHKey        `json:"userSshKeys,omitempty"`
-	Cluster        *ClusterTemplateInfo           `json:"cluster,omitempty"`
-	NodeDeployment *ClusterTemplateNodeDeployment `json:"nodeDeployment,omitempty"`
-	Applications   []apiv1.Application            `json:"applications,omitempty"`
-}
-
-// ClusterTemplateInfo represents a ClusterTemplateInfo object.
-type ClusterTemplateInfo struct {
-	Labels          map[string]string `json:"labels,omitempty"`
-	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
-	// indicates the preset name
-	Credential string            `json:"credential,omitempty"`
-	Spec       apiv1.ClusterSpec `json:"spec"`
-}
-
 type ClusterTemplateNodeDeployment struct {
 	Spec apiv1.NodeDeploymentSpec `json:"spec"`
 }
@@ -228,10 +202,6 @@ type ClusterTemplateSSHKey struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`
 }
-
-// ClusterTemplateList represents a ClusterTemplate list
-// swagger:model ClusterTemplateList
-type ClusterTemplateList []ClusterTemplate
 
 // ClusterTemplateInstance represents a ClusterTemplateInstance object
 // swagger:model ClusterTemplateInstance
@@ -796,12 +766,6 @@ type VpcConfigRequest struct {
 	// elastic network interfaces in these subnets to allow communication between
 	// your nodes and the Kubernetes control plane.
 	SubnetIds []string `json:"subnetIds" required:"true"`
-}
-
-// ExternalClusterNode represents an object holding external cluster node
-// swagger:model ExternalClusterNode
-type ExternalClusterNode struct {
-	apiv1.Node `json:",inline"`
 }
 
 // ExternalClusterMachineDeployment represents an object holding external cluster machine deployment
