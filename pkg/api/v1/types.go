@@ -1720,6 +1720,9 @@ type OpenstackNodeSpec struct {
 	// Max time to wait for the instance to be ready, i.e. 10s/1m
 	// required: false
 	InstanceReadyCheckTimeout string `json:"instanceReadyCheckTimeout"`
+	// UUID of the server group, used to configure affinity or anti-affinity of the VM instances relative to hypervisor
+	// required: false
+	ServerGroup string `json:"serverGroup"`
 }
 
 func (spec *OpenstackNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1746,6 +1749,7 @@ func (spec *OpenstackNodeSpec) MarshalJSON() ([]byte, error) {
 		AvailabilityZone          string            `json:"availabilityZone"`
 		InstanceReadyCheckPeriod  string            `json:"instanceReadyCheckPeriod"`
 		InstanceReadyCheckTimeout string            `json:"instanceReadyCheckTimeout"`
+		ServerGroup               string            `json:"serverGroup"`
 	}{
 		Flavor:                    spec.Flavor,
 		Image:                     spec.Image,
@@ -1755,6 +1759,7 @@ func (spec *OpenstackNodeSpec) MarshalJSON() ([]byte, error) {
 		AvailabilityZone:          spec.AvailabilityZone,
 		InstanceReadyCheckPeriod:  spec.InstanceReadyCheckPeriod,
 		InstanceReadyCheckTimeout: spec.InstanceReadyCheckTimeout,
+		ServerGroup:               spec.ServerGroup,
 	}
 
 	return json.Marshal(&res)
