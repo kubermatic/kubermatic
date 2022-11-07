@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
+	nutanixv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"

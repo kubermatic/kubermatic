@@ -31,10 +31,8 @@ exceptions:
   - github.com/cristim/ec2-instances-info # Public domain: https://github.com/cristim/ec2-instances-info/blob/master/LICENSE.
   - github.com/cristim/ec2-instances-info/data # MIT: https://github.com/powdahound/ec2instances.info/blob/master/LICENSE.
   - github.com/acomagu/bufpipe # MIT: https://github.com/acomagu/bufpipe/blob/master/LICENSE (used by go-git)
-  - github.com/embik/nutanix-client-go/internal/utils # MPL-2.0
-  - github.com/embik/nutanix-client-go/pkg/client # MPL-2.0
-  - github.com/embik/nutanix-client-go/pkg/client/v3 # MPL-2.0
   - github.com/gosimple/slug # MPL-2.0. Required for https://github.com/grafana-tools/sdk
+  - github.com/hashicorp/go-cleanhttp # MPL-2.0
   - github.com/hashicorp/go-version # MPL-2.0
   - github.com/hashicorp/golang-lru # MPL-2.0
   - github.com/hashicorp/golang-lru/simplelru # MPL-2.0

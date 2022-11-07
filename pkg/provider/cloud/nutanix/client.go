@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"strings"
 
-	nutanixclient "github.com/embik/nutanix-client-go/pkg/client"
-	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
+	nutanixclient "github.com/nutanix-cloud-native/prism-go-client"
+	nutanixv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -154,7 +154,7 @@ func getClientSet(credentials nutanixclient.Credentials) (*ClientSet, error) {
 
 func GetSubnetByName(ctx context.Context, client *ClientSet, name, clusterID string) (*nutanixv3.SubnetIntentResponse, error) {
 	filter := fmt.Sprintf("name==%s", name)
-	subnets, err := client.Prism.V3.ListAllSubnet(ctx, filter)
+	subnets, err := client.Prism.V3.ListAllSubnet(ctx, filter, nil)
 
 	if err != nil {
 		return nil, err

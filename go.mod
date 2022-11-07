@@ -28,7 +28,6 @@ require (
 	github.com/cristim/ec2-instances-info v0.0.0-20220804141719-da3da500d587
 	github.com/digitalocean/godo v1.88.0
 	github.com/distribution/distribution/v3 v3.0.0-20221028072015-7f9f86c4116f
-	github.com/embik/nutanix-client-go v0.1.0
 	github.com/envoyproxy/go-control-plane v0.10.3
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-logr/logr v1.2.3
@@ -43,6 +42,7 @@ require (
 	github.com/kubermatic/grafanasdk v0.9.12
 	github.com/kubermatic/machine-controller v1.55.1-0.20220930055319-5819bb5f27f7
 	github.com/minio/minio-go/v7 v7.0.43
+	github.com/nutanix-cloud-native/prism-go-client v0.3.2
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.24.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220504225309-3462b1a344f3 // v0.5.1
@@ -138,6 +138,8 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/squirrel v1.5.3 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
+	github.com/PaesslerAG/gval v1.0.0 // indirect
+	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
 	github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
@@ -225,6 +227,7 @@ require (
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
