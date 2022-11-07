@@ -133,37 +133,6 @@ type VMwareCloudDirectorStorageProfile struct {
 // swagger:model VMwareCloudDirectorStorageProfileList
 type VMwareCloudDirectorStorageProfileList []VMwareCloudDirectorStorageProfile
 
-// User represent an API user
-// swagger:model User
-type User struct {
-	ObjectMeta
-
-	// Email an email address of the user
-	Email string `json:"email"`
-	// IsAdmin indicates admin role
-	IsAdmin bool `json:"isAdmin,omitempty"`
-
-	// Projects holds the list of project the user belongs to
-	// along with the group names
-	Projects []ProjectGroup `json:"projects,omitempty"`
-
-	// Groups holds the list of groups that the user belongs to
-	Groups []string `json:"groups,omitempty"`
-
-	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
-
-	// LastSeen holds a time in UTC format when the user has been using the API last time
-	// swagger:strfmt date-time
-	LastSeen *Time `json:"lastSeen,omitempty"`
-}
-
-// ProjectGroup is a helper data structure that
-// stores the information about a project and a group prefix that a user belongs to.
-type ProjectGroup struct {
-	ID          string `json:"id"`
-	GroupPrefix string `json:"group"`
-}
-
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {
