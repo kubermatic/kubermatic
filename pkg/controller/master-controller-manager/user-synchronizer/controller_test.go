@@ -133,7 +133,7 @@ func generateUser(name string, deleted bool) *kubermaticv1.User {
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		user.DeletionTimestamp = &deleteTime
-		user.Finalizers = append(user.Finalizers, cleanupFinalizer)
+		user.Finalizers = append(user.Finalizers, seedUsersCleanupFinalizer)
 	}
 	return user
 }

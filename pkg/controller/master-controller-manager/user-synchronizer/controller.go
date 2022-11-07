@@ -19,6 +19,7 @@ package usersynchronizer
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -44,8 +45,11 @@ import (
 const (
 	ControllerName = "kkp-user-synchronizer"
 
-	// cleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
-	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
+	// seedUsersCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
+	seedUsersCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
+
+	// masterUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the master cluster need cleanup.
+	masterUserProjectBindingCleanupFinalizer = "kubermatic.io/cleanup-master-user-project-bindings"
 )
 
 type reconciler struct {
@@ -130,7 +134,11 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, cleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, masterUserProjectBindingCleanupFinalizer); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to add finalizer %v to user %s: %w", masterUserProjectBindingCleanupFinalizer, user.Name, err)
+	}
+
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, user, seedUsersCleanupFinalizer); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -181,6 +189,38 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	if err != nil {
 		return err
 	}
+	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, seedUsersCleanupFinalizer); err != nil {
+		return err
+	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, cleanupFinalizer)
+	// delete all userprojectbindings related to user
+	userProjectBindings, err := r.bindingsForUser(ctx, user)
+	if err != nil {
+		return err
+	}
+	for _, userBinding := range userProjectBindings {
+		if err := r.masterClient.Delete(ctx, &userBinding); err != nil {
+			if err := ctrlruntimeclient.IgnoreNotFound(err); err != nil {
+				return err
+			}
+		}
+	}
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, user, masterUserProjectBindingCleanupFinalizer)
+}
+
+func (r *reconciler) bindingsForUser(ctx context.Context, user *kubermaticv1.User) ([]kubermaticv1.UserProjectBinding, error) {
+	projectBindings := &kubermaticv1.UserProjectBindingList{}
+	if err := r.masterClient.List(ctx, projectBindings); err != nil {
+		return nil, err
+	}
+
+	var userProjectBindings []kubermaticv1.UserProjectBinding
+	for _, projectBinding := range projectBindings.Items {
+		if strings.EqualFold(user.Spec.Email, projectBinding.Spec.UserEmail) {
+			userProjectBindings = append(userProjectBindings, projectBinding)
+		}
+	}
+
+	return userProjectBindings, nil
 }
