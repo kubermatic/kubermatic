@@ -17,8 +17,13 @@ limitations under the License.
 package helper
 
 import (
+	"context"
 	"fmt"
 	"strings"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -46,4 +51,29 @@ func EnsureProjectServiceAccountPrefix(str string) string {
 	}
 
 	return str
+}
+
+func GetUserOwnedProjects(ctx context.Context, client ctrlruntimeclient.Client, userName string) ([]kubermaticv1.Project, error) {
+	var ownedProjects []kubermaticv1.Project
+
+	projectList := &kubermaticv1.ProjectList{}
+	if err := client.List(ctx, projectList); err != nil {
+		return nil, fmt.Errorf("failed to list projects: %w", err)
+	}
+
+	for _, project := range projectList.Items {
+		if len(project.OwnerReferences) == 0 {
+			continue
+		}
+
+		for _, ownerReference := range project.OwnerReferences {
+			ownerUser := ownerReference.Name
+			if ownerUser == userName {
+				ownedProjects = append(ownedProjects, project)
+				break
+			}
+		}
+	}
+
+	return ownedProjects, nil
 }
