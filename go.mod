@@ -33,7 +33,6 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3
-	github.com/go-openapi/errors v0.20.3
 	github.com/go-test/deep v1.0.8
 	github.com/gobuffalo/flect v0.3.0
 	github.com/google/go-cmp v0.5.9
