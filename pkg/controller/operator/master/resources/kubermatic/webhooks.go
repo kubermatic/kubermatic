@@ -184,6 +184,7 @@ func UserValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kuberma
 							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Create,
 								admissionregistrationv1.Update,
+								admissionregistrationv1.Delete,
 							},
 						},
 					},
