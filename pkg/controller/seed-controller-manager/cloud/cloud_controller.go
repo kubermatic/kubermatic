@@ -33,8 +33,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -52,15 +50,6 @@ import (
 
 const (
 	ControllerName = "kkp-cloud-controller"
-	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
-	// security group was migrated to contain allow rules for ICMP.
-	icmpMigrationRevision = 1
-	// awsHardcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
-	// hardcoded AZs and Subnets towards multi-AZ support.
-	awsHardcodedAZMigrationRevision = 2
-	// currentMigrationRevision describes the current migration revision. If this is set on the
-	// cluster, certain migrations won't get executed. This must never be decremented.
-	CurrentMigrationRevision = awsHardcodedAZMigrationRevision
 )
 
 // Check if the Reconciler fulfills the interface
@@ -168,15 +157,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, nil
 	}
 
-	// We do the migration inside the controller because it has a decent potential to fail (e.G. due
-	// to invalid credentials) and may take some time and we do not want to block the startup just
-	// because one cluster can not be migrated
-	if cluster.Status.CloudMigrationRevision < icmpMigrationRevision {
-		if err := r.migrateICMP(ctx, log, cluster, prov); err != nil {
-			return nil, err
-		}
-	}
-
 	handleProviderError := func(err error) (*reconcile.Result, error) {
 		if apierrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
@@ -248,29 +228,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	return nil, nil
-}
-
-func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
-	switch prov := cloudProvider.(type) {
-	case *openstack.Provider:
-		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
-		}
-		log.Info("Successfully ensured ICMP rules in security group of cluster")
-	case *azure.Azure:
-		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
-		}
-		log.Info("Successfully ensured ICMP rules in security group of cluster")
-	}
-
-	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-		c.Status.CloudMigrationRevision = icmpMigrationRevision
-	}); err != nil {
-		return fmt.Errorf("failed to update cluster after successfully executing its cloud provider migration: %w", err)
-	}
-
-	return nil
 }
 
 func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
