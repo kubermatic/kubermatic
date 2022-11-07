@@ -416,16 +416,20 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				}
 			}
 
+			// set of Source IP ranges
+			sourceIPList := sets.String{}
+
 			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
 				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
-					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
+					sourceIPList.Insert(string(cidr))
 				}
 			}
 
 			// Check if allowed IP ranges are configured and set the LoadBalancer source ranges
 			if data.Cluster().Spec.APIServerAllowedIPRanges != nil {
-				s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, data.Cluster().Spec.APIServerAllowedIPRanges.CIDRBlocks...)
+				sourceIPList.Insert(data.Cluster().Spec.APIServerAllowedIPRanges.CIDRBlocks...)
 			}
+			s.Spec.LoadBalancerSourceRanges = sourceIPList.List()
 
 			if data.Cluster().Spec.Cloud.AWS != nil {
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
