@@ -387,7 +387,7 @@ func TestOpenstackNodeSpec_MarshalJSON(t *testing.T) {
 				Flavor: "test-flavor",
 				Image:  "test-image",
 			},
-			"{\"flavor\":\"test-flavor\",\"image\":\"test-image\",\"diskSize\":null,\"availabilityZone\":\"\",\"instanceReadyCheckPeriod\":\"\",\"instanceReadyCheckTimeout\":\"\"}",
+			"{\"flavor\":\"test-flavor\",\"image\":\"test-image\",\"diskSize\":null,\"availabilityZone\":\"\",\"instanceReadyCheckPeriod\":\"\",\"instanceReadyCheckTimeout\":\"\",\"serverGroup\":\"\"}",
 		},
 	}
 
