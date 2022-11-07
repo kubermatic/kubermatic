@@ -218,11 +218,6 @@ var (
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
 		Default: semver.NewSemverOrDie("v1.24.6"),
 		Versions: []semver.Semver{
-			// Kubernetes 1.22
-			newSemver("v1.22.5"),
-			newSemver("v1.22.9"),
-			newSemver("v1.22.12"),
-			newSemver("v1.22.15"),
 			// Kubernetes 1.23
 			newSemver("v1.23.6"),
 			newSemver("v1.23.9"),
@@ -234,32 +229,6 @@ var (
 			newSemver("v1.25.2"),
 		},
 		Updates: []kubermaticv1.Update{
-			{
-				// Auto-upgrade unsupported clusters.
-				From:      "1.21.*",
-				To:        "1.22.12",
-				Automatic: pointer.Bool(true),
-			},
-
-			// ======= 1.22 =======
-			{
-				// Allow to change to any patch version
-				From: "1.22.*",
-				To:   "1.22.*",
-			},
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2021-3711 (fixed >= 1.22.4)
-				// - CVE-2021-3712 (fixed >= 1.22.4)
-				// - CVE-2021-33910 (fixed >= 1.22.4)
-				// - CVE-2021-44716 (fixed >= 1.22.5)
-				// - CVE-2021-44717 (fixed >= 1.22.5)
-				// - CVE-2022-3172 (fixed >= 1.22.14)
-				// - CVE-2021-25749 (fixed >= 1.22.14)
-				From:      ">= 1.22.0, < 1.22.15",
-				To:        "1.22.15",
-				Automatic: pointer.Bool(true),
-			},
 			{
 				// Allow to next minor release
 				From: "1.22.*",
@@ -364,7 +333,7 @@ var (
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-		Default: semver.NewSemverOrDie("v1.22"),
+		Default: semver.NewSemverOrDie("v1.23"),
 		Versions: []semver.Semver{
 			newSemver("v1.24"),
 			newSemver("v1.23"),

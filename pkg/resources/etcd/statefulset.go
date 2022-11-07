@@ -30,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -389,10 +388,13 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// during updates lacks behind the apiserver by one minor version; this is so that
 	// also external components like the kubernetes dashboard or external ccms wait for
 	// the new apiserver to be ready; etcd however is different and gets updated together
-	// with the apiserver
-	if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
-		return "v3.4.3"
-	}
+	// with the apiserver;
+	// As of now, all supported Kubernetes versions use the same etcd release, but the
+	// comment above is left as a reminder in case future versions switches will be needed
+	// again.
+	// if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
+	// 	return "v3.4.3"
+	// }
 
 	return "v3.5.4"
 }

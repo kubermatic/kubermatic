@@ -465,7 +465,7 @@ spec:
                               - vmwareclouddirector
                             type: string
                           version:
-                            description: Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+                            description: Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
                             type: string
                         type: object
                       type: array

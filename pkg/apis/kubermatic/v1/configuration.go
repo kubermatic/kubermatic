@@ -418,7 +418,7 @@ type Incompatibility struct {
 	// Provider to which to apply the compatibility check.
 	// Empty string matches all providers
 	Provider ProviderType `json:"provider,omitempty"`
-	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
 	Version string `json:"version,omitempty"`
 	// Condition is the cluster or datacenter condition that must be met to block a specific version
 	Condition ConditionType `json:"condition,omitempty"`
