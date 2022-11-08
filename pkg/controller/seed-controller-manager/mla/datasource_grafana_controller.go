@@ -187,6 +187,14 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 		return nil, fmt.Errorf("failed to create Grafana client: %w", err)
 	}
 
+	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
+	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
+		if err := r.handleDeletion(ctx, cluster, grafanaClient); err != nil {
+			return nil, fmt.Errorf("handling deletion: %w", err)
+		}
+		return nil, nil
+	}
+
 	project := &kubermaticv1.Project{}
 	err = r.Get(ctx, types.NamespacedName{Name: projectID}, project)
 	if err != nil {
@@ -214,14 +222,6 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	}
 	// set header from the very beginning so all other calls will be within this organization
 	grafanaClient.SetOrgIDHeader(org.ID)
-
-	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
-	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
-		if err := r.handleDeletion(ctx, cluster, grafanaClient); err != nil {
-			return nil, fmt.Errorf("handling deletion: %w", err)
-		}
-		return nil, nil
-	}
 
 	if err := kubernetes.TryAddFinalizer(ctx, r, cluster, mlaFinalizer); err != nil {
 		return nil, fmt.Errorf("failed to add finalizer: %w", err)
