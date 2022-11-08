@@ -37,19 +37,6 @@ type ClientSet struct {
 	Prism *nutanixv3.Client
 }
 
-type ErrorResponse struct {
-	APIVersion  string             `json:"api_version"`
-	Kind        string             `json:"kind"`
-	State       string             `json:"state"`
-	MessageList []ErrorResponseMsg `json:"message_list"`
-	Code        int32              `json:"code"`
-}
-
-type ErrorResponseMsg struct {
-	Message string `json:"message"`
-	Reason  string `json:"reason"`
-}
-
 func GetClientSet(dc *kubermaticv1.DatacenterSpecNutanix, cloud *kubermaticv1.NutanixCloudSpec, secretKeyGetter provider.SecretKeySelectorValueFunc) (*ClientSet, error) {
 	credentials, err := getCredentials(dc, cloud, secretKeyGetter)
 	if err != nil {
@@ -247,16 +234,34 @@ func GetClusterByName(ctx context.Context, client *ClientSet, name string) (*nut
 	return nil, fmt.Errorf("no cluster found for '%s'", filter)
 }
 
+// ErrorResponse matches the struct in upstream, but is copied here
+// because upstream has its version in an internal package. Can be
+// removed if and when Nutanix SDK does not return stringified
+// errors that we have to parse ourselves.
+type ErrorResponse struct {
+	APIVersion  string             `json:"api_version"`
+	Kind        string             `json:"kind"`
+	State       string             `json:"state"`
+	MessageList []ErrorResponseMsg `json:"message_list"`
+	Code        int32              `json:"code"`
+}
+
+type ErrorResponseMsg struct {
+	Message string `json:"message"`
+	Reason  string `json:"reason"`
+}
+
 func ParseNutanixError(err error) (*ErrorResponse, error) {
 	if err == nil {
 		return nil, nil
 	}
 
-	// the api returns a json error ... but with a string prefixed to it
-	errJsonString := strings.TrimPrefix(err.Error(), "error: ")
+	// Nutanix errors are prefixed with various strings, sometimes "error: ",
+	// sometimes "status: 404 Not Found, error-response: "; we therefore trim
+	// everything up to the first opening bracket
+	errJsonString := strings.TrimLeftFunc(err.Error(), func(r rune) bool { return r != '{' })
 
 	var resp ErrorResponse
-
 	if parseErr := json.Unmarshal([]byte(errJsonString), &resp); parseErr != nil {
 		return nil, fmt.Errorf("failed to parse '%v': %w", err, parseErr)
 	}
