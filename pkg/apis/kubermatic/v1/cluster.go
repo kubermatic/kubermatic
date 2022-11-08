@@ -520,11 +520,6 @@ type ClusterStatus struct {
 	// +optional
 	Phase ClusterPhase `json:"phase,omitempty"`
 
-	// CloudMigrationRevision describes the latest version of the migration that has been done
-	// It is used to avoid redundant and potentially costly migrations.
-	// +optional
-	CloudMigrationRevision int `json:"cloudMigrationRevision,omitempty"`
-
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`

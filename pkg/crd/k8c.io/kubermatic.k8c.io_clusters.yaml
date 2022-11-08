@@ -1771,9 +1771,6 @@ spec:
                       description: URL under which the Apiserver is available
                       type: string
                   type: object
-                cloudMigrationRevision:
-                  description: CloudMigrationRevision describes the latest version of the migration that has been done It is used to avoid redundant and potentially costly migrations.
-                  type: integer
                 conditions:
                   additionalProperties:
                     properties:
