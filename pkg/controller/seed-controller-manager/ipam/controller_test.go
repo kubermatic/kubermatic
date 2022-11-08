@@ -520,7 +520,7 @@ func TestReconcileCluster(t *testing.T) {
 					Spec: kubermaticv1.IPAMAllocationSpec{
 						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
 						DC:        "test-dc-1",
-						Addresses: []string{"192.168.1.1-192.168.1.1"},
+						Addresses: []string{"192.168.1.1"},
 					},
 				},
 			},
@@ -901,6 +901,116 @@ func TestReconcileCluster(t *testing.T) {
 							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
 							DC:   "test-dc-2",
 							CIDR: "192.169.1.16/28",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "prefix: exclude prefixes",
+			cluster: generateTestCluster("test-cluster-2", "test-dc-1"),
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMPool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-pool-1",
+					},
+					Spec: kubermaticv1.IPAMPoolSpec{
+						Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+							"test-dc-1": {
+								Type:             "prefix",
+								PoolCIDR:         "192.168.1.0/27",
+								AllocationPrefix: 29,
+								ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.1.8/29", "192.168.1.16/29"},
+							},
+						},
+					},
+				},
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool-1",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
+						DC:   "test-dc-1",
+						CIDR: "192.168.1.0/29",
+					},
+				},
+			},
+			expectedClusterAllocations: &kubermaticv1.IPAMAllocationList{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "IPAMAllocationList",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
+				Items: []kubermaticv1.IPAMAllocation{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:            "test-pool-1",
+							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
+							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+						},
+						Spec: kubermaticv1.IPAMAllocationSpec{
+							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
+							DC:   "test-dc-1",
+							CIDR: "192.168.1.24/29",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "range: exclude ranges",
+			cluster: generateTestCluster("test-cluster-2", "test-dc-1"),
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMPool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-pool-1",
+					},
+					Spec: kubermaticv1.IPAMPoolSpec{
+						Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+							"test-dc-1": {
+								Type:            "range",
+								PoolCIDR:        "192.168.1.0/27",
+								AllocationRange: 8,
+								ExcludeRanges:   []string{"192.168.1.9", "192.168.1.11-192.168.1.11", "192.168.1.15-192.168.1.17"},
+							},
+						},
+					},
+				},
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool-1",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "test-dc-1",
+						Addresses: []string{"192.168.1.0-192.168.1.7"},
+					},
+				},
+			},
+			expectedClusterAllocations: &kubermaticv1.IPAMAllocationList{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "IPAMAllocationList",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
+				Items: []kubermaticv1.IPAMAllocation{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:            "test-pool-1",
+							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
+							ResourceVersion: "1",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+						},
+						Spec: kubermaticv1.IPAMAllocationSpec{
+							Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+							DC:        "test-dc-1",
+							Addresses: []string{"192.168.1.8-192.168.1.8", "192.168.1.10-192.168.1.10", "192.168.1.12-192.168.1.14", "192.168.1.18-192.168.1.20"},
 						},
 					},
 				},
