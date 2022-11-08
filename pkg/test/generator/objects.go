@@ -29,7 +29,6 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -242,18 +241,6 @@ func GenUserWithGroups(id, name, email string, groups []string) *kubermaticv1.Us
 // DefaultCreationTimestamp returns default test timestamp.
 func DefaultCreationTimestamp() time.Time {
 	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
-}
-
-// GenDefaultAPIUser generates a default API user.
-func GenDefaultAPIUser() *apiv1.User {
-	return &apiv1.User{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:   GenDefaultUser().Name,
-			Name: GenDefaultUser().Spec.Name,
-		},
-		Email:    GenDefaultUser().Spec.Email,
-		LastSeen: &[]apiv1.Time{apiv1.NewTime(UserLastSeen)}[0],
-	}
 }
 
 // GenDefaultUser generates a default user.
