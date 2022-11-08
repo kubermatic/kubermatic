@@ -135,6 +135,16 @@ spec:
                     monitoringEnforced:
                       type: boolean
                   type: object
+                notifications:
+                  description: Notifications are the configuration for notifications on dashboard.
+                  properties:
+                    hideErrorEvents:
+                      description: HideErrorEvents will silence error events for the dashboard.
+                      type: boolean
+                    hideErrors:
+                      description: HideErrors will silence error notifications for the dashboard.
+                      type: boolean
+                  type: object
                 opaOptions:
                   properties:
                     enabled:
