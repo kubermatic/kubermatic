@@ -20,16 +20,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
-	"github.com/onsi/gomega"
 	"go.uber.org/zap"
 
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -40,98 +40,98 @@ type ServiceJig struct {
 	Log       *zap.SugaredLogger
 	Client    ctrlruntimeclient.Client
 	Namespace string
-
-	Services    []*corev1.Service
-	ServicePods map[string][]string
 }
 
-// CreateServiceWithPods deploys a service and the associated pods.
-func (n *ServiceJig) CreateServiceWithPods(ctx context.Context, svc *corev1.Service, numPods int32, https bool) (*corev1.Service, error) {
+// CreateServiceWithPods deploys a service and the associated pods, returning the
+// created service and the names of all pods that act as endpoints for the service.
+func (j *ServiceJig) CreateServiceWithPods(ctx context.Context, svc *corev1.Service, numPods int32, https bool) (*corev1.Service, []string, error) {
 	if len(svc.Spec.Ports) == 0 {
-		return nil, errors.New("failed to create service: at least one port is required")
+		return nil, nil, errors.New("failed to create service: at least one port is required")
 	}
 	if len(svc.Spec.Selector) == 0 {
-		return nil, errors.New("failed to create service: selector is required")
+		return nil, nil, errors.New("failed to create service: selector is required")
 	}
 
 	// Create the namespace to host the service
-	ns := n.newNamespaceTemplate()
-	n.Log.Debugw("Creating namespace", "service", ns)
-	if err := n.Client.Create(ctx, ns); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
-		return nil, err
+	ns := j.newNamespaceTemplate()
+	j.Log.Infow("Creating namespace…")
+	if err := j.Client.Create(ctx, ns); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return nil, nil, err
 	}
 
 	// Set back namespace name in case it was generated
-	n.Namespace = ns.Name
-	n.Log.Debugw("Setting generated namespace to ServiceJig", "namespace", n.Namespace)
+	j.Namespace = ns.Name
 
-	svc.Namespace = n.Namespace
-	n.Log.Debugw("Creating nodeport service", "service", svc)
-	if err := n.Client.Create(ctx, svc); err != nil {
-		return nil, fmt.Errorf("failed to create service of type nodeport: %w", err)
+	// Create the service
+	svc.Namespace = j.Namespace
+	j.Log.Infow("Creating nodeport service", "service", svc)
+	if err := j.Client.Create(ctx, svc); err != nil {
+		return nil, nil, fmt.Errorf("failed to create service: %w", err)
 	}
-	gomega.Expect(svc).NotTo(gomega.BeNil())
 
 	// Create service pods
-	rc := n.newRCFromService(svc, https, numPods)
-	n.Log.Debugw("Creating replication controller", "rc", rc)
-	if err := n.Client.Create(ctx, rc); err != nil {
-		return nil, err
+	deployment := j.newDeployment(svc, https, numPods)
+	j.Log.Infow("Creating deployment…", "deployment", deployment, "replicas", deployment.Spec.Replicas)
+	if err := j.Client.Create(ctx, deployment); err != nil {
+		return nil, nil, fmt.Errorf("failed to create deployment backing the service: %w", err)
 	}
 
 	// Wait for the pod to be ready
-	pods, err := e2eutils.WaitForPodsCreated(ctx, n.Client, n.Log, int(*rc.Spec.Replicas), rc.Namespace, svc.Spec.Selector)
+	pods, err := e2eutils.WaitForPodsCreated(ctx, j.Client, j.Log, int(*deployment.Spec.Replicas), deployment.Namespace, svc.Spec.Selector)
 	if err != nil {
-		return svc, fmt.Errorf("error occurred while waiting for pods to be ready: %w", err)
+		return svc, nil, fmt.Errorf("error occurred while waiting for pods to be ready: %w", err)
 	}
-	if !e2eutils.CheckPodsRunningReady(ctx, n.Client, n.Log, n.Namespace, pods, podReadinessTimeout) {
-		return svc, fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
+	if !e2eutils.CheckPodsRunningReady(ctx, j.Client, j.Log, j.Namespace, pods, 2*time.Minute) {
+		return svc, nil, errors.New("timeout waiting for all pods to be ready")
 	}
-	if n.ServicePods == nil {
-		n.ServicePods = map[string][]string{}
-	}
-	n.Services = append(n.Services, svc)
-	n.ServicePods[svc.Name] = pods
 
-	return svc, err
+	return svc, pods, err
 }
 
-func (n *ServiceJig) newNamespaceTemplate() *corev1.Namespace {
+// Cleanup removes the resources.
+func (j *ServiceJig) Cleanup(ctx context.Context) error {
+	ns := corev1.Namespace{}
+	if err := j.Client.Get(ctx, types.NamespacedName{Name: j.Namespace}, &ns); err != nil {
+		return err
+	}
+	j.Log.Infow("Deleting test namespace…", "namespace", j.Namespace)
+	return j.Client.Delete(ctx, &ns)
+}
+
+func (j *ServiceJig) newNamespaceTemplate() *corev1.Namespace {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: n.Namespace,
+			Name: j.Namespace,
 		},
 	}
-	if n.Namespace == "" {
+	if j.Namespace == "" {
 		ns.ObjectMeta.GenerateName = "np-proxy-test-"
 	}
 	return ns
 }
 
-func (n *ServiceJig) newRCFromService(svc *corev1.Service, https bool, replicas int32) *corev1.ReplicationController {
-	var args []string
-	var port intstr.IntOrString
-	var scheme corev1.URIScheme
+func (j *ServiceJig) newDeployment(svc *corev1.Service, https bool, replicas int32) *appsv1.Deployment {
+	port := svc.Spec.Ports[0].TargetPort
+	args := []string{"netexec", fmt.Sprintf("--http-port=%d", port.IntValue())}
+	scheme := corev1.URISchemeHTTP
+
 	if https {
-		port = svc.Spec.Ports[0].TargetPort
-		args = []string{"netexec", fmt.Sprintf("--http-port=%d", port.IntValue()), "--tls-cert-file=/localhost.crt", "--tls-private-key-file=/localhost.key"}
+		args = append(args, "--tls-cert-file=/localhost.crt", "--tls-private-key-file=/localhost.key")
 		scheme = corev1.URISchemeHTTPS
-	} else {
-		port = svc.Spec.Ports[0].TargetPort
-		args = []string{"netexec", fmt.Sprintf("--http-port=%d", port.IntValue())}
-		scheme = corev1.URISchemeHTTP
 	}
 
-	rc := &corev1.ReplicationController{
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svc.Name,
 			Namespace: svc.Namespace,
 			Labels:    svc.Spec.Selector,
 		},
-		Spec: corev1.ReplicationControllerSpec{
+		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
-			Selector: svc.Spec.Selector,
-			Template: &corev1.PodTemplateSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: svc.Spec.Selector,
+			},
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: svc.Spec.Selector,
 				},
@@ -158,15 +158,4 @@ func (n *ServiceJig) newRCFromService(svc *corev1.Service, https bool, replicas 
 			},
 		},
 	}
-	return rc
-}
-
-// CleanUp removes the resources.
-func (n *ServiceJig) CleanUp(ctx context.Context) error {
-	ns := corev1.Namespace{}
-	if err := n.Client.Get(ctx, types.NamespacedName{Name: n.Namespace}, &ns); err != nil {
-		return err
-	}
-	n.Log.Infow("deleting test namespace", "namespace", ns)
-	return n.Client.Delete(ctx, &ns)
 }

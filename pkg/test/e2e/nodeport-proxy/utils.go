@@ -21,37 +21,38 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const (
+	AgnhostImage = "registry.k8s.io/e2e-test-images/agnhost:2.21"
+)
+
 // function used to extract port info.
 type extractPortFunc func(corev1.ServicePort) int32
 
-func extractPort(svc *corev1.Service, extract extractPortFunc) sets.Int32 {
+func extractPortSet(svc *corev1.Service, extract extractPortFunc) sets.Int32 {
 	res := sets.NewInt32()
 	for _, p := range svc.Spec.Ports {
-		val := extract(p)
-		if val != 0 {
+		if val := extract(p); val != 0 {
 			res.Insert(val)
 		}
 	}
 	return res
 }
 
-// ExtractNodePorts returns the set of node ports extracted from the given
+// extractNodePorts returns the set of node ports extracted from the given
 // Service.
-func ExtractNodePorts(svc *corev1.Service) sets.Int32 {
-	return extractPort(svc,
-		func(p corev1.ServicePort) int32 { return p.NodePort })
+func extractNodePorts(svc *corev1.Service) sets.Int32 {
+	return extractPortSet(svc, func(p corev1.ServicePort) int32 { return p.NodePort })
 }
 
-// ExtractPorts returns the set of ports extracted from the given
+// extractPorts returns the set of ports extracted from the given
 // Service.
-func ExtractPorts(svc *corev1.Service) sets.Int32 {
-	return extractPort(svc,
-		func(p corev1.ServicePort) int32 { return p.Port })
+func extractPorts(svc *corev1.Service) sets.Int32 {
+	return extractPortSet(svc, func(p corev1.ServicePort) int32 { return p.Port })
 }
 
-// FindExposingNodePort returns the node port associated to the given target
+// findExposingNodePort returns the node port associated to the given target
 // port.
-func FindExposingNodePort(svc *corev1.Service, targetPort int32) int32 {
+func findExposingNodePort(svc *corev1.Service, targetPort int32) int32 {
 	for _, p := range svc.Spec.Ports {
 		if p.TargetPort.IntVal == targetPort {
 			return p.NodePort
