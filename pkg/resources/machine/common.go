@@ -524,6 +524,8 @@ func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.Nod
 				Name:    providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorName},
 				Profile: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorProfile},
 			},
+			Instancetype: nodeSpec.Cloud.Kubevirt.Instancetype,
+			Preference:   nodeSpec.Cloud.Kubevirt.Preference,
 			Template: kubevirt.Template{
 				CPUs:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.CPUs},
 				Memory: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Memory},

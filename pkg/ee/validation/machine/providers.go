@@ -277,19 +277,33 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 	}
 
 	var cpuReq, memReq resource.Quantity
-	// if flavor is set, then take the resource details from the vmi preset, otherwise take it from the config
-	if len(flavor) != 0 {
+	// If VM templating (Instancetype or Preset) is set then read cpu and memory from it.
+	// Flavors (Presets) are depracted in favor of Instancetypes, so the latter has a higher priority.
+	// We keep flavors for the current UI compatibility.
+	switch {
+	case rawConfig.VirtualMachine.Instancetype != nil && len(rawConfig.VirtualMachine.Instancetype.Name) != 0:
+		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
+		}
+		capacity, err := kubevirt.DescribeInstanceType(ctx, kubeconfig, rawConfig.VirtualMachine.Instancetype)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get KubeVirt VMI instancetype: %w", err)
+		}
+		cpuReq = *capacity.CPUCores
+		memReq = *capacity.Memory
+	case len(flavor) != 0:
 		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config: %w", err)
 		}
-		capacity, err := kubevirt.DescribeFlavor(ctx, kubeconfig, flavor)
+		capacity, err := kubevirt.DescribeFlavor(ctx, kubeconfig, flavor) //nolint:staticcheck
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt VMI Preset: %w", err)
 		}
 		cpuReq = *capacity.CPUCores
 		memReq = *capacity.Memory
-	} else {
+	default:
 		cpu, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.CPUs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt cpu request from machine config: %w", err)
@@ -298,7 +312,6 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt memory request from machine config: %w", err)
 		}
-		// parse the KubeVirt resource requests
 		cpuReq, err = resource.ParseQuantity(cpu)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
