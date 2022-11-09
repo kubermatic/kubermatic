@@ -54,7 +54,8 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v1.1.1"
+	// TODO: pin to a released version again
+	Tag = "296ee43a51a0aee013f0c6aa98f85493c59db050"
 )
 
 type operatingSystemManagerData interface {
