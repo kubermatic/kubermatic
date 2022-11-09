@@ -10,6 +10,14 @@
 - [v2.20.7](#v2207)
 - [v2.20.8](#v2208)
 - [v2.20.9](#v2209)
+- [v2.20.10](#v22010)
+
+## [v2.20.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.10)
+
+### Bugfixes
+
+- Adding finalizer `kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids` to `Cluster` resources can no longer remove other finalizers ([#11323](https://github.com/kubermatic/kubermatic/pull/11323))
+- Remove digests from Docker images in addon manifests to fix issues with Docker registry mirrors / local registries. KKP 2.22  will restore the digests and properly support them ([#11240](https://github.com/kubermatic/kubermatic/pull/11240))
 
 ## [v2.20.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.9)
 

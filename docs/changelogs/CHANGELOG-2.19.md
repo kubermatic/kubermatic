@@ -12,6 +12,13 @@
 - [v2.19.9](#v2199)
 - [v2.19.10](#v21910)
 - [v2.19.11](#v21911)
+- [v2.19.12](#v21912)
+
+## [v2.19.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.12)
+
+### Bugfixes
+
+- Fix regression that no longer created `Role` kubermatic:secret:sa-etcd-launcher for etcd-launcher-based restores ([#11241](https://github.com/kubermatic/kubermatic/pull/11241))
 
 ## [v2.19.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.11)
 

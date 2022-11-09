@@ -3,6 +3,23 @@
 - [v2.21.0](#v2210)
 - [v2.21.1](#v2211)
 - [v2.21.2](#v2212)
+- [v2.21.3](#v2213)
+
+## [v2.21.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.3)
+
+### Bugfixes
+
+- Fix kubermatic-webhook panic on providerName mismatch from CloudSpec ([#11247](https://github.com/kubermatic/kubermatic/pull/11247))
+- Fix rendering error of the metallb addon causing missing L2Advertisement ([#11233](https://github.com/kubermatic/kubermatic/pull/11233))
+- Remove digests from Docker images in addon manifests to fix issues with Docker registry mirrors / local registries. KKP 2.22  will restore the digests and properly support them ([#11239](https://github.com/kubermatic/kubermatic/pull/11239))
+
+### New Feature
+
+- Introduce a new field `disableIAMReconciling` in AWS cloud spec to disable IAM reconciliation ([#11280](https://github.com/kubermatic/kubermatic/pull/11280))
+
+### Updates
+
+- Update MetalLB version to v0.13.7 ([#11256](https://github.com/kubermatic/kubermatic/pull/11256))
 
 ## [v2.21.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.2)
 
