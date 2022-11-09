@@ -25,6 +25,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 	"k8c.io/kubermatic/v2/pkg/test"
 
 	"k8s.io/client-go/rest"
@@ -100,7 +101,7 @@ func (j *TestJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.D
 	return errors.New("no cluster created yet")
 }
 
-func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AlibabaCredentials, replicas int, spotMaxPriceUSD *string) *TestJig {
+func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AlibabaCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
@@ -118,7 +119,7 @@ func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithAlibaba("ecs.ic5.large", 40)
+		WithCloudProviderSpec(provider.NewAlibabaConfig().WithInstanceType("ecs.ic5.large").WithDiskSize(40).Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -142,11 +143,15 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 			},
 		})
 
+	awsConfig := provider.NewAWSConfig().WithInstanceType("t3.small")
+	if spotMaxPriceUSD != nil {
+		awsConfig.WithSpotInstanceMaxPrice(*spotMaxPriceUSD)
+	}
+
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		// WithAWS("t3.small", spotMaxPriceUSD)
-		WithAWS("t3.small", nil)
+		WithCloudProviderSpec(awsConfig.Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -175,7 +180,13 @@ func NewAzureCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cr
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithAzure("Standard_B1ms")
+		WithCloudProviderSpec(provider.NewAzureConfig().
+			WithVMSize("Standard_B1ms").
+			// From Azure VM there is no IPv6-only route to the internet
+			// unless the VM has a globally routable IPv6 address.
+			// We set this to make IPv6 egress work in dualstack tests.
+			WithAssignPublicIP(true).
+			Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -201,7 +212,7 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithHetzner("cx21")
+		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx21").Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -232,7 +243,7 @@ func NewOpenstackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithOpenstack("m1.small")
+		WithCloudProviderSpec(provider.NewOpenstackConfig().WithFlavor("m1.small").Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -259,7 +270,7 @@ func NewVSphereCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithVSphere(2, 4096, 10)
+		WithCloudProviderSpec(provider.NewVSphereConfig().WithCPUs(2).WithMemoryMB(4096).WithDiskSizeGB(10).Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -285,7 +296,7 @@ func NewDigitaloceanCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithDigitalocean("c-2")
+		WithCloudProviderSpec(provider.NewDigitaloceanConfig().WithSize("c-2").WithBackups(false).WithMonitoring(false).Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -311,7 +322,7 @@ func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithGCP("e2-small", 25, false)
+		WithCloudProviderSpec(provider.NewGCPConfig().WithMachineType("e2-small").WithDiskSize(25).WithDiskType("pd-standard").WithPreemptible(false).Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -338,7 +349,7 @@ func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
-		WithEquinixMetal("c3.small.x86")
+		WithCloudProviderSpec(provider.NewEquinixMetalConfig().WithInstanceType("c3.small.x86").Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,

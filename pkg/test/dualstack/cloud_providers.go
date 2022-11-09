@@ -26,8 +26,7 @@ import (
 
 	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
-	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
@@ -64,10 +63,10 @@ func addRHELSubscriptionInfo(osSpec interface{}) interface{} {
 type CreateJigFunc func(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig
 
 func newAlibabaTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
-	jig := jig.NewAlibabaCluster(seedClient, log, alibabaCredentials, 1, pointer.String("0.5"))
-	jig.MachineJig.WithProviderPatch(func(providerSpec interface{}) interface{} {
+	jig := jig.NewAlibabaCluster(seedClient, log, alibabaCredentials, 1)
+	jig.MachineJig.WithCloudProviderSpecPatch(func(providerSpec interface{}) interface{} {
 		alibabaSpec := providerSpec.(alibabatypes.RawConfig)
-		alibabaSpec.VSwitchID = providerconfigtypes.ConfigVarString{Value: "vsw-gw876svgsv52bk0c95krn"}
+		alibabaSpec.VSwitchID = providerconfig.ConfigVarString{Value: "vsw-gw876svgsv52bk0c95krn"}
 		return alibabaSpec
 	})
 
@@ -75,12 +74,12 @@ func newAlibabaTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogg
 }
 
 func newAWSTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
-	jig := jig.NewAWSCluster(seedClient, log, awsCredentials, 1, pointer.String("0.5"))
+	jig := jig.NewAWSCluster(seedClient, log, awsCredentials, 1, nil)
 	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
 		c.Cloud.AWS.NodePortsAllowedIPRange = "0.0.0.0/0"
 		return c
 	})
-	jig.MachineJig.WithProviderPatch(func(providerSpec interface{}) interface{} {
+	jig.MachineJig.WithCloudProviderSpecPatch(func(providerSpec interface{}) interface{} {
 		awsSpec := providerSpec.(awstypes.RawConfig)
 		awsSpec.AssignPublicIP = pointer.Bool(true)
 		return awsSpec
@@ -118,7 +117,6 @@ func newHetznerTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogg
 
 func newOpenstackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
 	jig := jig.NewOpenstackCluster(seedClient, log, openstackCredentials, 1)
-	jig.MachineJig.WithOpenstack("l1c.small")
 	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
 		c.Cloud.Openstack.NodePortsAllowedIPRange = "0.0.0.0/0"
 		c.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
@@ -132,13 +130,5 @@ func newOpenstackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLo
 }
 
 func newVSphereTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
-	jig := jig.NewVSphereCluster(seedClient, log, vsphereCredentials, 1)
-	jig.MachineJig.WithProviderSpec(vspheretypes.RawConfig{
-		CPUs:           2,
-		MemoryMB:       4096,
-		DiskSizeGB:     pointer.Int64(10),
-		TemplateVMName: providerconfigtypes.ConfigVarString{Value: "kkp-ubuntu-22.04"},
-	})
-
-	return jig
+	return jig.NewVSphereCluster(seedClient, log, vsphereCredentials, 1)
 }

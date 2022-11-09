@@ -27,7 +27,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,7 +49,7 @@ func NewAWSScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client,
 	return &AWSScenario{
 		commmonScenario: commmonScenario{
 			seedClient: seedClient,
-			testJig:    jig.NewAWSCluster(seedClient, log, credentials, 1, pointer.String("0.5")),
+			testJig:    jig.NewAWSCluster(seedClient, log, credentials, 1, nil),
 		},
 		credentials: credentials,
 	}

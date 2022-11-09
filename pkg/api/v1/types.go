@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"

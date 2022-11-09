@@ -52,7 +52,7 @@ elif [[ $provider == "packet" ]]; then
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
     -packet-project-id=${PACKET_PROJECT_ID}
     -packet-kkp-datacenter=packet-am"
-elif [[ $provider == "gcp" ]] || [[ $provider == "gce" ]]; then
+elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"
 elif [[ $provider == "azure" ]]; then

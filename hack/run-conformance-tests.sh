@@ -100,11 +100,6 @@ digitalocean)
     -digitalocean-kkp-datacenter=do-ams3"
   ;;
 
-gce)
-  extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
-    -gcp-kkp-datacenter=gcp-westeurope"
-  ;;
-
 gcp)
   extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"

@@ -26,10 +26,12 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/machine"
+	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -89,6 +91,8 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			Version: *kubernetesVersion,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
+				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+				Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 			},
 		},
 		Status: kubermaticv1.ClusterStatus{
@@ -100,6 +104,36 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 
 func TestReconcile(t *testing.T) {
 	logger := zap.NewNop().Sugar()
+
+	providerSpec, err := machine.NewBuilder().
+		WithOperatingSystemSpec(operatingsystem.NewUbuntuSpecBuilder(kubermaticv1.HetznerCloudProvider).Build()).
+		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx21").Build()).
+		BuildProviderSpec()
+	if err != nil {
+		t.Fatalf("Failed to create provider spec: %v", err)
+	}
+
+	dummyMD := clusterv1alpha1.MachineDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		Spec: clusterv1alpha1.MachineDeploymentSpec{
+			Replicas: pointer.Int32(1),
+			Template: clusterv1alpha1.MachineTemplateSpec{
+				Spec: clusterv1alpha1.MachineSpec{
+					Versions: clusterv1alpha1.MachineVersionInfo{
+						Kubelet: kubernetesVersion.String(),
+					},
+					ProviderSpec: *providerSpec,
+				},
+			},
+		},
+	}
+
+	mdAnnotation, err := json.Marshal(dummyMD)
+	if err != nil {
+		t.Fatalf("Cannot marshal initial machine deployment: %v", err)
+	}
 
 	testCases := []struct {
 		name      string
@@ -130,37 +164,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:      "MC webhook is not healthy, nothing should happen",
 			mcHealthy: false,
-			cluster: func() *kubermaticv1.Cluster {
-				nd := apiv1.NodeDeployment{
-					ObjectMeta: apiv1.ObjectMeta{
-						Name: "test",
-					},
-					Spec: apiv1.NodeDeploymentSpec{
-						Replicas: 1,
-						Template: apiv1.NodeSpec{
-							Versions: apiv1.NodeVersionInfo{
-								Kubelet: kubernetesVersion.String(),
-							},
-							OperatingSystem: apiv1.OperatingSystemSpec{
-								Ubuntu: &apiv1.UbuntuSpec{},
-							},
-							Cloud: apiv1.NodeCloudSpec{
-								Hetzner: &apiv1.HetznerNodeSpec{
-									Type:    "big",
-									Network: "test",
-								},
-							},
-						},
-					},
-				}
-
-				data, err := json.Marshal(nd)
-				if err != nil {
-					panic(fmt.Sprintf("cannot marshal initial machine deployment: %v", err))
-				}
-
-				return genCluster(string(data))
-			}(),
+			cluster:   genCluster(string(mdAnnotation)),
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				// cluster should now have its special condition
 				name := kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess
@@ -180,37 +184,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:      "vanilla case, create a MachineDeployment from the annotation",
 			mcHealthy: true,
-			cluster: func() *kubermaticv1.Cluster {
-				nd := apiv1.NodeDeployment{
-					ObjectMeta: apiv1.ObjectMeta{
-						Name: "test",
-					},
-					Spec: apiv1.NodeDeploymentSpec{
-						Replicas: 1,
-						Template: apiv1.NodeSpec{
-							Versions: apiv1.NodeVersionInfo{
-								Kubelet: kubernetesVersion.String(),
-							},
-							OperatingSystem: apiv1.OperatingSystemSpec{
-								Ubuntu: &apiv1.UbuntuSpec{},
-							},
-							Cloud: apiv1.NodeCloudSpec{
-								Hetzner: &apiv1.HetznerNodeSpec{
-									Type:    "big",
-									Network: "test",
-								},
-							},
-						},
-					},
-				}
-
-				data, err := json.Marshal(nd)
-				if err != nil {
-					panic(fmt.Sprintf("cannot marshal initial machine deployment: %v", err))
-				}
-
-				return genCluster(string(data))
-			}(),
+			cluster:   genCluster(string(mdAnnotation)),
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)

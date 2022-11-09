@@ -18,22 +18,18 @@ package scenarios
 
 import (
 	"context"
-	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
-
-	"k8s.io/utils/pointer"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
 const (
 	vmwareCloudDirectorIPAllocationMode = "DHCP"
 	vmwareCloudDirectorCPUs             = 2
 	vmwareCloudDirectorCPUCores         = 1
-	vmwareCloudDirectoMemoryMB          = 4096
+	vmwareCloudDirectorMemoryMB         = 4096
 	vmwareCloudDirectoDiskSize          = 20
 	vmwareCloudDirectorCatalog          = "kubermatic"
 	vmwareCloudDirectorStorageProfile   = "Intermediate"
@@ -66,32 +62,16 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 }
 
 func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
+	cloudProviderSpec := provider.NewVMwareCloudDirectorConfig().
+		WithCatalog(vmwareCloudDirectorCatalog).
+		WithCPUs(vmwareCloudDirectorCPUs).
+		WithCPUCores(vmwareCloudDirectorCPUCores).
+		WithMemoryMB(vmwareCloudDirectorMemoryMB).
+		WithDiskSizeGB(vmwareCloudDirectoDiskSize).
+		WithIPAllocationMode(vmwareCloudDirectorIPAllocationMode).
+		Build()
 
-	nodeSpec := apiv1.NodeSpec{
-		OperatingSystem: *osSpec,
-		Cloud: apiv1.NodeCloudSpec{
-			VMwareCloudDirector: &apiv1.VMwareCloudDirectorNodeSpec{
-				Template:         s.datacenter.Spec.VMwareCloudDirector.Templates[s.operatingSystem],
-				Catalog:          vmwareCloudDirectorCatalog,
-				CPUs:             vmwareCloudDirectorCPUs,
-				CPUCores:         vmwareCloudDirectorCPUCores,
-				MemoryMB:         vmwareCloudDirectoMemoryMB,
-				DiskSizeGB:       pointer.Int64(vmwareCloudDirectoDiskSize),
-				IPAllocationMode: vmwareCloudDirectorIPAllocationMode,
-			},
-		},
-	}
-
-	config, err := machine.GetVMwareCloudDirectorProviderConfig(cluster, nodeSpec, s.datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := s.createMachineDeployment(num, config)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
 	if err != nil {
 		return nil, err
 	}

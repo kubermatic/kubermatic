@@ -18,13 +18,11 @@ package scenarios
 
 import (
 	"context"
-	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
 type alibabaScenario struct {
@@ -46,38 +44,17 @@ func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 }
 
 func (s *alibabaScenario) MachineDeployments(_ context.Context, replicas int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
+	cloudProviderSpec := provider.NewAlibabaConfig().
+		WithInstanceType("ecs.c6.xsmall").
+		WithDiskSize(40).
+		WithDiskType("cloud_efficiency").
+		WithVSwitchID("vsw-gw8g8mn4ohmj483hsylmn").
+		Build()
 
-	nodeSpec := apiv1.NodeSpec{
-		OperatingSystem: *osSpec,
-		Cloud: apiv1.NodeCloudSpec{
-			Alibaba: &apiv1.AlibabaNodeSpec{
-				InstanceType:            "ecs.c6.xsmall",
-				DiskSize:                "40",
-				DiskType:                "cloud_efficiency",
-				VSwitchID:               "vsw-gw8g8mn4ohmj483hsylmn",
-				InternetMaxBandwidthOut: "10",
-				ZoneID:                  s.getZoneID(),
-			},
-		},
-	}
-
-	config, err := machine.GetAlibabaProviderConfig(cluster, nodeSpec, s.datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := s.createMachineDeployment(replicas, config)
+	md, err := s.createMachineDeployment(cluster, replicas, cloudProviderSpec)
 	if err != nil {
 		return nil, err
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *alibabaScenario) getZoneID() string {
-	return fmt.Sprintf("%sa", s.datacenter.Spec.Alibaba.Region)
 }

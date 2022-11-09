@@ -267,8 +267,6 @@ const (
 
 	// DefaultServiceAccountName is the name of Kubernetes default service accounts.
 	DefaultServiceAccountName = "default"
-	// KubeSystemNamespaceName is the name of Kubernetes kube-system namespace.
-	KubeSystemNamespaceName = "kube-system"
 
 	// OperatingSystemManagerCertUsername is the name of the user coming from kubeconfig cert.
 	OperatingSystemManagerCertUsername = "operating-system-manager"

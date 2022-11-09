@@ -18,19 +18,14 @@ package scenarios
 
 import (
 	"context"
-	"fmt"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
-
-	"k8s.io/utils/pointer"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
 const (
@@ -70,32 +65,15 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 }
 
 func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
+	cloudProviderSpec := provider.NewAnexiaConfig().
+		WithCPUs(nodeCpu).
+		WithMemory(nodeMemory).
+		WithDiskSize(nodeDiskSize).
+		WithTemplateID(secrets.Anexia.TemplateID).
+		WithVlanID(secrets.Anexia.VlanID).
+		Build()
 
-	osSpec.Flatcar.ProvisioningUtility = flatcar.CloudInit
-
-	nodeSpec := apiv1.NodeSpec{
-		OperatingSystem: *osSpec,
-		Cloud: apiv1.NodeCloudSpec{
-			Anexia: &apiv1.AnexiaNodeSpec{
-				CPUs:       nodeCpu,
-				Memory:     nodeMemory,
-				DiskSize:   pointer.Int64(nodeDiskSize),
-				TemplateID: secrets.Anexia.TemplateID,
-				VlanID:     secrets.Anexia.VlanID,
-			},
-		},
-	}
-
-	config, err := machine.GetAnexiaProviderConfig(cluster, nodeSpec, s.datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := createMachineDeployment(num, &s.version, s.operatingSystem, osSpec, s.cloudProvider, config, s.dualstackEnabled)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
 	if err != nil {
 		return nil, err
 	}

@@ -25,10 +25,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
@@ -100,33 +99,17 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 
 	result := []clusterv1alpha1.MachineDeployment{}
 
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
-
 	for _, subnet := range subnets {
-		nodeSpec := apiv1.NodeSpec{
-			OperatingSystem: *osSpec,
-			Cloud: apiv1.NodeCloudSpec{
-				AWS: &apiv1.AWSNodeSpec{
-					InstanceType:     awsInstanceType,
-					VolumeType:       awsVolumeType,
-					VolumeSize:       awsVolumeSize,
-					AvailabilityZone: *subnet.AvailabilityZone,
-					SubnetID:         *subnet.SubnetId,
-					IsSpotInstance:   pointer.Bool(false),
-					// SpotInstanceMaxPrice: pointer.String("0.5"), // USD
-				},
-			},
-		}
+		cloudProviderSpec := provider.NewAWSConfig().
+			WithInstanceType(awsInstanceType).
+			WithDiskSize(awsVolumeSize).
+			WithDiskType(awsVolumeType).
+			WithAvailabilityZone(*subnet.AvailabilityZone).
+			WithSubnetID(*subnet.SubnetId).
+			// WithSpotInstanceMaxPrice("0.5").
+			Build()
 
-		config, err := machine.GetAWSProviderConfig(cluster, nodeSpec, s.datacenter)
-		if err != nil {
-			return nil, err
-		}
-
-		md, err := s.createMachineDeployment(num, config)
+		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
 		if err != nil {
 			return nil, err
 		}

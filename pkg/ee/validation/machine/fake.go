@@ -28,12 +28,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func getFakeQuotaRequest(config *types.Config) (*ResourceDetails, error) {
+func getFakeQuotaRequest(config *providerconfig.Config) (*ResourceDetails, error) {
 	spec := &FakeProviderSpec{}
 	if err := json.Unmarshal(config.CloudProviderSpec.Raw, spec); err != nil {
 		return nil, fmt.Errorf("error unmarshalling fake raw config: %w", err)

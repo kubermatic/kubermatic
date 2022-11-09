@@ -1012,7 +1012,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 	}
 
 	// finally, ensure kube-system default service account is updated as well
-	err := r.reconcileDefaultServiceAccount(ctx, resources.KubeSystemNamespaceName)
+	err := r.reconcileDefaultServiceAccount(ctx, metav1.NamespaceSystem)
 	if err != nil {
 		return fmt.Errorf("failed to update default service account: %w", err)
 	}
