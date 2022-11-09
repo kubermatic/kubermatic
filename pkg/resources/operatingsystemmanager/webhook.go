@@ -58,6 +58,8 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 				"-logtostderr",
 				"-v", "4",
 				"-namespace", "kube-system",
+				"-health-probe-bind-address", "0.0.0.0:8081",
+				"-metrics-bind-address", "0.0.0.0:8080",
 			}
 
 			dep.Name = resources.OperatingSystemManagerWebhookDeploymentName
@@ -105,7 +107,7 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/healthz",
+								Path:   "/readyz",
 								Port:   intstr.FromInt(8081),
 								Scheme: corev1.URISchemeHTTPS,
 							},

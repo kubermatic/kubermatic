@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	webhookRoleName        = "kubermatic:machine-controller-webhook"
-	webhookRoleBindingName = "kubermatic:machine-controller-webhook"
+	webhookRoleName        = "kubermatic:operating-system-manager-webhook"
+	webhookRoleBindingName = "kubermatic:operating-system-manager-webhook"
 
 	clusterAPIGroup   = "cluster.k8s.io"
 	clusterAPIVersion = "v1alpha1"
