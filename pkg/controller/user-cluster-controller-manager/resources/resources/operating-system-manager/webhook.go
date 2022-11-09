@@ -89,8 +89,8 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 
 			// This only gets set when the APIServer supports it, so carry it over
 			var scope *admissionregistrationv1.ScopeType
-			if len(mutatingWebhookConfiguration.Webhooks) != 2 {
-				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1.MutatingWebhook{{}, {}}
+			if len(mutatingWebhookConfiguration.Webhooks) != 1 {
+				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1.MutatingWebhook{{}}
 			} else if len(mutatingWebhookConfiguration.Webhooks[0].Rules) > 0 {
 				scope = mutatingWebhookConfiguration.Webhooks[0].Rules[0].Scope
 			}

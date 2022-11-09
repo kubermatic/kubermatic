@@ -68,7 +68,7 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume(), getCABundleVolume()}
+			volumes := []corev1.Volume{getWebhookKubeconfigVolume(), getServingCertVolume(), getCABundleVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			podLabels, err := data.GetPodTemplateLabels(resources.OperatingSystemManagerWebhookDeploymentName, volumes, nil)
@@ -269,6 +269,17 @@ func getCABundleVolume() corev1.Volume {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: resources.CABundleConfigMapName,
 				},
+			},
+		},
+	}
+}
+
+func getWebhookKubeconfigVolume() corev1.Volume {
+	return corev1.Volume{
+		Name: resources.OperatingSystemManagerWebhookKubeconfigSecretName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: resources.OperatingSystemManagerWebhookKubeconfigSecretName,
 			},
 		},
 	}
