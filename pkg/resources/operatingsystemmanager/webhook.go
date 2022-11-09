@@ -58,8 +58,6 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 				"-logtostderr",
 				"-v", "4",
 				"-namespace", "kube-system",
-				"-health-probe-bind-address", "0.0.0.0:8081",
-				"-metrics-bind-address", "0.0.0.0:8080",
 			}
 
 			dep.Name = resources.OperatingSystemManagerWebhookDeploymentName
@@ -104,12 +102,18 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 							Value: "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 						},
 					},
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          "webhook-server",
+							ContainerPort: 9443,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/readyz",
-								Port:   intstr.FromInt(8081),
-								Scheme: corev1.URISchemeHTTPS,
+								Path: "/readyz",
+								Port: intstr.FromInt(8081),
 							},
 						},
 						FailureThreshold: 3,
@@ -121,9 +125,8 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 						FailureThreshold: 8,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/healthz",
-								Port:   intstr.FromInt(8081),
-								Scheme: corev1.URISchemeHTTPS,
+								Path: "/healthz",
+								Port: intstr.FromInt(8081),
 							},
 						},
 						InitialDelaySeconds: 15,
@@ -179,7 +182,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 			}
 			se.Spec.Ports = []corev1.ServicePort{
 				{
-					Name:       "",
+					Name:       "webhook-server",
 					Port:       443,
 					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt(9443),
