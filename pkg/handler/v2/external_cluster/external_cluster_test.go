@@ -391,7 +391,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 	}{
 		{
 			Name:                   "scenario 1: get external cluster",
-			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.15"},"status":{"state":"RUNNING","statusMessage":""}}`,
+			ExpectedResponse:       `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.16"},"status":{"state":"RUNNING","statusMessage":""}}`,
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
@@ -400,7 +400,7 @@ func TestGetClusterEndpoint(t *testing.T) {
 		},
 		{
 			Name:             "scenario 2: the admin John can get Bob's cluster",
-			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.15"},"status":{"state":"RUNNING","statusMessage":""}}`,
+			ExpectedResponse: `{"id":"clusterAbcID","name":"clusterAbcID","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"spec":{"version":"1.22.16"},"status":{"state":"RUNNING","statusMessage":""}}`,
 			HTTPStatus:       http.StatusOK,
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
