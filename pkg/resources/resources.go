@@ -166,9 +166,9 @@ const (
 	// OperatingSystemManagerWebhookServingCertSecretName is the name for the operating-system-manager webhook TLS server certificate secret.
 	OperatingSystemManagerWebhookServingCertSecretName = "operating-system-manager-webhook-serving-cert"
 	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the cert.
-	OperatingSystemManagerWebhookServingCertCertKeyName = "cert.pem"
+	OperatingSystemManagerWebhookServingCertCertKeyName = "tls.crt"
 	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the private key.
-	OperatingSystemManagerWebhookServingCertKeyKeyName = "key.pem"
+	OperatingSystemManagerWebhookServingCertKeyKeyName = "tls.key"
 	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
