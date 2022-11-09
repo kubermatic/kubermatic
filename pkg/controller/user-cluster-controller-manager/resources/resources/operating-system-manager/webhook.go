@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	webhookRoleName        = "kubermatic:operating-system-manager-webhook"
-	webhookRoleBindingName = "kubermatic:operating-system-manager-webhook"
+	webhookClusterRoleName        = "kubermatic:operating-system-manager-webhook"
+	webhookClusterRoleBindingName = "kubermatic:operating-system-manager-webhook"
 
 	clusterAPIGroup   = "cluster.k8s.io"
 	clusterAPIVersion = "v1alpha1"
@@ -39,7 +39,7 @@ const (
 
 func WebhookClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
-		return webhookRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+		return webhookClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"operatingsystemmanager.k8c.io"},
@@ -61,9 +61,9 @@ func WebhookClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 
 func WebhookClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return webhookRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+		return webhookClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
-				Name:     webhookRoleName,
+				Name:     webhookClusterRoleName,
 				Kind:     "ClusterRole",
 				APIGroup: rbacv1.GroupName,
 			}

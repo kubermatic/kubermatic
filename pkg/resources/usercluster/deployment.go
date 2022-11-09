@@ -156,9 +156,9 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-owner-email", email)
 			}
 
-			if data.Cluster().Spec.DebugLog {
-				args = append(args, "-log-debug=true")
-			}
+			//if data.Cluster().Spec.DebugLog {
+			args = append(args, "-log-debug=true")
+			//}
 
 			if data.IsKonnectivityEnabled() {
 				args = append(args, "-konnectivity-enabled=true")
