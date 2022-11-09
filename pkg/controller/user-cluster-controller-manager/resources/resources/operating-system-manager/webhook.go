@@ -69,8 +69,9 @@ func WebhookClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreat
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{
-					Kind: rbacv1.UserKind,
-					Name: resources.OperatingSystemManagerWebhookCertUsername,
+					Kind:     rbacv1.UserKind,
+					APIGroup: rbacv1.GroupName,
+					Name:     resources.OperatingSystemManagerWebhookCertUsername,
 				},
 			}
 			return crb, nil
