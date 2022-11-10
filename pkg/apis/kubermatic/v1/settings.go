@@ -77,6 +77,10 @@ type SettingSpec struct {
 	// +optional
 	Notifications NotificationsOptions `json:"notifications,omitempty"`
 
+	// ProviderConfiguration are the cloud provider specific configurations on dashboard.
+	// +optional
+	ProviderConfiguration ProviderConfiguration `json:"providerConfiguration,omitempty"`
+
 	// MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
 	MachineDeploymentVMResourceQuota *MachineFlavorFilter `json:"machineDeploymentVMResourceQuota,omitempty"`
 
@@ -118,6 +122,16 @@ type NotificationsOptions struct {
 	HideErrors bool `json:"hideErrors,omitempty"`
 	// HideErrorEvents will silence error events for the dashboard.
 	HideErrorEvents bool `json:"hideErrorEvents,omitempty"`
+}
+
+type ProviderConfiguration struct {
+	// OpenStack are the configurations for openstack provider.
+	OpenStack OpenStack `json:"openStack,omitempty"`
+}
+
+type OpenStack struct {
+	// EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
+	EnforceCustomDisk bool `json:"enforceCustomDisk,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
