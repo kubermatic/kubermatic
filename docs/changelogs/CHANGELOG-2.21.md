@@ -21,6 +21,13 @@
 
 - Update MetalLB version to v0.13.7 ([#11256](https://github.com/kubermatic/kubermatic/pull/11256))
 
+#### Metering (EE)
+
+Update metering to version 1.0.1 ([#11293](https://github.com/kubermatic/kubermatic/pull/11293))
+- Add average-used-cpu-millicores to Cluster and Namespace reports
+- Add average-available-cpu-millicores add average-cluster-machines field to Cluster reports
+- Fix a bug that causes wrong values if metric is not continuously present for the aggregation window 
+
 ## [v2.21.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.2)
 
 ### Bugfixes
