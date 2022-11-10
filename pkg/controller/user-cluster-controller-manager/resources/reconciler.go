@@ -556,6 +556,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 
 	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleCreator())
+		creators = append(creators, operatingsystemmanager.WebhookClusterRoleCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -605,6 +606,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 
 	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleBindingCreator())
+		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -657,6 +659,10 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators, operatingsystemmanager.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace))
+	}
+
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile MutatingWebhookConfigurations: %w", err)
 	}

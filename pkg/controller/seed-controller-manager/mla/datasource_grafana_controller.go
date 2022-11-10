@@ -189,14 +189,14 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 
 	project := &kubermaticv1.Project{}
 	err = r.Get(ctx, types.NamespacedName{Name: projectID}, project)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// if project removed before cluster we need only to remove resources and finalizer
-			if err := r.handleDeletion(ctx, cluster, nil); err != nil {
-				return nil, fmt.Errorf("handling deletion: %w", err)
-			}
-			return nil, nil
+	if (err != nil && apierrors.IsNotFound(err)) || (err == nil && !project.DeletionTimestamp.IsZero()) {
+		// if project removed before cluster we need only to remove resources and finalizer
+		if err := r.handleDeletion(ctx, cluster, nil); err != nil {
+			return nil, fmt.Errorf("handling deletion: %w", err)
 		}
+		return nil, nil
+	}
+	if err != nil {
 		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
 

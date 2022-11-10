@@ -410,7 +410,7 @@ consul:
     # A `null` value will use the Kubernetes cluster's default StorageClass. If a default
     # StorageClass does not exist, you will need to create one.
     # @type: string
-    storageClass: null
+    storageClass: kubermatic-fast
     # This will enable/disable Connect (https://consul.io/docs/connect). Setting this to true
     # _will not_ automatically secure pod communication, this
     # setting will only enable usage of the feature. Consul will automatically initialize

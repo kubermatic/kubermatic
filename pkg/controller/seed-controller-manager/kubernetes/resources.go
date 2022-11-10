@@ -348,6 +348,10 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator(data))
 	}
 
+	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
+		creators = append(creators, operatingsystemmanager.ServiceCreator())
+	}
+
 	return creators
 }
 
@@ -391,6 +395,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 
 	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
 		deployments = append(deployments, operatingsystemmanager.DeploymentCreator(data))
+		deployments = append(deployments, operatingsystemmanager.WebhookDeploymentCreator(data))
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -443,6 +448,13 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
 			resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
+		)
+	}
+
+	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
+		creators = append(creators,
+			resources.GetInternalKubeconfigCreator(namespace, resources.OperatingSystemManagerWebhookKubeconfigSecretName, resources.OperatingSystemManagerWebhookCertUsername, nil, data, r.log),
+			operatingsystemmanager.TLSServingCertificateCreator(data),
 		)
 	}
 

@@ -202,6 +202,7 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 				Validation: &constrainttemplatev1.Validation{
 					LegacySchema: pointer.Bool(false),
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+						Type: "object",
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							AllowedRegistryField: {
 								Type: "array",

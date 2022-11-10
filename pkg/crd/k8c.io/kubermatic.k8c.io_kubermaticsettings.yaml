@@ -135,12 +135,33 @@ spec:
                     monitoringEnforced:
                       type: boolean
                   type: object
+                notifications:
+                  description: Notifications are the configuration for notifications on dashboard.
+                  properties:
+                    hideErrorEvents:
+                      description: HideErrorEvents will silence error events for the dashboard.
+                      type: boolean
+                    hideErrors:
+                      description: HideErrors will silence error notifications for the dashboard.
+                      type: boolean
+                  type: object
                 opaOptions:
                   properties:
                     enabled:
                       type: boolean
                     enforced:
                       type: boolean
+                  type: object
+                providerConfiguration:
+                  description: ProviderConfiguration are the cloud provider specific configurations on dashboard.
+                  properties:
+                    openStack:
+                      description: OpenStack are the configurations for openstack provider.
+                      properties:
+                        enforceCustomDisk:
+                          description: EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
+                          type: boolean
+                      type: object
                   type: object
                 restrictProjectCreation:
                   type: boolean

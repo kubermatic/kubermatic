@@ -76,6 +76,11 @@ func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 					Resources: []string{"clustertemplates", "projects", "ipamallocations", "resourcequotas"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"externalclusters"},
+					Verbs:     []string{"get", "list"},
+				},
 			}
 
 			return r, nil

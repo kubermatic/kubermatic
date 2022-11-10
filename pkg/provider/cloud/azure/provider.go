@@ -20,11 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -364,89 +361,6 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 
 		if _, err = sgClient.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, nil); err != nil {
 			return err
-		}
-	}
-
-	return nil
-}
-
-func (a *Azure) AddICMPRulesIfRequired(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	azure := cluster.Spec.Cloud.Azure
-	if azure.SecurityGroup == "" {
-		return nil
-	}
-
-	credentials, err := GetCredentialsForCluster(cluster.Spec.Cloud, a.secretKeySelector)
-	if err != nil {
-		return err
-	}
-
-	credential, err := credentials.ToAzureCredential()
-	if err != nil {
-		return err
-	}
-
-	sgClient, err := getSecurityGroupsClient(credential, credentials.SubscriptionID)
-	if err != nil {
-		return fmt.Errorf("failed to get security group client: %w", err)
-	}
-
-	sg, err := sgClient.Get(ctx, azure.ResourceGroup, azure.SecurityGroup, nil)
-	if err != nil {
-		return fmt.Errorf("failed to get security group %q: %w", azure.SecurityGroup, err)
-	}
-
-	// we do not want to add IMCP rules to a NSG we do not own;
-	// which is the case when a pre-provisioned NSG is configured.
-	if !hasOwnershipTag(sg.Tags, cluster) {
-		return nil
-	}
-
-	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool
-	if sg.Properties.SecurityRules != nil {
-		for _, rule := range sg.Properties.SecurityRules {
-			if rule.Name == nil {
-				continue
-			}
-			// We trust that no one will alter the content of the rules
-			switch *rule.Name {
-			case denyAllTCPSecGroupRuleName:
-				hasDenyAllTCPRule = true
-			case denyAllUDPSecGroupRuleName:
-				hasDenyAllUDPRule = true
-			case allowAllICMPSecGroupRuleName:
-				hasICMPAllowAllRule = true
-			}
-		}
-	}
-
-	var newSecurityRules []*armnetwork.SecurityRule
-	if !hasDenyAllTCPRule {
-		a.log.With("cluster", cluster.Name).Info("Creating TCP deny all rule")
-		newSecurityRules = append(newSecurityRules, tcpDenyAllRule())
-	}
-	if !hasDenyAllUDPRule {
-		a.log.With("cluster", cluster.Name).Info("Creating UDP deny all rule")
-		newSecurityRules = append(newSecurityRules, udpDenyAllRule())
-	}
-	if !hasICMPAllowAllRule {
-		a.log.With("cluster", cluster.Name).Info("Creating ICMP allow all rule")
-		newSecurityRules = append(newSecurityRules, icmpAllowAllRule())
-	}
-
-	if len(newSecurityRules) > 0 {
-		sg.Properties.SecurityRules = append(sg.Properties.SecurityRules, newSecurityRules...)
-
-		future, err := sgClient.BeginCreateOrUpdate(ctx, azure.ResourceGroup, azure.SecurityGroup, sg.SecurityGroup, nil)
-		if err != nil {
-			return fmt.Errorf("failed to add new rules to security group %q: %w", *sg.Name, err)
-		}
-
-		_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
-			Frequency: 5 * time.Second,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to add new rules to security group %q: %w", *sg.Name, err)
 		}
 	}
 

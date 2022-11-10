@@ -59,13 +59,7 @@ time kind create cluster --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND_CLUSTER_NAME"
 
 # run tests
-CGO_ENABLED=1 go_test nodeport_proxy_e2e \
-  --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
-  --ginkgo.randomizeAllSpecs \
-  --ginkgo.failOnPending \
-  --ginkgo.trace \
-  --ginkgo.progress \
-  --ginkgo.v \
-  --kubeconfig "${HOME}/.kube/config" \
-  --kubermatic-tag "${TAG}" \
-  --log-debug
+go_test nodeport_proxy_e2e -tags e2e -v -race ./pkg/test/e2e/nodeport-proxy \
+  -kubeconfig "${HOME}/.kube/config" \
+  -kubermatic-tag "${TAG}" \
+  -log-debug

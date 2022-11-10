@@ -99,45 +99,6 @@ metadata:
     {}
 automountServiceAccountToken: true
 ---
-# Source: cortex/charts/memcached-blocks-index/templates/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-automountServiceAccountToken: true
-metadata:
-  name: release-name-memcached-blocks-index
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-index
-    helm.sh/chart: memcached-blocks-index-5.15.14
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
----
-# Source: cortex/charts/memcached-blocks-metadata/templates/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-automountServiceAccountToken: true
-metadata:
-  name: release-name-memcached-blocks-metadata
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-metadata
-    helm.sh/chart: memcached-blocks-metadata-5.15.14
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
----
-# Source: cortex/charts/memcached-blocks/templates/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-automountServiceAccountToken: true
-metadata:
-  name: release-name-memcached-blocks
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks
-    helm.sh/chart: memcached-blocks-5.15.14
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
----
 # Source: cortex/charts/cortex/templates/secret.yaml
 apiVersion: v1
 kind: Secret
@@ -551,11 +512,37 @@ metadata:
   annotations:
 spec:
   type: ClusterIP
+  clusterIP: None
   ports:
     - name: memcache
       port: 11211
       targetPort: memcache
       nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks-index
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/memcached-blocks-index/templates/svc-metrics.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-index-metrics
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+  annotations:
+    prometheus.io/port: '9150'
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9150
+      targetPort: metrics
   selector:
     app.kubernetes.io/name: memcached-blocks-index
     app.kubernetes.io/instance: release-name
@@ -574,11 +561,37 @@ metadata:
   annotations:
 spec:
   type: ClusterIP
+  clusterIP: None
   ports:
     - name: memcache
       port: 11211
       targetPort: memcache
       nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/memcached-blocks-metadata/templates/svc-metrics.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-metadata-metrics
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+  annotations:
+    prometheus.io/port: '9150'
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9150
+      targetPort: metrics
   selector:
     app.kubernetes.io/name: memcached-blocks-metadata
     app.kubernetes.io/instance: release-name
@@ -597,11 +610,37 @@ metadata:
   annotations:
 spec:
   type: ClusterIP
+  clusterIP: None
   ports:
     - name: memcache
       port: 11211
       targetPort: memcache
       nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/memcached-blocks/templates/svc-metrics.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-metrics
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+  annotations:
+    prometheus.io/port: '9150'
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9150
+      targetPort: metrics
   selector:
     app.kubernetes.io/name: memcached-blocks
     app.kubernetes.io/instance: release-name
@@ -1146,258 +1185,6 @@ spec:
             name: cortex-runtime-config
           name: cortex-runtime-config
         - name: storage
-          emptyDir: {}
----
-# Source: cortex/charts/memcached-blocks-index/templates/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: release-name-memcached-blocks-index
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-index
-    helm.sh/chart: memcached-blocks-index-5.15.14
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: memcached-blocks-index
-      app.kubernetes.io/instance: release-name
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: memcached-blocks-index
-        helm.sh/chart: memcached-blocks-index-5.15.14
-        app.kubernetes.io/instance: release-name
-        app.kubernetes.io/managed-by: Helm
-    spec:
-      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: memcached-blocks-index
-                    app.kubernetes.io/instance: release-name
-                namespaces:
-                  - "default"
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-        runAsUser: 1001
-      serviceAccountName: release-name-memcached-blocks-index
-      containers:
-        - name: memcached
-          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
-          imagePullPolicy: "IfNotPresent"
-          args:
-            - /run.sh
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-          ports:
-            - name: memcache
-              containerPort: 11211
-          livenessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 6
-          readinessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 5
-            timeoutSeconds: 3
-            periodSeconds: 5
-          resources:
-            limits: {}
-            requests:
-              cpu: 250m
-              memory: 256Mi
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-          securityContext:
-            readOnlyRootFilesystem: false
-      volumes:
-        - name: tmp
-          emptyDir: {}
----
-# Source: cortex/charts/memcached-blocks-metadata/templates/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: release-name-memcached-blocks-metadata
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-metadata
-    helm.sh/chart: memcached-blocks-metadata-5.15.14
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: memcached-blocks-metadata
-      app.kubernetes.io/instance: release-name
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: memcached-blocks-metadata
-        helm.sh/chart: memcached-blocks-metadata-5.15.14
-        app.kubernetes.io/instance: release-name
-        app.kubernetes.io/managed-by: Helm
-    spec:
-      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: memcached-blocks-metadata
-                    app.kubernetes.io/instance: release-name
-                namespaces:
-                  - "default"
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-        runAsUser: 1001
-      serviceAccountName: release-name-memcached-blocks-metadata
-      containers:
-        - name: memcached
-          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
-          imagePullPolicy: "IfNotPresent"
-          args:
-            - /run.sh
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-          ports:
-            - name: memcache
-              containerPort: 11211
-          livenessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 6
-          readinessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 5
-            timeoutSeconds: 3
-            periodSeconds: 5
-          resources:
-            limits: {}
-            requests:
-              cpu: 250m
-              memory: 256Mi
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-          securityContext:
-            readOnlyRootFilesystem: false
-      volumes:
-        - name: tmp
-          emptyDir: {}
----
-# Source: cortex/charts/memcached-blocks/templates/deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: release-name-memcached-blocks
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks
-    helm.sh/chart: memcached-blocks-5.15.14
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: memcached-blocks
-      app.kubernetes.io/instance: release-name
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: memcached-blocks
-        helm.sh/chart: memcached-blocks-5.15.14
-        app.kubernetes.io/instance: release-name
-        app.kubernetes.io/managed-by: Helm
-    spec:
-      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: memcached-blocks
-                    app.kubernetes.io/instance: release-name
-                namespaces:
-                  - "default"
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-        runAsUser: 1001
-      serviceAccountName: release-name-memcached-blocks
-      containers:
-        - name: memcached
-          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
-          imagePullPolicy: "IfNotPresent"
-          args:
-            - /run.sh
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-          ports:
-            - name: memcache
-              containerPort: 11211
-          livenessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 6
-          readinessProbe:
-            tcpSocket:
-              port: memcache
-            initialDelaySeconds: 5
-            timeoutSeconds: 3
-            periodSeconds: 5
-          resources:
-            limits: {}
-            requests:
-              cpu: 250m
-              memory: 256Mi
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-          securityContext:
-            readOnlyRootFilesystem: false
-      volumes:
-        - name: tmp
           emptyDir: {}
 ---
 # Source: cortex/charts/cortex/templates/alertmanager/alertmanager-statefulset.yaml
@@ -1991,3 +1778,339 @@ spec:
                 secretKeyRef:
                   key: rootPassword
                   name: minio
+---
+# Source: cortex/charts/memcached-blocks-index/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-memcached-blocks-index
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks-index
+      app.kubernetes.io/instance: release-name
+  replicas: 2
+  serviceName: release-name-memcached-blocks-index
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks-index
+        helm.sh/chart: memcached-blocks-index-5.15.14
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+      annotations:
+        prometheus.io/port: "9150"
+        prometheus.io/scrape: "true"
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks-index
+                    app.kubernetes.io/instance: release-name
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: default
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - /run.sh
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+            limits: {}
+            requests:
+              cpu: 5m
+              memory: 256Mi
+          securityContext:
+            readOnlyRootFilesystem: false
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+        - name: metrics
+          image: docker.io/bitnami/memcached-exporter:0.9.0-debian-10-r268
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: metrics
+              containerPort: 9150
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits: {}
+            requests: {}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Source: cortex/charts/memcached-blocks-metadata/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-memcached-blocks-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks-metadata
+      app.kubernetes.io/instance: release-name
+  replicas: 2
+  serviceName: release-name-memcached-blocks-metadata
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks-metadata
+        helm.sh/chart: memcached-blocks-metadata-5.15.14
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+      annotations:
+        prometheus.io/port: "9150"
+        prometheus.io/scrape: "true"
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks-metadata
+                    app.kubernetes.io/instance: release-name
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: default
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - /run.sh
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+            limits: {}
+            requests:
+              cpu: 5m
+              memory: 256Mi
+          securityContext:
+            readOnlyRootFilesystem: false
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+        - name: metrics
+          image: docker.io/bitnami/memcached-exporter:0.9.0-debian-10-r268
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: metrics
+              containerPort: 9150
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits: {}
+            requests: {}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Source: cortex/charts/memcached-blocks/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-memcached-blocks
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-5.15.14
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks
+      app.kubernetes.io/instance: release-name
+  replicas: 2
+  serviceName: release-name-memcached-blocks
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks
+        helm.sh/chart: memcached-blocks-5.15.14
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+      annotations:
+        prometheus.io/port: "9150"
+        prometheus.io/scrape: "true"
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks
+                    app.kubernetes.io/instance: release-name
+                namespaces:
+                  - "default"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: default
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.13-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - /run.sh
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: memcache
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+          resources:
+            limits: {}
+            requests:
+              cpu: 5m
+              memory: 256Mi
+          securityContext:
+            readOnlyRootFilesystem: false
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+        - name: metrics
+          image: docker.io/bitnami/memcached-exporter:0.9.0-debian-10-r268
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - name: metrics
+              containerPort: 9150
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits: {}
+            requests: {}
+      volumes:
+        - name: tmp
+          emptyDir: {}

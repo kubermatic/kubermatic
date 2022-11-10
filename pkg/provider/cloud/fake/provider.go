@@ -19,20 +19,15 @@ package fake
 import (
 	"context"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-type fakeCloudProvider struct {
-	nodes map[string]*apiv1.Node
-}
+type fakeCloudProvider struct{}
 
 // NewCloudProvider creates a new fake cloud provider.
 func NewCloudProvider() provider.CloudProvider {
-	return &fakeCloudProvider{
-		nodes: map[string]*apiv1.Node{},
-	}
+	return &fakeCloudProvider{}
 }
 
 var _ provider.CloudProvider = &fakeCloudProvider{}

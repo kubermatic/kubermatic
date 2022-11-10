@@ -188,7 +188,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup User webhooks
 
-	userValidator := uservalidation.NewValidator(mgr.GetClient())
+	userValidator := uservalidation.NewValidator(mgr.GetClient(), seedsGetter, seedClientGetter)
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.User{}).WithValidator(userValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup user validation webhook", zap.Error(err))
 	}
@@ -226,7 +226,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup IPAMPool webhook
 
-	ipamPoolValidator := ipampoolvalidation.NewValidator()
+	ipamPoolValidator := ipampoolvalidation.NewValidator(seedGetter, seedClientGetter)
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.IPAMPool{}).WithValidator(ipamPoolValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup IPAMPool validation webhook", zap.Error(err))
 	}

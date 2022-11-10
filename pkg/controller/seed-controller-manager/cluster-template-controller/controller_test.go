@@ -66,7 +66,7 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
-					generator.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, generator.GenDefaultAPIUser().Email),
+					generator.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, "bob@acme.com"),
 					generator.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
 					generator.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
 					generator.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),

@@ -17,23 +17,34 @@ limitations under the License.
 package validation
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"net"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // validator for validating Resource Quota CRD.
-type validator struct{}
+type validator struct {
+	seedGetter       provider.SeedGetter
+	seedClientGetter provider.SeedClientGetter
+}
 
 // NewValidator returns a new Resource Quota validator.
-func NewValidator() *validator {
-	return &validator{}
+func NewValidator(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *validator {
+	return &validator{
+		seedGetter:       seedGetter,
+		seedClientGetter: seedClientGetter,
+	}
 }
 
 var _ admission.CustomValidator = &validator{}
@@ -66,15 +77,26 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 			return errors.New("it's not allowed to update the allocation type for a datacenter")
 		}
 
+		var addedExclusions []string
+
 		switch dcOldConfig.Type {
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
 			if dcOldConfig.AllocationRange != dcNewConfig.AllocationRange {
 				return errors.New("it's not allowed to update the allocation range for a datacenter")
 			}
+			addedExclusions = getSliceAdditions(dcOldConfig.ExcludeRanges, dcNewConfig.ExcludeRanges)
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			if dcOldConfig.AllocationPrefix != dcNewConfig.AllocationPrefix {
 				return errors.New("it's not allowed to update the allocation prefix for a datacenter")
 			}
+			addedExclusions = getSliceAdditions(
+				subnetCIDRSliceToStringSlice(dcOldConfig.ExcludePrefixes),
+				subnetCIDRSliceToStringSlice(dcNewConfig.ExcludePrefixes),
+			)
+		}
+
+		if err := v.checkExclusionsNotAllocated(ctx, addedExclusions, oldIPAMPool.Name, dc, dcOldConfig.Type); err != nil {
+			return err
 		}
 	}
 
@@ -118,12 +140,114 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 			if dcConfig.AllocationRange > numberOfPoolSubnetIPs {
 				return errors.New("allocation range cannot be greater than the pool subnet possible number of IP addresses")
 			}
+
+			for _, rangeToExclude := range dcConfig.ExcludeRanges {
+				if err := validateRange(rangeToExclude); err != nil {
+					return err
+				}
+			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			if dcConfig.AllocationPrefix < poolPrefix {
 				return errors.New("allocation prefix cannot be smaller than the pool subnet mask size")
 			}
 			if dcConfig.AllocationPrefix > bits {
 				return errors.New("invalid allocation prefix for IP version")
+			}
+
+			for _, subnetCIDRToExclude := range dcConfig.ExcludePrefixes {
+				_, subnet, err := net.ParseCIDR(string(subnetCIDRToExclude))
+				if err != nil {
+					return fmt.Errorf("invalid CIDR for subnet to exclude: %w", err)
+				}
+				subnetPrefix, _ := subnet.Mask.Size()
+				if dcConfig.AllocationPrefix != subnetPrefix {
+					return fmt.Errorf("invalid length for subnet to exclude \"%s\": must be the same as the pool allocation prefix (%d)", subnetCIDRToExclude, subnetPrefix)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func validateRange(r string) error {
+	splittedRange := strings.Split(r, "-")
+	if len(splittedRange) != 1 && len(splittedRange) != 2 {
+		return fmt.Errorf("invalid format for range: \"%s\" (format should be \"{first_ip}-{last_ip}\" or single \"{ip}\")", r)
+	}
+	var firstIP, lastIP net.IP
+	firstIP = net.ParseIP(splittedRange[0])
+	if firstIP == nil {
+		return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splittedRange[0], r)
+	}
+	if len(splittedRange) == 2 {
+		lastIP = net.ParseIP(splittedRange[1])
+		if lastIP == nil {
+			return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splittedRange[1], r)
+		}
+		if (firstIP.To4() == nil && lastIP.To4() != nil) || (firstIP.To4() != nil && lastIP.To4() == nil) {
+			return fmt.Errorf("different IP versions for range \"%s\"", r)
+		}
+		if bytes.Compare(lastIP, firstIP) < 0 {
+			return fmt.Errorf("invalid range order for \"%s\"", r)
+		}
+	}
+
+	return nil
+}
+
+func (v *validator) getSeedClient(ctx context.Context) (ctrlruntimeclient.Client, error) {
+	seed, err := v.seedGetter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get current seed: %w", err)
+	}
+	if seed == nil {
+		return nil, errors.New("webhook not configured for a seed cluster")
+	}
+
+	client, err := v.seedClientGetter(seed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get seed client: %w", err)
+	}
+
+	return client, nil
+}
+
+func (v *validator) checkExclusionsNotAllocated(ctx context.Context, exclusions []string, ipamPoolName string, dc string, allocationType kubermaticv1.IPAMPoolAllocationType) error {
+	if len(exclusions) == 0 {
+		return nil
+	}
+
+	seedClient, err := v.getSeedClient(ctx)
+	if err != nil {
+		return err
+	}
+
+	// List all IPAM allocations
+	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
+	err = seedClient.List(ctx, ipamAllocationList)
+	if err != nil {
+		return fmt.Errorf("failed to list IPAM allocations: %w", err)
+	}
+
+	// Iterate current IPAM allocations to check if there is an allocation for the exclusion
+	for _, ipamAllocation := range ipamAllocationList.Items {
+		if ipamAllocation.Name != ipamPoolName || ipamAllocation.Spec.DC != dc {
+			continue
+		}
+
+		errExclusionConflict := fmt.Errorf("failed to add exclusion: there is an conflicted allocation in IPAM pool \"%s\" and datacenter \"%s\"", ipamPoolName, dc)
+
+		switch allocationType {
+		case kubermaticv1.IPAMPoolAllocationTypeRange:
+			if addressRangesConflict(ipamAllocation.Spec.Addresses, exclusions) {
+				return errExclusionConflict
+			}
+		case kubermaticv1.IPAMPoolAllocationTypePrefix:
+			for _, exclusion := range exclusions {
+				if string(ipamAllocation.Spec.CIDR) == exclusion {
+					return errExclusionConflict
+				}
 			}
 		}
 	}

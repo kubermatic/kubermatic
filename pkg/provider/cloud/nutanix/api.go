@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	nutanixv3 "github.com/embik/nutanix-client-go/pkg/client/v3"
+	nutanixv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 
 	"k8s.io/utils/pointer"
 )
@@ -65,7 +65,7 @@ func GetProjects(ctx context.Context, client *ClientSet) ([]nutanixv3.Project, e
 }
 
 func GetSubnets(ctx context.Context, client *ClientSet, clusterName, projectName string) ([]nutanixv3.SubnetIntentResponse, error) {
-	resp, err := client.Prism.V3.ListAllSubnet(ctx, "")
+	resp, err := client.Prism.V3.ListAllSubnet(ctx, "", nil)
 	if err != nil {
 		return nil, wrapNutanixError(err)
 	}

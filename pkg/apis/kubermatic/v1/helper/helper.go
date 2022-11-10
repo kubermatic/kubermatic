@@ -18,6 +18,7 @@ package helper
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -352,4 +353,30 @@ func UpdateResourceQuotaStatus(ctx context.Context, client ctrlruntimeclient.Cli
 		// update the status
 		return client.Status().Patch(ctx, resourceQuota, ctrlruntimeclient.MergeFrom(original))
 	})
+}
+
+func HasClusters(ctx context.Context, client ctrlruntimeclient.Client, projectID string) (bool, error) {
+	clusterList := &kubermaticv1.ClusterList{}
+
+	if err := client.List(ctx,
+		clusterList,
+		&ctrlruntimeclient.ListOptions{Limit: 1},
+		ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
+		return false, fmt.Errorf("failed to list clusters: %w", err)
+	}
+
+	return len(clusterList.Items) > 0, nil
+}
+
+func HasExternalClusters(ctx context.Context, client ctrlruntimeclient.Client, projectID string) (bool, error) {
+	extClusterList := &kubermaticv1.ExternalClusterList{}
+
+	if err := client.List(ctx,
+		extClusterList,
+		&ctrlruntimeclient.ListOptions{Limit: 1},
+		ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
+		return false, fmt.Errorf("failed to list external clusters: %w", err)
+	}
+
+	return len(extClusterList.Items) > 0, nil
 }
