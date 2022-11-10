@@ -62,10 +62,12 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 
 			dep.Name = resources.OperatingSystemManagerWebhookDeploymentName
 			dep.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil)
+
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil),
 			}
+
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			volumes := []corev1.Volume{getWebhookKubeconfigVolume(), getServingCertVolume(), getCABundleVolume()}
@@ -112,8 +114,9 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/readyz",
-								Port: intstr.FromInt(8081),
+								Path:   "/readyz",
+								Port:   intstr.FromInt(8081),
+								Scheme: corev1.URISchemeHTTP,
 							},
 						},
 						FailureThreshold: 3,
@@ -125,8 +128,9 @@ func WebhookDeploymentCreator(data operatingSystemManagerData) reconciling.Named
 						FailureThreshold: 8,
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path: "/healthz",
-								Port: intstr.FromInt(8081),
+								Path:   "/healthz",
+								Port:   intstr.FromInt(8081),
+								Scheme: corev1.URISchemeHTTP,
 							},
 						},
 						InitialDelaySeconds: 15,
