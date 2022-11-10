@@ -152,6 +152,17 @@ spec:
                     enforced:
                       type: boolean
                   type: object
+                providerConfiguration:
+                  description: ProviderConfiguration are the cloud provider specific configurations on dashboard.
+                  properties:
+                    openStack:
+                      description: OpenStack are the configurations for openstack provider.
+                      properties:
+                        enforceCustomDisks:
+                          description: EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
+                          type: boolean
+                      type: object
+                  type: object
                 restrictProjectCreation:
                   type: boolean
                 userProjectsLimit:
