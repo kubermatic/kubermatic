@@ -7,6 +7,8 @@
 
 ## [v2.21.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.3)
 
+This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE-2022-3294. For more information, see below. We strongly recommend upgrading to those Kubernetes patch releases as soon as possible.
+
 ### Bugfixes
 
 - Fix kubermatic-webhook panic on providerName mismatch from CloudSpec ([#11247](https://github.com/kubermatic/kubermatic/pull/11247))
@@ -20,6 +22,8 @@
 ### Updates
 
 - Update MetalLB version to v0.13.7 ([#11256](https://github.com/kubermatic/kubermatic/pull/11256))
+- Add support for Kubernetes 1.24.8, 1.23.14, and 1.22.16 and automatically upgrade existing clusters ([#11341](https://github.com/kubermatic/kubermatic/pull/11341))
+    * Those Kubernetes patch releases fix CVE-2022-3162 and CVE-2022-3294, both in kube-apiserver: [CVE-2022-3162: Unauthorized read of Custom Resources](https://groups.google.com/g/kubernetes-announce/c/oR2PUBiODNA/m/tShPgvpUDQAJ) and [CVE-2022-3294: Node address isn't always verified when proxying](https://groups.google.com/g/kubernetes-announce/c/eR0ghAXy2H8/m/sCuQQZlVDQAJ).
 
 #### Metering (EE)
 
