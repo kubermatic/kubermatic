@@ -31,7 +31,7 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 ### Updates
 
 - Upgrade konnectivity version to v0.0.33 ([#11080](https://github.com/kubermatic/kubermatic/issues/11080))
-- Add support for Kubernetes 1.22.16 and automatically upgrade existing 1.22.x ([#11343](https://github.com/kubermatic/kubermatic/pull/11343))
+- Add support for Kubernetes 1.22.16 and automatically upgrade existing 1.22.x clusters ([#11343](https://github.com/kubermatic/kubermatic/pull/11343))
     * Those Kubernetes patch releases fix CVE-2022-3162 and CVE-2022-3294, both in kube-apiserver: [CVE-2022-3162: Unauthorized read of Custom Resources](https://groups.google.com/g/kubernetes-announce/c/oR2PUBiODNA/m/tShPgvpUDQAJ) and [CVE-2022-3294: Node address isn't always verified when proxying](https://groups.google.com/g/kubernetes-announce/c/eR0ghAXy2H8/m/sCuQQZlVDQAJ).
 
 
