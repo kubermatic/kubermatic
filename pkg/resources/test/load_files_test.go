@@ -486,6 +486,13 @@ func TestLoadFiles(t *testing.T) {
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
+									Name:            resources.OperatingSystemManagerWebhookKubeconfigSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
 									Name:            resources.OpenVPNServerCertificatesSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
@@ -550,6 +557,13 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.MachineControllerWebhookServingCertSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.OperatingSystemManagerWebhookServingCertSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},

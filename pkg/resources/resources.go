@@ -65,6 +65,10 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	// OperatingSystemManagerDeploymentName is the name for the operating-system-manager deployment.
 	OperatingSystemManagerDeploymentName = "operating-system-manager"
+	// OperatingSystemManagerWebhookDeploymentName is the name for the operating-system-manager webhook deployment.
+	OperatingSystemManagerWebhookDeploymentName = "operating-system-manager-webhook"
+	// OperatingSystemManagerWebhookServiceName is the name for the operating-system-manager webhook service.
+	OperatingSystemManagerWebhookServiceName = "operating-system-manager-webhook"
 	// MachineControllerDeploymentName is the name for the machine-controller deployment.
 	MachineControllerDeploymentName = "machine-controller"
 	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment.
@@ -146,6 +150,8 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
 	OperatingSystemManagerKubeconfigSecretName = "operatingsystemmanager-kubeconfig"
+	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm webhook.
+	OperatingSystemManagerWebhookKubeconfigSecretName = "operatingsystemmanager-webhook-kubeconfig"
 	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller.
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider.
@@ -157,6 +163,12 @@ const (
 	MachineControllerWebhookServingCertCertKeyName = "cert.pem"
 	// MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key.
 	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
+	// OperatingSystemManagerWebhookServingCertSecretName is the name for the operating-system-manager webhook TLS server certificate secret.
+	OperatingSystemManagerWebhookServingCertSecretName = "operating-system-manager-webhook-serving-cert"
+	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the cert.
+	OperatingSystemManagerWebhookServingCertCertKeyName = "tls.crt"
+	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the private key.
+	OperatingSystemManagerWebhookServingCertKeyKeyName = "tls.key"
 	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
@@ -260,6 +272,8 @@ const (
 
 	// OperatingSystemManagerCertUsername is the name of the user coming from kubeconfig cert.
 	OperatingSystemManagerCertUsername = "operating-system-manager"
+	// OperatingSystemManagerWebhookCertUsername is the name of the user coming from the kubeconfig cert.
+	OperatingSystemManagerWebhookCertUsername = "operating-system-manager-webhook"
 	// MachineControllerCertUsername is the name of the user coming from kubeconfig cert.
 	MachineControllerCertUsername = "machine-controller"
 	// KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert.
@@ -452,6 +466,8 @@ const (
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
+	// MachineControllerMutatingWebhookConfigurationName is the name of OSM's mutating webhook configuration.
+	OperatingSystemManagerMutatingWebhookConfigurationName = "operating-system-manager.kubermatic.io"
 
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
