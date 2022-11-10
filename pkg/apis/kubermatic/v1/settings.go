@@ -131,7 +131,7 @@ type ProviderConfiguration struct {
 
 type OpenStack struct {
 	// EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
-	EnforceCustomDisk bool `json:"enforceCustomDisks,omitempty"`
+	EnforceCustomDisk bool `json:"enforceCustomDisk,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
