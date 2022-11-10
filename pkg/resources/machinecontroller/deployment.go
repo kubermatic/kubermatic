@@ -52,7 +52,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	// TODO: update to tagged machine-controller version
+	// TODO: update to tagged machine-controller version.
 	Tag = "d41d7d9ce97ff62d7f3629495fce00c355e3ae53"
 )
 
