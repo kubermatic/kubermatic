@@ -29,7 +29,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 
@@ -37,6 +36,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -374,7 +374,7 @@ func bodyEqual(t *testing.T, expectedRequest, request *http.Request) bool {
 	if jsonEqual(expectedBody, body) || yamlEqual(expectedBody, body) {
 		return true
 	}
-	assert.Fail(t, "body not equal", cmp.Diff(string(expectedBody), string(body)))
+	assert.Fail(t, "body not equal", diff.StringDiff(string(expectedBody), string(body)))
 	return false
 }
 

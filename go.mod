@@ -34,7 +34,6 @@ require (
 	github.com/go-logr/zapr v1.2.3
 	github.com/go-test/deep v1.0.8
 	github.com/gobuffalo/flect v0.3.0
-	github.com/google/go-cmp v0.5.9
 	github.com/gophercloud/gophercloud v1.0.0
 	github.com/hetznercloud/hcloud-go v1.35.3
 	github.com/imdario/mergo v0.3.13
@@ -215,6 +214,7 @@ require (
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/cel-go v0.12.5 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.1-0.20210504230335-f78f29fc09ea // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
