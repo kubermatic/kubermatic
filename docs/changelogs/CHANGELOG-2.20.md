@@ -10,6 +10,26 @@
 - [v2.20.7](#v2207)
 - [v2.20.8](#v2208)
 - [v2.20.9](#v2209)
+- [v2.20.10](#v22010)
+
+## [v2.20.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.10)
+
+This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE-2022-3294. For more information, see below. We strongly recommend upgrading to those Kubernetes patch releases as soon as possible.
+
+### Bugfixes
+
+- Adding finalizer `kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids` to `Cluster` resources can no longer remove other finalizers ([#11323](https://github.com/kubermatic/kubermatic/pull/11323))
+- Remove digests from Docker images in addon manifests to fix issues with Docker registry mirrors / local registries. KKP 2.22  will restore the digests and properly support them ([#11240](https://github.com/kubermatic/kubermatic/pull/11240))
+
+### Updates
+
+- Add support for Kubernetes 1.23.14 and 1.22.16 and automatically upgrade existing 1.23.x and 1.22.x clusters ([#11342](https://github.com/kubermatic/kubermatic/pull/11342))
+    * Those Kubernetes patch releases fix CVE-2022-3162 and CVE-2022-3294, both in kube-apiserver: [CVE-2022-3162: Unauthorized read of Custom Resources](https://groups.google.com/g/kubernetes-announce/c/oR2PUBiODNA/m/tShPgvpUDQAJ) and [CVE-2022-3294: Node address isn't always verified when proxying](https://groups.google.com/g/kubernetes-announce/c/eR0ghAXy2H8/m/sCuQQZlVDQAJ).
+
+### Upcoming Changes
+
+- For the next series of KKP patch releases, image references will move from `k8s.gcr.io` to `registry.k8s.io`. This will be done to keep up with [latest upstream changes](https://github.com/kubernetes/enhancements/tree/master/keps/sig-release/3000-artifact-distribution). Please ensure that any mirrors you use are going to host `registry.k8s.io` and/or that firewall rules are going to allow access to `registry.k8s.io` to pull images before applying the next KKP patch releases. **This is not included in this patch release but just a notification of future changes.**
+
 
 ## [v2.20.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.9)
 
