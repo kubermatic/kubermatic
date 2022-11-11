@@ -216,17 +216,27 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.24.6"),
+		Default: semver.NewSemverOrDie("v1.24.8"),
+		// NB: We keep all patch releases that we supported, even if there's
+		// an auto-upgrade rule in place. That's because removing a patch
+		// release from this slice can break reconciliation loop for clusters
+		// running that version, and it might take some time to upgrade all
+		// the clusters in large KKP installations.
+		// Dashboard hides version that are not supported any longer from the
+		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
 			// Kubernetes 1.23
 			newSemver("v1.23.6"),
 			newSemver("v1.23.9"),
 			newSemver("v1.23.12"),
+			newSemver("v1.23.14"),
 			// Kubernetes 1.24
 			newSemver("v1.24.3"),
 			newSemver("v1.24.6"),
+			newSemver("v1.24.8"),
 			// Kubernetes 1.25
 			newSemver("v1.25.2"),
+			newSemver("v1.25.4"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -245,8 +255,10 @@ var (
 				// Auto-upgrade because of CVEs:
 				// - CVE-2022-3172 (fixed >= 1.23.11)
 				// - CVE-2021-25749 (fixed >= 1.23.11)
-				From:      ">= 1.23.0, < 1.23.12",
-				To:        "1.23.12",
+				// - CVE-2022-3162 (fixed >= 1.23.14)
+				// - CVE-2022-3294 (fixed >= 1.23.14)
+				From:      ">= 1.23.0, < 1.23.14",
+				To:        "1.23.14",
 				Automatic: pointer.Bool(true),
 			},
 			{
@@ -264,8 +276,10 @@ var (
 				// Auto-upgrade because of CVEs:
 				// - CVE-2022-3172 (fixed >= 1.24.5)
 				// - CVE-2021-25749 (fixed >= 1.24.5)
-				From:      ">= 1.24.0, < 1.24.6",
-				To:        "1.24.6",
+				// - CVE-2022-3162 (fixed >= 1.24.8)
+				// - CVE-2022-3294 (fixed >= 1.24.8)
+				From:      ">= 1.24.0, < 1.24.8",
+				To:        "1.24.8",
 				Automatic: pointer.Bool(true),
 			},
 			{
@@ -278,6 +292,14 @@ var (
 				// Allow to change to any patch version
 				From: "1.25.*",
 				To:   "1.25.*",
+			},
+			{
+				// Auto-upgrade because of CVEs:
+				// - CVE-2022-3162 (fixed >= 1.25.4)
+				// - CVE-2022-3294 (fixed >= 1.25.4)
+				From:      ">= 1.25.0, < 1.25.4",
+				To:        "1.25.4",
+				Automatic: pointer.Bool(true),
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
