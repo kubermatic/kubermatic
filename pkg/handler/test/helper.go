@@ -142,7 +142,7 @@ const (
 	// RequiredEmailDomain required domain for predefined credentials.
 	RequiredEmailDomain = "acme.com"
 	// DefaultKubernetesVersion kubernetes version.
-	DefaultKubernetesVersion = "1.22.15"
+	DefaultKubernetesVersion = "1.22.16"
 	// Kubermatic namespace.
 	KubermaticNamespace = "kubermatic"
 )
@@ -1276,7 +1276,7 @@ func GenDefaultVersions() []semver.Semver {
 	return []semver.Semver{
 		*semver.NewSemverOrDie("1.20.14"),
 		*semver.NewSemverOrDie("1.21.8"),
-		*semver.NewSemverOrDie("1.22.15"),
+		*semver.NewSemverOrDie("1.22.16"),
 	}
 }
 
