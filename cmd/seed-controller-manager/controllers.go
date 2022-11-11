@@ -32,6 +32,7 @@ import (
 	clusterphasecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-phase-controller"
 	clusterstuckcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-stuck-controller"
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cni"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
 	encryptionatrestcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/encryption-at-rest-controller"
@@ -72,6 +73,7 @@ var AllControllers = map[string]controllerCreator{
 	constrainttemplatecontroller.ControllerName:             createConstraintTemplateController,
 	initialmachinedeployment.ControllerName:                 createInitialMachineDeploymentController,
 	initialapplicationinstallationcontroller.ControllerName: createInitialApplicationInstallationController,
+	cni.ControllerName:                                      createCNIController,
 	mla.ControllerName:                                      createMLAController,
 	clustertemplatecontroller.ControllerName:                createClusterTemplateController,
 	projectcontroller.ControllerName:                        createProjectController,
@@ -308,6 +310,19 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 
 func createInitialApplicationInstallationController(ctrlCtx *controllerContext) error {
 	return initialapplicationinstallationcontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.seedGetter,
+		ctrlCtx.clientProvider,
+		ctrlCtx.log,
+		ctrlCtx.versions,
+	)
+}
+
+func createCNIController(ctrlCtx *controllerContext) error {
+	return cni.Add(
 		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,

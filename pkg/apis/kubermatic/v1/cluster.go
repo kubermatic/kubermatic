@@ -404,6 +404,7 @@ const (
 	ClusterConditionMonitoringControllerReconcilingSuccess              ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess       ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
 	ClusterConditionApplicationInstallationControllerReconcilingSuccess ClusterConditionType = "ApplicationInstallationControllerReconciledSuccessfully"
+	ClusterConditionCNIControllerReconcilingSuccess                     ClusterConditionType = "CNIControllerReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess                     ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionEncryptionControllerReconcilingSuccess              ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"

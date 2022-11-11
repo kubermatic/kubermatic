@@ -46,7 +46,7 @@ var (
 	// Only supported versions are available for selection in KKP UI.
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
 		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.20", "v3.21", "v3.22", "v3.23"),
-		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.11", "v1.12"),
+		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.11", "v1.12", "v1.13"),
 		kubermaticv1.CNIPluginTypeNone:   sets.NewString(""),
 	}
 	// deprecatedCNIPluginVersions contains a list of deprecated CNI versions for each CNI type.
@@ -141,4 +141,16 @@ func IsSupportedCNIPluginTypeAndVersion(cni *kubermaticv1.CNIPluginSettings) boo
 // Apart from these, one minor version change is allowed for each CNI.
 func GetAllowedCNIVersionTransitions(cniPluginType kubermaticv1.CNIPluginType) []AllowedCNIVersionTransition {
 	return allowedCNIVersionTransitions[cniPluginType]
+}
+
+// IsManagedByAppInfra returns true if the given CNI type and version is managed by KKP Applications infra,
+// false if it is managed as a KKP Addon.
+func IsManagedByAppInfra(cniType kubermaticv1.CNIPluginType, cniVersion string) bool {
+	if cniType == kubermaticv1.CNIPluginTypeCilium {
+		if cniVersion == "v1.12" { // TODO: use smever to check >= 1.13
+			return true
+		}
+		return false
+	}
+	return false
 }
