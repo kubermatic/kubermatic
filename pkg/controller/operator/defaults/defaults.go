@@ -196,6 +196,13 @@ var (
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
 		Default: semver.MustParse("v1.21.8"),
+		// NB: We keep all patch releases that we supported, even if there's
+		// an auto-upgrade rule in place. That's because removing a patch
+		// release from this slice can break reconciliation loop for clusters
+		// running that version, and it might take some time to upgrade all
+		// the clusters in large KKP installations.
+		// Dashboard hides version that are not supported any longer from the
+		// cluster creation/upgrade page.
 		Versions: []*semver.Version{
 			// Kubernetes 1.20
 			semver.MustParse("v1.20.13"),
@@ -205,6 +212,7 @@ var (
 			// Kubernetes 1.22
 			semver.MustParse("v1.22.5"),
 			semver.MustParse("v1.22.15"),
+			semver.MustParse("v1.22.16"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.19 =======
@@ -277,8 +285,10 @@ var (
 				// - CVE-2021-44717 (fixed >= 1.22.5)
 				// - CVE-2022-3172 (fixed >= 1.22.14)
 				// - CVE-2021-25749 (fixed >= 1.22.14)
-				From:      ">= 1.22.0, < 1.22.15",
-				To:        "1.22.15",
+				// - CVE-2022-3162 (fixed >= 1.22.16)
+				// - CVE-2022-3294 (fixed >= 1.22.16)
+				From:      ">= 1.22.0, < 1.22.16",
+				To:        "1.22.16",
 				Automatic: pointer.BoolPtr(true),
 			},
 		},

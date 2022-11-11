@@ -124,7 +124,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				DatacenterName: "my-dc",
 				Fake:           &kubermaticv1.FakeCloudSpec{},
 			},
-			Version: *semver.NewSemverOrDie("1.22.15"),
+			Version: *semver.NewSemverOrDie("1.22.16"),
 		},
 		Status: kubermaticv1.ClusterStatus{
 			NamespaceName: "cluster-test-cluster",
