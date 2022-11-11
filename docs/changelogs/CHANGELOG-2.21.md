@@ -32,6 +32,10 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
     * Add average-available-cpu-millicores add average-cluster-machines field to Cluster reports
     * Fix a bug that causes wrong values if metric is not continuously present for the aggregation window 
 
+### Upcoming Changes
+
+- For the next series of KKP patch releases, image references will move from `k8s.gcr.io` to `registry.k8s.io`. This will be done to keep up with [latest upstream changes](https://github.com/kubernetes/enhancements/tree/master/keps/sig-release/3000-artifact-distribution). Please ensure that any mirrors you use are going to host `registry.k8s.io` and/or that firewall rules are going to allow access to `registry.k8s.io` to pull images before applying the next KKP patch releases. **This is not included in this patch release but just a notification of future changes.**
+
 ## [v2.21.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.2)
 
 ### Bugfixes
