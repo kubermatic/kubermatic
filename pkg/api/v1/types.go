@@ -624,6 +624,9 @@ type ApplicationRef struct {
 	Name string `json:"name" required:"true"`
 
 	// Version of the Application. Must be a valid SemVer version
+	// NOTE: We are not using Masterminds/semver here, as it keeps data in unexported fields witch causes issues for
+	// DeepEqual used in our reconciliation packages. At the same time, we are not using pkg/semver because
+	// of the reasons stated in https://github.com/kubermatic/kubermatic/pull/10891.
 	Version string `json:"version" required:"true"`
 }
 
