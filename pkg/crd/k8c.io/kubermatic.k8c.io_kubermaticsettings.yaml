@@ -178,7 +178,6 @@ spec:
                 - enableDashboard
                 - enableExternalClusterImport
                 - enableOIDCKubeconfig
-                - enableWebTerminal
                 - mlaAlertmanagerPrefix
                 - mlaGrafanaPrefix
                 - restrictProjectCreation
