@@ -919,8 +919,8 @@ spec:
                         storagePolicy:
                           description: StoragePolicy to be used for storage provisioning
                           type: string
-                        tagCategoryID:
-                          description: This is category for the machine deployment tags
+                        tagCategoryName:
+                          description: TagCategoryID represents the category id for the machine deployment tags.
                           type: string
                         username:
                           description: Username is the vSphere user name.
