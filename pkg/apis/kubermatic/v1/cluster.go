@@ -1014,8 +1014,11 @@ type VSphereCloudSpec struct {
 	// This user will be used for everything except cloud provider functionality
 	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`
 
-	// This is category for the machine deployment tags
-	TagCategoryID string `json:"tagCategoryID,omitempty"`
+	// TagCategoryName represents the name of vSphere tag category that will be used to create and attach tags on VMS.
+	TagCategoryName string `json:"tagCategoryName,omitempty"`
+
+	// TagCategoryID represents the category id for the machine deployment tags.
+	TagCategoryID string `json:"tagCategoryName,omitempty"`
 }
 
 // VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.

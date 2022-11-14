@@ -45,7 +45,7 @@ const (
 	// categoryCleanupFinilizer will instruct the deletion of the default category tag.
 	tagCategoryCleanupFinilizer = "kubermatic.k8c.io/cleanup-vsphere-tag-category"
 
-	defaultCategory = "cluster"
+	defaultCategoryPrefix = "kubermatic.k8c.io"
 )
 
 // Provider represents the vsphere provider.
@@ -172,26 +172,31 @@ func (v *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberma
 		}
 	}
 
+	tagCategoryName := cluster.Spec.Cloud.VSphere.TagCategoryName
 	// We only need to fetch/create tag categories only if the user explicitly decides to use on.
-	if cluster.Spec.Cloud.VSphere.TagCategoryID != "" {
+	if tagCategoryName != "" {
 		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create REST client session: %w", err)
 		}
 		defer restSession.Logout(ctx)
 
-		// If the user did not specify a tag category, we create an own default for this cluster
-		categoryID, err := createTagCategory(ctx, restSession, cluster)
+		categoryID, err := fetchTagCategory(ctx, restSession, tagCategoryName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create tag category: %w", err)
+			return nil, fmt.Errorf("failed to fetch tag category: %w", err)
 		}
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+
+		if categoryID != "" {
+			return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				cluster.Spec.Cloud.VSphere.TagCategoryID = categoryID
+			})
+		}
+
+		categoryID, err = createTagCategory(ctx, restSession, cluster)
+		return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, tagCategoryCleanupFinilizer)
 			cluster.Spec.Cloud.VSphere.TagCategoryID = categoryID
 		})
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return cluster, nil

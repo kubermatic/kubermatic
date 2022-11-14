@@ -19,35 +19,43 @@ package vsphere
 import (
 	"context"
 	"fmt"
-
 	"github.com/vmware/govmomi/vapi/tags"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-func categoryName(cluster *kubermaticv1.Cluster) string {
-	return defaultCategory + cluster.Name
+func tagCategoryOwnership(cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("%s/cluster-%s-%s",
+		defaultCategoryPrefix,
+		cluster.Name, cluster.Spec.Cloud.VSphere.TagCategoryName)
 }
 
-// createTagCategory creates the specified tag category if it does not exist yet.
-func createTagCategory(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) (string, error) {
+func fetchTagCategory(ctx context.Context, restSession *RESTSession, name string) (string, error) {
 	tagManager := tags.NewManager(restSession.Client)
 	categories, err := tagManager.GetCategories(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get tag categories %w", err)
 	}
 
-	defaultCategoryName := categoryName(cluster)
-
 	for _, category := range categories {
-		if category.Name == defaultCategoryName {
+		if category.Name == name {
 			return category.ID, nil
 		}
 	}
 
+	return "", err
+}
+
+// createTagCategory creates the specified tag category if it does not exist yet.
+func createTagCategory(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) (string, error) {
+	tagManager := tags.NewManager(restSession.Client)
+
+	defaultCategoryName := tagCategoryOwnership(cluster)
+
 	return tagManager.CreateCategory(ctx, &tags.Category{
-		Name:        defaultCategoryName,
-		Cardinality: "MULTIPLE",
+		Name:            defaultCategoryName,
+		Cardinality:     "MULTIPLE",
+		AssociableTypes: []string{"Virtual Machine"},
 	})
 }
 
@@ -59,7 +67,7 @@ func deleteTagCategory(ctx context.Context, restSession *RESTSession, cluster *k
 		return fmt.Errorf("failed to get tag categories %w", err)
 	}
 
-	defaultCategoryName := categoryName(cluster)
+	defaultCategoryName := tagCategoryOwnership(cluster)
 
 	for _, category := range categories {
 		if category.Name == defaultCategoryName {
