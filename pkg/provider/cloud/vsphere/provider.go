@@ -171,7 +171,9 @@ func (v *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberma
 			return nil, err
 		}
 	}
-	if cluster.Spec.Cloud.VSphere.TagCategoryID == "" {
+
+	// We only need to fetch/create tag categories only if the user explicitly decides to use on.
+	if cluster.Spec.Cloud.VSphere.TagCategoryID != "" {
 		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create REST client session: %w", err)
