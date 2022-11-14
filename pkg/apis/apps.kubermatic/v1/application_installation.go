@@ -111,9 +111,9 @@ type ApplicationRef struct {
 	Version string `json:"version"`
 	// (pattern taken from masterminds/semver we use https://github.com/Masterminds/semver/blob/master/version.go#L42)
 
-	// (NOTE: We are not using Masterminds/semver here, as it keeps data in unexported fields witch causes issues for
+	// NOTE: We are not using Masterminds/semver here, as it keeps data in unexported fields witch causes issues for
 	// DeepEqual used in our reconciliation packages. At the same time, we are not using pkg/semver because
-	// of the reasons stated in https://github.com/kubermatic/kubermatic/pull/10891).
+	// of the reasons stated in https://github.com/kubermatic/kubermatic/pull/10891.
 }
 
 // ApplicationInstallationStatus denotes status information about an ApplicationInstallation.
