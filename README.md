@@ -15,7 +15,7 @@
   </a>
 </p>
 
-## Overview / User Guides
+## Overview / User Guide
 
 Kubermatic Kubernetes Platform is in an open source project to centrally manage the global automation of thousands of Kubernetes clusters across multicloud, on-prem and edge with unparalleled density and resilience.
 
