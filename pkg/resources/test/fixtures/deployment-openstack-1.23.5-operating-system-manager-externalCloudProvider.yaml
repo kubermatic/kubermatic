@@ -81,7 +81,7 @@ spec:
               key: applicationCredentialSecret
               name: cloud-credentials
               optional: true
-        image: quay.io/kubermatic/operating-system-manager:0cdd1fb7707d5961b1f2e3cf6ffab07dabe292f7
+        image: quay.io/kubermatic/operating-system-manager:192412d78cbfb9d826fbc7cf7e077cfe7629d6ba
         livenessProbe:
           failureThreshold: 3
           httpGet:
