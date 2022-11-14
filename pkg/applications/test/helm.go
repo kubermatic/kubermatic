@@ -45,6 +45,9 @@ const (
 	// ConfigmapName is the Name of the config map deployed by the examplechart and examplechart-v2.
 	ConfigmapName = "testcm"
 
+	// ConfigmapName2 is the Name of the config map deployed by the examplechart and examplechart2.
+	ConfigmapName2 = "testcm-2"
+
 	// CmDataKey is the key in the values.yaml of examplechart / examplechart-v2 that holds custom configmap data.
 	CmDataKey = "cmData"
 
