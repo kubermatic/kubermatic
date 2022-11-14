@@ -24,7 +24,6 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
@@ -625,7 +624,7 @@ type ApplicationRef struct {
 	Name string `json:"name" required:"true"`
 
 	// Version of the Application. Must be a valid SemVer version
-	Version appskubermaticv1.Version `json:"version" required:"true"`
+	Version string `json:"version" required:"true"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster

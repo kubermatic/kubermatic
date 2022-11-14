@@ -212,7 +212,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 // getApplicationVersion finds the applicationVersion defined by appInstallation into the applicationDef and updates the struct appVersion with it.
 // An error is returned if the applicationVersion is not found.
 func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.ApplicationInstallation, applicationDef *appskubermaticv1.ApplicationDefinition, appVersion *appskubermaticv1.ApplicationVersion) error {
-	desiredVersion := appInstallation.Spec.ApplicationRef.Version.String()
+	desiredVersion := appInstallation.Spec.ApplicationRef.Version
 	for _, version := range applicationDef.Spec.Versions {
 		if version.Version == desiredVersion {
 			version.DeepCopyInto(appVersion)

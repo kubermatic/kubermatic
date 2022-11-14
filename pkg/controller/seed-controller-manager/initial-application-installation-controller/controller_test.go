@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -300,7 +299,7 @@ func generateApplication(name string) apiv1.Application {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    name,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: "1.0.0",
 			},
 			Values: values,
 		},
