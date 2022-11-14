@@ -54,7 +54,7 @@ type SettingSpec struct {
 	// +kubebuilder:default=false
 
 	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
-	EnableWebTerminal bool `json:"enableWebTerminal"`
+	EnableWebTerminal bool `json:"enableWebTerminal,omitempty"`
 
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
 	// UserProjectsLimit is the maximum number of projects a user can create.
