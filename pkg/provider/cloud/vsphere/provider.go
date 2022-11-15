@@ -194,7 +194,7 @@ func (v *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberma
 
 		categoryID, err = createTagCategory(ctx, restSession, cluster)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create tag category: %v", err)
+			return nil, fmt.Errorf("failed to create tag category: %w", err)
 		}
 
 		return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
