@@ -69,13 +69,15 @@ spec:
         vsphere:
           cluster: Kubermatic
           datacenter: Hamburg
-          datastore: alpha1
+          datastore: ceph-vm
           endpoint: https://vcenter.dc.k8c.io
-          root_path: /Hamburg/vm/Kubermatic-dev
+          root_path: /Hamburg/vm/Kubermatic-ci
           templates:
-            ubuntu: ubuntu-20.04
-            centos: centos-7
-            flatcar: flatcar-stable
+            centos: kkp-centos-7
+            flatcar: kkp-flatcar-3033.2.2
+            rhel: kkp-rhel-8.6
+            ubuntu: kkp-ubuntu-20.04
+            rockylinux: kkp-rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
       country: NL
