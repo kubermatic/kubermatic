@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -217,7 +215,7 @@ func genApplicationInstallation(namspaceSpec appskubermaticv1.AppNamespaceSpec) 
 			Namespace: namspaceSpec,
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    "applicationDef1",
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: "1.0.0",
 			},
 		},
 		Status: appskubermaticv1.ApplicationInstallationStatus{},

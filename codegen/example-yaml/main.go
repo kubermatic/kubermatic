@@ -25,7 +25,6 @@ import (
 	"reflect"
 	"strings"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
@@ -378,10 +377,8 @@ func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstall
 				Annotations: map[string]string{"project-code": "azerty"},
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
-				Name: "apache",
-				Version: appskubermaticv1.Version{
-					Version: *semverlib.MustParse("v1.2.3"),
-				},
+				Name:    "apache",
+				Version: "1.2.3",
 			},
 			Values: runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)},
 		},

@@ -24,8 +24,6 @@ import (
 	"testing"
 	"time"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -213,7 +211,7 @@ func TestController(t *testing.T) {
 				expectStatusHasConditions(t, ctx, client, app.Name)
 
 				// Update application Installation.
-				app.Spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse("2.0.0")}
+				app.Spec.ApplicationRef.Version = "2.0.0"
 				if err := client.Update(ctx, &app); err != nil {
 					t.Fatalf("failed to update applicationInstallation: %s", err)
 				}

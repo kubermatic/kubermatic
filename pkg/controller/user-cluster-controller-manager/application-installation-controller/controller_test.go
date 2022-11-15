@@ -20,7 +20,6 @@ import (
 	"context"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/onsi/gomega"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -151,7 +150,7 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    applicationDefName,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: appVersion,
 			},
 		},
 		Status: appskubermaticv1.ApplicationInstallationStatus{},
