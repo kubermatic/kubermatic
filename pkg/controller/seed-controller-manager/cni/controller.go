@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -185,12 +184,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-
-	cniVer, err := semverlib.NewVersion(cluster.Spec.CNIPlugin.Version)
-	if err != nil {
-		return fmt.Errorf("failed to parse CNI plugin version: %w", err)
-	}
-
 	cniAppInstallation := func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		var app *appskubermaticv1.ApplicationInstallation
 		if existing == nil {
@@ -205,7 +198,7 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client
 		}
 		app.Spec.ApplicationRef = appskubermaticv1.ApplicationRef{
 			Name:    cluster.Spec.CNIPlugin.Type.String(),
-			Version: appskubermaticv1.Version{Version: *cniVer},
+			Version: cluster.Spec.CNIPlugin.Version,
 		}
 		app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
 			Name: cniPluginNamespace,
