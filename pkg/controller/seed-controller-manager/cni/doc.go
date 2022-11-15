@@ -17,6 +17,7 @@ limitations under the License.
 /*
 Package cni contains a controller that watches Cluster resources,
 and if the CNI for the Cluster is manged by the Applications infra,
-reconciles ApplicationInstallation Resources in the user cluster.
+reconciles ApplicationInstallation Resources in the user cluster
+with necessary CNI configuration in ApplicationInstallation's Values.
 */
 package cni

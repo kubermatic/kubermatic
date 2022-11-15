@@ -1,40 +1,47 @@
 package cni
 
 import (
-	"bytes"
+	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	kyaml "k8s.io/apimachinery/pkg/util/yaml"
+	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
-var ciliumValues = `
-cni:
-  exclusive: false
-hubble:
-  relay:
-    enabled: false
-  tls:
-    auto:
-      method: cronJob
-  ui:
-    enabled: false
-ipam:
-  operator:
-    clusterPoolIPv4MaskSize: 24
-    clusterPoolIPv4PodCIDR: 172.25.0.0/16
-kubeProxyReplacement: disabled
-operator:
-  replicas: 1
-`
-
-func getCiliumValues(cluster *kubermaticv1.Cluster) runtime.RawExtension {
-	// TODO: merge with https://pkg.go.dev/go.uber.org/config/internal/merge
-
-	decoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBufferString(ciliumValues))
-	raw := runtime.RawExtension{}
-	if err := decoder.Decode(&raw); err != nil {
-		return runtime.RawExtension{} // TODO: return error
+func getCiliumOverrideValues(cluster *kubermaticv1.Cluster) map[string]interface{} {
+	values := map[string]interface{}{
+		"cni": map[string]interface{}{
+			"exclusive": "false", // non-exclusive to allow Multus use-cases
+		},
+		"operator": map[string]interface{}{
+			"replicas": "1",
+			"securityContext": map[string]interface{}{
+				"seccompProfile": map[string]interface{}{
+					"type": "RuntimeDefault",
+				},
+			},
+		},
 	}
 
-	return raw
+	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
+		values["kubeProxyReplacement"] = "strict"
+		values["k8sServiceHost"] = cluster.Status.Address.ExternalName
+		values["k8sServicePort"] = fmt.Sprintf("%d", cluster.Status.Address.Port)
+	} else {
+		values["kubeProxyReplacement"] = "disabled"
+	}
+
+	ipamOperator := map[string]interface{}{
+		"clusterPoolIPv4PodCIDR":  cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(),
+		"clusterPoolIPv4MaskSize": fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4),
+	}
+	if cluster.IsDualStack() {
+		values["ipv6"] = map[string]interface{}{"enabled": "true"}
+		ipamOperator["clusterPoolIPv6PodCIDR"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR()
+		ipamOperator["clusterPoolIPv6MaskSize"] = fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6)
+	}
+	values["ipam"] = map[string]interface{}{"operator": ipamOperator}
+
+	// TODO (rastislavs): override *.image.repository + set *.image.useDigest=false if registry override is configured
+
+	return values
 }

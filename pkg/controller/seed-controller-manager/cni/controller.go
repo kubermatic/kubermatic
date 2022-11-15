@@ -18,7 +18,10 @@ package cni
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/imdario/mergo"
+	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -91,7 +94,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	// Only react to cluster update events when the CNI or cluster network config changed
+	// React to cluster update events only when CNIPlugin or ClusterNetwork config changed
 	clusterPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObj := e.ObjectOld.(*kubermaticv1.Cluster)
@@ -109,6 +112,8 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicate); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
+
+	// TODO (rastislavs): enqueue cluster events for ApplicationDefinition changes
 
 	return nil
 }
@@ -162,7 +167,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: 30 * time.Second}, nil // try reconciling later
 	}
 
-	// ensure CNI addon is removed if it was deployed before
+	// Ensure CNI addon is removed if it was deployed before
 	if err := r.ensureCNIAddonIsRemoved(ctx, cluster); err != nil {
 		return &reconcile.Result{}, err
 	}
@@ -179,24 +184,9 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	addon := &kubermaticv1.Addon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cluster.Spec.CNIPlugin.Type.String(),
-			Namespace: cluster.Status.NamespaceName,
-		},
-	}
-	err := r.Client.Delete(ctx, addon)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete CNI addon %s: %w", addon.GetName(), err)
-	}
-	return nil
-}
+func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 
-func (r *Reconciler) ensreCNIApplicationInstallationBROKEN(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-
-	cniVer, err := semverlib.NewVersion("1.12.2") // TODO: cluster.Spec.CNIPlugin.Version
-
+	cniVer, err := semverlib.NewVersion(cluster.Spec.CNIPlugin.Version)
 	if err != nil {
 		return fmt.Errorf("failed to parse CNI plugin version: %w", err)
 	}
@@ -209,18 +199,38 @@ func (r *Reconciler) ensreCNIApplicationInstallationBROKEN(ctx context.Context, 
 			app = existing.(*appskubermaticv1.ApplicationInstallation)
 		}
 
-		// TODO: labels
-
-		app.Spec = appskubermaticv1.ApplicationInstallationSpec{
-			ApplicationRef: appskubermaticv1.ApplicationRef{
-				Name:    cluster.Spec.CNIPlugin.Type.String(),
-				Version: appskubermaticv1.Version{Version: *cniVer},
-			},
-			Namespace: appskubermaticv1.AppNamespaceSpec{
-				Name: cniPluginNamespace,
-			},
-			Values: getCiliumValues(cluster),
+		app.Labels = map[string]string{
+			"apps.kubermatic.k8c.io/managed-by": "kkp",
+			"apps.kubermatic.k8c.io/type":       "cni",
 		}
+		app.Spec.ApplicationRef = appskubermaticv1.ApplicationRef{
+			Name:    cluster.Spec.CNIPlugin.Type.String(),
+			Version: appskubermaticv1.Version{Version: *cniVer},
+		}
+		app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
+			Name: cniPluginNamespace,
+		}
+
+		// Unmarshall existing values
+		values := make(map[string]interface{})
+		if len(app.Spec.Values.Raw) > 0 {
+			if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
+				return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
+			}
+		}
+
+		// Override values with necessary CNI config
+		overrideValues := r.getCNIOverrideValues(cluster)
+		if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
+			return app, fmt.Errorf("failed to merge CNI values: %w", err)
+		}
+
+		// Set new values
+		rawValues, err := json.Marshal(values)
+		if err != nil {
+			return app, fmt.Errorf("failed to marshall CNI values: %w", err)
+		}
+		app.Spec.Values = runtime.RawExtension{Raw: rawValues}
 
 		return app, nil
 	}
@@ -228,33 +238,23 @@ func (r *Reconciler) ensreCNIApplicationInstallationBROKEN(ctx context.Context, 
 	return reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: cniPluginNamespace, Name: cluster.Spec.CNIPlugin.Type.String()}, cniAppInstallation, client, &appskubermaticv1.ApplicationInstallation{}, false)
 }
 
-func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-
-	cniVer, err := semverlib.NewVersion("1.12.2") // TODO: cluster.Spec.CNIPlugin.Version
-
-	if err != nil {
-		return fmt.Errorf("failed to parse CNI plugin version: %w", err)
+func (r *Reconciler) getCNIOverrideValues(cluster *kubermaticv1.Cluster) map[string]interface{} {
+	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+		return getCiliumOverrideValues(cluster)
 	}
+	return nil
+}
 
-	app := &appskubermaticv1.ApplicationInstallation{
+func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	addon := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cluster.Spec.CNIPlugin.Type.String(),
-			Namespace: cniPluginNamespace,
+			Namespace: cluster.Status.NamespaceName,
 		},
 	}
-
-	// TODO: labels
-
-	app.Spec = appskubermaticv1.ApplicationInstallationSpec{
-		ApplicationRef: appskubermaticv1.ApplicationRef{
-			Name:    cluster.Spec.CNIPlugin.Type.String(),
-			Version: appskubermaticv1.Version{Version: *cniVer},
-		},
-		Namespace: appskubermaticv1.AppNamespaceSpec{
-			Name: cniPluginNamespace,
-		},
-		Values: getCiliumValues(cluster),
+	err := r.Client.Delete(ctx, addon)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete CNI addon %s: %w", addon.GetName(), err)
 	}
-
-	return client.Update(ctx, app)
+	return nil
 }
