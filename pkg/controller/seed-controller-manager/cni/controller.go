@@ -20,13 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/imdario/mergo"
-	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
+	"github.com/imdario/mergo"
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -41,12 +38,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -162,8 +162,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	// Make sure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Debug("Application controller not healthy")
-		return &reconcile.Result{RequeueAfter: 30 * time.Second}, nil // try reconciling later
+		r.log.Debug("Requeue CNI reconciliation as Application controller is not healthy")
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil // try reconciling later
 	}
 
 	// Ensure CNI addon is removed if it was deployed before
@@ -228,7 +228,8 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client
 		return app, nil
 	}
 
-	return reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: cniPluginNamespace, Name: cluster.Spec.CNIPlugin.Type.String()}, cniAppInstallation, client, &appskubermaticv1.ApplicationInstallation{}, false)
+	return reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: cniPluginNamespace, Name: cluster.Spec.CNIPlugin.Type.String()},
+		cniAppInstallation, client, &appskubermaticv1.ApplicationInstallation{}, false)
 }
 
 func (r *Reconciler) getCNIOverrideValues(cluster *kubermaticv1.Cluster) map[string]interface{} {
@@ -249,5 +250,8 @@ func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kuber
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete CNI addon %s: %w", addon.GetName(), err)
 	}
+
+	// TODO (rastislavs): In case of Cilium also remove Hubble
+
 	return nil
 }
