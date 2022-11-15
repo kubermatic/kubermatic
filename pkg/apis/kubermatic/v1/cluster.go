@@ -1018,7 +1018,7 @@ type VSphereCloudSpec struct {
 	TagCategoryName string `json:"tagCategoryName,omitempty"`
 
 	// TagCategoryID represents the category id for the machine deployment tags.
-	TagCategoryID string `json:"tagCategoryName,omitempty"`
+	TagCategoryID string `json:"tagCategoryID,omitempty"`
 }
 
 // VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.
