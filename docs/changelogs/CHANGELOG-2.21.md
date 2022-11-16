@@ -3,6 +3,38 @@
 - [v2.21.0](#v2210)
 - [v2.21.1](#v2211)
 - [v2.21.2](#v2212)
+- [v2.21.3](#v2213)
+
+## [v2.21.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.3)
+
+This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE-2022-3294. For more information, see below. We strongly recommend upgrading to those Kubernetes patch releases as soon as possible.
+
+### Bugfixes
+
+- Fix kubermatic-webhook panic on providerName mismatch from CloudSpec ([#11247](https://github.com/kubermatic/kubermatic/pull/11247))
+- Fix rendering error of the metallb addon causing missing L2Advertisement ([#11233](https://github.com/kubermatic/kubermatic/pull/11233))
+- Remove digests from Docker images in addon manifests to fix issues with Docker registry mirrors / local registries. KKP 2.22  will restore the digests and properly support them ([#11239](https://github.com/kubermatic/kubermatic/pull/11239))
+
+### New Feature
+
+- Introduce a new field `disableIAMReconciling` in AWS cloud spec to disable IAM reconciliation ([#11280](https://github.com/kubermatic/kubermatic/pull/11280))
+
+### Updates
+
+- Update MetalLB version to v0.13.7 ([#11256](https://github.com/kubermatic/kubermatic/pull/11256))
+- Add support for Kubernetes 1.24.8, 1.23.14, and 1.22.16 and automatically upgrade existing clusters ([#11341](https://github.com/kubermatic/kubermatic/pull/11341))
+    * Those Kubernetes patch releases fix CVE-2022-3162 and CVE-2022-3294, both in kube-apiserver: [CVE-2022-3162: Unauthorized read of Custom Resources](https://groups.google.com/g/kubernetes-announce/c/oR2PUBiODNA/m/tShPgvpUDQAJ) and [CVE-2022-3294: Node address isn't always verified when proxying](https://groups.google.com/g/kubernetes-announce/c/eR0ghAXy2H8/m/sCuQQZlVDQAJ).
+
+#### Metering (EE)
+
+- Update metering to version 1.0.1 ([#11293](https://github.com/kubermatic/kubermatic/pull/11293))
+    * Add average-used-cpu-millicores to Cluster and Namespace reports
+    * Add average-available-cpu-millicores add average-cluster-machines field to Cluster reports
+    * Fix a bug that causes wrong values if metric is not continuously present for the aggregation window 
+
+### Upcoming Changes
+
+- For the next series of KKP patch releases, image references will move from `k8s.gcr.io` to `registry.k8s.io`. This will be done to keep up with [latest upstream changes](https://github.com/kubernetes/enhancements/tree/master/keps/sig-release/3000-artifact-distribution). Please ensure that any mirrors you use are going to host `registry.k8s.io` and/or that firewall rules are going to allow access to `registry.k8s.io` to pull images before applying the next KKP patch releases. **This is not included in this patch release but just a notification of future changes.**
 
 ## [v2.21.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.2)
 

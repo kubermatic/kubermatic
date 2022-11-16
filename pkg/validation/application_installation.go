@@ -47,7 +47,7 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 
 	// Ensure that there is matching version defined in ApplicationDefinition
 	exists := false
-	desiredVersion := spec.ApplicationRef.Version.String()
+	desiredVersion := spec.ApplicationRef.Version
 	for _, version := range ad.Spec.Versions {
 		if version.Version == desiredVersion {
 			exists = true

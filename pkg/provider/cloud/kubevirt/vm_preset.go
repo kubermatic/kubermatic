@@ -74,6 +74,7 @@ func GetKubermaticStandardPresets(client ctrlruntimeclient.Client, getter kvmani
 	return presets
 }
 
+// Deprecated: use DescribeInstanceType instead.
 func DescribeFlavor(ctx context.Context, kubeconfig, flavor string) (*provider.NodeCapacity, error) {
 	client, err := NewClient(kubeconfig, ClientOptions{})
 	if err != nil {
@@ -98,8 +99,8 @@ func DescribeFlavor(ctx context.Context, kubeconfig, flavor string) (*provider.N
 	return nil, fmt.Errorf("VMI flavor %q not found", flavor)
 }
 
-// vmiPresetToNodeCapacity extracts cpu and mem resource requests from the kubevirt preset
-// for CPU, take the value by priority:
+// vmiPresetToNodeCapacity extracts cpu and mem resource requests from the kubevirt preset.
+// For CPU, take the value by priority:
 // - check if spec.cpu is set, if socket and threads are set then do the calculation, use that
 // - if resource request is set, use that
 // - if resource limit is set, use that

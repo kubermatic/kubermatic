@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,10 +79,10 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 			ai: &appskubermaticv1.ApplicationInstallation{
 				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
-					spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse("3.2.3")}
+					spec.ApplicationRef.Version = "3.2.3"
 					return *spec
 				}(),
-			}, expectedError: `[spec.applicationRef.version: Not found: 3.2.3]`,
+			}, expectedError: `[spec.applicationRef.version: Not found: "3.2.3"]`,
 		},
 	}
 
@@ -126,7 +124,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
 					spec := ai.Spec.DeepCopy()
 					spec.Namespace.Labels = map[string]string{"key": "value"}
-					spec.ApplicationRef.Version = appskubermaticv1.Version{Version: *semverlib.MustParse(defaultAppSecondaryVersion)}
+					spec.ApplicationRef.Version = defaultAppSecondaryVersion
 					return *spec
 				}(),
 			},
@@ -203,7 +201,7 @@ func getApplicationInstallation(name string, appName string, appVersion string) 
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    appName,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: appVersion,
 			},
 		},
 	}

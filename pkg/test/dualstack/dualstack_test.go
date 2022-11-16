@@ -138,6 +138,13 @@ func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, 
 		}
 	}
 
+	nodes := corev1.NodeList{}
+	if err := userclusterClient.List(ctx, &nodes); err != nil {
+		t.Fatalf("Failed to list nodes: %v", err)
+	}
+
+	nNodes := len(nodes.Items)
+
 	// validate pods
 	pods := corev1.PodList{}
 	if err := userclusterClient.List(ctx, &pods, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
@@ -197,17 +204,17 @@ func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, 
 	} else {
 		switch ipFamily {
 		case util.IPv4, util.Unspecified:
-			validateEgressConnectivity(t, ctx, log, userclusterClient, 4)
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
 		case util.IPv6:
-			validateEgressConnectivity(t, ctx, log, userclusterClient, 6)
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
 		case util.DualStack:
-			validateEgressConnectivity(t, ctx, log, userclusterClient, 4)
-			validateEgressConnectivity(t, ctx, log, userclusterClient, 6)
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
 		}
 	}
 }
 
-func validateEgressConnectivity(t *testing.T, ctx context.Context, log *zap.SugaredLogger, userclusterClient ctrlruntimeclient.Client, ipVersion int) {
+func validateEgressConnectivity(t *testing.T, ctx context.Context, log *zap.SugaredLogger, userclusterClient ctrlruntimeclient.Client, ipVersion, expectedPodCount int) {
 	log.Infof("validating %s", fmt.Sprintf("egress-validator-%d", ipVersion))
 
 	ds := egressValidatorDaemonSet(ipVersion, metav1.NamespaceDefault)
@@ -229,8 +236,8 @@ func validateEgressConnectivity(t *testing.T, ctx context.Context, log *zap.Suga
 			return fmt.Errorf("failed to get DaemonSet: %w", err), nil
 		}
 
-		if d.Status.NumberAvailable != d.Status.DesiredNumberScheduled {
-			return fmt.Errorf("only %d out of %d replicas available", d.Status.NumberAvailable, d.Status.DesiredNumberScheduled), nil
+		if int(d.Status.NumberAvailable) != expectedPodCount {
+			return fmt.Errorf("only %d out of %d pods available", d.Status.NumberAvailable, expectedPodCount), nil
 		}
 
 		return nil, nil

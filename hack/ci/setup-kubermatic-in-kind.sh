@@ -50,7 +50,6 @@ echodate "Building binaries for $KUBERMATIC_VERSION"
 TEST_NAME="Build Kubermatic binaries"
 
 beforeGoBuild=$(nowms)
-export UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF:-main}")"
 time retry 1 make build
 pushElapsed kubermatic_go_build_duration_milliseconds $beforeGoBuild
 

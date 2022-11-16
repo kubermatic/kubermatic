@@ -30,7 +30,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
@@ -159,11 +158,6 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		err      error
 	)
 
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
-	}
-
 	switch {
 	case nd.Spec.Template.Cloud.AWS != nil && dc.Spec.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
@@ -179,15 +173,6 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		}
 	case nd.Spec.Template.Cloud.VSphere != nil && dc.Spec.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
-
-		// We use OverwriteCloudConfig for VSphere to ensure we always use the credentials
-		// passed in via frontend for the cloud-provider functionality.
-		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, dc, credentials)
-		if err != nil {
-			return nil, err
-		}
-		config.OverwriteCloudConfig = &overwriteCloudConfig
-
 		cloudExt, err = getVSphereProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
