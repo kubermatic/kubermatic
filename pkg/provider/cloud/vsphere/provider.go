@@ -85,16 +85,19 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		// If the user did not specify a folder, we create a own folder for this cluster to improve
 		// the VM management in vCenter
 		clusterFolder := path.Join(rootPath, cluster.Name)
-		if err := createVMFolder(ctx, session, clusterFolder); err != nil {
+		created, err := createVMFolder(ctx, session, clusterFolder)
+		if err != nil {
 			return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
 		}
 
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
-			cluster.Spec.Cloud.VSphere.Folder = clusterFolder
-		})
-		if err != nil {
-			return nil, err
+		if created {
+			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
+				cluster.Spec.Cloud.VSphere.Folder = clusterFolder
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
