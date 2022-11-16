@@ -21,11 +21,14 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"path"
+
 	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"path"
 )
 
 const (
@@ -51,6 +54,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}
 	return &VSphere{
 		dc:                dc.Spec.VSphere,
+		log:               log.Logger,
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,
 	}, nil
@@ -58,18 +62,21 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 
 var _ provider.ReconcilingCloudProvider = &VSphere{}
 
-func (a *VSphere) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return nil, nil
+func (v *VSphere) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return v.reconcileCluster(ctx, cluster, update, true, true)
 }
 
-// InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
-func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	username, password, err := GetCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
+func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, _ bool) (*kubermaticv1.Cluster, error) {
+	logger := v.log.With("cluster", cluster.Name)
+
+	username, password, err := getCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
 	if err != nil {
 		return nil, err
 	}
+
 	rootPath := getVMRootPath(v.dc)
-	if cluster.Spec.Cloud.VSphere.Folder == "" {
+	if force || cluster.Spec.Cloud.VSphere.Folder == "" {
+		logger.Infow("reconciling vsphere folder", "folder", cluster.Spec.Cloud.VSphere.Folder)
 		session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create vCenter session: %w", err)
@@ -93,7 +100,8 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 
 	tagCategoryName := cluster.Spec.Cloud.VSphere.TagCategoryName
 	// We only need to fetch/create tag categories only if the user explicitly decides to use on.
-	if tagCategoryName != "" {
+	if force || tagCategoryName != "" {
+		logger.Infow("reconciling vsphere tag category", "tagCategory", cluster.Spec.Cloud.VSphere.TagCategoryName)
 		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create REST client session: %w", err)
@@ -125,10 +133,10 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 	return cluster, nil
 }
 
-// TODO: Hey, you! Yes, you! Why don't you implement reconciling for vSphere? Would be really cool :)
-// func (v *VSphere) ReconcileCluster(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-// 	return cluster, nil
-// }
+// InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
+func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	return v.reconcileCluster(ctx, cluster, update, false, true)
+}
 
 // DefaultCloudSpec adds defaults to the cloud spec.
 func (v *VSphere) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSpec) error {
@@ -142,7 +150,7 @@ func (v *VSphere) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSp
 // ValidateCloudSpec validates whether a vsphere client can be constructed for
 // the passed cloudspec and perform some additional checks on datastore config.
 func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
-	username, password, err := GetCredentialsForCluster(spec, v.secretKeySelector, v.dc)
+	username, password, err := getCredentialsForCluster(spec, v.secretKeySelector, v.dc)
 	if err != nil {
 		return err
 	}
@@ -205,7 +213,7 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 // This covers cases where the finalizer was not added
 // We also remove the finalizer if either the folder is not present or we successfully deleted it.
 func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	username, password, err := GetCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
+	username, password, err := getCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
 	if err != nil {
 		return nil, err
 	}
