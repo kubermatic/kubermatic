@@ -7,7 +7,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
-func getCiliumOverrideValues(cluster *kubermaticv1.Cluster) map[string]interface{} {
+func getCiliumOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]interface{} {
 	values := map[string]interface{}{
 		"cni": map[string]interface{}{
 			// we run Cilium as non-exclusive CNI to allow for Multus use-cases

@@ -327,10 +327,10 @@ func createCNIController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.seedGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
+		ctrlCtx.runOptions.overwriteRegistry,
 	)
 }
 

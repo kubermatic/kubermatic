@@ -30,8 +30,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -67,22 +67,21 @@ type Reconciler struct {
 
 	workerName                    string
 	recorder                      record.EventRecorder
-	seedGetter                    provider.SeedGetter
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
+	overwriteRegistry             string
 }
 
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions, overwriteRegistry string) error {
 	reconciler := &Reconciler{
-		Client: mgr.GetClient(),
-
+		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
-		seedGetter:                    seedGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
-		log:                           log,
+		log:                           log.Named(ControllerName),
 		versions:                      versions,
+		overwriteRegistry:             overwriteRegistry,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -93,8 +92,8 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	// React to cluster update events only when CNIPlugin or ClusterNetwork config changed, or cluster Address changed
-	clusterPredicate := predicate.Funcs{
+	// Predicate for reacting to cluster update events only when CNIPlugin or ClusterNetwork config changed, or cluster Address changed
+	clusterUpdatePredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObj := e.ObjectOld.(*kubermaticv1.Cluster)
 			newObj := e.ObjectNew.(*kubermaticv1.Cluster)
@@ -111,16 +110,18 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		},
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterPredicate); err != nil {
+	// Watch on cluster events
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterUpdatePredicate, workerlabel.Predicates(workerName)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
-
-	// TODO (rastislavs): enqueue cluster events for ApplicationDefinition changes
 
 	return nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("cluster", request.NamespacedName.Name)
+	log.Debug("Processing")
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -131,7 +132,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if cluster.DeletionTimestamp != nil {
 		// Cluster is queued for deletion; no action required
-		r.log.Debugw("Cluster is queued for deletion; no action required", "cluster", cluster.Name)
+		log.Debugw("Cluster is queued for deletion; skipping")
 		return reconcile.Result{}, nil
 	}
 
@@ -144,11 +145,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionCNIControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, cluster)
+			return r.reconcile(ctx, log, cluster)
 		},
 	)
 	if err != nil {
-		r.log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
+		log.Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	if result == nil {
@@ -157,17 +158,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	log := logger.With("CNIType", cluster.Spec.CNIPlugin.Type, "CNIVersion", cluster.Spec.CNIPlugin.Version)
+
 	// Do not reconcile the cluster if the CNI is not managed by Applications infra
 	if !cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
+		log.Debug("CNI is not managed by Applications infra, skipping")
 		return nil, nil
 	}
 
 	// Make sure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Debug("Requeue CNI reconciliation as Application controller is not healthy")
+		log.Debug("Requeue CNI reconciliation as Application controller is not healthy")
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil // try reconciling later
 	}
+
+	log.Debugf("Reconciling CNI")
 
 	// Ensure CNI addon is removed if it was deployed before
 	if err := r.ensureCNIAddonIsRemoved(ctx, cluster); err != nil {
@@ -196,8 +202,8 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client
 		}
 
 		app.Labels = map[string]string{
-			"apps.kubermatic.k8c.io/managed-by": "kkp",
-			"apps.kubermatic.k8c.io/type":       "cni",
+			appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+			appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,
 		}
 		app.Spec.ApplicationRef = appskubermaticv1.ApplicationRef{
 			Name:    cluster.Spec.CNIPlugin.Type.String(),
@@ -216,7 +222,7 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client
 		}
 
 		// Override values with necessary CNI config
-		overrideValues := r.getCNIOverrideValues(cluster)
+		overrideValues := r.getCNIOverrideValues(cluster, r.overwriteRegistry)
 		if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
 			return app, fmt.Errorf("failed to merge CNI values: %w", err)
 		}
@@ -235,9 +241,9 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client
 		cniAppInstallation, client, &appskubermaticv1.ApplicationInstallation{}, false)
 }
 
-func (r *Reconciler) getCNIOverrideValues(cluster *kubermaticv1.Cluster) map[string]interface{} {
+func (r *Reconciler) getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]interface{} {
 	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-		return getCiliumOverrideValues(cluster)
+		return getCiliumOverrideValues(cluster, overwriteRegistry)
 	}
 	return nil
 }
