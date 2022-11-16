@@ -18,12 +18,50 @@ package vsphere
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"path"
+	"strings"
+
+	vapitags "github.com/vmware/govmomi/vapi/tags"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-// createVMFolder creates the specified vm folder if it does not exist yet.
-func createVMFolder(ctx context.Context, session *Session, fullPath string) error {
+// Folder represents a vsphere folder.
+type Folder struct {
+	Path string
+}
+
+func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, rootPath string,
+	cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+
+	// If the user did not specify a folder, we create a own folder for this cluster to improve
+	// the VM management in vCenter
+	clusterFolder := path.Join(rootPath, cluster.Name)
+	err := createVMFolder(ctx, s, restSession, cluster.Name, clusterFolder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
+	}
+
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
+		}
+
+		cluster.Spec.Cloud.VSphere.Folder = clusterFolder
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
+	}
+	return cluster, nil
+}
+
+// createVMFolder creates the specified vm folder if it does not exist yet. It returns true if a new folder has been created
+// and false if no new folder is created or on reported errors, other than not found error.
+func createVMFolder(ctx context.Context, session *Session, restSession *RESTSession, clusterName, fullPath string) error {
 	rootPath, newFolder := path.Split(fullPath)
 
 	rootFolder, err := session.Finder.Folder(ctx, rootPath)
@@ -36,31 +74,84 @@ func createVMFolder(ctx context.Context, session *Session, fullPath string) erro
 			return fmt.Errorf("failed to get folder %s: %w", fullPath, err)
 		}
 
-		if _, err = rootFolder.CreateFolder(ctx, newFolder); err != nil {
+		folder, err := rootFolder.CreateFolder(ctx, newFolder)
+		if err != nil {
 			return fmt.Errorf("failed to create folder %s: %w", fullPath, err)
 		}
+
+		tagManager := vapitags.NewManager(restSession.Client)
+		tag, err := tagManager.GetTag(ctx, "mq-test-tag")
+		if err != nil {
+			return fmt.Errorf("failed to fetch ownership tag: %w", err)
+		}
+
+		if err := tagManager.AttachTag(ctx, tag.ID, folder); err != nil {
+			return fmt.Errorf("failed to attach ownership tag on created folder %s: %w", newFolder, err)
+		}
+
+		return err
 	}
 
 	return nil
 }
 
 // deleteVMFolder deletes the specified folder.
-func deleteVMFolder(ctx context.Context, session *Session, path string) error {
-	folder, err := session.Finder.Folder(ctx, path)
+func deleteVMFolder(ctx context.Context, session *Session, restSession *RESTSession, clusterName, folderPath string) error {
+	folder, err := session.Finder.Folder(ctx, folderPath)
 	if err != nil {
 		if isNotFound(err) {
 			return nil
 		}
-		return fmt.Errorf("couldn't open folder %q: %w", path, err)
+		return fmt.Errorf("couldn't open folder %q: %w", folderPath, err)
 	}
 
-	task, err := folder.Destroy(ctx)
+	tagManager := vapitags.NewManager(restSession.Client)
+	attachedTags, err := tagManager.GetAttachedTags(ctx, folder)
 	if err != nil {
-		return fmt.Errorf("failed to trigger folder deletion: %w", err)
+		return fmt.Errorf("failed to fetch attached tags on folder %s: %w", folder.Name(), err)
 	}
-	if err := task.Wait(ctx); err != nil {
-		return fmt.Errorf("failed to wait for deletion of folder: %w", err)
+
+	for _, tag := range attachedTags {
+		if tag.Name == controllerOwnershipTag(clusterName) {
+			task, err := folder.Destroy(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to trigger folder deletion: %w", err)
+			}
+			if err := task.Wait(ctx); err != nil {
+				return fmt.Errorf("failed to wait for deletion of folder: %w", err)
+			}
+		}
 	}
 
 	return nil
+}
+
+// getVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
+func getVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
+	session, err := newSession(ctx, dc, username, password, caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
+	}
+	defer session.Logout(ctx)
+
+	// We simply list all folders & filter out afterwards.
+	// Filtering here is not possible as vCenter only lists the first level when giving a path.
+	// vCenter only lists folders recursively if you just specify "*".
+	folderRefs, err := session.Finder.FolderList(ctx, "*")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't retrieve folder list: %w", err)
+	}
+
+	rootPath := getVMRootPath(dc)
+	var folders []Folder
+	for _, folderRef := range folderRefs {
+		// We filter by rootPath. If someone configures it, we should respect it.
+		if !strings.HasPrefix(folderRef.InventoryPath, rootPath+"/") && folderRef.InventoryPath != rootPath {
+			continue
+		}
+		folder := Folder{Path: folderRef.Common.InventoryPath}
+		folders = append(folders, folder)
+	}
+
+	return folders, nil
 }
