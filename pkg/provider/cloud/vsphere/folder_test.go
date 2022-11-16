@@ -89,7 +89,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			folders, err := GetVMFolders(context.Background(), test.dc, vSphereUsername, vSpherePassword, nil)
+			folders, err := getVMFolders(context.Background(), test.dc, vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

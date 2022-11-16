@@ -20,9 +20,10 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"path"
 	"strings"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 // Folder represents a vsphere folder.
@@ -73,8 +74,8 @@ func deleteVMFolder(ctx context.Context, session *Session, path string) error {
 	return nil
 }
 
-// GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
-func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
+// getVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
+func getVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
 	session, err := newSession(ctx, dc, username, password, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
@@ -102,4 +103,3 @@ func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, u
 
 	return folders, nil
 }
-
