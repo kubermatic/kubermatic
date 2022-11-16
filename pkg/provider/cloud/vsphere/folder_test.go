@@ -46,7 +46,7 @@ func TestCreateVMFolder(t *testing.T) {
 
 	// Cheap way to test idempotency
 	for i := 0; i < 2; i++ {
-		if err := createVMFolder(ctx, session, folder); err != nil {
+		if _, err := createVMFolder(ctx, session, folder); err != nil {
 			t.Fatal(err)
 		}
 	}

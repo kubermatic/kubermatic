@@ -31,26 +31,29 @@ type Folder struct {
 	Path string
 }
 
-// createVMFolder creates the specified vm folder if it does not exist yet.
-func createVMFolder(ctx context.Context, session *Session, fullPath string) error {
+// createVMFolder creates the specified vm folder if it does not exist yet. It returns true if a new folder has been created
+// and false if no new folder is created or on reported errors, other than not found error.
+func createVMFolder(ctx context.Context, session *Session, fullPath string) (bool, error) {
 	rootPath, newFolder := path.Split(fullPath)
 
 	rootFolder, err := session.Finder.Folder(ctx, rootPath)
 	if err != nil {
-		return fmt.Errorf("couldn't find rootpath, see: %w", err)
+		return false, fmt.Errorf("couldn't find rootpath, see: %w", err)
 	}
 
 	if _, err = session.Finder.Folder(ctx, newFolder); err != nil {
 		if !isNotFound(err) {
-			return fmt.Errorf("failed to get folder %s: %w", fullPath, err)
+			return false, fmt.Errorf("failed to get folder %s: %w", fullPath, err)
 		}
 
 		if _, err = rootFolder.CreateFolder(ctx, newFolder); err != nil {
-			return fmt.Errorf("failed to create folder %s: %w", fullPath, err)
+			return false, fmt.Errorf("failed to create folder %s: %w", fullPath, err)
 		}
+
+		return true, err
 	}
 
-	return nil
+	return false, nil
 }
 
 // deleteVMFolder deletes the specified folder.
