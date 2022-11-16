@@ -1437,6 +1437,80 @@ func ReconcileAppsKubermaticV1ApplicationDefinitions(ctx context.Context, namedG
 	return nil
 }
 
+// AppsKubermaticV1ApplicationInstallationCreator defines an interface to create/update ApplicationInstallations
+type AppsKubermaticV1ApplicationInstallationCreator = func(existing *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error)
+
+// NamedAppsKubermaticV1ApplicationInstallationCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedAppsKubermaticV1ApplicationInstallationCreatorGetter = func() (name string, create AppsKubermaticV1ApplicationInstallationCreator)
+
+// AppsKubermaticV1ApplicationInstallationObjectWrapper adds a wrapper so the AppsKubermaticV1ApplicationInstallationCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func AppsKubermaticV1ApplicationInstallationObjectWrapper(create AppsKubermaticV1ApplicationInstallationCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*appskubermaticv1.ApplicationInstallation))
+		}
+		return create(&appskubermaticv1.ApplicationInstallation{})
+	}
+}
+
+// ReconcileAppsKubermaticV1ApplicationInstallations will create and update the AppsKubermaticV1ApplicationInstallations coming from the passed AppsKubermaticV1ApplicationInstallationCreator slice
+func ReconcileAppsKubermaticV1ApplicationInstallations(ctx context.Context, namedGetters []NamedAppsKubermaticV1ApplicationInstallationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := AppsKubermaticV1ApplicationInstallationObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appskubermaticv1.ApplicationInstallation{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ApplicationInstallation %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubeVirtV1VirtualMachineInstancePresetCreator defines an interface to create/update VirtualMachineInstancePresets
+type KubeVirtV1VirtualMachineInstancePresetCreator = func(existing *kubevirtv1.VirtualMachineInstancePreset) (*kubevirtv1.VirtualMachineInstancePreset, error)
+
+// NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter = func() (name string, create KubeVirtV1VirtualMachineInstancePresetCreator)
+
+// KubeVirtV1VirtualMachineInstancePresetObjectWrapper adds a wrapper so the KubeVirtV1VirtualMachineInstancePresetCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubeVirtV1VirtualMachineInstancePresetObjectWrapper(create KubeVirtV1VirtualMachineInstancePresetCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubevirtv1.VirtualMachineInstancePreset))
+		}
+		return create(&kubevirtv1.VirtualMachineInstancePreset{})
+	}
+}
+
+// ReconcileKubeVirtV1VirtualMachineInstancePresets will create and update the KubeVirtV1VirtualMachineInstancePresets coming from the passed KubeVirtV1VirtualMachineInstancePresetCreator slice
+func ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx context.Context, namedGetters []NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubeVirtV1VirtualMachineInstancePresetObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubevirtv1.VirtualMachineInstancePreset{}, false); err != nil {
+			return fmt.Errorf("failed to ensure VirtualMachineInstancePreset %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator defines an interface to create/update VirtualMachineInstancetypes
 type KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator = func(existing *kvinstancetypev1alpha1.VirtualMachineInstancetype) (*kvinstancetypev1alpha1.VirtualMachineInstancetype, error)
 

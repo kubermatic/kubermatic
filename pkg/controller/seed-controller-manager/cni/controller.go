@@ -39,7 +39,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -192,62 +191,6 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	return nil, nil
 }
 
-func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	cniAppInstallation := func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		var app *appskubermaticv1.ApplicationInstallation
-		if existing == nil {
-			app = &appskubermaticv1.ApplicationInstallation{}
-		} else {
-			app = existing.(*appskubermaticv1.ApplicationInstallation)
-		}
-
-		app.Labels = map[string]string{
-			appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
-			appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,
-		}
-		app.Spec.ApplicationRef = appskubermaticv1.ApplicationRef{
-			Name:    cluster.Spec.CNIPlugin.Type.String(),
-			Version: cluster.Spec.CNIPlugin.Version,
-		}
-		app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
-			Name: cniPluginNamespace,
-		}
-
-		// Unmarshall existing values
-		values := make(map[string]interface{})
-		if len(app.Spec.Values.Raw) > 0 {
-			if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
-				return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
-			}
-		}
-
-		// Override values with necessary CNI config
-		overrideValues := r.getCNIOverrideValues(cluster, r.overwriteRegistry)
-		if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
-			return app, fmt.Errorf("failed to merge CNI values: %w", err)
-		}
-
-		// Set new values
-		rawValues, err := json.Marshal(values)
-		if err != nil {
-			return app, fmt.Errorf("failed to marshall CNI values: %w", err)
-		}
-		app.Spec.Values = runtime.RawExtension{Raw: rawValues}
-
-		return app, nil
-	}
-
-	return reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: cniPluginNamespace, Name: cluster.Spec.CNIPlugin.Type.String()},
-		cniAppInstallation, client, &appskubermaticv1.ApplicationInstallation{}, false)
-}
-
-func (r *Reconciler) getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]interface{} {
-	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-		return getCiliumOverrideValues(cluster, overwriteRegistry)
-	}
-	return nil
-}
-
 func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	cniAddon := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
@@ -272,6 +215,62 @@ func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kuber
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete Hubble addon %s: %w", cniAddon.GetName(), err)
 		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	creators := []reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter{
+		ApplicationInstallationCreator(cluster, r.overwriteRegistry),
+	}
+	return reconciling.ReconcileAppsKubermaticV1ApplicationInstallations(ctx, creators, cniPluginNamespace, client)
+}
+
+func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegistry string) reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter {
+	return func() (string, reconciling.AppsKubermaticV1ApplicationInstallationCreator) {
+		return cluster.Spec.CNIPlugin.Type.String(), func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
+
+			app.Labels = map[string]string{
+				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+				appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,
+			}
+			app.Spec.ApplicationRef = appskubermaticv1.ApplicationRef{
+				Name:    cluster.Spec.CNIPlugin.Type.String(),
+				Version: cluster.Spec.CNIPlugin.Version,
+			}
+			app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
+				Name: cniPluginNamespace,
+			}
+
+			// Unmarshall existing values
+			values := make(map[string]interface{})
+			if len(app.Spec.Values.Raw) > 0 {
+				if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
+					return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
+				}
+			}
+
+			// Override values with necessary CNI config
+			overrideValues := getCNIOverrideValues(cluster, overwriteRegistry)
+			if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
+				return app, fmt.Errorf("failed to merge CNI values: %w", err)
+			}
+
+			// Set new values
+			rawValues, err := json.Marshal(values)
+			if err != nil {
+				return app, fmt.Errorf("failed to marshall CNI values: %w", err)
+			}
+			app.Spec.Values = runtime.RawExtension{Raw: rawValues}
+
+			return app, nil
+		}
+	}
+}
+
+func getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]interface{} {
+	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+		return getCiliumOverrideValues(cluster, overwriteRegistry)
 	}
 	return nil
 }
