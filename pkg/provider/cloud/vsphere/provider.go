@@ -63,10 +63,10 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 var _ provider.ReconcilingCloudProvider = &VSphere{}
 
 func (v *VSphere) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return v.reconcileCluster(ctx, cluster, update, true, true)
+	return v.reconcileCluster(ctx, cluster, update, true)
 }
 
-func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, _ bool) (*kubermaticv1.Cluster, error) {
+func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool) (*kubermaticv1.Cluster, error) {
 	logger := v.log.With("cluster", cluster.Name)
 
 	username, password, err := getCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
@@ -135,7 +135,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
 func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return v.reconcileCluster(ctx, cluster, update, false, true)
+	return v.reconcileCluster(ctx, cluster, update, false)
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
