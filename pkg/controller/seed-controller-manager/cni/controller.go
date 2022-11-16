@@ -93,7 +93,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	// React to cluster update events only when CNIPlugin or ClusterNetwork config changed
+	// React to cluster update events only when CNIPlugin or ClusterNetwork config changed, or cluster Address changed
 	clusterPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObj := e.ObjectOld.(*kubermaticv1.Cluster)
@@ -102,6 +102,9 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 				return true
 			}
 			if !reflect.DeepEqual(oldObj.Spec.ClusterNetwork, newObj.Spec.ClusterNetwork) {
+				return true
+			}
+			if !reflect.DeepEqual(oldObj.Status.Address, newObj.Status.Address) {
 				return true
 			}
 			return false
@@ -240,18 +243,29 @@ func (r *Reconciler) getCNIOverrideValues(cluster *kubermaticv1.Cluster) map[str
 }
 
 func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	addon := &kubermaticv1.Addon{
+	cniAddon := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cluster.Spec.CNIPlugin.Type.String(),
 			Namespace: cluster.Status.NamespaceName,
 		},
 	}
-	err := r.Client.Delete(ctx, addon)
+	err := r.Client.Delete(ctx, cniAddon)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete CNI addon %s: %w", addon.GetName(), err)
+		return fmt.Errorf("failed to delete CNI addon %s: %w", cniAddon.GetName(), err)
 	}
 
-	// TODO (rastislavs): In case of Cilium also remove Hubble
-
+	// In case of Cilium we also need to remove the Hubble addon
+	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+		cniAddon := &kubermaticv1.Addon{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "hubble",
+				Namespace: cluster.Status.NamespaceName,
+			},
+		}
+		err := r.Client.Delete(ctx, cniAddon)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete Hubble addon %s: %w", cniAddon.GetName(), err)
+		}
+	}
 	return nil
 }

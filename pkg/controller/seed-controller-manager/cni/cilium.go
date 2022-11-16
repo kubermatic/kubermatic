@@ -10,13 +10,29 @@ import (
 func getCiliumOverrideValues(cluster *kubermaticv1.Cluster) map[string]interface{} {
 	values := map[string]interface{}{
 		"cni": map[string]interface{}{
-			"exclusive": "false", // non-exclusive to allow Multus use-cases
+			// we run Cilium as non-exclusive CNI to allow for Multus use-cases
+			"exclusive": "false",
 		},
 		"operator": map[string]interface{}{
 			"replicas": "1",
 			"securityContext": map[string]interface{}{
 				"seccompProfile": map[string]interface{}{
 					"type": "RuntimeDefault",
+				},
+			},
+		},
+		// TODO (rastislavs): Move Hubble config (+ operator replicas) to ApplicationDefinition defaultValues instead
+		"hubble": map[string]interface{}{
+			"relay": map[string]interface{}{
+				"enabled": "true",
+			},
+			"ui": map[string]interface{}{
+				"enabled": "true",
+			},
+			// cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
+			"tls": map[string]interface{}{
+				"auto": map[string]interface{}{
+					"method": "cronJob",
 				},
 			},
 		},
