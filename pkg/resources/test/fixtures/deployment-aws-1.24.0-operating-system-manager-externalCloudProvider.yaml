@@ -39,7 +39,7 @@ spec:
         - '{"command":"/usr/local/bin/osm-controller","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","cluster-de-test-01","-external-cloud-provider"]}'
         command:
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/operating-system-manager:296ee43a51a0aee013f0c6aa98f85493c59db050
+        image: quay.io/kubermatic/operating-system-manager:192412d78cbfb9d826fbc7cf7e077cfe7629d6ba
         livenessProbe:
           failureThreshold: 3
           httpGet:
