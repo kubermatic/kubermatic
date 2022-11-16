@@ -18,9 +18,17 @@ package vsphere
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"path"
+	"strings"
 )
+
+// Folder represents a vsphere folder.
+type Folder struct {
+	Path string
+}
 
 // createVMFolder creates the specified vm folder if it does not exist yet.
 func createVMFolder(ctx context.Context, session *Session, fullPath string) error {
@@ -64,3 +72,34 @@ func deleteVMFolder(ctx context.Context, session *Session, path string) error {
 
 	return nil
 }
+
+// GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
+func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
+	session, err := newSession(ctx, dc, username, password, caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
+	}
+	defer session.Logout(ctx)
+
+	// We simply list all folders & filter out afterwards.
+	// Filtering here is not possible as vCenter only lists the first level when giving a path.
+	// vCenter only lists folders recursively if you just specify "*".
+	folderRefs, err := session.Finder.FolderList(ctx, "*")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't retrieve folder list: %w", err)
+	}
+
+	rootPath := getVMRootPath(dc)
+	var folders []Folder
+	for _, folderRef := range folderRefs {
+		// We filter by rootPath. If someone configures it, we should respect it.
+		if !strings.HasPrefix(folderRef.InventoryPath, rootPath+"/") && folderRef.InventoryPath != rootPath {
+			continue
+		}
+		folder := Folder{Path: folderRef.Common.InventoryPath}
+		folders = append(folders, folder)
+	}
+
+	return folders, nil
+}
+
