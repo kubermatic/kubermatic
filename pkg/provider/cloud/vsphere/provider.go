@@ -90,7 +90,11 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
 		}
 
-		if created {
+		// We need to check if the folder has been created, however kkp failed to add the underlying finalizer, in such
+		// a case, the only way we can check that this folder has been created by kkp is, check the if the folder field
+		// has been set. If the folder field is empty, it means the contorller failed to update the cluster hence, it failed
+		// also to add the finalizer.
+		if created || cluster.Spec.Cloud.VSphere.Folder == "" {
 			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
 				cluster.Spec.Cloud.VSphere.Folder = clusterFolder
