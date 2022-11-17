@@ -19,7 +19,7 @@
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 ---
 # Source: aws-ebs-csi-driver/templates/poddisruptionbudget-controller.yaml
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: ebs-csi-controller
