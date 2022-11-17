@@ -50,7 +50,7 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 
 	vnet, err := clients.Networks.Get(ctx, resourceGroup, cluster.Spec.Cloud.Azure.VNetName, nil)
 	if err != nil && !isNotFound(err) {
-		return cluster, err
+		return nil, err
 	}
 
 	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, nil)
@@ -66,8 +66,8 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	// since subnets are sub-resources of VNETs and don't have tags themselves
 	// we can only guess KKP ownership based on the VNET ownership tag. If the
 	// VNET isn't owned by KKP, we should not try to reconcile subnets and
-	// return early
-	if !isNotFound(err) && !hasOwnershipTag(vnet.Tags, cluster) {
+	// return early.
+	if err == nil && !hasOwnershipTag(vnet.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
 		})

@@ -43,9 +43,10 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 		return nil, err
 	}
 
-	// if we found an availability set, we can check for the ownership tag to determine
-	// if the referenced availability set is owned by this cluster and should be reconciled
-	if !isNotFound(err) && !hasOwnershipTag(availabilitySet.Tags, cluster) {
+	// if we found an availability set (no error), we can check for the ownership tag to determine
+	// if the referenced availability set is owned by this cluster and should be reconciled. We return
+	// early if the availability set is not owned by us.
+	if err == nil && !hasOwnershipTag(availabilitySet.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.AvailabilitySet = cluster.Spec.Cloud.Azure.AvailabilitySet
 		})

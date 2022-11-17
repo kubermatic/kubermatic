@@ -47,10 +47,11 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 		return nil, err
 	}
 
+	// if the request returned no error, it means the resource group already exists and we can return early.
 	// usually, we check for ownership tags here and then compare attributes of interest to a target representation
 	// of the resource. Since there is nothing in the resource group we could compare to eventually reconcile, we
 	// skip all of that and return early if we found a resource group during our API call earlier.
-	if !isNotFound(err) {
+	if err == nil {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.ResourceGroup = cluster.Spec.Cloud.Azure.ResourceGroup
 			// this is a special case; because we cannot determine if a resource group was created by
