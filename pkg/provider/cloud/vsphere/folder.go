@@ -23,7 +23,11 @@ import (
 	"path"
 	"strings"
 
+	vapitags "github.com/vmware/govmomi/vapi/tags"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 // Folder represents a vsphere folder.
@@ -31,47 +35,96 @@ type Folder struct {
 	Path string
 }
 
+func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, rootPath string,
+	cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
+
+	// If the user did not specify a folder, we create a own folder for this cluster to improve
+	// the VM management in vCenter
+	clusterFolder := path.Join(rootPath, cluster.Name)
+	err := createVMFolder(ctx, s, restSession, cluster, clusterFolder)
+	if err != nil {
+		return fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
+	}
+
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
+		}
+
+		cluster.Spec.Cloud.VSphere.Folder = clusterFolder
+	})
+	if err != nil {
+		return fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
+	}
+	return nil
+}
+
 // createVMFolder creates the specified vm folder if it does not exist yet. It returns true if a new folder has been created
 // and false if no new folder is created or on reported errors, other than not found error.
-func createVMFolder(ctx context.Context, session *Session, fullPath string) (bool, error) {
+func createVMFolder(ctx context.Context, session *Session, restSession *RESTSession, cluster *kubermaticv1.Cluster, fullPath string) error {
 	rootPath, newFolder := path.Split(fullPath)
 
 	rootFolder, err := session.Finder.Folder(ctx, rootPath)
 	if err != nil {
-		return false, fmt.Errorf("couldn't find rootpath, see: %w", err)
+		return fmt.Errorf("couldn't find rootpath, see: %w", err)
 	}
 
 	if _, err = session.Finder.Folder(ctx, newFolder); err != nil {
 		if !isNotFound(err) {
-			return false, fmt.Errorf("failed to get folder %s: %w", fullPath, err)
+			return fmt.Errorf("failed to get folder %s: %w", fullPath, err)
 		}
 
-		if _, err = rootFolder.CreateFolder(ctx, newFolder); err != nil {
-			return false, fmt.Errorf("failed to create folder %s: %w", fullPath, err)
+		folder, err := rootFolder.CreateFolder(ctx, newFolder)
+		if err != nil {
+			return fmt.Errorf("failed to create folder %s: %w", fullPath, err)
 		}
 
-		return true, err
+		tagManager := vapitags.NewManager(restSession.Client)
+		tag, err := tagManager.GetTag(ctx, controllerOwnershipTag(cluster))
+		if err != nil {
+			return fmt.Errorf("failed to fetch ownership tag: %w", err)
+		}
+
+		if err := tagManager.AttachTag(ctx, tag.ID, folder); err != nil {
+			return fmt.Errorf("failed to attach ownership tag on created folder %s: %w", newFolder, err)
+		}
+
+		return err
 	}
 
-	return false, nil
+	return nil
 }
 
 // deleteVMFolder deletes the specified folder.
-func deleteVMFolder(ctx context.Context, session *Session, path string) error {
-	folder, err := session.Finder.Folder(ctx, path)
+func deleteVMFolder(ctx context.Context, session *Session, restSession *RESTSession, cluster *kubermaticv1.Cluster) error {
+	var (
+		folderPath   = cluster.Spec.Cloud.VSphere.Folder
+		ownershipTag = controllerOwnershipTag(cluster)
+	)
+	folder, err := session.Finder.Folder(ctx, folderPath)
 	if err != nil {
 		if isNotFound(err) {
 			return nil
 		}
-		return fmt.Errorf("couldn't open folder %q: %w", path, err)
+		return fmt.Errorf("couldn't open folder %q: %w", folderPath, err)
 	}
 
-	task, err := folder.Destroy(ctx)
+	tagManager := vapitags.NewManager(restSession.Client)
+	attachedTags, err := tagManager.GetAttachedTags(ctx, folder)
 	if err != nil {
-		return fmt.Errorf("failed to trigger folder deletion: %w", err)
+		return fmt.Errorf("failed to fetch attached tags on folder %s: %w", folder.Name(), err)
 	}
-	if err := task.Wait(ctx); err != nil {
-		return fmt.Errorf("failed to wait for deletion of folder: %w", err)
+
+	for _, tag := range attachedTags {
+		if tag.Name == ownershipTag {
+			task, err := folder.Destroy(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to trigger folder deletion: %w", err)
+			}
+			if err := task.Wait(ctx); err != nil {
+				return fmt.Errorf("failed to wait for deletion of folder: %w", err)
+			}
+		}
 	}
 
 	return nil
