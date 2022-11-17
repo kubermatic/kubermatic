@@ -18,7 +18,7 @@ promtail:
   deploymentStrategy: RollingUpdate
 
   initContainer:
-    enabled: true
+    enabled: false
     fsInotifyMaxUserInstances: 256
     image:
       repository: library/busybox
