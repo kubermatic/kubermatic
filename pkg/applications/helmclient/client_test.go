@@ -19,9 +19,7 @@ package helmclient
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -29,21 +27,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/distribution/distribution/v3/configuration"
-	ociregistry "github.com/distribution/distribution/v3/registry"
-	"github.com/phayes/freeport"
-	"golang.org/x/crypto/bcrypt"
-	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
-	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/provenance"
-	"helm.sh/helm/v3/pkg/pusher"
-	helmregistry "helm.sh/helm/v3/pkg/registry"
-	"helm.sh/helm/v3/pkg/repo/repotest"
-	"helm.sh/helm/v3/pkg/uploader"
 
+	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	cmdtesting "k8s.io/kubectl/pkg/cmd/testing"
@@ -75,28 +63,16 @@ func TestDownloadChart(t *testing.T) {
 	chartArchiveDir := t.TempDir()
 
 	chartGlobPath := path.Join(chartArchiveDir, "*.tgz")
-	chartArchiveV1Path, chartArchiveV1Size := packageChart(t, "testdata/examplechart", chartArchiveDir)
-	chartArchiveV2Path, chartArchiveV2Size := packageChart(t, "testdata/examplechart-v2", chartArchiveDir)
+	chartArchiveV1Path, chartArchiveV1Size := test.PackageChart(t, "testdata/examplechart", chartArchiveDir)
+	chartArchiveV2Path, chartArchiveV2Size := test.PackageChart(t, "testdata/examplechart-v2", chartArchiveDir)
 	chartArchiveV1Name := path.Base(chartArchiveV1Path)
 	chartArchiveV2Name := path.Base(chartArchiveV2Path)
 
-	srv, err := repotest.NewTempServerWithCleanup(t, chartGlobPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer srv.Stop()
-	if err := srv.CreateIndex(); err != nil {
-		t.Fatal(err)
-	}
+	httpRegistryUrl := test.StartHttpRegistryWithCleanup(t, chartGlobPath)
+	httpRegistryWithAuthUrl := test.StartHttpRegistryWithAuthAndCleanup(t, chartGlobPath)
 
-	srvWithAuth := repotest.NewTempServerWithCleanupAndBasicAuth(t, chartGlobPath)
-	defer srvWithAuth.Stop()
-	if err := srvWithAuth.CreateIndex(); err != nil {
-		t.Fatal(err)
-	}
-
-	ociRegistryUrl := startOciRegistry(t, chartGlobPath)
-	ociregistryWithAuthUrl, registryConfigFile := startOciRegistryWithAuth(t, chartGlobPath)
+	ociRegistryUrl := test.StartOciRegistry(t, chartGlobPath)
+	ociregistryWithAuthUrl, registryConfigFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
 	testCases := []struct {
 		name               string
@@ -110,7 +86,7 @@ func TestDownloadChart(t *testing.T) {
 	}{
 		{
 			name:               "Download from HTTP repository should be successful",
-			repoUrl:            srv.URL(),
+			repoUrl:            httpRegistryUrl,
 			chartName:          "examplechart",
 			chartVersion:       "0.1.0",
 			auth:               AuthSettings{},
@@ -120,7 +96,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:               "Download from HTTP repository with empty version should get the latest version",
-			repoUrl:            srv.URL(),
+			repoUrl:            httpRegistryUrl,
 			chartName:          "examplechart",
 			chartVersion:       "",
 			auth:               AuthSettings{},
@@ -130,7 +106,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:               "Download from HTTP repository with auth should be successful",
-			repoUrl:            srvWithAuth.URL(),
+			repoUrl:            httpRegistryWithAuthUrl,
 			chartName:          "examplechart",
 			chartVersion:       "0.1.0",
 			auth:               AuthSettings{Username: "username", Password: "password"},
@@ -140,7 +116,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:              "Download from HTTP repository should fail when chart does not exist",
-			repoUrl:           srv.URL(),
+			repoUrl:           httpRegistryUrl,
 			chartName:         "chartthatdoesnotexist",
 			chartVersion:      "0.1.0",
 			auth:              AuthSettings{},
@@ -149,7 +125,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:              "Download from HTTP repository should fail when version is not a semversion",
-			repoUrl:           srv.URL(),
+			repoUrl:           httpRegistryUrl,
 			chartName:         "examplechart",
 			chartVersion:      "notSemver",
 			auth:              AuthSettings{},
@@ -257,26 +233,14 @@ func TestBuildDependencies(t *testing.T) {
 	chartArchiveDir := t.TempDir()
 	chartGlobPath := path.Join(chartArchiveDir, "*.tgz")
 
-	packageChart(t, "testdata/examplechart", chartArchiveDir)
-	packageChart(t, "testdata/examplechart2", chartArchiveDir)
+	test.PackageChart(t, "testdata/examplechart", chartArchiveDir)
+	test.PackageChart(t, "testdata/examplechart2", chartArchiveDir)
 
-	srv, err := repotest.NewTempServerWithCleanup(t, chartGlobPath)
-	defer srv.Stop()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := srv.CreateIndex(); err != nil {
-		t.Fatal(err)
-	}
+	httpRegistryUrl := test.StartHttpRegistryWithCleanup(t, chartGlobPath)
+	httpRegistryWithAuthUrl := test.StartHttpRegistryWithAuthAndCleanup(t, chartGlobPath)
 
-	srvWithAuth := repotest.NewTempServerWithCleanupAndBasicAuth(t, chartGlobPath)
-	if err := srvWithAuth.CreateIndex(); err != nil {
-		t.Fatal(err)
-	}
-	defer srvWithAuth.Stop()
-
-	ociRegistryUrl := startOciRegistry(t, chartGlobPath)
-	ociRegistryWithAuthUrl, registryConfigFile := startOciRegistryWithAuth(t, chartGlobPath)
+	ociRegistryUrl := test.StartOciRegistry(t, chartGlobPath)
+	ociRegistryWithAuthUrl, registryConfigFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
 	const fileDepChartName = "filedepchart"
 	const fileDepChartVersion = "2.3.4"
@@ -296,14 +260,14 @@ func TestBuildDependencies(t *testing.T) {
 		},
 		{
 			name:         "http dependencies with Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: srv.URL()}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}},
 			hasLockFile:  true,
 			auth:         AuthSettings{},
 			wantErr:      false,
 		},
 		{
 			name:         "http dependencies without Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: srv.URL()}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      false,
@@ -338,28 +302,28 @@ func TestBuildDependencies(t *testing.T) {
 		},
 		{
 			name:         "http and oci dependencies with Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: srv.URL()}, {Name: "examplechart2", Version: "0.1.0", Repository: ociRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}, {Name: "examplechart2", Version: "0.1.0", Repository: ociRegistryUrl}},
 			hasLockFile:  true,
 			auth:         AuthSettings{},
 			wantErr:      false,
 		},
 		{
 			name:         "http and oci dependencies without Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: srv.URL()}, {Name: "examplechart2", Version: "0.1.0", Repository: ociRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}, {Name: "examplechart2", Version: "0.1.0", Repository: ociRegistryUrl}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      false,
 		},
 		{
 			name:         "http dependencies with Chat.lock file and auth",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: srvWithAuth.URL()}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryWithAuthUrl}},
 			hasLockFile:  true,
 			auth:         AuthSettings{Username: "username", Password: "password"},
 			wantErr:      false,
 		},
 		{
 			name:         "http dependencies without Chat.lock file and auth",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: srvWithAuth.URL()}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryWithAuthUrl}},
 			hasLockFile:  false,
 			auth:         AuthSettings{Username: "username", Password: "password"},
 			wantErr:      false,
@@ -380,7 +344,7 @@ func TestBuildDependencies(t *testing.T) {
 		},
 		{
 			name:         "http dependency with empty version should fail",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: srv.URL()}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: httpRegistryUrl}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      true,
@@ -394,7 +358,7 @@ func TestBuildDependencies(t *testing.T) {
 		},
 		{
 			name:         "http dependency with non semver should fail",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: srv.URL()}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: httpRegistryUrl}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      true,
@@ -534,137 +498,4 @@ func HashReq(req, lock []*chart.Dependency) (string, error) {
 	}
 	s, err := provenance.Digest(bytes.NewBuffer(data))
 	return "sha256:" + s, err
-}
-
-// startOciRegistry start an oci registry and uploads charts archives matching glob and returns the registry URL.
-func startOciRegistry(t *testing.T, glob string) string {
-	registryURL, _ := newOciRegistry(t, glob, false)
-	return registryURL
-}
-
-// startOciRegistryWithAuth start an oci registry with authentication, uploads charts archives matching glob,
-// returns the registry URL and registryConfigFile.
-// registryConfigFile contains the credentials of the registry.
-func startOciRegistryWithAuth(t *testing.T, glob string) (string, string) {
-	return newOciRegistry(t, glob, true)
-}
-
-// startOciRegistry start an oci registry, uploads charts archives matching glob, returns the registry URL and
-// registryConfigFile if authentication is enabled.
-func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string) {
-	t.Helper()
-
-	// Registry config
-	config := &configuration.Configuration{}
-	credentialDir := t.TempDir()
-
-	var username, password, registryConfigFile string
-
-	if enableAuth {
-		username = "someuser"
-		password = "somepassword"
-
-		encrypedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			t.Fatalf("failed to generate encrypt password: %s", err)
-		}
-		authHtpasswd := filepath.Join(credentialDir, "auth.htpasswd")
-		err = os.WriteFile(authHtpasswd, []byte(fmt.Sprintf("%s:%s\n", username, string(encrypedPassword))), 0600)
-		if err != nil {
-			t.Fatalf("failed to write auth.htpasswd file: %s", err)
-		}
-
-		config.Auth = configuration.Auth{
-			"htpasswd": configuration.Parameters{
-				"realm": "localhost",
-				"path":  authHtpasswd,
-			},
-		}
-	}
-
-	port, err := freeport.GetFreePort()
-	if err != nil {
-		t.Fatalf("error finding free port for test registry")
-	}
-
-	config.HTTP.Addr = fmt.Sprintf(":%d", port)
-	config.HTTP.DrainTimeout = time.Duration(10) * time.Second
-	config.Storage = map[string]configuration.Parameters{"inmemory": map[string]interface{}{}}
-
-	ociRegistryUrl := fmt.Sprintf("oci://localhost:%d/helm-charts", port)
-
-	r, err := ociregistry.NewRegistry(context.Background(), config)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go func() {
-		if err := r.ListenAndServe(); err != nil {
-			t.Errorf("can not start http registry: %s", err)
-			return
-		}
-	}()
-
-	if glob != "" {
-		options := []helmregistry.ClientOption{helmregistry.ClientOptWriter(os.Stdout)}
-		if enableAuth {
-			registryConfigFile = filepath.Join(credentialDir, "reg-cred")
-			// to generate auth field :  echo '<user>:<password>' | base64
-			auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
-			if err := os.WriteFile(registryConfigFile, []byte(fmt.Sprintf(`{"auths":{"localhost:%d":{"username":"%s","password":"%s","auth":"%s"}}}`, port, username, password, auth)), 0600); err != nil {
-				t.Fatal(err)
-			}
-			options = append(options, helmregistry.ClientOptCredentialsFile(registryConfigFile))
-		}
-		regClient, err := helmregistry.NewClient(options...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		chartUploader := uploader.ChartUploader{
-			Out:     os.Stdout,
-			Pushers: pusher.All(&cli.EnvSettings{}),
-			Options: []pusher.Option{pusher.WithRegistryClient(regClient)},
-		}
-
-		files, err := filepath.Glob(glob)
-		if err != nil {
-			t.Fatalf("failed to upload chart, invalid blob: %s", err)
-		}
-		for i := range files {
-			err = chartUploader.UploadTo(files[i], ociRegistryUrl)
-			if err != nil {
-				t.Fatalf("can not push chart '%s' to oci registry: %s", files[i], err)
-			}
-		}
-	}
-
-	return ociRegistryUrl, registryConfigFile
-}
-
-// packageChart packages the chart in chartDir into a chart archive file (i.e. a tgz) in destDir directory and returns
-// the full path and the size of the archive.
-func packageChart(t *testing.T, chartDir string, destDir string) (string, int64) {
-	ch, err := loader.LoadDir(chartDir)
-	if err != nil {
-		t.Fatalf("failed to load chart '%s': %s", chartDir, err)
-	}
-
-	if reqs := ch.Metadata.Dependencies; reqs != nil {
-		if err := action.CheckDependencies(ch, reqs); err != nil {
-			t.Fatalf("invalid dependencies for chart '%s': %s", chartDir, err)
-		}
-	}
-
-	archivePath, err := chartutil.Save(ch, destDir)
-	if err != nil {
-		t.Fatalf("failed to package chart '%s': %s", chartDir, err)
-	}
-
-	expectedChartInfo, err := os.Stat(archivePath)
-	if err != nil {
-		t.Fatalf("can get size chart archive %s", err)
-	}
-
-	return archivePath, expectedChartInfo.Size()
 }

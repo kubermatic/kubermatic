@@ -28,6 +28,7 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -453,7 +454,7 @@ func createNamespaceWithCleanup(t *testing.T, ctx context.Context, client ctrlru
 		namespace := &corev1.Namespace{}
 		return client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(ns), namespace) == nil
 	}) {
-		t.Fatalf("tileout waiting for namespace creation")
+		t.Fatalf("timeout waiting for namespace creation")
 	}
 	return ns
 }
@@ -515,8 +516,8 @@ func startTestEnvAndPackageChartsWithCleanup(t *testing.T) (context.Context, ctr
 
 	// packages Helm charts
 	helmTempDir := t.TempDir()
-	chartArchiveV1Path, _ = packageChart(t, "testdata/examplechart", helmTempDir)
-	chartArchiveV2Path, _ = packageChart(t, "testdata/examplechart-v2", helmTempDir)
+	chartArchiveV1Path, _ = test.PackageChart(t, "testdata/examplechart", helmTempDir)
+	chartArchiveV2Path, _ = test.PackageChart(t, "testdata/examplechart-v2", helmTempDir)
 
 	// get envTest kubeconfig
 	kubeconfig := *clientcmdapi.NewConfig()
