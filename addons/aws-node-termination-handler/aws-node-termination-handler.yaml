@@ -17,40 +17,6 @@
 
 {{ if eq .Cluster.CloudProviderName "aws" }}
 ---
-# Source: aws-node-termination-handler/templates/psp.yaml
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: aws-node-termination-handler
-  labels:
-    app.kubernetes.io/name: aws-node-termination-handler
-    app.kubernetes.io/instance: aws-node-termination-handler
-    app.kubernetes.io/version: "1.16.2"
-    app.kubernetes.io/part-of: aws-node-termination-handler
-    app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: aws-node-termination-handler-0.18.2
-  annotations:
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
-spec:
-  privileged: false
-  hostIPC: false
-  hostNetwork: true
-  hostPID: false
-  readOnlyRootFilesystem: false
-  allowPrivilegeEscalation: false
-  allowedCapabilities:
-    - '*'
-  fsGroup:
-    rule: RunAsAny
-  runAsUser:
-    rule: RunAsAny
-  seLinux:
-    rule: RunAsAny
-  supplementalGroups:
-    rule: RunAsAny
-  volumes:
-    - '*'
----
 # Source: aws-node-termination-handler/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -129,48 +95,6 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: aws-node-termination-handler
-subjects:
-  - kind: ServiceAccount
-    name: aws-node-termination-handler
-    namespace: kube-system
----
-# Source: aws-node-termination-handler/templates/psp.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: aws-node-termination-handler-psp
-  namespace: kube-system
-  labels:
-    app.kubernetes.io/name: aws-node-termination-handler
-    app.kubernetes.io/instance: aws-node-termination-handler
-    app.kubernetes.io/version: "1.16.2"
-    app.kubernetes.io/part-of: aws-node-termination-handler
-    app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: aws-node-termination-handler-0.18.2
-rules:
-  - apiGroups: ['policy']
-    resources: ['podsecuritypolicies']
-    verbs:     ['use']
-    resourceNames:
-      - aws-node-termination-handler
----
-# Source: aws-node-termination-handler/templates/psp.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: aws-node-termination-handler-psp
-  namespace: kube-system
-  labels:
-    app.kubernetes.io/name: aws-node-termination-handler
-    app.kubernetes.io/instance: aws-node-termination-handler
-    app.kubernetes.io/version: "1.16.2"
-    app.kubernetes.io/part-of: aws-node-termination-handler
-    app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: aws-node-termination-handler-0.18.2
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: aws-node-termination-handler-psp
 subjects:
   - kind: ServiceAccount
     name: aws-node-termination-handler
