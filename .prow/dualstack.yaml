@@ -162,7 +162,7 @@ presubmits:
               memory: 4Gi
               cpu: 2
 
-  - name: pre-kubermatic-dualstack-e2e-azure
+  - name: pre-kubermatic-dualstack-e2e-azure-canal
     optional: true
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -181,7 +181,43 @@ presubmits:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
             - name: CNI
-              value: canal,cilium
+              value: canal
+            - name: PROVIDER
+              value: azure
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+
+  - name: pre-kubermatic-dualstack-e2e-azure-cilium
+    optional: true
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
+          imagePullPolicy: Always
+          command:
+            - "./hack/ci/run-dualstack-e2e-test.sh"
+          env:
+            - name: CNI
+              value: cilium
             - name: PROVIDER
               value: azure
             - name: KUBERMATIC_EDITION
