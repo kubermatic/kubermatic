@@ -74,6 +74,8 @@ const (
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
+//
+//gocyclo:ignore
 func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
@@ -118,6 +120,11 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	// Validate APIServerAllowedIPRanges for LoadBalancer expose strategy
 	if spec.ExposeStrategy != kubermaticv1.ExposeStrategyLoadBalancer && spec.APIServerAllowedIPRanges != nil {
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("APIServerAllowedIPRanges"), "Access control for API server is supported only for LoadBalancer expose strategy"))
+	}
+
+	// Validate TunnelingAgentIP for Tunneling Expose strategy
+	if spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling && spec.ClusterNetwork.TunnelingAgentIP != "" {
+		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("TunnelingAgentIP"), "Tunneling agent IP can be configured only for Tunneling Expose strategy"))
 	}
 
 	// External CCM is not supported for all providers and all Kubernetes versions.

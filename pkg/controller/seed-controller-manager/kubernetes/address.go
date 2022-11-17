@@ -45,7 +45,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 	b := address.NewModifiersBuilder(log)
 	// we only need providing the agentIP if the Tunneling strategy is used.
 	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		b.TunnelingAgentIP(r.tunnelingAgentIP)
+		b.TunnelingAgentIP(cluster.Spec.ClusterNetwork.TunnelingAgentIP)
 	}
 	modifiers, err := b.
 		Cluster(cluster).
