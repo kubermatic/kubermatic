@@ -39,4 +39,4 @@ subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
     name: system:serviceaccounts
-{{ - end }}
+{{- end }}
