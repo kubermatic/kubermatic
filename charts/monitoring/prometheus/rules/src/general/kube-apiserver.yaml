@@ -48,20 +48,6 @@ groups:
           resource: apiserver
           service: kubernetes
 
-      - alert: KubeAPIErrorsHigh
-        annotations:
-          message: API server is returning errors for {{ $value }}% of requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapierrorshigh
-        expr: |
-          sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
-            /
-          sum(rate(apiserver_request_total{job="apiserver"}[5m])) without(instance, pod) * 100 > 10
-        for: 10m
-        labels:
-          severity: critical
-          resource: apiserver
-          service: kubernetes
-
       - alert: KubeAPITerminatedRequests
         annotations:
           message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
@@ -87,20 +73,6 @@ groups:
         for: 10m
         labels:
           severity: critical
-          resource: apiserver
-          service: kubernetes
-
-      - alert: KubeAPIErrorsHigh
-        annotations:
-          message: API server is returning errors for {{ $value }}% of requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapierrorshigh
-        expr: |
-          sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
-            /
-          sum(rate(apiserver_request_total{job="apiserver"}[5m])) without(instance, pod) * 100 > 5
-        for: 10m
-        labels:
-          severity: warning
           resource: apiserver
           service: kubernetes
 

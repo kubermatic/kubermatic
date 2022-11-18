@@ -39,8 +39,7 @@ groups:
         runbook:
           steps:
             - Check the target system's resource usage for anomalias.
-            - Check if the target application has been recently rescheduled and is still settling.
-
+            - Check if the target application has been recently rescheduled and is still settling.    
       - alert: HttpCertExpiresSoon
         annotations:
           message: The certificate for {{ $labels.instance }} expires in less than 3 days.
@@ -50,7 +49,6 @@ groups:
           severity: warning
           resource: "{{ $labels.instance }}"
           service: blackbox-exporter
-
       - alert: HttpCertExpiresVerySoon
         annotations:
           message: The certificate for {{ $labels.instance }} expires in less than 24 hours.
@@ -59,4 +57,5 @@ groups:
         labels:
           severity: critical
           resource: "{{ $labels.instance }}"
-          service: blackbox-exporter
+          service: blackbox-exporter      
+
