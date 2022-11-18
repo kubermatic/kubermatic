@@ -27,7 +27,6 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -37,13 +36,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/utils/pointer"
-	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 const (
@@ -53,16 +47,22 @@ const (
 )
 
 var (
-	kubeconfigPath     string
-	chartArchiveV1Path string
-	chartArchiveV2Path string
+	kubeconfigPath string
 )
 
 func TestHelmClient(t *testing.T) {
-	ctx, client := startTestEnvAndPackageChartsWithCleanup(t)
+	var ctx context.Context
+	var client ctrlruntimeclient.Client
+	ctx, client, kubeconfigPath = test.StartTestEnvWithCleanup(t)
 
 	const chartDirV1Path = "testdata/examplechart"
 	const chartDirV2Path = "testdata/examplechart-v2"
+
+	// packages Helm charts
+	helmTempDir := t.TempDir()
+	chartArchiveV1Path, _ := test.PackageChart(t, chartDirV1Path, helmTempDir)
+	chartArchiveV2Path, _ := test.PackageChart(t, chartDirV2Path, helmTempDir)
+
 	defaultData := map[string]string{"foo": "bar"}
 	defaultDataV2 := map[string]string{"foo-version-2": "bar-version-2"}
 	defaultVerionLabel := "1.0"
@@ -429,87 +429,4 @@ func copyDir(source string, destination string) error {
 			return os.WriteFile(filepath.Join(destination, relPath), data, 0755)
 		}
 	})
-}
-
-// startTestEnvAndPackageChartsWithCleanup bootstraps the testing environment and registers a hook on T.Cleanup to
-// clean it.
-//
-// more precisely it:
-//   - starts envTest
-//   - packages charts testdata/examplechart and testdata/examplechart-v2. archive path are stored in chartArchiveV1Path and chartArchiveV2Path variables
-//   - writes the kubeconfig to access envTest cluster in temporary directory. The path is stored in kubeconfigPath variable.
-func startTestEnvAndPackageChartsWithCleanup(t *testing.T) (context.Context, ctrlruntimeclient.Client) {
-	ctx, cancel := context.WithCancel(context.Background())
-	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
-
-	// Bootstrapping test environment.
-	testEnv := &envtest.Environment{
-		CRDDirectoryPaths:     []string{"../../crd/k8c.io"},
-		ErrorIfCRDPathMissing: true,
-	}
-
-	cfg, err := testEnv.Start()
-	if err != nil {
-		t.Fatalf("failed to start envTest: %s", err)
-	}
-
-	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to add kubermaticv1 scheme: %s", err)
-	}
-
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
-	})
-	if err != nil {
-		t.Fatalf("failed to create manager: %s", err)
-	}
-
-	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		t.Fatalf("failed to create client: %s", err)
-	}
-
-	go func() {
-		if err := mgr.Start(ctx); err != nil {
-			t.Errorf("failed to start manager: %s", err)
-			return
-		}
-	}()
-
-	t.Cleanup(func() {
-		// Clean up and stop controller.
-		cancel()
-
-		// Tearing down the test environment.
-		if err := testEnv.Stop(); err != nil {
-			t.Fatalf("failed to stop testEnv: %s", err)
-		}
-	})
-
-	// packages Helm charts
-	helmTempDir := t.TempDir()
-	chartArchiveV1Path, _ = test.PackageChart(t, "testdata/examplechart", helmTempDir)
-	chartArchiveV2Path, _ = test.PackageChart(t, "testdata/examplechart-v2", helmTempDir)
-
-	// get envTest kubeconfig
-	kubeconfig := *clientcmdapi.NewConfig()
-	kubeconfig.Clusters["testenv"] = &clientcmdapi.Cluster{
-		Server:                   cfg.Host,
-		CertificateAuthorityData: cfg.CAData,
-	}
-	kubeconfig.CurrentContext = "default-context"
-	kubeconfig.Contexts["default-context"] = &clientcmdapi.Context{
-		Cluster:   "testenv",
-		Namespace: "default",
-		AuthInfo:  "auth-info",
-	}
-	kubeconfig.AuthInfos["auth-info"] = &clientcmdapi.AuthInfo{ClientCertificateData: cfg.CertData, ClientKeyData: cfg.KeyData}
-
-	kubeconfigPath = path.Join(helmTempDir, "testEnv-kubeconfig")
-	err = clientcmd.WriteToFile(kubeconfig, kubeconfigPath)
-	if err != nil {
-		t.Fatalf("failed to write testEnv kubeconfig: %s", err)
-	}
-
-	return ctx, client
 }
