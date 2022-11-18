@@ -66,42 +66,42 @@ import (
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr            string
-	healthListenAddr             string
-	version                      string
-	networks                     networkFlags
-	namespace                    string
-	clusterURL                   string
-	clusterName                  string
-	openvpnServerPort            int
-	kasSecurePort                int
-	tunnelingAgentIP             flagopts.IPValue
-	overwriteRegistry            string
-	cloudProviderName            string
-	nodelabels                   string
-	seedKubeconfig               string
-	ownerEmail                   string
-	updateWindowStart            string
-	updateWindowLength           string
-	dnsClusterIP                 string
-	nodeLocalDNSCache            bool
-	opaIntegration               bool
-	opaEnableMutation            bool
-	opaWebhookTimeout            int
-	useSSHKeyAgent               bool
-	networkPolicies              bool
-	caBundleFile                 string
-	mlaGatewayURL                string
-	userClusterLogging           bool
-	userClusterMonitoring        bool
-	prometheusScrapeConfigPrefix string
-	ccmMigration                 bool
-	ccmMigrationCompleted        bool
-	nutanixCSIEnabled            bool
-	isKonnectivityEnabled        bool
-	konnectivityServerHost       string
-	konnectivityServerPort       int
-	applicationCache             string
+	metricsListenAddr                 string
+	healthListenAddr                  string
+	version                           string
+	networks                          networkFlags
+	namespace                         string
+	clusterURL                        string
+	clusterName                       string
+	openvpnServerPort                 int
+	kasSecurePort                     int
+	tunnelingAgentIP                  flagopts.IPValue
+	overwriteRegistry                 string
+	cloudProviderName                 string
+	nodelabels                        string
+	seedKubeconfig                    string
+	ownerEmail                        string
+	updateWindowStart                 string
+	updateWindowLength                string
+	dnsClusterIP                      string
+	nodeLocalDNSCache                 bool
+	opaIntegration                    bool
+	opaEnableMutation                 bool
+	opaWebhookTimeout                 int
+	useSSHKeyAgent                    bool
+	networkPolicies                   bool
+	caBundleFile                      string
+	mlaGatewayURL                     string
+	userClusterLogging                bool
+	userClusterMonitoring             bool
+	monitoringAgentScrapeConfigPrefix string
+	ccmMigration                      bool
+	ccmMigrationCompleted             bool
+	nutanixCSIEnabled                 bool
+	isKonnectivityEnabled             bool
+	konnectivityServerHost            string
+	konnectivityServerPort            int
+	applicationCache                  string
 }
 
 func main() {
@@ -140,7 +140,7 @@ func main() {
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
 	flag.BoolVar(&runOp.userClusterMonitoring, "user-cluster-monitoring", false, "Enable monitoring in user cluster.")
-	flag.StringVar(&runOp.prometheusScrapeConfigPrefix, "prometheus-scrape-config-prefix", "prometheus-scraping", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster Prometheus.", resources.UserClusterMLANamespace))
+	flag.StringVar(&runOp.monitoringAgentScrapeConfigPrefix, "monitoring-agent-scrape-config-prefix", "monitoring-scraping", fmt.Sprintf("The name prefix of ConfigMaps in namespace %s, which will be used to add customized scrape configs for user cluster monitoring Agent.", resources.UserClusterMLANamespace))
 	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
 	flag.BoolVar(&runOp.ccmMigrationCompleted, "ccm-migration-completed", false, "cluster has been successfully migrated.")
 	flag.BoolVar(&runOp.nutanixCSIEnabled, "nutanix-csi-enabled", false, "enable Nutanix CSI")
@@ -296,10 +296,10 @@ func main() {
 		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{
-			Logging:                      runOp.userClusterLogging,
-			Monitoring:                   runOp.userClusterMonitoring,
-			MLAGatewayURL:                runOp.mlaGatewayURL,
-			PrometheusScrapeConfigPrefix: runOp.prometheusScrapeConfigPrefix,
+			Logging:                           runOp.userClusterLogging,
+			Monitoring:                        runOp.userClusterMonitoring,
+			MLAGatewayURL:                     runOp.mlaGatewayURL,
+			MonitoringAgentScrapeConfigPrefix: runOp.monitoringAgentScrapeConfigPrefix,
 		},
 		runOp.clusterName,
 		runOp.nutanixCSIEnabled,

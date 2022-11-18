@@ -14,23 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package prometheus
+package monitoringagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.UserClusterPrometheusCertificatesSecretName,
-			certificates.GetECDSAClientCertificateCreator(
-				resources.UserClusterPrometheusCertificatesSecretName,
-				resources.UserClusterPrometheusCertificateCommonName,
-				[]string{},
-				resources.UserClusterPrometheusClientCertSecretKey,
-				resources.UserClusterPrometheusClientKeySecretKey,
-				func() (*resources.ECDSAKeyPair, error) { return ca, nil })
+func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
+		return resources.UserClusterMonitoringAgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			sa.Labels = resources.BaseAppLabels(appName, nil)
+			return sa, nil
+		}
 	}
 }

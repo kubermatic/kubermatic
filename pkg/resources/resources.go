@@ -881,11 +881,11 @@ const (
 	PromtailSecretName             = "promtail"
 	PromtailDaemonSetName          = "promtail"
 
-	UserClusterPrometheusConfigMapName          = "prometheus"
-	UserClusterPrometheusServiceAccountName     = "prometheus"
-	UserClusterPrometheusClusterRoleName        = "system:mla:prometheus"
-	UserClusterPrometheusClusterRoleBindingName = "system:mla:prometheus"
-	UserClusterPrometheusDeploymentName         = "prometheus"
+	UserClusterMonitoringAgentConfigMapName          = "mla-monitoring-agent"
+	UserClusterMonitoringAgentServiceAccountName     = "mla-monitoring-agent"
+	UserClusterMonitoringAgentClusterRoleName        = "system:mla:mla-monitoring-agent"
+	UserClusterMonitoringAgentClusterRoleBindingName = "system:mla:mla-monitoring-agent"
+	UserClusterMonitoringAgentDeploymentName         = "mla-monitoring-agent"
 
 	// MLAGatewayExternalServiceName is the name for the MLA Gateway external service.
 	MLAGatewayExternalServiceName = "mla-gateway-ext"
@@ -902,12 +902,12 @@ const (
 	MLAGatewayKeySecretKey           = "gateway.key"
 	MLAGatewayCertSecretKey          = "gateway.crt"
 
-	// UserClusterPrometheusCertificatesSecretName is the name for the secret containing the Prometheus client certificates.
-	UserClusterPrometheusCertificatesSecretName = "prometheus-certificates"
-	UserClusterPrometheusCertificateCommonName  = "prometheus"
-	UserClusterPrometheusClientKeySecretKey     = "client.key"
-	UserClusterPrometheusClientCertSecretKey    = "client.crt"
-	UserClusterPrometheusClientCertMountPath    = "/etc/ssl/mla"
+	// UserClusterMonitoringAgentCertificatesSecretName is the name for the secret containing the Monitoring Agent (grafana-agent) client certificates.
+	UserClusterMonitoringAgentCertificatesSecretName = "monitoring-agent-certificates"
+	UserClusterMonitoringAgentCertificateCommonName  = "grafana-agent"
+	UserClusterMonitoringAgentClientKeySecretKey     = "client.key"
+	UserClusterMonitoringAgentClientCertSecretKey    = "client.crt"
+	UserClusterMonitoringAgentClientCertMountPath    = "/etc/ssl/mla"
 
 	// PromtailCertificatesSecretName is the name for the secret containing the promtail client certificates.
 	PromtailCertificatesSecretName = "promtail-certificates"

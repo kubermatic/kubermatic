@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package prometheus
+package monitoringagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -25,18 +25,18 @@ import (
 
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return resources.UserClusterPrometheusClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+		return resources.UserClusterMonitoringAgentClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(appName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
-				Name:     resources.UserClusterPrometheusClusterRoleName,
+				Name:     resources.UserClusterMonitoringAgentClusterRoleName,
 				Kind:     "ClusterRole",
 				APIGroup: rbacv1.GroupName,
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{
 					Kind:      rbacv1.ServiceAccountKind,
-					Name:      resources.UserClusterPrometheusServiceAccountName,
+					Name:      resources.UserClusterMonitoringAgentServiceAccountName,
 					Namespace: resources.UserClusterMLANamespace,
 				},
 			}

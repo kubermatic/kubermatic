@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package prometheus
+package monitoringagent
 
 import (
 	"fmt"
@@ -33,13 +33,13 @@ import (
 )
 
 const (
-	imageName     = "prometheus/prometheus"
-	tag           = "v2.37.0"
-	appName       = "mla-prometheus"
-	containerName = "prometheus"
+	imageName     = "grafana/agent"
+	tag           = "v0.29.0"
+	appName       = "mla-monitoring-agent"
+	containerName = "grafana-agent"
 
 	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
-	reloaderTag       = "v0.52.0"
+	reloaderTag       = "v0.60.1"
 
 	configVolumeName       = "config-volume"
 	configPath             = "/etc/config"
@@ -52,8 +52,8 @@ const (
 
 var (
 	controllerLabels = map[string]string{
-		common.NameLabel:      resources.UserClusterPrometheusDeploymentName,
-		common.InstanceLabel:  resources.UserClusterPrometheusDeploymentName,
+		common.NameLabel:      resources.UserClusterMonitoringAgentDeploymentName,
+		common.InstanceLabel:  resources.UserClusterMonitoringAgentDeploymentName,
 		common.ComponentLabel: resources.MLAComponentName,
 	}
 
@@ -71,7 +71,7 @@ var (
 
 func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return resources.UserClusterMonitoringAgentDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
 
 			deployment.Spec.Selector = &metav1.LabelSelector{
@@ -82,7 +82,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 				deployment.Spec.Replicas = replicas
 			}
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
-			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterPrometheusServiceAccountName
+			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterMonitoringAgentServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:    pointer.Int64(65534),
 				RunAsGroup:   pointer.Int64(65534),
@@ -95,16 +95,12 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, tag))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						fmt.Sprintf("--config.file=%s/prometheus.yaml", configPath),
-						"--storage.tsdb.retention.time=15d",
-						fmt.Sprintf("--storage.tsdb.path=%s", storagePath),
-						"--web.console.libraries=/etc/prometheus/console_libraries",
-						"--web.console.templates=/etc/prometheus/consoles",
-						"--web.enable-lifecycle",
-						"--enable-feature=expand-external-labels",
+						"-server.http.address=0.0.0.0:9090",
+						fmt.Sprintf("-metrics.wal-directory=%s/agent", storagePath),
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -119,7 +115,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 						},
 						{
 							Name:      certificatesVolumeName,
-							MountPath: resources.UserClusterPrometheusClientCertMountPath,
+							MountPath: resources.UserClusterMonitoringAgentClientCertMountPath,
 						},
 						{
 							Name:      storageVolumeName,
@@ -178,6 +174,14 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 							},
 						},
 						{
+							Name: "HOSTNAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
 							Name:  "SHARD",
 							Value: "0",
 						},
@@ -206,7 +210,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.UserClusterPrometheusConfigMapName,
+								Name: resources.UserClusterMonitoringAgentConfigMapName,
 							},
 						},
 					},
@@ -215,7 +219,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 					Name: certificatesVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.UserClusterPrometheusCertificatesSecretName,
+							SecretName:  resources.UserClusterMonitoringAgentCertificatesSecretName,
 							DefaultMode: pointer.Int32(0400),
 						},
 					},
