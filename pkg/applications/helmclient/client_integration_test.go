@@ -29,7 +29,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -238,7 +237,7 @@ func installTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Cli
 		t.Fatalf("invalid helm release version. expected 1, got %v", releaseInfo.Version)
 	}
 
-	checkConfigMap(t, ctx, client, ns, expectedData, expectedVersionLabel)
+	test.CheckConfigMap(t, ctx, client, ns, expectedData, expectedVersionLabel)
 }
 
 func installShouldFailedIfAlreadyInstalledTest(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string, values map[string]interface{}) {
@@ -264,7 +263,7 @@ func upgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Cli
 		t.Fatalf("invalid helm release version. expected 2, got %v", releaseInfo.Version)
 	}
 
-	checkConfigMap(t, ctx, client, ns, expectedData, expectedVersionLabel)
+	test.CheckConfigMap(t, ctx, client, ns, expectedData, expectedVersionLabel)
 }
 
 func upgradeShouldFailedIfNotAlreadyInstalledTest(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string, values map[string]interface{}) {
@@ -290,7 +289,7 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 		t.Fatalf("invalid helm release version. expected %v, got %v", expectedRelVersion, releaseInfo.Version)
 	}
 
-	checkConfigMap(t, ctx, client, ns, expectedData, expectedVersionLabel)
+	test.CheckConfigMap(t, ctx, client, ns, expectedData, expectedVersionLabel)
 }
 
 func uninstallTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace) {
@@ -340,35 +339,6 @@ func uninstallShloulFailedIfnotAlreadyInstalledTest(t *testing.T, ctx context.Co
 
 	if err == nil {
 		t.Fatal("helm uninstall should failed if release it not already installed, but not error was raised")
-	}
-}
-
-// checkConfigMap asserts that configMap deployed by helm chart has been created/ updated with the desired data and labels.
-func checkConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, expectedData map[string]string, expectedVersionLabel string) {
-	t.Helper()
-
-	cm := &corev1.ConfigMap{}
-	var errorGetCm error
-	if !utils.WaitFor(interval, timeout, func() bool {
-		errorGetCm = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.ConfigmapName}, cm)
-		// if config map has not been  updated
-		if errorGetCm != nil || !diff.SemanticallyEqual(expectedData, cm.Data) || cm.Labels[test.VersionLabelKey] != expectedVersionLabel {
-			return false
-		}
-		return true
-	}) {
-		if errorGetCm != nil {
-			t.Fatalf("failed to get configMap: %s", errorGetCm)
-		}
-		// test object values are merged
-		if !diff.SemanticallyEqual(expectedData, cm.Data) {
-			t.Errorf("ConfigMap.Data differs from expected:\n%v", diff.ObjectDiff(expectedData, cm.Data))
-		}
-
-		// test scalar values are overiwritten
-		if cm.Labels[test.VersionLabelKey] != expectedVersionLabel {
-			t.Errorf("ConfigMap versionLabel has invalid value. expected '%s', got '%s'", expectedVersionLabel, cm.Labels[test.VersionLabelKey])
-		}
 	}
 }
 

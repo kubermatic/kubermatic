@@ -24,10 +24,12 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -134,4 +136,33 @@ func StartTestEnvWithCleanup(t *testing.T) (context.Context, ctrlruntimeclient.C
 	}
 
 	return ctx, client, kubeconfigPath
+}
+
+// CheckConfigMap asserts that configMap deployed by helm chart has been created/ updated with the desired data and labels.
+func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, expectedData map[string]string, expectedVersionLabel string) {
+	t.Helper()
+
+	cm := &corev1.ConfigMap{}
+	var errorGetCm error
+	if !utils.WaitFor(time.Second*1, time.Second*10, func() bool {
+		errorGetCm = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: ConfigmapName}, cm)
+		// if config map has not been  updated
+		if errorGetCm != nil || !diff.SemanticallyEqual(expectedData, cm.Data) || cm.Labels[VersionLabelKey] != expectedVersionLabel {
+			return false
+		}
+		return true
+	}) {
+		if errorGetCm != nil {
+			t.Fatalf("failed to get configMap: %s", errorGetCm)
+		}
+		// test object values are merged
+		if !diff.SemanticallyEqual(expectedData, cm.Data) {
+			t.Errorf("ConfigMap.Data differs from expected:\n%v", diff.ObjectDiff(expectedData, cm.Data))
+		}
+
+		// test scalar values are overiwritten
+		if cm.Labels[VersionLabelKey] != expectedVersionLabel {
+			t.Errorf("ConfigMap versionLabel has invalid value. expected '%s', got '%s'", expectedVersionLabel, cm.Labels[VersionLabelKey])
+		}
+	}
 }
