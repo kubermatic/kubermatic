@@ -324,7 +324,7 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(resources.GCPServiceAccount)})
 	}
 	if data.Cluster().Spec.Cloud.Kubevirt != nil {
-		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(resources.KubeVirtKubeConfig)})
+		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(resources.KubeVirtKubeconfig)})
 	}
 
 	return resources.SanitizeEnvVars(vars), nil

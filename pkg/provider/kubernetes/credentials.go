@@ -359,7 +359,7 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
-		resources.KubeVirtKubeConfig: []byte(spec.Kubeconfig),
+		resources.KubeVirtKubeconfig: []byte(spec.Kubeconfig),
 	})
 	if err != nil {
 		return false, err

@@ -769,7 +769,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(GCPServiceAccount)})
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
-		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(KubeVirtKubeConfig)})
+		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(KubeVirtKubeconfig)})
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
 		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_ID", ValueFrom: refTo(AlibabaAccessKeyID)})

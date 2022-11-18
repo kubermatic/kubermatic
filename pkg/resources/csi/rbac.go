@@ -40,7 +40,7 @@ func ClusterRolesCreators(c *kubermaticv1.Cluster) []reconciling.NamedClusterRol
 
 	switch {
 	case c.Spec.Cloud.Kubevirt != nil:
-		creatorGetters = append(creatorGetters, kubevirt.ClusterRolesCreators()...)
+		creatorGetters = kubevirt.ClusterRolesCreators()
 	}
 
 	return creatorGetters
@@ -52,7 +52,7 @@ func RoleBindingsCreators(c *kubermaticv1.Cluster) []reconciling.NamedRoleBindin
 
 	switch {
 	case c.Spec.Cloud.Kubevirt != nil:
-		creatorGetters = append(creatorGetters, kubevirt.RoleBindingsCreators(c)...)
+		creatorGetters = kubevirt.RoleBindingsCreators(c)
 	}
 
 	return creatorGetters

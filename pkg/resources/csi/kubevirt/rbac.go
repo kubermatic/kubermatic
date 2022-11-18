@@ -48,13 +48,13 @@ func ServiceAccountCreator(c *kubermaticv1.Cluster) reconciling.NamedServiceAcco
 // ClusterRolesCreators returns the CSI cluster roles for KubeVirt.
 func ClusterRolesCreators() []reconciling.NamedClusterRoleCreatorGetter {
 	creators := []reconciling.NamedClusterRoleCreatorGetter{
-		ClusterRoleCreator(),
+		ControllerClusterRoleCreator(),
 	}
 	return creators
 }
 
-// ClusterRoleCreator returns the CSI cluster role for KubeVirt.
-func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+// ControllerClusterRoleCreator returns the CSI cluster role for KubeVirt.
+func ControllerClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.KubeVirtCSIClusterRoleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Labels = resources.BaseAppLabels(resources.KubeVirtCSIClusterRoleName, nil)
@@ -150,13 +150,13 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 // RoleBindingsCreators returns the CSI rolebindings for KubeVirt.
 func RoleBindingsCreators(c *kubermaticv1.Cluster) []reconciling.NamedRoleBindingCreatorGetter {
 	creators := []reconciling.NamedRoleBindingCreatorGetter{
-		RoleBindingCreator(c),
+		ControllerRoleBindingCreator(c),
 	}
 	return creators
 }
 
-// RoleBindingCreator returns the CSI rolebinding for KubeVirt.
-func RoleBindingCreator(c *kubermaticv1.Cluster) reconciling.NamedRoleBindingCreatorGetter {
+// ControllerRoleBindingCreator returns the CSI rolebinding for KubeVirt.
+func ControllerRoleBindingCreator(c *kubermaticv1.Cluster) reconciling.NamedRoleBindingCreatorGetter {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.KubeVirtCSIRoleBindingName, func(r *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			r.Labels = resources.BaseAppLabels(resources.KubeVirtCSIClusterRoleName, nil)

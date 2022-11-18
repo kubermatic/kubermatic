@@ -187,7 +187,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		if cloud.Kubevirt.CredentialsReference == nil {
 			return "", errors.New("no credentials provided")
 		}
-		kubeconfig, err = secretKeySelector(cloud.Kubevirt.CredentialsReference, resources.KubeVirtKubeConfig)
+		kubeconfig, err = secretKeySelector(cloud.Kubevirt.CredentialsReference, resources.KubeVirtKubeconfig)
 		if err != nil {
 			return "", err
 		}

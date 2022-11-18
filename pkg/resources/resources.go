@@ -685,7 +685,7 @@ const (
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 
-	KubeVirtKubeConfig = "kubeConfig"
+	KubeVirtKubeconfig = "kubeConfig"
 
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"

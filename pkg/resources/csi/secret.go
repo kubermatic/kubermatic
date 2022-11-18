@@ -33,13 +33,13 @@ func SecretsCreators(ctx context.Context, data *resources.TemplateData) []reconc
 
 	switch {
 	case data.Cluster().Spec.Cloud.VSphere != nil:
-		creatorGetters = append(creatorGetters, vsphere.SecretsCreators(data)...)
+		creatorGetters = vsphere.SecretsCreators(data)
 	case data.Cluster().Spec.Cloud.VMwareCloudDirector != nil:
-		creatorGetters = append(creatorGetters, vmwareclouddirector.SecretsCreators(data)...)
+		creatorGetters = vmwareclouddirector.SecretsCreators(data)
 	case data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil:
-		creatorGetters = append(creatorGetters, nutanix.SecretsCreators(data)...)
+		creatorGetters = nutanix.SecretsCreators(data)
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetters = append(creatorGetters, kubevirt.SecretsCreators(ctx, data)...)
+		creatorGetters = kubevirt.SecretsCreators(ctx, data)
 	}
 
 	return creatorGetters

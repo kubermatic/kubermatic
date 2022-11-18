@@ -32,13 +32,13 @@ import (
 // DeploymentsCreators returns the CSI controller Deployments for KubeVirt.
 func DeploymentsCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		DeploymentCreator(data),
+		ControllerDeploymentCreator(data),
 	}
 	return creators
 }
 
-// DeploymentCreator returns the CSI controller Deployment for KubeVirt.
-func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+// ControllerDeploymentCreator returns the CSI controller Deployment for KubeVirt.
+func ControllerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (name string, create reconciling.DeploymentCreator) {
 		return resources.KubeVirtCSIControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			version := data.Cluster().Status.Versions.ControllerManager.Semver()

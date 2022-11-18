@@ -639,7 +639,7 @@ func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {
 
 	if spec.Kubeconfig != "" {
 		kubevirtCredentials.KubeConfig = spec.Kubeconfig
-	} else if kubevirtCredentials.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubeVirtKubeConfig); err != nil {
+	} else if kubevirtCredentials.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubeVirtKubeconfig); err != nil {
 		return KubevirtCredentials{}, err
 	}
 

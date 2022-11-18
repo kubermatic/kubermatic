@@ -28,7 +28,7 @@ func DeploymentsCreators(data *resources.TemplateData) []reconciling.NamedDeploy
 
 	switch {
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetters = append(creatorGetters, kubevirt.DeploymentsCreators(data)...)
+		creatorGetters = kubevirt.DeploymentsCreators(data)
 	}
 
 	return creatorGetters

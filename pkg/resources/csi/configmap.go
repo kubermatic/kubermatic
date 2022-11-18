@@ -28,7 +28,7 @@ func ConfigMapsCreators(data *resources.TemplateData) []reconciling.NamedConfigM
 
 	switch {
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetters = append(creatorGetters, kubevirt.ConfigMapsCreators(data)...)
+		creatorGetters = kubevirt.ConfigMapsCreators(data)
 	}
 
 	return creatorGetters
