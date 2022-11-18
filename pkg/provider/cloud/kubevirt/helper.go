@@ -23,7 +23,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-func generateKubeconfigWithToken(restConfig *restclient.Config, sa *corev1.ServiceAccount, token string) ([]byte, error) {
+func GenerateKubeconfigWithToken(restConfig *restclient.Config, sa *corev1.ServiceAccount, token string) ([]byte, error) {
 	config := api.Config{
 		APIVersion: "v1",
 		Kind:       "Config",

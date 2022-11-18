@@ -1,0 +1,272 @@
+/*
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package kubevirt
+
+import (
+	"fmt"
+
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
+)
+
+// DeploymentsCreators returns the CSI controller Deployments for KubeVirt.
+func DeploymentsCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
+	creators := []reconciling.NamedDeploymentCreatorGetter{
+		DeploymentCreator(data),
+	}
+	return creators
+}
+
+// DeploymentCreator returns the CSI controller Deployment for KubeVirt.
+func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+	return func() (name string, create reconciling.DeploymentCreator) {
+		return resources.KubeVirtCSIControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			version := data.Cluster().Status.Versions.ControllerManager.Semver()
+			volumes := []corev1.Volume{
+				{
+					Name: "socket-dir",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: "tenantcluster",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.AdminKubeconfigSecretName,
+						},
+					},
+				},
+				{
+					Name: "infracluster",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.KubeVirtCSISecretName,
+						},
+					},
+				},
+			}
+			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			d.Labels = resources.BaseAppLabels(resources.KubeVirtCSIControllerName, nil)
+
+			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": name,
+				},
+			}
+			d.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+				Labels: podLabels,
+			}
+			d.Spec.Template.Spec.DNSPolicy, d.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
+			if err != nil {
+				return nil, err
+			}
+			d.Spec.Template.Spec.HostNetwork = true
+			d.Spec.Template.Spec.ServiceAccountName = resources.KubeVirtCSIServiceAccountName
+			d.Spec.Template.Spec.Tolerations = []corev1.Toleration{
+				{
+					Key:      "node-role.kubernetes.io/master",
+					Operator: corev1.TolerationOpExists,
+					Effect:   corev1.TaintEffectNoSchedule,
+				},
+			}
+			d.Spec.Template.Spec.Containers = []corev1.Container{
+				{
+					Name:            "csi-driver",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
+					Args: []string{
+						"--endpoint=$(CSI_ENDPOINT)",
+						fmt.Sprintf("--infra-cluster-namespace=%s", data.Cluster().Status.NamespaceName),
+						fmt.Sprintf("--infra-cluster-labels=%s", fmt.Sprintf("cluster-name=%s", data.Cluster().Name)),
+						"--infra-cluster-kubeconfig=/var/run/secrets/infracluster/kubeconfig",
+						"--tenant-cluster-kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+						"--run-node-service=false",
+						"--run-controller-service=true",
+						"--v=5",
+					},
+					Ports: []corev1.ContainerPort{
+						{
+							Name:          "healthz",
+							ContainerPort: 10301,
+							HostPort:      10301,
+							Protocol:      corev1.ProtocolTCP,
+						},
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "CSI_ENDPOINT",
+							Value: "unix:///var/lib/csi/sockets/pluginproxy/csi.sock",
+						},
+						{
+							Name: "KUBE_NODE_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name: "INFRACLUSTER_NAMESPACE",
+							ValueFrom: &corev1.EnvVarSource{
+								ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.KubeVirtCSIConfigMapName,
+									},
+									Key: resources.KubeVirtCSINamespaceKey,
+								},
+							},
+						},
+						{
+							Name: "INFRACLUSTER_LABELS",
+							ValueFrom: &corev1.EnvVarSource{
+								ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.KubeVirtCSIConfigMapName,
+									},
+									Key: resources.KubeVirtCSIClusterLabelKey,
+								},
+							},
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/var/lib/csi/sockets/pluginproxy/",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+						{
+							Name:      "infracluster",
+							MountPath: "/var/run/secrets/infracluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+				},
+				{
+					Name:            "csi-provisioner",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           "quay.io/openshift/origin-csi-external-provisioner:4.13.0",
+					Args: []string{
+						"--csi-address=$(ADDRESS)",
+						"--default-fstype=ext4",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+						"--v=5",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "ADDRESS",
+							Value: "/var/lib/csi/sockets/pluginproxy/csi.sock",
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/var/lib/csi/sockets/pluginproxy/",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+				},
+				{
+					Name:            "csi-attacher",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           "quay.io/openshift/origin-csi-external-attacher:4.13.0",
+					Args: []string{
+						"--csi-address=$(ADDRESS)",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+						"--v=5",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "ADDRESS",
+							Value: "/var/lib/csi/sockets/pluginproxy/csi.sock",
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/var/lib/csi/sockets/pluginproxy/",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+				},
+				{
+					Name:            "csi-liveness-probe",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           "quay.io/openshift/origin-csi-livenessprobe:4.13.0",
+					Args: []string{
+						"--csi-address=/csi/csi.sock",
+						"--probe-timeout=3s",
+						"--health-port=10301",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/csi",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("50Mi"),
+						},
+					},
+				},
+			}
+			d.Spec.Template.Spec.Volumes = volumes
+			return d, nil
+		}
+	}
+}

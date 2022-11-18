@@ -222,7 +222,7 @@ func TestVSphereCloudConfigClusterID(t *testing.T) {
 	for idx := range testCases {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
-			cloudConfig, err := getVSphereCloudConfig(tc.cluster, tc.dc, resources.Credentials{})
+			cloudConfig, err := GetVSphereCloudConfig(tc.cluster, tc.dc, resources.Credentials{})
 			if err != nil {
 				t.Fatalf("Error trying to get cloud-config: %v", err)
 			}

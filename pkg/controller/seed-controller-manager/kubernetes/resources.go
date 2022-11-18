@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/controllermanager"
+	"k8c.io/kubermatic/v2/pkg/resources/csi"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
@@ -371,6 +372,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		usercluster.DeploymentCreator(data),
 		userclusterwebhook.DeploymentCreator(data),
 	}
+	deployments = append(deployments, csi.DeploymentsCreators(data)...)
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		deployments = append(deployments, kubernetesdashboard.DeploymentCreator(data))
@@ -414,7 +416,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use.
-func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
+func (r *Reconciler) GetSecretCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
 	namespace := data.Cluster().Status.NamespaceName
 
 	creators := []reconciling.NamedSecretCreatorGetter{
@@ -444,6 +446,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		apiserver.TokenUsersCreator(data),
 		resources.ViewerKubeconfigCreator(data),
 	}
+	creators = append(creators, csi.SecretsCreators(ctx, data)...)
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
@@ -496,23 +499,11 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		creators = append(creators, resources.ServiceAccountSecretCreator(data))
 	}
 
-	if data.Cluster().Spec.Cloud.VSphere != nil {
-		creators = append(creators, cloudconfig.VsphereCSISecretCreator(data))
-	}
-
-	if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
-		creators = append(creators, cloudconfig.NutanixCSISecretCreator(data))
-	}
-
-	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
-		creators = append(creators, cloudconfig.VMwareCloudDirectorCSISecretCreator(data))
-	}
-
 	return creators
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretCreatorGetters := r.GetSecretCreators(data)
+	namedSecretCreatorGetters := r.GetSecretCreators(ctx, data)
 
 	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
@@ -529,6 +520,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		machinecontroller.WebhookServiceAccountCreator,
 		userclusterwebhook.ServiceAccountCreator,
 	}
+	namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, csi.ServiceAccountCreators(c)...)
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, operatingsystemmanager.ServiceAccountCreator)
@@ -571,6 +563,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 		usercluster.RoleBindingCreator,
 		machinecontroller.WebhookRoleBindingCreator,
 	}
+	namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, csi.RoleBindingsCreators(c)...)
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, operatingsystemmanager.RoleBindingCreator)
@@ -586,11 +579,14 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
+func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedClusterRoleCreatorGetters := []reconciling.NamedClusterRoleCreatorGetter{
 		usercluster.ClusterRole(),
 		userclusterwebhook.ClusterRole(),
 	}
+
+	namedClusterRoleCreatorGetters = append(namedClusterRoleCreatorGetters, csi.ClusterRolesCreators(c)...)
+
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
 	}
@@ -676,6 +672,7 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
 	}
+	creators = append(creators, csi.ConfigMapsCreators(data)...)
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, apiserver.EgressSelectorConfigCreator())
@@ -903,7 +900,7 @@ func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	if err := r.ensureClusterRoles(ctx); err != nil {
+	if err := r.ensureClusterRoles(ctx, cluster); err != nil {
 		return err
 	}
 
