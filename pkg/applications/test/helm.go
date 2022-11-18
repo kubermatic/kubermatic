@@ -39,6 +39,18 @@ import (
 	"helm.sh/helm/v3/pkg/uploader"
 )
 
+// Const relative to pkg/applications/helmclient/testdata/examplechart chart.
+const (
+	// ConfigmapName is the Name of the config map deployed by the examplechart and examplechart-v2
+	ConfigmapName = "testcm"
+
+	// CmDataKey is the key in the values.yaml of examplechart / examplechart-v2 that holds custom configmap data.
+	CmDataKey = "cmData"
+
+	// VersionLabelKey is the key in the values.yaml of examplechart / examplechart-v2 that holds custom version label value. it's also the name of the label in the configmap.
+	VersionLabelKey = "versionLabel"
+)
+
 // PackageChart packages the chart in chartDir into a chart archive file (i.e. a tgz) in destDir directory and returns
 // the full path and the size of the archive.
 func PackageChart(t *testing.T, chartDir string, destDir string) (string, int64) {

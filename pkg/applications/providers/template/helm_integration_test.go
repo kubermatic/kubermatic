@@ -30,6 +30,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
+	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	. "k8c.io/kubermatic/v2/pkg/test/gomegautil"
 
@@ -47,15 +48,6 @@ const (
 
 var _ = Describe("helm template", func() {
 	const chartLoc = "../../helmclient/testdata/examplechart"
-
-	// Name of the config map deployed by the chart.
-	const configmapName = "testcm"
-
-	// Key in the values.yaml that holds custom configmap data.
-	const cmDataKey = "cmData"
-
-	// Key in the values.yaml that holds custom version label value. it's also the name of the label in the configmap.
-	const versionLabelKey = "versionLabel"
 
 	defaultCmData := map[string]string{"foo": "bar"}
 	defaultVersionLabel := "1.0"
@@ -124,7 +116,7 @@ var _ = Describe("helm template", func() {
 
 			cm := &corev1.ConfigMap{}
 			Eventually(func() bool {
-				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
+				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -132,7 +124,7 @@ var _ = Describe("helm template", func() {
 			Expect(cm.Data).To(SemanticallyEqual(defaultCmData))
 
 			By("creating the config map with default version label defined in values.yaml")
-			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
+			Expect(cm.Labels[test.VersionLabelKey]).To(Equal(defaultVersionLabel))
 
 			By("status should be updated")
 			assertStatusIsUpdated(app, statusUpdater, 1)
@@ -143,7 +135,7 @@ var _ = Describe("helm template", func() {
 		It("should install application into user cluster", func() {
 			By("installing chart")
 			customCmData := map[string]string{"hello": "world", "a": "b"}
-			rawValues := toHelmRawValues(cmDataKey, customCmData)
+			rawValues := toHelmRawValues(test.CmDataKey, customCmData)
 			app.Spec.Values.Raw = rawValues
 
 			template := HelmTemplate{
@@ -161,7 +153,7 @@ var _ = Describe("helm template", func() {
 
 			cm := &corev1.ConfigMap{}
 			Eventually(func() bool {
-				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
+				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -170,7 +162,7 @@ var _ = Describe("helm template", func() {
 			Expect(cm.Data).To(SemanticallyEqual(customCmData))
 
 			By("creating the configmap with default version label defined in values.yaml")
-			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
+			Expect(cm.Labels[test.VersionLabelKey]).To(Equal(defaultVersionLabel))
 
 			By("status should be updated")
 			assertStatusIsUpdated(app, statusUpdater, 1)
@@ -181,7 +173,7 @@ var _ = Describe("helm template", func() {
 		It("should install application into user cluster", func() {
 			By("installing chart")
 			customVersionLabel := "1.2.3"
-			rawValues := toHelmRawValues(versionLabelKey, customVersionLabel)
+			rawValues := toHelmRawValues(test.VersionLabelKey, customVersionLabel)
 			app.Spec.Values.Raw = rawValues
 
 			template := HelmTemplate{
@@ -199,7 +191,7 @@ var _ = Describe("helm template", func() {
 
 			cm := &corev1.ConfigMap{}
 			Eventually(func() bool {
-				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
+				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -207,7 +199,7 @@ var _ = Describe("helm template", func() {
 			Expect(cm.Data).To(SemanticallyEqual(defaultCmData))
 
 			By("creating the configmap with label versionLabel equal to custom versionLabel")
-			Expect(cm.Labels[versionLabelKey]).To(Equal(customVersionLabel))
+			Expect(cm.Labels[test.VersionLabelKey]).To(Equal(customVersionLabel))
 
 			By("status should be updated")
 			assertStatusIsUpdated(app, statusUpdater, 1)
@@ -218,7 +210,7 @@ var _ = Describe("helm template", func() {
 		It("should update application into user cluster with new data", func() {
 			By("installing chart")
 			customCmData := map[string]string{"hello": "world", "a": "b"}
-			app.Spec.Values.Raw = toHelmRawValues(cmDataKey, customCmData)
+			app.Spec.Values.Raw = toHelmRawValues(test.CmDataKey, customCmData)
 
 			template := HelmTemplate{
 				Ctx:                     context.Background(),
@@ -235,7 +227,7 @@ var _ = Describe("helm template", func() {
 
 			cm := &corev1.ConfigMap{}
 			Eventually(func() bool {
-				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
+				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -244,14 +236,14 @@ var _ = Describe("helm template", func() {
 			Expect(cm.Data).To(SemanticallyEqual(customCmData))
 
 			By("creating the configmap with default version label defined in values.yaml")
-			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
+			Expect(cm.Labels[test.VersionLabelKey]).To(Equal(defaultVersionLabel))
 
 			By("status should be updated")
 			assertStatusIsUpdated(app, statusUpdater, 1)
 
 			By("updating application")
 			newCustomCmData := map[string]string{"c": "d", "e": "f"}
-			app.Spec.Values.Raw = toHelmRawValues(cmDataKey, newCustomCmData)
+			app.Spec.Values.Raw = toHelmRawValues(test.CmDataKey, newCustomCmData)
 
 			template = HelmTemplate{
 				Ctx:                     context.Background(),
@@ -269,7 +261,7 @@ var _ = Describe("helm template", func() {
 			By("configmap should be updated with new data")
 			appendDefaultValues(newCustomCmData, defaultCmData)
 			Eventually(func() map[string]string {
-				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
+				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 				if err != nil {
 					return nil
 				}
@@ -285,7 +277,7 @@ var _ = Describe("helm template", func() {
 		It("should uninstall application of user cluster", func() {
 			By("installing chart")
 			customCmData := map[string]string{"hello": "world", "a": "b"}
-			app.Spec.Values.Raw = toHelmRawValues(cmDataKey, customCmData)
+			app.Spec.Values.Raw = toHelmRawValues(test.CmDataKey, customCmData)
 
 			template := HelmTemplate{
 				Ctx:                     context.Background(),
@@ -302,7 +294,7 @@ var _ = Describe("helm template", func() {
 
 			cm := &corev1.ConfigMap{}
 			Eventually(func() bool {
-				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
+				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 				return err == nil
 			}, timeout, interval).Should(BeTrue())
 
@@ -311,7 +303,7 @@ var _ = Describe("helm template", func() {
 			Expect(cm.Data).To(SemanticallyEqual(customCmData))
 
 			By("creating the configmap with default version label defined in values.yaml")
-			Expect(cm.Labels[versionLabelKey]).To(Equal(defaultVersionLabel))
+			Expect(cm.Labels[test.VersionLabelKey]).To(Equal(defaultVersionLabel))
 
 			By("status should be updated")
 			assertStatusIsUpdated(app, statusUpdater, 1)
@@ -333,7 +325,7 @@ var _ = Describe("helm template", func() {
 
 			By("configmap should be removed")
 			Eventually(func() bool {
-				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: configmapName}, cm)
+				err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 				return err != nil && apierrors.IsNotFound(err)
 			}, timeout, interval).Should(BeTrue())
 
