@@ -63,11 +63,6 @@ func TestHelmClient(t *testing.T) {
 	chartArchiveV1Path, _ := test.PackageChart(t, chartDirV1Path, helmTempDir)
 	chartArchiveV2Path, _ := test.PackageChart(t, chartDirV2Path, helmTempDir)
 
-	defaultData := map[string]string{"foo": "bar"}
-	defaultDataV2 := map[string]string{"foo-version-2": "bar-version-2"}
-	defaultVerionLabel := "1.0"
-	defaultVerionLabelV2 := "2.0"
-
 	tests := []struct {
 		name     string
 		testFunc func(t *testing.T)
@@ -76,35 +71,35 @@ func TestHelmClient(t *testing.T) {
 			name: "installation from archive with default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
 			},
 		},
 		{
 			name: "installation from dir with default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
 			},
 		},
 		{
 			name: "installation from archive with custom values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{"cmData": map[string]interface{}{"hello": "world"}, "versionLabel": "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
 			},
 		},
 		{
 			name: "installation from dir with custom values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{"cmData": map[string]interface{}{"hello": "world"}, "versionLabel": "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
 			},
 		},
 		{
 			name: "installation from archive should failed if already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
 				installShouldFailedIfAlreadyInstalledTest(t, ctx, ns, chartArchiveV1Path, map[string]interface{}{})
 			},
 		},
@@ -112,7 +107,7 @@ func TestHelmClient(t *testing.T) {
 			name: "installation from dir should failed if already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
 				installShouldFailedIfAlreadyInstalledTest(t, ctx, ns, chartDirV1Path, map[string]interface{}{})
 			},
 		},
@@ -120,48 +115,48 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade from archive with same version and different values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{"cmData": map[string]interface{}{"hello": "world"}, "versionLabel": "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
 			},
 		},
 		{
 			name: "upgrade from dir with same version and different values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				upgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{"cmData": map[string]interface{}{"hello": "world"}, "versionLabel": "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				upgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
 			},
 		},
 		{
 			name: "upgrade from archive with new version and default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				upgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, defaultDataV2, defaultVerionLabelV2)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				upgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2)
 			},
 		},
 		{
 			name: "upgrade from dir with new version and default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, defaultDataV2, defaultVerionLabelV2)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2)
 			},
 		},
 		{
 			name: "upgrade from archive with new version and custom values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				upgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{"cmData": map[string]interface{}{"hello": "world"}, "versionLabel": "another-version"}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, "another-version")
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				upgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, "another-version")
 			},
 		},
 		{
 			name: "upgrade from dir with new version and custom values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{"cmData": map[string]interface{}{"hello": "world"}, "versionLabel": "another-version"}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, "another-version")
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, "another-version")
 			},
 		},
 		{
@@ -182,37 +177,37 @@ func TestHelmClient(t *testing.T) {
 			name: "installOrUpgrade from archive should installs chart when it not already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, 1)
 			},
 		},
 		{
 			name: "installOrUpgrade from Dir should installs chart when it not already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, 1)
 			},
 		},
 		{
 			name: "installOrUpgrade from archive should upgrades chart when it already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, defaultDataV2, defaultVerionLabelV2, 2)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, 2)
 			},
 		},
 		{
 			name: "installOrUpgrade from archive should upgrades chart when it already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, defaultDataV2, defaultVerionLabelV2, 2)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, 2)
 			},
 		},
 		{
 			name: "uninstall should be successful when chart is already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, defaultData, defaultVerionLabel)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
 				uninstallTest(t, ctx, client, ns)
 			},
 		},
@@ -320,7 +315,7 @@ func uninstallTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.C
 
 	cm := &corev1.ConfigMap{}
 	if !utils.WaitFor(interval, timeout, func() bool {
-		err := client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: "testcm"}, cm)
+		err := client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.ConfigmapName}, cm)
 		return err != nil && apierrors.IsNotFound(err)
 	}) {
 		t.Fatal("configMap has not been removed by helm unsintall")
@@ -355,9 +350,9 @@ func checkConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.
 	cm := &corev1.ConfigMap{}
 	var errorGetCm error
 	if !utils.WaitFor(interval, timeout, func() bool {
-		errorGetCm = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: "testcm"}, cm)
+		errorGetCm = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.ConfigmapName}, cm)
 		// if config map has not been  updated
-		if errorGetCm != nil || !diff.SemanticallyEqual(expectedData, cm.Data) || cm.Labels["versionLabel"] != expectedVersionLabel {
+		if errorGetCm != nil || !diff.SemanticallyEqual(expectedData, cm.Data) || cm.Labels[test.VersionLabelKey] != expectedVersionLabel {
 			return false
 		}
 		return true
@@ -371,8 +366,8 @@ func checkConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.
 		}
 
 		// test scalar values are overiwritten
-		if cm.Labels["versionLabel"] != expectedVersionLabel {
-			t.Errorf("ConfigMap versionLabel has invalid value. expected '%s', got '%s'", expectedVersionLabel, cm.Labels["versionLabel"])
+		if cm.Labels[test.VersionLabelKey] != expectedVersionLabel {
+			t.Errorf("ConfigMap versionLabel has invalid value. expected '%s', got '%s'", expectedVersionLabel, cm.Labels[test.VersionLabelKey])
 		}
 	}
 }

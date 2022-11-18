@@ -49,6 +49,20 @@ const (
 
 	// VersionLabelKey is the key in the values.yaml of examplechart / examplechart-v2 that holds custom version label value. it's also the name of the label in the configmap.
 	VersionLabelKey = "versionLabel"
+
+	// DefaultVerionLabel is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart chart.
+	DefaultVerionLabel = "1.0"
+
+	// DefaultVerionLabelV2 is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart-v2 chart.
+	DefaultVerionLabelV2 = "2.0"
+)
+
+var (
+	// DefaultData contains the default data of the configmap deployed by pkg/applications/helmclient/testdata/examplechart chart.
+	DefaultData = map[string]string{"foo": "bar"}
+
+	// DefaultDataV2 contains the default data of the configmap deployed by pkg/applications/helmclient/testdata/examplechart-v2 chart.
+	DefaultDataV2 = map[string]string{"foo-version-2": "bar-version-2"}
 )
 
 // PackageChart packages the chart in chartDir into a chart archive file (i.e. a tgz) in destDir directory and returns
