@@ -108,7 +108,7 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 // for the cloud provider.
 func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool {
 	switch kubermaticv1.ProviderType(cloudSpec.ProviderName) {
-	case kubermaticv1.OpenstackCloudProvider, kubermaticv1.AzureCloudProvider, kubermaticv1.AWSCloudProvider:
+	case kubermaticv1.OpenstackCloudProvider, kubermaticv1.AzureCloudProvider, kubermaticv1.AWSCloudProvider, kubermaticv1.KubevirtCloudProvider:
 		return true
 	default:
 		return false
