@@ -110,13 +110,13 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			OperatingSystem: *osSpec,
 			Cloud: apiv1.NodeCloudSpec{
 				AWS: &apiv1.AWSNodeSpec{
-					InstanceType:         awsInstanceType,
-					VolumeType:           awsVolumeType,
-					VolumeSize:           awsVolumeSize,
-					AvailabilityZone:     *subnet.AvailabilityZone,
-					SubnetID:             *subnet.SubnetId,
-					IsSpotInstance:       pointer.Bool(true),
-					SpotInstanceMaxPrice: pointer.String("0.5"), // USD
+					InstanceType:     awsInstanceType,
+					VolumeType:       awsVolumeType,
+					VolumeSize:       awsVolumeSize,
+					AvailabilityZone: *subnet.AvailabilityZone,
+					SubnetID:         *subnet.SubnetId,
+					IsSpotInstance:   pointer.Bool(false),
+					// SpotInstanceMaxPrice: pointer.String("0.5"), // USD
 				},
 			},
 		}
