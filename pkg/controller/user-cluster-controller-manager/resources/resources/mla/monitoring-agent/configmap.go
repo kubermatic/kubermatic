@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
 			if configMap.Data == nil {
 				configMap.Data = map[string]string{}
 			}
-			t, err := template.New("prometheus").Funcs(sprig.TxtFuncMap()).Parse(configTemplate)
+			t, err := template.New("agent").Funcs(sprig.TxtFuncMap()).Parse(configTemplate)
 			if err != nil {
 				return nil, err
 			}
@@ -51,7 +51,7 @@ func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
 			if err := t.Execute(&configBuf, config); err != nil {
 				return nil, err
 			}
-			configMap.Data["prometheus.yaml"] = configBuf.String()
+			configMap.Data["agent.yaml"] = configBuf.String()
 			configMap.Labels = resources.BaseAppLabels(appName, nil)
 			return configMap, nil
 		}

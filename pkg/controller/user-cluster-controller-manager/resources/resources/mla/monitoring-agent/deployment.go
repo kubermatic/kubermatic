@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
-						fmt.Sprintf("--config.file=%s/prometheus.yaml", configPath),
+						fmt.Sprintf("--config.file=%s/agent.yaml", configPath),
 						"-server.http.address=0.0.0.0:9090",
 						fmt.Sprintf("-metrics.wal-directory=%s/agent", storagePath),
 					},

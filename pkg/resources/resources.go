@@ -949,6 +949,16 @@ alertmanager_config: |
 )
 
 const (
+	// Legacy Prometheus resource names, used only for cleanup/migration purposes.
+	UserClusterLegacyPrometheusConfigMapName          = "prometheus"
+	UserClusterLegacyPrometheusServiceAccountName     = "prometheus"
+	UserClusterLegacyPrometheusClusterRoleName        = "system:mla:prometheus"
+	UserClusterLegacyPrometheusClusterRoleBindingName = "system:mla:prometheus"
+	UserClusterLegacyPrometheusDeploymentName         = "prometheus"
+	UserClusterLegacyPrometheusCertificatesSecretName = "prometheus-certificates"
+)
+
+const (
 	NetworkPolicyDefaultDenyAllEgress          = "default-deny-all-egress"
 	NetworkPolicyEtcdAllow                     = "etcd-allow"
 	NetworkPolicyDNSAllow                      = "dns-allow"

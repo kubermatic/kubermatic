@@ -26,40 +26,40 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResourcesOnDeletion() []ctrlruntimeclient.Object {
+func LegacyResourcesOnDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentDeploymentName,
+				Name:      resources.UserClusterLegacyPrometheusDeploymentName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentConfigMapName,
+				Name:      resources.UserClusterLegacyPrometheusConfigMapName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentCertificatesSecretName,
+				Name:      resources.UserClusterLegacyPrometheusCertificatesSecretName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentServiceAccountName,
+				Name:      resources.UserClusterLegacyPrometheusServiceAccountName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.UserClusterMonitoringAgentClusterRoleName,
+				Name: resources.UserClusterLegacyPrometheusClusterRoleName,
 			},
 		},
 		&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.UserClusterMonitoringAgentClusterRoleBindingName,
+				Name: resources.UserClusterLegacyPrometheusClusterRoleBindingName,
 			},
 		},
 	}

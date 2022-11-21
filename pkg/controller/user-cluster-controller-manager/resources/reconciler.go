@@ -234,7 +234,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 	if !r.userClusterMLA.Monitoring {
-		if err := r.ensureUserClusterPrometheusIsRemoved(ctx); err != nil {
+		if err := r.ensureUserClusterMonitoringAgentIsRemoved(ctx); err != nil {
+			return err
+		}
+	} else {
+		// remove legacy prometheus installation in user cluster
+		if err := r.ensureLegacyPrometheusIsRemoved(ctx); err != nil {
 			return err
 		}
 	}
@@ -1276,14 +1281,27 @@ func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) ensureUserClusterPrometheusIsRemoved(ctx context.Context) error {
+func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Context) error {
 	for _, resource := range userclustermonitoringagent.ResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
 		}
 		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure user cluster prometheus is removed/not present: %w", err)
+			return fmt.Errorf("failed to ensure user cluster monitring agent is removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureLegacyPrometheusIsRemoved(ctx context.Context) error {
+	for _, resource := range userclustermonitoringagent.LegacyResourcesOnDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
+			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
+		}
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure user cluster monitring agent is removed/not present: %w", err)
 		}
 	}
 	return nil
