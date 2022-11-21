@@ -67,13 +67,13 @@ func CreateNamespaceWithCleanup(t *testing.T, ctx context.Context, client ctrlru
 
 // StartTestEnvWithCleanup bootstraps the testing environment and return the to the kubeconfig. It also registers a hook on T.Cleanup to
 // stop the env and remove the kubeconfig.
-func StartTestEnvWithCleanup(t *testing.T) (context.Context, ctrlruntimeclient.Client, string) {
+func StartTestEnvWithCleanup(t *testing.T, crdPath string) (context.Context, ctrlruntimeclient.Client, string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	log.Logger = log.New(true, log.FormatJSON).Sugar()
 
 	// Bootstrapping test environment.
 	testEnv := &envtest.Environment{
-		CRDDirectoryPaths:     []string{"../../crd/k8c.io"},
+		CRDDirectoryPaths:     []string{crdPath},
 		ErrorIfCRDPathMissing: true,
 	}
 

@@ -52,7 +52,7 @@ var (
 func TestHelmClient(t *testing.T) {
 	var ctx context.Context
 	var client ctrlruntimeclient.Client
-	ctx, client, kubeconfigPath = test.StartTestEnvWithCleanup(t)
+	ctx, client, kubeconfigPath = test.StartTestEnvWithCleanup(t, "../../crd/k8c.io")
 
 	const chartDirV1Path = "testdata/examplechart"
 	const chartDirV2Path = "testdata/examplechart-v2"
