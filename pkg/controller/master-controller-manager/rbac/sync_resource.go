@@ -159,6 +159,11 @@ func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlr
 		return nil
 	}
 
+	// do not reconcile anyone once a cluster is in deletion
+	if cluster.DeletionTimestamp != nil {
+		return nil
+	}
+
 	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
 		return err
@@ -269,11 +274,13 @@ func ensureClusterRBACRoleForNamedResource(ctx context.Context, log *zap.Sugared
 			return err
 		}
 
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 
 		if err := cli.Update(ctx, existingRole); err != nil {
 			return err
@@ -382,11 +389,13 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(ctx context.Context
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}
@@ -508,12 +517,13 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(ctx context.Context
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
-
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}
@@ -602,11 +612,13 @@ func (c *resourcesController) ensureRBACRoleForEtcdLauncher(ctx context.Context,
 	}
 
 	// make sure that existing rbac role has appropriate rules/policies
-	if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+	if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+		equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 		return nil
 	}
 	existingRole := sharedExistingRole.DeepCopy()
 	existingRole.Rules = generatedRole.Rules
+	existingRole.Labels = generatedRole.Labels
 	if err := c.client.Update(ctx, existingRole); err != nil {
 		return err
 	}
@@ -776,11 +788,13 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagers(ctx context.
 
 		// make sure that existing rbac role has appropriate rules/policies
 
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}
@@ -877,12 +891,13 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagerConfigSecrets(
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
-
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}
@@ -978,12 +993,13 @@ func (c *resourcesController) ensureRBACRoleForClusterConstraints(ctx context.Co
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
-
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}
@@ -1077,12 +1093,13 @@ func (c *resourcesController) ensureRBACRoleForClusterRuleGroups(ctx context.Con
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
-
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}
@@ -1120,11 +1137,13 @@ func (c *resourcesController) ensureClusterRBACRoleForEtcdLauncher(ctx context.C
 		return err
 	}
 
-	if equality.Semantic.DeepEqual(existingClusterRole.Rules, generatedClusterRole.Rules) {
+	if equality.Semantic.DeepEqual(existingClusterRole.Rules, generatedClusterRole.Rules) &&
+		equality.Semantic.DeepEqual(existingClusterRole.Labels, generatedClusterRole.Labels) {
 		return nil
 	}
 	updatedClusterRole := existingClusterRole.DeepCopy()
 	updatedClusterRole.Rules = generatedClusterRole.Rules
+	updatedClusterRole.Labels = generatedClusterRole.Labels
 	if err := c.client.Update(ctx, updatedClusterRole); err != nil {
 		return err
 	}
@@ -1255,12 +1274,13 @@ func (c *resourcesController) ensureRBACRoleForEtcdBackupConfigs(ctx context.Con
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
-
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}
@@ -1354,12 +1374,13 @@ func (c *resourcesController) ensureRBACRoleForEtcdRestores(ctx context.Context,
 		}
 
 		// make sure that existing rbac role has appropriate rules/policies
-
-		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) &&
+			equality.Semantic.DeepEqual(sharedExistingRole.Labels, generatedRole.Labels) {
 			continue
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
+		existingRole.Labels = generatedRole.Labels
 		if err := c.client.Update(ctx, existingRole); err != nil {
 			return err
 		}

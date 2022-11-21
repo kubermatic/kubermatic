@@ -22,7 +22,6 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	eviction "github.com/kubermatic/machine-controller/pkg/node/eviction/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -33,8 +32,12 @@ import (
 )
 
 func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if !kuberneteshelper.HasFinalizer(cluster, apiv1.NodeDeletionFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.NodeDeletionFinalizer) {
 		return nil
+	}
+
+	if cluster.Status.NamespaceName == "" {
+		return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.NodeDeletionFinalizer)
 	}
 
 	userClusterClient, err := d.userClusterClientGetter()
@@ -63,19 +66,20 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		}
 	}
 
+	listOpts := ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)
+
 	machineDeploymentList := &clusterv1alpha1.MachineDeploymentList{}
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
 	if err := userClusterClient.List(ctx, machineDeploymentList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineDeployments: %w", err)
 	}
+
 	if len(machineDeploymentList.Items) > 0 {
-		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
-		for _, machineDeployment := range machineDeploymentList.Items {
-			if err := userClusterClient.Delete(ctx, &machineDeployment); err != nil {
-				return fmt.Errorf("failed to delete MachineDeployment %q: %w", machineDeployment.Name, err)
-			}
+		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.MachineDeployment{}, listOpts); err != nil {
+			return fmt.Errorf("failed to delete MachineDeployments: %w", err)
 		}
+
 		// Return here to make sure we don't attempt to delete MachineSets until the MachineDeployment is actually gone
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "Waiting for %d MachineDeployment(s) to be destroyed.", len(machineDeploymentList.Items))
 		return nil
 	}
 
@@ -83,14 +87,14 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	if err := userClusterClient.List(ctx, machineSetList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineSets: %w", err)
 	}
+
 	if len(machineSetList.Items) > 0 {
-		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
-		for _, machineSet := range machineSetList.Items {
-			if err := userClusterClient.Delete(ctx, &machineSet); err != nil {
-				return fmt.Errorf("failed to delete MachineSet %q: %w", machineSet.Name, err)
-			}
+		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.MachineSet{}, listOpts); err != nil {
+			return fmt.Errorf("failed to delete MachineSets: %w", err)
 		}
+
 		// Return here to make sure we don't attempt to delete Machines until the MachineSet is actually gone
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "Waiting for %d MachineSet(s) to be destroyed.", len(machineSetList.Items))
 		return nil
 	}
 
@@ -98,16 +102,17 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 	if err := userClusterClient.List(ctx, machineList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get Machines: %w", err)
 	}
+
 	if len(machineList.Items) > 0 {
-		// TODO: Use DeleteCollection once https://github.com/kubernetes-sigs/controller-runtime/issues/344 is resolved
-		for _, machine := range machineList.Items {
-			if err := userClusterClient.Delete(ctx, &machine); err != nil {
-				return fmt.Errorf("failed to delete Machine %q: %w", machine.Name, err)
-			}
+		if err = userClusterClient.DeleteAllOf(ctx, &clusterv1alpha1.Machine{}, listOpts); err != nil {
+			return fmt.Errorf("failed to delete Machines: %w", err)
 		}
 
+		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "NodeCleanup", "Waiting for %d Machine(s) to be destroyed.", len(machineList.Items))
 		return nil
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, apiv1.NodeDeletionFinalizer)
+	d.recorder.Event(cluster, corev1.EventTypeNormal, "NodeCleanup", "Cleanup has been completed, all machines have been destroyed.")
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.NodeDeletionFinalizer)
 }

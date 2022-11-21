@@ -22,10 +22,11 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -145,7 +146,7 @@ var (
 )
 
 type nodePortProxyData interface {
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	NodePortProxyTag() string
 	Cluster() *kubermaticv1.Cluster
 	SupportsFailureDomainZoneAntiAffinity() bool
@@ -210,7 +211,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "copy-envoy-config",
-					Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
+					Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, data.NodePortProxyTag()))),
 					Command: []string{
 						"/bin/cp",
 						"/envoy.yaml",
@@ -225,7 +226,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "envoy-manager",
-				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, data.NodePortProxyTag()))),
 				Command: []string{"/envoy-manager",
 					"-listen-address=:8001",
 					"-envoy-node-name=$(PODNAME)",
@@ -249,7 +250,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 				},
 			}, {
 				Name:  resources.NodePortProxyEnvoyContainerName,
-				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.16.0",
+				Image: registry.Must(data.RewriteImage("envoyproxy/envoy-alpine:v1.16.0")),
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
@@ -343,7 +344,7 @@ func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploym
 					"-expose-annotation-key=" + NodePortProxyExposeNamespacedAnnotationKey,
 					"-namespaced=true",
 				},
-				Image: fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, data.NodePortProxyTag()),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, data.NodePortProxyTag()))),
 				Env: []corev1.EnvVar{{
 					Name: "MY_NAMESPACE",
 					ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
@@ -365,7 +366,7 @@ func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploym
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	maxUnavailable := intstr.FromInt(1)
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return name + "-envoy", func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return name + "-envoy", func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			pdb.Spec.MaxUnavailable = &maxUnavailable
 			pdb.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(envoyAppLabelValue, nil),
@@ -403,6 +404,10 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				s.Annotations = seed.Spec.NodeportProxy.Annotations
 			}
 
+			if s.Annotations == nil {
+				s.Annotations = make(map[string]string)
+			}
+
 			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
 			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
 			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
@@ -411,17 +416,22 @@ func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.N
 				}
 			}
 
+			// set of Source IP ranges
+			sourceIPList := sets.String{}
+
 			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
 				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
-					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
+					sourceIPList.Insert(string(cidr))
 				}
 			}
 
-			if data.Cluster().Spec.Cloud.AWS != nil {
-				if s.Annotations == nil {
-					s.Annotations = make(map[string]string)
-				}
+			// Check if allowed IP ranges are configured and set the LoadBalancer source ranges
+			if data.Cluster().Spec.APIServerAllowedIPRanges != nil {
+				sourceIPList.Insert(data.Cluster().Spec.APIServerAllowedIPRanges.CIDRBlocks...)
+			}
+			s.Spec.LoadBalancerSourceRanges = sourceIPList.List()
 
+			if data.Cluster().Spec.Cloud.AWS != nil {
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
 				// https://github.com/kubernetes/kubernetes/blob/v1.22.2/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go
 

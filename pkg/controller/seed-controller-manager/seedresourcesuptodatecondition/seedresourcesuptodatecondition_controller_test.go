@@ -35,7 +35,7 @@ import (
 )
 
 // There is a good chance someone wants simplify the code
-// and make an if err := r.reconcile(); err != nil {} simplication,
+// and make an if err := r.reconcile(); err != nil {} simplification,
 // accidentally shortcircuiting the workqeue and retrying.
 func TestReconcileReturnsError(t *testing.T) {
 	ctx := context.Background()
@@ -56,6 +56,7 @@ func (f *fakeClientThatErrorsOnGet) Get(
 	_ context.Context,
 	key ctrlruntimeclient.ObjectKey,
 	_ ctrlruntimeclient.Object,
+	_ ...ctrlruntimeclient.GetOption,
 ) error {
 	return errors.New("erroring on get as requested")
 }
@@ -68,7 +69,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas:   1,
@@ -82,7 +83,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.DeploymentStatus{
 				UpdatedReplicas:   2,
@@ -96,7 +97,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas:   2,
@@ -110,7 +111,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32Ptr(2),
+				Replicas: utilpointer.Int32(2),
 			},
 			Status: appsv1.DeploymentStatus{
 				UpdatedReplicas:   2,

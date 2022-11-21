@@ -29,16 +29,22 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
 	applicationdefinitionvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/validation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
+	clustertemplatevalidation "k8c.io/kubermatic/v2/pkg/webhook/clustertemplate/validation"
+	externalclustermutation "k8c.io/kubermatic/v2/pkg/webhook/externalcluster/mutation"
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/webhook/groupprojectbinding/validation"
+	ipampoolvalidation "k8c.io/kubermatic/v2/pkg/webhook/ipampool/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
 	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
+	resourcequotavalidation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
 	usersshkeymutation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/mutation"
@@ -51,10 +57,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
-	rootCtx := context.Background()
+	rootCtx := signals.SetupSignalHandler()
 
 	// /////////////////////////////////////////
 	// setup flags
@@ -72,7 +79,7 @@ func main() {
 	log := rawLog.Sugar()
 
 	// set the logger used by controller-runtime
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// say hello
 	versions := kubermatic.NewDefaultVersions()
@@ -90,6 +97,9 @@ func main() {
 	// create manager
 
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		Namespace: options.namespace,
 	})
 	if err != nil {
@@ -153,6 +163,19 @@ func main() {
 	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
+	// setup ExternalCluster webhooks
+
+	externalclustermutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup ClusterTemplate webhooks
+
+	clusterTemplateValidator := clustertemplatevalidation.NewValidator(mgr.GetClient(), seedGetter, seedClientGetter, configGetter, options.featureGates, caPool)
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.ClusterTemplate{}).WithValidator(clusterTemplateValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup cluster validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
 	// setup Addon webhook
 
 	addonmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
@@ -165,9 +188,17 @@ func main() {
 	// /////////////////////////////////////////
 	// setup User webhooks
 
-	userValidator := uservalidation.NewValidator(mgr.GetClient())
+	userValidator := uservalidation.NewValidator(mgr.GetClient(), seedsGetter, seedClientGetter)
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.User{}).WithValidator(userValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup user validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
+	// setup Resource Quota webhooks
+
+	quotaValidator := resourcequotavalidation.NewValidator(mgr.GetClient())
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.ResourceQuota{}).WithValidator(quotaValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup resource quota validation webhook", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////
@@ -193,10 +224,26 @@ func main() {
 	applicationdefinitionvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
+	// setup IPAMPool webhook
+
+	ipamPoolValidator := ipampoolvalidation.NewValidator(seedGetter, seedClientGetter)
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.IPAMPool{}).WithValidator(ipamPoolValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup IPAMPool validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
+	// setup GroupProjectBinding webhook
+
+	groupProjectBindingValidator := groupprojectbinding.NewValidator()
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.GroupProjectBinding{}).WithValidator(groupProjectBindingValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup GroupProjectBinding validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
 	// Here we go!
 
 	log.Info("Starting the webhook...")
-	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("The controller manager has failed", zap.Error(err))
 	}
 }
@@ -230,9 +277,9 @@ func createGetters(ctx context.Context, log *zap.SugaredLogger, mgr manager.Mana
 	var err error
 
 	if options.kubermaticConfiguration != nil {
-		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+		configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
 	} else {
-		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(client, options.namespace)
+		configGetter, err = kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(client, options.namespace)
 	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
@@ -258,12 +305,12 @@ func createGetters(ctx context.Context, log *zap.SugaredLogger, mgr manager.Mana
 		log.Fatalw("Failed to create seeds getter", zap.Error(err))
 	}
 
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, client)
+	seedKubeconfigGetter, err := kubernetesprovider.SeedKubeconfigGetterFactory(ctx, client)
 	if err != nil {
 		log.Fatalw("Failed to create seed kubeconfig getter", zap.Error(err))
 	}
 
-	seedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
+	seedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 	return
 }

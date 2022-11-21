@@ -21,6 +21,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ResourceQuotaKindName represents "Kind" defined in Kubernetes.
+	ResourceQuotaKindName = "ResourceQuota"
+
+	ResourceQuotaSubjectNameLabelKey = "subject-name"
+	ResourceQuotaSubjectKindLabelKey = "subject-kind"
+
+	ProjectSubjectKind = "project"
+)
+
+// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -73,4 +84,23 @@ type ResourceDetails struct {
 	Memory *resource.Quantity `json:"memory,omitempty"`
 	// Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
 	Storage *resource.Quantity `json:"storage,omitempty"`
+}
+
+// +kubebuilder:object:generate=true
+// +kubebuilder:object:root=true
+
+// ResourceQuotaList is a collection of resource quotas.
+type ResourceQuotaList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []ResourceQuota `json:"items"`
+}
+
+func NewResourceDetails(cpu, memory, storage resource.Quantity) *ResourceDetails {
+	return &ResourceDetails{
+		CPU:     &cpu,
+		Memory:  &memory,
+		Storage: &storage,
+	}
 }

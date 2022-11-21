@@ -20,13 +20,16 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -43,23 +46,20 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 		cluster.Spec.Cloud.Azure.SubnetName = subnetName(cluster)
 	}
 
-	resourceGroup := cluster.Spec.Cloud.Azure.ResourceGroup
-	if cluster.Spec.Cloud.Azure.VNetResourceGroup != "" {
-		resourceGroup = cluster.Spec.Cloud.Azure.VNetResourceGroup
-	}
+	resourceGroup := getResourceGroup(cluster.Spec.Cloud)
 
-	vnet, err := clients.Networks.Get(ctx, resourceGroup, cluster.Spec.Cloud.Azure.VNetName, "")
-	if err != nil && !isNotFound(vnet.Response) {
+	vnet, err := clients.Networks.Get(ctx, resourceGroup, cluster.Spec.Cloud.Azure.VNetName, nil)
+	if err != nil && !isNotFound(err) {
 		return cluster, err
 	}
 
-	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, "")
-	if err != nil && !isNotFound(routeTable.Response) {
+	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, nil)
+	if err != nil && !isNotFound(err) {
 		return nil, err
 	}
 
-	subnet, err := clients.Subnets.Get(ctx, resourceGroup, *vnet.Name, cluster.Spec.Cloud.Azure.SubnetName, "")
-	if err != nil && !isNotFound(subnet.Response) {
+	subnet, err := clients.Subnets.Get(ctx, resourceGroup, *vnet.Name, cluster.Spec.Cloud.Azure.SubnetName, nil)
+	if err != nil && !isNotFound(err) {
 		return nil, err
 	}
 
@@ -67,7 +67,7 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	// we can only guess KKP ownership based on the VNET ownership tag. If the
 	// VNET isn't owned by KKP, we should not try to reconcile subnets and
 	// return early
-	if !isNotFound(subnet.Response) && !hasOwnershipTag(vnet.Tags, cluster) {
+	if !isNotFound(err) && !hasOwnershipTag(vnet.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.SubnetName = cluster.Spec.Cloud.Azure.SubnetName
 		})
@@ -89,10 +89,10 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	//
 	// Attributes we check:
 	// - Subnet CIDR
-	if !(subnet.SubnetPropertiesFormat != nil &&
-		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefix, target.SubnetPropertiesFormat.AddressPrefix) &&
-		reflect.DeepEqual(subnet.SubnetPropertiesFormat.AddressPrefixes, target.SubnetPropertiesFormat.AddressPrefixes) &&
-		reflect.DeepEqual(subnet.SubnetPropertiesFormat.RouteTable, target.SubnetPropertiesFormat.RouteTable)) {
+	if !(subnet.Properties != nil &&
+		reflect.DeepEqual(subnet.Properties.AddressPrefix, target.Properties.AddressPrefix) &&
+		reflect.DeepEqual(subnet.Properties.AddressPrefixes, target.Properties.AddressPrefixes) &&
+		reflect.DeepEqual(subnet.Properties.RouteTable, target.Properties.RouteTable)) {
 		if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}
@@ -104,69 +104,59 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	})
 }
 
-func targetSubnet(cloud kubermaticv1.CloudSpec, routeTableID *string, cidrs []string) *network.Subnet {
-	s := &network.Subnet{
-		Name: to.StringPtr(cloud.Azure.SubnetName),
-		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
-			RouteTable: &network.RouteTable{
+func targetSubnet(cloud kubermaticv1.CloudSpec, routeTableID *string, cidrs []string) *armnetwork.Subnet {
+	cidrPointers := []*string{}
+	for _, cidr := range cidrs {
+		cidrPointers = append(cidrPointers, pointer.String(cidr))
+	}
+
+	s := &armnetwork.Subnet{
+		Name: pointer.String(cloud.Azure.SubnetName),
+		Properties: &armnetwork.SubnetPropertiesFormat{
+			RouteTable: &armnetwork.RouteTable{
 				ID: routeTableID,
 			},
 		},
 	}
+
 	if len(cidrs) == 1 {
-		s.SubnetPropertiesFormat.AddressPrefix = to.StringPtr(cidrs[0])
+		s.Properties.AddressPrefix = pointer.String(cidrs[0])
 	} else {
-		s.SubnetPropertiesFormat.AddressPrefixes = &cidrs
+		s.Properties.AddressPrefixes = cidrPointers
 	}
+
 	return s
 }
 
 // ensureSubnet will create or update an Azure subnetwork in the specified vnet. The call is idempotent.
-func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, sn *network.Subnet) error {
+func ensureSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, sn *armnetwork.Subnet) error {
 	if sn == nil {
 		return fmt.Errorf("invalid subnet reference")
 	}
 
-	var resourceGroup = cloud.Azure.ResourceGroup
-	if cloud.Azure.VNetResourceGroup != "" {
-		resourceGroup = cloud.Azure.VNetResourceGroup
-	}
-	future, err := clients.Subnets.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, *sn)
+	resourceGroup := getResourceGroup(cloud)
+
+	future, err := clients.Subnets.BeginCreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, *sn, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %w", cloud.Azure.SubnetName, err)
 	}
 
-	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update subnetwork %q: %w", cloud.Azure.SubnetName, err)
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	return nil
+	return err
 }
 
 func deleteSubnet(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	var resourceGroup = cloud.Azure.ResourceGroup
-	if cloud.Azure.VNetResourceGroup != "" {
-		resourceGroup = cloud.Azure.VNetResourceGroup
-	}
-
-	// We first do Get to check existence of the subnet to see if its already gone or not.
-	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
-	res, err := clients.Subnets.Get(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, "")
+	future, err := clients.Subnets.BeginDelete(ctx, getResourceGroup(cloud), cloud.Azure.VNetName, cloud.Azure.SubnetName, nil)
 	if err != nil {
-		if isNotFound(res.Response) {
-			return nil
-		}
-		return err
+		return ignoreNotFound(err)
 	}
 
-	deleteSubnetFuture, err := clients.Subnets.Delete(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName)
-	if err != nil {
-		return err
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	if err = deleteSubnetFuture.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

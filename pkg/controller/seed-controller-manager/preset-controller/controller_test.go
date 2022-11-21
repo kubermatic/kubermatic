@@ -20,10 +20,9 @@ import (
 	"context"
 	"testing"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -53,7 +52,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "scenario 1: reconcile only deleted preset",
 			namespacedName: types.NamespacedName{
-				Name: test.TestFakeCredential,
+				Name: generator.TestFakeCredential,
 			},
 			expectedClusters: nil,
 			seedClient: fakectrlruntimeclient.
@@ -61,16 +60,16 @@ func TestReconcile(t *testing.T) {
 				WithScheme(scheme.Scheme).
 				WithObjects(
 					getPreset(nil),
-					genCluster("ct2-0", "bob@acme.com", test.TestFakeCredential),
+					genCluster("ct2-0", "bob@acme.com", generator.TestFakeCredential),
 					genCluster("ct2-1", "bob@acme.com", "test"),
-					genCluster("ct2-2", "bob@acme.com", test.TestFakeCredential),
+					genCluster("ct2-2", "bob@acme.com", generator.TestFakeCredential),
 				).
 				Build(),
 		},
 		{
 			name: "scenario 2: reconcile deleted preset",
 			namespacedName: types.NamespacedName{
-				Name: test.TestFakeCredential,
+				Name: generator.TestFakeCredential,
 			},
 			expectedClusters: []string{"ct2-0", "ct2-2"},
 			seedClient: fakectrlruntimeclient.
@@ -78,9 +77,9 @@ func TestReconcile(t *testing.T) {
 				WithScheme(scheme.Scheme).
 				WithObjects(
 					getPreset(&now),
-					genCluster("ct2-0", "bob@acme.com", test.TestFakeCredential),
+					genCluster("ct2-0", "bob@acme.com", generator.TestFakeCredential),
 					genCluster("ct2-1", "bob@acme.com", "test"),
-					genCluster("ct2-2", "bob@acme.com", test.TestFakeCredential),
+					genCluster("ct2-2", "bob@acme.com", generator.TestFakeCredential),
 				).
 				Build(),
 		},
@@ -131,7 +130,7 @@ func genCluster(name, userEmail, preset string) *kubermaticv1.Cluster {
 			Name:            name,
 			Labels:          map[string]string{kubermaticv1.IsCredentialPresetLabelKey: "true"},
 			ResourceVersion: "1",
-			Finalizers:      []string{apiv1.CredentialsSecretsCleanupFinalizer},
+			Finalizers:      []string{kubermaticv1.CredentialsSecretsCleanupFinalizer},
 			Annotations:     map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail, kubermaticv1.PresetNameAnnotation: preset},
 		},
 		Spec: kubermaticv1.ClusterSpec{
@@ -148,7 +147,7 @@ func genCluster(name, userEmail, preset string) *kubermaticv1.Cluster {
 }
 
 func getPreset(deletionTimestamp *metav1.Time) *kubermaticv1.Preset {
-	preset := test.GenDefaultPreset()
+	preset := generator.GenDefaultPreset()
 	preset.DeletionTimestamp = deletionTimestamp
 	return preset
 }

@@ -29,7 +29,6 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/addon"
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -173,7 +172,7 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("addon", request)
 	log.Debug("Processing")
 
 	addon := &kubermaticv1.Addon{}
@@ -185,19 +184,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	cluster := &kubermaticv1.Cluster{}
-	if err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster); err != nil {
-		// If it's not a NotFound err, return it
-		if !apierrors.IsNotFound(err) {
-			return reconcile.Result{}, err
-		}
+	err := r.Get(ctx, types.NamespacedName{Name: addon.Spec.Cluster.Name}, cluster)
+	isNotFound := apierrors.IsNotFound(err)
+	if err != nil && !isNotFound {
+		return reconcile.Result{}, err
+	}
 
-		// Remove the cleanup finalizer if the cluster is gone, as we can not delete the addons manifests
-		// from the cluster anymore
-		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to remove addon cleanup finalizer: %w", err)
-		}
-
-		return reconcile.Result{}, nil
+	// If the cluster is deleted, there is no point in cleaning up addons properly anymore.
+	// Free the addon from its cleanup finalizer and delete it. This should happen regardless
+	// of the control plane version being set in order to not prevent cleanups in defunct clusters.
+	if isNotFound || cluster.DeletionTimestamp != nil {
+		return reconcile.Result{}, r.garbageCollectAddon(ctx, log, addon)
 	}
 
 	if cluster.Status.Versions.ControlPlane == "" {
@@ -236,10 +233,27 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
+// garbageCollectAddon is called when the cluster that owns the addon is gone
+// or in deletion. The function ensures that the addon is removed without going
+// through the normal cleanup procedure (i.e. no `kubectl delete`).
+func (r *Reconciler) garbageCollectAddon(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
+	if addon.DeletionTimestamp == nil {
+		if err := r.Delete(ctx, addon); err != nil {
+			return fmt.Errorf("failed to delete Addon: %w", err)
+		}
+	}
+
+	if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
+		return fmt.Errorf("failed to remove cleanup finalizer: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
-		log.Debug("API server is not running, trying again in 10 seconds")
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		log.Debug("API server is not running, trying again in 3 seconds")
+		return &reconcile.Result{RequeueAfter: 3 * time.Second}, nil
 	}
 
 	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
@@ -255,10 +269,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 			return nil, fmt.Errorf("failed to delete manifests from cluster: %w", err)
 		}
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
-			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %w", err)
+			return nil, fmt.Errorf("failed to remove cleanup finalizer from addon: %w", err)
 		}
 		return nil, nil
 	}
+
 	// This is true when the addon: 1) is fully deployed, 2) doesn't have a `addonEnsureLabelKey` set to true.
 	// we do this to allow users to "edit/delete" resources deployed by unlabeled addons,
 	// while we enfornce the labeled ones
@@ -267,11 +282,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	// Reconciling
-	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %w", err)
-	}
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer exists on the addon: %w", err)
+	}
+	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
+		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %w", err)
 	}
 	if err := r.ensureResourcesCreatedConditionIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to set add ResourcesCreated Condition: %w", err)
@@ -283,7 +298,7 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, addon, cleanupFinalizerName)
 }
 
-func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]addon.Manifest, error) {
+func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]addonutils.Manifest, error) {
 	addonDir := r.kubernetesAddonDir
 	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
 	if err != nil {
@@ -318,12 +333,21 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		}
 	}
 
+	// listing IPAM allocations for cluster
+	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
+	if r.Client != nil {
+		if err := r.Client.List(ctx, ipamAllocationList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+			return nil, fmt.Errorf("failed to list IPAM allocations: %w", err)
+		}
+	}
+
 	data, err := addonutils.NewTemplateData(
 		cluster,
 		credentials,
 		string(kubeconfig),
 		clusterIP,
 		dnsResolverIP,
+		ipamAllocationList,
 		variables,
 	)
 	if err != nil {
@@ -354,7 +378,7 @@ func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 
 // ensureAddonLabelOnManifests adds the addonLabelKey label to all manifests.
 // For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again.
-func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []addon.Manifest) ([]*bytes.Buffer, error) {
+func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []addonutils.Manifest) ([]*bytes.Buffer, error) {
 	var rawManifests []*bytes.Buffer
 
 	wantLabels := r.getAddonLabel(addon)
@@ -528,7 +552,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	}
 
 	oldAddon := addon.DeepCopy()
-	setAddonCodition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
@@ -596,7 +620,7 @@ func formatGVK(gvk kubermaticv1.GroupVersionKind) string {
 	return fmt.Sprintf("%s/%s %s", gvk.Group, gvk.Version, gvk.Kind)
 }
 
-func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
+func setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
 	now := metav1.Now()
 
 	condition, exists := a.Status.Conditions[condType]

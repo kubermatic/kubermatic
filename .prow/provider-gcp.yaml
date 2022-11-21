@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.24
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.25
     decorate: true
     always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -30,14 +30,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.0"
+            - name: RELEASES_TO_TEST
+              value: "1.25"
             - name: PROVIDER
-              value: "gcp"
+              value: "gce"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY
@@ -55,54 +55,7 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
-
-  - name: pre-kubermatic-e2e-gcp-ubuntu-1.24-psp
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-gce: "true"
-      preset-vault: "true"
-      preset-docker-mirror: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-repo-ssh: "true"
-      preset-e2e-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.0"
-            - name: PROVIDER
-              value: "gcp"
-            - name: DISTRIBUTIONS
-              value: ubuntu
-            - name: KUBERMATIC_PSP_ENABLED
-              value: "true"
-            - name: ONLY_TEST_CREATION
-              value: "true"
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
-          command:
-            - "./hack/ci/run-e2e-tests.sh"
-          # docker-in-docker needs privileged mode
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 3.5
-            limits:
-              memory: 4Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-e2e-gcp-offline
     decorate: true
@@ -116,7 +69,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
           command:
             - "./hack/ci/run-offline-test.sh"
           # docker-in-docker needs privileged mode
@@ -127,5 +80,5 @@ presubmits:
               memory: 2.5Gi
               cpu: 500m
             limits:
-              memory: 4Gi
+              memory: 6Gi
               cpu: 2

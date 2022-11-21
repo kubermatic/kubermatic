@@ -18,24 +18,22 @@ package constrainttemplatecontroller
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -137,15 +135,20 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint template: %v", err)
 			}
 
-			if !reflect.DeepEqual(ct.Spec.CRD, tc.expectedCT.Spec.CRD) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct.Spec.CRD, tc.expectedCT.Spec.CRD))
-			}
-			if !reflect.DeepEqual(ct.Spec.Targets, tc.expectedCT.Spec.Targets) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct.Spec.Targets, tc.expectedCT.Spec.Targets))
+			ct.ResourceVersion = ""
+			ct.APIVersion = ""
+			ct.Kind = ""
+
+			if tc.expectedCT.Name != ct.Name {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 
-			if !reflect.DeepEqual(ct.Name, tc.expectedCT.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			if !diff.SemanticallyEqual(tc.expectedCT.Spec.CRD, ct.Spec.CRD) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
+			}
+
+			if !diff.SemanticallyEqual(tc.expectedCT.Spec.Targets, ct.Spec.Targets) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 		})
 	}
@@ -205,7 +208,7 @@ func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTe
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
-		ct.Finalizers = append(ct.Finalizers, apiv1.GatekeeperConstraintTemplateCleanupFinalizer)
+		ct.Finalizers = append(ct.Finalizers, cleanupFinalizer)
 	}
 
 	return ct

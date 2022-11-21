@@ -22,9 +22,10 @@ import (
 	"os"
 
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
@@ -32,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/klog/v2"
-	"sigs.k8s.io/yaml"
 )
 
 type appOptions struct {
@@ -64,13 +64,13 @@ func initApplicationOptions() (appOptions, error) {
 
 	klog.InitFlags(nil)
 
-	flag.StringVar(&c.seedName, "seed-name", "", "The name of the seed this controller is running in. It will be used to build the absolute url for a customer cluster.")
+	flag.StringVar(&c.seedName, "seed-name", "", "The name of the seed this controller is running in. It will be used to build the absolute url for a user cluster.")
 	flag.Var(&c.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for Seed resources")
-	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
+	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all user clusters")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 
-	c.webhook.AddFlags(flag.CommandLine)
+	c.webhook.AddFlags(flag.CommandLine, "webhook")
 	c.pprof.AddFlags(flag.CommandLine)
 	c.log.AddFlags(flag.CommandLine)
 
@@ -96,17 +96,21 @@ func initApplicationOptions() (appOptions, error) {
 }
 
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
-	content, err := os.ReadFile(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
+	defer f.Close()
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := yaml.UnmarshalStrict(content, &config); err != nil {
+	decoder := yaml.NewDecoder(f)
+	decoder.KnownFields(true)
+
+	if err := decoder.Decode(&config); err != nil {
 		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to process: %w", err)
 	}

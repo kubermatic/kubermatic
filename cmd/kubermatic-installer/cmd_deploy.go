@@ -35,8 +35,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
+	userclustermla "k8c.io/kubermatic/v2/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -57,19 +58,24 @@ type DeployOptions struct {
 	Kubeconfig  string
 	KubeContext string
 
-	HelmBinary  string
-	HelmValues  string
-	HelmTimeout time.Duration
-	Force       bool
+	HelmBinary       string
+	HelmValues       string
+	HelmTimeout      time.Duration
+	SkipDependencies bool
+	Force            bool
 
-	StorageClass     string
-	DisableTelemetry bool
+	StorageClass       string
+	DisableTelemetry   bool
+	AllowEditionChange bool
 
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
 	MigrateNginx               bool
-	MigrateOpenstackCSI        bool
-	MigrateLogrotate           bool
+
+	MLASkipMinio             bool
+	MLASkipMinioLifecycleMgr bool
+	MLAForceMLASecrets       bool
+	MLAIncludeIap            bool
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -79,8 +85,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	}
 
 	cmd := &cobra.Command{
-		Use:          "deploy [kubermatic-master | kubermatic-seed]",
-		Short:        "installs or upgrades the current installation to the installer's built-in version",
+		Use:          "deploy [kubermatic-master | kubermatic-seed | usercluster-mla]",
+		Short:        "Install or upgrade the current installation to the installer's built-in version",
 		Long:         "Installs or upgrades the current installation to the installer's built-in version",
 		RunE:         DeployFunc(logger, versions, &opt),
 		SilenceUsage: true,
@@ -105,23 +111,28 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 		},
 	}
 
-	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "full path to the KubermaticConfiguration YAML file")
+	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "full path to the KubermaticConfiguration YAML file (only required during first installation, on upgrades the configuration can automatically be read from the cluster instead)")
 	cmd.PersistentFlags().StringVar(&opt.Kubeconfig, "kubeconfig", "", "full path to where a kubeconfig with cluster-admin permissions for the target cluster")
 	cmd.PersistentFlags().StringVar(&opt.KubeContext, "kube-context", "", "context to use from the given kubeconfig")
 
 	cmd.PersistentFlags().StringVar(&opt.HelmValues, "helm-values", "", "full path to the Helm values.yaml used for customizing all charts")
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
+	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
 	cmd.PersistentFlags().BoolVar(&opt.Force, "force", false, "perform Helm upgrades even when the release is up-to-date")
 
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()))
 	cmd.PersistentFlags().BoolVar(&opt.DisableTelemetry, "disable-telemetry", false, "disable telemetry agents")
+	cmd.PersistentFlags().BoolVar(&opt.AllowEditionChange, "allow-edition-change", false, "allow up- or downgrading between Community and Enterprise editions")
 
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
-	cmd.PersistentFlags().BoolVar(&opt.MigrateOpenstackCSI, "migrate-openstack-csidrivers", false, "(kubermatic-seed only) enable the data migration of CSIDriver of openstack user-clusters")
-	cmd.PersistentFlags().BoolVar(&opt.MigrateLogrotate, "migrate-logrotate", false, "enable the data migration to delete the logrotate addon")
+
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
+	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
+	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 
 	return cmd
 }
@@ -163,6 +174,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		var kubermaticStack stack.Stack
 		switch stackName {
+		case "usercluster-mla":
+			kubermaticStack = userclustermla.NewStack()
 		case "kubermatic-seed":
 			kubermaticStack = kubermaticseed.NewStack()
 		case "kubermatic-master", "":
@@ -178,6 +191,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			return errors.New("no kubeconfig (--kubeconfig or $KUBECONFIG) given")
 		}
 
+		// this can result in both configs being nil, if no --config is given
 		kubermaticConfig, rawKubermaticConfig, err := loadKubermaticConfiguration(opt.Config)
 		if err != nil {
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
@@ -199,29 +213,15 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			EnableCertManagerV2Migration:       opt.MigrateCertManager,
 			EnableCertManagerUpstreamMigration: opt.MigrateUpstreamCertManager,
 			EnableNginxIngressMigration:        opt.MigrateNginx,
-			EnableOpenstackCSIDriverMigration:  opt.MigrateOpenstackCSI,
-			EnableLogrotateMigration:           opt.MigrateLogrotate,
 			DisableTelemetry:                   opt.DisableTelemetry,
+			DisableDependencyUpdate:            opt.SkipDependencies,
+			AllowEditionChange:                 opt.AllowEditionChange,
+			MLASkipMinio:                       opt.MLASkipMinio,
+			MLASkipMinioLifecycleMgr:           opt.MLASkipMinioLifecycleMgr,
+			MLAForceSecrets:                    opt.MLAForceMLASecrets,
+			MLAIncludeIap:                      opt.MLAIncludeIap,
 			Versions:                           versions,
 		}
-
-		// validate the configuration
-		logger.Info("🚦 Validating the provided configuration…")
-
-		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
-
-		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, deployOptions, subLogger)
-		if len(validationErrors) > 0 {
-			logger.Error("⛔ The provided configuration files are invalid:")
-
-			for _, e := range validationErrors {
-				subLogger.Errorf("%v", e)
-			}
-
-			return errors.New("please review your configuration and try again")
-		}
-
-		logger.Info("✅ Provided configuration is valid.")
 
 		// prepapre Kubernetes and Helm clients
 		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(opt.KubeContext)
@@ -255,6 +255,33 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		kubeClient := mgr.GetClient()
 
+		// try to auto-find the KubermaticConfiguration
+		if kubermaticConfig == nil {
+			kubermaticConfig, err = findKubermaticConfiguration(appContext, kubeClient, kubermaticmaster.KubermaticOperatorNamespace)
+			if err != nil {
+				return fmt.Errorf("failed to detect current KubermaticConfiguration: %w", err)
+			}
+		}
+
+		// validate the configuration (in order to auto-fetch the config during upgrades,
+		// this validation has to happen after we connected to the cluster)
+		logger.Info("🚦 Validating the provided configuration…")
+
+		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
+
+		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, deployOptions, subLogger)
+		if len(validationErrors) > 0 {
+			logger.Error("⛔ The provided configuration files are invalid:")
+
+			for _, e := range validationErrors {
+				subLogger.Errorf("%v", e)
+			}
+
+			return errors.New("please review your configuration and try again")
+		}
+
+		logger.Info("✅ Provided configuration is valid.")
+
 		if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
 			return fmt.Errorf("failed to add scheme: %w", err)
 		}
@@ -283,7 +310,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		deployOptions.KubeClient = kubeClient
 		deployOptions.Logger = subLogger
 		deployOptions.SeedsGetter = seedsGetter
-		deployOptions.SeedClientGetter = provider.SeedClientGetterFactory(seedKubeconfigGetter)
+		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("🚦 Validating existing installation…")
 

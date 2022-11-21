@@ -33,6 +33,14 @@ spec:
     name: "__SEED_NAME__-kubeconfig"
     namespace: kubermatic
     fieldPath: kubeconfig
+  metering:
+    enabled: true
+    reports:
+      e2e-weekly:
+        interval: 7
+        schedule: 0 1 * * 6
+    storageClassName: standard
+    storageSize: 75Gi
   datacenters:
     byo-kubernetes:
       location: Frankfurt
@@ -57,8 +65,6 @@ spec:
       spec:
         aws:
           region: eu-central-1
-          images:
-            ubuntu: ami-092f628832a8d22a5 # ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220523
     hetzner-hel1:
       location: Helsinki 1 DC 6
       country: DE
@@ -77,7 +83,7 @@ spec:
       location: Hamburg
       country: DE
       spec:
-        vmwareCloudDirector:
+        vmwareclouddirector:
           url: "__VCD_URL__"
           allowInsecure: false
           catalog: "kubermatic"
@@ -89,15 +95,19 @@ spec:
       country: DE
       spec:
         vsphere:
-          endpoint: "https://vcenter.qa.lab.kubermatic.io"
-          datacenter: "dc-1"
-          datastore: "HS-FreeNAS"
-          cluster: "cl-1"
-          rootPath: "/dc-1/vm/e2e-tests"
+          cluster: vcenter.dc.k8c.io
+          datacenter: Hamburg
+          datastore: ceph-vm
+          endpoint: https://10.10.0.100
+          allowInsecure: true
+          ipv6Enabled: true
+          rootPath: /Hamburg/vm/Kubermatic-ci
           templates:
-            ubuntu: "machine-controller-e2e-ubuntu"
-            centos: "machine-controller-e2e-centos"
-            coreos: "machine-controller-e2e-coreos"
+            centos: kkp-centos-7
+            flatcar: kkp-flatcar-3033.2.2
+            rhel: kkp-rhel-8.6
+            ubuntu: kkp-ubuntu-22.04
+            rockylinux: kkp-rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
       country: NL
@@ -112,13 +122,12 @@ spec:
           region: europe-west3
           zoneSuffixes:
             - c
-    packet-ewr1:
-      location: "Packet EWR1 (New York)"
-      country: US
+    packet-am:
+      location: "Packet AM (Amsterdam)"
+      country: NL
       spec:
         packet:
-          facilities:
-            - ewr1
+          metro: AM
     do-ams3:
       location: Amsterdam
       country: NL
@@ -154,11 +163,34 @@ spec:
           images:
             centos: kubermatic-e2e-centos
             coreos: kubermatic-e2e-coreos
-            ubuntu: kubermatic-e2e-ubuntu
+            ubuntu: kubermatic-ubuntu
           nodeSizeRequirements:
             minimumMemory: 0
             minimumVCPUs: 0
           region: dbl
+    syseleven-fes1:
+      country: DE
+      location: Syseleven - fes1
+      spec:
+        openstack:
+          authURL: https://api.cbk.cloud.syseleven.net:5000/v3
+          availabilityZone: fes1
+          dnsServers:
+            - 37.123.105.116
+            - 37.123.105.117
+          enforceFloatingIP: true
+          images:
+            centos: kubermatic-e2e-centos
+            coreos: kubermatic-e2e-coreos
+            flatcar: Flatcar Stable (2022-10-19)
+            rhel: kubermatic-e2e-rhel
+            rockylinux: rockylinux-8
+            ubuntu: Ubuntu Focal 20.04 (2022-10-26)
+          nodeSizeRequirements:
+            minimumMemory: 0
+            minimumVCPUs: 0
+          region: fes # ipv6 is only available in this zone
+          ipv6Enabled: true
     nutanix-ger:
       country: DE
       location: Hamburg

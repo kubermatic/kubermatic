@@ -39,10 +39,10 @@ karma:
     # in-cluster access to Prometheus.
     # See https://github.com/prymitive/karma/blob/main/docs/CONFIGURATION.md#alert-history
     # for more information
-    # history:
-    #   rewrite:
-    #     - source: 'https://(.+).example.com'
-    #       uri: 'http://$1.monitoring.svc.cluster.local'
+    history:
+      rewrite:
+        - source: 'http://(.+)-[0-9]+:9090'
+          uri: 'http://$1.monitoring.svc.cluster.local:9090'
 
     alertmanager:
       interval: 60s
@@ -51,11 +51,11 @@ karma:
   images:
     karma:
       repository: docker.io/lmierzwa/karma
-      tag: v0.89
+      tag: v0.103
       pullPolicy: IfNotPresent
     initContainer:
       repository: quay.io/kubermatic/util
-      tag: 2.1.0
+      tag: 2.2.0
       pullPolicy: IfNotPresent
   resources:
     karma:

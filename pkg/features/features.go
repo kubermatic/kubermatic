@@ -59,17 +59,17 @@ const (
 	// solution based on OpenVPN.
 	KonnectivityService = "KonnectivityService"
 
-	// OperatingSystemManager feature create the required resources for the deployment of OperatingSystemManager(OSM)
-	// across KKP seeds. However, this won't enable the deployment of OSM controllers on user clusters by default. To
-	// enable OSM to be used as a provisioning tool, is via the enabling of the EnableOperatingSystemManager field in
-	// user cluster.
-	OperatingSystemManager = "OperatingSystemManager"
-
 	// HeadlessInstallation feature makes the KKP installer not install nginx and Dex. This is useful to create
 	// a KKP system without UI/API deployments, that will only be interacted with using kubectl or similar means.
 	// Setting this feature flag will make KKP ignore any UI/API/Ingress configuration.
 	// This feature is in preview and not yet ready for production.
 	HeadlessInstallation = "HeadlessInstallation"
+
+	// DevelopmentEnvironment feature enables additional controllers only useful in shared development clusters.
+	// Currently this includes the kkp-cluster-stuck-controller, but additional tweaks might be added to this feature
+	// gate in the future.
+	// This feature perpetually in preview and never ready for production.
+	DevelopmentEnvironment = "DevelopmentEnvironment"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

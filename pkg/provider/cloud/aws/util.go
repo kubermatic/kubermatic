@@ -17,13 +17,16 @@ limitations under the License.
 package aws
 
 import (
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/iam"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
+
+	"k8s.io/utils/pointer"
 )
 
-func hasEC2Tag(expected *ec2.Tag, actual []*ec2.Tag) bool {
+func hasEC2Tag(expected ec2types.Tag, actual []ec2types.Tag) bool {
 	for _, tag := range actual {
-		if tag.String() == expected.String() {
+		if pointer.StringDeref(tag.Key, "") == pointer.StringDeref(expected.Key, "") &&
+			pointer.StringDeref(tag.Value, "") == pointer.StringDeref(expected.Value, "") {
 			return true
 		}
 	}
@@ -31,9 +34,10 @@ func hasEC2Tag(expected *ec2.Tag, actual []*ec2.Tag) bool {
 	return false
 }
 
-func hasIAMTag(expected *iam.Tag, actual []*iam.Tag) bool {
+func hasIAMTag(expected iamtypes.Tag, actual []iamtypes.Tag) bool {
 	for _, tag := range actual {
-		if tag.String() == expected.String() {
+		if pointer.StringDeref(tag.Key, "") == pointer.StringDeref(expected.Key, "") &&
+			pointer.StringDeref(tag.Value, "") == pointer.StringDeref(expected.Value, "") {
 			return true
 		}
 	}

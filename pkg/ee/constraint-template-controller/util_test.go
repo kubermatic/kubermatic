@@ -30,11 +30,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eectcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -124,14 +124,14 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 			}
 
 			if !resultSet.Equal(tc.expectedClusters) {
-				t.Fatalf("received clusters differ from expected: diff: %s", diff.ObjectGoPrintSideBySide(resultSet, tc.expectedClusters))
+				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff[string](tc.expectedClusters, resultSet))
 			}
 		})
 	}
 }
 
 func genCluster(name string, labels map[string]string, bringYourOwnProvider bool) *kubermaticv1.Cluster {
-	cluster := test.GenDefaultCluster()
+	cluster := generator.GenDefaultCluster()
 
 	cluster.Name = name
 	cluster.Labels = labels
@@ -145,7 +145,7 @@ func genCluster(name string, labels map[string]string, bringYourOwnProvider bool
 }
 
 func genConstraintTemplateWithSelector(selector kubermaticv1.ConstraintTemplateSelector) *kubermaticv1.ConstraintTemplate {
-	ct := test.GenConstraintTemplate("ct1")
+	ct := generator.GenConstraintTemplate("ct1")
 	ct.Spec.Selector = selector
 	return ct
 }

@@ -3,7 +3,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.10.0
+    kubermatic.k8c.io/location: master
   creationTimestamp: null
   name: usersshkeys.kubermatic.k8c.io
 spec:
@@ -15,78 +16,64 @@ spec:
     singular: usersshkey
   scope: Cluster
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.name
-      name: HumanReadableName
-      type: string
-    - jsonPath: .spec.owner
-      name: Owner
-      type: string
-    - jsonPath: .spec.project
-      name: Project
-      type: string
-    - jsonPath: .spec.fingerprint
-      name: Fingerprint
-      type: string
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: v1
-    schema:
-      openAPIV3Schema:
-        description: UserSSHKey specifies a users UserSSHKey.
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            properties:
-              clusters:
-                description: Clusters is the list of cluster names that this SSH key
-                  is assigned to.
-                items:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.name
+          name: HumanReadableName
+          type: string
+        - jsonPath: .spec.owner
+          name: Owner
+          type: string
+        - jsonPath: .spec.project
+          name: Project
+          type: string
+        - jsonPath: .spec.fingerprint
+          name: Fingerprint
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: UserSSHKey specifies a users UserSSHKey.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              properties:
+                clusters:
+                  description: Clusters is the list of cluster names that this SSH key is assigned to.
+                  items:
+                    type: string
+                  type: array
+                fingerprint:
+                  description: Fingerprint is calculated server-side based on the supplied public key and doesn't need to be set by clients.
                   type: string
-                type: array
-              fingerprint:
-                description: Fingerprint is calculated on the server-side and doesn't
-                  need to be set by clients.
-                type: string
-              name:
-                description: Name is the human readable name for this SSH key.
-                type: string
-              owner:
-                description: 'Owner is the name of the User object that owns this
-                  SSH key. Deprecated: This field is not used anymore.'
-                type: string
-              project:
-                description: Project is the name of the Project object that this SSH
-                  key belongs to. This field is immutable.
-                type: string
-              publicKey:
-                description: PublicKey is the SSH public key.
-                type: string
-            required:
-            - clusters
-            - name
-            - project
-            - publicKey
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
+                name:
+                  description: Name is the human readable name for this SSH key.
+                  type: string
+                owner:
+                  description: 'Owner is the name of the User object that owns this SSH key. Deprecated: This field is not used anymore.'
+                  type: string
+                project:
+                  description: Project is the name of the Project object that this SSH key belongs to. This field is immutable.
+                  type: string
+                publicKey:
+                  description: PublicKey is the SSH public key.
+                  type: string
+              required:
+                - clusters
+                - name
+                - project
+                - publicKey
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources: {}

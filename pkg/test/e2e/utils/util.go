@@ -17,49 +17,17 @@ limitations under the License.
 package utils
 
 import (
-	"errors"
-	"fmt"
-	"net/url"
 	"os"
 	"time"
 
-	httptransport "github.com/go-openapi/runtime/client"
-
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func NewKubermaticClient(endpointURL string) (*client.KubermaticKubernetesPlatformAPI, error) {
-	parsed, err := url.Parse(endpointURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse URL: %w", err)
-	}
-
-	if parsed.Host == "" || parsed.Scheme == "" {
-		return nil, errors.New("Kubermatic endpoint must be scheme://host[:port]")
-	}
-
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return nil, errors.New("invalid scheme, must be HTTP or HTTPS")
-	}
-
-	return client.New(httptransport.New(parsed.Host, parsed.Path, []string{parsed.Scheme}), nil), nil
-}
-
-func APIEndpoint() (string, error) {
-	endpoint := os.Getenv("KUBERMATIC_API_ENDPOINT")
-	if len(endpoint) == 0 {
-		return "", errors.New("no $KUBERMATIC_API_ENDPOINT (scheme://host:port) environment variable set")
-	}
-
-	return endpoint, nil
-}
-
 func KubernetesVersion() string {
-	version := defaults.DefaultKubernetesVersioning.Default
+	version := defaulting.DefaultKubernetesVersioning.Default
 
 	if v := os.Getenv("VERSION_TO_TEST"); v != "" {
 		version = semver.NewSemverOrDie(v)

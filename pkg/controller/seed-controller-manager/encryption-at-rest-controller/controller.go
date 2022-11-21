@@ -18,6 +18,7 @@ package encryptionatrestcontroller
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
@@ -49,6 +50,7 @@ import (
 
 const (
 	ControllerName = "kkp-encryption-at-rest-controller"
+	EARKeyLength   = 32
 )
 
 // userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
@@ -135,8 +137,8 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("cluster", request.Name)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -146,8 +148,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, err
 	}
-
-	log = r.log.With("cluster", cluster.Name)
 
 	// replicate the predicate from above to make sure that reconcile loops triggered by apiserver and secret
 	// do not run unexpected reconciles.
@@ -179,9 +179,62 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
+func getSecretKeyValue(ctx context.Context, client ctrlruntimeclient.Client, ref *corev1.SecretKeySelector, namespace string) ([]byte, error) {
+	secret := corev1.Secret{}
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{
+		Name:      ref.Name,
+		Namespace: namespace,
+	}, &secret); err != nil {
+		return nil, err
+	}
+
+	val, ok := secret.Data[ref.Key]
+	if !ok {
+		return nil, fmt.Errorf("key %q not found in secret", ref.Key)
+	}
+
+	return val, nil
+}
+
+// validateKeyLength base64 decodes key and checks length.
+func validateKeyLength(key string) error {
+	data, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return err
+	}
+	if len(data) != EARKeyLength {
+		return fmt.Errorf("key length should be 32 it is %d", len(data))
+	}
+	return nil
+}
+
+func hasSecretKeyRef(cluster *kubermaticv1.Cluster) bool {
+	if cluster.Spec.EncryptionConfiguration == nil {
+		return false
+	}
+
+	if cluster.Spec.EncryptionConfiguration.Secretbox == nil {
+		return false
+	}
+
+	for _, key := range cluster.Spec.EncryptionConfiguration.Secretbox.Keys {
+		if key.SecretRef != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// reconcile until encryption is successfully initialized
 	if cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
+		// validate secretRef before going into Pending phase
+		result, err := r.validateSecretRef(ctx, cluster)
+		if err != nil {
+			return result, err
+		}
+
 		log.Debug("EncryptionInitialized is not set yet, setting initial encryption status and condition ...")
 		return r.setInitializedCondition(ctx, cluster)
 	}
@@ -234,6 +287,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		if cluster.Status.Encryption.ActiveKey != configuredKey {
+			// validate secretRef before going into Pending phase
+			result, err := r.validateSecretRef(ctx, cluster)
+			if err != nil {
+				return result, err
+			}
+
 			log.Debugf("configured key %q != %q, moving cluster to EncryptionPhase 'Pending'", configuredKey, cluster.Status.Encryption.ActiveKey)
 			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhasePending
@@ -269,6 +328,27 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	default:
 		return &reconcile.Result{}, nil
 	}
+}
+
+func (r *Reconciler) validateSecretRef(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	if !hasSecretKeyRef(cluster) {
+		return nil, nil
+	}
+
+	for _, key := range cluster.Spec.EncryptionConfiguration.Secretbox.Keys {
+		if key.SecretRef != nil {
+			v, err := getSecretKeyValue(ctx, r.Client, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
+			if err != nil {
+				return &reconcile.Result{}, err
+			} else {
+				if err := validateKeyLength(string(v)); err != nil {
+					return &reconcile.Result{}, fmt.Errorf("%s->Secret:%s->Key:%s: %w", key.Name, key.SecretRef.Name, key.SecretRef.Key, err)
+				}
+			}
+		}
+	}
+
+	return nil, nil
 }
 
 func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {

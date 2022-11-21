@@ -138,7 +138,7 @@ https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-accou
 
 ## Looking ahead
 
-To make this more accessible to customers we could build on top of this and extend the KKP dashboard
+To make this more accessible to KKP admins we could build on top of this and extend the KKP dashboard
 with an interface to manage this. Similar to the [SSH key feature][ssh key agent] container registry
 credentials could be managed from there.
 
@@ -174,4 +174,4 @@ user cluster
   * Add docker support for writing node level registry credentials (analog to containerd)
 
 [#6231]: https://github.com/kubermatic/kubermatic/issues/6231
-[ssh key agent]: https://docs.kubermatic.com/kubermatic/master/tutorials_howtos/administration/user_settings/user_ssh_key_agent/
+[ssh key agent]: https://docs.kubermatic.com/kubermatic/main/tutorials-howtos/administration/user-settings/user-ssh-key-agent/

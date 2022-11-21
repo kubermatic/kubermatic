@@ -16,6 +16,7 @@ _cache
 _dist
 download-gocache
 /dev.*
+.envrc
 
 # this is filled during release
 charts/kubermatic-operator/crd/k8c.io

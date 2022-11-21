@@ -17,13 +17,13 @@ limitations under the License.
 package runner
 
 import (
-	"bytes"
 	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/onsi/ginkgo/reporters"
@@ -36,18 +36,17 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/tests"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -56,19 +55,13 @@ type TestRunner struct {
 	log       *zap.SugaredLogger
 	opts      *ctypes.Options
 	kkpClient clients.Client
-}
 
-func NewAPIRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
-	return &TestRunner{
-		log:       log.With("client", "api"),
-		opts:      opts,
-		kkpClient: clients.NewAPIClient(opts),
-	}
+	createdProject bool
 }
 
 func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
 	return &TestRunner{
-		log:       log.With("client", "kube"),
+		log:       log,
 		opts:      opts,
 		kkpClient: clients.NewKubeClient(opts),
 	}
@@ -86,9 +79,10 @@ func (r *TestRunner) SetupProject(ctx context.Context) error {
 		}
 
 		r.opts.KubermaticProject = projectName
+		r.createdProject = true
 	}
 
-	if err := r.kkpClient.CreateSSHKeys(ctx, r.log); err != nil {
+	if err := r.kkpClient.EnsureSSHKeys(ctx, r.log); err != nil {
 		return fmt.Errorf("failed to create SSH keys: %w", err)
 	}
 
@@ -99,12 +93,11 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	scenariosCh := make(chan scenarios.Scenario, len(testScenarios))
 	resultsCh := make(chan testResult, len(testScenarios))
 
-	r.log.Info("Test suite:")
+	r.log.Infow("Test suite:", "total", len(testScenarios))
 	for _, scenario := range testScenarios {
-		r.log.Info(scenario.Name())
+		scenario.NamedLog(scenario.Log(r.log)).Info("Scenario")
 		scenariosCh <- scenario
 	}
-	r.log.Infof("Total: %d tests", len(testScenarios))
 
 	for i := 1; i <= r.opts.ClusterParallelCount; i++ {
 		go r.scenarioWorker(ctx, scenariosCh, resultsCh)
@@ -112,36 +105,72 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 
 	close(scenariosCh)
 
+	success := 0
+	failures := 0
+	remaining := len(testScenarios)
+
 	var results []testResult
 	for range testScenarios {
-		results = append(results, <-resultsCh)
-		r.log.Infof("Finished %d/%d test cases", len(results), len(testScenarios))
+		result := <-resultsCh
+
+		remaining--
+		if result.Passed() {
+			success++
+		} else {
+			failures++
+		}
+
+		results = append(results, result)
+		r.log.Infow("Scenario finished.", "successful", success, "failed", failures, "remaining", remaining)
 	}
 
-	overallResultBuf := &bytes.Buffer{}
-	hadFailure := false
-	for _, result := range results {
-		prefix := "PASS"
-		if !result.Passed() {
-			prefix = "FAIL"
-			hadFailure = true
-		}
-		scenarioResultMsg := fmt.Sprintf("[%s] - %s", prefix, result.scenario.Name())
-		if result.err != nil {
-			scenarioResultMsg = fmt.Sprintf("%s : %v", scenarioResultMsg, result.err)
-		}
+	r.log.Info("All scenarios have finished.")
 
-		fmt.Fprintln(overallResultBuf, scenarioResultMsg)
+	for _, result := range results {
 		if result.report != nil {
 			printDetailedReport(result.report)
 		}
 	}
 
+	fmt.Println("")
 	fmt.Println("========================== RESULT ===========================")
-	fmt.Println(overallResultBuf.String())
+	fmt.Println("Parameters:")
+	fmt.Printf("  KKP Version.........: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
+	fmt.Printf("  Name Prefix.........: %q\n", r.opts.NamePrefix)
+	fmt.Printf("  OSM Enabled.........: %v\n", r.opts.OperatingSystemManagerEnabled)
+	fmt.Printf("  Dualstack Enabled...: %v\n", r.opts.DualStackEnabled)
+	fmt.Printf("  Konnectivity Enabled: %v\n", r.opts.KonnectivityEnabled)
+	fmt.Printf("  Enabled Tests.......: %v\n", r.opts.Tests.List())
+	fmt.Printf("  Scenario Options....: %v\n", r.opts.ScenarioOptions.List())
+	fmt.Println("")
+	fmt.Println("Test results:")
+
+	// sort results alphabetically
+	sort.Slice(results, func(i, j int) bool {
+		iname := results[i].scenario.Name()
+		jname := results[j].scenario.Name()
+
+		return iname < jname
+	})
+
+	hadFailure := false
+	for _, result := range results {
+		prefix := " OK "
+		if !result.Passed() {
+			prefix = "FAIL"
+			hadFailure = true
+		}
+		duration := result.duration.Round(time.Second)
+		scenarioResultMsg := fmt.Sprintf("[%s] - %s (%s)", prefix, result.scenario.Name(), duration)
+		if result.err != nil {
+			scenarioResultMsg = fmt.Sprintf("%s: %v", scenarioResultMsg, result.err)
+		}
+
+		fmt.Println(scenarioResultMsg)
+	}
 
 	if hadFailure {
-		return errors.New("some tests failed")
+		return errors.New("not all scenarios have passed all selected tests")
 	}
 
 	return nil
@@ -151,8 +180,10 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 	for s := range scenarios {
 		var report *reporters.JUnitTestSuite
 
-		scenarioLog := r.log.With("scenario", s.Name())
+		scenarioLog := s.NamedLog(r.log)
 		scenarioLog.Info("Starting to test scenario...")
+
+		start := time.Now()
 
 		err := metrics.MeasureTime(metrics.ScenarioRuntimeMetric.With(prometheus.Labels{"scenario": s.Name()}), scenarioLog, func() error {
 			var err error
@@ -162,11 +193,12 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 		if err != nil {
 			scenarioLog.Warnw("Finished with error", zap.Error(err))
 		} else {
-			scenarioLog.Info("Finished")
+			scenarioLog.Info("Finished successfully")
 		}
 
 		results <- testResult{
 			report:   report,
+			duration: time.Since(start),
 			scenario: s,
 			err:      err,
 		}
@@ -187,7 +219,7 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 
 	// We need the closure to defer the evaluation of the time.Since(totalStart) call
 	defer func() {
-		log.Infof("Finished testing cluster after %s", time.Since(totalStart))
+		log.Infof("Finished testing cluster after %s", time.Since(totalStart).Round(time.Second))
 	}()
 
 	// Always write junit to disk
@@ -209,45 +241,11 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		return report, err
 	}
 
-	// cluster could become nil during the wait loop, save its name in a local variable;
-	// NB: It's important for this health check loop to refresh the cluster object, as
-	// during reconciliation some cloud providers will fill in missing fields in the CloudSpec,
-	// and later when we create MachineDeployments we potentially rely on these fields
-	// being set in the cluster variable.
-	clusterName := cluster.Name
-	log = log.With("cluster", clusterName)
-
-	healthCheck := func() error {
-		return wait.Poll(5*time.Second, 5*time.Minute, func() (bool, error) {
-			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-				log.Errorw("Failed to get cluster when waiting for successful reconciliation", zap.Error(err))
-				return false, nil
-			}
-
-			versions := kubermatic.NewDefaultVersions()
-			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
-			missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
-			if len(missingConditions) > 0 {
-				log.Infof("Waiting for the following conditions: %v", missingConditions)
-			}
-			return success, nil
-		})
-	}
-
-	if err := util.JUnitWrapper("[KKP] Wait for successful reconciliation", report, metrics.TimeMeasurementWrapper(
-		metrics.KubermaticReconciliationDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
-		log,
-		healthCheck,
-	)); err != nil {
-		return report, fmt.Errorf("failed to wait for successful reconciliation: %w", err)
-	}
-
-	if err := r.executeTests(ctx, log, cluster, report, scenario); err != nil {
-		return report, err
-	}
+	log = log.With("cluster", cluster.Name)
+	testError := r.executeTests(ctx, log, cluster, report, scenario)
 
 	if !r.opts.DeleteClusterAfterTests {
-		return report, nil
+		return report, testError
 	}
 
 	deleteTimeout := 15 * time.Minute
@@ -256,13 +254,28 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		deleteTimeout = 30 * time.Minute
 	}
 
-	if err := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
-		return r.kkpClient.DeleteCluster(ctx, log, cluster, deleteTimeout)
-	}); err != nil {
-		return report, fmt.Errorf("failed to delete cluster: %w", err)
+	if !r.opts.WaitForClusterDeletion {
+		deleteTimeout = 0
 	}
 
-	return report, nil
+	clusterDeleteError := util.JUnitWrapper("[KKP] Delete cluster", report, func() error {
+		// use a background context to ensure that when the test is cancelled using Ctrl-C,
+		// the cleanup is still happening
+		return r.kkpClient.DeleteCluster(context.Background(), log, cluster, deleteTimeout)
+	})
+
+	errs := []error{testError, clusterDeleteError}
+
+	if r.createdProject {
+		projectDeleteError := util.JUnitWrapper("[KKP] Delete project", report, func() error {
+			// use a background context to ensure that when the test is cancelled using Ctrl-C,
+			// the cleanup is still happening
+			return r.kkpClient.DeleteProject(context.Background(), log, r.opts.KubermaticProject, deleteTimeout)
+		})
+		errs = append(errs, projectDeleteError)
+	}
+
+	return report, kerrors.NewAggregate(errs)
 }
 
 func (r *TestRunner) ensureCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, report *reporters.JUnitTestSuite) (*kubermaticv1.Cluster, error) {
@@ -317,6 +330,38 @@ func (r *TestRunner) executeTests(
 
 	var err error
 
+	// NB: It's important for this health check loop to refresh the cluster object, as
+	// during reconciliation some cloud providers will fill in missing fields in the CloudSpec,
+	// and later when we create MachineDeployments we potentially rely on these fields
+	// being set in the cluster variable.
+	healthCheck := func() error {
+		log.Info("Waiting for cluster to be successfully reconciled...")
+
+		return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
+			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+				return err, nil
+			}
+
+			versions := kubermatic.NewDefaultVersions()
+
+			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
+			missingConditions, _ := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
+			if len(missingConditions) > 0 {
+				return fmt.Errorf("missing conditions: %v", missingConditions), nil
+			}
+
+			return nil, nil
+		})
+	}
+
+	if err := util.JUnitWrapper("[KKP] Wait for successful reconciliation", report, metrics.TimeMeasurementWrapper(
+		metrics.KubermaticReconciliationDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+		log,
+		healthCheck,
+	)); err != nil {
+		return fmt.Errorf("failed to wait for successful reconciliation: %w", err)
+	}
+
 	if err := util.JUnitWrapper("[KKP] Wait for control plane", report, metrics.TimeMeasurementWrapper(
 		metrics.SeedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
 		log,
@@ -334,21 +379,14 @@ func (r *TestRunner) executeTests(
 				return err
 			}
 			cluster.Finalizers = append(cluster.Finalizers,
-				apiv1.InClusterPVCleanupFinalizer,
-				apiv1.InClusterLBCleanupFinalizer,
+				kubermaticv1.InClusterPVCleanupFinalizer,
+				kubermaticv1.InClusterLBCleanupFinalizer,
 			)
 			return r.opts.SeedClusterClient.Update(ctx, cluster)
 		})
 	}); err != nil {
 		return fmt.Errorf("failed to add PV and LB cleanup finalizers: %w", err)
 	}
-
-	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
-	if err != nil {
-		return fmt.Errorf("failed to get cloud provider name from cluster: %w", err)
-	}
-
-	log = log.With("cloud-provider", providerName)
 
 	kubeconfigFilename, err := r.getKubeconfig(ctx, log, cluster)
 	if err != nil {
@@ -369,10 +407,9 @@ func (r *TestRunner) executeTests(
 	//         dial tcp <ciclusternodeip>:<port>:
 	//           connect: connection refused
 	// To prevent this from stopping a conformance test, we simply retry a couple of times.
-	if err := wait.PollImmediate(1*time.Second, 15*time.Second, func() (done bool, err error) {
+	if err := wait.PollImmediate(ctx, 1*time.Second, 15*time.Second, func() (transient error, terminal error) {
 		userClusterClient, err = r.opts.ClusterClientProvider.GetClient(ctx, cluster)
-
-		return err == nil, nil
+		return err, nil
 	}); err != nil {
 		return fmt.Errorf("failed to get the client for the cluster: %w", err)
 	}
@@ -434,11 +471,6 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed to wait for all pods to get ready: %w", err)
 	}
 
-	if r.opts.OnlyTestCreation {
-		log.Info("All nodes are ready. Only testing cluster creation, skipping further tests.")
-		return nil
-	}
-
 	if err := r.testCluster(ctx, log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
 		return fmt.Errorf("failed to test cluster: %w", err)
 	}
@@ -474,6 +506,7 @@ func (r *TestRunner) testCluster(
 		metrics.PVCTestRuntimeMetric.MustCurryWith(defaultLabels),
 		metrics.PVCTestAttemptsMetric.With(defaultLabels),
 		log,
+		3*time.Second,
 		maxTestAttempts,
 		func(attempt int) error {
 			return tests.TestStorage(ctx, log, r.opts, cluster, userClusterClient, attempt)
@@ -487,6 +520,7 @@ func (r *TestRunner) testCluster(
 		metrics.LBTestRuntimeMetric.MustCurryWith(defaultLabels),
 		metrics.LBTestAttemptsMetric.With(defaultLabels),
 		log,
+		3*time.Second,
 		maxTestAttempts,
 		func(attempt int) error {
 			return tests.TestLoadBalancer(ctx, log, r.opts, cluster, userClusterClient, attempt)
@@ -497,7 +531,7 @@ func (r *TestRunner) testCluster(
 
 	// Do user cluster RBAC controller test
 	if err := util.JUnitWrapper("[KKP] Test user cluster RBAC controller", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserclusterControllerRBAC(ctx, log, r.opts, cluster, userClusterClient, r.opts.SeedClusterClient)
 		})
 	}); err != nil {
@@ -506,7 +540,7 @@ func (r *TestRunner) testCluster(
 
 	// Do prometheus metrics available test
 	if err := util.JUnitWrapper("[KKP] Test prometheus metrics availability", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterMetrics(ctx, log, r.opts, cluster, r.opts.SeedClusterClient)
 		})
 	}); err != nil {
@@ -515,7 +549,7 @@ func (r *TestRunner) testCluster(
 
 	// Do pod and node metrics availability test
 	if err := util.JUnitWrapper("[KKP] Test pod and node metrics availability", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterPodAndNodeMetrics(ctx, log, r.opts, cluster, userClusterClient)
 		})
 	}); err != nil {
@@ -524,7 +558,7 @@ func (r *TestRunner) testCluster(
 
 	// Check seccomp profiles for Pods running on user cluster
 	if err := util.JUnitWrapper("[KKP] Test pod seccomp profiles on user cluster", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterSeccompProfiles(ctx, log, r.opts, cluster, userClusterClient)
 		})
 	}); err != nil {
@@ -533,7 +567,7 @@ func (r *TestRunner) testCluster(
 
 	// Check security context (seccomp profiles) for control plane pods running on seed cluster
 	if err := util.JUnitWrapper("[KKP] Test pod security context on seed cluster", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestUserClusterControlPlaneSecurityContext(ctx, log, r.opts, cluster)
 		})
 	}); err != nil {
@@ -542,7 +576,7 @@ func (r *TestRunner) testCluster(
 
 	// Check telemetry is working
 	if err := util.JUnitWrapper("[KKP] Test telemetry", report, func() error {
-		return util.RetryN(maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
 			return tests.TestTelemetry(ctx, log, r.opts)
 		})
 	}); err != nil {
@@ -574,14 +608,14 @@ func (r *TestRunner) getKubeconfig(ctx context.Context, log *zap.SugaredLogger, 
 func (r *TestRunner) getCloudConfig(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, error) {
 	log.Debug("Getting cloud-config...")
 
-	name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.CloudConfigConfigMapName}
-	cm := &corev1.ConfigMap{}
+	name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.CloudConfigSeedSecretName}
+	cm := &corev1.Secret{}
 	if err := r.opts.SeedClusterClient.Get(ctx, name, cm); err != nil {
-		return "", fmt.Errorf("failed to get ConfigMap %s: %w", name.String(), err)
+		return "", fmt.Errorf("failed to get Secret %s: %w", name.String(), err)
 	}
 
 	filename := path.Join(r.opts.HomeDir, fmt.Sprintf("%s-cloud-config", cluster.Name))
-	if err := os.WriteFile(filename, []byte(cm.Data["config"]), 0644); err != nil {
+	if err := os.WriteFile(filename, cm.Data["config"], 0644); err != nil {
 		return "", fmt.Errorf("failed to write cloud config: %w", err)
 	}
 

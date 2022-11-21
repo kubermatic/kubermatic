@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -34,7 +33,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,6 +60,7 @@ func Add(
 	namespace string,
 	masterManager manager.Manager,
 	seedManagers map[string]manager.Manager,
+	configGetter provider.KubermaticConfigurationGetter,
 	seedsGetter provider.SeedsGetter,
 	numWorkers int,
 	workerName string,
@@ -69,17 +69,23 @@ func Add(
 	workerNamePredicate := workerlabel.Predicates(workerName)
 	versionChangedPredicate := predicate.ResourceVersionChangedPredicate{}
 
+	// As the seedlifecyclecontroller skips uninitialized seeds, we do
+	// the same so that we do not reconcile clusters for which we technically
+	// should not do anything yet.
+	seedsGetter = initializedSeedsGetter(seedsGetter)
+
 	reconciler := &Reconciler{
-		log:            log.Named(ControllerName),
-		scheme:         masterManager.GetScheme(),
-		namespace:      namespace,
-		masterClient:   masterManager.GetClient(),
-		masterRecorder: masterManager.GetEventRecorderFor(ControllerName),
-		seedClients:    map[string]ctrlruntimeclient.Client{},
-		seedRecorders:  map[string]record.EventRecorder{},
-		seedsGetter:    seedsGetter,
-		workerName:     workerName,
-		versions:       kubermatic.NewDefaultVersions(),
+		log:                    log.Named(ControllerName),
+		scheme:                 masterManager.GetScheme(),
+		namespace:              namespace,
+		masterClient:           masterManager.GetClient(),
+		masterRecorder:         masterManager.GetEventRecorderFor(ControllerName),
+		seedClients:            map[string]ctrlruntimeclient.Client{},
+		seedRecorders:          map[string]record.EventRecorder{},
+		initializedSeedsGetter: seedsGetter,
+		configGetter:           configGetter,
+		workerName:             workerName,
+		versions:               kubermatic.NewDefaultVersions(),
 	}
 
 	ctrlOpts := controller.Options{
@@ -121,7 +127,7 @@ func Add(
 	// watch for changes to the global CA bundle ConfigMap and replicate it into each Seed
 	configMapEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		// find the owning KubermaticConfiguration
-		config, err := getKubermaticConfigurationForNamespace(ctx, reconciler.masterClient, namespace, reconciler.log)
+		config, err := configGetter(ctx)
 		if err != nil {
 			log.Errorw("Failed to retrieve config", zap.Error(err))
 			utilruntime.HandleError(err)
@@ -136,16 +142,9 @@ func Add(
 			return nil
 		}
 
-		defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
-		if err != nil {
-			log.Errorw("Failed to default config", zap.Error(err))
-			utilruntime.HandleError(err)
-			return nil
-		}
-
 		// we only care for one specific ConfigMap, but its name is dynamic so we cannot have
 		// a static watch setup for it
-		if a.GetName() != defaulted.Spec.CABundle.Name {
+		if a.GetName() != config.Spec.CABundle.Name {
 			return nil
 		}
 
@@ -180,7 +179,9 @@ func Add(
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
-	// watch all resources we manage inside all configured seeds
+	// watch all resources we manage inside all configured seeds (note that the seedManagers
+	// map does not necessarily contain a manager for every seed, as uninitialized seeds
+	// are automatically skipped by the seedlifecyclecontroller).
 	for key, manager := range seedManagers {
 		reconciler.seedClients[key] = manager.GetClient()
 		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
@@ -225,7 +226,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		&corev1.Secret{},
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
-		&policyv1beta1.PodDisruptionBudget{},
+		&policyv1.PodDisruptionBudget{},
 	}
 
 	for _, t := range namespacedTypesToWatch {
@@ -290,26 +291,21 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	return nil
 }
 
-func getKubermaticConfigurationForNamespace(ctx context.Context, client ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) (*kubermaticv1.KubermaticConfiguration, error) {
-	// find the owning KubermaticConfiguration
-	configList := &kubermaticv1.KubermaticConfigurationList{}
-	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace: namespace,
-	}
+// initializedSeedsGetter returns a seedsgetter that only returns
+// initialized seeds.
+func initializedSeedsGetter(seedsGetter provider.SeedsGetter) provider.SeedsGetter {
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, err
+		}
 
-	if err := client.List(ctx, configList, listOpts); err != nil {
-		return nil, fmt.Errorf("failed to find KubermaticConfigurations: %w", err)
-	}
+		for name, seed := range seeds {
+			if !seed.Status.IsInitialized() {
+				delete(seeds, name)
+			}
+		}
 
-	if len(configList.Items) == 0 {
-		log.Debug("ignoring request for namespace without KubermaticConfiguration")
-		return nil, nil
+		return seeds, nil
 	}
-
-	if len(configList.Items) > 1 {
-		log.Infow("there are multiple KubermaticConfiguration objects, cannot reconcile", "namespace", namespace)
-		return nil, nil
-	}
-
-	return &configList.Items[0], nil
 }

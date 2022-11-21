@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -26,10 +27,12 @@ import (
 	"github.com/spf13/cobra"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type cobraFuncE func(cmd *cobra.Command, args []string) error
@@ -45,9 +48,19 @@ func handleErrors(logger *logrus.Logger, action cobraFuncE) cobraFuncE {
 	}
 }
 
+func findKubermaticConfiguration(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
+	getter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(client, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	return getter(ctx)
+}
+
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, *unstructured.Unstructured, error) {
+	// the config file is optional during upgrades, so we do not yet error out if it's not given
 	if filename == "" {
-		return nil, nil, errors.New("no file specified via --config flag")
+		return nil, nil, nil
 	}
 
 	content, err := os.ReadFile(filename)
@@ -61,8 +74,8 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 	}
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(config); err != nil {
-		return nil, raw, fmt.Errorf("failed to decode %s: %w", filename, err)
+	if err = yaml.UnmarshalStrict(content, config); err != nil {
+		return nil, nil, fmt.Errorf("%s is not a valid KubermaticConfiguration: %w", filename, err)
 	}
 
 	return config, raw, nil

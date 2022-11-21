@@ -22,30 +22,27 @@
    END OF TERMS AND CONDITIONS
 */
 
-package allowedregistrycontroller_test
+package allowedregistrycontroller
 
 import (
 	"context"
 	"encoding/json"
-	"reflect"
 	"testing"
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -124,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			r := allowedregistrycontroller.NewReconciler(
+			r := NewReconciler(
 				kubermaticlog.Logger,
 				&record.FakeRecorder{},
 				tc.masterClient,
@@ -163,12 +160,12 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint template: %v", err)
 			}
 
-			if !reflect.DeepEqual(ct.Spec, tc.expectedCT.Spec) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
-			}
+			ct.ResourceVersion = ""
+			ct.APIVersion = ""
+			ct.Kind = ""
 
-			if !reflect.DeepEqual(ct.Name, tc.expectedCT.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			if !diff.SemanticallyEqual(tc.expectedCT, ct) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 
 			// check Constraint
@@ -181,12 +178,12 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint: %v", err)
 			}
 
-			if !equality.Semantic.DeepEqual(constraint.Spec, tc.expectedConstraint.Spec) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint.Spec, tc.expectedConstraint.Spec))
-			}
+			constraint.ResourceVersion = ""
+			constraint.APIVersion = ""
+			constraint.Kind = ""
 
-			if !reflect.DeepEqual(constraint.Name, tc.expectedConstraint.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint.Name, tc.expectedConstraint.Name))
+			if !diff.SemanticallyEqual(tc.expectedConstraint, constraint) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedConstraint, constraint))
 			}
 		})
 	}
@@ -195,17 +192,19 @@ func TestReconcile(t *testing.T) {
 func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 
-	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
+	ct.Name = AllowedRegistryCTName
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
 		CRD: constrainttemplatev1.CRD{
 			Spec: constrainttemplatev1.CRDSpec{
 				Names: constrainttemplatev1.Names{
-					Kind: allowedregistrycontroller.AllowedRegistryCTName,
+					Kind: AllowedRegistryCTName,
 				},
 				Validation: &constrainttemplatev1.Validation{
+					LegacySchema: pointer.Bool(false),
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+						Type: "object",
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
-							allowedregistrycontroller.AllowedRegistryField: {
+							AllowedRegistryField: {
 								Type: "array",
 								Items: &apiextensionsv1.JSONSchemaPropsOrArray{
 									Schema: &apiextensionsv1.JSONSchemaProps{
@@ -239,7 +238,7 @@ func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.Allow
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		wr.DeletionTimestamp = &deleteTime
-		wr.Finalizers = append(wr.Finalizers, apiv1.AllowedRegistryCleanupFinalizer)
+		wr.Finalizers = append(wr.Finalizers, cleanupFinalizer)
 	}
 
 	return wr
@@ -247,13 +246,13 @@ func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.Allow
 
 func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
-	ct.Name = allowedregistrycontroller.AllowedRegistryCTName
+	ct.Name = AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
 	jsonRegSet, _ := json.Marshal(registrySet.List())
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: allowedregistrycontroller.AllowedRegistryCTName,
+		ConstraintType: AllowedRegistryCTName,
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
 				{
@@ -263,7 +262,7 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 			},
 		},
 		Parameters: map[string]json.RawMessage{
-			allowedregistrycontroller.AllowedRegistryField: jsonRegSet,
+			AllowedRegistryField: jsonRegSet,
 		},
 		Disabled: registrySet.Len() == 0,
 	}

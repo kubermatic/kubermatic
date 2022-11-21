@@ -21,12 +21,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-test/deep"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,7 +124,7 @@ func TestCreateAddon(t *testing.T) {
 				Build()
 
 			config := createKubermaticConfiguration(addons)
-			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(config)
 			if err != nil {
 				t.Fatalf("Failed to create Config Getter: %v", err)
 			}
@@ -148,8 +146,8 @@ func TestCreateAddon(t *testing.T) {
 					addonFromClient); err != nil {
 					t.Fatalf("Did not find expected addon %q", expectedAddon.Name)
 				}
-				if diff := deep.Equal(addonFromClient, expectedAddon); diff != nil {
-					t.Errorf("created addon is not equal to expected addon, diff: %v", diff)
+				if d := diff.ObjectDiff(expectedAddon, addonFromClient); d != "" {
+					t.Errorf("created addon is not equal to expected addon:\n%v", d)
 				}
 			}
 		})
@@ -352,7 +350,7 @@ func TestUpdateAddon(t *testing.T) {
 			client := ctrlruntimefakeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			config := createKubermaticConfiguration(addons)
-			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(config)
 			if err != nil {
 				t.Fatalf("Failed to create Config Getter: %v", err)
 			}
@@ -374,8 +372,8 @@ func TestUpdateAddon(t *testing.T) {
 					addonFromClient); err != nil {
 					t.Fatalf("Did not find expected addon %q", expectedAddon.Name)
 				}
-				if diff := deep.Equal(addonFromClient, expectedAddon); diff != nil {
-					t.Errorf("created addon is not equal to expected addon, diff: %v", diff)
+				if d := diff.ObjectDiff(expectedAddon, addonFromClient); d != "" {
+					t.Errorf("created addon is not equal to expected addon:\n%v", d)
 				}
 			}
 		})

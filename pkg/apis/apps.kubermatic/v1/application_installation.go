@@ -17,14 +17,23 @@ limitations under the License.
 package v1
 
 import (
-	semverlib "github.com/Masterminds/semver/v3"
+	"helm.sh/helm/v3/pkg/release"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const ApplicationInstallationsFQDNName = "applicationinstallations." + GroupName
+const (
+	// ApplicationInstallationResourceName represents "Resource" defined in Kubernetes.
+	ApplicationInstallationResourceName = "applicationinstallations"
+
+	// ApplicationInstallationKindName represents "Kind" defined in Kubernetes.
+	ApplicationInstallationKindName = "ApplicationInstallations"
+
+	// ApplicationInstallationsFQDNName represents "FQDN" defined in Kubernetes.
+	ApplicationInstallationsFQDNName = ApplicationInstallationResourceName + "." + GroupName
+)
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -50,19 +59,19 @@ type ApplicationInstallationList struct {
 
 type ApplicationInstallationSpec struct {
 	// Namespace describe the desired state of the namespace where application will be created.
-	Namespace NamespaceSpec `json:"namespace"`
+	Namespace AppNamespaceSpec `json:"namespace"`
 
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
-	// Values describe overrides for manifest-rendering
+	// Values describe overrides for manifest-rendering. It's a free yaml field.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Values runtime.RawExtension `json:"values,omitempty"`
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
 }
 
-// NamespaceSpec describe the desired state of the namespace where application will be created.
-type NamespaceSpec struct {
+// AppNamespaceSpec describe the desired state of the namespace where application will be created.
+type AppNamespaceSpec struct {
 	// Name is the namespace to deploy the Application into.
 	// Should be a valid lowercase RFC1123 domain name
 	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
@@ -71,6 +80,7 @@ type NamespaceSpec struct {
 	Name string `json:"name"`
 
 	// +kubebuilder:default:=true
+
 	// Create defines whether the namespace should be created if it does not exist. Defaults to true
 	Create bool `json:"create"`
 
@@ -98,48 +108,92 @@ type ApplicationRef struct {
 	// +kubebuilder:validation:Type=string
 
 	// Version of the Application. Must be a valid SemVer version
-	Version Version `json:"version"`
+	Version string `json:"version"`
 	// (pattern taken from masterminds/semver we use https://github.com/Masterminds/semver/blob/master/version.go#L42)
-}
 
-// +kubebuilder:validation:Type=string
-
-// Version wraps semverlib.Version. It is needed because kubebuilder does not accept structs with non-tagged fields, even if they have custom marshallers
-// With this the CRD resource will have Version as string but operator code can work directly with the semverlib.Version struct
-// (taken from https://github.com/kubernetes-sigs/controller-tools/blob/master/pkg/crd/testdata/cronjob_types.go#L283)
-type Version struct {
-	semverlib.Version
+	// NOTE: We are not using Masterminds/semver here, as it keeps data in unexported fields witch causes issues for
+	// DeepEqual used in our reconciliation packages. At the same time, we are not using pkg/semver because
+	// of the reasons stated in https://github.com/kubermatic/kubermatic/pull/10891.
 }
 
 // ApplicationInstallationStatus denotes status information about an ApplicationInstallation.
 type ApplicationInstallationStatus struct {
-	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
-	Conditions []ApplicationInstallationCondition `json:"conditions,omitempty"`
+	Conditions map[ApplicationInstallationConditionType]ApplicationInstallationCondition `json:"conditions,omitempty"`
 
 	// ApplicationVersion contains information installing / removing application
 	ApplicationVersion *ApplicationVersion `json:"applicationVersion,omitempty"`
+
+	// Method used to install the application
+	Method TemplateMethod `json:"method"`
+
+	// HelmRelease holds the information about the helm release installed by this application. This field is only filled if template method is 'helm'.
+	HelmRelease *HelmRelease `json:"helmRelease,omitempty"`
+}
+
+type HelmRelease struct {
+	// Name is the name of the release.
+	Name string `json:"name,omitempty"`
+
+	// Version is an int which represents the revision of the release.
+	Version int `json:"version,omitempty"`
+
+	// Info provides information about a release.
+	Info *HelmReleaseInfo `json:"info,omitempty"`
+}
+
+// HelmReleaseInfo describes release information.
+// tech note: we can not use release.Info from Helm because the underlying type used for time has no json tag.
+type HelmReleaseInfo struct {
+	// FirstDeployed is when the release was first deployed.
+	FirstDeployed metav1.Time `json:"firstDeployed,omitempty"`
+
+	// LastDeployed is when the release was last deployed.
+	LastDeployed metav1.Time `json:"lastDeployed,omitempty"`
+
+	// Deleted tracks when this object was deleted.
+	Deleted metav1.Time `json:"deleted,omitempty"`
+
+	// Description is human-friendly "log entry" about this release.
+	Description string `json:"description,omitempty"`
+
+	// Status is the current state of the release.
+	Status release.Status `json:"status,omitempty"`
+
+	// Notes is  the rendered templates/NOTES.txt if available.
+	Notes string `json:"notes,omitempty"`
 }
 
 type ApplicationInstallationCondition struct {
-	// Type of cluster condition.
-	Type ApplicationInstallationConditionType `json:"type"`
 	// Status of the condition, one of True, False, Unknown.
 	Status corev1.ConditionStatus `json:"status"`
+	// Last time we got an update on a given condition.
+	// +optional
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"`
+	// Last time the condition transit from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
 	// (brief) reason for the condition's last transition.
 	Reason string `json:"reason,omitempty"`
 	// Human readable message indicating details about last transition.
 	Message string `json:"message,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=ManifestsRetrieved;ManifestsApplied;Ready
+// +kubebuilder:validation:Enum=ManifestsRetrieved;Ready
+
+// swagger:enum ApplicationInstallationConditionType
+// All condition types must be registered within the `AllApplicationInstallationConditionTypes` variable.
 type ApplicationInstallationConditionType string
 
 const (
 	// ManifestsRetrieved indicates all necessary manifests have been fetched from the external source.
 	ManifestsRetrieved ApplicationInstallationConditionType = "ManifestsRetrieved"
-	// ManifestsApplied indicates that all manifests have been applied in the target user-cluster.
-	ManifestsApplied ApplicationInstallationConditionType = "ManifestsApplied"
+
 	// Ready describes all components have been successfully rolled out and are ready.
 	Ready ApplicationInstallationConditionType = "Ready"
 )
+
+var AllApplicationInstallationConditionTypes = []ApplicationInstallationConditionType{
+	ManifestsRetrieved,
+	Ready,
+}

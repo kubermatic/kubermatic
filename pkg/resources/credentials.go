@@ -18,6 +18,7 @@ package resources
 
 import (
 	"context"
+	"errors"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -71,6 +72,14 @@ type AKSCredentials struct {
 	SubscriptionID string
 	ClientID       string
 	ClientSecret   string
+}
+
+type EKSCredential struct {
+	AccessKeyID          string
+	SecretAccessKey      string
+	Region               string
+	AssumeRoleARN        string
+	AssumeRoleExternalID string
 }
 
 type DigitaloceanCredentials struct {
@@ -160,6 +169,56 @@ func (cd *credentialsData) Cluster() *kubermaticv1.Cluster {
 
 func (cd *credentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
 	return cd.globalSecretKeySelectorValueFunc(configVar, key)
+}
+
+// GetCredentialsReference returns the CredentialsReference for the cluster's chosen
+// cloud provider (or nil if the provider is BYO). If an unknown provider is used, an
+// error is returned.
+func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.GlobalSecretKeySelector, error) {
+	if cluster.Spec.Cloud.AWS != nil {
+		return cluster.Spec.Cloud.AWS.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Azure != nil {
+		return cluster.Spec.Cloud.Azure.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Digitalocean != nil {
+		return cluster.Spec.Cloud.Digitalocean.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.GCP != nil {
+		return cluster.Spec.Cloud.GCP.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Hetzner != nil {
+		return cluster.Spec.Cloud.Hetzner.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Openstack != nil {
+		return cluster.Spec.Cloud.Openstack.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Packet != nil {
+		return cluster.Spec.Cloud.Packet.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		return cluster.Spec.Cloud.Kubevirt.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.VSphere != nil {
+		return cluster.Spec.Cloud.VSphere.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Alibaba != nil {
+		return cluster.Spec.Cloud.Alibaba.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Anexia != nil {
+		return cluster.Spec.Cloud.Anexia.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.Nutanix != nil {
+		return cluster.Spec.Cloud.Nutanix.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
+		return cluster.Spec.Cloud.VMwareCloudDirector.CredentialsReference, nil
+	}
+	if cluster.Spec.Cloud.BringYourOwn != nil {
+		return nil, nil
+	}
+
+	return nil, errors.New("cluster has no known cloud provider spec set")
 }
 
 func GetCredentials(data CredentialsData) (Credentials, error) {

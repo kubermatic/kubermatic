@@ -16,11 +16,10 @@ FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
 ENV MC_VERSION=RELEASE.2022-05-09T04-08-26Z \
-    KUBECTL_VERSION=v1.22.9 \
+    KUBECTL_VERSION=v1.23.13 \
     HELM_VERSION=v3.8.1 \
     VAULT_VERSION=1.10.2 \
-    YQ3_VERSION=3.4.1 \
-    YQ4_VERSION=4.25.1
+    YQ_VERSION=4.25.1
 
 RUN apk add --no-cache -U \
     bash \
@@ -38,14 +37,9 @@ RUN apk add --no-cache -U \
     unzip \
     tar
 
-RUN curl -Lo /usr/bin/yq3 https://github.com/mikefarah/yq/releases/download/${YQ3_VERSION}/yq_linux_amd64 && \
-    chmod +x /usr/bin/yq3 && \
-    yq3 --version && \
-    ln -s /usr/bin/yq3 /usr/bin/yq
-
-RUN curl -Lo /usr/bin/yq4 https://github.com/mikefarah/yq/releases/download/v${YQ4_VERSION}/yq_linux_amd64 && \
-    chmod +x /usr/bin/yq4 && \
-    yq4 --version
+RUN curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 && \
+    chmod +x /usr/bin/yq && \
+    yq --version
 
 RUN curl -Lo /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/archive/mc.${MC_VERSION} && \
     chmod +x /usr/bin/mc && \

@@ -75,7 +75,7 @@ func FailureDomainZoneAntiAffinity(app string) corev1.WeightedPodAffinityTerm {
 					AppLabelKey: app,
 				},
 			},
-			TopologyKey: TopologyKeyFailureDomainZone,
+			TopologyKey: TopologyKeyZone,
 		},
 	}
 }

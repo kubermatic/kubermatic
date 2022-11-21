@@ -22,12 +22,13 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -41,14 +42,16 @@ import (
 
 const (
 	ControllerName = "kkp-project-synchronizer"
+
+	// cleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-projects"
 )
 
 type reconciler struct {
-	log             *zap.SugaredLogger
-	recorder        record.EventRecorder
-	masterClient    ctrlruntimeclient.Client
-	masterAPIClient ctrlruntimeclient.Reader
-	seedClients     map[string]ctrlruntimeclient.Client
+	log          *zap.SugaredLogger
+	recorder     record.EventRecorder
+	masterClient ctrlruntimeclient.Client
+	seedClients  kuberneteshelper.SeedClientMap
 }
 
 func Add(
@@ -58,11 +61,10 @@ func Add(
 	numWorkers int,
 ) error {
 	r := &reconciler{
-		log:             log.Named(ControllerName),
-		recorder:        masterManager.GetEventRecorderFor(ControllerName),
-		masterClient:    masterManager.GetClient(),
-		masterAPIClient: masterManager.GetAPIReader(),
-		seedClients:     map[string]ctrlruntimeclient.Client{},
+		log:          log.Named(ControllerName),
+		recorder:     masterManager.GetEventRecorderFor(ControllerName),
+		masterClient: masterManager.GetClient(),
+		seedClients:  kuberneteshelper.SeedClientMap{},
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -96,7 +98,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("request", request)
 
 	project := &kubermaticv1.Project{}
-	if err := r.masterAPIClient.Get(ctx, request.NamespacedName, project); err != nil {
+	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
@@ -112,7 +114,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, project, apiv1.SeedProjectCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, project, cleanupFinalizer); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -120,28 +122,51 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		projectCreatorGetter(project),
 	}
 
-	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		err := reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		seedProject := &kubermaticv1.Project{}
+		if err := seedClient.Get(ctx, request.NamespacedName, seedProject); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
+		}
+
+		// The informer can trigger a reconciliation before the cache backing the
+		// master client has been updated; this can make the reconciler read
+		// an old state and would replicate this old state onto seeds; if master
+		// and seed are the same cluster, this would effectively overwrite the
+		// change that just happened.
+		// To prevent this from occurring, we check the UID and refuse to update
+		// the project if the UID on the seed == UID on the master.
+		// Note that in this distinction cannot be made inside the creator function
+		// further down, as the reconciling framework reads the current state
+		// from cache and even if no changes were made (because of the UID match),
+		// it would still persist the new object and might overwrite the actual,
+		// new state.
+		if seedProject.UID != "" && seedProject.UID == project.UID {
+			return nil
+		}
+
+		err := reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile project: %w", err)
 		}
 
-		seedProject := &kubermaticv1.Project{}
-		if err := seedClusterClient.Get(ctx, request.NamespacedName, seedProject); err != nil {
+		// fetch the updated project from the cache
+		if err := seedClient.Get(ctx, request.NamespacedName, seedProject); err != nil {
 			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
 		}
 
-		oldProject := seedProject.DeepCopy()
-		seedProject.Status = project.Status
-		if err := seedClusterClient.Status().Patch(ctx, seedProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
-			return fmt.Errorf("failed to update project status on seed cluster: %w", err)
+		if !equality.Semantic.DeepEqual(seedProject.Status, project.Status) {
+			oldProject := seedProject.DeepCopy()
+			seedProject.Status = project.Status
+			if err := seedClient.Status().Patch(ctx, seedProject, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
+				return fmt.Errorf("failed to update project status on seed cluster: %w", err)
+			}
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		r.recorder.Eventf(project, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(project, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("reconciled project: %s: %w", project.Name, err)
 	}
 
@@ -149,28 +174,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project) error {
-	err := r.syncAllSeeds(log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		return ctrlruntimeclient.IgnoreNotFound(seedClusterClient.Delete(ctx, project))
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		return ctrlruntimeclient.IgnoreNotFound(seedClient.Delete(ctx, project))
 	})
 	if err != nil {
 		return err
 	}
 
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, project, apiv1.SeedProjectCleanupFinalizer)
-}
-
-func (r *reconciler) syncAllSeeds(
-	log *zap.SugaredLogger,
-	project *kubermaticv1.Project,
-	action func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error,
-) error {
-	for seedName, seedClient := range r.seedClients {
-		if err := action(seedClient, project); err != nil {
-			return fmt.Errorf("failed syncing project for seed %s: %w", seedName, err)
-		}
-		log.Debugw("Reconciled project with seed", "seed", seedName)
-	}
-	return nil
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, project, cleanupFinalizer)
 }
 
 func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {

@@ -19,10 +19,14 @@ package machine
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 
-	"github.com/aws/aws-sdk-go/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
+	anexiaProvider "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia"
 	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
@@ -33,9 +37,10 @@ import (
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmware-cloud-director/types"
+	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"github.com/kubermatic/machine-controller/pkg/userdata/amzn2"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
@@ -71,11 +76,25 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 	if nodeSpec.OperatingSystem.RockyLinux != nil {
 		return providerconfig.OperatingSystemRockyLinux, nil
 	}
+	if nodeSpec.OperatingSystem.AmazonLinux != nil {
+		return providerconfig.OperatingSystemAmazonLinux2, nil
+	}
 
 	return "", errors.New("unknown operating system")
 }
 
-func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+func EncodeAsRawExtension(providerConfig interface{}) (*runtime.RawExtension, error) {
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(providerConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
+func GetAWSProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*aws.RawConfig, error) {
 	osName, err := getOsName(nodeSpec)
 	if err != nil {
 		return nil, err
@@ -100,7 +119,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		}
 	}
 
-	config := aws.RawConfig{
+	config := &aws.RawConfig{
 		// If the node spec doesn't provide a subnet ID, AWS will just pick the AZ's default subnet.
 		SubnetID:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.AWS.SubnetID},
 		VpcID:                providerconfig.ConfigVarString{Value: c.Spec.Cloud.AWS.VPCID},
@@ -120,7 +139,7 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		EBSVolumeEncrypted:   providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
 	}
 	if config.DiskType.Value == "" {
-		config.DiskType.Value = ec2.VolumeTypeGp2
+		config.DiskType.Value = string(ec2types.VolumeTypeGp2)
 	}
 	if config.DiskSize == 0 {
 		config.DiskSize = 25
@@ -137,18 +156,20 @@ func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		config.Tags["system/project"] = projectID
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getAWSProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetAWSProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := azure.RawConfig{
+func GetAzureProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*azure.RawConfig, error) {
+	config := &azure.RawConfig{
 		Location:              providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
 		ResourceGroup:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
 		VNetResourceGroup:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetResourceGroup},
@@ -178,17 +199,23 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 		config.Tags["system-project"] = projectID
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetAzureProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	if nodeSpec.Cloud.Azure.AssignPublicIP && c.Spec.Cloud.Azure.LoadBalancerSKU == kubermaticv1.AzureStandardLBSKU {
+		config.PublicIPSKU = pointer.String("standard")
+	}
+
+	return EncodeAsRawExtension(config)
 }
 
-func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+func GetVSphereProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*vsphere.RawConfig, error) {
 	var datastore = ""
 	// If `DatastoreCluster` is not specified we use either the Datastore
 	// specified at `Cluster` or the one specified at `Datacenter` level.
@@ -196,7 +223,7 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		datastore = defaultIfEmpty(c.Spec.Cloud.VSphere.Datastore, dc.Spec.VSphere.DefaultDatastore)
 	}
 
-	config := vsphere.RawConfig{
+	config := &vsphere.RawConfig{
 		TemplateVMName:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
 		VMNetName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
 		CPUs:             int32(nodeSpec.Cloud.VSphere.CPUs),
@@ -225,21 +252,23 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		config.Tags = append(config.Tags, vsphereTag)
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetVSphereProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getVMwareCloudDirectorProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+func GetVMwareCloudDirectorProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*vcd.RawConfig, error) {
 	catalogName := defaultIfEmpty(nodeSpec.Cloud.VMwareCloudDirector.Catalog, dc.Spec.VMwareCloudDirector.DefaultCatalog)
 	storageProfile := defaultIfEmpty(nodeSpec.Cloud.VMwareCloudDirector.StorageProfile, dc.Spec.VMwareCloudDirector.DefaultStorageProfile)
 
-	config := vcd.RawConfig{
+	config := &vcd.RawConfig{
 		VApp:             providerconfig.ConfigVarString{Value: c.Spec.Cloud.VMwareCloudDirector.VApp},
 		Template:         providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VMwareCloudDirector.Template},
 		Catalog:          providerconfig.ConfigVarString{Value: catalogName},
@@ -247,7 +276,8 @@ func getVMwareCloudDirectorProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.
 		CPUs:             int64(nodeSpec.Cloud.VMwareCloudDirector.CPUs),
 		CPUCores:         int64(nodeSpec.Cloud.VMwareCloudDirector.CPUCores),
 		MemoryMB:         int64(nodeSpec.Cloud.VMwareCloudDirector.MemoryMB),
-		IPAllocationMode: vcd.IPAllocationMode(nodeSpec.Cloud.VMwareCloudDirector.IPAllocationMode),
+		IPAllocationMode: nodeSpec.Cloud.VMwareCloudDirector.IPAllocationMode,
+		AllowInsecure:    providerconfig.ConfigVarBool{Value: pointer.Bool(dc.Spec.VMwareCloudDirector.AllowInsecure)},
 	}
 
 	if storageProfile != "" {
@@ -266,18 +296,20 @@ func getVMwareCloudDirectorProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.
 		config.Metadata = &nodeSpec.Cloud.VMwareCloudDirector.Metadata
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getVMwareCloudDirectorProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetVMwareCloudDirectorProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := openstack.RawConfig{
+func GetOpenstackProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*openstack.RawConfig, error) {
+	config := &openstack.RawConfig{
 		Image:                     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Image},
 		Flavor:                    providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Flavor},
 		AvailabilityZone:          providerconfig.ConfigVarString{Value: dc.Spec.Openstack.AvailabilityZone},
@@ -289,6 +321,7 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		InstanceReadyCheckPeriod:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.InstanceReadyCheckPeriod},
 		InstanceReadyCheckTimeout: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.InstanceReadyCheckTimeout},
 		TrustDevicePath:           providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
+		ServerGroup:               providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.ServerGroup},
 	}
 
 	if nodeSpec.Cloud.Openstack.UseFloatingIP || dc.Spec.Openstack.EnforceFloatingIP {
@@ -318,17 +351,20 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 	if ok {
 		config.Tags["system-project"] = projectID
 	}
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+
+	return config, nil
+}
+
+func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetOpenstackProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+func GetHetznerProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*hetzner.RawConfig, error) {
 	network := nodeSpec.Cloud.Hetzner.Network
 	// fall back to network defined in cluster spec
 	if network == "" {
@@ -345,25 +381,27 @@ func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		networks = append(networks, providerconfig.ConfigVarString{Value: network})
 	}
 
-	config := hetzner.RawConfig{
+	config := &hetzner.RawConfig{
 		Datacenter: providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Datacenter},
 		Location:   providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Location},
 		Networks:   networks,
 		ServerType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Hetzner.Type},
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetHetznerProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := digitalocean.RawConfig{
+func GetDigitaloceanProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*digitalocean.RawConfig, error) {
+	config := &digitalocean.RawConfig{
 		Region:            providerconfig.ConfigVarString{Value: dc.Spec.Digitalocean.Region},
 		Backups:           providerconfig.ConfigVarBool{Value: pointer.Bool(nodeSpec.Cloud.Digitalocean.Backups)},
 		IPv6:              providerconfig.ConfigVarBool{Value: pointer.Bool(nodeSpec.Cloud.Digitalocean.IPv6)},
@@ -384,18 +422,20 @@ func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpe
 		config.Tags[i].Value = tag
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getDigitaloceanProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetDigitaloceanProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := equinixmetal.RawConfig{
+func GetPacketProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*equinixmetal.RawConfig, error) {
+	config := &equinixmetal.RawConfig{
 		InstanceType: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Packet.InstanceType},
 	}
 
@@ -410,24 +450,35 @@ func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc 
 		config.Tags[i].Value = tag
 	}
 
-	facilities := sets.NewString(dc.Spec.Packet.Facilities...)
-	config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
-	for i, facility := range facilities.List() {
-		config.Facilities[i].Value = facility
+	var facilities = sets.String{}
+	if dc.Spec.Packet.Facilities != nil {
+		facilities = sets.NewString(dc.Spec.Packet.Facilities...)
+		config.Facilities = make([]providerconfig.ConfigVarString, len(facilities.List()))
+		for i, facility := range facilities.List() {
+			config.Facilities[i].Value = facility
+		}
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	if len(facilities) < 1 && dc.Spec.Packet.Metro == "" {
+		return nil, errors.New("equinixmetal metro or facilities must be specified")
+	}
+
+	config.Metro.Value = dc.Spec.Packet.Metro
+
+	return config, nil
+}
+
+func getPacketProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetPacketProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := gce.CloudProviderSpec{
+func GetGCPProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*gce.CloudProviderSpec, error) {
+	config := &gce.CloudProviderSpec{
 		Zone:                  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.Zone},
 		MachineType:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.GCP.MachineType},
 		DiskSize:              nodeSpec.Cloud.GCP.DiskSize,
@@ -454,23 +505,27 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 		config.Labels[key] = value
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetGCPProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := kubevirt.RawConfig{
+func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*kubevirt.RawConfig, error) {
+	config := &kubevirt.RawConfig{
 		VirtualMachine: kubevirt.VirtualMachine{
 			Flavor: kubevirt.Flavor{
 				Name:    providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorName},
 				Profile: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorProfile},
 			},
+			Instancetype: nodeSpec.Cloud.Kubevirt.Instancetype,
+			Preference:   nodeSpec.Cloud.Kubevirt.Preference,
 			Template: kubevirt.Template{
 				CPUs:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.CPUs},
 				Memory: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.Memory},
@@ -479,15 +534,15 @@ func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacente
 						Size:             providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskSize},
 						StorageClassName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskStorageClassName},
 					},
-					OsImage: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PrimaryDiskOSImage},
+					OsImage: providerconfig.ConfigVarString{Value: extractKubeVirtOsImageURLOrDataVolumeNsName(cluster.Status.NamespaceName, nodeSpec.Cloud.Kubevirt.PrimaryDiskOSImage)},
 				},
 			},
 			DNSPolicy: providerconfig.ConfigVarString{Value: dc.Spec.Kubevirt.DNSPolicy},
 			DNSConfig: dc.Spec.Kubevirt.DNSConfig.DeepCopy(),
 		},
 		Affinity: kubevirt.Affinity{
-			PodAffinityPreset:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAffinityPreset},
-			PodAntiAffinityPreset: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAntiAffinityPreset},
+			PodAffinityPreset:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAffinityPreset},     //nolint:staticcheck
+			PodAntiAffinityPreset: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAntiAffinityPreset}, //nolint:staticcheck
 			NodeAffinityPreset: kubevirt.NodeAffinityPreset{
 				Type: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Type},
 				Key:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Key},
@@ -506,19 +561,45 @@ func getKubevirtProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacente
 	for _, val := range nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Values {
 		config.Affinity.NodeAffinityPreset.Values = append(config.Affinity.NodeAffinityPreset.Values, providerconfig.ConfigVarString{Value: val})
 	}
+	config.TopologySpreadConstraints = make([]kubevirt.TopologySpreadConstraint, 0, len(nodeSpec.Cloud.Kubevirt.TopologySpreadConstraints))
+	for _, tsc := range nodeSpec.Cloud.Kubevirt.TopologySpreadConstraints {
+		constraint := kubevirt.TopologySpreadConstraint{
+			MaxSkew:           providerconfig.ConfigVarString{Value: strconv.Itoa(tsc.MaxSkew)},
+			TopologyKey:       providerconfig.ConfigVarString{Value: tsc.TopologyKey},
+			WhenUnsatisfiable: providerconfig.ConfigVarString{Value: tsc.WhenUnsatisfiable},
+		}
+		config.TopologySpreadConstraints = append(config.TopologySpreadConstraints, constraint)
+	}
+	return config, nil
+}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+func extractKubeVirtOsImageURLOrDataVolumeNsName(namespace string, osImage string) string {
+	// config.VirtualMachine.Template.PrimaryDisk.OsImage.Value contains:
+	// - a URL
+	// - or a DataVolume name
+	// If config.VirtualMachine.Template.PrimaryDisk.OsImage.Value is a DataVolume, we need to add the namespace prefix
+	if _, err := url.ParseRequestURI(osImage); err == nil {
+		return osImage
+	}
+	// It's a DataVolume
+	// If it's already a ns/name keep it.
+	if nameSpaceAndName := strings.Split(osImage, "/"); len(nameSpaceAndName) >= 2 {
+		return osImage
+	}
+	return fmt.Sprintf("%s/%s", namespace, osImage)
+}
+
+func getKubevirtProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetKubevirtProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getAlibabaProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := alibaba.RawConfig{
+func GetAlibabaProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*alibaba.RawConfig, error) {
+	config := &alibaba.RawConfig{
 		InstanceType:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.InstanceType},
 		DiskSize:                providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.DiskSize},
 		DiskType:                providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Alibaba.DiskType},
@@ -533,38 +614,62 @@ func getAlibabaProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		config.Labels[key] = value
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getAlibabaProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetAlibabaProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getAnexiaProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := anexia.RawConfig{
+func GetAnexiaProviderConfig(_ *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*anexia.RawConfig, error) {
+	config := &anexia.RawConfig{
 		VlanID:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Anexia.VlanID},
 		TemplateID: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Anexia.TemplateID},
 		CPUs:       nodeSpec.Cloud.Anexia.CPUs,
 		Memory:     int(nodeSpec.Cloud.Anexia.Memory),
-		DiskSize:   int(nodeSpec.Cloud.Anexia.DiskSize),
+		DiskSize:   int(*nodeSpec.Cloud.Anexia.DiskSize),
 		LocationID: providerconfig.ConfigVarString{Value: dc.Spec.Anexia.LocationID},
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	if nodeSpec.Cloud.Anexia.DiskSize != nil {
+		config.DiskSize = int(*nodeSpec.Cloud.Anexia.DiskSize)
+	}
+
+	if diskcount := len(nodeSpec.Cloud.Anexia.Disks); diskcount > 0 {
+		config.Disks = make([]anexia.RawDisk, diskcount)
+
+		for diskIndex, diskConfig := range nodeSpec.Cloud.Anexia.Disks {
+			config.Disks[diskIndex].Size = int(diskConfig.Size)
+
+			if diskConfig.PerformanceType != nil {
+				config.Disks[diskIndex].PerformanceType.Value = *diskConfig.PerformanceType
+			}
+		}
+	}
+
+	if config.DiskSize >= 0 && len(config.Disks) > 0 {
+		return nil, anexiaProvider.ErrConfigDiskSizeAndDisks
+	}
+
+	return config, nil
+}
+
+func getAnexiaProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetAnexiaProviderConfig(nil, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
-func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
-	config := nutanix.RawConfig{
+func GetNutanixProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*nutanix.RawConfig, error) {
+	config := &nutanix.RawConfig{
 		SubnetName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Nutanix.SubnetName},
 		ImageName:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Nutanix.ImageName},
 
@@ -593,77 +698,43 @@ func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		config.Categories[nutanixprovider.ProjectCategoryName] = projectID
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
+	return config, nil
+}
+
+func getNutanixProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config, err := GetNutanixProviderConfig(c, nodeSpec, dc)
 	if err != nil {
 		return nil, err
 	}
 
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
 func getCentOSOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
-	config := centos.Config{
+	return EncodeAsRawExtension(centos.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.CentOS.DistUpgradeOnBoot,
-	}
-
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
+	})
 }
 
 func getUbuntuOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
-	config := ubuntu.Config{
+	return EncodeAsRawExtension(ubuntu.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.Ubuntu.DistUpgradeOnBoot,
-	}
-
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
+	})
 }
 
 func getSLESOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
-	config := sles.Config{
+	return EncodeAsRawExtension(sles.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.SLES.DistUpgradeOnBoot,
-	}
-
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
+	})
 }
 
 func getRHELOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
-	config := rhel.Config{
+	return EncodeAsRawExtension(rhel.Config{
 		DistUpgradeOnBoot:               nodeSpec.OperatingSystem.RHEL.DistUpgradeOnBoot,
 		RHELSubscriptionManagerUser:     nodeSpec.OperatingSystem.RHEL.RHELSubscriptionManagerUser,
 		RHELSubscriptionManagerPassword: nodeSpec.OperatingSystem.RHEL.RHELSubscriptionManagerPassword,
 		RHSMOfflineToken:                nodeSpec.OperatingSystem.RHEL.RHSMOfflineToken,
-	}
-
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
+	})
 }
 
 func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
@@ -675,35 +746,24 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 
 		ProvisioningUtility: flatcar.Ignition,
 	}
-	// set cloud init only for anexia and aws(due to the userdata size limit on aws, ignition increases the size drastically).
-	// This should be temporary until the new operating system manager is added to KKP.
-	if nodeSpec.Cloud.Anexia != nil || nodeSpec.Cloud.AWS != nil {
+	// Force cloud-init on Anexia since it doesn't have support for ignition
+	if nodeSpec.Cloud.Anexia != nil {
 		config.ProvisioningUtility = flatcar.CloudInit
 	}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
+	return EncodeAsRawExtension(config)
 }
 
 func getRockyLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
-	config := rockylinux.Config{
+	return EncodeAsRawExtension(rockylinux.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.RockyLinux.DistUpgradeOnBoot,
-	}
+	})
+}
 
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
+func getAmazonLinuxOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
+	return EncodeAsRawExtension(amzn2.Config{
+		DistUpgradeOnBoot: nodeSpec.OperatingSystem.AmazonLinux.DistUpgradeOnBoot,
+	})
 }
 
 // defaultIfEmpty returns the given value if not empty or the default value

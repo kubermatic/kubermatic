@@ -13,10 +13,10 @@
 # limitations under the License.
 
 foo:
-- a
-- b: 12
+  - a
+  - b: 12
 ###
 foo:
-- a
-- b: 12
-  c: 42
+  - a
+  - b: 12
+    c: 42

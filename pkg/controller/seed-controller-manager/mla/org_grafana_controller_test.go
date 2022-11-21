@@ -29,14 +29,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -236,7 +236,6 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 				},
 			},
 			hasFinalizer: true,
-			err:          false,
 		},
 		{
 			name:        "update org for project",
@@ -375,7 +374,7 @@ func bodyEqual(t *testing.T, expectedRequest, request *http.Request) bool {
 	if jsonEqual(expectedBody, body) || yamlEqual(expectedBody, body) {
 		return true
 	}
-	assert.Fail(t, "body not equal", cmp.Diff(string(expectedBody), string(body)))
+	assert.Fail(t, "body not equal", diff.StringDiff(string(expectedBody), string(body)))
 	return false
 }
 
@@ -394,11 +393,16 @@ func jsonEqual(expectedBody, body []byte) bool {
 func yamlEqual(expectedBody, body []byte) bool {
 	expectedBodyMap := map[string]interface{}{}
 	bodyMap := map[string]interface{}{}
-	if err := yaml.UnmarshalStrict(expectedBody, &expectedBodyMap); err != nil {
+
+	decoder := yaml.NewDecoder(bytes.NewReader(expectedBody))
+	if err := decoder.Decode(&expectedBodyMap); err != nil {
 		return false
 	}
-	if err := yaml.UnmarshalStrict(body, &bodyMap); err != nil {
+
+	decoder = yaml.NewDecoder(bytes.NewReader(body))
+	if err := decoder.Decode(&bodyMap); err != nil {
 		return false
 	}
+
 	return reflect.DeepEqual(expectedBodyMap, bodyMap)
 }

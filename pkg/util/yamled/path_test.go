@@ -42,14 +42,14 @@ func TestPathParent(t *testing.T) {
 	assertPath(t, Path{"a", "b", "c"}.Parent(), Path{"a", "b"})
 }
 
-func TestEmptyPathTail(t *testing.T) {
-	if tail := (Path{}).Tail(); tail != nil {
-		t.Errorf("tail of an empty path should be nil, but is %v", tail)
+func TestEmptyPathEnd(t *testing.T) {
+	if end := (Path{}).End(); end != nil {
+		t.Errorf("end of an empty path should be nil, but is %v", end)
 	}
 }
 
-func TestPathTail(t *testing.T) {
-	if tail := (Path{"a", "b", "c"}).Tail(); tail != "c" {
-		t.Errorf("tail of [a b c] should be a, but is %v", tail)
+func TestPathEnd(t *testing.T) {
+	if end := (Path{"a", "b", "c"}).End(); end != "c" {
+		t.Errorf("end of [a b c] should be a, but is %v", end)
 	}
 }

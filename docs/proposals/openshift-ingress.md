@@ -27,7 +27,7 @@ The proposed implementation looks like this:
 
 * The human Kubermatic operator must provide a DNS domain per seed under which kubermatic will set up a wildcard domain per cluster
 * [External DNS](https://github.com/kubernetes-sigs/external-dns/) must be set up in the seed and configured
-	with the customers provider of choice
+	with the admin's provider of choice
 * Kubermatic runs a controller that manages a [`DNSEndpoint`](https://github.com/kubernetes-sigs/external-dns/blob/f763d2a4139746abd775c61642cb9e776b387ba6/docs/contributing/crd-source.md) custom resource and
     * Sets its `DNSName` to `*.<<clusterid>>.<<DNS_ZONE>>`
     * Synchronizes the `target` property of it with the ready nodes in the cluster

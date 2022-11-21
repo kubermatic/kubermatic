@@ -23,14 +23,11 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +35,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -96,7 +92,7 @@ func Add(
 
 // Reconcile reconciles the kubermatic cluster template instance in the seed cluster.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("templateinstance", request.Name)
 	log.Debug("Reconciling")
 
 	instance := &kubermaticv1.ClusterTemplateInstance{}
@@ -111,7 +107,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, instance, log)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
-		r.recorder.Eventf(instance, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(instance, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return reconcile.Result{}, err
@@ -201,10 +197,6 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 	if err != nil {
 		return fmt.Errorf("failed to get credentials: %w", err)
 	}
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, r.seedClient, newCluster); err != nil {
-		return err
-	}
-	kuberneteshelper.AddFinalizer(newCluster, apiv1.CredentialsSecretsCleanupFinalizer)
 
 	// re-use our reconciling framework, because this is a special place where right after the Cluster
 	// creation, we must set some status fields and this requires us to wait for the Cluster object
@@ -251,7 +243,8 @@ func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string
 }
 
 func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string) *kubermaticv1.Cluster {
-	name := rand.String(10)
+	name := utilcluster.MakeClusterName()
+
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -268,7 +261,7 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 		newCluster.Labels[kubermaticv1.WorkerNameLabelKey] = workerName
 	}
 	newCluster.Labels[kubermaticv1.ProjectIDLabelKey] = instance.Spec.ProjectID
-	newCluster.Labels[kubernetes.ClusterTemplateInstanceLabelKey] = instance.Name
+	newCluster.Labels[kubermaticv1.ClusterTemplateInstanceLabelKey] = instance.Name
 	newCluster.Spec = template.Spec
 
 	newCluster.Spec.HumanReadableName = fmt.Sprintf("%s-%s", newCluster.Spec.HumanReadableName, name)

@@ -22,9 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -46,6 +44,9 @@ import (
 const (
 	// This controller duplicate roles with label component=userClusterRole for all namespaces.
 	controllerName = "kkp-role-cloner-controller"
+
+	// cleanupFinalizer indicates that user cluster role still need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
 )
 
 type reconciler struct {
@@ -74,7 +75,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 	// enqueues the roles from kube-system namespace and special label component=userClusterRole.
 	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
-		if err := r.client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		if err := r.client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %w", err))
 			return []reconcile.Request{}
 		}
@@ -99,6 +100,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("role", request.Name)
+	log.Debug("Reconciling")
+
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
@@ -106,9 +110,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if paused {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("Role", request.Name)
-	log.Debug("Reconciling")
 
 	role := &rbacv1.Role{}
 	if err := r.client.Get(ctx, request.NamespacedName, role); err != nil {
@@ -141,7 +142,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 		}
 		// No point in trying to create something in a deleted namespace
 		if n.DeletionTimestamp != nil {
-			log.Debugf("Skipping namespace %s", n.Name)
+			log.Debugw("Skipping terminating namespace", "namespace", n.Name)
 			continue
 		}
 		namespaces = append(namespaces, n.Name)
@@ -151,10 +152,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role
 }
 
 func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger, oldRole *rbacv1.Role, namespaces []string) error {
-	finalizer := apiv1.UserClusterRoleCleanupFinalizer
-
 	if oldRole.DeletionTimestamp != nil {
-		if kuberneteshelper.HasFinalizer(oldRole, finalizer) {
+		if kuberneteshelper.HasFinalizer(oldRole, cleanupFinalizer) {
 			for _, namespace := range namespaces {
 				if err := r.client.Delete(ctx, &rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
@@ -170,10 +169,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 			}
 		}
 
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.client, oldRole, finalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.client, oldRole, cleanupFinalizer)
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.client, oldRole, finalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.client, oldRole, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 

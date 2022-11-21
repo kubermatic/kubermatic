@@ -20,57 +20,66 @@ import (
 	"crypto/x509"
 	"fmt"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
-	clusterAPIGroup   = "cluster.k8s.io"
-	clusterAPIVersion = "v1alpha1"
+	machineValidatingWebhookConfigurationName = "kubermatic-machine-validation"
 )
 
 // ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the machine CRD.
 func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return resources.MachineValidatingWebhookConfigurationName, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
-			// TODO - change to Fail when the resource quotas are fully implemented
-			failurePolicy := admissionregistrationv1.Ignore
+		return machineValidatingWebhookConfigurationName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone
-			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./validate-cluster-k8s-io-v1-machine", resources.UserClusterWebhookServiceName, namespace)
-			reviewVersions := []string{"v1", "v1beta1"}
+			scope := admissionregistrationv1.NamespacedScope
 
-			// This only gets set when the APIServer supports it, so carry it over
-			var scope *admissionregistrationv1.ScopeType
-			if len(validatingWebhookConfiguration.Webhooks) != 1 {
-				validatingWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{{}, {}}
-			} else if len(validatingWebhookConfiguration.Webhooks[0].Rules) > 0 {
-				scope = validatingWebhookConfiguration.Webhooks[0].Rules[0].Scope
-			}
+			url := fmt.Sprintf("https://%s.%s.svc.cluster.local.:%d/validate-cluster-k8s-io-v1alpha1-machine",
+				resources.UserClusterWebhookServiceName,
+				namespace,
+				resources.UserClusterWebhookUserListenPort,
+			)
 
-			validatingWebhookConfiguration.Webhooks[0].Name = fmt.Sprintf("%s-machines", resources.MachineValidatingWebhookConfigurationName)
-			validatingWebhookConfiguration.Webhooks[0].NamespaceSelector = &metav1.LabelSelector{}
-			validatingWebhookConfiguration.Webhooks[0].SideEffects = &sideEffects
-			validatingWebhookConfiguration.Webhooks[0].FailurePolicy = &failurePolicy
-			validatingWebhookConfiguration.Webhooks[0].AdmissionReviewVersions = reviewVersions
-			validatingWebhookConfiguration.Webhooks[0].Rules = []admissionregistrationv1.RuleWithOperations{{
-				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
-				Rule: admissionregistrationv1.Rule{
-					APIGroups:   []string{clusterAPIGroup},
-					APIVersions: []string{clusterAPIVersion},
-					Resources:   []string{"machines"},
-					Scope:       scope,
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    "machines.cluster.k8c.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32(3),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: triple.EncodeCertPEM(caCert),
+						URL:      &url,
+					},
+					ObjectSelector:    &metav1.LabelSelector{},
+					NamespaceSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{clusterv1alpha1.SchemeGroupVersion.Group},
+								APIVersions: []string{clusterv1alpha1.SchemeGroupVersion.Version},
+								Resources:   []string{"machines"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+							},
+						},
+					},
 				},
-			}}
-			validatingWebhookConfiguration.Webhooks[0].ClientConfig = admissionregistrationv1.WebhookClientConfig{
-				URL:      &mURL,
-				CABundle: triple.EncodeCertPEM(caCert),
 			}
-
-			return validatingWebhookConfiguration, nil
+			return hook, nil
 		}
 	}
 }

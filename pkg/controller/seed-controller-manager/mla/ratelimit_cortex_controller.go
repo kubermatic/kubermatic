@@ -20,9 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
@@ -85,7 +86,7 @@ func newRatelimitCortexReconciler(
 	reconciler := &ratelimitCortexReconciler{
 		Client: client,
 
-		log:                       log,
+		log:                       log.Named("cortex-ratelimit"),
 		workerName:                workerName,
 		recorder:                  mgr.GetEventRecorderFor(ControllerName),
 		versions:                  versions,
@@ -165,7 +166,11 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 		return errors.New("unable to find runtime config file in configmap")
 	}
 	or := &Overrides{}
-	if err := yaml.UnmarshalStrict([]byte(config), or); err != nil {
+
+	decoder := yaml.NewDecoder(strings.NewReader(config))
+	decoder.KnownFields(true)
+
+	if err := decoder.Decode(or); err != nil {
 		return fmt.Errorf("unable to unmarshal runtime config[%s]: %w", config, err)
 	}
 
@@ -226,9 +231,14 @@ func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap
 		return errors.New("unable to find runtime config file in configmap")
 	}
 	or := &Overrides{}
-	if err := yaml.UnmarshalStrict([]byte(config), or); err != nil {
+
+	decoder := yaml.NewDecoder(strings.NewReader(config))
+	decoder.KnownFields(true)
+
+	if err := decoder.Decode(or); err != nil {
 		return fmt.Errorf("unable to unmarshal runtime config[%s]: %w", config, err)
 	}
+
 	if _, ok := or.Overrides[mlaAdminSetting.Spec.ClusterName]; ok {
 		delete(or.Overrides, mlaAdminSetting.Spec.ClusterName)
 		data, err := yaml.Marshal(or)

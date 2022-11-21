@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -119,7 +120,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			if data.Cluster().Spec.Cloud.VSphere != nil {
 				fakeVMWareUUIDMount := corev1.VolumeMount{
-					Name:      resources.CloudConfigConfigMapName,
+					Name:      resources.CloudConfigSeedSecretName,
 					SubPath:   cloudconfig.FakeVMWareUUIDKeyName,
 					MountPath: "/sys/class/dmi/id/product_serial",
 					ReadOnly:  true,
@@ -151,7 +152,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + version.String(),
+					Image:   registry.Must(data.RewriteImage(resources.RegistryK8S + "/kube-controller-manager:v" + version.String())),
 					Command: []string{"/usr/local/bin/kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,
@@ -258,11 +259,6 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 	}
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
-	// starting with k8s 1.21, this is always true and cannot be toggled anymore
-	if version.LessThan(semverlib.MustParse("1.21.0")) {
-		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
-	}
-
 	featureGates = append(featureGates, data.GetCSIMigrationFeatureGates()...)
 
 	flags = append(flags, "--feature-gates")
@@ -333,7 +329,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 		{
-			Name:      resources.CloudConfigConfigMapName,
+			Name:      resources.CloudConfigSeedSecretName,
 			MountPath: "/etc/kubernetes/cloud",
 			ReadOnly:  true,
 		},
@@ -374,12 +370,10 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 			},
 		},
 		{
-			Name: resources.CloudConfigConfigMapName,
+			Name: resources.CloudConfigSeedSecretName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.CloudConfigConfigMapName,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.CloudConfigSeedSecretName,
 				},
 			},
 		},
@@ -406,15 +400,11 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 }
 
 type kubeControllerManagerEnvData interface {
-	resources.CredentialsData
+	Cluster() *kubermaticv1.Cluster
 	Seed() *kubermaticv1.Seed
 }
 
 func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
-	}
 	cluster := data.Cluster()
 
 	vars := []corev1.EnvVar{
@@ -424,9 +414,20 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 		},
 	}
 
+	refTo := func(key string) *corev1.EnvVarSource {
+		return &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: resources.ClusterCloudCredentialsSecretName,
+				},
+				Key: key,
+			},
+		}
+	}
+
 	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", ValueFrom: refTo(resources.AWSAccessKeyID)})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", ValueFrom: refTo(resources.AWSSecretAccessKey)})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: cluster.Spec.Cloud.AWS.AssumeRoleARN})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
@@ -436,25 +437,25 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
 
-	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().GetAddress().InternalName)...)
+	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...)
 	return vars, nil
 }
 
 func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {
 	if cloudSpec.AWS != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.Openstack != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.VSphere != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.Azure != nil {
-		return utilpointer.BoolPtr(false)
+		return utilpointer.Bool(false)
 	}
 	if cloudSpec.GCP != nil {
-		return utilpointer.BoolPtr(true)
+		return utilpointer.Bool(true)
 	}
 	return nil
 }

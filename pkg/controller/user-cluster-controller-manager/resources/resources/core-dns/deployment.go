@@ -28,7 +28,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -51,7 +51,7 @@ var (
 )
 
 // DeploymentCreator returns the function to create and update the CoreDNS deployment.
-func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.CoreDNSDeploymentName
@@ -100,7 +100,7 @@ func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, re
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion, registryWithOverwrite)
+			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion, imageRewriter)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
@@ -131,7 +131,7 @@ func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, re
 
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return resources.CoreDNSPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return resources.CoreDNSPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			iptr := intstr.FromInt(1)
 			pdb.Spec.MinAvailable = &iptr
 			pdb.Spec.Selector = &metav1.LabelSelector{
@@ -143,14 +143,11 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 	}
 }
 
-func getContainers(
-	clusterVersion *semverlib.Version,
-	registryWithOverwrite registry.WithOverwriteFunc,
-) []corev1.Container {
+func getContainers(clusterVersion *semverlib.Version, imageRewriter registry.ImageRewriter) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            resources.CoreDNSDeploymentName,
-			Image:           fmt.Sprintf("%s/%s", registryWithOverwrite(resources.RegistryK8SGCR), dns.GetCoreDNSImage(clusterVersion)),
+			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s", resources.RegistryK8S, dns.GetCoreDNSImage(clusterVersion)))),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			Args: []string{"-conf", "/etc/coredns/Corefile"},
@@ -212,8 +209,8 @@ func getContainers(
 				FailureThreshold: 3,
 			},
 			SecurityContext: &corev1.SecurityContext{
-				ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
-				AllowPrivilegeEscalation: pointer.BoolPtr(false),
+				ReadOnlyRootFilesystem:   pointer.Bool(true),
+				AllowPrivilegeEscalation: pointer.Bool(false),
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
 						"NET_BIND_SERVICE",

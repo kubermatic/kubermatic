@@ -18,6 +18,7 @@ package seedsync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -59,7 +61,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get seed: %w", err)
 	}
 
-	client, err := r.seedClientGetter(seed)
+	// do nothing until the operator has prepared the seed cluster
+	if !seed.Status.IsInitialized() {
+		logger.Debug("Seed cluster has not yet been initialized, skipping.")
+		return reconcile.Result{}, nil
+	}
+
+	seedClient, err := r.seedClientGetter(seed)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to create client for seed: %w", err)
 	}
@@ -76,7 +84,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// cleanup once a Seed was deleted in the master cluster
 	if seed.DeletionTimestamp != nil {
-		result, err := r.cleanupDeletedSeed(ctx, config, seed, client, logger)
+		result, err := r.cleanupDeletedSeed(ctx, config, seed, seedClient, logger)
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to cleanup deleted Seed: %w", err)
 		}
@@ -87,65 +95,82 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcile(ctx, config, seed, client, logger); err != nil {
-		r.recorder.Eventf(seed, corev1.EventTypeWarning, "ReconcilingFailed", "%v", err)
+	if err := r.reconcile(ctx, config, seed, seedClient, logger); err != nil {
+		r.recorder.Event(seed, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %w", err)
 	}
 
-	logger.Info("Successfully reconciled")
+	logger.Debug("Successfully reconciled")
 	return reconcile.Result{}, nil
 }
 
 func (r *Reconciler) getKubermaticConfiguration(ctx context.Context, namespace string) (*kubermaticv1.KubermaticConfiguration, error) {
-	configList := &kubermaticv1.KubermaticConfigurationList{}
-	listOpts := &ctrlruntimeclient.ListOptions{
-		Namespace: namespace,
-	}
+	// retrieve the _undefaulted_ config (which is why this cannot use the KubermaticConfigurationGetter)
+	config, err := kubernetesprovider.GetRawKubermaticConfiguration(ctx, r, namespace)
 
-	if err := r.List(ctx, configList, listOpts); err != nil {
-		return nil, fmt.Errorf("failed to find KubermaticConfigurations: %w", err)
-	}
-
-	if len(configList.Items) == 0 {
+	if errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
 		r.log.Debug("ignoring request for namespace without KubermaticConfiguration")
 		return nil, nil
 	}
 
-	if len(configList.Items) > 1 {
+	if errors.Is(err, provider.ErrTooManyKubermaticConfigurationFound) {
 		r.log.Warnw("there are multiple KubermaticConfiguration objects, cannot reconcile", "namespace", namespace)
 		return nil, nil
 	}
 
-	return &configList.Items[0], nil
+	return config, nil
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
 	// ensure we always have a cleanup finalizer on the original
 	// Seed CR inside the master cluster
 	if err := kubernetes.TryAddFinalizer(ctx, r, seed, CleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if seed.Spec.ExposeStrategy != "" {
-		if !kubermaticv1.AllExposeStrategies.Has(seed.Spec.ExposeStrategy) {
-			return fmt.Errorf("failed to validate seed: invalid expose strategy %q, must be one of %v", seed.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies)
+	nsCreators := []reconciling.NamedNamespaceCreatorGetter{
+		namespaceCreator(seed.Namespace),
+	}
+
+	if err := reconciling.ReconcileNamespaces(ctx, nsCreators, "", seedClient); err != nil {
+		return fmt.Errorf("failed to reconcile namespace: %w", err)
+	}
+
+	seedInSeed := &kubermaticv1.Seed{}
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), seedInSeed); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get seed: %w", err)
+	}
+
+	// see project-synchronizer's syncAllSeeds comment
+	if seedInSeed.UID == "" || seedInSeed.UID != seed.UID {
+		seedKubeconfig, err := kubernetesprovider.GetSeedKubeconfigSecret(ctx, r, seed)
+		if err != nil {
+			return fmt.Errorf("failed to get kubeconfig for seed: %w", err)
 		}
-	}
 
-	seedCreators := []reconciling.NamedSeedCreatorGetter{
-		seedCreator(seed),
-	}
+		seedKubeconfigCreators := []reconciling.NamedSecretCreatorGetter{
+			secretCreator(seedKubeconfig),
+		}
 
-	if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile seed: %w", err)
+		if err := reconciling.ReconcileSecrets(ctx, seedKubeconfigCreators, seedKubeconfig.Namespace, seedClient); err != nil {
+			return fmt.Errorf("failed to reconcile seed kubeconfig: %w", err)
+		}
+
+		seedCreators := []reconciling.NamedSeedCreatorGetter{
+			seedCreator(seed),
+		}
+
+		if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, seedClient); err != nil {
+			return fmt.Errorf("failed to reconcile seed: %w", err)
+		}
 	}
 
 	configCreators := []reconciling.NamedKubermaticConfigurationCreatorGetter{
 		configCreator(config),
 	}
 
-	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile seed: %w", err)
+	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, seedClient); err != nil {
+		return fmt.Errorf("failed to reconcile Kubermatic configuration: %w", err)
 	}
 
 	return nil

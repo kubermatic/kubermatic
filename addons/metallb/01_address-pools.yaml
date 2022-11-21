@@ -1,0 +1,71 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{- if not .Variables.disableAutoIPAMAllocation }}
+
+{{- if .Cluster.Network.IPAMAllocations.metallb }}
+{{- $allocation := .Cluster.Network.IPAMAllocations.metallb }}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: kkp-managed-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  {{- if eq $allocation.Type "prefix" }} 
+    - {{ $allocation.CIDR }}
+  {{- end }}
+  {{- if eq $allocation.Type "range" }}
+    {{- range $allocation.Addresses }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- if and (index .Cluster.Network.IPAMAllocations "metallb-ipv4").Type (index .Cluster.Network.IPAMAllocations "metallb-ipv6").Type }}
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: kkp-managed-pool-dualstack
+  namespace: metallb-system
+spec:
+  addresses:
+{{- range $allocName := list "metallb-ipv4" "metallb-ipv6" }}
+{{- $allocation := index $.Cluster.Network.IPAMAllocations $allocName }}
+  {{- if eq $allocation.Type "prefix" }}
+    - {{ $allocation.CIDR }}
+  {{- end }}
+  {{- if eq $allocation.Type "range" }}
+    {{- range $allocation.Addresses }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- end }}
+
+{{- if .Variables.addressPoolYaml }}
+---
+{{ .Variables.addressPoolYaml }}
+{{- end }}
+
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: advertise-all
+  namespace: metallb-system

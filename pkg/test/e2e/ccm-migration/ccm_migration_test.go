@@ -20,154 +20,173 @@ package ccmmigration
 
 import (
 	"context"
+	"errors"
+	"flag"
+	"fmt"
 	"strings"
+	"testing"
 
-	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = ginkgo.Describe("CCM migration", func() {
-	var (
-		seedClient            ctrlruntimeclient.Client
-		userClient            ctrlruntimeclient.Client
-		clusterClientProvider *clusterclient.Provider
-		clusterJig            providers.ClusterJigInterface
-		ctx                   context.Context
+// Options holds the e2e test options.
+type testOptions struct {
+	skipCleanup       bool
+	logOptions        log.Options
+	kubernetesRelease string
 
-		err error
-	)
+	provider string
 
-	ginkgo.BeforeEach(func() {
-		ctx = context.Background()
-		seedClient, _, _ = e2eutils.GetClientsOrDie()
-		clusterClientProvider, err = clusterclient.NewExternal(seedClient)
-		gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	})
+	osCredentials      jig.OpenstackCredentials
+	vsphereCredentials jig.VSphereCredentials
+	azureCredentials   jig.AzureCredentials
+	awsCredentials     jig.AWSCredentials
+}
 
-	ginkgo.Context("testing provider", func() {
-		var cluster *kubermaticv1.Cluster
+func (o testOptions) KubernetesVersion() semver.Semver {
+	return *test.ParseVersionOrRelease(o.kubernetesRelease, nil)
+}
 
-		ginkgo.BeforeEach(func() {
-			clusterJig, cluster, userClient = SetupClusterByProvider(ctx, seedClient, clusterClientProvider, options)
-		})
+var (
+	options = testOptions{
+		logOptions: e2eutils.DefaultLogOptions,
+	}
+)
 
-		ginkgo.AfterEach(func() {
-			gomega.Expect(clusterJig.Cleanup(ctx, userClient)).NotTo(gomega.HaveOccurred())
-		})
+func init() {
+	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
+	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
+	flag.StringVar(&options.kubernetesRelease, "cluster-version", "", "Kubernetes version or release for the usercluster")
 
-		ginkgo.It("migrating cluster to external CCM", func() {
-			testBody(ctx, clusterJig, cluster, userClient)
-		})
-	})
-})
+	options.awsCredentials.AddFlags(flag.CommandLine)
+	options.azureCredentials.AddFlags(flag.CommandLine)
+	options.osCredentials.AddFlags(flag.CommandLine)
+	options.vsphereCredentials.AddFlags(flag.CommandLine)
+	options.logOptions.AddFlags(flag.CommandLine)
+}
 
-func SetupClusterByProvider(ctx context.Context, seedClient ctrlruntimeclient.Client, clientProvider *clusterclient.Provider, options testOptions) (providers.ClusterJigInterface, *kubermaticv1.Cluster, ctrlruntimeclient.Client) {
-	var (
-		clusterJig providers.ClusterJigInterface
-		userClient ctrlruntimeclient.Client
-		cluster    *kubermaticv1.Cluster
-	)
-	cluster = &kubermaticv1.Cluster{}
+func TestCCMMigration(t *testing.T) {
+	switch kubermaticv1.ProviderType(options.provider) {
+	case kubermaticv1.AWSCloudProvider:
+		runtime.Must(options.awsCredentials.Parse())
+	case kubermaticv1.AzureCloudProvider:
+		runtime.Must(options.azureCredentials.Parse())
+	case kubermaticv1.OpenstackCloudProvider:
+		runtime.Must(options.osCredentials.Parse())
+	case kubermaticv1.VSphereCloudProvider:
+		runtime.Must(options.vsphereCredentials.Parse())
+	default:
+		t.Fatalf("Unknown provider %q", options.provider)
+	}
+
+	ctx := context.Background()
+	seedClient, _, _ := e2eutils.GetClientsOrDie()
+	log := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
+
+	// prepare cluster
+	scenario, cluster, userClient, err := setupClusterByProvider(t, ctx, log, seedClient, options)
+	if err != nil {
+		t.Fatalf("Failed to setup preconditions: %v", err)
+	}
+
+	// run tests
+	if err := testBody(t, ctx, log, seedClient, scenario, cluster, userClient); err != nil {
+		t.Error(err)
+	}
+
+	// cleanup
+	if err := scenario.Cleanup(ctx, cluster, userClient); err != nil {
+		t.Error(err)
+	}
+}
+
+func setupClusterByProvider(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, options testOptions) (providers.TestScenario, *kubermaticv1.Cluster, ctrlruntimeclient.Client, error) {
+	var scenario providers.TestScenario
+
+	version := options.KubernetesVersion()
 
 	switch kubermaticv1.ProviderType(options.provider) {
 	case kubermaticv1.OpenstackCloudProvider:
-		clusterJig = providers.NewClusterJigOpenstack(seedClient, options.kubernetesVersion, options.osSeedDatacenter, options.osCredentials)
+		scenario = providers.NewOpenstackScenario(log, seedClient, options.osCredentials)
 	case kubermaticv1.VSphereCloudProvider:
-		clusterJig = providers.NewClusterJigVsphere(seedClient, options.kubernetesVersion, options.vsphereSeedDatacenter, options.vSphereCredentials)
+		scenario = providers.NewVSphereScenario(log, seedClient, options.vsphereCredentials)
 	case kubermaticv1.AzureCloudProvider:
-		clusterJig = providers.NewClusterJigAzure(seedClient, options.kubernetesVersion, options.azureSeedDatacenter, options.azureCredentials)
+		scenario = providers.NewAzureScenario(log, seedClient, options.azureCredentials)
+	case kubermaticv1.AWSCloudProvider:
+		scenario = providers.NewAWSScenario(log, seedClient, options.awsCredentials)
 	default:
-		ginkgo.Fail("provider not supported")
+		return nil, nil, nil, errors.New("provider not supported for CCM tests")
 	}
 
-	userClient = setupAndGetUserClient(ctx, clusterJig, cluster, clientProvider)
-	return clusterJig, cluster, userClient
+	scenario.ClusterJig().
+		WithName("ccmmig-" + rand.String(5)).
+		WithVersion(version.String()).
+		WithFeatures(map[string]bool{
+			kubermaticv1.ClusterFeatureExternalCloudProvider: false,
+		})
+
+	cluster, err := scenario.Setup(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	userClient, err := scenario.ClusterJig().ClusterClient(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return scenario, cluster, userClient, err
 }
 
-func setupAndGetUserClient(ctx context.Context, clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, clusterClientProvider *clusterclient.Provider) ctrlruntimeclient.Client {
-	ginkgo.By("setting up cluster")
-	gomega.Expect(clusterJig.Setup(ctx)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
-	clusterJig.Log().Debugw("Cluster set up", "name", clusterJig.Name())
-	gomega.Expect(clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
-
-	var userClient ctrlruntimeclient.Client
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
-		gomega.Expect(clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
-		userClient, err = clusterClientProvider.GetClient(ctx, cluster)
-		if err != nil {
-			clusterJig.Log().Debugw("failed to get usercluster client", zap.Error(err))
-			return false, nil
-		}
-		return true, nil
-	})).NotTo(gomega.HaveOccurred())
-	clusterJig.Log().Debugw("User cluster client correctly created")
-
-	gomega.Expect(clusterv1alpha1.AddToScheme(userClient.Scheme())).NotTo(gomega.HaveOccurred())
-
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
-		if err = clusterJig.CreateMachineDeployment(ctx, userClient); err != nil {
-			clusterJig.Log().Debugw("machine deployment creation failed", zap.Error(err))
-			return false, nil
-		}
-		return true, nil
-	})).NotTo(gomega.HaveOccurred())
-	clusterJig.Log().Debug("MachineDeployment created")
-
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
-		var ready bool
-		if ready, err = clusterJig.WaitForNodeToBeReady(ctx, userClient); err != nil {
-			clusterJig.Log().Debugw("node not ready yet", zap.Error(err))
-			return false, nil
-		}
-		return ready, nil
-	})).NotTo(gomega.HaveOccurred())
-	clusterJig.Log().Debug("Node ready")
-
-	return userClient
-}
-
-func testBody(ctx context.Context, clusterJig providers.ClusterJigInterface, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) {
-	ginkgo.By("enabling externalCloudProvider feature")
-	gomega.Expect(clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, cluster)).NotTo(gomega.HaveOccurred())
+func testBody(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, scenario providers.TestScenario, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) error {
+	log.Info("Enabling externalCloudProvider feature...")
 	newCluster := cluster.DeepCopy()
-	newCluster.Spec.Features = map[string]bool{
-		kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	newCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] = true
+
+	if err := seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(cluster)); err != nil {
+		return fmt.Errorf("failed to patch cluster: %w", err)
 	}
-	gomega.Expect(clusterJig.Seed().Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(cluster))).NotTo(gomega.HaveOccurred())
 
-	clusterJig.Log().Debug("getting the patched cluster")
-	annotatedCluster := &kubermaticv1.Cluster{}
-	gomega.Expect(clusterJig.Seed().Get(ctx, types.NamespacedName{Name: cluster.Name}, annotatedCluster)).NotTo(gomega.HaveOccurred())
+	log.Info("Asserting the annotations existence in the cluster...")
+	err := wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+		annotatedCluster := &kubermaticv1.Cluster{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, annotatedCluster); err != nil {
+			return false, fmt.Errorf("failed to get cluster: %w", err)
+		}
 
-	clusterJig.Log().Debug("asserting the annotations existence in the cluster")
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
 		_, ccmOk := annotatedCluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 		_, csiOk := annotatedCluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
-		if ccmOk && csiOk {
-			return true, nil
-		}
-		return false, nil
-	})).NotTo(gomega.HaveOccurred())
 
-	clusterJig.Log().Debug("checking the -node-external-cloud-provider flag in the machineController webhook pod")
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
+		return ccmOk && csiOk, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for annotations to appear: %w", err)
+	}
+
+	log.Info("Checking the -node-external-cloud-provider flag in the machine-controller webhook Pod...")
+	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		machineControllerWebhookPods := &corev1.PodList{}
-		if err := clusterJig.Seed().List(ctx, machineControllerWebhookPods, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
+		if err := seedClient.List(ctx, machineControllerWebhookPods, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
 			resources.AppLabelKey: resources.MachineControllerWebhookDeploymentName,
 		}); err != nil {
 			return false, err
@@ -181,36 +200,47 @@ func testBody(ctx context.Context, clusterJig providers.ClusterJigInterface, clu
 			}
 		}
 		return false, nil
-	})).NotTo(gomega.HaveOccurred())
-
-	machines := &clusterv1alpha1.MachineList{}
-	ginkgo.By("rolling out all the machines")
-	gomega.Expect(userClient.List(ctx, machines)).NotTo(gomega.HaveOccurred())
-	for _, m := range machines.Items {
-		gomega.Expect(userClient.Delete(ctx, &m)).NotTo(gomega.HaveOccurred())
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for flag in Pod: %w", err)
 	}
 
-	ginkgo.By("waiting for the complete cluster migration")
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
+	log.Info("Rotating all the machines...")
+	machines := &clusterv1alpha1.MachineList{}
+	if err := userClient.List(ctx, machines); err != nil {
+		return fmt.Errorf("failed to list machines: %w", err)
+	}
+
+	for _, m := range machines.Items {
+		if err := userClient.Delete(ctx, &m); err != nil {
+			return fmt.Errorf("failed to delete machine: %w", err)
+		}
+	}
+
+	log.Info("Waiting for the complete cluster migration...")
+	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
 		migratingCluster := &kubermaticv1.Cluster{}
-		if err := clusterJig.Seed().Get(ctx, types.NamespacedName{Name: clusterJig.Name()}, migratingCluster); err != nil {
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, migratingCluster); err != nil {
 			return false, err
 		}
 		return kubermaticv1helper.CCMMigrationCompleted(migratingCluster), nil
-	})).NotTo(gomega.HaveOccurred())
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for migration to finish: %w", err)
+	}
 
-	clusterJig.Log().Debug("waiting for node to come up again")
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
-		var ready bool
-		if ready, err = clusterJig.WaitForNodeToBeReady(ctx, userClient); err != nil {
-			clusterJig.Log().Debugw("node not ready yet", zap.Error(err))
-			return false, nil
-		}
-		return ready, nil
-	})).NotTo(gomega.HaveOccurred())
+	log.Info("Waiting for node(s) to come up again...")
+	if err := scenario.MachineJig().WaitForReadyNodes(ctx, userClient); err != nil {
+		return fmt.Errorf("failed to wait for nodes: %w", err)
+	}
 
-	ginkgo.By("checking that all the needed components are up and running")
-	gomega.Expect(wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (done bool, err error) {
-		return clusterJig.CheckComponents(ctx, userClient)
-	})).NotTo(gomega.HaveOccurred())
+	log.Info("Checking that all the needed components are up and running...")
+	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+		return scenario.CheckComponents(ctx, cluster, userClient)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for components: %w", err)
+	}
+
+	return nil
 }

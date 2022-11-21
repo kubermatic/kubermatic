@@ -40,10 +40,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/rest"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 type multiValFlag []string
@@ -106,9 +106,9 @@ func main() {
 		log.Fatalw("Invalid endpoint specified", zap.Error(err))
 	}
 
-	ctx := context.Background()
+	ctx := signals.SetupSignalHandler()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", e.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.String(), nil)
 	if err != nil {
 		log.Fatalw("Failed to build request", zap.Error(err))
 	}
@@ -189,7 +189,7 @@ func crdCheckersFactory(mvf multiValFlag) ([]func() error, error) {
 	return checkers, nil
 }
 
-func crdCheckerFromFlag(flag string, cfg *restclient.Config) (func() error, error) {
+func crdCheckerFromFlag(flag string, cfg *rest.Config) (func() error, error) {
 	splitVal := strings.Split(flag, ",")
 	if n := len(splitVal); n != 2 {
 		return nil, fmt.Errorf("comma-separating the flag value did not yield exactly two results, but %d", n)

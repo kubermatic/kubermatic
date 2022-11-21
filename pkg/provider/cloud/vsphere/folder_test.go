@@ -24,17 +24,15 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestCreateVMFolder(t *testing.T) {
-	dc := &kubermaticv1.DatacenterSpecVSphere{
-		Datacenter: vSphereDatacenter,
-		Endpoint:   vSphereEndpoint,
-		RootPath:   path.Join("/", vSphereDatacenter, "vm"),
-	}
+	dc := getTestDC()
+	dc.RootPath = path.Join("/", vSphereDatacenter, "vm")
 
 	ctx := context.Background()
 	session, err := newSession(ctx, dc, vSphereUsername, vSpherePassword, nil)
@@ -70,20 +68,21 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			dc:   getTestDC(),
 			expectedFolders: sets.NewString(
 				path.Join("/", vSphereDatacenter, "vm"),
-				path.Join("/", vSphereDatacenter, "vm", "e2e-tests"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic"),
+				path.Join("/", vSphereDatacenter, "vm", "sig-infra"),
+				path.Join("/", vSphereDatacenter, "vm", "Kubermatic-dev"),
 			),
 		},
 		{
 			name: "successfully-list-folders-below-custom-root",
 			dc: &kubermaticv1.DatacenterSpecVSphere{
-				Datacenter: vSphereDatacenter,
-				Endpoint:   vSphereEndpoint,
-				RootPath:   path.Join("/", vSphereDatacenter, "vm"),
+				Datacenter:    vSphereDatacenter,
+				Endpoint:      vSphereEndpoint,
+				AllowInsecure: true,
+				RootPath:      path.Join("/", vSphereDatacenter, "vm"),
 			},
 			expectedFolders: sets.NewString(
-				path.Join("/", vSphereDatacenter, "vm", "e2e-tests"),
-				path.Join("/", vSphereDatacenter, "vm", "kubermatic"),
+				path.Join("/", vSphereDatacenter, "vm", "sig-infra"),
+				path.Join("/", vSphereDatacenter, "vm", "Kubermatic-dev"),
 			),
 		},
 	}
@@ -101,8 +100,8 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			}
 			t.Logf("Got folders: %v", gotFolders.List())
 
-			if diff := test.expectedFolders.Difference(gotFolders); diff.Len() > 0 {
-				t.Errorf("Response is missing expected folders: %v", diff.List())
+			if test.expectedFolders.Difference(gotFolders).Len() > 0 {
+				t.Fatalf("Response is missing expected folders:\n%v", diff.SetDiff[string](test.expectedFolders, gotFolders))
 			}
 		})
 	}

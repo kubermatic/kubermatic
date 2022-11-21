@@ -18,19 +18,18 @@ package applicationdefinitionsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -60,7 +59,7 @@ func TestReconcile(t *testing.T) {
 			expectedApplicationDefinition: generateApplicationDef(applicationDefinitionName, false),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateApplicationDef(applicationDefinitionName, false), test.GenTestSeed()).
+				WithObjects(generateApplicationDef(applicationDefinitionName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -72,11 +71,11 @@ func TestReconcile(t *testing.T) {
 			expectedApplicationDefinition: nil,
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateApplicationDef(applicationDefinitionName, true), test.GenTestSeed()).
+				WithObjects(generateApplicationDef(applicationDefinitionName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateApplicationDef(applicationDefinitionName, false), test.GenTestSeed()).
+				WithObjects(generateApplicationDef(applicationDefinitionName, false), generator.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -109,18 +108,15 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get application definition: %v", err)
 				}
-				if !reflect.DeepEqual(seedApplicationDef.Name, tc.expectedApplicationDefinition.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
+
+				seedApplicationDef.ResourceVersion = ""
+				seedApplicationDef.APIVersion = ""
+				seedApplicationDef.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedApplicationDefinition, seedApplicationDef) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedApplicationDefinition, seedApplicationDef))
 				}
-				if !reflect.DeepEqual(seedApplicationDef.Labels, tc.expectedApplicationDefinition.Labels) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
-				}
-				if !reflect.DeepEqual(seedApplicationDef.Annotations, tc.expectedApplicationDefinition.Annotations) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
-				}
-				if !reflect.DeepEqual(seedApplicationDef.Spec, tc.expectedApplicationDefinition.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedApplicationDef, tc.expectedApplicationDefinition))
-				}
+
 				// todo label and annotation
 			}
 		})
@@ -143,10 +139,6 @@ func generateApplicationDef(name string, deleted bool) *appskubermaticv1.Applica
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "version 1",
-					Constraints: appskubermaticv1.ApplicationConstraints{
-						K8sVersion: "> 1.0.0",
-						KKPVersion: "> 1.1.1",
-					},
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{

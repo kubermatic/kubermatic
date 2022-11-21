@@ -30,7 +30,7 @@ Kubermatic-api:
 *   We create new v2 endpoints (backwards compatibility)
 *   Only one node per call (clear restful api)
 *   New API type for the node (abstracted version of the machine+node)
-*   The api creates machine resources in the customer cluster
+*   The api creates machine resources in the user cluster
 
 kubermatic-controller:
 *   The machine-controller gets deployed next to the existing node-controller (backwards compatibility)

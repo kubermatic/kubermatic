@@ -54,3 +54,14 @@ parameters:
   csi.storage.k8s.io/snapshotter-secret-namespace: kube-system
 {{ end }}
 {{ end }}
+
+{{ if eq .Cluster.CloudProviderName "digitalocean" }}
+kind: VolumeSnapshotClass
+apiVersion: snapshot.storage.k8s.io/v1
+metadata:
+  name: do-block-storage
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: dobs.csi.digitalocean.com
+deletionPolicy: Delete
+{{ end }}

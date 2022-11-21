@@ -26,7 +26,9 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,6 +45,16 @@ func init() {
 }
 
 func TestReconcilingSeed(t *testing.T) {
+	kubeconfigSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-seed-kubeconfig",
+			Namespace: "kubermatic",
+		},
+		Data: map[string][]byte{
+			provider.DefaultKubeconfigFieldPath: []byte("this-is-not-a-kubeconfig-but-that-doesnt-matter-here"),
+		},
+	}
+
 	existingSeeds := []ctrlruntimeclient.Object{
 		&kubermaticv1.Seed{
 			ObjectMeta: metav1.ObjectMeta{
@@ -78,6 +90,9 @@ func TestReconcilingSeed(t *testing.T) {
 				Spec: kubermaticv1.SeedSpec{
 					Country:        "Germany",
 					ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+					Kubeconfig: corev1.ObjectReference{
+						Name: kubeconfigSecret.Name,
+					},
 				},
 			},
 			config: &kubermaticv1.KubermaticConfiguration{
@@ -120,6 +135,9 @@ func TestReconcilingSeed(t *testing.T) {
 				},
 				Spec: kubermaticv1.SeedSpec{
 					Country: "Germany",
+					Kubeconfig: corev1.ObjectReference{
+						Name: kubeconfigSecret.Name,
+					},
 				},
 			},
 			config: &kubermaticv1.KubermaticConfiguration{
@@ -154,29 +172,6 @@ func TestReconcilingSeed(t *testing.T) {
 			},
 		},
 		{
-			name:       "invalid expose strategy",
-			shouldFail: true,
-			seed: &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-seed",
-					Namespace: "kubermatic",
-				},
-				Spec: kubermaticv1.SeedSpec{
-					Country:        "Germany",
-					ExposeStrategy: kubermaticv1.ExposeStrategy("wtf"),
-				},
-			},
-			config: &kubermaticv1.KubermaticConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kubermatic",
-					Namespace: "kubermatic",
-				},
-			},
-			existingSeeds: existingSeeds,
-			// actual check is done in the reconciler, nothing to validate here
-			validate: nil,
-		},
-		{
 			name: "sync config into seed",
 			seed: &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{
@@ -186,6 +181,9 @@ func TestReconcilingSeed(t *testing.T) {
 				Spec: kubermaticv1.SeedSpec{
 					Country:        "Germany",
 					ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+					Kubeconfig: corev1.ObjectReference{
+						Name: kubeconfigSecret.Name,
+					},
 				},
 			},
 			config: &kubermaticv1.KubermaticConfiguration{
@@ -225,7 +223,7 @@ func TestReconcilingSeed(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(test.seed).Build()
+			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(test.seed, kubeconfigSecret).Build()
 			seedClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).

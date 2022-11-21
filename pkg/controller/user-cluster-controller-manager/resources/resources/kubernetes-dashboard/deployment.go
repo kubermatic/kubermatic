@@ -53,7 +53,7 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment.
-func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = scraperName
@@ -70,7 +70,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			dep.Spec.Template.Spec.Containers = getContainers(registryWithOverwrite)
+			dep.Spec.Template.Spec.Containers = getContainers(imageRewriter)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
@@ -89,11 +89,11 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 	}
 }
 
-func getContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
+func getContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            scraperName,
-			Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), scraperImageName, scraperTag),
+			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", scraperImageName, scraperTag))),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"/metrics-sidecar"},
 			VolumeMounts: []corev1.VolumeMount{
@@ -109,10 +109,10 @@ func getContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Co
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
-				RunAsUser:                pointer.Int64Ptr(1001),
-				RunAsGroup:               pointer.Int64Ptr(2001),
-				ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
-				AllowPrivilegeEscalation: pointer.BoolPtr(false),
+				RunAsUser:                pointer.Int64(1001),
+				RunAsGroup:               pointer.Int64(2001),
+				ReadOnlyRootFilesystem:   pointer.Bool(true),
+				AllowPrivilegeEscalation: pointer.Bool(false),
 			},
 		},
 	}

@@ -139,3 +139,54 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 		})
 	}
 }
+
+var (
+	osImageURL              = "http://image-repo-http-server.kube-system.svc.cluster.local/images"
+	osImageDataVolumeName   = "dv-name"
+	osImageDataVolumeNsName = "namespace/dv-name"
+	ns                      = "namespace"
+)
+
+func TestExtractKubeVirtOsImageURLOrDataVolumeNsName(t *testing.T) {
+	type args struct {
+		namespace string
+		osImage   string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "URL",
+			args: args{
+				osImage:   osImageURL,
+				namespace: ns,
+			},
+			want: osImageURL, // no change, URL kept
+		},
+		{
+			name: "DataVolumeName prefixed with namespace",
+			args: args{
+				osImage:   osImageDataVolumeNsName,
+				namespace: ns,
+			},
+			want: osImageDataVolumeNsName, // no change, already right format
+		},
+		{
+			name: "DataVolumeName",
+			args: args{
+				osImage:   osImageDataVolumeName,
+				namespace: ns,
+			},
+			want: osImageDataVolumeNsName, // add the namespace/ prefix
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := extractKubeVirtOsImageURLOrDataVolumeNsName(tt.args.namespace, tt.args.osImage); got != tt.want {
+				t.Errorf("extractKubeVirtOsImageURLOrDataVolumeNsName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

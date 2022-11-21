@@ -29,6 +29,7 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -206,7 +207,6 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
-
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
@@ -216,6 +216,11 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					name:     "delete org user",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "update permissions",
+					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "lookup user",
@@ -237,10 +242,117 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
+			},
+		},
+		{
+			name:        "User is pruned from projects it does not belong to",
+			requestName: "prune",
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "prune",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Email:   "user@email.com",
+						IsAdmin: false,
+					},
+				},
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "project1",
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName1",
+					},
+				},
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "project2",
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "2"},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName2",
+					},
+				},
+				&kubermaticv1.UserProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "delete",
+						DeletionTimestamp: &metav1.Time{Time: time.Now()},
+						Finalizers:        []string{mlaFinalizer},
+					},
+					Spec: kubermaticv1.UserProjectBindingSpec{
+						UserEmail: "user@email.com",
+						ProjectID: "project1",
+						Group:     "viewers-project1",
+					},
+				},
+			},
+			hasFinalizer: true,
+			requests: []request{
+				{
+					name:     "create OAuth user",
+					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": true, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete user from default org",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				}, {
+					name:     "delete org user",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete org user",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/2/users/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
+				},
 				{
 					name:     "update permissions",
-					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
+					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":true}`))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "lookup user",
+					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org users",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "add org user",
+					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org 2 by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete org user",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/2/users/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -271,6 +383,91 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					name:     "delete user",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/admin/users/1", nil),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
+				},
+			},
+		},
+		{
+			name:        "Add users using group project bindings",
+			requestName: "group",
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "group",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Email:   "user@email.com",
+						IsAdmin: false,
+						Groups:  []string{"devs"},
+					},
+				},
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "project1",
+						Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName1",
+					},
+				},
+				&kubermaticv1.GroupProjectBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "group",
+						DeletionTimestamp: &metav1.Time{Time: time.Now()},
+						Finalizers:        []string{mlaFinalizer},
+					},
+					Spec: kubermaticv1.GroupProjectBindingSpec{
+						ProjectID: "project1",
+						Group:     "devs",
+						Role:      rbac.ViewerGroupNamePrefix,
+					},
+				},
+			},
+			hasFinalizer: true,
+			requests: []request{
+				{
+					name:     "create OAuth user",
+					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": true, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete user from default org",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete org user",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "update permissions",
+					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", io.NopCloser(strings.NewReader(`{"isGrafanaAdmin":false}`))),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "lookup user",
+					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org users",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "add org user",
+					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Viewer"}`)),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},

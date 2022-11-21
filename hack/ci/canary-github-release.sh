@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### This script is run for every commit to master and will create
+### This script is run for every commit to main and will create
 ### a dummy release in a dedicated GitHub repo. The purpose is to
 ###
 ### * test that releasing code actually works, and
@@ -32,7 +32,9 @@ export GIT_TAG="$(git rev-parse HEAD)"
 # or the name of the base branch in case of a PR. Since this is running
 # for untagged revisions, we cannot refer to the same revision in the
 # dashboard and must instead get the dashboard's latest revision.
-export DASHBOARD_GIT_TAG="$(get_latest_dashboard_hash "$PULL_BASE_REF")"
+UIBRANCH="${PULL_BASE_REF:-main}"
+
+export DASHBOARD_GIT_TAG="$(get_latest_dashboard_hash "$UIBRANCH")"
 
 git config --global user.email "dev@kubermatic.com"
 git config --global user.name "Prow CI Robot"

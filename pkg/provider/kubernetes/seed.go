@@ -17,125 +17,124 @@ limitations under the License.
 package kubernetes
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// SeedProvider struct that holds required components in order seeds.
-type SeedProvider struct {
-	clientPrivileged ctrlruntimeclient.Client
+var (
+	// emptySeedMap is returned when the default seed is not present.
+	emptySeedMap = map[string]*kubermaticv1.Seed{}
+)
+
+// SeedGetterFactory returns a SeedGetter. It has validation of all its arguments.
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, seedName string, namespace string) (provider.SeedGetter, error) {
+	return func() (*kubermaticv1.Seed, error) {
+		seed := &kubermaticv1.Seed{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
+			// allow callers to handle this gracefully
+			if apierrors.IsNotFound(err) {
+				return nil, err
+			}
+
+			return nil, fmt.Errorf("failed to get seed %q: %w", seedName, err)
+		}
+
+		seed.SetDefaults()
+
+		return seed, nil
+	}, nil
 }
 
-var _ provider.SeedProvider = &SeedProvider{}
+func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
+	return func() (map[string]*kubermaticv1.Seed, error) {
+		seed := &kubermaticv1.Seed{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: provider.DefaultSeedName}, seed); err != nil {
+			if apierrors.IsNotFound(err) {
+				// We should not fail if no seed exists and just return an
+				// empty map.
+				return emptySeedMap, nil
+			}
 
-func NewSeedProvider(client ctrlruntimeclient.Client) *SeedProvider {
-	return &SeedProvider{
-		clientPrivileged: client,
+			return nil, fmt.Errorf("failed to get seed %q: %w", provider.DefaultSeedName, err)
+		}
+
+		seed.SetDefaults()
+
+		return map[string]*kubermaticv1.Seed{
+			provider.DefaultSeedName: seed,
+		}, nil
+	}, nil
+}
+
+func GetSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) (*corev1.Secret, error) {
+	secret := &corev1.Secret{}
+	name := types.NamespacedName{
+		Namespace: seed.Spec.Kubeconfig.Namespace,
+		Name:      seed.Spec.Kubeconfig.Name,
 	}
-}
-
-func (p *SeedProvider) UpdateUnsecured(ctx context.Context, seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error) {
-	if err := p.clientPrivileged.Update(ctx, seed); err != nil {
-		return nil, err
+	if name.Namespace == "" {
+		name.Namespace = seed.Namespace
 	}
-	return seed, nil
-}
-
-func (p *SeedProvider) CreateUnsecured(ctx context.Context, seed *kubermaticv1.Seed) (*kubermaticv1.Seed, error) {
-	if err := p.clientPrivileged.Create(ctx, seed); err != nil {
-		return nil, err
+	if err := client.Get(ctx, name, secret); err != nil {
+		return nil, fmt.Errorf("failed to get kubeconfig secret %q: %w", name.String(), err)
 	}
-	return seed, nil
+
+	return secret, nil
 }
 
-func (p *SeedProvider) CreateOrUpdateKubeconfigSecretForSeed(ctx context.Context, seed *kubermaticv1.Seed, kubeconfig []byte) error {
-	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, seed, map[string][]byte{
-		resources.KubeconfigSecretKey: kubeconfig,
-	})
+func GetSeedKubeconfig(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed) ([]byte, error) {
+	secret, err := GetSeedKubeconfigSecret(ctx, client, seed)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	seed.Spec.Kubeconfig = *kubeconfigRef
-	return nil
+
+	fieldPath := seed.Spec.Kubeconfig.FieldPath
+	if len(fieldPath) == 0 {
+		fieldPath = provider.DefaultKubeconfigFieldPath
+	}
+	if _, exists := secret.Data[fieldPath]; !exists {
+		return nil, fmt.Errorf("secret %q has no key %q", secret.Name, fieldPath)
+	}
+
+	return secret.Data[fieldPath], nil
 }
 
-func (p *SeedProvider) ensureKubeconfigSecret(ctx context.Context, seed *kubermaticv1.Seed, secretData map[string][]byte) (*corev1.ObjectReference, error) {
-	name := fmt.Sprintf("kubeconfig-%s", seed.Name)
-
-	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
-	existingSecret := &corev1.Secret{}
-
-	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to probe for secret %q: %w", name, err)
+func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
+	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
+		kubeconfig, err := GetSeedKubeconfig(ctx, client, seed)
+		if err != nil {
+			return nil, err
 		}
-		return createSeedKubeconfigSecret(ctx, p.clientPrivileged, name, secretData)
-	}
 
-	return updateSeedKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, secretData)
-}
+		cfg, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
+		}
 
-func createSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name string, secretData map[string][]byte) (*corev1.ObjectReference, error) {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: secretData,
-	}
-	if err := client.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create kubeconfig secret: %w", err)
-	}
-
-	return &corev1.ObjectReference{
-		Kind:            secret.Kind,
-		Namespace:       resources.KubermaticNamespace,
-		Name:            secret.Name,
-		UID:             secret.UID,
-		APIVersion:      secret.APIVersion,
-		ResourceVersion: secret.ResourceVersion,
+		return cfg, nil
 	}, nil
 }
 
-func updateSeedKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, secretData map[string][]byte) (*corev1.ObjectReference, error) {
-	if existingSecret.Data == nil {
-		existingSecret.Data = map[string][]byte{}
-	}
-
-	requiresUpdate := false
-
-	for k, v := range secretData {
-		if !bytes.Equal(v, existingSecret.Data[k]) {
-			requiresUpdate = true
-			break
+// SeedClientGetterFactory returns a SeedClientGetter. It uses a RestMapperCache to cache
+// the discovery data, which considerably speeds up client creation.
+func SeedClientGetterFactory(kubeconfigGetter provider.SeedKubeconfigGetter) provider.SeedClientGetter {
+	cache := restmapper.New()
+	return func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+		cfg, err := kubeconfigGetter(seed)
+		if err != nil {
+			return nil, err
 		}
+		return cache.Client(cfg)
 	}
-
-	if requiresUpdate {
-		existingSecret.Data = secretData
-		if err := client.Update(ctx, existingSecret); err != nil {
-			return nil, fmt.Errorf("failed to update kubeconfig secret: %w", err)
-		}
-	}
-
-	return &corev1.ObjectReference{
-		Kind:            existingSecret.Kind,
-		Namespace:       resources.KubermaticNamespace,
-		Name:            existingSecret.Name,
-		UID:             existingSecret.UID,
-		APIVersion:      existingSecret.APIVersion,
-		ResourceVersion: existingSecret.ResourceVersion,
-	}, nil
 }

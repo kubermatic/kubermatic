@@ -22,22 +22,29 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // KubeSystemRoleCreator returns the func to create/update the Role for the OSM
-// to facilitate leaderelection.
+// to retrieve kube-apiserver address from the cluster-info configmap.
 func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Name = resources.OperatingSystemManagerRoleName
-			r.Namespace = metav1.NamespaceSystem
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{""},
 					Resources: []string{"configmaps"},
+					Verbs: []string{
+						"create",
+						"update",
+						"get",
+						"list",
+					},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"secrets"},
 					Verbs: []string{
 						"create",
 						"update",
@@ -64,6 +71,50 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
+// KubePublicRoleCreator returns the func to create/update the Role for the OSM
+// to facilitate leaderelection.
+func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"configmaps"},
+					ResourceNames: []string{"cluster-info"},
+					Verbs: []string{
+						"get",
+					},
+				},
+			}
+			return r, nil
+		}
+	}
+}
+
+// DefaultRoleCreator returns the func to create/update the Role for the OSM
+// to retrieve kube-apiserver address from the Kubernetes endpoint.
+func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups:     []string{""},
+					Resources:     []string{"endpoints"},
+					ResourceNames: []string{"kubernetes"},
+					Verbs: []string{
+						"get",
+					},
+				},
+			}
+			return r, nil
+		}
+	}
+}
+
 func CloudInitSettingsRoleCreator() reconciling.NamedRoleCreatorGetter {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName,
@@ -77,6 +128,7 @@ func CloudInitSettingsRoleCreator() reconciling.NamedRoleCreatorGetter {
 							"list",
 							"create",
 							"delete",
+							"update",
 						},
 					},
 				}

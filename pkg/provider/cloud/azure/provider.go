@@ -20,10 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -116,7 +114,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 		return nil, err
 	}
 
-	clientSet, err := GetClientSet(cluster.Spec.Cloud, credentials)
+	clientSet, err := GetClientSet(credentials)
 	if err != nil {
 		return nil, err
 	}
@@ -125,10 +123,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSecurityGroup) {
 		logger.Infow("deleting security group", "group", cluster.Spec.Cloud.Azure.SecurityGroup)
 		if err := deleteSecurityGroup(ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			var detErr *autorest.DetailedError
-			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete security group %q: %w", cluster.Spec.Cloud.Azure.SecurityGroup, err)
-			}
+			return cluster, fmt.Errorf("failed to delete security group %q: %w", cluster.Spec.Cloud.Azure.SecurityGroup, err)
 		}
 		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerSecurityGroup)
@@ -141,10 +136,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerSubnet) {
 		logger.Infow("deleting subnet", "subnet", cluster.Spec.Cloud.Azure.SubnetName)
 		if err := deleteSubnet(ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			var detErr *autorest.DetailedError
-			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete sub-network %q: %w", cluster.Spec.Cloud.Azure.SubnetName, err)
-			}
+			return cluster, fmt.Errorf("failed to delete sub-network %q: %w", cluster.Spec.Cloud.Azure.SubnetName, err)
 		}
 		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerSubnet)
@@ -157,10 +149,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerRouteTable) {
 		logger.Infow("deleting route table", "routeTableName", cluster.Spec.Cloud.Azure.RouteTableName)
 		if err := deleteRouteTable(ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			var detErr *autorest.DetailedError
-			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete route table %q: %w", cluster.Spec.Cloud.Azure.RouteTableName, err)
-			}
+			return cluster, fmt.Errorf("failed to delete route table %q: %w", cluster.Spec.Cloud.Azure.RouteTableName, err)
 		}
 		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerRouteTable)
@@ -173,10 +162,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerVNet) {
 		logger.Infow("deleting vnet", "vnet", cluster.Spec.Cloud.Azure.VNetName)
 		if err := deleteVNet(ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			var detErr *autorest.DetailedError
-			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete virtual network %q: %w", cluster.Spec.Cloud.Azure.VNetName, err)
-			}
+			return cluster, fmt.Errorf("failed to delete virtual network %q: %w", cluster.Spec.Cloud.Azure.VNetName, err)
 		}
 
 		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -190,10 +176,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerAvailabilitySet) {
 		logger.Infow("deleting availability set", "availabilitySet", cluster.Spec.Cloud.Azure.AvailabilitySet)
 		if err := deleteAvailabilitySet(ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			var detErr *autorest.DetailedError
-			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete availability set %q: %w", cluster.Spec.Cloud.Azure.AvailabilitySet, err)
-			}
+			return cluster, fmt.Errorf("failed to delete availability set %q: %w", cluster.Spec.Cloud.Azure.AvailabilitySet, err)
 		}
 
 		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -207,10 +190,7 @@ func (a *Azure) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.
 	if kuberneteshelper.HasFinalizer(cluster, FinalizerResourceGroup) {
 		logger.Infow("deleting resource group", "resourceGroup", cluster.Spec.Cloud.Azure.ResourceGroup)
 		if err := deleteResourceGroup(ctx, clientSet, cluster.Spec.Cloud); err != nil {
-			var detErr *autorest.DetailedError
-			if !errors.As(err, &detErr) || detErr.StatusCode != http.StatusNotFound {
-				return cluster, fmt.Errorf("failed to delete resource group %q: %w", cluster.Spec.Cloud.Azure.ResourceGroup, err)
-			}
+			return cluster, fmt.Errorf("failed to delete resource group %q: %w", cluster.Spec.Cloud.Azure.ResourceGroup, err)
 		}
 
 		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -242,7 +222,7 @@ func (a *Azure) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Clus
 		return nil, err
 	}
 
-	clientSet, err := GetClientSet(cluster.Spec.Cloud, credentials)
+	clientSet, err := GetClientSet(credentials)
 	if err != nil {
 		return nil, err
 	}
@@ -319,13 +299,18 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 		return err
 	}
 
+	credential, err := credentials.ToAzureCredential()
+	if err != nil {
+		return err
+	}
+
 	if cloud.Azure.ResourceGroup != "" {
-		rgClient, err := getGroupsClient(cloud, credentials)
+		rgClient, err := getGroupsClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
 
-		if _, err = rgClient.Get(ctx, cloud.Azure.ResourceGroup); err != nil {
+		if _, err = rgClient.Get(ctx, cloud.Azure.ResourceGroup, nil); err != nil {
 			return err
 		}
 	}
@@ -336,117 +321,49 @@ func (a *Azure) ValidateCloudSpec(ctx context.Context, cloud kubermaticv1.CloudS
 	}
 
 	if cloud.Azure.VNetName != "" {
-		vnetClient, err := getNetworksClient(cloud, credentials)
+		vnetClient, err := getNetworksClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
 
-		if _, err = vnetClient.Get(ctx, resourceGroup, cloud.Azure.VNetName, ""); err != nil {
+		if _, err = vnetClient.Get(ctx, resourceGroup, cloud.Azure.VNetName, nil); err != nil {
 			return err
 		}
 	}
 
 	if cloud.Azure.SubnetName != "" {
-		subnetClient, err := getSubnetsClient(cloud, credentials)
+		subnetClient, err := getSubnetsClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
 
-		if _, err = subnetClient.Get(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, ""); err != nil {
+		if _, err = subnetClient.Get(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, nil); err != nil {
 			return err
 		}
 	}
 
 	if cloud.Azure.RouteTableName != "" {
-		routeTablesClient, err := getRouteTablesClient(cloud, credentials)
+		routeTablesClient, err := getRouteTablesClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
 
-		if _, err = routeTablesClient.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, ""); err != nil {
+		if _, err = routeTablesClient.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, nil); err != nil {
 			return err
 		}
 	}
 
 	if cloud.Azure.SecurityGroup != "" {
-		sgClient, err := getSecurityGroupsClient(cloud, credentials)
+		sgClient, err := getSecurityGroupsClient(credential, credentials.SubscriptionID)
 		if err != nil {
 			return err
 		}
 
-		if _, err = sgClient.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, ""); err != nil {
+		if _, err = sgClient.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, nil); err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
-
-func (a *Azure) AddICMPRulesIfRequired(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	credentials, err := GetCredentialsForCluster(cluster.Spec.Cloud, a.secretKeySelector)
-	if err != nil {
-		return err
-	}
-
-	azure := cluster.Spec.Cloud.Azure
-	if azure.SecurityGroup == "" {
-		return nil
-	}
-	sgClient, err := getSecurityGroupsClient(cluster.Spec.Cloud, credentials)
-	if err != nil {
-		return fmt.Errorf("failed to get security group client: %w", err)
-	}
-	sg, err := sgClient.Get(ctx, azure.ResourceGroup, azure.SecurityGroup, "")
-	if err != nil {
-		return fmt.Errorf("failed to get security group %q: %w", azure.SecurityGroup, err)
-	}
-
-	// we do not want to add IMCP rules to a NSG we do not own;
-	// which is the case when a pre-provisioned NSG is configured.
-	if !hasOwnershipTag(sg.Tags, cluster) {
-		return nil
-	}
-
-	var hasDenyAllTCPRule, hasDenyAllUDPRule, hasICMPAllowAllRule bool
-	if sg.SecurityRules != nil {
-		for _, rule := range *sg.SecurityRules {
-			if rule.Name == nil {
-				continue
-			}
-			// We trust that no one will alter the content of the rules
-			switch *rule.Name {
-			case denyAllTCPSecGroupRuleName:
-				hasDenyAllTCPRule = true
-			case denyAllUDPSecGroupRuleName:
-				hasDenyAllUDPRule = true
-			case allowAllICMPSecGroupRuleName:
-				hasICMPAllowAllRule = true
-			}
-		}
-	}
-
-	var newSecurityRules []network.SecurityRule
-	if !hasDenyAllTCPRule {
-		a.log.With("cluster", cluster.Name).Info("Creating TCP deny all rule")
-		newSecurityRules = append(newSecurityRules, tcpDenyAllRule())
-	}
-	if !hasDenyAllUDPRule {
-		a.log.With("cluster", cluster.Name).Info("Creating UDP deny all rule")
-		newSecurityRules = append(newSecurityRules, udpDenyAllRule())
-	}
-	if !hasICMPAllowAllRule {
-		a.log.With("cluster", cluster.Name).Info("Creating ICMP allow all rule")
-		newSecurityRules = append(newSecurityRules, icmpAllowAllRule())
-	}
-
-	if len(newSecurityRules) > 0 {
-		newSecurityGroupRules := append(*sg.SecurityRules, newSecurityRules...)
-		sg.SecurityRules = &newSecurityGroupRules
-		_, err := sgClient.CreateOrUpdate(ctx, azure.ResourceGroup, azure.SecurityGroup, sg)
-		if err != nil {
-			return fmt.Errorf("failed to add new rules to security group %q: %w", *sg.Name, err)
-		}
-	}
 	return nil
 }
 
@@ -496,4 +413,8 @@ type Credentials struct {
 	SubscriptionID string
 	ClientID       string
 	ClientSecret   string
+}
+
+func (c Credentials) ToAzureCredential() (*azidentity.ClientSecretCredential, error) {
+	return azidentity.NewClientSecretCredential(c.TenantID, c.ClientID, c.ClientSecret, nil)
 }

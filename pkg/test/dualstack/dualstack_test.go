@@ -26,43 +26,71 @@ import (
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	netutils "k8s.io/utils/net"
-)
-
-const (
-	kubeSystem = "kube-system"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	userconfig          string
-	ipFamily            string
-	skipNodes           bool
-	skipHostNetworkPods bool
+	logOptions              = utils.DefaultLogOptions
+	enabledOperatingSystems = sets.NewString()
+	enabledCNIs             = sets.NewString()
+	enabledProviders        = sets.NewString()
+
+	userconfig             string
+	ipFamily               string
+	skipNodes              bool
+	skipHostNetworkPods    bool
+	skipEgressConnectivity bool
 )
 
 func init() {
-	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
+	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster (only used when running TestExistingCluster test)")
 	flag.StringVar(&ipFamily, "ipFamily", "IPv4", "IP family")
-	flag.BoolVar(&skipNodes, "skipNodes", true, "Set false to test nodes")
-	flag.BoolVar(&skipHostNetworkPods, "skipHostNetworkPods", true, "Set false to test pods in host network")
+	flag.Var(flagopts.SetFlag(enabledOperatingSystems), "os", "Comma-separated list of operating systems to test, like ubuntu,flatcar")
+	flag.Var(flagopts.SetFlag(enabledCNIs), "cni", "Comma-separated list of CNIs, like cilium,canal")
+	flag.Var(flagopts.SetFlag(enabledProviders), "provider", "Comma-separated list of cloud providers, like azure,aws,gcp")
+	flag.BoolVar(&skipNodes, "skip-nodes", false, "If true, skips node IP address tests")
+	flag.BoolVar(&skipHostNetworkPods, "skip-host-network-pods", false, "If true, skips host network pods IP test")
+	flag.BoolVar(&skipEgressConnectivity, "skip-egress-connectivity", false, "If true, skips egress connectivity test")
+
+	alibabaCredentials.AddFlags(flag.CommandLine)
+	awsCredentials.AddFlags(flag.CommandLine)
+	azureCredentials.AddFlags(flag.CommandLine)
+	digitaloceanCredentials.AddFlags(flag.CommandLine)
+	equinixMetalCredentials.AddFlags(flag.CommandLine)
+	gcpCredentials.AddFlags(flag.CommandLine)
+	hetznerCredentials.AddFlags(flag.CommandLine)
+	openstackCredentials.AddFlags(flag.CommandLine)
+	vsphereCredentials.AddFlags(flag.CommandLine)
+	jig.AddFlags(flag.CommandLine)
+	logOptions.AddFlags(flag.CommandLine)
 }
 
-// TestClusterIPFamily is used to run dualstack test against any cluster. Takes kubeconfig of the cluster as command line
-// argument.
-func TestClusterIPFamily(t *testing.T) {
+// TestExistingCluster is used to run dualstack test against any existing cluster.
+// Takes kubeconfig of the cluster as command line argument.
+func TestExistingCluster(t *testing.T) {
+	ctx := context.Background()
+	log := log.NewFromOptions(logOptions).Sugar()
+
 	// based on https://kubernetes.io/docs/tasks/network/validate-dual-stack/
 	if userconfig == "" {
 		t.Logf("kubeconfig for usercluster not provided, test passes vacuously.")
 		t.Logf("to run against ready usercluster use following command")
-		t.Logf("go test ./pkg/test/dualstack/dualstack -v -race -tags dualstack -timeout 30m -run TestClusterIPFamily -args --userconfig <USERCLUSTER KUBECONFIG> --ipFamily <IP FAMILY>")
+		t.Logf("go test ./pkg/test/dualstack -v -race -tags dualstack -timeout 30m -run TestExistingCluster -args --userconfig <USERCLUSTER KUBECONFIG> --ipFamily <IP FAMILY>")
 		return
 	}
 
@@ -71,147 +99,155 @@ func TestClusterIPFamily(t *testing.T) {
 		t.Fatalf("failed to build config: %s", err)
 	}
 
-	userclusterClient, err := kubernetes.NewForConfig(config)
+	userclusterClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
 		t.Fatalf("failed to create usercluster client: %s", err)
 	}
 
-	testUserCluster(t, userclusterClient, util.IPFamily(ipFamily), skipNodes, skipHostNetworkPods)
+	testUserCluster(t, ctx, log, userclusterClient, util.IPFamily(ipFamily), skipNodes, skipHostNetworkPods, skipEgressConnectivity)
 }
 
-func testUserCluster(t *testing.T, userclusterClient *kubernetes.Clientset, ipFamily util.IPFamily, skipNodes, skipHostNetworkPods bool) {
-	t.Logf("testing with IP family: %q", ipFamily)
-	ctx := context.Background()
+func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, userclusterClient ctrlruntimeclient.Client, ipFamily util.IPFamily, skipNodes, skipHostNetworkPods, skipEgressConnectivity bool) {
+	log.Infow("Testing cluster", "ipfamily", ipFamily)
 
 	// validate nodes
 	if skipNodes {
-		t.Log("skipping validation for nodes")
+		log.Info("Skipping validation for nodes")
 	} else {
-		nodes, err := userclusterClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-		if err != nil {
-			t.Fatal(err)
+		nodes := corev1.NodeList{}
+		if err := userclusterClient.List(ctx, &nodes); err != nil {
+			t.Fatalf("Failed to list nodes: %v", err)
 		}
 
 		for _, node := range nodes.Items {
 			var addrs []string
 			for _, addr := range node.Status.Addresses {
-				fmt.Println(addr)
 				if addr.Type == corev1.NodeHostName {
 					continue
 				}
 				addrs = append(addrs, addr.Address)
 			}
-			validate(t, node.Name, ipFamily, addrs)
+			validate(t, fmt.Sprintf("node '%s' status addresses", node.Name), ipFamily, addrs)
 		}
 
 		for _, node := range nodes.Items {
-			validate(t, node.Name, ipFamily, node.Spec.PodCIDRs)
+			if len(node.Spec.PodCIDRs) > 0 {
+				// in case of Cilium we can have 0 pod CIDRs as Cilium uses its own node IPAM
+				validate(t, fmt.Sprintf("node '%s' pod CIDRs", node.Name), ipFamily, node.Spec.PodCIDRs)
+			}
 		}
 	}
+
+	nodes := corev1.NodeList{}
+	if err := userclusterClient.List(ctx, &nodes); err != nil {
+		t.Fatalf("Failed to list nodes: %v", err)
+	}
+
+	nNodes := len(nodes.Items)
 
 	// validate pods
-	{
-		pods, err := userclusterClient.CoreV1().Pods(kubeSystem).List(ctx,
-			metav1.ListOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		for _, pod := range pods.Items {
-			if pod.Spec.HostNetwork && skipHostNetworkPods {
-				t.Logf("skipping host network pod: %s", pod.Name)
-				continue
-			}
-			var podAddrs []string
-			for _, addr := range pod.Status.PodIPs {
-				podAddrs = append(podAddrs, addr.IP)
-			}
-			validate(t, pod.Name, ipFamily, podAddrs)
-		}
+	pods := corev1.PodList{}
+	if err := userclusterClient.List(ctx, &pods, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		t.Fatalf("Failed to list pods: %v", err)
 	}
 
-	// validate svc
-	{
-		svcs, err := userclusterClient.CoreV1().Services(kubeSystem).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			t.Fatal(err)
+	for _, pod := range pods.Items {
+		if pod.Spec.HostNetwork && skipHostNetworkPods {
+			log.Infow("skipping host network pod", "pod", pod.Name)
+			continue
 		}
 
-		for _, svc := range svcs.Items {
-			if svc.Spec.IPFamilyPolicy == nil {
-				t.Logf("skipping %q because Spec.IPFamilyPolicy set", svc.Name)
+		var podAddrs []string
+		for _, addr := range pod.Status.PodIPs {
+			podAddrs = append(podAddrs, addr.IP)
+		}
+		validate(t, fmt.Sprintf("pod '%s' addresses", pod.Name), ipFamily, podAddrs)
+	}
+
+	// validate services
+	services := corev1.ServiceList{}
+	if err := userclusterClient.List(ctx, &services, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		t.Fatalf("Failed to list services: %v", err)
+	}
+
+	for _, svc := range services.Items {
+		svcLog := log.With("service", svc.Name)
+
+		if svc.Spec.IPFamilyPolicy == nil {
+			svcLog.Info("Skipping because Spec.IPFamilyPolicy is not set")
+			continue
+		}
+
+		switch *svc.Spec.IPFamilyPolicy {
+		case corev1.IPFamilyPolicySingleStack:
+			if ipFamily == util.DualStack {
+				svcLog.Infof("Skipping %q test because IP family policy is %q", ipFamily, *svc.Spec.IPFamilyPolicy)
 				continue
 			}
-			switch *svc.Spec.IPFamilyPolicy {
-			case corev1.IPFamilyPolicySingleStack:
-				if ipFamily == util.DualStack {
-					t.Logf("skipping %q test for %q because IP family policy is %q", ipFamily, svc.Name, *svc.Spec.IPFamilyPolicy)
-					continue
-				}
-			case corev1.IPFamilyPolicyPreferDualStack, corev1.IPFamilyPolicyRequireDualStack:
-			}
+		case corev1.IPFamilyPolicyPreferDualStack, corev1.IPFamilyPolicyRequireDualStack:
+		}
 
-			switch svc.Spec.Type {
-			case corev1.ServiceTypeClusterIP:
-				validate(t, svc.Name, ipFamily, svc.Spec.ClusterIPs)
-			case corev1.ServiceTypeNodePort:
-			case corev1.ServiceTypeExternalName:
-			case corev1.ServiceTypeLoadBalancer:
-				validate(t, svc.Name, ipFamily, svc.Spec.ClusterIPs)
-				validate(t, svc.Name, ipFamily, svc.Spec.ExternalIPs)
-			}
+		switch svc.Spec.Type {
+		case corev1.ServiceTypeClusterIP:
+			validate(t, fmt.Sprintf("service '%s' cluster IPs", svc.Name), ipFamily, svc.Spec.ClusterIPs)
+		case corev1.ServiceTypeNodePort:
+		case corev1.ServiceTypeExternalName:
+		case corev1.ServiceTypeLoadBalancer:
+			validate(t, fmt.Sprintf("service '%s' cluster IPs", svc.Name), ipFamily, svc.Spec.ClusterIPs)
+			validate(t, fmt.Sprintf("service '%s' external IPs", svc.Name), ipFamily, svc.Spec.ExternalIPs)
 		}
 	}
 
 	// validate egress connectivity
-	switch ipFamily {
-	case util.IPv4, util.Unspecified:
-		validateEgressConnectivity(t, userclusterClient, 4)
-	case util.IPv6:
-		validateEgressConnectivity(t, userclusterClient, 6)
-	case util.DualStack:
-		validateEgressConnectivity(t, userclusterClient, 4)
-		validateEgressConnectivity(t, userclusterClient, 6)
+	if skipEgressConnectivity {
+		log.Info("Skipping validation of egress connectivity")
+	} else {
+		switch ipFamily {
+		case util.IPv4, util.Unspecified:
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
+		case util.IPv6:
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
+		case util.DualStack:
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
+			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
+		}
 	}
 }
 
-func validateEgressConnectivity(t *testing.T, userclusterClient *kubernetes.Clientset, ipVersion int) {
-	t.Log("validating", fmt.Sprintf("egress-validator-%d", ipVersion))
-	ns := "default"
+func validateEgressConnectivity(t *testing.T, ctx context.Context, log *zap.SugaredLogger, userclusterClient ctrlruntimeclient.Client, ipVersion, expectedPodCount int) {
+	log.Infof("validating %s", fmt.Sprintf("egress-validator-%d", ipVersion))
 
-	ds, err := userclusterClient.AppsV1().DaemonSets(ns).Create(context.Background(), egressValidatorDaemonSet(ipVersion), metav1.CreateOptions{})
-	if err != nil {
-		t.Errorf("failed to create ds: %v", err)
+	ds := egressValidatorDaemonSet(ipVersion, metav1.NamespaceDefault)
+	if err := userclusterClient.Create(ctx, ds); err != nil {
+		t.Errorf("failed to create DaemonSet: %v", err)
 		return
 	}
 
 	defer func() {
-		err := userclusterClient.AppsV1().DaemonSets(ns).Delete(context.Background(), ds.Name, metav1.DeleteOptions{})
-		if err != nil {
+		if err := userclusterClient.Delete(ctx, ds); err != nil {
 			t.Errorf("failed to cleanup: %v", err)
+			return
 		}
 	}()
 
-	err = wait.Poll(10*time.Second, 2*time.Minute, func() (bool, error) {
-		p, err := userclusterClient.AppsV1().DaemonSets(ns).Get(context.Background(), ds.Name, metav1.GetOptions{})
-		if err != nil {
-			t.Logf("failed to get ds: %v", err)
-			return false, nil
+	err := wait.PollLog(ctx, log, 10*time.Second, 5*time.Minute, func() (error, error) {
+		d := &appsv1.DaemonSet{}
+		if err := userclusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(ds), d); err != nil {
+			return fmt.Errorf("failed to get DaemonSet: %w", err), nil
 		}
-		if p.Status.NumberAvailable != p.Status.DesiredNumberScheduled {
-			t.Logf("ds not healthy")
-			return false, nil
-		}
-		return true, nil
-	})
 
+		if int(d.Status.NumberAvailable) != expectedPodCount {
+			return fmt.Errorf("only %d out of %d pods available", d.Status.NumberAvailable, expectedPodCount), nil
+		}
+
+		return nil, nil
+	})
 	if err != nil {
-		t.Errorf("ds never became healthy: %v", err)
+		t.Errorf("DaemonSet never became healthy: %v", err)
 	}
 }
 
 func validate(t *testing.T, name string, ipFamily util.IPFamily, addrs []string) {
-	fmt.Println("validating", name, addrs)
 	if !all(ipFamily, addrs) {
 		t.Errorf("not all addresses in %s are in IP family %q for %s", addrs, ipFamily, name)
 	}
@@ -251,15 +287,12 @@ func all(ipFamily util.IPFamily, addrs []string) bool {
 	return true
 }
 
-func egressValidatorDaemonSet(ipVersion int) *appsv1.DaemonSet {
+func egressValidatorDaemonSet(ipVersion int, namespace string) *appsv1.DaemonSet {
 	pod := egressValidatorPod(ipVersion)
 	return &appsv1.DaemonSet{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "DaemonSet",
-			APIVersion: "apps/v1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("egress-validator-%d", ipVersion),
+			Name:      fmt.Sprintf("egress-validator-%d", ipVersion),
+			Namespace: namespace,
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -295,7 +328,7 @@ func egressValidatorPod(ipVersion int) *corev1.Pod {
 					Command: []string{
 						"/bin/ash",
 						"-c",
-						"sleep 1000000000",
+						"while true; do sleep 1; done",
 					},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{

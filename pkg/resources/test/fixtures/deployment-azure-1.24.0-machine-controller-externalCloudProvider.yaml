@@ -5,6 +5,7 @@ metadata:
   labels:
     app: machine-controller
   name: machine-controller
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -36,20 +37,32 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver","-node-external-cloud-provider"]}'
+        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver","-node-external-cloud-provider","-use-osm"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
         - /http-prober-bin/http-prober
         env:
         - name: AZURE_CLIENT_ID
-          value: az-client-id
+          valueFrom:
+            secretKeyRef:
+              key: clientID
+              name: cloud-credentials
         - name: AZURE_CLIENT_SECRET
-          value: az-client-secret
+          valueFrom:
+            secretKeyRef:
+              key: clientSecret
+              name: cloud-credentials
         - name: AZURE_TENANT_ID
-          value: az-tenant-id
+          valueFrom:
+            secretKeyRef:
+              key: tenantID
+              name: cloud-credentials
         - name: AZURE_SUBSCRIPTION_ID
-          value: az-subscription-id
+          valueFrom:
+            secretKeyRef:
+              key: subscriptionID
+              name: cloud-credentials
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
@@ -68,7 +81,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:v1.51.0
+        image: quay.io/kubermatic/machine-controller:7784255e05d856f53399d591c3387dcc651f3ae9
         livenessProbe:
           failureThreshold: 3
           httpGet:

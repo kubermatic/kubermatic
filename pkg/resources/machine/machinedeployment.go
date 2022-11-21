@@ -30,9 +30,9 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
+	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -55,6 +55,14 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 
 	// Add Annotations to Machine Deployment
 	md.Annotations = nd.Annotations
+
+	osp := getOperatingSystemProfile(nd, dc)
+	if osp != "" {
+		if md.Annotations == nil {
+			md.Annotations = make(map[string]string)
+		}
+		md.Annotations[osmresources.MachineDeploymentOSPAnnotation] = osp
+	}
 
 	md.Namespace = metav1.NamespaceSystem
 	md.Finalizers = []string{metav1.FinalizerDeleteDependents}
@@ -150,11 +158,6 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		err      error
 	)
 
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
-	}
-
 	switch {
 	case nd.Spec.Template.Cloud.AWS != nil && dc.Spec.AWS != nil:
 		config.CloudProvider = providerconfig.CloudProviderAWS
@@ -170,15 +173,6 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		}
 	case nd.Spec.Template.Cloud.VSphere != nil && dc.Spec.VSphere != nil:
 		config.CloudProvider = providerconfig.CloudProviderVsphere
-
-		// We use OverwriteCloudConfig for VSphere to ensure we always use the credentials
-		// passed in via frontend for the cloud-provider functionality.
-		overwriteCloudConfig, err := cloudconfig.CloudConfig(c, dc, credentials)
-		if err != nil {
-			return nil, err
-		}
-		config.OverwriteCloudConfig = &overwriteCloudConfig
-
 		cloudExt, err = getVSphereProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
@@ -219,7 +213,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		}
 	case nd.Spec.Template.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil:
 		config.CloudProvider = providerconfig.CloudProviderKubeVirt
-		cloudExt, err = getKubevirtProviderSpec(nd.Spec.Template, dc)
+		cloudExt, err = getKubevirtProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +236,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 			return nil, err
 		}
 	case nd.Spec.Template.Cloud.VMwareCloudDirector != nil && dc.Spec.VMwareCloudDirector != nil:
-		config.CloudProvider = providerconfig.CloudProviderVcloudDirector
+		config.CloudProvider = providerconfig.CloudProviderVMwareCloudDirector
 		cloudExt, err = getVMwareCloudDirectorProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
@@ -268,6 +262,32 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 	}
 
 	return &config, nil
+}
+
+func getOperatingSystemProfile(nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter) string {
+	if dc.Spec.DefaultOperatingSystemProfiles == nil {
+		return ""
+	}
+
+	// OS specifics
+	switch {
+	case nd.Spec.Template.OperatingSystem.Ubuntu != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemUbuntu]
+	case nd.Spec.Template.OperatingSystem.CentOS != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemCentOS]
+	case nd.Spec.Template.OperatingSystem.SLES != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemSLES]
+	case nd.Spec.Template.OperatingSystem.RHEL != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemRHEL]
+	case nd.Spec.Template.OperatingSystem.Flatcar != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemFlatcar]
+	case nd.Spec.Template.OperatingSystem.RockyLinux != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemRockyLinux]
+	case nd.Spec.Template.OperatingSystem.AmazonLinux != nil:
+		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemAmazonLinux2]
+	default:
+		return ""
+	}
 }
 
 func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) error {
@@ -311,6 +331,12 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 	case nd.Spec.Template.OperatingSystem.RockyLinux != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemRockyLinux
 		osExt, err = getRockyLinuxOperatingSystemSpec(nd.Spec.Template)
+		if err != nil {
+			return err
+		}
+	case nd.Spec.Template.OperatingSystem.AmazonLinux != nil:
+		config.OperatingSystem = providerconfig.OperatingSystemAmazonLinux2
+		osExt, err = getAmazonLinuxOperatingSystemSpec(nd.Spec.Template)
 		if err != nil {
 			return err
 		}

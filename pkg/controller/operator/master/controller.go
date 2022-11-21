@@ -18,6 +18,7 @@ package master
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -25,6 +26,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -32,7 +35,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -94,26 +97,23 @@ func Add(
 
 	// for each child put the parent configuration onto the queue
 	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		configs := &kubermaticv1.KubermaticConfigurationList{}
-		options := &ctrlruntimeclient.ListOptions{Namespace: namespace}
-
-		if err := mgr.GetClient().List(ctx, configs, options); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list KubermaticConfigurations: %w", err))
+		config, err := kubernetes.GetRawKubermaticConfiguration(ctx, mgr.GetClient(), namespace)
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to get KubermaticConfiguration: %w", err))
 			return nil
 		}
 
 		// when handling namespaces, it's okay to not find a KubermaticConfiguration
 		// and simply skip reconciling
-		if len(configs.Items) == 0 {
+		if errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
 			return nil
 		}
 
-		if len(configs.Items) > 1 {
+		if errors.Is(err, provider.ErrTooManyKubermaticConfigurationFound) {
 			log.Warnw("found multiple KubermaticConfigurations in this namespace, refusing to guess the owner", "namespace", namespace)
 			return nil
 		}
 
-		config := configs.Items[0]
 		if config.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
 			log.Debugf("KubermaticConfiguration does not have matching %s label", kubermaticv1.WorkerNameLabelKey)
 			return nil
@@ -134,7 +134,7 @@ func Add(
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&networkingv1.Ingress{},
-		&policyv1beta1.PodDisruptionBudget{},
+		&policyv1.PodDisruptionBudget{},
 	}
 
 	for _, t := range namespacedTypesToWatch {
@@ -143,13 +143,23 @@ func Add(
 		}
 	}
 
-	globalTypesToWatch := []ctrlruntimeclient.Object{
-		&rbacv1.ClusterRoleBinding{},
+	globalOwnedTypesToWatch := []ctrlruntimeclient.Object{
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
+		&rbacv1.ClusterRoleBinding{},
+	}
+
+	for _, t := range globalOwnedTypesToWatch {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
+			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
+		}
+	}
+
+	globalTypesToWatch := []ctrlruntimeclient.Object{
+		&kubermaticv1.AddonConfig{},
 	}
 
 	for _, t := range globalTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}

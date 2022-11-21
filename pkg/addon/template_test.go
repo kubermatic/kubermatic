@@ -17,101 +17,32 @@ limitations under the License.
 package addon
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"go.uber.org/zap"
+	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/yaml"
 )
 
-// TestRenderAddons ensures that all our default addon manifests render
-// properly given a variety of cluster configurations.
-func TestRenderAddons(t *testing.T) {
-	testRenderAddonsForOrchestrator(t, "kubernetes")
-}
-
-func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
-	clusterFiles, _ := filepath.Glob(fmt.Sprintf("testdata/cluster-%s-*", orchestrator))
-
-	clusters := []kubermaticv1.Cluster{}
-	for _, filename := range clusterFiles {
-		content, err := os.ReadFile(filename)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		cluster := kubermaticv1.Cluster{}
-		err = yaml.UnmarshalStrict(content, &cluster)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		clusters = append(clusters, cluster)
-	}
-
-	addonBasePath := "../../addons"
-
-	addonPaths, _ := filepath.Glob(filepath.Join(addonBasePath, "*"))
-	if len(addonPaths) == 0 {
-		t.Fatal("unable to find addons in the specified directory")
-	}
-
-	addons := []kubermaticv1.Addon{}
-	for _, addonPath := range addonPaths {
-		addonPath, _ := filepath.Abs(addonPath)
-
-		if stat, err := os.Stat(addonPath); err != nil || !stat.IsDir() {
-			continue
-		}
-
-		addons = append(addons, kubermaticv1.Addon{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: filepath.Base(addonPath),
-			},
-		})
-	}
-
-	log := zap.NewNop().Sugar()
-	credentials := resources.Credentials{}
-	variables := map[string]interface{}{
-		"test": true,
-	}
-
-	for _, cluster := range clusters {
-		for _, addon := range addons {
-			data, err := NewTemplateData(&cluster, credentials, "kubeconfig", "1.2.3.4", "5.6.7.8", variables)
-			if err != nil {
-				t.Fatalf("Rendering %s addon %s for cluster %s failed: %v", orchestrator, addon.Name, cluster.Name, err)
-			}
-
-			path := filepath.Join(addonBasePath, addon.Name)
-
-			_, err = ParseFromFolder(log, "", path, data)
-			if err != nil {
-				t.Fatalf("Rendering %s addon %s for cluster %s failed: %v", orchestrator, addon.Name, cluster.Name, err)
-			}
-		}
-	}
-}
+// There are unit tests in pkg/install/images/ that effectively render
+// all addons against a wide variety of cluster combinations, so there
+// is little use in having another set of tests (and more importantly,
+// testdata or testdata generators) in this package as well.
 
 func TestNewTemplateData(t *testing.T) {
-	version := semver.NewSemverOrDie("v1.22.5")
+	version := defaulting.DefaultKubernetesVersioning.Default
 	feature := "myfeature"
 	cluster := kubermaticv1.Cluster{
 		Spec: kubermaticv1.ClusterSpec{
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				IPVS: &kubermaticv1.IPVSConfiguration{
-					StrictArp: pointer.BoolPtr(true),
+					StrictArp: pointer.Bool(true),
 				},
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
@@ -129,10 +60,32 @@ func TestNewTemplateData(t *testing.T) {
 			},
 		},
 	}
+	ipamAllocationList := kubermaticv1.IPAMAllocationList{
+		Items: []kubermaticv1.IPAMAllocation{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ipam-pool-1",
+				},
+				Spec: kubermaticv1.IPAMAllocationSpec{
+					Type: "prefix",
+					CIDR: "192.168.0.1/28",
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "ipam-pool-2",
+				},
+				Spec: kubermaticv1.IPAMAllocationSpec{
+					Type:      "range",
+					Addresses: []string{"192.168.0.1-192.168.0.8", "192.168.0.10-192.168.0.17"},
+				},
+			},
+		},
+	}
 
 	credentials := resources.Credentials{}
 
-	templateData, err := NewTemplateData(&cluster, credentials, "", "", "", nil)
+	templateData, err := NewTemplateData(&cluster, credentials, "", "", "", &ipamAllocationList, nil)
 	if err != nil {
 		t.Fatalf("Failed to create template data: %v", err)
 	}
@@ -140,4 +93,15 @@ func TestNewTemplateData(t *testing.T) {
 	if !templateData.Cluster.Features.Has(feature) {
 		t.Fatalf("Expected cluster features to contain %q, but does not.", feature)
 	}
+
+	assert.Equal(t, map[string]IPAMAllocation{
+		"ipam-pool-1": {
+			Type: "prefix",
+			CIDR: "192.168.0.1/28",
+		},
+		"ipam-pool-2": {
+			Type:      "range",
+			Addresses: []string{"192.168.0.1-192.168.0.8", "192.168.0.10-192.168.0.17"},
+		},
+	}, templateData.Cluster.Network.IPAMAllocations)
 }

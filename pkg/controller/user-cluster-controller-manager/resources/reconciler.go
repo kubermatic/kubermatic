@@ -43,6 +43,7 @@ import (
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
@@ -56,7 +57,6 @@ import (
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -81,7 +81,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %w", err)
 	}
-	cloudConfig, err := r.cloudConfig(ctx, resources.CloudConfigConfigMapName)
+	cloudConfig, err := r.cloudConfig(ctx, resources.CloudConfigSeedSecretName)
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %w", err)
 	}
@@ -93,8 +93,8 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
-		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigName)
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
+		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigSecretName)
 		if err != nil {
 			return fmt.Errorf("failed to get csi config: %w", err)
 		}
@@ -135,7 +135,8 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
-	data.kubernetesDashboardEnabled = cluster.Spec.KubernetesDashboard.Enabled
+	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
+	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
 
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
@@ -181,10 +182,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileRoleBindings(ctx, data); err != nil {
-		return err
-	}
-
-	if err := controllerutil.RemoveOldApplicationInstallationCRD(ctx, r.Client); err != nil {
 		return err
 	}
 
@@ -266,7 +263,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if !r.enableOperatingSystemManager {
+	if !data.operatingSystemManagerEnabled {
 		if err := r.ensureOSMResourcesAreRemoved(ctx); err != nil {
 			return err
 		}
@@ -376,7 +373,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		creators = append(creators, usersshkeys.RoleCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.KubeSystemRoleCreator())
 	}
 
@@ -390,6 +387,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		machinecontroller.KubePublicRoleCreator(),
 	}
 
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators, operatingsystemmanager.KubePublicRoleCreator())
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", metav1.NamespacePublic, err)
 	}
@@ -398,6 +399,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	creators = []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.EndpointReaderRoleCreator(),
 		clusterautoscaler.DefaultRoleCreator(),
+	}
+
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators, operatingsystemmanager.DefaultRoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
@@ -419,7 +424,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		cloudinitsettings.RoleCreator(),
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		cloudInitRoleCreator = append(cloudInitRoleCreator, operatingsystemmanager.CloudInitSettingsRoleCreator())
 	}
 
@@ -454,7 +459,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		creators = append(creators, usersshkeys.RoleBindingCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingCreator())
 	}
 
@@ -467,6 +472,10 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		machinecontroller.KubePublicRoleBindingCreator(),
 		machinecontroller.ClusterInfoAnonymousRoleBindingCreator(),
 	}
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators, operatingsystemmanager.KubePublicRoleBindingCreator())
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-public Namespace: %w", err)
 	}
@@ -476,6 +485,10 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		machinecontroller.DefaultRoleBindingCreator(),
 		clusterautoscaler.DefaultRoleBindingCreator(),
 	}
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators, operatingsystemmanager.DefaultRoleBindingCreator())
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in default Namespace: %w", err)
 	}
@@ -494,7 +507,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		cloudinitsettings.RoleBindingCreator(),
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		cloudInitRoleBindingCreator = append(cloudInitRoleBindingCreator, operatingsystemmanager.CloudInitSettingsRoleBindingCreator())
 	}
 
@@ -541,8 +554,9 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		creators = append(creators, userclusterprometheus.ClusterRoleCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleCreator())
+		creators = append(creators, operatingsystemmanager.WebhookClusterRoleCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -590,8 +604,9 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, konnectivity.ClusterRoleBindingCreator())
 	}
 
-	if r.enableOperatingSystemManager {
+	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleBindingCreator())
+		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -626,7 +641,9 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 			gatekeeper.ConstraintTemplatePodStatusCRDCreator(),
 			gatekeeper.MutatorPodStatusCRDCreator(),
 			gatekeeper.AssignCRDCreator(),
-			gatekeeper.AssignMetadataCRDCreator())
+			gatekeeper.AssignMetadataCRDCreator(),
+			gatekeeper.ModifySetCRDCreator(),
+			gatekeeper.ProviderCRDCreator())
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
@@ -642,6 +659,10 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators, operatingsystemmanager.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace))
+	}
+
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile MutatingWebhookConfigurations: %w", err)
 	}
@@ -651,6 +672,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		applications.ApplicationInstallationValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
+		machine.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
@@ -660,7 +682,8 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
+		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
 		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationCreator(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
 	}
 
@@ -781,6 +804,12 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		creators = append(creators, nodelocaldns.ConfigMapCreator(r.dnsClusterIP))
 	}
 
+	if data.csiCloudConfig != nil {
+		if r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider {
+			creators = append(creators, cloudcontroller.VMwareCloudDirectorCSIConfig(data.csiCloudConfig))
+		}
+	}
+
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-system namespace: %w", err)
 	}
@@ -837,7 +866,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
-	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
 		creators = append(creators, csisnapshotter.TLSServingCertificateCreator(resources.CSISnapshotValidationWebhookName, data.caCert))
 	}
 
@@ -894,6 +923,17 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
+	// Operating System Manager
+	if data.operatingSystemManagerEnabled {
+		creators = []reconciling.NamedSecretCreatorGetter{
+			cloudinitsettings.SecretCreator(),
+		}
+
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.CloudInitSettingsNamespace, err)
+		}
+	}
+
 	return nil
 }
 
@@ -901,11 +941,11 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
 
 	if r.nodeLocalDNSCache {
-		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.overwriteRegistryFunc))
+		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.imageRewriter))
 	}
 
 	if r.userSSHKeyAgent {
-		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions, r.overwriteRegistryFunc))
+		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions, r.imageRewriter))
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
@@ -913,7 +953,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve envoy-agent config hash: %w", err)
 		}
-		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, configHash, r.overwriteRegistryFunc))
+		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -922,7 +962,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 
 	if r.userClusterMLA.Logging {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
-			promtail.DaemonSetCreator(data.loggingRequirements, r.overwriteRegistryFunc),
+			promtail.DaemonSetCreator(data.loggingRequirements, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
@@ -974,7 +1014,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			kubernetesdashboard.DeploymentCreator(r.overwriteRegistryFunc),
+			kubernetesdashboard.DeploymentCreator(r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", kubernetesdashboard.Namespace, err)
@@ -982,7 +1022,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	}
 
 	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
-		coredns.DeploymentCreator(r.clusterSemVer, data.coreDNSReplicas, r.overwriteRegistryFunc),
+		coredns.DeploymentCreator(r.clusterSemVer, data.coreDNSReplicas, r.imageRewriter),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -992,8 +1032,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	// OPA related resources
 	if r.opaIntegration {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.overwriteRegistryFunc, data.gatekeeperCtrlRequirements),
-			gatekeeper.AuditDeploymentCreator(r.overwriteRegistryFunc, data.gatekeeperAuditRequirements),
+			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.imageRewriter, data.gatekeeperCtrlRequirements),
+			gatekeeper.AuditDeploymentCreator(r.imageRewriter, data.gatekeeperAuditRequirements),
 		}
 
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -1003,7 +1043,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.overwriteRegistryFunc),
+			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -1012,8 +1052,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.isKonnectivityEnabled {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			konnectivity.DeploymentCreator(r.konnectivityServerHost, r.konnectivityServerPort, r.overwriteRegistryFunc),
-			metricsserver.DeploymentCreator(r.overwriteRegistryFunc), // deploy metrics-server in user cluster
+			konnectivity.DeploymentCreator(r.konnectivityServerHost, r.konnectivityServerPort, r.imageRewriter),
+			metricsserver.DeploymentCreator(r.imageRewriter), // deploy metrics-server in user cluster
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
@@ -1076,20 +1116,21 @@ type reconcileData struct {
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
-	// csiCloudConfig is currently used only by vSphere and Nutanix, whose needs it to properly configure the external CSI driver
-	csiCloudConfig              []byte
-	ccmMigration                bool
-	monitoringRequirements      *corev1.ResourceRequirements
-	loggingRequirements         *corev1.ResourceRequirements
-	gatekeeperCtrlRequirements  *corev1.ResourceRequirements
-	gatekeeperAuditRequirements *corev1.ResourceRequirements
-	monitoringReplicas          *int32
-	clusterAddress              *kubermaticv1.ClusterAddress
-	ipFamily                    kubermaticv1.IPFamily
-	k8sServiceApiIP             *net.IP
-	reconcileK8sSvcEndpoints    bool
-	kubernetesDashboardEnabled  bool
-	coreDNSReplicas             *int32
+	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
+	csiCloudConfig                []byte
+	ccmMigration                  bool
+	monitoringRequirements        *corev1.ResourceRequirements
+	loggingRequirements           *corev1.ResourceRequirements
+	gatekeeperCtrlRequirements    *corev1.ResourceRequirements
+	gatekeeperAuditRequirements   *corev1.ResourceRequirements
+	monitoringReplicas            *int32
+	clusterAddress                *kubermaticv1.ClusterAddress
+	ipFamily                      kubermaticv1.IPFamily
+	k8sServiceApiIP               *net.IP
+	reconcileK8sSvcEndpoints      bool
+	kubernetesDashboardEnabled    bool
+	operatingSystemManagerEnabled bool
+	coreDNSReplicas               *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
@@ -1116,11 +1157,12 @@ func (r *reconciler) ensureOPAExperimentalMutationWebhookIsRemoved(ctx context.C
 }
 
 func (r *reconciler) getCluster(ctx context.Context) (*kubermaticv1.Cluster, error) {
-	key := types.NamespacedName{Name: kubernetes.ClusterNameFromNamespace(r.namespace)}
-
-	cluster := &kubermaticv1.Cluster{}
-	if err := r.seedClient.Get(ctx, key, cluster); err != nil {
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, r.seedClient, r.namespace)
+	if err != nil {
 		return nil, err
+	}
+	if cluster == nil {
+		return nil, fmt.Errorf("no cluster exists for namespace %q", r.namespace)
 	}
 
 	return cluster, nil

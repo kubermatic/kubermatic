@@ -22,11 +22,9 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,15 +44,17 @@ import (
 const (
 	// This controller syncs the kubermatic constraint templates on the master cluster to the seed clusters.
 	ControllerName = "kkp-master-constraint-template-controller"
+
+	// cleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-master-constraint-templates"
 )
 
 type reconciler struct {
-	log              *zap.SugaredLogger
-	recorder         record.EventRecorder
-	masterClient     ctrlruntimeclient.Client
-	namespace        string
-	seedsGetter      provider.SeedsGetter
-	seedClientGetter provider.SeedClientGetter
+	log          *zap.SugaredLogger
+	recorder     record.EventRecorder
+	masterClient ctrlruntimeclient.Client
+	namespace    string
+	seedClients  kuberneteshelper.SeedClientMap
 }
 
 func Add(ctx context.Context,
@@ -62,21 +62,23 @@ func Add(ctx context.Context,
 	log *zap.SugaredLogger,
 	numWorkers int,
 	namespace string,
-	seedsGetter provider.SeedsGetter,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter,
+	seedManagers map[string]manager.Manager,
 ) error {
 	reconciler := &reconciler{
-		log:              log.Named(ControllerName),
-		recorder:         mgr.GetEventRecorderFor(ControllerName),
-		masterClient:     mgr.GetClient(),
-		namespace:        namespace,
-		seedsGetter:      seedsGetter,
-		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		log:          log.Named(ControllerName),
+		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		masterClient: mgr.GetClient(),
+		namespace:    namespace,
+		seedClients:  kuberneteshelper.SeedClientMap{},
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
 	if err != nil {
 		return fmt.Errorf("failed to construct controller: %w", err)
+	}
+
+	for seedName, seedManager := range seedManagers {
+		reconciler.seedClients[seedName] = seedManager.GetClient()
 	}
 
 	if err := c.Watch(
@@ -99,7 +101,7 @@ func Add(ctx context.Context,
 
 // Reconcile reconciles the kubermatic constraint template on the master cluster to all seed clusters.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("template", request.Name)
 	log.Debug("Reconciling")
 
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
@@ -114,39 +116,34 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, log, constraintTemplate)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	return reconcile.Result{}, err
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, constraintTemplate *kubermaticv1.ConstraintTemplate) error {
 	if constraintTemplate.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(constraintTemplate, apiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
+		if !kuberneteshelper.HasFinalizer(constraintTemplate, cleanupFinalizer) {
 			return nil
 		}
 
-		err := r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-			err := seedClusterClient.Delete(ctx, &kubermaticv1.ConstraintTemplate{
+		err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+			err := seedClient.Delete(ctx, &kubermaticv1.ConstraintTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: constraintTemplate.Name,
 				},
 			})
 
-			if apierrors.IsNotFound(err) {
-				log.Debug("constraint template not found, returning")
-				return nil
-			}
-
-			return err
+			return ctrlruntimeclient.IgnoreNotFound(err)
 		})
 		if err != nil {
 			return err
 		}
 
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraintTemplate, apiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, constraintTemplate, cleanupFinalizer)
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraintTemplate, apiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.masterClient, constraintTemplate, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
@@ -154,36 +151,19 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		constraintTemplateCreatorGetter(constraintTemplate),
 	}
 
-	return r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-		return reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", seedClusterClient)
+	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		seedCT := &kubermaticv1.ConstraintTemplate{}
+		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(constraintTemplate), seedCT); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to fetch ConstraintTemplate on seed cluster: %w", err)
+		}
+
+		// see project-synchronizer's syncAllSeeds comment
+		if seedCT.UID != "" && seedCT.UID == constraintTemplate.UID {
+			return nil
+		}
+
+		return reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", seedClient)
 	})
-}
-
-func (r *reconciler) syncAllSeeds(
-	ctx context.Context,
-	log *zap.SugaredLogger,
-	constraintTemplate *kubermaticv1.ConstraintTemplate,
-	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error,
-) error {
-	seeds, err := r.seedsGetter()
-	if err != nil {
-		return fmt.Errorf("failed listing seeds: %w", err)
-	}
-
-	for _, seed := range seeds {
-		seedClient, err := r.seedClientGetter(seed)
-		if err != nil {
-			return fmt.Errorf("failed getting seed client for seed %s: %w", seed.Name, err)
-		}
-
-		err = action(seedClient, constraintTemplate)
-		if err != nil {
-			return fmt.Errorf("failed syncing constraint template for seed %s: %w", seed.Name, err)
-		}
-		log.Debugw("Reconciled constraint template with seed", "seed", seed.Name)
-	}
-
-	return nil
 }
 
 func constraintTemplateCreatorGetter(kubeCT *kubermaticv1.ConstraintTemplate) reconciling.NamedKubermaticV1ConstraintTemplateCreatorGetter {

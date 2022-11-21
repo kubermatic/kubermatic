@@ -30,9 +30,12 @@ import (
 	"testing"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/machine"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestResourceQuotaValidation(t *testing.T) {
@@ -67,7 +70,7 @@ func TestResourceQuotaValidation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := machine.ValidateQuota(context.Background(), l, nil, nil, tc.machine, nil)
+			err := machine.ValidateQuota(context.Background(), l, nil, tc.machine, nil, genResourceQuota())
 			if err != nil {
 				if !tc.expectedErr {
 					t.Fatalf("unexpected error: %v", err)
@@ -82,7 +85,15 @@ func TestResourceQuotaValidation(t *testing.T) {
 }
 
 func genFakeMachine(cpu, memory, storage string) *clusterv1alpha1.Machine {
-	return test.GenTestMachine("fake",
+	return generator.GenTestMachine("fake",
 		fmt.Sprintf(`{"cloudProvider":"fake", "cloudProviderSpec":{"cpu":"%s","memory":"%s","storage":"%s"}}`, cpu, memory, storage),
 		nil, nil)
+}
+
+func genResourceQuota() *kubermaticv1.ResourceQuota {
+	rq := &kubermaticv1.ResourceQuota{}
+	rq.Spec.Quota = *kubermaticv1.NewResourceDetails(resource.MustParse("50"), resource.MustParse("50G"), resource.MustParse("1000G"))
+	rq.Status.GlobalUsage = *kubermaticv1.NewResourceDetails(resource.MustParse("3"), resource.MustParse("3G"), resource.MustParse("60G"))
+
+	return rq
 }

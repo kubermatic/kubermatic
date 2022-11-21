@@ -21,12 +21,13 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 const AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
@@ -50,30 +51,12 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 				Labels: podLabels,
 			}
 
-			f := false
-			deployment.Spec.Template.Spec.AutomountServiceAccountToken = &f
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %w", err)
-			}
-
-			deployment.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
-				corev1.Volume{
-					Name: resources.CloudConfigConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CloudConfigConfigMapName,
-							},
-						},
-					},
-				})
-
+			deployment.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:1.4.1",
+					Image: registry.Must(data.RewriteImage(resources.RegistryAnexia + "/anexia/anx-cloud-controller-manager:1.4.4")),
 					Command: []string{
 						"/app/ccm",
 						"--cloud-provider=anexia",
@@ -81,16 +64,25 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						fmt.Sprintf("--cluster-name=%s", data.Cluster().Spec.HumanReadableName),
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 					},
-					Env: []corev1.EnvVar{
-						{
-							Name:  "ANEXIA_TOKEN",
-							Value: credentials.Anexia.Token,
+					Env: append(
+						getEnvVars(),
+						corev1.EnvVar{
+							Name: "ANEXIA_TOKEN",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.ClusterCloudCredentialsSecretName,
+									},
+									Key: resources.AnexiaToken,
+								},
+							},
 						},
-						{
+						corev1.EnvVar{
 							Name:  "ANEXIA_AUTO_DISCOVER_LOAD_BALANCER",
 							Value: "true",
 						},
-					},
+					),
+					VolumeMounts: getVolumeMounts(true),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
@@ -126,25 +118,9 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						SuccessThreshold:    1,
 						FailureThreshold:    3,
 					},
-					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-						Name:      resources.CloudConfigConfigMapName,
-						MountPath: "/etc/kubernetes/cloud",
-						ReadOnly:  true,
-					}),
 				},
 			}
 
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, *openvpnSidecar)
-			}
-
-			if err != nil {
-				return nil, err
-			}
 			return deployment, nil
 		}
 	}

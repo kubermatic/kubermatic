@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -100,7 +101,7 @@ type controllerRunOptions struct {
 	isKonnectivityEnabled        bool
 	konnectivityServerHost       string
 	konnectivityServerPort       int
-	enableOperatingSystemManager bool
+	applicationCache             string
 }
 
 func main() {
@@ -146,18 +147,23 @@ func main() {
 	flag.BoolVar(&runOp.isKonnectivityEnabled, "konnectivity-enabled", false, "Enable Konnectivity.")
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
-	flag.BoolVar(&runOp.enableOperatingSystemManager, "operating-system-manager-enabled", false, "Enable Operating System Manager, this only enables deployment of OSM resources.")
+	flag.StringVar(&runOp.applicationCache, "application-cache", "", "Path to Application cache directory.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// make sure the logging flags actually affect the global (deprecated) logger instance
 	kubermaticlog.Logger = log
 
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
+
+	kubeconfigFlag := flag.Lookup("kubeconfig")
+	if kubeconfigFlag == nil { // Should not be possible.
+		log.Fatal("can not get kubeconfig flag")
+	}
 
 	if runOp.namespace == "" {
 		log.Fatal("-namespace must be set")
@@ -190,6 +196,10 @@ func main() {
 		}
 	}
 
+	if runOp.applicationCache == "" {
+		log.Fatal("application-cache must be set")
+	}
+
 	nodeLabels := map[string]string{}
 	if runOp.nodelabels != "" {
 		if err := json.Unmarshal([]byte(runOp.nodelabels), &nodeLabels); err != nil {
@@ -210,6 +220,9 @@ func main() {
 	rootCtx := signals.SetupSignalHandler()
 
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		LeaderElection:          true,
 		LeaderElectionNamespace: metav1.NamespaceSystem,
 		LeaderElectionID:        "user-cluster-controller-leader-lock",
@@ -295,7 +308,6 @@ func main() {
 		runOp.konnectivityServerPort,
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
-		runOp.enableOperatingSystemManager,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
@@ -382,10 +394,15 @@ func main() {
 		log.Info("Registered constraintsyncer controller")
 	}
 
-	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, &applications.ApplicationManager{}); err != nil {
+	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigFlag.Value.String(), SecretNamespace: runOp.namespace}); err != nil {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")
+
+	if err := addResourceUsageController(log, seedMgr, mgr, runOp.clusterName, caBundle, isPausedChecker); err != nil {
+		log.Fatalw("Failed to add user Resource Usage controller to mgr", zap.Error(err))
+	}
+	log.Info("Registered Resource Usage controller")
 
 	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("Failed running manager", zap.Error(err))

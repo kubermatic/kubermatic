@@ -18,20 +18,22 @@ package test
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 
-	"github.com/pmezard/go-difflib/difflib"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
-
-	"sigs.k8s.io/yaml"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {
@@ -53,20 +55,8 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 		t.Fatalf("failed to read .golden file: %v", err)
 	}
 
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(expected)),
-		B:        difflib.SplitLines(output),
-		FromFile: "Fixture",
-		ToFile:   "Current",
-		Context:  3,
-	}
-	diffStr, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diffStr != "" {
-		t.Errorf("got diff between expected and actual result: \n%s\n", diffStr)
+	if d := diff.StringDiff(string(expected), output); d != "" {
+		t.Fatalf("got diff between expected and actual result:\n%v", d)
 	}
 }
 
@@ -77,7 +67,7 @@ func NewSeedGetter(seed *kubermaticv1.Seed) provider.SeedGetter {
 }
 
 func NewConfigGetter(config *kubermaticv1.KubermaticConfiguration) provider.KubermaticConfigurationGetter {
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	return func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
 		return defaulted, err
 	}
@@ -98,32 +88,135 @@ func NewSeedsGetter(seeds ...*kubermaticv1.Seed) provider.SeedsGetter {
 func ObjectYAMLDiff(t *testing.T, expectedObj, actualObj interface{}) error {
 	t.Helper()
 
-	expectedEncoded, err := yaml.Marshal(expectedObj)
-	if err != nil {
-		return fmt.Errorf("failed to encode old object as YAML: %w", err)
-	}
-
-	actualEncoded, err := yaml.Marshal(actualObj)
-	if err != nil {
-		return fmt.Errorf("failed to encode new object as YAML: %w", err)
-	}
-
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(expectedEncoded)),
-		B:        difflib.SplitLines(string(actualEncoded)),
-		FromFile: "Expected",
-		ToFile:   "Actual",
-		Context:  3,
-	}
-
-	diffStr, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		return fmt.Errorf("failed to create diff: %w", err)
-	}
-
-	if diffStr != "" {
-		return errors.New(diffStr)
+	if d := diff.ObjectDiff(expectedObj, actualObj); d != "" {
+		return errors.New(d)
 	}
 
 	return nil
+}
+
+func kubernetesVersions(cfg *kubermaticv1.KubermaticConfiguration) []semver.Semver {
+	if cfg == nil {
+		return defaulting.DefaultKubernetesVersioning.Versions
+	}
+
+	return cfg.Spec.Versions.Versions
+}
+
+const (
+	versionLatest = "latest"
+	versionStable = "stable"
+)
+
+var releaseOnly = regexp.MustCompile(`^v?[0-9]+\.[0-9]+$`)
+
+// ParseVersionOrRelease returns the most recent supported patch release
+// for a given release branch (i.e. release="1.24" might return "1.24.7"). Passing nil for the
+// KubermaticConfiguration is fine and in this case the compiled-in defaults will be used.
+// If the release is empty, the default version is returned.
+func ParseVersionOrRelease(release string, cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
+	switch {
+	case strings.ToLower(release) == versionLatest:
+		return LatestKubernetesVersion(cfg)
+
+	case strings.ToLower(release) == versionStable:
+		return LatestStableKubernetesVersion(cfg)
+
+	case release == "":
+		if cfg == nil {
+			return defaulting.DefaultKubernetesVersioning.Default
+		}
+
+		return cfg.Spec.Versions.Default
+
+	// was only "1.23" or "v1.25" specified?
+	case releaseOnly.MatchString(release):
+		return LatestKubernetesVersionForRelease(release, cfg)
+
+	default:
+	}
+
+	return semver.NewSemverOrDie(release)
+}
+
+// LatestKubernetesVersion returns the most recent supported patch release. Passing nil
+// for the KubermaticConfiguration is fine and in this case the compiled-in defaults will
+// be used.
+func LatestKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
+	versions := kubernetesVersions(cfg)
+
+	var latest *semver.Semver
+	for i, version := range versions {
+		if latest == nil || version.GreaterThan(latest) {
+			latest = &versions[i]
+		}
+	}
+
+	return latest
+}
+
+// LatestStableKubernetesVersion returns the most recent patch release of the "stable" releases,
+// which are latest-1 (i.e. if KKP is configured to support up to 1.29.7, then the stable
+// releases would be all in the  1.28.x line). Passing nil for the KubermaticConfiguration
+// is fine and in this case the compiled-in defaults will be used.
+func LatestStableKubernetesVersion(cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
+	latest := LatestKubernetesVersion(cfg)
+	if latest == nil {
+		return nil
+	}
+
+	major := latest.Semver().Major()
+	minor := latest.Semver().Minor() - 1
+
+	return LatestKubernetesVersionForRelease(fmt.Sprintf("%d.%d", major, minor), cfg)
+}
+
+// LatestKubernetesVersionForRelease returns the most recent supported patch release
+// for a given release branch (i.e. release="1.24" might return "1.24.7"). Passing nil for the
+// KubermaticConfiguration is fine and in this case the compiled-in defaults will be used.
+func LatestKubernetesVersionForRelease(release string, cfg *kubermaticv1.KubermaticConfiguration) *semver.Semver {
+	parsed, err := semver.NewSemver(release)
+	if err != nil {
+		return nil
+	}
+
+	versions := kubernetesVersions(cfg)
+	minor := parsed.Semver().Minor()
+
+	var stable *semver.Semver
+	for i, version := range versions {
+		if version.Semver().Minor() != minor {
+			continue
+		}
+
+		if stable == nil || version.GreaterThan(stable) {
+			stable = &versions[i]
+		}
+	}
+
+	return stable
+}
+
+// SafeBase64Decoding takes a value and decodes it with base64, but only
+// if the given value can be decoded without errors. This primarily exists
+// because in older KKP releases, we sometimes had pre-base64-encoded secrets
+// in Vault, but during 2022 migrated to keeping plaintext in Vault.
+func SafeBase64Decoding(value string) string {
+	// If there was no error, the original value was encoded with base64.
+	if decoded, err := base64.StdEncoding.DecodeString(value); err == nil {
+		return string(decoded)
+	}
+
+	return value
+}
+
+// SafeBase64Encoding takes a value and encodes it with base64, but only
+// if the given value was not already base64-encoded.
+func SafeBase64Encoding(value string) string {
+	// If there was no error, the original value was already encoded.
+	if _, err := base64.StdEncoding.DecodeString(value); err == nil {
+		return value
+	}
+
+	return base64.StdEncoding.EncodeToString([]byte(value))
 }

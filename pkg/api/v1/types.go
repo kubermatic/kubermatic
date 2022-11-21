@@ -18,20 +18,14 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
-	"strings"
-	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	vcd "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
-
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // ObjectMeta defines the set of fields that objects returned from the API have
@@ -55,196 +49,6 @@ type ObjectMeta struct {
 	CreationTimestamp Time `json:"creationTimestamp,omitempty"`
 }
 
-// DatacenterSpec specifies the data for a datacenter.
-type DatacenterSpec struct {
-	// Name of the seed this datacenter belongs to.
-	Seed string `json:"seed,omitempty"`
-	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
-	// It is used for informational purposes.
-	Country string `json:"country,omitempty"`
-	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
-	// It is used for informational purposes.
-	Location string `json:"location,omitempty"`
-	// Name of the datacenter provider. Extracted based on which provider is defined in the spec.
-	// It is used for informational purposes.
-	Provider            string                                          `json:"provider,omitempty"`
-	Digitalocean        *kubermaticv1.DatacenterSpecDigitalocean        `json:"digitalocean,omitempty"`
-	BringYourOwn        *kubermaticv1.DatacenterSpecBringYourOwn        `json:"bringyourown,omitempty"`
-	AWS                 *kubermaticv1.DatacenterSpecAWS                 `json:"aws,omitempty"`
-	Azure               *kubermaticv1.DatacenterSpecAzure               `json:"azure,omitempty"`
-	Openstack           *kubermaticv1.DatacenterSpecOpenstack           `json:"openstack,omitempty"`
-	Packet              *kubermaticv1.DatacenterSpecPacket              `json:"packet,omitempty"`
-	GCP                 *kubermaticv1.DatacenterSpecGCP                 `json:"gcp,omitempty"`
-	Hetzner             *kubermaticv1.DatacenterSpecHetzner             `json:"hetzner,omitempty"`
-	VSphere             *kubermaticv1.DatacenterSpecVSphere             `json:"vsphere,omitempty"`
-	Kubevirt            *kubermaticv1.DatacenterSpecKubevirt            `json:"kubevirt,omitempty"`
-	Alibaba             *kubermaticv1.DatacenterSpecAlibaba             `json:"alibaba,omitempty"`
-	Anexia              *kubermaticv1.DatacenterSpecAnexia              `json:"anexia,omitempty"`
-	Nutanix             *kubermaticv1.DatacenterSpecNutanix             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *kubermaticv1.DatacenterSpecVMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
-
-	//nolint:staticcheck
-	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Fake *kubermaticv1.DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
-
-	// Node holds node-specific settings, like e.g. HTTP proxy, Docker
-	// registries and the like. Proxy settings are inherited from the seed if
-	// not specified here.
-	Node kubermaticv1.NodeSettings `json:"node"`
-
-	RequiredEmails []string `json:"requiredEmails,omitempty"`
-
-	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
-	// ignoring cluster-specific settings.
-	EnforceAuditLogging bool `json:"enforceAuditLogging"`
-
-	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
-	// ignoring cluster-specific settings
-	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy"`
-
-	// IPv6Enabled is a flag to indicate if the ipv6 is enabled for the datacenter.
-	IPv6Enabled bool `json:"ipv6Enabled"`
-}
-
-// DatacenterList represents a list of datacenters
-// swagger:model DatacenterList
-type DatacenterList []Datacenter
-
-// Datacenter is the object representing a Kubernetes infra datacenter.
-// swagger:model Datacenter
-type Datacenter struct {
-	Metadata DatacenterMeta `json:"metadata,omitempty"`
-	Spec     DatacenterSpec `json:"spec,omitempty"`
-}
-
-// DatacenterMeta holds datacenter metadata information.
-type DatacenterMeta struct {
-	Name string `json:"name"`
-}
-
-// AWSSize represents a object of AWS size.
-// swagger:model AWSSize
-type AWSSize struct {
-	Name         string  `json:"name"`
-	PrettyName   string  `json:"pretty_name"`
-	Memory       float32 `json:"memory"`
-	VCPUs        int     `json:"vcpus"`
-	GPUs         int     `json:"gpus"`
-	Price        float64 `json:"price"`
-	Architecture string  `json:"architecture"`
-}
-
-// AWSSizeList represents an array of AWS sizes.
-// swagger:model AWSSizeList
-type AWSSizeList []AWSSize
-
-// AWSSubnetList represents an array of AWS availability subnets.
-// swagger:model AWSSubnetList
-type AWSSubnetList []AWSSubnet
-
-// AWSSubnet represents a object of AWS availability subnet.
-// swagger:model AWSSubnet
-type AWSSubnet struct {
-	Name                    string   `json:"name"`
-	ID                      string   `json:"id"`
-	AvailabilityZone        string   `json:"availability_zone"`
-	AvailabilityZoneID      string   `json:"availability_zone_id"`
-	IPv4CIDR                string   `json:"ipv4cidr"`
-	IPv6CIDR                string   `json:"ipv6cidr"`
-	Tags                    []AWSTag `json:"tags,omitempty"`
-	State                   string   `json:"state"`
-	AvailableIPAddressCount int64    `json:"available_ip_address_count"`
-	DefaultForAz            bool     `json:"default"`
-	IsDefaultSubnet         bool     `json:"isDefaultSubnet"`
-}
-
-// AWSTag represents a object of AWS tags.
-// swagger:model AWSTag
-type AWSTag struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-// AWSSecurityGroupList represents an array of AWS Security Group.
-// swagger:model AWSSecurityGroupList
-type AWSSecurityGroupList struct {
-	IDs []string `json:"ids,omitempty"`
-}
-
-// AWSVPCList represents an array of AWS VPC's.
-// swagger:model AWSVPCList
-type AWSVPCList []AWSVPC
-
-// AWSVPC represents a object of AWS VPC.
-// swagger:model AWSVPC
-type AWSVPC struct {
-	// The primary IPv4 CIDR block for the VPC.
-	CidrBlock string `json:"cidrBlock"`
-
-	// Information about the IPv4 CIDR blocks associated with the VPC.
-	CidrBlockAssociationSet []AWSVpcCidrBlockAssociation `json:"cidrBlockAssociationSet,omitempty"`
-
-	// The ID of the set of DHCP options you've associated with the VPC (or default
-	// if the default options are associated with the VPC).
-	DhcpOptionsID string `json:"dhcpOptionsId"`
-
-	// The allowed tenancy of instances launched into the VPC.
-	InstanceTenancy string `json:"instanceTenancy"`
-
-	// Information about the IPv6 CIDR blocks associated with the VPC.
-	Ipv6CidrBlockAssociationSet []AWSVpcIpv6CidrBlockAssociation `json:"ipv6CidrBlockAssociationSet,omitempty"`
-
-	// Indicates whether the VPC is the default VPC.
-	IsDefault bool `json:"isDefault"`
-
-	// The ID of the AWS account that owns the VPC.
-	OwnerID string `json:"ownerId"`
-
-	// The current state of the VPC.
-	State string `json:"state"`
-
-	// Any tags assigned to the VPC.
-	Tags []AWSTag `json:"tags,omitempty"`
-
-	Name string `json:"name"`
-
-	// The ID of the VPC.
-	VpcID string `json:"vpcId"`
-}
-
-// AWSVpcCidrBlockAssociation describes an IPv4 CIDR block associated with a VPC.
-// swagger:model AWSVpcCidrBlockAssociation
-type AWSVpcCidrBlockAssociation struct {
-	// The association ID for the IPv4 CIDR block.
-	AssociationID string `json:"associationId"`
-
-	// The IPv4 CIDR block.
-	CidrBlock string `json:"cidrBlock"`
-
-	// The state of the CIDR block.
-	State string `json:"state"`
-
-	// A message about the status of the CIDR block, if applicable.
-	StatusMessage string `json:"statusMessage"`
-}
-
-// AWSVpcIpv6CidrBlockAssociation describes an IPv6 CIDR block associated with a VPC.
-// swagger:model AWSVpcIpv6CidrBlockAssociation
-type AWSVpcIpv6CidrBlockAssociation struct {
-	AWSVpcCidrBlockAssociation
-}
-
-// GCPDiskTypeList represents an array of GCP disk types.
-// swagger:model GCPDiskTypeList
-type GCPDiskTypeList []GCPDiskType
-
-// GCPDiskType represents a object of GCP disk type.
-// swagger:model GCPDiskType
-type GCPDiskType struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
 // GCPMachineSizeList represents an array of GCP machine sizes.
 // swagger:model GCPMachineSizeList
 type GCPMachineSizeList []GCPMachineSize
@@ -257,20 +61,6 @@ type GCPMachineSize struct {
 	Memory      int64  `json:"memory"`
 	VCPUs       int64  `json:"vcpus"`
 }
-
-// GCPZone represents a object of GCP zone.
-// swagger:model GCPZone
-type GCPZone struct {
-	Name string `json:"name"`
-}
-
-// GCPZoneList represents an array of GCP zones.
-// swagger:model GCPZoneList
-type GCPZoneList []GCPZone
-
-// GCPNetworkList represents an array of GCP networks.
-// swagger:model GCPNetworkList
-type GCPNetworkList []GCPNetwork
 
 // GCPNetwork represents a object of GCP networks.
 // swagger:model GCPNetwork
@@ -290,195 +80,17 @@ type GCPSubnetworkList []GCPSubnetwork
 // GCPSubnetwork represents a object of GCP subnetworks.
 // swagger:model GCPSubnetwork
 type GCPSubnetwork struct {
-	ID                    uint64 `json:"id"`
-	Name                  string `json:"name"`
-	Network               string `json:"network"`
-	IPCidrRange           string `json:"ipCidrRange"`
-	GatewayAddress        string `json:"gatewayAddress"`
-	Region                string `json:"region"`
-	SelfLink              string `json:"selfLink"`
-	PrivateIPGoogleAccess bool   `json:"privateIpGoogleAccess"`
-	Kind                  string `json:"kind"`
-	Path                  string `json:"path"`
-}
-
-// DigitaloceanSizeList represents a object of digitalocean sizes.
-// swagger:model DigitaloceanSizeList
-type DigitaloceanSizeList struct {
-	Standard  []DigitaloceanSize `json:"standard"`
-	Optimized []DigitaloceanSize `json:"optimized"`
-}
-
-// CredentialList represents a object for provider credential names.
-// swagger:model CredentialList
-type CredentialList struct {
-	Names []string `json:"names,omitempty"`
-}
-
-// DigitaloceanSize is the object representing digitalocean sizes.
-// swagger:model DigitaloceanSize
-type DigitaloceanSize struct {
-	Slug         string   `json:"slug"`
-	Available    bool     `json:"available"`
-	Transfer     float64  `json:"transfer"`
-	PriceMonthly float64  `json:"price_monthly"`
-	PriceHourly  float64  `json:"price_hourly"`
-	Memory       int      `json:"memory"`
-	VCPUs        int      `json:"vcpus"`
-	Disk         int      `json:"disk"`
-	Regions      []string `json:"regions"`
-}
-
-// AzureSubnetsList is the object representing the subnets for vms in azure cloud provider
-// swagger:model AzureSubnetsList
-type AzureSubnetsList struct {
-	Subnets []string `json:"subnets"`
-}
-
-// AzureVirtualNetworksList is the object representing the virtual network for vms in azure cloud provider
-// swagger:model AzureVirtualNetworksList
-type AzureVirtualNetworksList struct {
-	VirtualNetworks []string `json:"virtualNetworks"`
-}
-
-// AzureRouteTablesList is the object representing the route tables for vms in azure cloud provider
-// swagger:model AzureRouteTablesList
-type AzureRouteTablesList struct {
-	RouteTables []string `json:"routeTables"`
-}
-
-// AzureSecurityGroupsList is the object representing the security groups for vms in azure cloud provider
-// swagger:model AzureSecurityGroupsList
-type AzureSecurityGroupsList struct {
-	SecurityGroups []string `json:"securityGroups"`
-}
-
-// AzureResourceGroupsList is the object representing the resource groups for vms in azure cloud provider
-// swagger:model AzureResourceGroupsList
-type AzureResourceGroupsList struct {
-	ResourceGroups []string `json:"resourceGroups"`
-}
-
-// AzureAvailabilityZonesList is the object representing the availability zones for vms in azure cloud provider
-// swagger:model AzureAvailabilityZonesList
-type AzureAvailabilityZonesList struct {
-	Zones []string `json:"zones"`
-}
-
-// AzureSizeList represents an array of Azure VM sizes.
-// swagger:model AzureSizeList
-type AzureSizeList []AzureSize
-
-// AzureSize is the object representing Azure VM sizes.
-// swagger:model AzureSize
-type AzureSize struct {
-	Name                 string `json:"name"`
-	NumberOfCores        int32  `json:"numberOfCores"`
-	NumberOfGPUs         int32  `json:"numberOfGPUs"`
-	OsDiskSizeInMB       int32  `json:"osDiskSizeInMB"`
-	ResourceDiskSizeInMB int32  `json:"resourceDiskSizeInMB"`
-	MemoryInMB           int32  `json:"memoryInMB"`
-	MaxDataDiskCount     int32  `json:"maxDataDiskCount"`
-}
-
-// HetznerSizeList represents an array of Hetzner sizes.
-// swagger:model HetznerSizeList
-type HetznerSizeList struct {
-	Standard  []HetznerSize `json:"standard"`
-	Dedicated []HetznerSize `json:"dedicated"`
-}
-
-// HetznerSize is the object representing Hetzner sizes.
-// swagger:model HetznerSize
-type HetznerSize struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Cores       int     `json:"cores"`
-	Memory      float32 `json:"memory"`
-	Disk        int     `json:"disk"`
-}
-
-// PacketSizeList represents an array of Packet VM sizes.
-// swagger:model PacketSizeList
-type PacketSizeList []PacketSize
-
-// PacketSize is the object representing Packet VM sizes.
-// swagger:model PacketSize
-type PacketSize struct {
-	Name   string        `json:"name,omitempty"`
-	CPUs   []PacketCPU   `json:"cpus,omitempty"`
-	Memory string        `json:"memory,omitempty"`
-	Drives []PacketDrive `json:"drives,omitempty"`
-}
-
-// PacketCPU represents an array of Packet CPUs. It is a part of PacketSize.
-// swagger:model PacketCPU
-type PacketCPU struct {
-	Count int    `json:"count,omitempty"`
-	Type  string `json:"type,omitempty"`
-}
-
-// PacketDrive represents an array of Packet drives. It is a part of PacketSize.
-// swagger:model PacketDrive
-type PacketDrive struct {
-	Count int    `json:"count,omitempty"`
-	Size  string `json:"size,omitempty"`
-	Type  string `json:"type,omitempty"`
-}
-
-// NutanixCluster represents a Nutanix cluster.
-// swagger:model NutanixCluster
-type NutanixCluster struct {
-	Name string `json:"name"`
-}
-
-// NutanixClusterList represents an array of Nutanix clusters.
-// swagger:model NutanixClusterList
-type NutanixClusterList []NutanixCluster
-
-// NutanixProject represents a Nutanix project.
-// swagger:model NutanixProject
-type NutanixProject struct {
-	Name string `json:"name"`
-}
-
-// NutanixProjectList represents an array of Nutanix projects.
-// swagger:model NutanixProjectList
-type NutanixProjectList []NutanixProject
-
-// NutanixSubnet represents a Nutanix subnet.
-// swagger:model NutanixSubnet
-type NutanixSubnet struct {
-	Name   string `json:"name"`
-	Type   string `json:"type"`
-	VlanID int    `json:"vlanID,omitempty"`
-}
-
-// NutanixSubnetList represents an array of Nutanix subnets.
-// swagger:model NutanixSubnetList
-type NutanixSubnetList []NutanixSubnet
-
-// NutanixCategoryList represents an array of Nutanix categories.
-// swagger:model NutanixCategoryList
-type NutanixCategoryList []NutanixCategory
-
-// NutanixCategory represents a Nutanix category.
-// swagger:model NutanixCategory
-type NutanixCategory struct {
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	SystemDefined bool   `json:"systemDefined"`
-}
-
-// NutanixCategoryValueList represents an array of Nutanix category values.
-// swagger:model NutanixCategoryValueList
-type NutanixCategoryValueList []NutanixCategoryValue
-
-// NutanixCategoryValue represents a Nutanix category value.
-// swagger:model NutanixCategoryValue
-type NutanixCategoryValue struct {
-	Value string `json:"value"`
+	ID                    uint64                `json:"id"`
+	Name                  string                `json:"name"`
+	Network               string                `json:"network"`
+	IPCidrRange           string                `json:"ipCidrRange"`
+	GatewayAddress        string                `json:"gatewayAddress"`
+	Region                string                `json:"region"`
+	SelfLink              string                `json:"selfLink"`
+	PrivateIPGoogleAccess bool                  `json:"privateIpGoogleAccess"`
+	Kind                  string                `json:"kind"`
+	Path                  string                `json:"path"`
+	IPFamily              kubermaticv1.IPFamily `json:"ipFamily"`
 }
 
 // VMwareCloudDirectorCatalog represents a VMware Cloud Director catalog.
@@ -511,315 +123,15 @@ type VMwareCloudDirectorNetwork struct {
 // swagger:model VMwareCloudDirectorNetworkList
 type VMwareCloudDirectorNetworkList []VMwareCloudDirectorNetwork
 
-// SSHKey represents a ssh key
-// swagger:model SSHKey
-type SSHKey struct {
-	ObjectMeta
-	Spec SSHKeySpec `json:"spec"`
-}
-
-// SSHKeySpec represents the details of a ssh key.
-type SSHKeySpec struct {
-	Fingerprint string `json:"fingerprint"`
-	PublicKey   string `json:"publicKey"`
-}
-
-// User represent an API user
-// swagger:model User
-type User struct {
-	ObjectMeta
-
-	// Email an email address of the user
-	Email string `json:"email"`
-	// IsAdmin indicates admin role
-	IsAdmin bool `json:"isAdmin,omitempty"`
-
-	// Projects holds the list of project the user belongs to
-	// along with the group names
-	Projects []ProjectGroup `json:"projects,omitempty"`
-
-	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
-
-	// LastSeen holds a time in UTC format when the user has been using the API last time
-	LastSeen *Time `json:"lastSeen,omitempty"`
-}
-
-func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool, bindings ...*kubermaticv1.UserProjectBinding) *User {
-	apiUser := &User{
-		ObjectMeta: ObjectMeta{
-			ID:                internalUser.Name,
-			Name:              internalUser.Spec.Name,
-			CreationTimestamp: NewTime(internalUser.CreationTimestamp.Time),
-			DeletionTimestamp: func() *Time {
-				if internalUser.DeletionTimestamp != nil {
-					deletionTimestamp := NewTime(internalUser.DeletionTimestamp.Time)
-					return &deletionTimestamp
-				}
-				return nil
-			}(),
-		},
-		Email:   internalUser.Spec.Email,
-		IsAdmin: internalUser.Spec.IsAdmin,
-	}
-
-	if !internalUser.Status.LastSeen.IsZero() {
-		lastSeen := NewTime(internalUser.Status.LastSeen.Time)
-		apiUser.LastSeen = &lastSeen
-	}
-
-	if includeSettings {
-		apiUser.Settings = internalUser.Spec.Settings
-	}
-
-	for _, binding := range bindings {
-		bindingAlreadyExists := false
-		for _, pg := range apiUser.Projects {
-			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
-				bindingAlreadyExists = true
-				break
-			}
-		}
-		if !bindingAlreadyExists {
-			groupPrefix := ExtractGroupPrefix(binding.Spec.Group)
-			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
-		}
-	}
-
-	return apiUser
-}
-
-// ExtractGroupPrefix extracts only group prefix from the given group name.
-func ExtractGroupPrefix(groupName string) string {
-	ret := strings.Split(groupName, "-")
-	if len(ret) > 0 {
-		return ret[0]
-	}
-	return groupName
-}
-
-// Admin represents admin user
-// swagger:model Admin
-type Admin struct {
-	// Email address of the admin user
-	Email string `json:"email"`
-	// Name of the admin user
-	Name string `json:"name,omitempty"`
-	// IsAdmin indicates admin role
-	IsAdmin bool `json:"isAdmin"`
-}
-
-// ProjectGroup is a helper data structure that
-// stores the information about a project and a group prefix that a user belongs to.
-type ProjectGroup struct {
-	ID          string `json:"id"`
-	GroupPrefix string `json:"group"`
-}
-
-// These are the valid statuses of a ServiceAccount.
-const (
-	// ServiceAccountActive means the ServiceAccount is available for use in the system.
-	ServiceAccountActive string = "Active"
-
-	// ServiceAccountInactive means the ServiceAccount is inactive and requires further initialization.
-	ServiceAccountInactive string = "Inactive"
-
-	// ServiceAccountTerminating means the ServiceAccount is undergoing graceful termination.
-	ServiceAccountTerminating string = "Terminating"
-)
-
-// ServiceAccount represent an API service account
-// swagger:model ServiceAccount
-type ServiceAccount struct {
-	ObjectMeta
-	// Status describes three stages of ServiceAccount life including Active, Inactive and Terminating
-	Status string `json:"status"`
-	// Group that a service account belongs to
-	Group string `json:"group"`
-}
-
-// PublicServiceAccountToken represent an API service account token without secret fields
-// swagger:model PublicServiceAccountToken
-type PublicServiceAccountToken struct {
-	ObjectMeta
-	// Expiry is a timestamp representing the time when this token will expire.
-	// swagger:strfmt date-time
-	Expiry Time `json:"expiry,omitempty"`
-	// Invalidated indicates if the token must be regenerated
-	Invalidated bool `json:"invalidated,omitempty"`
-}
-
-// ServiceAccountToken represent an API service account token
-// swagger:model ServiceAccountToken
-type ServiceAccountToken struct {
-	PublicServiceAccountToken
-	// Token the JWT token
-	Token string `json:"token,omitempty"`
-}
-
-// Project is a top-level container for a set of resources
-// swagger:model Project
-type Project struct {
-	ObjectMeta
-	Status string            `json:"status"`
-	Labels map[string]string `json:"labels,omitempty"`
-	// Owners an optional owners list for the given project
-	Owners         []User `json:"owners,omitempty"`
-	ClustersNumber int    `json:"clustersNumber,omitempty"`
-}
-
-// Kubeconfig is a clusters kubeconfig
-// swagger:response Kubeconfig
-type Kubeconfig struct {
-	// in: body
-	Config []byte
-}
-
-// OpenstackSize is the object representing openstack's sizes.
-// swagger:model OpenstackSize
-type OpenstackSize struct {
-	// Slug holds  the name of the size
-	Slug string `json:"slug"`
-	// MemoryTotalBytes is the amount of memory, measured in MB
-	Memory int `json:"memory"`
-	// VCPUs indicates how many (virtual) CPUs are available for this flavor
-	VCPUs int `json:"vcpus"`
-	// Disk is the amount of root disk, measured in GB
-	Disk int `json:"disk"`
-	// Swap is the amount of swap space, measured in MB
-	Swap int `json:"swap"`
-	// Region specifies the geographic region in which the size resides
-	Region string `json:"region"`
-	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
-	IsPublic bool `json:"isPublic"`
-}
-
-// OpenstackSubnet is the object representing a openstack subnet.
-// swagger:model OpenstackSubnet
-type OpenstackSubnet struct {
-	// Id uniquely identifies the subnet
-	ID string `json:"id"`
-	// Name is human-readable name for the subnet
+// VMwareCloudDirectorStorageProfile represents a VMware Cloud Director storage profile.
+// swagger:model VMwareCloudDirectorStorageProfile
+type VMwareCloudDirectorStorageProfile struct {
 	Name string `json:"name"`
 }
 
-// OpenstackTenant is the object representing a openstack tenant.
-// swagger:model OpenstackTenant
-type OpenstackTenant struct {
-	// Id uniquely identifies the current tenant
-	ID string `json:"id"`
-	// Name is the name of the tenant
-	Name string `json:"name"`
-}
-
-// OpenstackNetwork is the object representing a openstack network.
-// swagger:model OpenstackNetwork
-type OpenstackNetwork struct {
-	// Id uniquely identifies the current network
-	ID string `json:"id"`
-	// Name is the name of the network
-	Name string `json:"name"`
-	// External set if network is the external network
-	External bool `json:"external"`
-}
-
-// OpenstackSecurityGroup is the object representing a openstack security group.
-// swagger:model OpenstackSecurityGroup
-type OpenstackSecurityGroup struct {
-	// Id uniquely identifies the current security group
-	ID string `json:"id"`
-	// Name is the name of the security group
-	Name string `json:"name"`
-}
-
-// OpenstackAvailabilityZone is the object representing a openstack availability zone.
-// swagger:model OpenstackAvailabilityZone
-type OpenstackAvailabilityZone struct {
-	// Name is the name of the availability zone
-	Name string `json:"name"`
-}
-
-// VSphereNetwork is the object representing a vsphere network.
-// swagger:model VSphereNetwork
-type VSphereNetwork struct {
-	// Name is the name of the network
-	Name string `json:"name"`
-	// AbsolutePath is the absolute path inside vCenter
-	AbsolutePath string `json:"absolutePath"`
-	// RelativePath is the relative path inside the datacenter
-	RelativePath string `json:"relativePath"`
-	// Type defines the type of network
-	Type string `json:"type"`
-}
-
-// VSphereFolder is the object representing a vsphere folder.
-// swagger:model VSphereFolder
-type VSphereFolder struct {
-	// Path is the path of the folder
-	Path string `json:"path"`
-}
-
-// VSphereDatastoreList is the object representing a vsphere datastores.
-// swagger:model VSphereDatastoreList
-type VSphereDatastoreList struct {
-	Datastores []string `json:"datastores"`
-}
-
-// AlibabaInstanceTypeList represents an array of Alibaba instance types.
-// swagger:model AlibabaInstanceTypeList
-type AlibabaInstanceTypeList []AlibabaInstanceType
-
-// AlibabaInstanceType represents a object of Alibaba instance type.
-// swagger:model AlibabaInstanceType
-type AlibabaInstanceType struct {
-	ID           string  `json:"id"`
-	CPUCoreCount int     `json:"cpuCoreCount"`
-	GPUCoreCount int     `json:"gpuCoreCount"`
-	MemorySize   float64 `json:"memorySize"`
-}
-
-// AlibabaZoneList represents an array of Alibaba zones.
-// swagger:model AlibabaZoneList
-type AlibabaZoneList []AlibabaZone
-
-// AlibabaZone represents a object of Alibaba zone.
-// swagger:model AlibabaZone
-type AlibabaZone struct {
-	ID string `json:"id"`
-}
-
-// AlibabaVSwitchList represents an array of Alibaba vSwitches.
-// swagger:model AlibabaVSwitchList
-type AlibabaVSwitchList []AlibabaVSwitch
-
-// AlibabaVSwitch represents a object of Alibaba vSwitch.
-// swagger:model AlibabaVSwitch
-type AlibabaVSwitch struct {
-	ID string `json:"id"`
-}
-
-// AnexiaVlanList represents an array of Anexia Vlans.
-// swagger:model AnexiaVlanList
-type AnexiaVlanList []AnexiaVlan
-
-// AnexiaVlan represents a object of Anexia Vlan.
-// swagger:model AnexiaVlan
-type AnexiaVlan struct {
-	ID string `json:"id"`
-}
-
-// AnexiaTemplateList represents an array of Anexia templates.
-// swagger:model AnexiaTemplateList
-type AnexiaTemplateList []AnexiaTemplate
-
-// AnexiaTemplate represents a object of Anexia template.
-// swagger:model AnexiaTemplate
-type AnexiaTemplate struct {
-	ID string `json:"id"`
-}
-
-// VersionList represents a list of versions
-// swagger:model VersionList
-type VersionList []MasterVersion
+// VMwareCloudDirectorStorageProfileList represents an array of VMware Cloud Director storage profiles.
+// swagger:model VMwareCloudDirectorStorageProfileList
+type VMwareCloudDirectorStorageProfileList []VMwareCloudDirectorStorageProfile
 
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
@@ -830,481 +142,6 @@ type MasterVersion struct {
 	// If true, then given version control plane version is not compatible
 	// with one of the kubelets inside cluster and shouldn't be used.
 	RestrictedByKubeletVersion bool `json:"restrictedByKubeletVersion,omitempty"`
-}
-
-// CreateClusterSpec is the structure that is used to create cluster with its initial node deployment
-// swagger:model CreateClusterSpec
-type CreateClusterSpec struct {
-	Cluster        Cluster         `json:"cluster"`
-	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
-	Applications   []Application   `json:"applications,omitempty"`
-}
-
-const (
-	// KubernetesClusterType defines the Kubernetes cluster type.
-	KubernetesClusterType string = "kubernetes"
-)
-
-// Cluster defines the cluster resource
-//
-// Note:
-// Cluster has a custom MarshalJSON method defined
-// and thus the output may vary
-//
-// swagger:model Cluster
-type Cluster struct {
-	ObjectMeta      `json:",inline"`
-	Labels          map[string]string `json:"labels,omitempty"`
-	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
-	// Type is deprecated and not used anymore.
-	Type                   string        `json:"type"`
-	Credential             string        `json:"credential,omitempty"`
-	Spec                   ClusterSpec   `json:"spec"`
-	Status                 ClusterStatus `json:"status"`
-	MachineDeploymentCount *int          `json:"machineDeploymentCount,omitempty"`
-}
-
-// ClusterSpec defines the cluster specification.
-type ClusterSpec struct {
-	// Cloud specifies the cloud providers configuration
-	Cloud kubermaticv1.CloudSpec `json:"cloud"`
-
-	// MachineNetworks optionally specifies the parameters for IPAM.
-	MachineNetworks []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
-
-	// Version desired version of the kubernetes master components
-	Version ksemver.Semver `json:"version"`
-
-	// OIDC settings
-	OIDC kubermaticv1.OIDCSettings `json:"oidc,omitempty"`
-
-	// Configure cluster upgrade window, currently used for flatcar node reboots
-	UpdateWindow *kubermaticv1.UpdateWindow `json:"updateWindow,omitempty"`
-
-	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
-	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
-
-	// If active the PodNodeSelector admission plugin is configured at the apiserver
-	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
-
-	// If active the EventRateLimit admission plugin is configured at the apiserver
-	UseEventRateLimitAdmissionPlugin bool `json:"useEventRateLimitAdmissionPlugin,omitempty"`
-
-	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
-	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
-	// to the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after
-	// the cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled
-	// it cannot be changed after the cluster is being created.
-	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
-
-	// EnableOperatingSystemManager enables OSM which in-turn is responsible for creating and managing worker node configuration
-	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
-
-	// KubernetesDashboard holds the configuration for kubernetes-dashboard component
-	KubernetesDashboard *kubermaticv1.KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
-
-	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
-	// It's used by the backend to create a configuration file for this plugin.
-	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
-	// The format in a file:
-	// podNodeSelectorPluginConfig:
-	//  clusterDefaultNodeSelector: <node-selectors-labels>
-	//  namespace1: <node-selectors-labels>
-	//  namespace2: <node-selectors-labels>
-	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
-
-	// EventRateLimitConfig allows configuring the EventRateLimit admission plugin (if enabled via useEventRateLimitAdmissionPlugin)
-	// to create limits on Kubernetes event generation. The EventRateLimit plugin is capable of comparing incoming Events
-	// to several configured buckets based on the type of event rate limit.
-	EventRateLimitConfig *kubermaticv1.EventRateLimitConfig `json:"eventRateLimitConfig,omitempty"`
-
-	// Additional Admission Controller plugins
-	AdmissionPlugins []string `json:"admissionPlugins,omitempty"`
-
-	// AuditLogging
-	AuditLogging *kubermaticv1.AuditLoggingSettings `json:"auditLogging,omitempty"`
-
-	// ServiceAccount contains service account related settings for the kube-apiserver of user cluster.
-	ServiceAccount *kubermaticv1.ServiceAccountSettings `json:"serviceAccount,omitempty"`
-
-	// OPAIntegration is a preview feature that enables OPA integration with Kubermatic for the cluster.
-	// Enabling it causes gatekeeper and its resources to be deployed on the user cluster.
-	// By default it is disabled.
-	OPAIntegration *kubermaticv1.OPAIntegrationSettings `json:"opaIntegration,omitempty"`
-
-	// MLA contains monitoring, logging and alerting related settings for the user cluster.
-	MLA *kubermaticv1.MLASettings `json:"mla,omitempty"`
-
-	// ClusterNetwork contains network settings.
-	ClusterNetwork *kubermaticv1.ClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
-
-	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
-	ContainerRuntime string `json:"containerRuntime,omitempty"`
-
-	// CNIPlugin contains the spec of the CNI plugin to be installed in the cluster.
-	CNIPlugin *kubermaticv1.CNIPluginSettings `json:"cniPlugin,omitempty"`
-}
-
-// MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
-// that will be returned in the API responses (see: PublicCloudSpec struct).
-func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
-	ret, err := json.Marshal(struct {
-		Cloud                                PublicCloudSpec                        `json:"cloud"`
-		MachineNetworks                      []kubermaticv1.MachineNetworkingConfig `json:"machineNetworks,omitempty"`
-		Version                              ksemver.Semver                         `json:"version"`
-		OIDC                                 kubermaticv1.OIDCSettings              `json:"oidc"`
-		UpdateWindow                         *kubermaticv1.UpdateWindow             `json:"updateWindow,omitempty"`
-		UsePodSecurityPolicyAdmissionPlugin  bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
-		UsePodNodeSelectorAdmissionPlugin    bool                                   `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
-		UseEventRateLimitAdmissionPlugin     bool                                   `json:"useEventRateLimitAdmissionPlugin,omitempty"`
-		EnableUserSSHKeyAgent                *bool                                  `json:"enableUserSSHKeyAgent,omitempty"`
-		EnableOperatingSystemManager         bool                                   `json:"enableOperatingSystemManager,omitempty"`
-		KubernetesDashboard                  *kubermaticv1.KubernetesDashboard      `json:"kubernetesDashboard,omitempty"`
-		AuditLogging                         *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
-		AdmissionPlugins                     []string                               `json:"admissionPlugins,omitempty"`
-		PodNodeSelectorAdmissionPluginConfig map[string]string                      `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
-		EventRateLimitConfig                 *kubermaticv1.EventRateLimitConfig     `json:"eventRateLimitConfig,omitempty"`
-		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
-		OPAIntegration                       *kubermaticv1.OPAIntegrationSettings   `json:"opaIntegration,omitempty"`
-		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
-		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
-		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
-		CNIPlugin                            *kubermaticv1.CNIPluginSettings        `json:"cniPlugin,omitempty"`
-	}{
-		Cloud: PublicCloudSpec{
-			DatacenterName:      cs.Cloud.DatacenterName,
-			Fake:                newPublicFakeCloudSpec(cs.Cloud.Fake),
-			Digitalocean:        newPublicDigitaloceanCloudSpec(cs.Cloud.Digitalocean),
-			BringYourOwn:        newPublicBringYourOwnCloudSpec(cs.Cloud.BringYourOwn),
-			AWS:                 newPublicAWSCloudSpec(cs.Cloud.AWS),
-			Azure:               newPublicAzureCloudSpec(cs.Cloud.Azure),
-			Openstack:           newPublicOpenstackCloudSpec(cs.Cloud.Openstack),
-			Packet:              newPublicPacketCloudSpec(cs.Cloud.Packet),
-			Hetzner:             newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
-			VSphere:             newPublicVSphereCloudSpec(cs.Cloud.VSphere),
-			GCP:                 newPublicGCPCloudSpec(cs.Cloud.GCP),
-			Kubevirt:            newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
-			Alibaba:             newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
-			Anexia:              newPublicAnexiaCloudSpec(cs.Cloud.Anexia),
-			Nutanix:             newPublicNutanixCloudSpec(cs.Cloud.Nutanix),
-			VMwareCloudDirector: newPublicVMwareCloudDirectorCloudSpec(cs.Cloud.VMwareCloudDirector),
-		},
-		Version:                              cs.Version,
-		MachineNetworks:                      cs.MachineNetworks,
-		OIDC:                                 cs.OIDC,
-		UpdateWindow:                         cs.UpdateWindow,
-		UsePodSecurityPolicyAdmissionPlugin:  cs.UsePodSecurityPolicyAdmissionPlugin,
-		UsePodNodeSelectorAdmissionPlugin:    cs.UsePodNodeSelectorAdmissionPlugin,
-		UseEventRateLimitAdmissionPlugin:     cs.UseEventRateLimitAdmissionPlugin,
-		EnableUserSSHKeyAgent:                cs.EnableUserSSHKeyAgent,
-		EnableOperatingSystemManager:         cs.EnableOperatingSystemManager,
-		KubernetesDashboard:                  cs.KubernetesDashboard,
-		AuditLogging:                         cs.AuditLogging,
-		AdmissionPlugins:                     cs.AdmissionPlugins,
-		PodNodeSelectorAdmissionPluginConfig: cs.PodNodeSelectorAdmissionPluginConfig,
-		EventRateLimitConfig:                 cs.EventRateLimitConfig,
-		ServiceAccount:                       cs.ServiceAccount,
-		OPAIntegration:                       cs.OPAIntegration,
-		MLA:                                  cs.MLA,
-		ContainerRuntime:                     cs.ContainerRuntime,
-		ClusterNetwork:                       cs.ClusterNetwork,
-		CNIPlugin:                            cs.CNIPlugin,
-	})
-
-	return ret, err
-}
-
-// PublicCloudSpec is a public counterpart of apiv1.CloudSpec.
-// swagger:model PublicCloudSpec
-type PublicCloudSpec struct {
-	DatacenterName      string                              `json:"dc"`
-	Fake                *PublicFakeCloudSpec                `json:"fake,omitempty"`
-	Digitalocean        *PublicDigitaloceanCloudSpec        `json:"digitalocean,omitempty"`
-	BringYourOwn        *PublicBringYourOwnCloudSpec        `json:"bringyourown,omitempty"`
-	AWS                 *PublicAWSCloudSpec                 `json:"aws,omitempty"`
-	Azure               *PublicAzureCloudSpec               `json:"azure,omitempty"`
-	Openstack           *PublicOpenstackCloudSpec           `json:"openstack,omitempty"`
-	Packet              *PublicPacketCloudSpec              `json:"packet,omitempty"`
-	Hetzner             *PublicHetznerCloudSpec             `json:"hetzner,omitempty"`
-	VSphere             *PublicVSphereCloudSpec             `json:"vsphere,omitempty"`
-	GCP                 *PublicGCPCloudSpec                 `json:"gcp,omitempty"`
-	Kubevirt            *PublicKubevirtCloudSpec            `json:"kubevirt,omitempty"`
-	Alibaba             *PublicAlibabaCloudSpec             `json:"alibaba,omitempty"`
-	Anexia              *PublicAnexiaCloudSpec              `json:"anexia,omitempty"`
-	Nutanix             *PublicNutanixCloudSpec             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *PublicVMwareCloudDirectorCloudSpec `json:"vmwareCloudDirector,omitempty"`
-}
-
-// PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
-type PublicFakeCloudSpec struct{}
-
-func newPublicFakeCloudSpec(internal *kubermaticv1.FakeCloudSpec) (public *PublicFakeCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicFakeCloudSpec{}
-}
-
-// PublicDigitaloceanCloudSpec is a public counterpart of apiv1.DigitaloceanCloudSpec.
-type PublicDigitaloceanCloudSpec struct{}
-
-func newPublicDigitaloceanCloudSpec(internal *kubermaticv1.DigitaloceanCloudSpec) (public *PublicDigitaloceanCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicDigitaloceanCloudSpec{}
-}
-
-// PublicHetznerCloudSpec is a public counterpart of apiv1.HetznerCloudSpec.
-type PublicHetznerCloudSpec struct{}
-
-func newPublicHetznerCloudSpec(internal *kubermaticv1.HetznerCloudSpec) (public *PublicHetznerCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicHetznerCloudSpec{}
-}
-
-// PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.
-type PublicAzureCloudSpec struct {
-	AssignAvailabilitySet *bool `json:"assignAvailabilitySet"`
-}
-
-func newPublicAzureCloudSpec(internal *kubermaticv1.AzureCloudSpec) (public *PublicAzureCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicAzureCloudSpec{
-		AssignAvailabilitySet: internal.AssignAvailabilitySet,
-	}
-}
-
-// PublicVSphereCloudSpec is a public counterpart of apiv1.VSphereCloudSpec.
-type PublicVSphereCloudSpec struct{}
-
-func newPublicVSphereCloudSpec(internal *kubermaticv1.VSphereCloudSpec) (public *PublicVSphereCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicVSphereCloudSpec{}
-}
-
-// PublicBringYourOwnCloudSpec is a public counterpart of apiv1.BringYourOwnCloudSpec.
-type PublicBringYourOwnCloudSpec struct{}
-
-func newPublicBringYourOwnCloudSpec(internal *kubermaticv1.BringYourOwnCloudSpec) (public *PublicBringYourOwnCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicBringYourOwnCloudSpec{}
-}
-
-// PublicAWSCloudSpec is a public counterpart of apiv1.AWSCloudSpec.
-type PublicAWSCloudSpec struct{}
-
-func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicAWSCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicAWSCloudSpec{}
-}
-
-// PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.
-type PublicOpenstackCloudSpec struct {
-	FloatingIPPool string `json:"floatingIpPool"`
-	Project        string `json:"project,omitempty"`
-	ProjectID      string `json:"projectID,omitempty"`
-	Domain         string `json:"domain,omitempty"`
-	Network        string `json:"network"`
-	SecurityGroups string `json:"securityGroups"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
-}
-
-func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicOpenstackCloudSpec{
-		FloatingIPPool: internal.FloatingIPPool,
-		Project:        internal.Project,
-		ProjectID:      internal.ProjectID,
-		Domain:         internal.Domain,
-		Network:        internal.Network,
-		SecurityGroups: internal.SecurityGroups,
-		RouterID:       internal.RouterID,
-		SubnetID:       internal.SubnetID,
-	}
-}
-
-// PublicPacketCloudSpec is a public counterpart of apiv1.PacketCloudSpec.
-type PublicPacketCloudSpec struct{}
-
-func newPublicPacketCloudSpec(internal *kubermaticv1.PacketCloudSpec) (public *PublicPacketCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicPacketCloudSpec{}
-}
-
-// PublicGCPCloudSpec is a public counterpart of apiv1.GCPCloudSpec.
-type PublicGCPCloudSpec struct{}
-
-func newPublicGCPCloudSpec(internal *kubermaticv1.GCPCloudSpec) (public *PublicGCPCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicGCPCloudSpec{}
-}
-
-// PublicKubevirtCloudSpec is a public counterpart of apiv1.KubevirtCloudSpec.
-type PublicKubevirtCloudSpec struct{}
-
-func newPublicKubevirtCloudSpec(internal *kubermaticv1.KubevirtCloudSpec) (public *PublicKubevirtCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicKubevirtCloudSpec{}
-}
-
-// PublicAlibabaCloudSpec is a public counterpart of apiv1.AlibabaCloudSpec.
-type PublicAlibabaCloudSpec struct{}
-
-func newPublicAlibabaCloudSpec(internal *kubermaticv1.AlibabaCloudSpec) (public *PublicAlibabaCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicAlibabaCloudSpec{}
-}
-
-// PublicAnexiaCloudSpec is a public counterpart of apiv1.AnexiaCloudSpec.
-type PublicAnexiaCloudSpec struct{}
-
-func newPublicAnexiaCloudSpec(internal *kubermaticv1.AnexiaCloudSpec) (public *PublicAnexiaCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicAnexiaCloudSpec{}
-}
-
-// PublicNutanixCloudSpec is a public counterpart of apiv1.NutanixCloudSpec.
-type PublicNutanixCloudSpec struct{}
-
-func newPublicNutanixCloudSpec(internal *kubermaticv1.NutanixCloudSpec) (public *PublicNutanixCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicNutanixCloudSpec{}
-}
-
-// PublicVMwareCloudDirectorCloudSpec is a public counterpart of apiv1.VMwareCloudDirectorCloudSpec.
-type PublicVMwareCloudDirectorCloudSpec struct{}
-
-func newPublicVMwareCloudDirectorCloudSpec(internal *kubermaticv1.VMwareCloudDirectorCloudSpec) (public *PublicVMwareCloudDirectorCloudSpec) {
-	if internal == nil {
-		return nil
-	}
-
-	return &PublicVMwareCloudDirectorCloudSpec{}
-}
-
-// ClusterStatus defines the cluster status.
-type ClusterStatus struct {
-	// Version actual version of the kubernetes master components
-	Version ksemver.Semver `json:"version"`
-	// URL specifies the address at which the cluster is available
-	URL string `json:"url"`
-	// ExternalCCMMigration represents the migration status to the external CCM
-	ExternalCCMMigration ExternalCCMMigrationStatus `json:"externalCCMMigration"`
-}
-
-type ExternalCCMMigrationStatus string
-
-var (
-	// ExternalCCMMigrationNotNeeded indicates that the external CCM is already in use.
-	ExternalCCMMigrationNotNeeded ExternalCCMMigrationStatus = "NotNeeded"
-	// ExternalCCMMigrationSupported indicates that the external CCM is not used but supported.
-	ExternalCCMMigrationSupported ExternalCCMMigrationStatus = "Supported"
-	// ExternalCCMMigrationUnsupported indicates that the external CCM is not used and not supported.
-	ExternalCCMMigrationUnsupported ExternalCCMMigrationStatus = "Unsupported"
-	// ExternalCCMMigrationInProgress indicates that the migration procedure to the external CCM is in progress.
-	ExternalCCMMigrationInProgress ExternalCCMMigrationStatus = "InProgress"
-)
-
-// ClusterHealth stores health information about the cluster's components.
-// swagger:model ClusterHealth
-type ClusterHealth struct {
-	Apiserver                    kubermaticv1.HealthStatus  `json:"apiserver"`
-	ApplicationController        kubermaticv1.HealthStatus  `json:"applicationController"`
-	Scheduler                    kubermaticv1.HealthStatus  `json:"scheduler"`
-	Controller                   kubermaticv1.HealthStatus  `json:"controller"`
-	MachineController            kubermaticv1.HealthStatus  `json:"machineController"`
-	Etcd                         kubermaticv1.HealthStatus  `json:"etcd"`
-	CloudProviderInfrastructure  kubermaticv1.HealthStatus  `json:"cloudProviderInfrastructure"`
-	UserClusterControllerManager kubermaticv1.HealthStatus  `json:"userClusterControllerManager"`
-	GatekeeperController         *kubermaticv1.HealthStatus `json:"gatekeeperController,omitempty"`
-	GatekeeperAudit              *kubermaticv1.HealthStatus `json:"gatekeeperAudit,omitempty"`
-	Monitoring                   *kubermaticv1.HealthStatus `json:"monitoring,omitempty"`
-	Logging                      *kubermaticv1.HealthStatus `json:"logging,omitempty"`
-	AlertmanagerConfig           *kubermaticv1.HealthStatus `json:"alertmanagerConfig,omitempty"`
-	MLAGateway                   *kubermaticv1.HealthStatus `json:"mlaGateway,omitempty"`
-}
-
-// AccessibleAddons represents an array of addons that can be configured in the user clusters.
-// swagger:model AccessibleAddons
-type AccessibleAddons []string
-
-// Addon represents a predefined addon that users may install into their cluster
-// swagger:model Addon
-type Addon struct {
-	ObjectMeta `json:",inline"`
-
-	Spec AddonSpec `json:"spec"`
-}
-
-// AddonSpec addon specification
-// swagger:model AddonSpec
-type AddonSpec struct {
-	// Variables is free form data to use for parsing the manifest templates
-	Variables map[string]interface{} `json:"variables,omitempty"`
-	// IsDefault indicates whether the addon is default
-	IsDefault bool `json:"isDefault,omitempty"`
-	// ContinuouslyReconcile indicates that the addon cannot be deleted or modified outside of the UI after installation
-	ContinuouslyReconcile bool `json:"continuouslyReconcile,omitempty"`
-}
-
-// AddonConfig represents a addon configuration
-// swagger:model AddonConfig
-type AddonConfig struct {
-	ObjectMeta `json:",inline"`
-
-	Spec kubermaticv1.AddonConfigSpec `json:"spec"`
-}
-
-// ClusterList represents a list of clusters
-// swagger:model ClusterList
-type ClusterList []Cluster
-
-// Node represents a worker node that is part of a cluster
-// swagger:model Node
-type Node struct {
-	ObjectMeta `json:",inline"`
-	Spec       NodeSpec   `json:"spec"`
-	Status     NodeStatus `json:"status"`
 }
 
 // NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
@@ -1322,7 +159,7 @@ type NodeCloudSpec struct {
 	Alibaba             *AlibabaNodeSpec             `json:"alibaba,omitempty"`
 	Anexia              *AnexiaNodeSpec              `json:"anexia,omitempty"`
 	Nutanix             *NutanixNodeSpec             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *VMwareCloudDirectorNodeSpec `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirectorNodeSpec `json:"vmwareclouddirector,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -1373,15 +210,23 @@ type RockyLinuxSpec struct {
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
+// AmazonLinuxSpec amazon linux specific settings
+// swagger:model AmazonLinuxSpec
+type AmazonLinuxSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
+}
+
 // OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.
 // swagger:model OperatingSystemSpec
 type OperatingSystemSpec struct {
-	Ubuntu     *UbuntuSpec     `json:"ubuntu,omitempty"`
-	CentOS     *CentOSSpec     `json:"centos,omitempty"`
-	SLES       *SLESSpec       `json:"sles,omitempty"`
-	RHEL       *RHELSpec       `json:"rhel,omitempty"`
-	Flatcar    *FlatcarSpec    `json:"flatcar,omitempty"`
-	RockyLinux *RockyLinuxSpec `json:"rockyLinux,omitempty"`
+	Ubuntu      *UbuntuSpec      `json:"ubuntu,omitempty"`
+	AmazonLinux *AmazonLinuxSpec `json:"amzn2,omitempty"`
+	CentOS      *CentOSSpec      `json:"centos,omitempty"`
+	SLES        *SLESSpec        `json:"sles,omitempty"`
+	RHEL        *RHELSpec        `json:"rhel,omitempty"`
+	Flatcar     *FlatcarSpec     `json:"flatcar,omitempty"`
+	RockyLinux  *RockyLinuxSpec  `json:"rockylinux,omitempty"`
 }
 
 // NodeVersionInfo node version information
@@ -1424,41 +269,14 @@ type DigitaloceanNodeSpec struct {
 	Size string `json:"size"`
 	// enable backups for the droplet
 	Backups bool `json:"backups"`
+	// DEPRECATED
+	// IPv6 is enabled automatically based on IP Family of the cluster so setting this field is not needed.
 	// enable ipv6 for the droplet
 	IPv6 bool `json:"ipv6"`
 	// enable monitoring for the droplet
 	Monitoring bool `json:"monitoring"`
 	// additional droplet tags
 	Tags []string `json:"tags"`
-}
-
-func (spec *DigitaloceanNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.Size) == 0 {
-		missing = append(missing, "size")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	// Inlined anonymous mirror structure to allow usage of real marshal after validation
-	res := struct {
-		Size       string   `json:"size"`
-		Backups    bool     `json:"backups"`
-		IPv6       bool     `json:"ipv6"`
-		Monitoring bool     `json:"monitoring"`
-		Tags       []string `json:"tags"`
-	}{
-		Size:       spec.Size,
-		Backups:    spec.Backups,
-		IPv6:       spec.IPv6,
-		Monitoring: spec.Monitoring,
-		Tags:       spec.Tags,
-	}
-
-	return json.Marshal(&res)
 }
 
 // HetznerNodeSpec Hetzner node settings
@@ -1470,28 +288,6 @@ type HetznerNodeSpec struct {
 	// network name
 	// required: false
 	Network string `json:"network"`
-}
-
-func (spec *HetznerNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.Type) == 0 {
-		missing = append(missing, "type")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		Network string `json:"network,omitempty"`
-		Type    string `json:"type"`
-	}{
-		Network: spec.Network,
-		Type:    spec.Type,
-	}
-
-	return json.Marshal(&res)
 }
 
 // AzureNodeSpec describes settings for an Azure node
@@ -1522,40 +318,6 @@ type AzureNodeSpec struct {
 	AssignAvailabilitySet bool `json:"assignAvailabilitySet"`
 }
 
-func (spec *AzureNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.Size) == 0 {
-		missing = append(missing, "size")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		Size                  string            `json:"size"`
-		AssignPublicIP        bool              `json:"assignPublicIP"`
-		Tags                  map[string]string `json:"tags,omitempty"`
-		OSDiskSize            int32             `json:"osDiskSize"`
-		DataDiskSize          int32             `json:"dataDiskSize"`
-		Zones                 []string          `json:"zones"`
-		ImageID               string            `json:"imageID"`
-		AssignAvailabilitySet bool              `json:"assignAvailabilitySet"`
-	}{
-		Size:                  spec.Size,
-		AssignPublicIP:        spec.AssignPublicIP,
-		Tags:                  spec.Tags,
-		OSDiskSize:            spec.OSDiskSize,
-		DataDiskSize:          spec.DataDiskSize,
-		Zones:                 spec.Zones,
-		ImageID:               spec.ImageID,
-		AssignAvailabilitySet: spec.AssignAvailabilitySet,
-	}
-
-	return json.Marshal(&res)
-}
-
 // VSphereNodeSpec VSphere node settings
 // swagger:model VSphereNodeSpec
 type VSphereNodeSpec struct {
@@ -1574,46 +336,6 @@ type VSphereTag struct {
 	Description string `json:"description,omitempty"`
 	// CategoryID when empty the default category will be used.
 	CategoryID string `json:"categoryID,omitempty"`
-}
-
-func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if spec.CPUs < 1 {
-		missing = append(missing, "cpus")
-	}
-
-	if spec.Memory < 1 {
-		missing = append(missing, "memory")
-	}
-
-	if spec.DiskSizeGB == nil || spec.DiskSizeGB != nil && *spec.DiskSizeGB < 1 {
-		missing = append(missing, "diskSizeGB")
-	}
-
-	if len(spec.Template) == 0 {
-		missing = append(missing, "template")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		CPUs       int          `json:"cpus"`
-		Memory     int          `json:"memory"`
-		DiskSizeGB *int64       `json:"diskSizeGB,omitempty"`
-		Template   string       `json:"template"`
-		Tags       []VSphereTag `json:"tags,omitempty"`
-	}{
-		CPUs:       spec.CPUs,
-		Memory:     spec.Memory,
-		DiskSizeGB: spec.DiskSizeGB,
-		Template:   spec.Template,
-		Tags:       spec.Tags,
-	}
-
-	return json.Marshal(&res)
 }
 
 // OpenstackNodeSpec openstack node settings
@@ -1643,44 +365,9 @@ type OpenstackNodeSpec struct {
 	// Max time to wait for the instance to be ready, i.e. 10s/1m
 	// required: false
 	InstanceReadyCheckTimeout string `json:"instanceReadyCheckTimeout"`
-}
-
-func (spec *OpenstackNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.Flavor) == 0 {
-		missing = append(missing, "flavor")
-	}
-
-	if len(spec.Image) == 0 {
-		missing = append(missing, "image")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		Flavor                    string            `json:"flavor"`
-		Image                     string            `json:"image"`
-		Tags                      map[string]string `json:"tags,omitempty"`
-		UseFloatingIP             bool              `json:"useFloatingIP,omitempty"`
-		RootDiskSizeGB            *int              `json:"diskSize"`
-		AvailabilityZone          string            `json:"availabilityZone"`
-		InstanceReadyCheckPeriod  string            `json:"instanceReadyCheckPeriod"`
-		InstanceReadyCheckTimeout string            `json:"instanceReadyCheckTimeout"`
-	}{
-		Flavor:                    spec.Flavor,
-		Image:                     spec.Image,
-		Tags:                      spec.Tags,
-		UseFloatingIP:             spec.UseFloatingIP,
-		RootDiskSizeGB:            spec.RootDiskSizeGB,
-		AvailabilityZone:          spec.AvailabilityZone,
-		InstanceReadyCheckPeriod:  spec.InstanceReadyCheckPeriod,
-		InstanceReadyCheckTimeout: spec.InstanceReadyCheckTimeout,
-	}
-
-	return json.Marshal(&res)
+	// UUID of the server group, used to configure affinity or anti-affinity of the VM instances relative to hypervisor
+	// required: false
+	ServerGroup string `json:"serverGroup"`
 }
 
 // AWSNodeSpec aws specific node settings
@@ -1691,7 +378,7 @@ type AWSNodeSpec struct {
 	InstanceType string `json:"instanceType"`
 	// size of the volume in gb. Only one volume will be created
 	// required: true
-	VolumeSize int64 `json:"diskSize"`
+	VolumeSize int32 `json:"diskSize"`
 	// type of the volume. for example: gp2, io1, st1, sc1, standard
 	// required: true
 	VolumeType string `json:"volumeType"`
@@ -1728,56 +415,6 @@ type AWSNodeSpec struct {
 	AssumeRoleExternalID string `json:"assumeRoleExternalID"`
 }
 
-func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.InstanceType) == 0 {
-		missing = append(missing, "instanceType")
-	}
-
-	if spec.VolumeSize < 1 {
-		missing = append(missing, "diskSize")
-	}
-
-	if len(spec.VolumeType) == 0 {
-		missing = append(missing, "volumeType")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		InstanceType                     string            `json:"instanceType"`
-		VolumeSize                       int64             `json:"diskSize"`
-		VolumeType                       string            `json:"volumeType"`
-		AMI                              string            `json:"ami"`
-		Tags                             map[string]string `json:"tags"`
-		AvailabilityZone                 string            `json:"availabilityZone"`
-		SubnetID                         string            `json:"subnetID"`
-		AssignPublicIP                   *bool             `json:"assignPublicIP"`
-		IsSpotInstance                   *bool             `json:"isSpotInstance"`
-		SpotInstanceMaxPrice             *string           `json:"spotInstanceMaxPrice,omitempty"`
-		SpotInstancePersistentRequest    *bool             `json:"spotInstancePersistentRequest,omitempty"`
-		SpotInstanceInterruptionBehavior *string           `json:"spotInstanceInterruptionBehavior,omitempty"`
-	}{
-		InstanceType:                     spec.InstanceType,
-		VolumeSize:                       spec.VolumeSize,
-		VolumeType:                       spec.VolumeType,
-		AMI:                              spec.AMI,
-		Tags:                             spec.Tags,
-		AvailabilityZone:                 spec.AvailabilityZone,
-		SubnetID:                         spec.SubnetID,
-		AssignPublicIP:                   spec.AssignPublicIP,
-		IsSpotInstance:                   spec.IsSpotInstance,
-		SpotInstanceMaxPrice:             spec.SpotInstanceMaxPrice,
-		SpotInstancePersistentRequest:    spec.SpotInstancePersistentRequest,
-		SpotInstanceInterruptionBehavior: spec.SpotInstanceInterruptionBehavior,
-	}
-
-	return json.Marshal(&res)
-}
-
 // PacketNodeSpec specifies packet specific node settings
 // swagger:model PacketNodeSpec
 type PacketNodeSpec struct {
@@ -1787,28 +424,6 @@ type PacketNodeSpec struct {
 	// additional instance tags
 	// required: false
 	Tags []string `json:"tags"`
-}
-
-func (spec *PacketNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.InstanceType) == 0 {
-		missing = append(missing, "instanceType")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		InstanceType string   `json:"instanceType"`
-		Tags         []string `json:"tags"`
-	}{
-		InstanceType: spec.InstanceType,
-		Tags:         spec.Tags,
-	}
-
-	return json.Marshal(&res)
 }
 
 // GCPNodeSpec gcp specific node settings
@@ -1824,59 +439,24 @@ type GCPNodeSpec struct {
 	CustomImage string            `json:"customImage"`
 }
 
-func (spec *GCPNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.Zone) == 0 {
-		missing = append(missing, "zone")
-	}
-
-	if spec.DiskSize < 1 {
-		missing = append(missing, "diskSize")
-	}
-
-	if len(spec.MachineType) == 0 {
-		missing = append(missing, "machineType")
-	}
-
-	if len(spec.DiskType) == 0 {
-		missing = append(missing, "diskType")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		Zone        string            `json:"zone"`
-		MachineType string            `json:"machineType"`
-		DiskSize    int64             `json:"diskSize"`
-		DiskType    string            `json:"diskType"`
-		Preemptible bool              `json:"preemptible"`
-		Labels      map[string]string `json:"labels"`
-		Tags        []string          `json:"tags"`
-		CustomImage string            `json:"customImage"`
-	}{
-		Zone:        spec.Zone,
-		MachineType: spec.MachineType,
-		DiskSize:    spec.DiskSize,
-		DiskType:    spec.DiskType,
-		Preemptible: spec.Preemptible,
-		Labels:      spec.Labels,
-		Tags:        spec.Tags,
-		CustomImage: spec.CustomImage,
-	}
-
-	return json.Marshal(&res)
-}
-
 // KubevirtNodeSpec kubevirt specific node settings
 // swagger:model KubevirtNodeSpec
 type KubevirtNodeSpec struct {
 	// FlavorName states name of the virtual-machine flavor.
+	//
+	// Deprecated. In favor of Instancetype and Preference.
 	FlavorName string `json:"flavorName"`
 	// FlavorProfile states name of virtual-machine profile.
+	//
+	// Deprecated. In favor of Instancetype and Preference.
 	FlavorProfile string `json:"flavorProfile"`
+	// Instancetype provide a way to define a set of resource, performance and other runtime characteristics,
+	// allowing users to reuse these definitions across multiple VirtualMachines.
+	// Anything provided within an instancetype cannot be overridden within the VirtualMachine.
+	Instancetype *kubevirtv1.InstancetypeMatcher `json:"instancetype"`
+	// Preference are like Instancetype defining runtime characteristics. But unlike Instancetypes,
+	// Preferences only represent the preferred values and as such can be overridden by values in the VirtualMachine.
+	Preference *kubevirtv1.PreferenceMatcher `json:"preference"`
 	// CPUs states how many cpus the kubevirt node will have.
 	// required: true
 	CPUs string `json:"cpus"`
@@ -1885,6 +465,9 @@ type KubevirtNodeSpec struct {
 	Memory string `json:"memory"`
 
 	// PrimaryDiskOSImage states the source from which the imported image will be downloaded.
+	// This field contains:
+	// - a URL to download an Os Image from a HTTP source.
+	// - a DataVolume Name as source for DataVolume cloning.
 	// required: true
 	PrimaryDiskOSImage string `json:"primaryDiskOSImage"`
 	// PrimaryDiskStorageClassName states the storage class name for the provisioned PVCs.
@@ -1896,11 +479,17 @@ type KubevirtNodeSpec struct {
 	// SecondaryDisks contains list of secondary-disks
 	SecondaryDisks []SecondaryDisks `json:"secondaryDisks"`
 	// PodAffinityPreset describes pod affinity scheduling rules
+	//
+	// Deprecated: in favor of topology spread constraints
 	PodAffinityPreset string `json:"podAffinityPreset"`
 	// PodAntiAffinityPreset describes pod anti-affinity scheduling rules
+	//
+	// Deprecated: in favor of topology spread constraints
 	PodAntiAffinityPreset string `json:"podAntiAffinityPreset"`
 	// NodeAffinityPreset describes node affinity scheduling rules
 	NodeAffinityPreset NodeAffinityPreset `json:"nodeAffinityPreset"`
+	// TopologySpreadConstraints describes topology spread constraints for VMs.
+	TopologySpreadConstraints []TopologySpreadConstraint `json:"topologySpreadConstraints"`
 }
 
 type SecondaryDisks struct {
@@ -1914,62 +503,14 @@ type NodeAffinityPreset struct {
 	Values []string
 }
 
-func (spec *KubevirtNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if spec.FlavorName == "" {
-		if len(spec.CPUs) == 0 {
-			missing = append(missing, "cpus")
-		}
-
-		if len(spec.Memory) == 0 {
-			missing = append(missing, "memory")
-		}
-	}
-
-	if len(spec.PrimaryDiskOSImage) == 0 {
-		missing = append(missing, "primaryDiskOSImage")
-	}
-
-	if len(spec.PrimaryDiskStorageClassName) == 0 {
-		missing = append(missing, "primaryDiskStorageClassName")
-	}
-
-	if len(spec.PrimaryDiskSize) == 0 {
-		missing = append(missing, "primaryDiskSize")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		FlavorName                  string             `json:"flavorName"`
-		FlavorProfile               string             `json:"flavorProfile"`
-		CPUs                        string             `json:"cpus"`
-		Memory                      string             `json:"memory"`
-		PrimaryDiskOSImage          string             `json:"primaryDiskOSImage"`
-		PrimaryDiskStorageClassName string             `json:"primaryDiskStorageClassName"`
-		PrimaryDiskSize             string             `json:"primaryDiskSize"`
-		SecondaryDisks              []SecondaryDisks   `json:"secondaryDisks"`
-		PodAffinityPreset           string             `json:"podAffinityPreset"`
-		PodAntiAffinityPreset       string             `json:"podAntiAffinityPreset"`
-		NodeAffinityPreset          NodeAffinityPreset `json:"nodeAffinityPreset"`
-	}{
-		FlavorName:                  spec.FlavorName,
-		FlavorProfile:               spec.FlavorProfile,
-		CPUs:                        spec.CPUs,
-		Memory:                      spec.Memory,
-		PrimaryDiskOSImage:          spec.PrimaryDiskOSImage,
-		PrimaryDiskStorageClassName: spec.PrimaryDiskStorageClassName,
-		PrimaryDiskSize:             spec.PrimaryDiskSize,
-		SecondaryDisks:              spec.SecondaryDisks,
-		PodAffinityPreset:           spec.PodAffinityPreset,
-		PodAntiAffinityPreset:       spec.PodAntiAffinityPreset,
-		NodeAffinityPreset:          spec.NodeAffinityPreset,
-	}
-
-	return json.Marshal(&res)
+type TopologySpreadConstraint struct {
+	// MaxSkew describes the degree to which VMs may be unevenly distributed.
+	MaxSkew int `json:"maxSkew"`
+	// TopologyKey is the key of infra-node labels.
+	TopologyKey string `json:"topologyKey"`
+	// WhenUnsatisfiable indicates how to deal with a VM if it doesn't satisfy
+	// the spread constraint.
+	WhenUnsatisfiable string `json:"whenUnsatisfiable"`
 }
 
 // AlibabaNodeSpec alibaba specific node settings
@@ -1984,56 +525,17 @@ type AlibabaNodeSpec struct {
 	ZoneID                  string            `json:"zoneID"`
 }
 
-func (spec *AlibabaNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
+// AnexiaDiskConfig defines a single disk for a node at anexia
+// swagger:model AnexiaDiskConfig
+type AnexiaDiskConfig struct {
+	// Disks configures this disk of each node will have.
+	// required: true
+	Size int64 `json:"size"`
 
-	if len(spec.InstanceType) == 0 {
-		missing = append(missing, "instanceType")
-	}
-
-	if len(spec.DiskSize) == 0 {
-		missing = append(missing, "diskSize")
-	}
-
-	if len(spec.DiskType) == 0 {
-		missing = append(missing, "diskType")
-	}
-
-	if len(spec.VSwitchID) == 0 {
-		missing = append(missing, "vSwitchID")
-	}
-
-	if len(spec.InternetMaxBandwidthOut) == 0 {
-		missing = append(missing, "internetMaxBandwidthOut")
-	}
-
-	if len(spec.ZoneID) == 0 {
-		missing = append(missing, "zoneID")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		InstanceType            string            `json:"instanceType"`
-		DiskSize                string            `json:"diskSize"`
-		DiskType                string            `json:"diskType"`
-		VSwitchID               string            `json:"vSwitchID"`
-		InternetMaxBandwidthOut string            `json:"internetMaxBandwidthOut"`
-		Labels                  map[string]string `json:"labels"`
-		ZoneID                  string            `json:"zoneID"`
-	}{
-		InstanceType:            spec.InstanceType,
-		VSwitchID:               spec.VSwitchID,
-		DiskSize:                spec.DiskSize,
-		DiskType:                spec.DiskType,
-		InternetMaxBandwidthOut: spec.InternetMaxBandwidthOut,
-		Labels:                  spec.Labels,
-		ZoneID:                  spec.ZoneID,
-	}
-
-	return json.Marshal(&res)
+	// PerformanceType configures the performance type this disks of each node will have.
+	// Known values are something like "ENT3" or "HPC2".
+	// required: false
+	PerformanceType *string `json:"performanceType,omitempty"`
 }
 
 // AnexiaNodeSpec anexia specific node settings
@@ -2051,53 +553,15 @@ type AnexiaNodeSpec struct {
 	// Memory states the memory that node will have.
 	// required: true
 	Memory int64 `json:"memory"`
+
 	// DiskSize states the disk size that node will have.
-	// required: true
-	DiskSize int64 `json:"diskSize"`
-}
+	// Deprecated: please use the new Disks attribute instead.
+	// required: false
+	DiskSize *int64 `json:"diskSize"`
 
-func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if len(spec.VlanID) == 0 {
-		missing = append(missing, "vlanID")
-	}
-
-	if spec.CPUs < 1 {
-		missing = append(missing, "cpus")
-	}
-
-	if spec.Memory < 1 {
-		missing = append(missing, "memory")
-	}
-
-	if spec.DiskSize < 1 {
-		missing = append(missing, "diskSize")
-	}
-
-	if len(spec.TemplateID) == 0 {
-		missing = append(missing, "templateID")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		VlanID     string `json:"vlanID"`
-		TemplateID string `json:"templateID"`
-		CPUs       int    `json:"cpus"`
-		Memory     int64  `json:"memory"`
-		DiskSize   int64  `json:"diskSize"`
-	}{
-		VlanID:     spec.VlanID,
-		TemplateID: spec.TemplateID,
-		DiskSize:   spec.DiskSize,
-		CPUs:       spec.CPUs,
-		Memory:     spec.Memory,
-	}
-
-	return json.Marshal(&res)
+	// Disks configures the disks each node will have.
+	// required: false
+	Disks []AnexiaDiskConfig `json:"disks"`
 }
 
 // NutanixNodeSpec nutanix specific node settings
@@ -2113,222 +577,23 @@ type NutanixNodeSpec struct {
 	DiskSize       *int64            `json:"diskSize"`
 }
 
-func (spec *NutanixNodeSpec) MarshalJSON() ([]byte, error) {
-	res := struct {
-		SubnetName     string            `json:"subnetName"`
-		ImageName      string            `json:"imageName"`
-		Categories     map[string]string `json:"categories"`
-		CPUs           int64             `json:"cpus"`
-		CPUCores       *int64            `json:"cpuCores"`
-		CPUPassthrough *bool             `json:"cpuPassthrough"`
-		MemoryMB       int64             `json:"memoryMB"`
-		DiskSize       *int64            `json:"diskSize"`
-	}{
-		SubnetName:     spec.SubnetName,
-		ImageName:      spec.ImageName,
-		Categories:     spec.Categories,
-		CPUs:           spec.CPUs,
-		CPUCores:       spec.CPUCores,
-		CPUPassthrough: spec.CPUPassthrough,
-		MemoryMB:       spec.MemoryMB,
-		DiskSize:       spec.DiskSize,
-	}
-
-	return json.Marshal(&res)
-}
-
 // VMwareCloudDirectorNodeSpec VMware Cloud Director node settings
 // swagger:model VMwareCloudDirectorNodeSpec
 type VMwareCloudDirectorNodeSpec struct {
-	CPUs             int    `json:"cpus"`
-	CPUCores         int    `json:"cpuCores"`
-	MemoryMB         int    `json:"memoryMB"`
-	DiskSizeGB       *int64 `json:"diskSizeGB,omitempty"`
-	DiskIOPS         *int64 `json:"diskIOPS,omitempty"`
-	Template         string `json:"template"`
-	Catalog          string `json:"catalog"`
-	StorageProfile   string `json:"storageProfile,omitempty"`
-	IPAllocationMode string `json:"ipAllocationMode,omitempty"`
-	VApp             string `json:"vapp"`
-	Network          string `json:"network"`
+	CPUs             int                  `json:"cpus"`
+	CPUCores         int                  `json:"cpuCores"`
+	MemoryMB         int                  `json:"memoryMB"`
+	DiskSizeGB       *int64               `json:"diskSizeGB,omitempty"`
+	DiskIOPS         *int64               `json:"diskIOPS,omitempty"`
+	Template         string               `json:"template"`
+	Catalog          string               `json:"catalog"`
+	StorageProfile   string               `json:"storageProfile"`
+	IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
+	VApp             string               `json:"vapp,omitempty"`
+	Network          string               `json:"network,omitempty"`
 	// Additional metadata to set
 	// required: false
 	Metadata map[string]string `json:"metadata,omitempty"`
-}
-
-func (spec *VMwareCloudDirectorNodeSpec) MarshalJSON() ([]byte, error) {
-	missing := make([]string, 0)
-
-	if spec.CPUs < 1 {
-		missing = append(missing, "cpus")
-	}
-
-	if spec.CPUCores < 1 {
-		missing = append(missing, "cpuCores")
-	}
-
-	if spec.MemoryMB < 1 {
-		missing = append(missing, "memoryMB")
-	}
-
-	if spec.DiskSizeGB != nil && *spec.DiskSizeGB < 4 {
-		missing = append(missing, "diskSizeGB")
-	}
-
-	if spec.DiskIOPS != nil && *spec.DiskIOPS < 0 {
-		missing = append(missing, "diskIOPS")
-	}
-
-	if len(spec.Template) == 0 {
-		missing = append(missing, "template")
-	}
-
-	if len(spec.Catalog) == 0 {
-		missing = append(missing, "catalog")
-	}
-
-	if len(spec.VApp) == 0 {
-		missing = append(missing, "vapp")
-	}
-
-	if len(spec.Network) == 0 {
-		missing = append(missing, "network")
-	}
-
-	if len(spec.IPAllocationMode) == 0 {
-		missing = append(missing, "ipAllocationMode")
-	}
-
-	if len(missing) > 0 {
-		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
-	}
-
-	res := struct {
-		CPUs             int               `json:"cpus"`
-		CPUCores         int               `json:"cpuCores"`
-		MemoryMB         int               `json:"memoryMB"`
-		DiskSizeGB       *int64            `json:"diskSizeGB,omitempty"`
-		DiskIOPS         *int64            `json:"diskIOPS,omitempty"`
-		Catalog          string            `json:"catalog"`
-		Template         string            `json:"template"`
-		StorageProfile   string            `json:"storageProfile,omitempty"`
-		IPAllocationMode string            `json:"ipAllocationMode,omitempty"`
-		VApp             string            `json:"vapp"`
-		Network          string            `json:"network"`
-		Metadata         map[string]string `json:"metadata,omitempty"`
-	}{
-		CPUs:             spec.CPUs,
-		CPUCores:         spec.CPUCores,
-		MemoryMB:         spec.MemoryMB,
-		DiskSizeGB:       spec.DiskSizeGB,
-		DiskIOPS:         spec.DiskIOPS,
-		Catalog:          spec.Catalog,
-		Template:         spec.Template,
-		StorageProfile:   spec.StorageProfile,
-		IPAllocationMode: spec.IPAllocationMode,
-		VApp:             spec.VApp,
-		Network:          spec.Network,
-		Metadata:         spec.Metadata,
-	}
-
-	return json.Marshal(&res)
-}
-
-// NodeResources cpu and memory of a node
-// swagger:model NodeResources
-type NodeResources struct {
-	CPU    string `json:"cpu"`
-	Memory string `json:"memory"`
-}
-
-// NodeStatus is information about the current status of a node.
-// swagger:model NodeStatus
-type NodeStatus struct {
-	// name of the actual Machine object
-	MachineName string `json:"machineName"`
-	// resources in total
-	Capacity NodeResources `json:"capacity,omitempty"`
-	// allocatable resources
-	Allocatable NodeResources `json:"allocatable,omitempty"`
-	// different addresses of a node
-	Addresses []NodeAddress `json:"addresses,omitempty"`
-	// node versions and systems info
-	NodeInfo NodeSystemInfo `json:"nodeInfo,omitempty"`
-
-	// in case of a error this will contain a short error message
-	ErrorReason string `json:"errorReason,omitempty"`
-	// in case of a error this will contain a detailed error explanation
-	ErrorMessage string `json:"errorMessage,omitempty"`
-}
-
-// NodeAddress contains information for the node's address.
-// swagger:model NodeAddress
-type NodeAddress struct {
-	// address type. for example: ExternalIP, InternalIP, InternalDNS, ExternalDNS
-	Type string `json:"type"`
-	// the actual address. for example: 192.168.1.1, node1.my.dns
-	Address string `json:"address"`
-}
-
-// NodeSystemInfo is a set of versions/ids/uuids to uniquely identify the node.
-// swagger:model NodeSystemInfo
-type NodeSystemInfo struct {
-	KernelVersion           string `json:"kernelVersion"`
-	ContainerRuntime        string `json:"containerRuntime"`
-	ContainerRuntimeVersion string `json:"containerRuntimeVersion"`
-	KubeletVersion          string `json:"kubeletVersion"`
-	OperatingSystem         string `json:"operatingSystem"`
-	Architecture            string `json:"architecture"`
-}
-
-// ClusterMetrics defines a metric for the given cluster
-// swagger:model ClusterMetrics
-type ClusterMetrics struct {
-	Name                string              `json:"name"`
-	ControlPlaneMetrics ControlPlaneMetrics `json:"controlPlane"`
-	NodesMetrics        NodesMetric         `json:"nodes"`
-}
-
-// ControlPlaneMetrics defines a metric for the user cluster control plane resources
-// swagger:model ControlPlaneMetrics
-type ControlPlaneMetrics struct {
-	// MemoryTotalBytes in bytes
-	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
-	// CPUTotalMillicores in m cores
-	CPUTotalMillicores int64 `json:"cpuTotalMillicores,omitempty"`
-}
-
-// NodesMetric defines a metric for a group of nodes
-// swagger:model NodesMetric
-type NodesMetric struct {
-	// MemoryTotalBytes current memory usage in bytes
-	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
-	// MemoryAvailableBytes available memory for node
-	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
-	// MemoryUsedPercentage in percentage
-	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
-	// CPUTotalMillicores in m cores
-	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
-	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
-	// CPUUsedPercentage in percentage
-	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
-}
-
-// NodeMetric defines a metric for the given node
-// swagger:model NodeMetric
-type NodeMetric struct {
-	Name string `json:"name"`
-	// MemoryTotalBytes current memory usage in bytes
-	MemoryTotalBytes int64 `json:"memoryTotalBytes,omitempty"`
-	// MemoryAvailableBytes available memory for node
-	MemoryAvailableBytes int64 `json:"memoryAvailableBytes,omitempty"`
-	// MemoryUsedPercentage in percentage
-	MemoryUsedPercentage int64 `json:"memoryUsedPercentage,omitempty"`
-	// CPUTotalMillicores in m cores
-	CPUTotalMillicores     int64 `json:"cpuTotalMillicores,omitempty"`
-	CPUAvailableMillicores int64 `json:"cpuAvailableMillicores,omitempty"`
-	// CPUUsedPercentage in percentage
-	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
 // Application represents a set of applications that are to be installed for the cluster
@@ -2371,7 +636,10 @@ type ApplicationRef struct {
 	Name string `json:"name" required:"true"`
 
 	// Version of the Application. Must be a valid SemVer version
-	Version appskubermaticv1.Version `json:"version" required:"true"`
+	// NOTE: We are not using Masterminds/semver here, as it keeps data in unexported fields witch causes issues for
+	// DeepEqual used in our reconciliation packages. At the same time, we are not using pkg/semver because
+	// of the reasons stated in https://github.com/kubermatic/kubermatic/pull/10891.
+	Version string `json:"version" required:"true"`
 }
 
 // NodeDeployment represents a set of worker nodes that is part of a cluster
@@ -2396,334 +664,3 @@ type NodeDeploymentSpec struct {
 	// required: false
 	DynamicConfig *bool `json:"dynamicConfig,omitempty"`
 }
-
-// Event is a report of an event somewhere in the cluster.
-// swagger:model Event
-type Event struct {
-	ObjectMeta `json:",inline"`
-
-	// A human-readable description of the status of this operation.
-	Message string `json:"message,omitempty"`
-
-	// Type of this event (i.e. normal or warning). New types could be added in the future.
-	Type string `json:"type,omitempty"`
-
-	// The object reference that those events are about.
-	InvolvedObject ObjectReferenceResource `json:"involvedObject"`
-
-	// The time at which the most recent occurrence of this event was recorded.
-	// swagger:strfmt date-time
-	LastTimestamp Time `json:"lastTimestamp,omitempty"`
-
-	// The number of times this event has occurred.
-	Count int32 `json:"count,omitempty"`
-}
-
-// ObjectReferenceResource contains basic information about referred object.
-type ObjectReferenceResource struct {
-	// Type of the referent.
-	Type string `json:"type,omitempty"`
-	// Namespace of the referent.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
-	// +optional
-	Namespace string `json:"namespace,omitempty"`
-	// Name of the referent.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-	// +optional
-	Name string `json:"name,omitempty"`
-}
-
-// KubermaticVersions describes the versions of running Kubermatic components.
-// swagger:model KubermaticVersions
-type KubermaticVersions struct {
-	// Version of the Kubermatic API server.
-	API string `json:"api"`
-}
-
-// ClusterRole defines cluster RBAC role for the user cluster
-// swagger:model ClusterRole
-type ClusterRole struct {
-	ObjectMeta `json:",inline"`
-	// Rules holds all the PolicyRules for this ClusterRole
-	Rules []rbacv1.PolicyRule `json:"rules"`
-}
-
-// RoleName defines RBAC role name object for the user cluster
-// swagger:model RoleName
-type RoleName struct {
-	// Name of the role.
-	Name string `json:"name"`
-	// Indicates the scopes of this role.
-	Namespace []string `json:"namespace"`
-}
-
-// ClusterRoleName defines RBAC cluster role name object for the user cluster
-// swagger:model ClusterRoleName
-type ClusterRoleName struct {
-	// Name of the cluster role.
-	Name string `json:"name"`
-}
-
-// RoleUser defines associated user with role
-// swagger:model RoleUser
-type RoleUser struct {
-	UserEmail string `json:"userEmail"`
-	Group     string `json:"group"`
-}
-
-// ClusterRoleUser defines associated user with cluster role
-// swagger:model ClusterRoleUser
-type ClusterRoleUser struct {
-	UserEmail string `json:"userEmail"`
-	Group     string `json:"group"`
-}
-
-// Role defines RBAC role for the user cluster
-// swagger:model Role
-type Role struct {
-	ObjectMeta `json:",inline"`
-	// Indicates the scope of this role.
-	Namespace string `json:"namespace,omitempty"`
-	// Rules holds all the PolicyRules for this Role
-	Rules []rbacv1.PolicyRule `json:"rules"`
-}
-
-// RoleBinding references a role, but does not contain it.
-// swagger:model RoleBinding
-type RoleBinding struct {
-	// Indicates the scope of this binding.
-	Namespace string `json:"namespace,omitempty"`
-	// Subjects holds references to the objects the role applies to.
-	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
-
-	RoleRefName string `json:"roleRefName"`
-}
-
-// ClusterRoleBinding references a cluster role, but does not contain it.
-// swagger:model ClusterRoleBinding
-type ClusterRoleBinding struct {
-	// Subjects holds references to the objects the role applies to.
-	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
-
-	RoleRefName string `json:"roleRefName"`
-}
-
-// Subject contains a reference to the object or user identities a role binding applies to.
-// Right now we support "User" as a API group.
-type Subject struct {
-	// Kind of object being referenced. Values defined by this API group are "User" and "Group".
-	// If the Authorizer does not recognized the kind value, the Authorizer should report an error.
-	Kind string `json:"kind"`
-	// APIGroup holds the API group of the referenced subject.
-	// Defaults to "rbac.authorization.k8s.io" for User and Group subjects.
-	APIGroup string `json:"apiGroup,omitempty"`
-	// Name of the object being referenced.
-	Name string `json:"name"`
-}
-
-// Namespace defines namespace
-// swagger:model Namespace
-type Namespace struct {
-	Name string `json:"name"`
-}
-
-// swagger:model ResourceType
-type ResourceType string
-
-// swagger:model LabelKeyList
-type LabelKeyList []string
-
-// ResourceLabelMap defines list of labels grouped by specific resource types.
-//
-// swagger:model ResourceLabelMap
-type ResourceLabelMap map[ResourceType]LabelKeyList
-
-// GlobalSettings defines global settings
-// swagger:model GlobalSettings
-type GlobalSettings kubermaticv1.SettingSpec
-
-// GlobalCustomLinks defines custom links for global settings
-// swagger:model GlobalCustomLinks
-type GlobalCustomLinks []kubermaticv1.CustomLink
-
-// AdmissionPluginList represents a list of admission plugins
-// swagger:model AdmissionPluginList
-type AdmissionPluginList []string
-
-// AdmissionPlugin represents an admission plugin
-// swagger:model AdmissionPlugin
-type AdmissionPlugin struct {
-	Name   string `json:"name"`
-	Plugin string `json:"plugin"`
-	// FromVersion flag can be empty. It means the plugin fit to all k8s versions
-	FromVersion *ksemver.Semver `json:"fromVersion,omitempty"`
-}
-
-// Seed represents a seed object
-// swagger:model Seed
-type Seed struct {
-	// Name represents human readable name for the resource
-	Name string `json:"name"`
-
-	SeedSpec `json:"spec"`
-}
-
-// The spec for a seed data.
-type SeedSpec struct {
-	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
-	// For informational purposes in the Kubermatic dashboard only.
-	Country string `json:"country,omitempty"`
-	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
-	// For informational purposes in the Kubermatic dashboard only.
-	Location string `json:"location,omitempty"`
-	// A reference to the Kubeconfig of this cluster. The Kubeconfig must
-	// have cluster-admin privileges. This field is mandatory for every
-	// seed, even if there are no datacenters defined yet.
-	Kubeconfig corev1.ObjectReference `json:"kubeconfig,omitempty"`
-	// Datacenters contains a map of the possible datacenters (DCs) in this seed.
-	// Each DC must have a globally unique identifier (i.e. names must be unique
-	// across all seeds).
-	SeedDatacenters map[string]Datacenter `json:"datacenters,omitempty"`
-	// Optional: This can be used to override the DNS name used for this seed.
-	// By default the seed name is used.
-	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
-	// Optional: ProxySettings can be used to configure HTTP proxy settings on the
-	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
-	ProxySettings *kubermaticv1.ProxySettings `json:"proxy_settings,omitempty"`
-	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
-	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
-	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
-	MLA *kubermaticv1.SeedMLASettings `json:"mla,omitempty"`
-	// Optional: EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed.
-	// When set, enables automatic etcd backup and restore controllers with given configuration.
-	EtcdBackupRestore *kubermaticv1.EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
-}
-
-// CreateSeedSpec is the structure that is used to create seed.
-// swagger:model CreateSeedSpec
-type CreateSeedSpec struct {
-	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
-	// For informational purposes in the Kubermatic dashboard only.
-	Country string `json:"country,omitempty"`
-	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
-	// For informational purposes in the Kubermatic dashboard only.
-	Location string `json:"location,omitempty"`
-	// The raw Kubeconfig encoded to base64. This field is used for cluster creation or update.
-	Kubeconfig string `json:"kubeconfig"`
-	// Optional: This can be used to override the DNS name used for this seed.
-	// By default the seed name is used.
-	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
-	// Optional: ProxySettings can be used to configure HTTP proxy settings on the
-	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
-	ProxySettings *CreateSeedProxySettings `json:"proxy_settings,omitempty"`
-	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
-	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
-	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
-	MLA *CreateSeedMLASettings `json:"mla,omitempty"`
-	// DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
-	// to default all new created clusters
-	DefaultClusterTemplate string `json:"defaultClusterTemplate,omitempty"`
-}
-
-// CreateSeedProxySettings allow configuring a HTTP proxy for the controlplanes
-// and nodes.
-type CreateSeedProxySettings struct {
-	// Optional: If set, this proxy will be configured for both HTTP and HTTPS.
-	HTTPProxy string `json:"httpProxy,omitempty"`
-	// Optional: If set this will be set as NO_PROXY environment variable on the node;
-	// The value must be a comma-separated list of domains for which no proxy
-	// should be used, e.g. "*.example.com,internal.dev".
-	// Note that the in-cluster apiserver URL will be automatically prepended
-	// to this value.
-	NoProxy string `json:"noProxy,omitempty"`
-}
-
-type CreateSeedMLASettings struct {
-	// Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
-	UserClusterMLAEnabled bool `json:"userClusterMLAEnabled,omitempty"` //nolint:tagliatelle
-}
-
-// swagger:model SeedNamesList
-type SeedNamesList []string
-
-// SeedCluster holds seed name for the cluster.
-type SeedCluster struct {
-	SeedName  string
-	ClusterID string
-}
-
-// MeteringReport holds objects names and metadata for available reports
-// swagger:model MeteringReport
-type MeteringReport struct {
-	Name         string    `json:"name"`
-	LastModified time.Time `json:"lastModified"`
-	Size         int64     `json:"size"`
-}
-
-// MeteringReportConfiguration holds report configuration
-// swagger:model MeteringReportConfiguration
-type MeteringReportConfiguration struct {
-	Name      string  `json:"name"`
-	Schedule  string  `json:"schedule"`
-	Interval  uint32  `json:"interval"`
-	Retention *uint32 `json:"retention,omitempty"`
-}
-
-// ReportURL represent an S3 pre signed URL to download a report
-// swagger:model MeteringReportURL
-type ReportURL string
-
-const (
-	// NodeDeletionFinalizer indicates that the nodes still need cleanup.
-	NodeDeletionFinalizer = "kubermatic.k8c.io/delete-nodes"
-	// InClusterPVCleanupFinalizer indicates that the PVs still need cleanup.
-	InClusterPVCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-pv"
-	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup.
-	InClusterLBCleanupFinalizer = "kubermatic.k8c.io/cleanup-in-cluster-lb"
-	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup.
-	CredentialsSecretsCleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials-secrets"
-	// ExternalClusterKubeOneManifestSecretCleanupFinalizer indicates that secrets for manifest secret still need cleanup.
-	ExternalClusterKubeOneManifestSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-manifest-secret"
-	// ExternalClusterKubeOneSSHSecretCleanupFinalizer indicates that secrets for ssh secret still need cleanup.
-	ExternalClusterKubeOneSSHSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-ssh-secret"
-	// ExternalClusterKubeOneNamespaceCleanupFinalizer indicates that kubeone cluster namespace still need cleanup.
-	ExternalClusterKubeOneNamespaceCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeone-namespace"
-	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup.
-	UserClusterRoleCleanupFinalizer = "kubermatic.k8c.io/user-cluster-role"
-	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup.
-	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubeconfig-secret"
-	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup.
-	EtcdBackupConfigCleanupFinalizer = "kubermatic.k8c.io/cleanup-etcdbackupconfigs"
-	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup.
-	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraint-templates"
-	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup.
-	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-master-constraint-templates"
-	// GatekeeperSeedConstraintCleanupFinalizer indicates that synced gatekeeper Constraint on seed clusters need cleanup.
-	GatekeeperSeedConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-seed-constraint"
-	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup.
-	GatekeeperConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-gatekeeper-constraints"
-	// KubermaticUserClusterNsDefaultConstraintCleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup.
-	KubermaticUserClusterNsDefaultConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-usercluster-ns-default-constraints"
-	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup.
-	KubermaticConstraintCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-constraints"
-	// SeedProjectCleanupFinalizer indicates that Kubermatic Projects on the seed clusters need cleanup.
-	SeedProjectCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-projects"
-	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup.
-	SeedUserProjectBindingCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-user-project-bindings"
-	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup.
-	SeedUserCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-users"
-	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup.
-	// This finalizer is deprecated and should not be used anymore since we migrated to using owner references for cleanup.
-	ClusterRoleBindingsCleanupFinalizer = "kubermatic.k8c.io/cleanup-cluster-role-bindings"
-	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup.
-	ClusterTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-cluster-template"
-	// AllowedRegistryCleanupFinalizer indicates that allowed registry Constraints need to be cleaned up.
-	AllowedRegistryCleanupFinalizer = "kubermatic.k8c.io/cleanup-allowed-registry"
-	// PresetSeedCleanupFinalizer indicates that synced preset on seed clusters need cleanup.
-	PresetSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-preset"
-)
-
-const (
-	InitialMachineDeploymentRequestAnnotation        = "kubermatic.io/initial-machinedeployment-request"
-	InitialApplicationInstallationsRequestAnnotation = "kubermatic.io/initial-application-installations-request"
-)

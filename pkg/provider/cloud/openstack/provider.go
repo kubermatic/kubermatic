@@ -32,7 +32,6 @@ import (
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
-	osecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 	ossubnetpools "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
 	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
@@ -41,7 +40,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -192,7 +190,7 @@ func ensureFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finali
 	if len(finalizers) > 0 {
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kubernetes.AddFinalizer(cluster, finalizers...)
-		}, provider.UpdaterOptionOptimisticLock)
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -487,7 +485,7 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 			RouterCleanupFinalizer,
 			OldNetworkCleanupFinalizer,
 		)
-	}, provider.UpdaterOptionOptimisticLock)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -677,82 +675,6 @@ func GetSubnets(ctx context.Context, authURL, region, networkID string, credenti
 	return subnets, nil
 }
 
-func (os *Provider) AddICMPRulesIfRequired(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		return nil
-	}
-	sgName := cluster.Spec.Cloud.Openstack.SecurityGroups
-
-	creds, err := GetCredentialsForCluster(cluster.Spec.Cloud, os.secretKeySelector)
-	if err != nil {
-		return err
-	}
-
-	netClient, err := getNetClient(ctx, os.dc.AuthURL, os.dc.Region, creds, os.caBundle)
-	if err != nil {
-		return fmt.Errorf("failed to create a authenticated openstack client: %w", err)
-	}
-
-	// We can only get security groups by ID and can't be sure that what's on the cluster
-	securityGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sgName})
-	if err != nil {
-		return fmt.Errorf("failed to list security groups: %w", err)
-	}
-
-	for _, sg := range securityGroups {
-		if err := addICMPRulesToSecurityGroupIfNecesary(cluster, sg, netClient); err != nil {
-			return fmt.Errorf("failed to add rules for ICMP to security group %q: %w", sg.ID, err)
-		}
-	}
-	return nil
-}
-
-func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGroup ossecuritygroups.SecGroup, netClient *gophercloud.ServiceClient) error {
-	var hasIPV4Rule, hasIPV6Rule bool
-	for _, rule := range secGroup.Rules {
-		if rule.Direction == string(osecuritygrouprules.DirIngress) {
-			if rule.EtherType == string(osecuritygrouprules.EtherType4) && rule.Protocol == string(osecuritygrouprules.ProtocolICMP) {
-				hasIPV4Rule = true
-			}
-			if rule.EtherType == string(osecuritygrouprules.EtherType6) && rule.Protocol == string(osecuritygrouprules.ProtocolIPv6ICMP) {
-				hasIPV6Rule = true
-			}
-		}
-	}
-
-	var rulesToCreate []osecuritygrouprules.CreateOpts
-	if !hasIPV4Rule {
-		rulesToCreate = append(rulesToCreate, osecuritygrouprules.CreateOpts{
-			Direction:  osecuritygrouprules.DirIngress,
-			EtherType:  osecuritygrouprules.EtherType4,
-			SecGroupID: secGroup.ID,
-			Protocol:   osecuritygrouprules.ProtocolICMP,
-		})
-		kubermaticlog.Logger.Infow("Adding Openstack ICMP allow rule to cluster", "cluster", cluster.Name)
-	}
-	if !hasIPV6Rule {
-		rulesToCreate = append(rulesToCreate, osecuritygrouprules.CreateOpts{
-			Direction:  osecuritygrouprules.DirIngress,
-			EtherType:  osecuritygrouprules.EtherType6,
-			SecGroupID: secGroup.ID,
-			Protocol:   osecuritygrouprules.ProtocolIPv6ICMP,
-		})
-		kubermaticlog.Logger.Infow("Adding Openstack ICMP6 allow rule to cluster", "cluster", cluster.Name)
-	}
-
-	for _, rule := range rulesToCreate {
-		res := osecuritygrouprules.Create(netClient, rule)
-		if res.Err != nil {
-			return fmt.Errorf("failed to create security group rule: %w", res.Err)
-		}
-		if _, err := res.Extract(); err != nil {
-			return fmt.Errorf("failed to extract result after security group creation: %w", err)
-		}
-	}
-
-	return nil
-}
-
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	if oldSpec.Openstack == nil || newSpec.Openstack == nil {
@@ -935,4 +857,30 @@ func ValidateCredentials(authURL, region string, credentials *resources.Openstac
 	_, err = getAvailabilityZones(computeClient)
 
 	return err
+}
+
+func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region string, caBundle *x509.CertPool, flavorName string) (*provider.NodeCapacity, error) {
+	flavors, err := GetFlavors(authURL, region, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, flavor := range flavors {
+		if strings.EqualFold(flavor.Name, flavorName) {
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(flavor.VCPUs)
+
+			if err := capacity.WithMemory(flavor.RAM, "M"); err != nil {
+				return nil, fmt.Errorf("failed to parse memory size: %w", err)
+			}
+
+			if err := capacity.WithStorage(flavor.Disk, "G"); err != nil {
+				return nil, fmt.Errorf("failed to parse disk size: %w", err)
+			}
+
+			return capacity, nil
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find flavor %q", flavorName)
 }

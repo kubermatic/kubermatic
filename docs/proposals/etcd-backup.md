@@ -13,37 +13,37 @@ Recovery will be a documented, manual process. As we now use a StatefulSet with 
 
 The old way via the etcd operator had several downsides:
 
-*   etcd's were storing to `emtpyDir`
-*   multiple etcd's on the same host caused very high disk-io. Having one noisy etcd affects all others
-*   high frequency of restore operations when a host got replaced. Resulted in data loss
-*   direct code dependency to the etcd-operator crd
-*   etcd-operator had issues with recovering when encountering a concurrent write to the crd. Resulting in the etcd-operator ending to operate
+* etcd's were storing to `emptyDir`
+* multiple etcd's on the same host caused very high disk-io. Having one noisy etcd affects all others
+* high frequency of restore operations when a host got replaced. Resulted in data loss
+* direct code dependency to the etcd-operator crd
+* etcd-operator had issues with recovering when encountering a concurrent write to the crd. Resulting in the etcd-operator ending to operate
 
 Since the move to the StatefulSet we already benefit from
 
-*   etcd's are more resilient thanks to PVC's
-*   noisy neighbors do not affect other's (PVC's + resource limits are now in place)
-*   Less external dependencies (no copied etcd crd anymore)
+* etcd's are more resilient thanks to PVC's
+* noisy neighbors do not affect other's (PVC's + resource limits are now in place)
+* Less external dependencies (no copied etcd crd anymore)
 
 ## Implementation
 
-**Basic**
+### Basic
 For each cluster a Kubernetes CronJob will be created.
 This Job will:
 - create a snapshot of the etcd cluster
 - Store snapshot to target (Default: S3)
 - Cleanup old snapshots (Default: keep last 20 revisions)
 
-**Creation of CronJob**
+### Creation of CronJob
 As this feature is not planned to be open sourced, we'll write a simple controller which will listen on Cluster resources and create/update CronJobs for backups.
 Each cluster will get a own CronJob.
 The controller will be running inside our controller-manager.
 The CronJob will be managed in a `reconciling` manner, meaning it should always be checked if it needs to be updated.
 
 The Job which should be executed needs to come from a template file.
-As we need to be able to let customers develop a own backup-solution.
+As we need to be able to let admins develop a own backup-solution.
 
-**Job**
+### Job
 The job should consist of 2 containers. Both share a emptyDir volume:
 - `init-container`
   - Creates the snapshot
@@ -53,16 +53,16 @@ The job should consist of 2 containers. Both share a emptyDir volume:
   - Stores snapshot to S3
   - Cleans up old snapshots (Defined by `revision`-flag)
 
-A customer should be able to replace the `store-container` with any custom container.
+An admin should be able to replace the `store-container` with any custom container.
 
-**Cleanup of backups after cluster deletion**
+### Cleanup of backups after cluster deletion
 The backup controller will register a finalizer on the cluster to be able to cleanup after a cluster has been deleted.
 When a cluster gets deleted a Job will be created from a admin defined template to delete the backups for the given cluster.
 
+### Store & Cleanup template
+Both, the store & cleanup container can be specified by the admin.
+To inject secrets into the containers the admin can use Environment variables:
 
-**Store & Cleanup template**
-Both, the store & cleanup container can be specified by the customer.
-To inject secrets into the containers the customer can use Environment variables:
 ```yaml
 command:
 - /bin/true

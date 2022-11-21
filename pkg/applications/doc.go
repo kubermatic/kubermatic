@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /*
-Package applications contains logic to download the source of an application (eg download manifest from git) and
+Package applications contains logic to download the source of an application (e.g. download manifest from git) and
 install / uninstall the application into the user-cluster.
 */
 package applications

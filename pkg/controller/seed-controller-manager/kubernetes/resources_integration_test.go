@@ -24,12 +24,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,7 +50,7 @@ func (c *testUserClusterConnectionProvider) GetClient(context.Context, *kubermat
 	return c, nil
 }
 
-func (c *testUserClusterConnectionProvider) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object) error {
+func (c *testUserClusterConnectionProvider) Get(ctx context.Context, key ctrlruntimeclient.ObjectKey, obj ctrlruntimeclient.Object, _ ...ctrlruntimeclient.GetOption) error {
 	switch x := obj.(type) {
 	case *corev1.ServiceAccount:
 		x.Secrets = append(x.Secrets, corev1.ObjectReference{
@@ -82,6 +82,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err := autoscalingv1.AddToScheme(mgr.GetScheme()); err != nil {
 		t.Fatalf("failed to register vertical pod autoscaler resources to scheme: %v", err)
 	}
+
 	crdInstallOpts := envtest.CRDInstallOptions{
 		Paths: []string{
 			"../../../../charts/kubermatic-operator/crd/k8s.io",
@@ -110,10 +111,14 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}()
 
 	caBundle := certificates.NewFakeCABundle()
+	version := defaulting.DefaultKubernetesVersioning.Default
 
 	testCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: "project",
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
@@ -122,7 +127,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                resources.IPVSProxyMode,
-				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+				NodeLocalDNSCacheEnabled: pointer.Bool(true),
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -132,7 +137,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				DatacenterName: "my-dc",
 				Fake:           &kubermaticv1.FakeCloudSpec{},
 			},
-			Version: *semver.NewSemverOrDie("1.22.5"),
+			Version: *version,
 		},
 	}
 
@@ -182,9 +187,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}
 
 	testCluster.Status = kubermaticv1.ClusterStatus{
-		UserEmail:              "test@example.com",
-		CloudMigrationRevision: 2,
-		NamespaceName:          clusterNamespace,
+		UserEmail:     "test@example.com",
+		NamespaceName: clusterNamespace,
 		ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 			Apiserver:                    kubermaticv1.HealthStatusUp,
 			Scheduler:                    kubermaticv1.HealthStatusUp,
@@ -196,10 +200,10 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 		},
 		Versions: kubermaticv1.ClusterVersionsStatus{
-			ControlPlane:      *semver.NewSemverOrDie("1.22.5"),
-			Apiserver:         *semver.NewSemverOrDie("1.22.5"),
-			ControllerManager: *semver.NewSemverOrDie("1.22.5"),
-			Scheduler:         *semver.NewSemverOrDie("1.22.5"),
+			ControlPlane:      *version,
+			Apiserver:         *version,
+			ControllerManager: *version,
+			Scheduler:         *version,
 		},
 	}
 
@@ -236,9 +240,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		Client:               mgr.GetClient(),
 		dockerPullConfigJSON: []byte("{}"),
 		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
-		kubermaticImage:      defaults.DefaultKubermaticImage,
-		dnatControllerImage:  defaults.DefaultDNATControllerImage,
-		etcdLauncherImage:    defaults.DefaultEtcdLauncherImage,
+		kubermaticImage:      defaulting.DefaultKubermaticImage,
+		dnatControllerImage:  defaulting.DefaultDNATControllerImage,
+		etcdLauncherImage:    defaulting.DefaultEtcdLauncherImage,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return &kubermaticv1.Seed{
 				Spec: kubermaticv1.SeedSpec{
@@ -253,6 +257,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
+		versions:                kubermatic.NewFakeVersions(),
 	}
 
 	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {

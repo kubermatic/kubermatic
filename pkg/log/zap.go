@@ -51,12 +51,12 @@ func NewDefaultOptions() Options {
 }
 
 func (o *Options) AddFlags(fs *flag.FlagSet) {
-	fs.BoolVar(&o.Debug, "log-debug", o.Debug, "Enables debug logging")
+	fs.BoolVar(&o.Debug, "log-debug", o.Debug, "Enables more verbose logging")
 	fs.Var(&o.Format, "log-format", "Log format, one of "+AvailableFormats.String())
 }
 
 func (o *Options) AddPFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&o.Debug, "log-debug", o.Debug, "Enables debug logging")
+	fs.BoolVar(&o.Debug, "log-debug", o.Debug, "Enables more verbose logging")
 	fs.Var(&o.Format, "log-format", "Log format, one of "+AvailableFormats.String())
 }
 
@@ -122,6 +122,10 @@ func (f Formats) Contains(s Format) bool {
 	return false
 }
 
+func NewFromOptions(o Options) *zap.Logger {
+	return New(o.Debug, o.Format)
+}
+
 func New(debug bool, format Format) *zap.Logger {
 	// this basically mimics New<type>Config, but with a custom sink
 	sink := zapcore.AddSync(os.Stderr)
@@ -144,7 +148,7 @@ func New(debug bool, format Format) *zap.Logger {
 	var enc zapcore.Encoder
 	if format == FormatJSON {
 		enc = zapcore.NewJSONEncoder(encCfg)
-	} else if format == FormatConsole {
+	} else {
 		enc = zapcore.NewConsoleEncoder(encCfg)
 	}
 

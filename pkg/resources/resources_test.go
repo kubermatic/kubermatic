@@ -19,9 +19,8 @@ package resources
 import (
 	"testing"
 
-	"github.com/go-test/deep"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -575,7 +574,7 @@ func TestSetResourceRequirementsDoesNotChangeDefaults(t *testing.T) {
 		t.Fatalf("function should not have returned an error, but got: %v", err)
 	}
 
-	if diff := deep.Equal(backup, defaults); diff != nil {
-		t.Fatalf("The defaults have changed: %v\n", diff)
+	if !diff.SemanticallyEqual(defaults, backup) {
+		t.Fatalf("The defaults have changed:\n%v", diff.ObjectDiff(defaults, backup))
 	}
 }

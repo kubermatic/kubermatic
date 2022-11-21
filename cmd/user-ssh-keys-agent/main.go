@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -45,7 +46,7 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	cli.Hello(log, "User SSH-Key Agent", logOpts.Debug, nil)
 
@@ -57,6 +58,9 @@ func main() {
 	ctx := signals.SetupSignalHandler()
 
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
 		Namespace: metav1.NamespaceSystem,
 		NewCache:  usersshkeys.NewCacheFunc(),
 	})

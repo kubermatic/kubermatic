@@ -24,11 +24,19 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
+	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func validateQuota(_ context.Context, _ *zap.SugaredLogger, _, _ ctrlruntimeclient.Client, _ *clusterv1alpha1.Machine, _ *certificates.CABundle) error {
+func validateQuota(_ context.Context, _ *zap.SugaredLogger, _ ctrlruntimeclient.Client, _ *clusterv1alpha1.Machine,
+	_ *certificates.CABundle, _ *kubermaticv1.ResourceQuota) error {
 	return nil
+}
+
+// Resource Quotas are an EE feature
+func getResourceQuota(_ context.Context, _ ctrlruntimeclient.Client, _ labels.Selector) (*kubermaticv1.ResourceQuota, error) {
+	return nil, nil
 }

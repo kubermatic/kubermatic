@@ -22,19 +22,21 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-logr/zapr"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/collectors"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -44,7 +46,6 @@ import (
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
-	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -104,13 +105,15 @@ func main() {
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrlruntimelog.SetLogger(ctrlruntimezaplog.New(ctrlruntimezaplog.UseDevMode(false)))
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 	kubermaticlog.Logger = log
 	ctrlCtx.log = log
 	ctrlCtx.workerName = runOpts.workerName
 	ctrlCtx.namespace = runOpts.namespace
+
+	// Set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
 
@@ -148,6 +151,9 @@ func main() {
 		electionName += "-" + runOpts.workerName
 	}
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
 		LeaderElection:          runOpts.enableLeaderElection,
 		LeaderElectionNamespace: runOpts.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
@@ -159,9 +165,9 @@ func main() {
 	ctrlCtx.mgr = mgr
 
 	if config != nil {
-		ctrlCtx.configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(config)
+		ctrlCtx.configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(config)
 	} else {
-		ctrlCtx.configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), runOpts.namespace)
+		ctrlCtx.configGetter, err = kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), runOpts.namespace)
 	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
@@ -189,6 +195,9 @@ func main() {
 	log.Debug("Starting external clusters collector")
 	collectors.MustRegisterExternalClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
+	log.Debug("Starting projects collector")
+	collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+
 	if err := createAllControllers(ctrlCtx); err != nil {
 		log.Fatalw("could not create all controllers", zap.Error(err))
 	}
@@ -204,17 +213,21 @@ func main() {
 }
 
 func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfiguration, error) {
-	content, err := os.ReadFile(filename)
+	f, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
+	defer f.Close()
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := yaml.UnmarshalStrict(content, &config); err != nil {
+	decoder := yaml.NewDecoder(f)
+	decoder.KnownFields(true)
+
+	if err := decoder.Decode(&config); err != nil {
 		return nil, fmt.Errorf("failed to parse file as YAML: %w", err)
 	}
 
-	defaulted, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to process: %w", err)
 	}

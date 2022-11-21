@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -110,6 +111,16 @@ http {
 	  auth_basic off;
 	}
 
+	# Alertmanager Alerts
+	location ~ /api/prom/alertmanager/.* {
+	  proxy_pass      http://cortex-alertmanager.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
+	}
+	
+	# Alertmanager Config
+	location = /api/prom/api/v1/alerts {
+	  proxy_pass      http://cortex-alertmanager.{{ .Namespace }}.svc.cluster.local:8080/api/v1/alerts;
+	}
+
 	# Loki
 	location ~ /loki/api/.* {
 {{ if .LokiReadLimit }}
@@ -118,12 +129,22 @@ http {
 	  proxy_pass       http://loki-distributed-query-frontend.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
 	}
 
+	# Loki Ruler
+	location ~ /prometheus/.* {
+	  proxy_pass       http://loki-distributed-ruler.{{ .Namespace }}.svc.cluster.local:3100$request_uri;
+	}
+
 	# Cortex
 	location ~ /api/prom/.* {
 {{ if .CortexReadLimit }}
       limit_req zone=cortex_read_limit{{ if .CortexReadLimitBurst }} burst={{ .CortexReadLimitBurst }} nodelay{{ end }};
 {{ end }}
 	  proxy_pass       http://cortex-query-frontend.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
+	}
+
+	# Cortex Ruler, alternative for /api/v1/rules which is also used by loki)
+	location = /api/prom/api/v1/rules {
+	  proxy_pass       http://cortex-ruler.{{ .Namespace }}.svc.cluster.local:8080/prometheus/api/v1/rules;
 	}
   }
 }
@@ -254,7 +275,7 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.SNIType.String()
 				// Maps SNI host with the port name of this service.
 				s.Annotations[nodeportproxy.PortHostMappingAnnotationKey] =
-					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.GetAddress().ExternalName)
+					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.Status.Address.ExternalName)
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", c.Spec.ExposeStrategy)
@@ -286,7 +307,7 @@ const (
 func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32Ptr(1)
+			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: gatewayName,
@@ -294,10 +315,10 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				FSGroup:      pointer.Int64Ptr(1001),
-				RunAsGroup:   pointer.Int64Ptr(2001),
-				RunAsUser:    pointer.Int64Ptr(1001),
-				RunAsNonRoot: pointer.BoolPtr(true),
+				FSGroup:      pointer.Int64(1001),
+				RunAsGroup:   pointer.Int64(2001),
+				RunAsUser:    pointer.Int64(1001),
+				RunAsNonRoot: pointer.Bool(true),
 			}
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			// hash for the annotation used to force deployment rollout upon configuration change
@@ -313,7 +334,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "nginx",
-					Image:           data.ImageRegistry(resources.RegistryDocker) + "/" + image + ":" + version,
+					Image:           registry.Must(data.RewriteImage(resources.RegistryDocker + "/" + image + ":" + version)),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Ports: []corev1.ContainerPort{
 						{
@@ -345,8 +366,8 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{"ALL"},
 						},
-						ReadOnlyRootFilesystem:   pointer.BoolPtr(true),
-						AllowPrivilegeEscalation: pointer.BoolPtr(false),
+						ReadOnlyRootFilesystem:   pointer.Bool(true),
+						AllowPrivilegeEscalation: pointer.Bool(false),
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -388,7 +409,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.MLAGatewayCertificatesSecretName,
-							DefaultMode: pointer.Int32Ptr(0400),
+							DefaultMode: pointer.Int32(0400),
 						},
 					},
 				},
@@ -403,7 +424,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 									Path: resources.MLAGatewayCACertKey,
 								},
 							},
-							DefaultMode: pointer.Int32Ptr(0400),
+							DefaultMode: pointer.Int32(0400),
 						},
 					},
 				},
@@ -464,7 +485,7 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 				return nil, fmt.Errorf("failed to get MLA Gateway ca: %w", err)
 			}
 
-			address := c.GetAddress()
+			address := c.Status.Address
 			if address.ExternalName == "" {
 				return nil, fmt.Errorf("unable to issue MLA Gateway certificate: cluster ExternalName is empty")
 			}

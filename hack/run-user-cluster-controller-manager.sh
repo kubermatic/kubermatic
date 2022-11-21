@@ -30,7 +30,7 @@ make user-cluster-controller-manager
 NAMESPACE="${NAMESPACE:-$(kubectl config view --minify | grep namespace | awk '{ print $2 }')}"
 CLUSTER_NAME="$(echo $NAMESPACE | sed 's/cluster-//')"
 CLUSTER_RAW="$(kubectl get cluster $CLUSTER_NAME -o json)"
-CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r '.address.url')"
+CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .status.address.url)"
 
 if [ -z "${OWNER_EMAIL:-}" ]; then
   echo "You must set the email address of the cluster owner \"\$OWNER_EMAIL\", otherwise the controller will fail to start"
@@ -41,11 +41,9 @@ fi
 # the one creating it in case of openshift. So we just use the internal kubeconfig and replace
 # the apiserver url
 KUBECONFIG_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
-kubectl --namespace "$NAMESPACE" get secret internal-admin-kubeconfig -o json |
+kubectl --namespace "$NAMESPACE" get secret admin-kubeconfig --output json |
   jq '.data.kubeconfig' -r |
-  base64 -d |
-  yq -o=json - |
-  jq --arg url "$CLUSTER_URL" '.clusters[0].cluster.server = $url' \
+  base64 -d \
     > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
 echo "Using kubeconfig $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE"
 
@@ -57,7 +55,6 @@ kubectl config view --flatten --minify -ojson |
   jq --arg token "$SEED_SERVICEACCOUNT_TOKEN" 'del(.users[0].user)|.users[0].user.token = $token' > $SEED_KUBECONFIG
 
 CLUSTER_VERSION="$(echo $CLUSTER_RAW | jq -r '.spec.version')"
-CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .address.url)"
 
 ARGS=""
 if echo $CLUSTER_RAW | grep -i aws -q; then
@@ -70,10 +67,10 @@ if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); th
   KONNECTIVITY_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service konnectivity-server -o json)"
   if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
     KONNECTIVITY_SERVER_PORT="$(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].nodePort')"
-    KONNECTIVITY_SERVER_HOST="$(echo ${CLUSTER_RAW} | jq -r '.address.externalName')"
+    KONNECTIVITY_SERVER_HOST="$(echo ${CLUSTER_RAW} | jq -r '.status.address.externalName')"
   else
-    KONNECTIVITY_SERVER_PORT="$(echo ${CLUSTER_RAW} | jq -r '.address.port')"
-    KONNECTIVITY_SERVER_HOST="konnectivity-server.$(echo ${CLUSTER_RAW} | jq -r '.address.externalName')"
+    KONNECTIVITY_SERVER_PORT="$(echo ${CLUSTER_RAW} | jq -r '.status.address.port')"
+    KONNECTIVITY_SERVER_HOST="konnectivity-server.$(echo ${CLUSTER_RAW} | jq -r '.status.address.externalName')"
     ARGS="$ARGS -tunneling-agent-ip=192.168.30.10"
   fi
   ARGS="$ARGS -konnectivity-enabled=true"
@@ -89,6 +86,8 @@ else
   fi
   ARGS="$ARGS -openvpn-server-port=${OPENVPN_SERVER_PORT}"
 fi
+
+APPTMPDIR=$(mktemp -d ${TMPDIR}/application.XXXXX)
 
 echodate "Starting user-cluster-controller-manager..."
 set -x
@@ -109,4 +108,5 @@ set -x
   -seed-kubeconfig=${SEED_KUBECONFIG} \
   -owner-email=${OWNER_EMAIL} \
   -dns-cluster-ip=10.240.16.10 \
+  -application-cache="${APPTMPDIR}" \
   ${ARGS}

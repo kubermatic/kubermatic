@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### This script is used as a postsubmit job and updates the dev master
-### cluster after every commit to master.
-
 set -euo pipefail
 
 cd $(dirname $0)/../..
@@ -31,6 +28,8 @@ trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
+export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
+export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
 
 # gather the logs of all things in the Kubermatic namespace
@@ -38,24 +37,57 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 
 source hack/ci/setup-kubermatic-in-kind.sh
 
-export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
-
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 
-export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
-export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
+export AWS_E2E_TESTS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
+export AWS_E2E_TESTS_SECRET=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
 
-export AZURE_TENANT_ID="${AZURE_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
-export AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
-export AZURE_CLIENT_ID="${AZURE_CLIENT_ID:-$(vault kv get -field=clientID dev/e2e-azure)}"
-export AZURE_CLIENT_SECRET="${AZURE_CLIENT_SECRET:-$(vault kv get -field=clientSecret dev/e2e-azure)}"
+export ALIBABA_ACCESS_KEY_ID="${ALIBABA_ACCESS_KEY_ID:-$(vault kv get -field=AccessKeyId dev/e2e-alibaba)}"
+export ALIBABA_ACCESS_KEY_SECRET="${ALIBABA_ACCESS_KEY_SECRET:-$(vault kv get -field=AccessKeySecret dev/e2e-alibaba)}"
 
-export GOOGLE_SERVICE_ACCOUNT="${GOOGLE_SERVICE_ACCOUNT:-$(vault kv get -field=serviceAccount dev/e2e-gce)}"
+export AZURE_E2E_TESTS_TENANT_ID="${AZURE_E2E_TESTS_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
+export AZURE_E2E_TESTS_SUBSCRIPTION_ID="${AZURE_E2E_TESTS_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
+export AZURE_E2E_TESTS_CLIENT_ID="${AZURE_E2E_TESTS_CLIENT_ID:-$(vault kv get -field=clientID dev/e2e-azure)}"
+export AZURE_E2E_TESTS_CLIENT_SECRET="${AZURE_E2E_TESTS_CLIENT_SECRET:-$(vault kv get -field=clientSecret dev/e2e-azure)}"
 
-echodate "Successfully got secrets for dev from Vault"
+export GOOGLE_SERVICE_ACCOUNT="$(safebase64 "${GOOGLE_SERVICE_ACCOUNT:-$(vault kv get -field=serviceAccount dev/e2e-gce)}")"
+
+export OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
+export OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
+export OS_DOMAIN="${OS_DOMAIN:-$(vault kv get -field=OS_USER_DOMAIN_NAME dev/syseleven-openstack)}"
+export OS_TENANT_NAME="${OS_TENANT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
+export OS_FLOATING_IP_POOL="${OS_FLOATING_IP_POOL:-$(vault kv get -field=OS_FLOATING_IP_POOL dev/syseleven-openstack)}"
+
+export OS_RHEL_USERNAME="${OS_RHEL_USERNAME:-$(vault kv get -field=user dev/redhat-subscription)}"
+export OS_RHEL_PASSWORD="${OS_RHEL_PASSWORD:-$(vault kv get -field=password dev/redhat-subscription)}"
+export OS_RHEL_OFFLINE_TOKEN="${OS_RHEL_OFFLINE_TOKEN:-$(vault kv get -field=offlineToken dev/redhat-subscription)}"
+
+export HZ_TOKEN="${HZ_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
+
+export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
+
+export METAL_AUTH_TOKEN="${METAL_AUTH_TOKEN:-$(vault kv get -field=METAL_AUTH_TOKEN dev/e2e-equinix-metal)}"
+export METAL_PROJECT_ID="${METAL_PROJECT_ID:-$(vault kv get -field=METAL_PROJECT_ID dev/e2e-equinix-metal)}"
+
+export VSPHERE_E2E_USERNAME="${VSPHERE_E2E_USERNAME:-$(vault kv get -field=username dev/e2e-vsphere)}"
+export VSPHERE_E2E_PASSWORD="${VSPHERE_E2E_PASSWORD:-$(vault kv get -field=password dev/e2e-vsphere)}"
+
+echodate "Successfully got secrets from Vault"
 echodate "Running dualstack tests..."
 
-go test -race -timeout 1h -tags dualstack -v ./pkg/test/dualstack/...
+go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -v ./pkg/test/dualstack \
+  -cni "${CNI:-}" \
+  -provider "${PROVIDER:-}" \
+  -os "${OSNAMES:-all}" \
+  -alibaba-kkp-datacenter alibaba-eu-central-1a \
+  -aws-kkp-datacenter aws-eu-central-1a \
+  -azure-kkp-datacenter azure-westeurope \
+  -digitalocean-kkp-datacenter do-fra1 \
+  -equinix-kkp-datacenter packet-am \
+  -gcp-kkp-datacenter gcp-westeurope \
+  -hetzner-kkp-datacenter hetzner-nbg1 \
+  -openstack-kkp-datacenter syseleven-fes1 \
+  -vsphere-kkp-datacenter vsphere-ger
 
 echodate "Dualstack tests done."

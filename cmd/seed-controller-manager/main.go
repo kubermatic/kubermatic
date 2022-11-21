@@ -38,6 +38,7 @@ import (
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
@@ -45,6 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
@@ -52,6 +54,7 @@ import (
 	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 const (
@@ -81,7 +84,7 @@ func main() {
 	}
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// make sure the logging flags actually affect the global (deprecated) logger instance
 	kubermaticlog.Logger = log
@@ -101,7 +104,12 @@ func main() {
 
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
+	rootCtx := signals.SetupSignalHandler()
+
 	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return rootCtx
+		},
 		MetricsBindAddress:      "0",
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
@@ -113,6 +121,12 @@ func main() {
 
 			return ctrlruntimecluster.DefaultNewClient(c, config, options, uncachedObjects...)
 		},
+		// inject a custom broadcaster because during cluster deletion we emit more than
+		// usual events and the default configuration would consider this spam.
+		EventBroadcaster: record.NewBroadcasterWithCorrelatorOptions(record.CorrelatorOptions{
+			BurstSize: 20,
+			QPS:       5,
+		}),
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
@@ -141,7 +155,7 @@ func main() {
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if err := mgr.GetAPIReader().List(context.Background(), &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
+	if err := mgr.GetAPIReader().List(rootCtx, &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
 		if meta.IsNoMatchError(err) {
 			log.Fatal(`
 The VerticalPodAutoscaler is not installed in this seed cluster.
@@ -166,7 +180,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 	}
 
-	rootCtx := context.Background()
 	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
 	if err != nil {
 		log.Fatalw("Unable to create the seed getter", zap.Error(err))
@@ -174,38 +187,22 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	var configGetter provider.KubermaticConfigurationGetter
 	if options.kubermaticConfiguration != nil {
-		configGetter, err = provider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
+		configGetter, err = kubernetesprovider.StaticKubermaticConfigurationGetterFactory(options.kubermaticConfiguration)
 	} else {
-		configGetter, err = provider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
+		configGetter, err = kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), options.namespace)
 	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
 	}
 
 	var clientProvider *client.Provider
-	if !isInternalConfig(cfg) {
-		clientProvider, err = client.NewExternal(mgr.GetClient())
-	} else {
+	if isInternalConfig(cfg) {
 		clientProvider, err = client.NewInternal(mgr.GetClient())
+	} else {
+		clientProvider, err = client.NewExternal(mgr.GetClient())
 	}
 	if err != nil {
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
-	}
-
-	// migrate existing data
-
-	// create a dedicated client because the manager isn't started yet and so the caches
-	// are also not ready yet; for the migration there is no need for caches anyway.
-	migrationClient, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	})
-	if err != nil {
-		log.Fatalw("Failed to create migration client", zap.Error(err))
-	}
-
-	if err := migrateClusterAddresses(rootCtx, log, migrationClient); err != nil {
-		log.Fatalw("Failed to migrate Cluster addresses", zap.Error(err))
 	}
 
 	ctrlCtx := &controllerContext{
@@ -234,13 +231,17 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 	log.Debug("Starting addons collector")
 	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+	// The canonical source of projects is the master cluster, but since they are replicated onto
+	// seeds, we start the project collctor on seed clusters as well, just for convenience for the admin.
+	log.Debug("Starting projects collector")
+	collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
 	if err := mgr.Add(metricserver.New(options.internalAddr)); err != nil {
 		log.Fatalw("failed to add metrics server", zap.Error(err))
 	}
 
 	log.Info("Starting the seed-controller-manager")
-	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
 }

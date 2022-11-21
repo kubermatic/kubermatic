@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +79,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		// apply defaults to the existing addon
 		err := h.ensureClusterReference(ctx, addon)
 		if err != nil {
-			h.log.Info("addon mutation failed", "error", err)
+			h.log.Error(err, "addon mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -95,7 +96,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		err := h.validateUpdate(ctx, oldAddon, addon)
 		if err != nil {
-			h.log.Info("addon mutation failed", "error", err)
+			h.log.Error(err, "addon mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("addon mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -128,17 +129,9 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 		return fmt.Errorf("failed to get Seed client: %w", err)
 	}
 
-	clusters := kubermaticv1.ClusterList{}
-	if err := client.List(ctx, &clusters); err != nil {
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, client, addon.Namespace)
+	if err != nil {
 		return fmt.Errorf("failed to list Cluster objects: %w", err)
-	}
-
-	var cluster *kubermaticv1.Cluster
-	for i, c := range clusters.Items {
-		if c.Status.NamespaceName == addon.Namespace {
-			cluster = &clusters.Items[i]
-			break
-		}
 	}
 
 	if cluster == nil {
@@ -161,6 +154,14 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 }
 
 func (h *AdmissionHandler) validateUpdate(ctx context.Context, oldAddon *kubermaticv1.Addon, newAddon *kubermaticv1.Addon) error {
+	// We only care about the APIVersion, Kind and Name to stay the same, the rest can be changed
+	// as they are irrelevant.
+
+	oldAddon.Spec.Cluster.UID = newAddon.Spec.Cluster.UID
+	oldAddon.Spec.Cluster.Namespace = newAddon.Spec.Cluster.Namespace
+	oldAddon.Spec.Cluster.ResourceVersion = newAddon.Spec.Cluster.ResourceVersion
+	oldAddon.Spec.Cluster.FieldPath = newAddon.Spec.Cluster.FieldPath
+
 	if !equality.Semantic.DeepEqual(oldAddon.Spec.Cluster, newAddon.Spec.Cluster) {
 		return errors.New("Cluster reference cannot be changed")
 	}

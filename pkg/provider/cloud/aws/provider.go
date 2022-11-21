@@ -68,7 +68,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 
 var _ provider.ReconcilingCloudProvider = &AmazonEC2{}
 
-func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
+func (a *AmazonEC2) getClientSet(ctx context.Context, cloud kubermaticv1.CloudSpec) (*ClientSet, error) {
 	if a.clientSet != nil {
 		return a.clientSet, nil
 	}
@@ -78,7 +78,7 @@ func (a *AmazonEC2) getClientSet(cloud kubermaticv1.CloudSpec) (*ClientSet, erro
 		return nil, err
 	}
 
-	return GetClientSet(accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, a.dc.Region)
+	return GetClientSet(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, a.dc.Region)
 }
 
 func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
@@ -92,7 +92,7 @@ func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clo
 // TL;DR: This validation does not need to be extended to cover more than
 // VPC and SG.
 func (a *AmazonEC2) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
-	client, err := a.getClientSet(spec)
+	client, err := a.getClientSet(ctx, spec)
 	if err != nil {
 		return fmt.Errorf("failed to get API client: %w", err)
 	}
@@ -161,7 +161,7 @@ func (a *AmazonEC2) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.
 }
 
 func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, setTags bool) (*kubermaticv1.Cluster, error) {
-	client, err := a.getClientSet(cluster.Spec.Cloud)
+	client, err := a.getClientSet(ctx, cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %w", err)
 	}
@@ -198,7 +198,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	// We create a dedicated role for the control plane.
-	if force || cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "" {
+	if !cluster.Spec.Cloud.AWS.DisableIAMReconciling && (force || cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "") {
 		cluster, err = reconcileControlPlaneRole(ctx, client.IAM, cluster, update)
 		if err != nil {
 			return nil, err
@@ -206,7 +206,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	// instance profile and role for worker nodes
-	if force || cluster.Spec.Cloud.AWS.InstanceProfileName == "" {
+	if !cluster.Spec.Cloud.AWS.DisableIAMReconciling && (force || cluster.Spec.Cloud.AWS.InstanceProfileName == "") {
 		cluster, err = reconcileWorkerInstanceProfile(ctx, client.IAM, cluster, update)
 		if err != nil {
 			return nil, err
@@ -238,7 +238,13 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 }
 
 func (a *AmazonEC2) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, updater provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	client, err := a.getClientSet(cluster.Spec.Cloud)
+	// prevent excessive requests to AWS when a cluster is re-reconciled often
+	// during its deletion phase
+	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+		return cluster, nil
+	}
+
+	client, err := a.getClientSet(ctx, cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get API client: %w", err)
 	}

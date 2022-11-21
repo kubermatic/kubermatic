@@ -35,7 +35,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -76,36 +75,7 @@ func (s *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 		return fmt.Errorf("failed to deploy S3 Exporter: %w", err)
 	}
 
-	if err := s.deployKubermatic(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Kubermatic: %w", err)
-	}
-
-	if err := migrateUserClustersData(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to migrate data in user-clusters: %w", err)
-	}
-
 	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
-
-	return nil
-}
-
-func (s *SeedStack) deployKubermatic(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	logger.Info("📦 Deploying KKP Dependencies…")
-
-	// The KKP Operator will not reconcile the seed cluster if the "kubermatic"
-	// namespace doesn't exist yet. This is meant as a "safety mechanism", so we
-	// must ensure the namespace exists.
-	ns := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: kubermaticmaster.KubermaticOperatorNamespace,
-		},
-	}
-
-	if err := kubeClient.Create(ctx, ns); err != nil && !apierrors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create Namespace %s: %w", ns.Name, err)
-	}
-
-	logger.Info("✅ Success.")
 
 	return nil
 }
@@ -179,7 +149,7 @@ func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunti
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MinioNamespace, MinioReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, MinioNamespace, MinioReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
@@ -206,7 +176,7 @@ func deployS3Exporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, S3ExporterNamespace, S3ExporterReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, S3ExporterNamespace, S3ExporterReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 

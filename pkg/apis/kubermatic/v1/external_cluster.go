@@ -32,10 +32,27 @@ const (
 	ExternalClusterKind = "ExternalCluster"
 )
 
+// +kubebuilder:validation:Enum=aks;bringyourown;eks;gke;kubeone
+
+// ExternalClusterProvider is the identifier for the cloud provider that hosts
+// the external cluster control plane.
+type ExternalClusterProvider string
+
+const (
+	ExternalClusterAKSProvider          ExternalClusterProvider = "aks"
+	ExternalClusterBringYourOwnProvider ExternalClusterProvider = "bringyourown"
+	ExternalClusterEKSProvider          ExternalClusterProvider = "eks"
+	ExternalClusterGKEProvider          ExternalClusterProvider = "gke"
+	ExternalClusterKubeOneProvider      ExternalClusterProvider = "kubeone"
+)
+
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.cloudSpec.providerName",name="Provider",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.pause",name="Paused",type="boolean"
+// +kubebuilder:printcolumn:JSONPath=".status.condition.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // ExternalCluster is the object representing an external kubernetes cluster.
@@ -43,7 +60,10 @@ type ExternalCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ExternalClusterSpec   `json:"spec"`
+	// Spec describes the desired cluster state.
+	Spec ExternalClusterSpec `json:"spec"`
+
+	// Status contains reconciliation information for the cluster.
 	Status ExternalClusterStatus `json:"status,omitempty"`
 }
 
@@ -85,16 +105,50 @@ type ExternalClusterSpec struct {
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
 
+	// KubeconfigReference is reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
-	CloudSpec           *ExternalClusterCloudSpec               `json:"cloudSpec,omitempty"`
+
+	// CloudSpec contains provider specific fields
+	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
+
+	ClusterNetwork ExternalClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
+
+	// If this is set to true, the cluster will not be reconciled by KKP.
+	// This indicates that the user needs to do some action to resolve the pause.
+	Pause bool `json:"pause"`
+
+	// PauseReason is the reason why the cluster is not being managed. This field is for informational
+	// purpose only and can be set by a user or a controller to communicate the reason for pausing the cluster.
+	PauseReason string `json:"pauseReason,omitempty"`
+}
+
+// ExternalClusterNetworkingConfig specifies the different networking
+// parameters for a external cluster.
+type ExternalClusterNetworkingConfig struct {
+	// The network ranges from which service VIPs are allocated.
+	// It can contain one IPv4 and/or one IPv6 CIDR.
+	// If both address families are specified, the first one defines the primary address family.
+	Services ExternalClusterNetworkRanges `json:"services,omitempty"`
+
+	// The network ranges from which POD networks are allocated.
+	// It can contain one IPv4 and/or one IPv6 CIDR.
+	// If both address families are specified, the first one defines the primary address family.
+	Pods ExternalClusterNetworkRanges `json:"pods,omitempty"`
+}
+
+// ExternalClusterNetworkRanges represents ranges of network addresses.
+type ExternalClusterNetworkRanges struct {
+	CIDRBlocks []string `json:"cidrBlocks,omitempty"`
 }
 
 // ExternalClusterCloudSpec mutually stores access data to a cloud provider.
 type ExternalClusterCloudSpec struct {
-	GKE     *ExternalClusterGKECloudSpec     `json:"gke,omitempty"`
-	EKS     *ExternalClusterEKSCloudSpec     `json:"eks,omitempty"`
-	AKS     *ExternalClusterAKSCloudSpec     `json:"aks,omitempty"`
-	KubeOne *ExternalClusterKubeOneCloudSpec `json:"kubeone,omitempty"`
+	ProviderName ExternalClusterProvider               `json:"providerName"`
+	GKE          *ExternalClusterGKECloudSpec          `json:"gke,omitempty"`
+	EKS          *ExternalClusterEKSCloudSpec          `json:"eks,omitempty"`
+	AKS          *ExternalClusterAKSCloudSpec          `json:"aks,omitempty"`
+	KubeOne      *ExternalClusterKubeOneCloudSpec      `json:"kubeone,omitempty"`
+	BringYourOwn *ExternalClusterBringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 }
 
 type ExternalClusterPhase string
@@ -145,29 +199,78 @@ const (
 	ExternalClusterPhaseConfigError ExternalClusterPhase = "ConfigError"
 )
 
+type ExternalClusterBringYourOwnCloudSpec struct{}
+
 type ExternalClusterGKECloudSpec struct {
-	Name                 string                                  `json:"name"`
-	ServiceAccount       string                                  `json:"serviceAccount"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
-	Zone                 string                                  `json:"zone,omitempty"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+
+	Name string `json:"name"`
+	// ServiceAccount: The Google Cloud Platform Service Account.
+	// Can be read from `credentialsReference` instead.
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// Zone: The name of the Google Compute Engine zone
+	// (https://cloud.google.com/compute/docs/zones#available) in which the
+	// cluster resides.
+	Zone string `json:"zone"`
 }
 
 type ExternalClusterEKSCloudSpec struct {
-	Name                 string                                  `json:"name"`
-	AccessKeyID          string                                  `json:"accessKeyID"`
-	SecretAccessKey      string                                  `json:"secretAccessKey"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
-	Region               string                                  `json:"region"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+
+	Name string `json:"name"`
+	// AccessKeyID: AWS Access key ID
+	// Can be read from `credentialsReference` instead.
+	AccessKeyID string `json:"accessKeyID,omitempty"`
+	// SecretAccessKey: AWS Secret Access Key
+	// Can be read from `credentialsReference` instead.
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+	Region          string `json:"region"`
+	// ControlPlaneRoleARN: The Amazon Resource Name (ARN) of the IAM role that provides permissions
+	// for the Kubernetes control plane to make calls to Amazon Web Services API
+	// operations on your behalf.
+	ControlPlaneRoleARN string `json:"roleArn,omitempty"`
+	// VPCID: The VPC associated with your cluster.
+	VPCID string `json:"vpcID,omitempty"`
+	// SubnetIDs: The subnets associated with your cluster.
+	SubnetIDs []string `json:"subnetIDs,omitempty"`
+	// SecurityGroupIDs: The security groups associated with the cross-account elastic network interfaces
+	// that are used to allow communication between your nodes and the Kubernetes
+	// control plane.
+	SecurityGroupIDs []string `json:"securityGroupIDs,omitempty"`
+
+	// AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
+	// required: false
+	AssumeRoleARN string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	// AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// Using an external ID can help to prevent the "confused deputy problem".
+	// required: false
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 }
 
 type ExternalClusterAKSCloudSpec struct {
-	Name                 string                                  `json:"name"`
-	TenantID             string                                  `json:"tenantID"`
-	SubscriptionID       string                                  `json:"subscriptionID"`
-	ClientID             string                                  `json:"clientID"`
-	ClientSecret         string                                  `json:"clientSecret"`
-	ResourceGroup        string                                  `json:"resourceGroup"`
+	// CredentialsReference allows referencing a `Secret` resource instead of passing secret data in this spec.
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
+
+	Name string `json:"name"`
+	// TenantID: The Azure Active Directory Tenant used for this cluster.
+	// Can be read from `credentialsReference` instead.
+	TenantID string `json:"tenantID,omitempty"`
+	// SubscriptionID: The Azure Subscription used for this cluster.
+	// Can be read from `credentialsReference` instead.
+	SubscriptionID string `json:"subscriptionID,omitempty"`
+	// ClientID: The service principal used to access Azure.
+	// Can be read from `credentialsReference` instead.
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret: The client secret corresponding to the given service principal.
+	// Can be read from `credentialsReference` instead.
+	ClientSecret string `json:"clientSecret,omitempty"`
+	// Location: The geo-location where the resource lives
+	Location string `json:"location"`
+	// ResourceGroup: The resource group that will be used to look up and create resources for the cluster in.
+	// If set to empty string at cluster creation, a new resource group will be created and this field will be updated to
+	// the generated resource group's name.
+	ResourceGroup string `json:"resourceGroup"`
 }
 
 func (i *ExternalCluster) GetKubeconfigSecretName() string {
@@ -186,7 +289,7 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 		},
 	}
 	cloud := i.Spec.CloudSpec
-	if cloud == nil {
+	if cloud.ProviderName == ExternalClusterBringYourOwnProvider {
 		return ""
 	}
 	if cloud.GKE != nil {

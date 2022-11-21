@@ -17,14 +17,137 @@ limitations under the License.
 package kubernetes
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func TestHasOnlyFinalizer(t *testing.T) {
+	testcases := []struct {
+		finalizers []string
+		query      []string
+		expected   bool
+	}{
+		{
+			finalizers: []string{},
+			query:      []string{},
+			expected:   true,
+		},
+		{
+			finalizers: []string{},
+			query:      []string{"a"},
+			expected:   false,
+		},
+		{
+			finalizers: []string{"a"},
+			query:      []string{"a"},
+			expected:   true,
+		},
+		{
+			finalizers: []string{"a"},
+			query:      []string{"b"},
+			expected:   false,
+		},
+		{
+			finalizers: []string{"a", "b"},
+			query:      []string{"a"},
+			expected:   false,
+		},
+		{
+			finalizers: []string{"a"},
+			query:      []string{"a", "b"},
+			expected:   false,
+		},
+		{
+			finalizers: []string{"a", "b"},
+			query:      []string{"a", "b"},
+			expected:   true,
+		},
+		{
+			finalizers: []string{"a", "b"},
+			query:      []string{"b", "a"},
+			expected:   true,
+		},
+	}
+
+	for i, testcase := range testcases {
+		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
+			pod := corev1.Pod{}
+			pod.SetFinalizers(testcase.finalizers)
+
+			result := HasOnlyFinalizer(&pod, testcase.query...)
+			if result != testcase.expected {
+				t.Fatalf("Expected hasOnlyFinalizer(%v, %v) to be %v, but got the opposite", testcase.finalizers, testcase.query, testcase.expected)
+			}
+		})
+	}
+}
+
+func TestHasFinalizerSuperset(t *testing.T) {
+	testcases := []struct {
+		finalizers []string
+		query      []string
+		expected   bool
+	}{
+		{
+			finalizers: []string{},
+			query:      []string{},
+			expected:   true,
+		},
+		{
+			finalizers: []string{},
+			query:      []string{"a"},
+			expected:   true,
+		},
+		{
+			finalizers: []string{"a"},
+			query:      []string{"a"},
+			expected:   true,
+		},
+		{
+			finalizers: []string{"a"},
+			query:      []string{"b"},
+			expected:   false,
+		},
+		{
+			finalizers: []string{"a", "b"},
+			query:      []string{"a"},
+			expected:   false,
+		},
+		{
+			finalizers: []string{"a"},
+			query:      []string{"a", "b"},
+			expected:   true,
+		},
+		{
+			finalizers: []string{"a", "b"},
+			query:      []string{"a", "b"},
+			expected:   true,
+		},
+		{
+			finalizers: []string{"a", "b"},
+			query:      []string{"b", "a"},
+			expected:   true,
+		},
+	}
+
+	for i, testcase := range testcases {
+		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
+			pod := corev1.Pod{}
+			pod.SetFinalizers(testcase.finalizers)
+
+			result := HasFinalizerSuperset(&pod, testcase.query...)
+			if result != testcase.expected {
+				t.Fatalf("Expected hasFinalizerSuperset(%v, %v) to be %v, but got the opposite", testcase.finalizers, testcase.query, testcase.expected)
+			}
+		})
+	}
+}
 
 func TestGenerateToken(t *testing.T) {
 	tokenA := GenerateToken()
@@ -94,8 +217,8 @@ func TestRemoveOwnerReferences(t *testing.T) {
 
 			RemoveOwnerReferences(fakeObj, testcase.toRemove...)
 
-			if diff := deep.Equal(fakeObj.OwnerReferences, testcase.expectedRefs); diff != nil {
-				t.Fatal(diff)
+			if d := diff.ObjectDiff(testcase.expectedRefs, fakeObj.OwnerReferences); d != "" {
+				t.Fatalf("Objects differ:\n%v", d)
 			}
 		})
 	}
@@ -128,8 +251,8 @@ func TestRemoveOwnerReferenceKinds(t *testing.T) {
 
 			RemoveOwnerReferenceKinds(fakeObj, testcase.toRemove...)
 
-			if diff := deep.Equal(fakeObj.OwnerReferences, testcase.expectedRefs); diff != nil {
-				t.Fatal(diff)
+			if d := diff.ObjectDiff(testcase.expectedRefs, fakeObj.OwnerReferences); d != "" {
+				t.Fatalf("Objects differ:\n%v", d)
 			}
 		})
 	}

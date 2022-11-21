@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-openapi/errors"
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -31,6 +30,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -86,7 +86,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(apiv1.InitialApplicationInstallationsRequestAnnotation, "", false)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(kubermaticv1.InitialApplicationInstallationsRequestAnnotation, "", false)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
@@ -132,14 +132,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// there is no annotation anymore
-	request := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]
+	request := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]
 	if request == "" {
 		return nil, nil
 	}
 
 	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Info("Application controller not healthy")
+		r.log.Debug("Application controller not healthy")
 		return nil, nil
 	}
 
@@ -161,12 +161,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	for _, app := range applications {
 		if err := r.createInitialApplicationInstallations(ctx, userClusterClient, app, cluster); err != nil {
 			errs = append(errs, err)
-			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallion %s", app.Name)
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallation %s", app.Name)
 		}
 	}
 
 	if len(errs) > 0 {
-		return nil, errors.CompositeValidationError(errs...)
+		return nil, utilerrors.NewAggregate(errs)
 	}
 
 	if err := r.removeAnnotation(ctx, cluster); err != nil {
@@ -184,7 +184,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 			Annotations: application.Annotations,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:        application.Spec.Namespace.Name,
 				Create:      application.Spec.Namespace.Create,
 				Labels:      application.Spec.Namespace.Labels,
@@ -201,14 +201,10 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 	err := client.Create(ctx, &applicationInstallation)
 	if err != nil {
 		// If the application already exists, we just ignore the error and move forward.
-		if apierrors.IsAlreadyExists(err) {
-			return nil
-		}
-
-		return err
+		return ctrlruntimeclient.IgnoreAlreadyExists(err)
 	}
 
-	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Initial ApplicationInstallion %s has been created", applicationInstallation.Name)
+	r.recorder.Eventf(cluster, corev1.EventTypeNormal, "ApplicationInstallationCreated", "Initial ApplicationInstallation %s has been created", applicationInstallation.Name)
 
 	return nil
 }
@@ -223,6 +219,6 @@ func (r *Reconciler) parseApplications(cluster *kubermaticv1.Cluster, request st
 
 func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	oldCluster := cluster.DeepCopy()
-	delete(cluster.Annotations, apiv1.InitialApplicationInstallationsRequestAnnotation)
+	delete(cluster.Annotations, kubermaticv1.InitialApplicationInstallationsRequestAnnotation)
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

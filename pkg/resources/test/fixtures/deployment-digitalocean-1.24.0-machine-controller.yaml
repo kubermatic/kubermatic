@@ -5,6 +5,7 @@ metadata:
   labels:
     app: machine-controller
   name: machine-controller
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -36,14 +37,17 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver"]}'
+        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver","-use-osm"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
         - /http-prober-bin/http-prober
         env:
         - name: DO_TOKEN
-          value: do-token
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: cloud-credentials
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
@@ -62,7 +66,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:v1.51.0
+        image: quay.io/kubermatic/machine-controller:7784255e05d856f53399d591c3387dcc651f3ae9
         livenessProbe:
           failureThreshold: 3
           httpGet:

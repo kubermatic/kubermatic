@@ -3,7 +3,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.10.0
+    kubermatic.k8c.io/location: master,seed
   creationTimestamp: null
   name: presets.kubermatic.k8c.io
 spec:
@@ -15,395 +16,422 @@ spec:
     singular: preset
   scope: Cluster
   versions:
-  - name: v1
-    schema:
-      openAPIV3Schema:
-        description: Preset is the type representing a Preset.
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: Presets specifies default presets for supported providers.
-            properties:
-              aks:
-                properties:
-                  clientID:
-                    type: string
-                  clientSecret:
-                    type: string
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  subscriptionID:
-                    type: string
-                  tenantID:
-                    type: string
-                required:
-                - clientID
-                - clientSecret
-                - subscriptionID
-                - tenantID
-                type: object
-              alibaba:
-                properties:
-                  accessKeyID:
-                    type: string
-                  accessKeySecret:
-                    type: string
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                required:
-                - accessKeyID
-                - accessKeySecret
-                type: object
-              anexia:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  token:
-                    description: Token is used to authenticate with the Anexia API.
-                    type: string
-                required:
-                - token
-                type: object
-              aws:
-                properties:
-                  accessKeyID:
-                    type: string
-                  assumeRoleARN:
-                    type: string
-                  assumeRoleExternalID:
-                    type: string
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  instanceProfileName:
-                    type: string
-                  roleARN:
-                    type: string
-                  routeTableID:
-                    type: string
-                  secretAccessKey:
-                    type: string
-                  securityGroupID:
-                    type: string
-                  vpcID:
-                    type: string
-                required:
-                - accessKeyID
-                - secretAccessKey
-                type: object
-              azure:
-                properties:
-                  clientID:
-                    type: string
-                  clientSecret:
-                    type: string
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  loadBalancerSKU:
-                    description: LoadBalancerSKU sets the LB type that will be used
-                      for the Azure cluster, possible values are "basic" and "standard",
-                      if empty, "basic" will be used
-                    enum:
-                    - standard
-                    - basic
-                    type: string
-                  resourceGroup:
-                    type: string
-                  routeTable:
-                    type: string
-                  securityGroup:
-                    type: string
-                  subnet:
-                    type: string
-                  subscriptionID:
-                    type: string
-                  tenantID:
-                    type: string
-                  vnet:
-                    type: string
-                  vnetResourceGroup:
-                    type: string
-                required:
-                - clientID
-                - clientSecret
-                - loadBalancerSKU
-                - subscriptionID
-                - tenantID
-                type: object
-              digitalocean:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  token:
-                    description: Token is used to authenticate with the DigitalOcean
-                      API.
-                    type: string
-                required:
-                - token
-                type: object
-              eks:
-                properties:
-                  accessKeyID:
-                    type: string
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  region:
-                    type: string
-                  secretAccessKey:
-                    type: string
-                required:
-                - accessKeyID
-                - region
-                - secretAccessKey
-                type: object
-              enabled:
-                type: boolean
-              fake:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  token:
-                    type: string
-                required:
-                - token
-                type: object
-              gcp:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  network:
-                    type: string
-                  serviceAccount:
-                    type: string
-                  subnetwork:
-                    type: string
-                required:
-                - serviceAccount
-                type: object
-              gke:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  serviceAccount:
-                    type: string
-                required:
-                - serviceAccount
-                type: object
-              hetzner:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  network:
-                    description: Network is the pre-existing Hetzner network in which
-                      the machines are running. While machines can be in multiple
-                      networks, a single one must be chosen for the HCloud CCM to
-                      work. If this is empty, the network configured on the datacenter
-                      will be used.
-                    type: string
-                  token:
-                    description: Token is used to authenticate with the Hetzner API.
-                    type: string
-                required:
-                - token
-                type: object
-              kubevirt:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  kubeconfig:
-                    type: string
-                required:
-                - kubeconfig
-                type: object
-              nutanix:
-                properties:
-                  clusterName:
-                    description: ClusterName is the Nutanix cluster to deploy resources
-                      and nodes to.
-                    type: string
-                  csiEndpoint:
-                    description: CSIEndpoint to access Nutanix Prism Element for csi
-                      driver
-                    type: string
-                  csiPassword:
-                    description: Prism Element Password for csi driver
-                    type: string
-                  csiPort:
-                    description: CSIPort to use when connecting to the Nutanix Prism
-                      Element endpoint (defaults to 9440)
-                    format: int32
-                    type: integer
-                  csiUsername:
-                    description: Prism Element Username for csi driver
-                    type: string
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  password:
-                    description: Password is the password corresponding to the provided
-                      user.
-                    type: string
-                  projectName:
-                    description: ProjectName is the optional Nutanix project to use.
-                      If none is given, no project will be used.
-                    type: string
-                  proxyURL:
-                    description: ProxyURL is used to optionally configure a HTTP proxy
-                      to access Nutanix Prism Central.
-                    type: string
-                  username:
-                    description: Username is the username to access the Nutanix Prism
-                      Central API.
-                    type: string
-                required:
-                - clusterName
-                - password
-                - username
-                type: object
-              openstack:
-                properties:
-                  applicationCredentialID:
-                    type: string
-                  applicationCredentialSecret:
-                    type: string
-                  datacenter:
-                    type: string
-                  domain:
-                    type: string
-                  enabled:
-                    type: boolean
-                  floatingIPPool:
-                    type: string
-                  network:
-                    type: string
-                  password:
-                    type: string
-                  project:
-                    type: string
-                  projectID:
-                    type: string
-                  routerID:
-                    type: string
-                  securityGroups:
-                    type: string
-                  subnetID:
-                    type: string
-                  useToken:
-                    type: boolean
-                  username:
-                    type: string
-                required:
-                - domain
-                type: object
-              packet:
-                properties:
-                  apiKey:
-                    type: string
-                  billingCycle:
-                    type: string
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  projectID:
-                    type: string
-                required:
-                - apiKey
-                - projectID
-                type: object
-              requiredEmails:
-                items:
-                  type: string
-                type: array
-              vmwareCloudDirector:
-                properties:
-                  datacenter:
-                    type: string
-                  enabled:
-                    type: boolean
-                  organization:
-                    type: string
-                  ovdcNetwork:
-                    type: string
-                  password:
-                    type: string
-                  username:
-                    type: string
-                  vdc:
-                    type: string
-                required:
-                - organization
-                - ovdcNetwork
-                - password
-                - username
-                - vdc
-                type: object
-              vsphere:
-                properties:
-                  datacenter:
-                    type: string
-                  datastore:
-                    type: string
-                  datastoreCluster:
-                    type: string
-                  enabled:
-                    type: boolean
-                  password:
-                    type: string
-                  resourcePool:
-                    type: string
-                  username:
-                    type: string
-                  vmNetName:
-                    type: string
-                required:
-                - password
-                - username
-                type: object
-            type: object
-        required:
-        - spec
-        type: object
-    served: true
-    storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: Presets are preconfigured cloud provider credentials that can be applied to new clusters. This frees end users from having to know the actual credentials used for their clusters.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: Presets specifies default presets for supported providers.
+              properties:
+                aks:
+                  properties:
+                    clientID:
+                      type: string
+                    clientSecret:
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    subscriptionID:
+                      type: string
+                    tenantID:
+                      type: string
+                  required:
+                    - clientID
+                    - clientSecret
+                    - subscriptionID
+                    - tenantID
+                  type: object
+                alibaba:
+                  properties:
+                    accessKeyID:
+                      description: Access Key ID to authenticate against Alibaba.
+                      type: string
+                    accessKeySecret:
+                      description: Access Key Secret to authenticate against Alibaba.
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                  required:
+                    - accessKeyID
+                    - accessKeySecret
+                  type: object
+                anexia:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    token:
+                      description: Token is used to authenticate with the Anexia API.
+                      type: string
+                  required:
+                    - token
+                  type: object
+                aws:
+                  properties:
+                    accessKeyID:
+                      description: Access Key ID to authenticate against AWS.
+                      type: string
+                    assumeRoleARN:
+                      type: string
+                    assumeRoleExternalID:
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    instanceProfileName:
+                      description: Instance profile to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      type: string
+                    roleARN:
+                      description: ARN to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      type: string
+                    routeTableID:
+                      description: Route table to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      type: string
+                    secretAccessKey:
+                      description: Secret Access Key to authenticate against AWS.
+                      type: string
+                    securityGroupID:
+                      description: Security group to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      type: string
+                    vpcID:
+                      description: AWS VPC to use. Must be configured.
+                      type: string
+                  required:
+                    - accessKeyID
+                    - secretAccessKey
+                  type: object
+                azure:
+                  properties:
+                    clientID:
+                      type: string
+                    clientSecret:
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    loadBalancerSKU:
+                      description: LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+                      enum:
+                        - standard
+                        - basic
+                      type: string
+                    resourceGroup:
+                      type: string
+                    routeTable:
+                      type: string
+                    securityGroup:
+                      type: string
+                    subnet:
+                      type: string
+                    subscriptionID:
+                      type: string
+                    tenantID:
+                      type: string
+                    vnet:
+                      type: string
+                    vnetResourceGroup:
+                      type: string
+                  required:
+                    - clientID
+                    - clientSecret
+                    - loadBalancerSKU
+                    - subscriptionID
+                    - tenantID
+                  type: object
+                digitalocean:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    token:
+                      description: Token is used to authenticate with the DigitalOcean API.
+                      type: string
+                  required:
+                    - token
+                  type: object
+                eks:
+                  properties:
+                    accessKeyID:
+                      type: string
+                    assumeRoleARN:
+                      type: string
+                    assumeRoleExternalID:
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    secretAccessKey:
+                      type: string
+                  required:
+                    - accessKeyID
+                    - secretAccessKey
+                  type: object
+                enabled:
+                  description: Only enabled presets will be available in the KKP dashboard.
+                  type: boolean
+                fake:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    token:
+                      type: string
+                  required:
+                    - token
+                  type: object
+                gcp:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    network:
+                      type: string
+                    serviceAccount:
+                      type: string
+                    subnetwork:
+                      type: string
+                  required:
+                    - serviceAccount
+                  type: object
+                gke:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    serviceAccount:
+                      type: string
+                  required:
+                    - serviceAccount
+                  type: object
+                hetzner:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    network:
+                      description: Network is the pre-existing Hetzner network in which the machines are running. While machines can be in multiple networks, a single one must be chosen for the HCloud CCM to work. If this is empty, the network configured on the datacenter will be used.
+                      type: string
+                    token:
+                      description: Token is used to authenticate with the Hetzner API.
+                      type: string
+                  required:
+                    - token
+                  type: object
+                kubevirt:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    kubeconfig:
+                      type: string
+                  required:
+                    - kubeconfig
+                  type: object
+                nutanix:
+                  properties:
+                    clusterName:
+                      description: ClusterName is the Nutanix cluster to deploy resources and nodes to.
+                      type: string
+                    csiEndpoint:
+                      description: CSIEndpoint to access Nutanix Prism Element for csi driver
+                      type: string
+                    csiPassword:
+                      description: Prism Element Password for csi driver
+                      type: string
+                    csiPort:
+                      description: CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+                      format: int32
+                      type: integer
+                    csiUsername:
+                      description: Prism Element Username for csi driver
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    password:
+                      description: Password is the password corresponding to the provided user.
+                      type: string
+                    projectName:
+                      description: ProjectName is the optional Nutanix project to use. If none is given, no project will be used.
+                      type: string
+                    proxyURL:
+                      description: ProxyURL is used to optionally configure a HTTP proxy to access Nutanix Prism Central.
+                      type: string
+                    username:
+                      description: Username is the username to access the Nutanix Prism Central API.
+                      type: string
+                  required:
+                    - clusterName
+                    - password
+                    - username
+                  type: object
+                openstack:
+                  properties:
+                    applicationCredentialID:
+                      type: string
+                    applicationCredentialSecret:
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    domain:
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    floatingIPPool:
+                      type: string
+                    network:
+                      type: string
+                    password:
+                      type: string
+                    project:
+                      type: string
+                    projectID:
+                      type: string
+                    routerID:
+                      type: string
+                    securityGroups:
+                      type: string
+                    subnetID:
+                      type: string
+                    useToken:
+                      type: boolean
+                    username:
+                      type: string
+                  required:
+                    - domain
+                  type: object
+                packet:
+                  properties:
+                    apiKey:
+                      type: string
+                    billingCycle:
+                      type: string
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    projectID:
+                      type: string
+                  required:
+                    - apiKey
+                    - projectID
+                  type: object
+                projects:
+                  description: Projects is a list of project IDs that this preset is limited to.
+                  items:
+                    type: string
+                  type: array
+                requiredEmails:
+                  description: RequiredEmails is a list of e-mail addresses that this presets should be restricted to. Each item in the list can be either a full e-mail address or just a domain name. This restriction is only enforced in the KKP API.
+                  items:
+                    type: string
+                  type: array
+                vmwareclouddirector:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    organization:
+                      type: string
+                    ovdcNetwork:
+                      type: string
+                    password:
+                      type: string
+                    username:
+                      type: string
+                    vdc:
+                      type: string
+                  required:
+                    - organization
+                    - ovdcNetwork
+                    - password
+                    - username
+                    - vdc
+                  type: object
+                vsphere:
+                  properties:
+                    datacenter:
+                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      type: string
+                    datastore:
+                      type: string
+                    datastoreCluster:
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    password:
+                      type: string
+                    resourcePool:
+                      type: string
+                    username:
+                      type: string
+                    vmNetName:
+                      type: string
+                  required:
+                    - password
+                    - username
+                  type: object
+              type: object
+          required:
+            - spec
+          type: object
+      served: true
+      storage: true

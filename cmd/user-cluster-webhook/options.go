@@ -29,10 +29,12 @@ import (
 )
 
 type appOptions struct {
-	webhook  webhook.Options
-	pprof    pprof.Opts
-	log      kubermaticlog.Options
-	caBundle *certificates.CABundle
+	seedWebhook webhook.Options
+	userWebhook webhook.Options
+	pprof       pprof.Opts
+	log         kubermaticlog.Options
+	caBundle    *certificates.CABundle
+	projectID   string
 }
 
 func initApplicationOptions() (appOptions, error) {
@@ -42,12 +44,17 @@ func initApplicationOptions() (appOptions, error) {
 
 	klog.InitFlags(nil)
 
-	c.webhook.AddFlags(flag.CommandLine)
+	c.seedWebhook.AddFlags(flag.CommandLine, "seed-webhook")
+	c.userWebhook.AddFlags(flag.CommandLine, "user-webhook")
+
 	c.pprof.AddFlags(flag.CommandLine)
 	c.log.AddFlags(flag.CommandLine)
 
 	var caBundleFile string
+	var projectID string
+
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
+	flag.StringVar(&projectID, "project-id", "", "Project ID in which cluster the webhook is running in")
 
 	flag.Parse()
 
@@ -56,9 +63,14 @@ func initApplicationOptions() (appOptions, error) {
 		return c, fmt.Errorf("invalid CA bundle file (%q): %w", caBundleFile, err)
 	}
 	c.caBundle = caBundle
+	c.projectID = projectID
 
-	if err := c.webhook.Validate(); err != nil {
-		return c, fmt.Errorf("invalid webhook configuration: %w", err)
+	if err := c.userWebhook.Validate(); err != nil {
+		return c, fmt.Errorf("invalid user cluster webhook configuration: %w", err)
+	}
+
+	if err := c.seedWebhook.Validate(); err != nil {
+		return c, fmt.Errorf("invalid seed webhook configuration: %w", err)
 	}
 
 	return c, nil

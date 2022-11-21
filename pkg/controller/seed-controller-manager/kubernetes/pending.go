@@ -20,10 +20,10 @@ import (
 	"context"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -31,15 +31,9 @@ const (
 	reachableCheckPeriod = 5 * time.Second
 )
 
-func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	// Create the namespace
-	namespace, err := r.ensureNamespaceExists(ctx, cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	if !kuberneteshelper.HasFinalizer(cluster, apiv1.EtcdBackupConfigCleanupFinalizer) {
-		res, err := r.AddFinalizers(ctx, cluster, apiv1.EtcdBackupConfigCleanupFinalizer)
+func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) (*reconcile.Result, error) {
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer) {
+		res, err := r.AddFinalizers(ctx, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
 		if err != nil {
 			return nil, err
 		}
@@ -76,13 +70,13 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 
 		// Only add the node deletion finalizer when the cluster is actually running
 		// Otherwise we fail to delete the nodes and are stuck in a loop
-		if !kuberneteshelper.HasFinalizer(cluster, apiv1.NodeDeletionFinalizer) {
-			finalizers = append(finalizers, apiv1.NodeDeletionFinalizer)
+		if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.NodeDeletionFinalizer) {
+			finalizers = append(finalizers, kubermaticv1.NodeDeletionFinalizer)
 		}
 	}
 
-	if !kuberneteshelper.HasFinalizer(cluster, apiv1.KubermaticConstraintCleanupFinalizer) {
-		finalizers = append(finalizers, apiv1.KubermaticConstraintCleanupFinalizer)
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.KubermaticConstraintCleanupFinalizer) {
+		finalizers = append(finalizers, kubermaticv1.KubermaticConstraintCleanupFinalizer)
 	}
 
 	if len(finalizers) > 0 {

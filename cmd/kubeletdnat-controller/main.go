@@ -67,6 +67,8 @@ func main() {
 		log.Fatalw("Failed to build configs from flags", zap.Error(err))
 	}
 
+	ctx := signals.SetupSignalHandler()
+
 	// Wait until the API server is actually up & the corev1 api groups is available.
 	// This is a smallish hack to avoid dying instantly when running as sidecar to the kube API server
 	// The API server takes a few seconds to start which makes this sidecar die immediately
@@ -77,7 +79,7 @@ func main() {
 		}
 
 		nodeList := &corev1.NodeList{}
-		if err := client.List(context.Background(), nodeList); err != nil {
+		if err := client.List(ctx, nodeList); err != nil {
 			return false, nil
 		}
 
@@ -88,7 +90,12 @@ func main() {
 	}
 
 	// 8080 is already in use by the insecure port of the apiserver
-	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: ":8090"})
+	mgr, err := manager.New(config, manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
+		MetricsBindAddress: ":8090",
+	})
 	if err != nil {
 		log.Fatalw("Failed to create manager", zap.Error(err))
 	}
@@ -101,7 +108,7 @@ func main() {
 		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
 	}
 
-	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("Failed to start kubeletdnat controller", zap.Error(err))
 	}
 }

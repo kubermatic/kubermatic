@@ -13,25 +13,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package seedconstraintsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/diff"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -49,7 +48,7 @@ func TestReconcile(t *testing.T) {
 	}
 
 	seedNamespace := "namespace"
-	clusterNamespace := test.GenDefaultCluster().Status.NamespaceName
+	clusterNamespace := generator.GenDefaultCluster().Status.NamespaceName
 
 	testCases := []struct {
 		name                 string
@@ -136,15 +135,16 @@ func TestReconcile(t *testing.T) {
 
 			// set resource version to empty as it messes up tests
 			constraint.ResourceVersion = ""
-			if !reflect.DeepEqual(constraint, tc.expectedConstraint) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+
+			if !diff.SemanticallyEqual(tc.expectedConstraint, constraint) {
+				t.Fatalf("diff:\n%v", diff.ObjectDiff(tc.expectedConstraint, constraint))
 			}
 		})
 	}
 }
 
 func genConstraint(name, namespace, kind string, label, deleted bool) *kubermaticv1.Constraint {
-	constraint := test.GenConstraint(name, namespace, kind)
+	constraint := generator.GenConstraint(name, namespace, kind)
 	if label {
 		if constraint.Labels != nil {
 			constraint.Labels[Key] = constraint.Name
@@ -155,13 +155,13 @@ func genConstraint(name, namespace, kind string, label, deleted bool) *kubermati
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		constraint.DeletionTimestamp = &deleteTime
-		constraint.Finalizers = append(constraint.Finalizers, apiv1.KubermaticUserClusterNsDefaultConstraintCleanupFinalizer)
+		constraint.Finalizers = append(constraint.Finalizers, cleanupFinalizer)
 	}
 	return constraint
 }
 
 func genCluster(opaEnabled bool) *kubermaticv1.Cluster {
-	cluster := test.GenDefaultCluster()
+	cluster := generator.GenDefaultCluster()
 	cluster.Spec.OPAIntegration = &kubermaticv1.OPAIntegrationSettings{
 		Enabled: opaEnabled,
 	}

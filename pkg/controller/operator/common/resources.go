@@ -17,6 +17,10 @@ limitations under the License.
 package common
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
@@ -60,8 +64,17 @@ const (
 	// UserAdmissionWebhookName is the name of the validating webhook for Users.
 	UserAdmissionWebhookName = "kubermatic-users"
 
+	// ResourceQuotaAdmissionWebhookName is the name of the validating and mutating webhook for ResourceQuotas.
+	ResourceQuotaAdmissionWebhookName = "kubermatic-resourcequotas"
+
+	// ExternalClusterAdmissionWebhookName is the name of the mutating webhook for ExternalClusters.
+	ExternalClusterAdmissionWebhookName = "kubermatic-externalclusters"
+
 	// ApplicationDefinitionAdmissionWebhookName is the name of the validating webhook for ApplicationDefnition.
 	ApplicationDefinitionAdmissionWebhookName = "kubermatic-application-definitions"
+
+	// GroupProjectBindingAdmissionWebhookName is the name of the validating webhook for GroupProjectBindings.
+	GroupProjectBindingAdmissionWebhookName = "kubermatic-groupprojectbindings"
 
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks
 	// run in the same controller manager so it's much easier if they all use the
@@ -82,20 +95,6 @@ const (
 	// the cluster. This should only be used during cluster migrations.
 	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
 )
-
-func NamespaceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedNamespaceCreatorGetter {
-	return func() (string, reconciling.NamespaceCreator) {
-		return cfg.Namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
-			if n.Labels == nil {
-				n.Labels = map[string]string{}
-			}
-
-			n.Labels[NameLabel] = cfg.Namespace
-
-			return n, nil
-		}
-	}
-}
 
 func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
@@ -122,12 +121,12 @@ func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredL
 			if obj != nil {
 				existingVersion := obj.GetAnnotations()[resources.VersionLabel]
 				if existingVersion != "" {
-					existing, err := semverlib.NewVersion(existingVersion)
+					existing, err := semverlib.NewVersion(comparableVersionSuffix(existingVersion))
 					if err != nil {
 						log.Warnw("CRD has invalid version annotation", "annotation", existingVersion, zap.Error(err))
 						// continue to update the CRD
 					} else {
-						current, err := semverlib.NewVersion(currentVersion)
+						current, err := semverlib.NewVersion(comparableVersionSuffix(currentVersion))
 						if err != nil {
 							// This should never happen.
 							log.Warnw("Built-in CRD has invalid version annotation", "version", currentVersion, zap.Error(err))
@@ -160,4 +159,49 @@ func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredL
 			return obj, nil
 		}
 	}
+}
+
+var versionRegex = regexp.MustCompile(`^(.+)-([0-9]+)-g[0-9a-f]+$`)
+
+// We compare versions when updating CRDs and this works fine when it comes
+// to "v2.20.1" vs. "v2.20.3". But during development our versions look like
+// git-describe output ("<last-tag>-<number of commits since tag>-g<hash>",
+// for example "v2.21.0-7-gfd517a". The semverlib does not treat this suffix
+// special, and so would say "v2.21.0-10-gfd517a" < "v2.21.0-7-gfd517a".
+// Semverlib correctly handles the version suffix, so alpha.4 is smaller than
+// alpha.12.
+// This function knows about the KKP versioning scheme and zerofills the
+// number of commits to allow a stable sorting order.
+func comparableVersionSuffix(version string) string {
+	match := versionRegex.FindStringSubmatch(version)
+	if match == nil {
+		// a plain version number without any suffix needs to be treated special
+		// as otherwise a comparison like "v1.0.0-1-gabcdef > v1.0.0" would not
+		// become true, as semver treats the final tag ("v1.0.0") as the latest
+		// version.
+		parsed, err := semverlib.NewVersion(version)
+		if err != nil {
+			// let the outer version parsing deal with the error
+			return version
+		}
+
+		if parsed.Prerelease() == "" {
+			// Inject zeta as hopefully the highest we ever go in prereleases,
+			// so that "v1.0.0-zeta" > "v1.0.0-beta"
+			return fmt.Sprintf("%s-zeta-0", version)
+		}
+
+		return version
+	}
+
+	base := match[1]
+	commits := match[2]
+
+	// a version like "v1.2.3-00007" is not valid, so we must treat
+	// versions without a second segment special
+	if !strings.Contains(base, "-") {
+		return fmt.Sprintf("%s-zeta-%09s", base, commits)
+	}
+
+	return fmt.Sprintf("%s-%09s", base, commits)
 }

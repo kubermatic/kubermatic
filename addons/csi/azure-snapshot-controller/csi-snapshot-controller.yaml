@@ -1,0 +1,62 @@
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/csi-snapshot-controller.yaml
+#
+# Changes:
+# - template image registry
+# - add security context
+# - set replicas=1 (pod has a leader election)
+# - add CPU limit of 1
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "azure" }}
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: csi-snapshot-controller
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-snapshot-controller
+  template:
+    metadata:
+      labels:
+        app: csi-snapshot-controller
+    spec:
+      serviceAccountName: csi-snapshot-controller-sa
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: csi-snapshot-controller
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/snapshot-controller:v5.0.1" }}
+          args:
+            - "--v=2"
+            - "--leader-election=true"
+            - "--leader-election-namespace=kube-system"
+          resources:
+            limits:
+              cpu: 1
+              memory: 100Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
+{{ end }}
+{{ end }}

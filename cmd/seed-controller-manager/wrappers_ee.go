@@ -21,8 +21,11 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
+	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
+	resourcequotaseedcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/seed-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,4 +37,16 @@ func addFlags(fs *flag.FlagSet) {
 
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return eeseedctrlmgr.SeedGetterFactory(ctx, client, options.seedName, options.namespace)
+}
+
+func setupControllers(ctrlCtx *controllerContext) error {
+	if err := resourcequotaseedcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.workerCount); err != nil {
+		return fmt.Errorf("failed to create resource quota controller: %w", err)
+	}
+
+	if err := groupprojectbindingcontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, false); err != nil {
+		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
+	}
+
+	return nil
 }

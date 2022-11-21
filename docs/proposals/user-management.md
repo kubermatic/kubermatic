@@ -10,7 +10,7 @@ User management describes how to manage user access to various resources like de
 
 ## Goals
 1. Describe how `kubermatic-server` is going to drive authorization decisions.
-2. Utilise kubernetes `RBAC` mechanism as much as possible.
+2. Utilise Kubernetes `RBAC` mechanism as much as possible.
 3. Describe how `RBAC` roles are generated and attached to project’s resources.
 
 ## Non-Goal
@@ -19,7 +19,7 @@ User management describes how to manage user access to various resources like de
 
 ## Core concept
 
-Since we are going to use kubernete’s `RBAC` as an underlying authorisation mechanism, we can bind roles to certain subjects. At this moment subjects can be groups, users or service accounts. We decided to bind to groups not only because it will be simpler (we don’t have to generate a set of roles for each `User`) but it also aligns with our own concept of `Groups`. In the `Introduction` section we said that “all `Resources` are equal in terms of the `Groups` attached to them.” What we mean by that is that we are going to create and maintain a set of fixed `RBAC Roles` for each `Resource` that belongs to a `Project`.  The number of `Roles` and their definitions springs directly from the number and the type of the `Groups`. For example the following `Role` was generated for `editors Group` and describes access to `cluster` `Resource`
+Since we are going to use Kubernetes' `RBAC` as an underlying authorisation mechanism, we can bind roles to certain subjects. At this moment subjects can be groups, users or service accounts. We decided to bind to groups not only because it will be simpler (we don’t have to generate a set of roles for each `User`) but it also aligns with our own concept of `Groups`. In the `Introduction` section we said that “all `Resources` are equal in terms of the `Groups` attached to them.” What we mean by that is that we are going to create and maintain a set of fixed `RBAC Roles` for each `Resource` that belongs to a `Project`.  The number of `Roles` and their definitions springs directly from the number and the type of the `Groups`. For example the following `Role` was generated for `editors Group` and describes access to `cluster` `Resource`
 
 ```
 kind: Role
@@ -30,7 +30,7 @@ metadata:
 rules:
 - apiGroups: ["kubermatic.k8s.io"]
   resources: [“clusters”]
-  resourceNames: ["my-powerfull-cluster“]
+  resourceNames: ["my-powerful-cluster“]
   verbs: ["get", “update”, "create", "delete", "patch"]
 ```
 
@@ -45,7 +45,7 @@ metadata:
 rules:
 - apiGroups: ["kubermatic.k8s.io"]
   resources: [“clusters”]
-  resourceNames: ["my-powerfull-cluster“]
+  resourceNames: ["my-powerful-cluster“]
   verbs: ["get"]
 ```
 
@@ -71,7 +71,7 @@ roleRef:
 **Possible Optimization**:
 
 It may turn out that the `verb` list for `Editor`, `Owner`, `Reader` is exactly the same in such case we could generate only one `Role` to rule them all.
-Does it mean we don't need more than two Groups ? Not necessarly.
+Does it mean we don't need more than two Groups ? Not necessarily.
 We could say that the `Editor`group is special in a way that allows them to add other users to the `Project`.
 Similarly the `Owner` can be special in a way that would allow them to delete an instance of  `Project`.
 

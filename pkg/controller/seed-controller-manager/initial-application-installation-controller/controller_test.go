@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -31,7 +30,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -45,11 +44,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var (
+	kubernetesVersion = defaulting.DefaultKubernetesVersioning.Default
+)
+
 const (
-	kubernetesVersion = "v1.22.5"
-	datacenterName    = "testdc"
-	projectID         = "testproject"
-	applicationName   = "katana"
+	datacenterName  = "testdc"
+	projectID       = "testproject"
+	applicationName = "katana"
 )
 
 func init() {
@@ -76,14 +78,14 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
 			Annotations: map[string]string{
-				apiv1.InitialApplicationInstallationsRequestAnnotation: annotation,
+				kubermaticv1.InitialApplicationInstallationsRequestAnnotation: annotation,
 			},
 			Labels: map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectID,
 			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version: *semver.NewSemverOrDie(kubernetesVersion),
+			Version: *kubernetesVersion,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 			},
@@ -138,7 +140,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -172,7 +174,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
 
-				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -196,7 +198,7 @@ func TestReconcile(t *testing.T) {
 					return errors.New("reconciling a bad annotation should have produced an error, but got nil")
 				}
 
-				if ann, ok := cluster.Annotations[apiv1.InitialApplicationInstallationsRequestAnnotation]; ok {
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; ok {
 					return fmt.Errorf("bad annotation should be have been removed, but found %q on the cluster", ann)
 				}
 
@@ -297,7 +299,7 @@ func generateApplication(name string) apiv1.Application {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    name,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: "1.0.0",
 			},
 			Values: values,
 		},

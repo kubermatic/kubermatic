@@ -20,83 +20,128 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 
-	"github.com/Azure/azure-sdk-for-go/profiles/latest/containerservice/mgmt/containerservice"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/arm"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
+	semverlib "github.com/Masterminds/semver/v3"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/pointer"
 )
 
+func GetLocations(ctx context.Context, cred resources.AKSCredentials) (apiv2.AKSLocationList, error) {
+	var locationList apiv2.AKSLocationList
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+	client, err := armsubscriptions.NewClient(azcred, &arm.ClientOptions{})
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	pager := client.NewListLocationsPager(cred.SubscriptionID, &armsubscriptions.ClientListLocationsOptions{
+		IncludeExtendedLocations: pointer.Bool(false),
+	})
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, DecodeError(err)
+		}
+		for _, v := range nextResult.Value {
+			if v.Name != nil && v.Metadata != nil && v.Metadata.RegionCategory != nil {
+				if *v.Metadata.RegionCategory == "Recommended" && *v.Name != "eastus2euap" {
+					locationList = append(locationList, apiv2.AKSLocation{
+						Name:           *v.Name,
+						RegionCategory: string(*v.Metadata.RegionCategory),
+					},
+					)
+				}
+			}
+		}
+	}
+	return locationList, nil
+}
+
 func GetClusterConfig(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName string) (*api.Config, error) {
-	var err error
-	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+	aksClient, err := GetClusterClient(cred)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
 
-	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName, "")
+	credResult, err := aksClient.ListClusterAdminCredentials(ctx, resourceGroupName, clusterName, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
+		return nil, DecodeError(err)
 	}
 
-	data := (*credResult.Kubeconfigs)[0].Value
-	config, err := clientcmd.Load(*data)
+	config, err := clientcmd.Load(credResult.Kubeconfigs[0].Value)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get azure cluster config %w", err)
+		return nil, fmt.Errorf("cannot get azure cluster config: %w", err)
 	}
+
 	return config, nil
 }
 
-func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (resources.AKSCredentials, error) {
-	tenantID := cloud.AKS.TenantID
-	subscriptionID := cloud.AKS.SubscriptionID
-	clientID := cloud.AKS.ClientID
-	clientSecret := cloud.AKS.ClientSecret
+func GetCredentialsForCluster(cloud *kubermaticv1.ExternalClusterAKSCloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (resources.AKSCredentials, error) {
+	tenantID := cloud.TenantID
+	subscriptionID := cloud.SubscriptionID
+	clientID := cloud.ClientID
+	clientSecret := cloud.ClientSecret
 	cred := resources.AKSCredentials{}
 	var err error
 
 	if tenantID == "" {
-		if cloud.AKS.CredentialsReference == nil {
+		if cloud.CredentialsReference == nil {
 			return cred, errors.New("no credentials provided")
 		}
-		tenantID, err = secretKeySelector(cloud.AKS.CredentialsReference, resources.AzureTenantID)
+		tenantID, err = secretKeySelector(cloud.CredentialsReference, resources.AzureTenantID)
 		if err != nil {
 			return cred, err
 		}
 	}
 
 	if subscriptionID == "" {
-		if cloud.AKS.CredentialsReference == nil {
+		if cloud.CredentialsReference == nil {
 			return cred, errors.New("no credentials provided")
 		}
-		subscriptionID, err = secretKeySelector(cloud.AKS.CredentialsReference, resources.AzureSubscriptionID)
+		subscriptionID, err = secretKeySelector(cloud.CredentialsReference, resources.AzureSubscriptionID)
 		if err != nil {
 			return cred, err
 		}
 	}
 
 	if clientID == "" {
-		if cloud.AKS.CredentialsReference == nil {
+		if cloud.CredentialsReference == nil {
 			return cred, errors.New("no credentials provided")
 		}
-		clientID, err = secretKeySelector(cloud.AKS.CredentialsReference, resources.AzureClientID)
+		clientID, err = secretKeySelector(cloud.CredentialsReference, resources.AzureClientID)
 		if err != nil {
 			return cred, err
 		}
 	}
 
 	if clientSecret == "" {
-		if cloud.AKS.CredentialsReference == nil {
+		if cloud.CredentialsReference == nil {
 			return cred, errors.New("no credentials provided")
 		}
-		clientSecret, err = secretKeySelector(cloud.AKS.CredentialsReference, resources.AzureClientSecret)
+		clientSecret, err = secretKeySelector(cloud.CredentialsReference, resources.AzureClientSecret)
 		if err != nil {
 			return cred, err
 		}
@@ -111,80 +156,307 @@ func GetCredentialsForCluster(cloud kubermaticv1.ExternalClusterCloudSpec, secre
 	return cred, nil
 }
 
-func GetAKSClusterClient(cred resources.AKSCredentials) (*containerservice.ManagedClustersClient, error) {
-	var err error
-
-	aksClient := containerservice.NewManagedClustersClient(cred.SubscriptionID)
-	aksClient.Authorizer, err = auth.NewClientCredentialsConfig(cred.ClientID, cred.ClientSecret, cred.TenantID).Authorizer()
+func GetClusterClient(cred resources.AKSCredentials) (*armcontainerservice.ManagedClustersClient, error) {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create authorizer: %w", err)
+		return nil, err
 	}
-	return &aksClient, nil
+
+	client, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	return client, DecodeError(err)
 }
 
-func GetAKSCluster(ctx context.Context, aksClient *containerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterCloudSpec) (*containerservice.ManagedCluster, error) {
-	resourceGroup := cloud.AKS.ResourceGroup
-	clusterName := cloud.AKS.Name
-
-	aksCluster, err := aksClient.Get(ctx, cloud.AKS.ResourceGroup, cloud.AKS.Name)
+func GetCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloud *kubermaticv1.ExternalClusterAKSCloudSpec) (*armcontainerservice.ManagedCluster, error) {
+	aksCluster, err := aksClient.Get(ctx, cloud.ResourceGroup, cloud.Name, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get AKS managed cluster %v from resource group %v: %w", clusterName, resourceGroup, err)
+		return nil, DecodeError(err)
 	}
 
-	return &aksCluster, nil
+	return &aksCluster.ManagedCluster, nil
 }
 
-func GetAKSClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterCloudSpec) (*apiv2.ExternalClusterStatus, error) {
-	cred, err := GetCredentialsForCluster(*cloud, secretKeySelector)
+func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterAKSCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+	cred, err := GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
 	}
 
-	aksClient, err := GetAKSClusterClient(cred)
+	aksClient, err := GetClusterClient(cred)
 	if err != nil {
 		return nil, err
 	}
-	aksCluster, err := GetAKSCluster(ctx, aksClient, cloud)
+	aksCluster, err := GetCluster(ctx, aksClient, cloudSpec)
 	if err != nil {
 		return nil, err
 	}
-	state := apiv2.UNKNOWN
-	if aksCluster.ManagedClusterProperties != nil {
-		var powerState containerservice.Code
+	status := &apiv2.ExternalClusterStatus{
+		State: apiv2.UnknownExternalClusterState,
+	}
+	if aksCluster.Properties != nil {
+		var powerState armcontainerservice.Code
 		var provisioningState string
-		if aksCluster.ManagedClusterProperties.PowerState != nil {
-			powerState = aksCluster.ManagedClusterProperties.PowerState.Code
+		if aksCluster.Properties.PowerState != nil {
+			powerState = *aksCluster.Properties.PowerState.Code
 		}
-		if aksCluster.ManagedClusterProperties.ProvisioningState != nil {
-			provisioningState = *aksCluster.ManagedClusterProperties.ProvisioningState
+		if aksCluster.Properties.ProvisioningState != nil {
+			provisioningState = *aksCluster.Properties.ProvisioningState
 		}
-		state = convertAKSStatus(provisioningState, powerState)
+		status.State = ConvertStatus(provisioningState, powerState)
+		status.AKS = &apiv2.AKSClusterStatus{
+			ProvisioningState: apiv2.AKSProvisioningState(provisioningState),
+			PowerState:        apiv2.AKSPowerState(powerState),
+		}
+		switch status.State {
+		case apiv2.StoppedExternalClusterState:
+			status.StatusMessage = "The Kubernetes service is currently stopped. You can only start or delete a stopped AKS cluster. To perform any operation like scale or upgrade, start your cluster first."
+		case apiv2.WarningExternalClusterState:
+			status.StatusMessage = "The last operation attempted on this cluster failed. The nodes may still be running. Check previous operations on the cluster to resolve any failures."
+		}
 	}
 
-	return &apiv2.ExternalClusterStatus{
-		State: state,
-	}, nil
+	return status, nil
 }
 
-func convertAKSStatus(provisioningState string, powerState containerservice.Code) apiv2.ExternalClusterState {
+func DeleteCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloudSpec *kubermaticv1.ExternalClusterAKSCloudSpec) error {
+	resourceGroup := cloudSpec.ResourceGroup
+	clusterName := cloudSpec.Name
+
+	_, err := aksClient.BeginDelete(ctx, resourceGroup, clusterName, &armcontainerservice.ManagedClustersClientBeginDeleteOptions{})
+	return DecodeError(err)
+}
+
+func ConvertStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
 	switch {
-	case provisioningState == "Creating":
-		return apiv2.PROVISIONING
-	case provisioningState == "Succeeded" && powerState == "Running":
-		return apiv2.RUNNING
-	case provisioningState == "Starting":
-		return apiv2.PROVISIONING
-	case provisioningState == "Stopping":
-		return apiv2.STOPPING
-	case provisioningState == "Succeeded" && powerState == "Stopped":
-		return apiv2.STOPPED
-	case provisioningState == "Failed":
-		return apiv2.ERROR
-	case provisioningState == "Deleting":
-		return apiv2.DELETING
-	case provisioningState == "Upgrading":
-		return apiv2.RECONCILING
+	case provisioningState == string(resources.CreatingAKSState):
+		return apiv2.ProvisioningExternalClusterState
+	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.RunningAKSState):
+		return apiv2.RunningExternalClusterState
+	case provisioningState == string(resources.StartingAKSState):
+		return apiv2.StartingExternalClusterState
+	case provisioningState == string(resources.StoppingAKSState):
+		return apiv2.StoppingExternalClusterState
+	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.StoppedAKSState):
+		return apiv2.StoppedExternalClusterState
+	case provisioningState == string(resources.FailedAKSState) && powerState == armcontainerservice.Code(resources.RunningAKSState):
+		return apiv2.WarningExternalClusterState
+	case provisioningState == string(resources.DeletingAKSState):
+		return apiv2.DeletingExternalClusterState
+	case provisioningState == string(resources.UpgradingAKSState):
+		return apiv2.ReconcilingExternalClusterState
 	default:
-		return apiv2.UNKNOWN
+		return apiv2.UnknownExternalClusterState
 	}
+}
+
+func ConvertMDStatus(provisioningState string, powerState armcontainerservice.Code, readyReplicas int32) apiv2.ExternalClusterMDState {
+	switch {
+	case provisioningState == string(resources.CreatingAKSMDState):
+		return apiv2.ProvisioningExternalClusterMDState
+	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.RunningAKSMDState):
+		return apiv2.RunningExternalClusterMDState
+	case provisioningState == string(resources.StartingAKSMDState):
+		return apiv2.StartingExternalClusterMDState
+	case provisioningState == string(resources.SucceededAKSMDState) && string(powerState) == string(resources.StoppedAKSMDState):
+		return apiv2.StoppedExternalClusterMDState
+	case provisioningState == string(resources.FailedAKSMDState) && readyReplicas == 0:
+		return apiv2.ErrorExternalClusterMDState
+	case provisioningState == string(resources.FailedAKSMDState) && string(powerState) == string(resources.RunningAKSMDState):
+		return apiv2.WarningExternalClusterMDState
+	case provisioningState == string(resources.DeletingAKSMDState):
+		return apiv2.DeletingExternalClusterMDState
+	// "Upgrading" indicates Kubernetes version upgrade.
+	// "Updating" indicates MachineDeployment Replica Scale.
+	case sets.NewString(string(resources.UpgradingAKSMDState), string(resources.UpdatingAKSMDState), string(resources.ScalingAKSMDState)).Has(provisioningState):
+		return apiv2.ReconcilingExternalClusterMDState
+	default:
+		return apiv2.UnknownExternalClusterMDState
+	}
+}
+
+func ListMachineDeploymentUpgrades(ctx context.Context, cred resources.AKSCredentials, clusterName, resourceGroupName, machineDeployment string) ([]*apiv1.MasterVersion, error) {
+	upgrades := make([]*apiv1.MasterVersion, 0)
+
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	agentPoolClient, err := armcontainerservice.NewAgentPoolsClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	profile, err := agentPoolClient.GetUpgradeProfile(ctx, resourceGroupName, clusterName, machineDeployment, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	poolUpgradeProperties := profile.Properties
+	if poolUpgradeProperties == nil || poolUpgradeProperties.Upgrades == nil {
+		return upgrades, nil
+	}
+
+	for _, poolUpgrade := range poolUpgradeProperties.Upgrades {
+		if poolUpgrade.KubernetesVersion != nil {
+			upgradeMachineDeploymentVer, err := semverlib.NewVersion(*poolUpgrade.KubernetesVersion)
+			if err != nil {
+				return nil, err
+			}
+			upgrades = append(upgrades, &apiv1.MasterVersion{Version: upgradeMachineDeploymentVer})
+		}
+	}
+
+	return upgrades, nil
+}
+
+func ListUpgrades(ctx context.Context, cred resources.AKSCredentials, resourceGroupName, resourceName string) ([]*apiv1.MasterVersion, error) {
+	upgrades := make([]*apiv1.MasterVersion, 0)
+
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	clusterUpgradeProfile, err := aksClient.GetUpgradeProfile(ctx, resourceGroupName, resourceName, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	upgradeProperties := clusterUpgradeProfile.Properties
+	if upgradeProperties == nil || upgradeProperties.ControlPlaneProfile == nil || upgradeProperties.ControlPlaneProfile.Upgrades == nil {
+		return upgrades, nil
+	}
+
+	for _, upgradesItem := range upgradeProperties.ControlPlaneProfile.Upgrades {
+		v, err := ksemver.NewSemver(*upgradesItem.KubernetesVersion)
+		if err != nil {
+			return nil, err
+		}
+		upgrades = append(upgrades, &apiv1.MasterVersion{
+			Version: v.Semver(),
+		})
+	}
+	return upgrades, nil
+}
+
+func ValidateCredentials(ctx context.Context, cred resources.AKSCredentials) error {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	aksClient, err := armcontainerservice.NewManagedClustersClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	_, err = aksClient.NewListPager(nil).NextPage(ctx)
+
+	return DecodeError(err)
+}
+
+func ValidateCredentialsPermissions(ctx context.Context, cred resources.AKSCredentials, resourceGroup string, isCreation bool) error {
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	permissionsClient, err := armauthorization.NewPermissionsClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	var requiredPermissions = map[string]bool{
+		"Microsoft.ContainerService/managedClusters/read":                              false,
+		"Microsoft.ContainerService/managedClusters/write":                             false,
+		"Microsoft.ContainerService/managedClusters/listClusterAdminCredential/action": false,
+	}
+	if isCreation {
+		requiredPermissions["Microsoft.ContainerService/managedClusters/delete"] = false
+	}
+
+	pager := permissionsClient.NewListForResourceGroupPager(resourceGroup, nil)
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return DecodeError(err)
+		}
+		for _, permission := range nextResult.Value {
+			for _, action := range permission.Actions {
+				switch *action {
+				case "*",
+					"Microsoft.ContainerService/*",
+					"Microsoft.ContainerService/managedClusters/*":
+					// if it's a wildcard permission, then the user can execute all necessary actions, so just return
+					return nil
+				default:
+					// checking and saving if user has a required permission
+					_, hasRequiredPermission := requiredPermissions[*action]
+					if hasRequiredPermission {
+						requiredPermissions[*action] = true
+					}
+				}
+			}
+		}
+	}
+
+	// checking if user has all required permissions
+	for permission, hasRequiredPermission := range requiredPermissions {
+		if !hasRequiredPermission {
+			return utilerrors.New(http.StatusForbidden, fmt.Sprintf("Missing permission: %s", permission))
+		}
+	}
+
+	return nil
+}
+
+func DecodeError(err error) error {
+	var aerr *azcore.ResponseError
+	if errors.As(err, &aerr) {
+		if aerr.RawResponse != nil {
+			byteErr, err := io.ReadAll(aerr.RawResponse.Body)
+			if err != nil {
+				return err
+			}
+
+			return utilerrors.New(aerr.StatusCode, string(byteErr))
+		}
+	}
+	return err
+}
+
+func ListAzureResourceGroups(ctx context.Context, cred *resources.AKSCredentials) (apiv2.AzureResourceGroupList, error) {
+	var resourceGroupList apiv2.AzureResourceGroupList
+
+	azcred, err := azidentity.NewClientSecretCredential(cred.TenantID, cred.ClientID, cred.ClientSecret, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+	rgClient, err := armresources.NewResourceGroupsClient(cred.SubscriptionID, azcred, nil)
+	if err != nil {
+		return nil, DecodeError(err)
+	}
+
+	pager := rgClient.NewListPager(nil)
+
+	for pager.More() {
+		nextResult, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, DecodeError(err)
+		}
+		if nextResult.Value != nil {
+			for _, rg := range nextResult.Value {
+				resourceGroupList = append(resourceGroupList, apiv2.AzureResourceGroup{
+					Name: pointer.StringDeref(rg.Name, ""),
+				})
+			}
+		}
+	}
+
+	return resourceGroupList, nil
 }

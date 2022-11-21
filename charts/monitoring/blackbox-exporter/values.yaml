@@ -15,7 +15,7 @@
 blackboxExporter:
   image:
     repository: quay.io/prometheus/blackbox-exporter
-    tag: v0.20.0
+    tag: v0.21.1
     pullPolicy: IfNotPresent
 
   containers:

@@ -11,18 +11,20 @@ import (
 	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	kubevirtv1 "kubevirt.io/api/core/v1"
+	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
 
@@ -400,7 +402,7 @@ func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreat
 }
 
 // PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets
-type PodDisruptionBudgetCreator = func(existing *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error)
+type PodDisruptionBudgetCreator = func(existing *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error)
 
 // NamedPodDisruptionBudgetCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedPodDisruptionBudgetCreatorGetter = func() (name string, create PodDisruptionBudgetCreator)
@@ -410,9 +412,9 @@ type NamedPodDisruptionBudgetCreatorGetter = func() (name string, create PodDisr
 func PodDisruptionBudgetObjectWrapper(create PodDisruptionBudgetCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*policyv1beta1.PodDisruptionBudget))
+			return create(existing.(*policyv1.PodDisruptionBudget))
 		}
-		return create(&policyv1beta1.PodDisruptionBudget{})
+		return create(&policyv1.PodDisruptionBudget{})
 	}
 }
 
@@ -428,7 +430,7 @@ func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodD
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &policyv1beta1.PodDisruptionBudget{}, true); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &policyv1.PodDisruptionBudget{}, true); err != nil {
 			return fmt.Errorf("failed to ensure PodDisruptionBudget %s/%s: %w", namespace, name, err)
 		}
 	}
@@ -659,7 +661,7 @@ func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []Name
 }
 
 // CronJobCreator defines an interface to create/update CronJobs
-type CronJobCreator = func(existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
+type CronJobCreator = func(existing *batchv1.CronJob) (*batchv1.CronJob, error)
 
 // NamedCronJobCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedCronJobCreatorGetter = func() (name string, create CronJobCreator)
@@ -669,9 +671,9 @@ type NamedCronJobCreatorGetter = func() (name string, create CronJobCreator)
 func CronJobObjectWrapper(create CronJobCreator) ObjectCreator {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return create(existing.(*batchv1beta1.CronJob))
+			return create(existing.(*batchv1.CronJob))
 		}
-		return create(&batchv1beta1.CronJob{})
+		return create(&batchv1.CronJob{})
 	}
 }
 
@@ -688,7 +690,7 @@ func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGe
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &batchv1beta1.CronJob{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &batchv1.CronJob{}, false); err != nil {
 			return fmt.Errorf("failed to ensure CronJob %s/%s: %w", namespace, name, err)
 		}
 	}
@@ -992,6 +994,43 @@ func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConst
 	return nil
 }
 
+// OperatingSystemProfileCreator defines an interface to create/update OperatingSystemProfiles
+type OperatingSystemProfileCreator = func(existing *osmv1alpha1.OperatingSystemProfile) (*osmv1alpha1.OperatingSystemProfile, error)
+
+// NamedOperatingSystemProfileCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedOperatingSystemProfileCreatorGetter = func() (name string, create OperatingSystemProfileCreator)
+
+// OperatingSystemProfileObjectWrapper adds a wrapper so the OperatingSystemProfileCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func OperatingSystemProfileObjectWrapper(create OperatingSystemProfileCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*osmv1alpha1.OperatingSystemProfile))
+		}
+		return create(&osmv1alpha1.OperatingSystemProfile{})
+	}
+}
+
+// ReconcileOperatingSystemProfiles will create and update the OperatingSystemProfiles coming from the passed OperatingSystemProfileCreator slice
+func ReconcileOperatingSystemProfiles(ctx context.Context, namedGetters []NamedOperatingSystemProfileCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := OperatingSystemProfileObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &osmv1alpha1.OperatingSystemProfile{}, false); err != nil {
+			return fmt.Errorf("failed to ensure OperatingSystemProfile %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // KubermaticV1ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
 type KubermaticV1ConstraintTemplateCreator = func(existing *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
 
@@ -1103,6 +1142,43 @@ func ReconcileKubermaticV1UserProjectBindings(ctx context.Context, namedGetters 
 	return nil
 }
 
+// KubermaticV1GroupProjectBindingCreator defines an interface to create/update GroupProjectBindings
+type KubermaticV1GroupProjectBindingCreator = func(existing *kubermaticv1.GroupProjectBinding) (*kubermaticv1.GroupProjectBinding, error)
+
+// NamedKubermaticV1GroupProjectBindingCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1GroupProjectBindingCreatorGetter = func() (name string, create KubermaticV1GroupProjectBindingCreator)
+
+// KubermaticV1GroupProjectBindingObjectWrapper adds a wrapper so the KubermaticV1GroupProjectBindingCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1GroupProjectBindingObjectWrapper(create KubermaticV1GroupProjectBindingCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.GroupProjectBinding))
+		}
+		return create(&kubermaticv1.GroupProjectBinding{})
+	}
+}
+
+// ReconcileKubermaticV1GroupProjectBindings will create and update the KubermaticV1GroupProjectBindings coming from the passed KubermaticV1GroupProjectBindingCreator slice
+func ReconcileKubermaticV1GroupProjectBindings(ctx context.Context, namedGetters []NamedKubermaticV1GroupProjectBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1GroupProjectBindingObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.GroupProjectBinding{}, false); err != nil {
+			return fmt.Errorf("failed to ensure GroupProjectBinding %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // KubermaticV1ConstraintCreator defines an interface to create/update Constraints
 type KubermaticV1ConstraintCreator = func(existing *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 
@@ -1171,6 +1247,43 @@ func ReconcileKubermaticV1Users(ctx context.Context, namedGetters []NamedKuberma
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.User{}, false); err != nil {
 			return fmt.Errorf("failed to ensure User %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticV1ClusterCreator defines an interface to create/update Clusters
+type KubermaticV1ClusterCreator = func(existing *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error)
+
+// NamedKubermaticV1ClusterCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1ClusterCreatorGetter = func() (name string, create KubermaticV1ClusterCreator)
+
+// KubermaticV1ClusterObjectWrapper adds a wrapper so the KubermaticV1ClusterCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1ClusterObjectWrapper(create KubermaticV1ClusterCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.Cluster))
+		}
+		return create(&kubermaticv1.Cluster{})
+	}
+}
+
+// ReconcileKubermaticV1Clusters will create and update the KubermaticV1Clusters coming from the passed KubermaticV1ClusterCreator slice
+func ReconcileKubermaticV1Clusters(ctx context.Context, namedGetters []NamedKubermaticV1ClusterCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1ClusterObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Cluster{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Cluster %s/%s: %w", namespace, name, err)
 		}
 	}
 
@@ -1362,6 +1475,80 @@ func ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx context.Context, named
 	return nil
 }
 
+// KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator defines an interface to create/update VirtualMachineInstancetypes
+type KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator = func(existing *kvinstancetypev1alpha1.VirtualMachineInstancetype) (*kvinstancetypev1alpha1.VirtualMachineInstancetype, error)
+
+// NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter = func() (name string, create KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator)
+
+// KvInstancetypeV1alpha1VirtualMachineInstancetypeObjectWrapper adds a wrapper so the KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KvInstancetypeV1alpha1VirtualMachineInstancetypeObjectWrapper(create KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kvinstancetypev1alpha1.VirtualMachineInstancetype))
+		}
+		return create(&kvinstancetypev1alpha1.VirtualMachineInstancetype{})
+	}
+}
+
+// ReconcileKvInstancetypeV1alpha1VirtualMachineInstancetypes will create and update the KvInstancetypeV1alpha1VirtualMachineInstancetypes coming from the passed KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator slice
+func ReconcileKvInstancetypeV1alpha1VirtualMachineInstancetypes(ctx context.Context, namedGetters []NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KvInstancetypeV1alpha1VirtualMachineInstancetypeObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kvinstancetypev1alpha1.VirtualMachineInstancetype{}, false); err != nil {
+			return fmt.Errorf("failed to ensure VirtualMachineInstancetype %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KvInstancetypeV1alpha1VirtualMachinePreferenceCreator defines an interface to create/update VirtualMachinePreferences
+type KvInstancetypeV1alpha1VirtualMachinePreferenceCreator = func(existing *kvinstancetypev1alpha1.VirtualMachinePreference) (*kvinstancetypev1alpha1.VirtualMachinePreference, error)
+
+// NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter = func() (name string, create KvInstancetypeV1alpha1VirtualMachinePreferenceCreator)
+
+// KvInstancetypeV1alpha1VirtualMachinePreferenceObjectWrapper adds a wrapper so the KvInstancetypeV1alpha1VirtualMachinePreferenceCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KvInstancetypeV1alpha1VirtualMachinePreferenceObjectWrapper(create KvInstancetypeV1alpha1VirtualMachinePreferenceCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kvinstancetypev1alpha1.VirtualMachinePreference))
+		}
+		return create(&kvinstancetypev1alpha1.VirtualMachinePreference{})
+	}
+}
+
+// ReconcileKvInstancetypeV1alpha1VirtualMachinePreferences will create and update the KvInstancetypeV1alpha1VirtualMachinePreferences coming from the passed KvInstancetypeV1alpha1VirtualMachinePreferenceCreator slice
+func ReconcileKvInstancetypeV1alpha1VirtualMachinePreferences(ctx context.Context, namedGetters []NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KvInstancetypeV1alpha1VirtualMachinePreferenceObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kvinstancetypev1alpha1.VirtualMachinePreference{}, false); err != nil {
+			return fmt.Errorf("failed to ensure VirtualMachinePreference %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // KubermaticV1PresetCreator defines an interface to create/update Presets
 type KubermaticV1PresetCreator = func(existing *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
@@ -1430,6 +1617,154 @@ func ReconcileCDIv1beta1DataVolumes(ctx context.Context, namedGetters []NamedCDI
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &cdiv1beta1.DataVolume{}, false); err != nil {
 			return fmt.Errorf("failed to ensure DataVolume %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticV1ResourceQuotaCreator defines an interface to create/update ResourceQuotas
+type KubermaticV1ResourceQuotaCreator = func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error)
+
+// NamedKubermaticV1ResourceQuotaCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1ResourceQuotaCreatorGetter = func() (name string, create KubermaticV1ResourceQuotaCreator)
+
+// KubermaticV1ResourceQuotaObjectWrapper adds a wrapper so the KubermaticV1ResourceQuotaCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1ResourceQuotaObjectWrapper(create KubermaticV1ResourceQuotaCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.ResourceQuota))
+		}
+		return create(&kubermaticv1.ResourceQuota{})
+	}
+}
+
+// ReconcileKubermaticV1ResourceQuotas will create and update the KubermaticV1ResourceQuotas coming from the passed KubermaticV1ResourceQuotaCreator slice
+func ReconcileKubermaticV1ResourceQuotas(ctx context.Context, namedGetters []NamedKubermaticV1ResourceQuotaCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1ResourceQuotaObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.ResourceQuota{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ResourceQuota %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticV1UserSSHKeyCreator defines an interface to create/update UserSSHKeys
+type KubermaticV1UserSSHKeyCreator = func(existing *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error)
+
+// NamedKubermaticV1UserSSHKeyCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1UserSSHKeyCreatorGetter = func() (name string, create KubermaticV1UserSSHKeyCreator)
+
+// KubermaticV1UserSSHKeyObjectWrapper adds a wrapper so the KubermaticV1UserSSHKeyCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1UserSSHKeyObjectWrapper(create KubermaticV1UserSSHKeyCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.UserSSHKey))
+		}
+		return create(&kubermaticv1.UserSSHKey{})
+	}
+}
+
+// ReconcileKubermaticV1UserSSHKeys will create and update the KubermaticV1UserSSHKeys coming from the passed KubermaticV1UserSSHKeyCreator slice
+func ReconcileKubermaticV1UserSSHKeys(ctx context.Context, namedGetters []NamedKubermaticV1UserSSHKeyCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1UserSSHKeyObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.UserSSHKey{}, false); err != nil {
+			return fmt.Errorf("failed to ensure UserSSHKey %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticV1AddonCreator defines an interface to create/update Addons
+type KubermaticV1AddonCreator = func(existing *kubermaticv1.Addon) (*kubermaticv1.Addon, error)
+
+// NamedKubermaticV1AddonCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1AddonCreatorGetter = func() (name string, create KubermaticV1AddonCreator)
+
+// KubermaticV1AddonObjectWrapper adds a wrapper so the KubermaticV1AddonCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1AddonObjectWrapper(create KubermaticV1AddonCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.Addon))
+		}
+		return create(&kubermaticv1.Addon{})
+	}
+}
+
+// ReconcileKubermaticV1Addons will create and update the KubermaticV1Addons coming from the passed KubermaticV1AddonCreator slice
+func ReconcileKubermaticV1Addons(ctx context.Context, namedGetters []NamedKubermaticV1AddonCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1AddonObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Addon{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Addon %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// KubermaticV1AddonConfigCreator defines an interface to create/update AddonConfigs
+type KubermaticV1AddonConfigCreator = func(existing *kubermaticv1.AddonConfig) (*kubermaticv1.AddonConfig, error)
+
+// NamedKubermaticV1AddonConfigCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1AddonConfigCreatorGetter = func() (name string, create KubermaticV1AddonConfigCreator)
+
+// KubermaticV1AddonConfigObjectWrapper adds a wrapper so the KubermaticV1AddonConfigCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1AddonConfigObjectWrapper(create KubermaticV1AddonConfigCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.AddonConfig))
+		}
+		return create(&kubermaticv1.AddonConfig{})
+	}
+}
+
+// ReconcileKubermaticV1AddonConfigs will create and update the KubermaticV1AddonConfigs coming from the passed KubermaticV1AddonConfigCreator slice
+func ReconcileKubermaticV1AddonConfigs(ctx context.Context, namedGetters []NamedKubermaticV1AddonConfigCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1AddonConfigObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.AddonConfig{}, false); err != nil {
+			return fmt.Errorf("failed to ensure AddonConfig %s/%s: %w", namespace, name, err)
 		}
 	}
 

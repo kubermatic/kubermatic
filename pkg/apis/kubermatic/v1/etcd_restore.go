@@ -36,9 +36,12 @@ const (
 
 	// EtcdRestorePhaseCompleted value indicating that the old Etcd statefulset has completed successfully.
 	EtcdRestorePhaseCompleted EtcdRestorePhase = "Completed"
+
+	// EtcdRestorePhaseEtcdLauncherNotEnabled value indicating that etcd-launcher is not enabled.
+	EtcdRestorePhaseEtcdLauncherNotEnabled EtcdRestorePhase = "EtcdLauncherNotEnabled"
 )
 
-// +kubebuilder:validation:Enum=Started;StsRebuilding;Completed
+// +kubebuilder:validation:Enum=Started;StsRebuilding;Completed;EtcdLauncherNotEnabled
 
 // EtcdRestorePhase represents the lifecycle phase of an EtcdRestore.
 type EtcdRestorePhase string

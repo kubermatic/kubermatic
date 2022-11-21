@@ -117,9 +117,26 @@ logging)
   deploy "promtail" "logging" charts/logging/promtail/
   ;;
 
+usercluster-mla)
+  echodate "Running Kubermatic Installer for UserCluster MLA..."
+  if [[ $VALUES_FILE == *"europe"* ]]; then
+    ./_build/kubermatic-installer deploy usercluster-mla \
+      --config "$KUBERMATIC_CONFIG" \
+      --helm-values "$VALUES_FILE" \
+      --mla-include-iap \
+      --helm-timeout=30m
+  else
+    ./_build/kubermatic-installer deploy usercluster-mla \
+      --config "$KUBERMATIC_CONFIG" \
+      --helm-values "$VALUES_FILE" \
+      --helm-timeout=30m
+  fi
+  ;;
+
 kubermatic)
   if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
-    yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.imagePullSecret' "$(cat $IMAGE_PULL_SECRET)"
+    export IMAGE_PULL_SECRET_CONTENT="$(cat $IMAGE_PULL_SECRET)"
+    yq --inplace ".kubermaticOperator.imagePullSecret = env(IMAGE_PULL_SECRET_CONTENT)" charts/kubermatic-operator/values.yaml
   fi
 
   # Kubermatic
@@ -138,7 +155,7 @@ kubermatic)
   if [[ "$clusterType" = "master" ]]; then
     # We might have not configured IAP, which results in nothing being deployed. This triggers
     # https://github.com/helm/helm/issues/4295 and marks this as failed.
-    if [ $(yq read "$VALUES_FILE" --length 'iap.deployments') -gt 0 ]; then
+    if [ $(yq '.iap.deployments | length' "$VALUES_FILE") -gt 0 ]; then
       deploy "iap" "iap" charts/iap/
     else
       echodate "Skipping IAP chart because no deployments are defined in Helm values file."

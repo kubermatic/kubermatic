@@ -45,14 +45,15 @@ type IPAMPool struct {
 // IPAMPoolSpec specifies the  Multi-Cluster IP Address Management (IPAM)
 // configuration for KKP user clusters.
 type IPAMPoolSpec struct {
-	// Type is the allocation type to be used.
-	Type IPAMPoolAllocationType `json:"type"`
 	// Datacenters contains a map of datacenters (DCs) for the allocation.
 	Datacenters map[string]IPAMPoolDatacenterSettings `json:"datacenters"`
 }
 
 // IPAMPoolDatacenterSettings contains IPAM Pool configuration for a datacenter.
 type IPAMPoolDatacenterSettings struct {
+	// Type is the allocation type to be used.
+	Type IPAMPoolAllocationType `json:"type"`
+
 	// PoolCIDR is the pool CIDR to be used for the allocation.
 	PoolCIDR SubnetCIDR `json:"poolCidr"`
 
@@ -60,12 +61,22 @@ type IPAMPoolDatacenterSettings struct {
 	// +kubebuilder:validation:Maximum:=128
 	// AllocationPrefix is the prefix for the allocation.
 	// Used when "type=prefix".
-	AllocationPrefix uint8 `json:"allocationPrefix,omitempty"`
+	AllocationPrefix int `json:"allocationPrefix,omitempty"`
+
+	// Optional: ExcludePrefixes is used to exclude particular subnets for the allocation.
+	// NOTE: must be the same length as allocationPrefix.
+	// Can be used when "type=prefix".
+	ExcludePrefixes []SubnetCIDR `json:"excludePrefixes,omitempty"`
 
 	// +kubebuilder:validation:Minimum:=1
 	// AllocationRange is the range for the allocation.
 	// Used when "type=range".
-	AllocationRange uint32 `json:"allocationRange,omitempty"`
+	AllocationRange int `json:"allocationRange,omitempty"`
+
+	// Optional: ExcludeRanges is used to exclude particular IPs or IP ranges for the allocation.
+	// Examples: "192.168.1.100-192.168.1.110", "192.168.1.255".
+	// Can be used when "type=range".
+	ExcludeRanges []string `json:"excludeRanges,omitempty"`
 }
 
 // +kubebuilder:validation:Pattern="((^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))/([0-9]|[1-2][0-9]|3[0-2])$)|(^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:))/([0-9]|[0-9][0-9]|1[0-1][0-9]|12[0-8])$))"

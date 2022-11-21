@@ -42,86 +42,99 @@ if [[ $provider == "anexia" ]]; then
   EXTRA_ARGS="-anexia-token=${ANEXIA_TOKEN}
     -anexia-template-id=${ANEXIA_TEMPLATE_ID}
     -anexia-vlan-id=${ANEXIA_VLAN_ID}
-    -anexia-location-id=${ANEXIA_LOCATION_ID}"
+    -anexia-kkp-datacenter=anexia-at"
 elif [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
-    -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
+    -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}
+    -aws-kkp-datacenter=aws-eu-central-1a"
 elif [[ $provider == "packet" ]]; then
   maxDuration=90
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
-    -packet-project-id=${PACKET_PROJECT_ID}"
-elif [[ $provider == "gcp" ]]; then
-  EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
+    -packet-project-id=${PACKET_PROJECT_ID}
+    -packet-kkp-datacenter=packet-am"
+elif [[ $provider == "gcp" ]] || [[ $provider == "gce" ]]; then
+  EXTRA_ARGS="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
+    -gcp-kkp-datacenter=gcp-westeurope"
 elif [[ $provider == "azure" ]]; then
   maxDuration=90
   EXTRA_ARGS="-azure-client-id=${AZURE_E2E_TESTS_CLIENT_ID}
     -azure-client-secret=${AZURE_E2E_TESTS_CLIENT_SECRET}
     -azure-tenant-id=${AZURE_E2E_TESTS_TENANT_ID}
-    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}"
+    -azure-subscription-id=${AZURE_E2E_TESTS_SUBSCRIPTION_ID}
+    -azure-kkp-datacenter=azure-westeurope"
 elif [[ $provider == "digitalocean" ]]; then
-  EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}"
+  EXTRA_ARGS="-digitalocean-token=${DO_E2E_TESTS_TOKEN}
+    -digitalocean-kkp-datacenter=do-ams3"
 elif [[ $provider == "hetzner" ]]; then
-  EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}"
+  EXTRA_ARGS="-hetzner-token=${HZ_E2E_TOKEN}
+    -hetzner-kkp-datacenter=hetzner-nbg1"
 elif [[ $provider == "openstack" ]]; then
   EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-project=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
-    -openstack-password=${OS_PASSWORD}"
+    -openstack-password=${OS_PASSWORD}
+    -openstack-kkp-datacenter=syseleven-dbl1"
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
-    -vsphere-datastore=HS-FreeNAS"
+    -vsphere-kkp-datacenter=vsphere-ger"
 elif [[ $provider == "kubevirt" ]]; then
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"
-  EXTRA_ARGS="-kubevirt-kubeconfig=$tmpFile"
+  EXTRA_ARGS="-kubevirt-kubeconfig=$tmpFile
+    -kubevirt-kkp-datacenter=kubevirt-europe-west3-c"
 elif [[ $provider == "alibaba" ]]; then
   EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
-    -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
+    -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}
+    -alibaba-kkp-datacenter=alibaba-eu-central-1a"
 elif [[ $provider == "nutanix" ]]; then
   EXTRA_ARGS="-nutanix-username=${NUTANIX_E2E_USERNAME}
     -nutanix-password=${NUTANIX_E2E_PASSWORD}
     -nutanix-csi-username=${NUTANIX_E2E_PE_USERNAME}
     -nutanix-csi-password=${NUTANIX_E2E_PE_PASSWORD}
     -nutanix-csi-endpoint=${NUTANIX_E2E_PE_ENDPOINT}
-    -nutanix-proxy-url=http://${NUTANIX_E2E_PROXY_USERNAME}:${NUTANIX_E2E_PROXY_PASSWORD}@10.240.20.100:${NUTANIX_E2E_PROXY_PORT}/
     -nutanix-cluster-name=${NUTANIX_E2E_CLUSTER_NAME}
     -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
-    -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
+    -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}
+    -nutanix-kkp-datacenter=nutanix-ger"
 elif [[ $provider == "vmware-cloud-director" ]]; then
   EXTRA_ARGS="-vmware-cloud-director-username=${VCD_USER}
     -vmware-cloud-director-password=${VCD_PASSWORD}
     -vmware-cloud-director-organization=${VCD_ORG}
     -vmware-cloud-director-vdc=${VCD_VDC}
-    -vmware-cloud-director-ovdc-network=${VCD_OVDC_NETWORK}"
+    -vmware-cloud-director-ovdc-network=${VCD_OVDC_NETWORK}
+    -vmware-cloud-director-kkp-datacenter=vmware-cloud-director-ger"
 fi
 
 # in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),
 # so we must multiply the maxDuration with the number of scenarios
 numDists=$(echo "${DISTRIBUTIONS:-}" | tr "," "\n" | wc -l)
-numVersions=$(echo "${VERSIONS_TO_TEST:-}" | tr "," "\n" | wc -l)
-((maxDuration = $numDists * $numVersions * $maxDuration))
+numReleases=$(echo "${RELEASES_TO_TEST:-}" | tr "," "\n" | wc -l)
+((maxDuration = $numDists * $numReleases * $maxDuration))
 
 # add a bit of setup time to bring up the project, tear it down again etc.
 ((maxDuration = $maxDuration + 30))
 
+# copy conformance junit into artifacts to process it in Prow
+function copy_junit {
+  echodate "Copying conformance results to ${ARTIFACTS}"
+  cp -r ${ARTIFACTS}/conformance/junit.*.xml ${ARTIFACTS}/
+}
+appendTrap copy_junit EXIT
+
 timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
-  -client="${SETUP_MODE:-api}" \
-  -name-prefix=prow-e2e \
+  -name-prefix="kkp-$BUILD_ID" \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \
-  -kubermatic-endpoint="$KUBERMATIC_API_ENDPOINT" \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
   -reports-root="$ARTIFACTS/conformance" \
   -log-directory="$ARTIFACTS/logs" \
-  -create-oidc-token=true \
-  -versions="$VERSIONS_TO_TEST" \
+  -releases="${RELEASES_TO_TEST:-}" \
   -providers=$provider \
   -node-ssh-pub-key="$E2E_SSH_PUBKEY" \
   -distributions="${DISTRIBUTIONS:-}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS:-}" \
-  -dex-helm-values-file="$KUBERMATIC_DEX_VALUES_FILE" \
-  -only-test-creation=${ONLY_TEST_CREATION:-false} \
-  -enable-psp=${KUBERMATIC_PSP_ENABLED:-false} \
+  -exclude-tests="${EXCLUDE_TESTS:-}" \
+  -enable-osm=${KUBERMATIC_OSM_ENABLED:-true} \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"

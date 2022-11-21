@@ -19,6 +19,7 @@ package etcdbackup
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -42,13 +43,14 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/clock"
 	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -94,6 +96,9 @@ const (
 	bucketNameEnvVarKey = "BUCKET_NAME"
 	// backupEndpointEnvVarKey defines the environment variable key for the backup endpoint.
 	backupEndpointEnvVarKey = "ENDPOINT"
+	// backupInsecureEnvVarKey defines the environment variable key for a boolean that tells whether the
+	// configured endpoint uses HTTPS ("false") or HTTP ("true").
+	backupInsecureEnvVarKey = "INSECURE"
 
 	// requeueAfter time after starting a job
 	// should be the time after which a started job will usually have completed.
@@ -119,7 +124,7 @@ type Reconciler struct {
 	// backupContainerImage holds the image used for creating the etcd backup
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
-	clock                clock.Clock
+	clock                clock.WithTickerAndDelayedExecution
 	randStringGenerator  func() string
 	caBundle             resources.CABundle
 	recorder             record.EventRecorder
@@ -345,7 +350,7 @@ func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *ku
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
 	}
 
-	return kuberneteshelper.ContainerFromString(defaults.DefaultNewBackupStoreContainer)
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultNewBackupStoreContainer)
 }
 
 func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
@@ -354,7 +359,7 @@ func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *k
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
 	}
 
-	return kuberneteshelper.ContainerFromString(defaults.DefaultNewBackupDeleteContainer)
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultNewBackupDeleteContainer)
 }
 
 func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
@@ -422,7 +427,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupConfig.Status.CurrentBackups = []kubermaticv1.BackupStatus{{}}
 		backupToSchedule = &backupConfig.Status.CurrentBackups[0]
 		backupToSchedule.ScheduledTime = metav1.NewTime(r.clock.Now())
-		backupToSchedule.BackupName = backupConfig.Name
+		backupToSchedule.BackupName = fmt.Sprintf("%s.db", backupConfig.Name)
 		requeueAfter = 0
 	} else {
 		// compute the pending (i.e. latest past) and the next (i.e. earliest future) backup time,
@@ -455,7 +460,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupConfig.Status.CurrentBackups = append(backupConfig.Status.CurrentBackups, kubermaticv1.BackupStatus{})
 		backupToSchedule = &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
 		backupToSchedule.ScheduledTime = metav1.NewTime(pendingBackupTime)
-		backupToSchedule.BackupName = fmt.Sprintf("%s-%s", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
+		backupToSchedule.BackupName = fmt.Sprintf("%s-%s.db", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
 		requeueAfter = nextBackupTime.Sub(now)
 	}
 
@@ -485,28 +490,44 @@ func (r *Reconciler) limitNameLength(name string) string {
 	return name[0:63-len(randomness)] + randomness
 }
 
-// set a condition on a backupConfig, return true if the condition's status was changed.
+// setBackupConfigCondition sets a condition on a backupConfig, return true if the condition's
+// status was changed. If the status has not changed, no other changes are made (i.e. the
+// LastHeartbeatTime is not incremented if it would be the only change, to prevent us spamming
+// the apiserver with tons of needless updates). This is the same behaviour that is used for
+// ClusterConditions.
 func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBackupConfig, conditionType kubermaticv1.EtcdBackupConfigConditionType, status corev1.ConditionStatus, reason, message string) bool {
-	now := metav1.Now()
-	statusChanged := false
-
-	condition, exists := backupConfig.Status.Conditions[conditionType]
-	if exists && condition.Status != status {
-		condition.LastTransitionTime = now
-		statusChanged = true
+	newCondition := kubermaticv1.EtcdBackupConfigCondition{
+		Status:  status,
+		Reason:  reason,
+		Message: message,
 	}
 
-	condition.Status = status
-	condition.LastHeartbeatTime = now
-	condition.Reason = reason
-	condition.Message = message
+	oldCondition, hadCondition := backupConfig.Status.Conditions[conditionType]
+	if hadCondition {
+		conditionCopy := oldCondition.DeepCopy()
+
+		// Reset the times before comparing
+		conditionCopy.LastHeartbeatTime.Reset()
+		conditionCopy.LastTransitionTime.Reset()
+
+		if apiequality.Semantic.DeepEqual(*conditionCopy, newCondition) {
+			return false
+		}
+	}
+
+	now := metav1.Now()
+	newCondition.LastHeartbeatTime = now
+	newCondition.LastTransitionTime = oldCondition.LastTransitionTime
+	if hadCondition && oldCondition.Status != status {
+		newCondition.LastTransitionTime = now
+	}
 
 	if backupConfig.Status.Conditions == nil {
 		backupConfig.Status.Conditions = map[kubermaticv1.EtcdBackupConfigConditionType]kubermaticv1.EtcdBackupConfigCondition{}
 	}
-	backupConfig.Status.Conditions[conditionType] = condition
+	backupConfig.Status.Conditions[conditionType] = newCondition
 
-	return !exists || statusChanged
+	return true
 }
 
 // create any backup jobs that can be created, i.e. that don't exist yet while their scheduled time has arrived
@@ -545,7 +566,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				}
 			} else if backup.BackupPhase == "" && r.clock.Now().Sub(backup.ScheduledTime.Time) >= 0 && backupConfig.DeletionTimestamp == nil {
 				job := r.backupJob(backupConfig, cluster, backup, destination, storeContainer)
-				if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
+				if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 					return nil, fmt.Errorf("error creating job for backup %s: %w", backup.BackupName, err)
 				}
 				backup.BackupPhase = kubermaticv1.BackupStatusPhaseRunning
@@ -628,7 +649,7 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 	destination *kubermaticv1.BackupDestination, deleteContainer *corev1.Container) error {
 	if deleteContainer != nil {
 		job := r.backupDeleteJob(backupConfig, cluster, backup, destination, deleteContainer)
-		if err := r.Create(ctx, job); err != nil && !apierrors.IsAlreadyExists(err) {
+		if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 			return fmt.Errorf("error creating delete job for backup %s: %w", backup.BackupName, err)
 		}
 		backup.DeletePhase = kubermaticv1.BackupStatusPhaseRunning
@@ -834,6 +855,19 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 	return nil, err
 }
 
+func isInsecureURL(u string) bool {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+
+	// a hostname like "foo.com:9000" is parsed as {scheme: "foo.com", host: ""},
+	// so we must make sure to not mis-interpret "http:9000" ({scheme: "http", host: ""}) as
+	// an HTTP url
+
+	return strings.ToLower(parsed.Scheme) == "http" && parsed.Host != ""
+}
+
 func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus,
 	destination *kubermaticv1.BackupDestination, storeContainer *corev1.Container) *batchv1.Job {
 	storeContainer = storeContainer.DeepCopy()
@@ -849,6 +883,16 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
 			Name:  backupEndpointEnvVarKey,
 			Value: destination.Endpoint,
+		})
+
+		insecure := "false"
+		if isInsecureURL(destination.Endpoint) {
+			insecure = "true"
+		}
+
+		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
+			Name:  backupInsecureEnvVarKey,
+			Value: insecure,
 		})
 	}
 
@@ -1004,6 +1048,16 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 			Name:  backupEndpointEnvVarKey,
 			Value: destination.Endpoint,
 		})
+
+		insecure := "false"
+		if isInsecureURL(destination.Endpoint) {
+			insecure = "true"
+		}
+
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
+			Name:  backupInsecureEnvVarKey,
+			Value: insecure,
+		})
 	}
 
 	deleteContainer.Env = append(
@@ -1067,9 +1121,9 @@ func (r *Reconciler) jobBase(backupConfig *kubermaticv1.EtcdBackupConfig, cluste
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:          utilpointer.Int32Ptr(3),
-			Completions:           utilpointer.Int32Ptr(1),
-			Parallelism:           utilpointer.Int32Ptr(1),
+			BackoffLimit:          utilpointer.Int32(3),
+			Completions:           utilpointer.Int32(1),
+			Parallelism:           utilpointer.Int32(1),
 			ActiveDeadlineSeconds: resources.Int64(2 * 60),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{

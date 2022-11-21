@@ -20,26 +20,25 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -66,6 +65,10 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	// OperatingSystemManagerDeploymentName is the name for the operating-system-manager deployment.
 	OperatingSystemManagerDeploymentName = "operating-system-manager"
+	// OperatingSystemManagerWebhookDeploymentName is the name for the operating-system-manager webhook deployment.
+	OperatingSystemManagerWebhookDeploymentName = "operating-system-manager-webhook"
+	// OperatingSystemManagerWebhookServiceName is the name for the operating-system-manager webhook service.
+	OperatingSystemManagerWebhookServiceName = "operating-system-manager-webhook"
 	// MachineControllerDeploymentName is the name for the machine-controller deployment.
 	MachineControllerDeploymentName = "machine-controller"
 	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment.
@@ -147,6 +150,8 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
 	OperatingSystemManagerKubeconfigSecretName = "operatingsystemmanager-kubeconfig"
+	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm webhook.
+	OperatingSystemManagerWebhookKubeconfigSecretName = "operatingsystemmanager-webhook-kubeconfig"
 	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller.
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
 	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider.
@@ -158,6 +163,12 @@ const (
 	MachineControllerWebhookServingCertCertKeyName = "cert.pem"
 	// MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key.
 	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
+	// OperatingSystemManagerWebhookServingCertSecretName is the name for the operating-system-manager webhook TLS server certificate secret.
+	OperatingSystemManagerWebhookServingCertSecretName = "operating-system-manager-webhook-serving-cert"
+	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the cert.
+	OperatingSystemManagerWebhookServingCertCertKeyName = "tls.crt"
+	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the private key.
+	OperatingSystemManagerWebhookServingCertKeyKeyName = "tls.key"
 	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
@@ -219,11 +230,11 @@ const (
 	// CABundleConfigMapKey is the key under which a ConfigMap must contain a PEM-encoded collection of certificates.
 	CABundleConfigMapKey = "ca-bundle.pem"
 
-	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config.
-	CloudConfigConfigMapName = "cloud-config"
-	// CSICloudConfigName is the name for the configmap containing the cloud-config used by the csi driver.
-	CSICloudConfigName = "cloud-config-csi"
-	// CloudConfigKey is the key under which the cloud-config in the cloud-config configmap can be found.
+	// CloudConfigSeedSecretName is the name for the secret containing the cloud-config inside the usercluster namespace
+	// on the seed cluster. Not to be confused with CloudConfigSecretName, which is the copy of this Secret inside the
+	// usercluster.
+	CloudConfigSeedSecretName = "cloud-config"
+	// CloudConfigKey is the key under which the cloud-config in the cloud-config Secret can be found.
 	CloudConfigKey = "config"
 	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
@@ -235,6 +246,10 @@ const (
 	PrometheusConfigConfigMapName = "prometheus"
 	// AuditConfigMapName is the name for the configmap that contains the content of the file that will be passed to the apiserver with the flag "--audit-policy-file".
 	AuditConfigMapName = "audit-config"
+
+	// FluentBitSecretName is the name of the secret that contains the fluent-bit configuration mounted
+	// into kube-apisever and used by the "audit-logs" sidecar to ship audit logs.
+	FluentBitSecretName = "audit-logs-fluentbit"
 	// AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file.
 	AdmissionControlConfigMapName = "adm-control"
 
@@ -257,6 +272,8 @@ const (
 
 	// OperatingSystemManagerCertUsername is the name of the user coming from kubeconfig cert.
 	OperatingSystemManagerCertUsername = "operating-system-manager"
+	// OperatingSystemManagerWebhookCertUsername is the name of the user coming from the kubeconfig cert.
+	OperatingSystemManagerWebhookCertUsername = "operating-system-manager-webhook"
 	// MachineControllerCertUsername is the name of the user coming from kubeconfig cert.
 	MachineControllerCertUsername = "machine-controller"
 	// KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert.
@@ -371,6 +388,10 @@ const (
 	ConstraintViolationsLimit = 20
 	// GatekeeperExemptNamespaceLabel label key for exempting namespaces from Gatekeeper checks.
 	GatekeeperExemptNamespaceLabel = "admission.gatekeeper.sh/ignore"
+	// ClusterCloudCredentialsSecretName is the name the Secret in the cluster namespace that contains
+	// the cloud provider credentials. This Secret is a copy of the credentials secret from the KKP
+	// namespace (which has a dynamic name).
+	ClusterCloudCredentialsSecretName = "cloud-credentials"
 
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init.
@@ -393,6 +414,8 @@ const (
 
 	// RegistryK8SGCR defines the kubernetes specific docker registry at google.
 	RegistryK8SGCR = "k8s.gcr.io"
+	// RegistryK8S defines the (new) official registry hosted by the Kubernetes project.
+	RegistryK8S = "registry.k8s.io"
 	// RegistryEUGCR defines the docker registry at google EU.
 	RegistryEUGCR = "eu.gcr.io"
 	// RegistryUSGCR defines the docker registry at google US.
@@ -410,8 +433,8 @@ const (
 
 	// TopologyKeyHostname defines the topology key for the node hostname.
 	TopologyKeyHostname = "kubernetes.io/hostname"
-	// TopologyKeyFailureDomainZone defines the topology key for the node's cloud provider zone.
-	TopologyKeyFailureDomainZone = "failure-domain.beta.kubernetes.io/zone"
+	// TopologyKeyZone defines the topology key for the node's cloud provider zone.
+	TopologyKeyZone = "topology.kubernetes.io/zone"
 
 	// MachineCRDName defines the CRD name for machine objects.
 	MachineCRDName = "machines.cluster.k8s.io"
@@ -435,13 +458,16 @@ const (
 	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
 	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects.
 	GatekeeperConstraintTemplatePodStatusCRDName = "constrainttemplatepodstatuses.status.gatekeeper.sh"
+	// GatekeeperModifySetCRDName defines the CRD name for gatekeeper modify set objects.
+	GatekeeperModifySetCRDName = "modifyset.mutations.gatekeeper.sh"
+	// GatekeeperProviderCRDName defines the CRD name for gatekeeper provider objects.
+	GatekeeperProviderCRDName = "providers.externaldata.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
-
-	// MachineValidatingWebhookConfigurationName is the name for the machine validating webhook.
-	MachineValidatingWebhookConfigurationName = "machine.kubermatic.k8c.io"
+	// MachineControllerMutatingWebhookConfigurationName is the name of OSM's mutating webhook configuration.
+	OperatingSystemManagerMutatingWebhookConfigurationName = "operating-system-manager.kubermatic.io"
 
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
@@ -465,6 +491,14 @@ const (
 
 	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
+
+	// KubeVirtInfraSecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster.
+	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
+	// KubeVirtInfraSecretKey infra kubeconfig.
+	KubeVirtInfraSecretKey = "infra-kubeconfig"
+
+	// DefaultNodePortRange is a Kubernetes cluster's default nodeport range.
+	DefaultNodePortRange = "30000-32767"
 )
 
 const (
@@ -550,6 +584,11 @@ const (
 	NutanixCSIConfigSecretKey = "key"
 	// NutanixCSIConfigSecretName is the secret key for nutanix csi secret.
 	NutanixCSIConfigSecretName = "ntnx-secret"
+
+	// VMwareCloudDirectorCSIConfigConfigMapKey is the key for VMware Cloud Director CSI configmap.
+	VMwareCloudDirectorCSIConfigConfigMapKey = "vcloud-csi-config.yaml"
+	// VMwareCloudDirectorCSIConfigConfigMapName is the name for VMware Cloud Director CSI configmap.
+	VMwareCloudDirectorCSIConfigConfigMapName = "vcloud-csi-configmap"
 )
 
 const (
@@ -595,8 +634,10 @@ rm ${SSH_ASKPASS} -f
 )
 
 const (
-	AWSAccessKeyID     = "accessKeyId"
-	AWSSecretAccessKey = "secretAccessKey"
+	AWSAccessKeyID          = "accessKeyId"
+	AWSSecretAccessKey      = "secretAccessKey"
+	AWSAssumeRoleARN        = "assumeRoleARN"
+	AWSAssumeRoleExternalID = "assumeRoleExternalID"
 
 	AzureTenantID       = "tenantID"
 	AzureSubscriptionID = "subscriptionID"
@@ -660,6 +701,9 @@ const (
 	VMwareCloudDirectorVDC          = "vdc"
 	VMwareCloudDirectorURL          = "url"
 
+	ServiceAccountTokenType       = "kubernetes.io/service-account-token"
+	ServiceAccountTokenAnnotation = "kubernetes.io/service-account.name"
+
 	UserSSHKeys = "usersshkeys"
 )
 
@@ -694,20 +738,106 @@ const (
 )
 
 const (
+	ExternalClusterIsImported         = "is-imported"
+	ExternalClusterIsImportedTrue     = "true"
+	ExternalClusterIsImportedFalse    = "false"
 	ExternalClusterKubeconfig         = "kubeconfig"
 	ExternalEKSClusterAccessKeyID     = "accessKeyId"
 	ExternalEKSClusterSecretAccessKey = "secretAccessKey"
 	ExternalGKEClusterSeriveAccount   = "serviceAccount"
+	GKEUnspecifiedReleaseChannel      = "UNSPECIFIED"
+	GKERapidReleaseChannel            = "RAPID"
+	GKERegularReleaseChannel          = "REGULAR"
+	GKEStableReleaseChannel           = "STABLE"
 	ExternalAKSClusterTenantID        = "tenantID"
 	ExternalAKSClusterSubscriptionID  = "subscriptionID"
 	ExternalAKSClusterClientID        = "clientID"
 	ExternalAKSClusterClientSecret    = "clientSecret"
+	AKSNodepoolNameLabel              = "kubernetes.azure.com/agentpool"
+	EKSNodeGroupNameLabel             = "eks.amazonaws.com/nodegroup"
+	GKENodepoolNameLabel              = "cloud.google.com/gke-nodepool"
+)
+
+type AKSState string
+
+const (
+	CreatingAKSState  AKSState = "Creating"
+	RunningAKSState   AKSState = "Running"
+	StartingAKSState  AKSState = "Starting"
+	StoppingAKSState  AKSState = "Stopping"
+	SucceededAKSState AKSState = "Succeeded"
+	StoppedAKSState   AKSState = "Stopped"
+	FailedAKSState    AKSState = "Failed"
+	DeletingAKSState  AKSState = "Deleting"
+	UpgradingAKSState AKSState = "Upgrading"
+)
+
+type AKSMDState string
+
+const (
+	CreatingAKSMDState  AKSMDState = "Creating"
+	SucceededAKSMDState AKSMDState = "Succeeded"
+	RunningAKSMDState   AKSMDState = "Running"
+	StoppedAKSMDState   AKSMDState = "Stopped"
+	FailedAKSMDState    AKSMDState = "Failed"
+	DeletingAKSMDState  AKSMDState = "Deleting"
+	UpgradingAKSMDState AKSMDState = "Upgrading"
+	UpdatingAKSMDState  AKSMDState = "Updating"
+	ScalingAKSMDState   AKSMDState = "Scaling"
+	StartingAKSMDState  AKSMDState = "Starting"
+)
+
+type EKSState string
+
+const (
+	CreatingEKSState EKSState = "CREATING"
+	PendingEKSState  EKSState = "PENDING"
+	ActiveEKSState   EKSState = "ACTIVE"
+	UpdatingEKSState EKSState = "UPDATING"
+	DeletingEKSState EKSState = "DELETING"
+	FailedEKSState   EKSState = "FAILED"
+)
+
+type EKSMDState string
+
+const (
+	CreatingEKSMDState     EKSMDState = "CREATING"
+	ActiveEKSMDState       EKSMDState = "ACTIVE"
+	UpdatingEKSMDState     EKSMDState = "UPDATING"
+	DeletingEKSMDState     EKSMDState = "DELETING"
+	CreateFailedEKSMDState EKSMDState = "CREATE_FAILED"
+	DeleteFailedEKSMDState EKSMDState = "DELETE_FAILED"
+	DegradedEKSMDState     EKSMDState = "DEGRADED"
+)
+
+type GKEState string
+
+const (
+	ProvisioningGKEState GKEState = "PROVISIONING"
+	RunningGKEState      GKEState = "RUNNING"
+	ReconcilingGKEState  GKEState = "RECONCILING"
+	StoppingGKEState     GKEState = "STOPPING"
+	ErrorGKEState        GKEState = "ERROR"
+	DegradedGKEState     GKEState = "DEGRADED"
+	UnspecifiedGKEState  GKEState = "STATUS_UNSPECIFIED"
+)
+
+type GKEMDState string
+
+const (
+	ProvisioningGKEMDState     GKEMDState = "PROVISIONING"
+	RunningGKEMDState          GKEMDState = "RUNNING"
+	ReconcilingGKEMDState      GKEMDState = "RECONCILING"
+	StoppingGKEMDState         GKEMDState = "STOPPING"
+	ErrorGKEMDState            GKEMDState = "ERROR"
+	RunningWithErrorGKEMDState GKEMDState = "RUNNING_WITH_ERROR"
+	UnspecifiedGKEMDState      GKEMDState = "STATUS_UNSPECIFIED"
 )
 
 const (
 	EtcdTrustedCAFile = "/etc/etcd/pki/ca/ca.crt"
 	EtcdCertFile      = "/etc/etcd/pki/tls/etcd-tls.crt"
-	EtcdKetFile       = "/etc/etcd/pki/tls/etcd-tls.key"
+	EtcdKeyFile       = "/etc/etcd/pki/tls/etcd-tls.key"
 
 	EtcdPeerCertFile = "/etc/etcd/pki/tls/etcd-tls.crt"
 	EtcdPeerKeyFile  = "/etc/etcd/pki/tls/etcd-tls.key"
@@ -824,6 +954,7 @@ const (
 	NetworkPolicyDNSAllow                      = "dns-allow"
 	NetworkPolicyOpenVPNServerAllow            = "openvpn-server-allow"
 	NetworkPolicyMachineControllerWebhookAllow = "machine-controller-webhook-allow"
+	NetworkPolicyUserClusterWebhookAllow       = "usercluster-webhook-allow"
 	NetworkPolicyMetricsServerAllow            = "metrics-server-allow"
 	NetworkPolicyClusterExternalAddrAllow      = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
@@ -833,6 +964,8 @@ const (
 	UserClusterWebhookDeploymentName        = "usercluster-webhook"
 	UserClusterWebhookServiceName           = "usercluster-webhook"
 	UserClusterWebhookServingCertSecretName = "usercluster-webhook-serving-cert"
+	UserClusterWebhookSeedListenPort        = 443
+	UserClusterWebhookUserListenPort        = 6443
 )
 
 const (
@@ -862,6 +995,21 @@ const (
 	// IPv6MatchAnyCIDR is the CIDR used for matching with any IPv6 address.
 	IPv6MatchAnyCIDR = "::/0"
 )
+
+const (
+	ApplicationCacheVolumeName = "applications-cache"
+	ApplicationCacheMountPath  = "/applications-cache"
+)
+
+var DefaultApplicationCacheSize = resource.MustParse("300Mi")
+
+// GetApplicationCacheSize return the application cache size if defined, otherwise fallback to the default size.
+func GetApplicationCacheSize(appSettings *kubermaticv1.ApplicationSettings) *resource.Quantity {
+	if appSettings == nil || appSettings.CacheSize == nil {
+		return &DefaultApplicationCacheSize
+	}
+	return appSettings.CacheSize
+}
 
 // List of allowed TLS cipher suites.
 var allowedTLSCipherSuites = []string{
@@ -897,7 +1045,7 @@ func GetAllowedTLSCipherSuites() []string {
 
 // GetClusterExternalIP returns a net.IP for the given Cluster.
 func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
-	address := cluster.GetAddress()
+	address := cluster.Status.Address
 
 	ip := net.ParseIP(address.IP)
 	if ip == nil {
@@ -910,6 +1058,12 @@ func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
 	return *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
+}
+
+// GetProjectRef returns a metav1.OwnerReference for the given Project.
+func GetProjectRef(project *kubermaticv1.Project) metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(project, gv.WithKind(kubermaticv1.ProjectKindName))
 }
 
 // GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore.
@@ -1408,9 +1562,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 }
 
 // SupportsFailureDomainZoneAntiAffinity checks if there are any nodes with the
-// TopologyKeyFailureDomainZone label.
+// TopologyKeyZone label.
 func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
-	selector, err := labels.Parse(TopologyKeyFailureDomainZone)
+	selector, err := labels.Parse(TopologyKeyZone)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse selector: %w", err)
 	}
@@ -1423,7 +1577,7 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 
 	nodeList := &corev1.NodeList{}
 	if err := client.List(ctx, nodeList, opts); err != nil {
-		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyFailureDomainZone, err)
+		return false, fmt.Errorf("failed to list nodes having the %s label: %w", TopologyKeyZone, err)
 	}
 
 	return len(nodeList.Items) != 0, nil
@@ -1523,14 +1677,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		return nil, "", errors.New("CA bundle does not contain any valid certificates")
 	}
 
-	s3Client, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: true,
-		Transport: &http.Transport{
-			TLSClientConfig:    &tls.Config{RootCAs: pool},
-			DisableCompression: true,
-		},
-	})
+	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, pool)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
 	}
@@ -1603,4 +1750,25 @@ func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
 		return IPTablesProxyMode
 	}
 	return IPVSProxyMode
+}
+
+// GetKubeletPreferredAddressTypes returns the preferred address types in the correct order to be used when
+// contacting kubelet from the control plane.
+func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivityEnabled bool) string {
+	if cluster.Spec.Cloud.GCP != nil {
+		return "InternalIP"
+	}
+	if cluster.IsDualStack() && cluster.Spec.Cloud.Hetzner != nil {
+		// Due to https://github.com/hetznercloud/hcloud-cloud-controller-manager/issues/305
+		// InternalIP needs to be preferred over ExternalIP in dual-stack Hetzner clusters
+		return "InternalIP,ExternalIP"
+	}
+	if isKonnectivityEnabled {
+		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
+		// This request fails because of security policies disallow external traffic to the node.
+		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
+		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
+		return "InternalIP,ExternalIP"
+	}
+	return "ExternalIP,InternalIP"
 }

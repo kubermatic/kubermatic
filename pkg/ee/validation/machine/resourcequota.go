@@ -26,12 +26,14 @@ package machine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -39,126 +41,62 @@ import (
 )
 
 // ValidateQuota validates if the requested Machine resource consumption fits in the quota of the clusters project.
-func ValidateQuota(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client,
-	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) error {
-	config, err := types.GetConfig(machine.Spec.ProviderSpec)
+func ValidateQuota(ctx context.Context,
+	log *zap.SugaredLogger,
+	userClient ctrlruntimeclient.Client,
+	machine *clusterv1alpha1.Machine,
+	caBundle *certificates.CABundle,
+	resourceQuota *kubermaticv1.ResourceQuota,
+) error {
+	machineResourceUsage, err := GetMachineResourceUsage(ctx, userClient, machine, caBundle)
 	if err != nil {
-		return fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
+		return fmt.Errorf("error getting machine resource request: %w", err)
 	}
 
-	// TODO add all providers
-	var quotaReq *ResourceDetails
-	switch config.CloudProvider {
-	// add this fake for test and so further code is reachable until more providers are implemented
-	case types.CloudProviderFake:
-		quotaReq, err = getFakeQuotaRequest(config)
-		if err != nil {
-			return fmt.Errorf("error getting fake resource requirements: %w", err)
-		}
-	case types.CloudProviderAWS:
-		quotaReq, err = getAWSResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting aws resource requirements: %w", err)
-		}
-	case types.CloudProviderGoogle:
-		quotaReq, err = getGCPResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting gcp resource requirements: %w", err)
-		}
-	case types.CloudProviderAzure:
-		quotaReq, err = getAzureResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting azure resource requirements: %w", err)
-		}
-	case types.CloudProviderKubeVirt:
-		quotaReq, err = getKubeVirtResourceRequirements(ctx, userClient, config)
-		if err != nil {
-			return fmt.Errorf("error getting kubevirt resource requirements: %w", err)
-		}
-	case types.CloudProviderVsphere:
-		quotaReq, err = getVsphereResourceRequirements(config)
-		if err != nil {
-			return fmt.Errorf("error getting vsphere resource requirements: %w", err)
-		}
-	case types.CloudProviderOpenstack:
-		quotaReq, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
-		if err != nil {
-			return fmt.Errorf("error getting openstack resource requirements: %w", err)
-		}
-	default:
-		// TODO skip for now, when all providers are added, throw error
-		log.Debugf("provider %q not supported", config.CloudProvider)
-		return nil
+	var currentCPU = resource.Quantity{}
+	if resourceQuota.Status.GlobalUsage.CPU != nil {
+		currentCPU = *resourceQuota.Status.GlobalUsage.CPU
 	}
 
-	// TODO Get quota and usage from ResourceQuota CRD when its implemented
-	quota, currentUsage, err := getResourceQuota()
-	if err != nil {
-		return fmt.Errorf("failed to get resource quota: %w", err)
+	var currentMem = resource.Quantity{}
+	if resourceQuota.Status.GlobalUsage.Memory != nil {
+		currentMem = *resourceQuota.Status.GlobalUsage.Memory
+	}
+
+	var currentStorage = resource.Quantity{}
+	if resourceQuota.Status.GlobalUsage.Storage != nil {
+		currentStorage = *resourceQuota.Status.GlobalUsage.Storage
 	}
 
 	// add requested resources to current usage and compare
-	combinedUsage := NewResourceDetails(currentUsage.cpu, currentUsage.mem, currentUsage.storage)
-	combinedUsage.Cpu().Add(*quotaReq.Cpu())
-	combinedUsage.Memory().Add(*quotaReq.Memory())
-	combinedUsage.Storage().Add(*quotaReq.Storage())
+	combinedUsage := NewResourceDetails(currentCPU, currentMem, currentStorage)
+	combinedUsage.Cpu().Add(*machineResourceUsage.Cpu())
+	combinedUsage.Memory().Add(*machineResourceUsage.Memory())
+	combinedUsage.Storage().Add(*machineResourceUsage.Storage())
 
-	if quota.Cpu().Cmp(*combinedUsage.Cpu()) < 0 {
+	quota := resourceQuota.Spec.Quota
+	if quota.CPU != nil && quota.CPU.Cmp(*combinedUsage.Cpu()) < 0 {
 		log.Debugw("requested CPU would exceed current quota", "request",
-			quotaReq.Cpu(), "quota", quota.Cpu(), "used", currentUsage.Cpu())
+			machineResourceUsage.Cpu(), "quota", quota.CPU, "used", currentCPU.String())
 		return fmt.Errorf("requested CPU %q would exceed current quota (quota/used %q/%q)",
-			quotaReq.Cpu(), quota.Cpu(), currentUsage.Cpu())
+			machineResourceUsage.Cpu(), quota.CPU, currentCPU.String())
 	}
 
-	if quota.Memory().Cmp(*combinedUsage.Memory()) < 0 {
+	if quota.Memory != nil && quota.Memory.Cmp(*combinedUsage.Memory()) < 0 {
 		log.Debugw("requested Memory would exceed current quota", "request",
-			quotaReq.Memory(), "quota", quota.Memory(), "used", currentUsage.Memory())
+			machineResourceUsage.Memory(), "quota", quota.Memory, "used", currentMem.String())
 		return fmt.Errorf("requested Memory %q would exceed current quota (quota/used %q/%q)",
-			quotaReq.Memory(), quota.Memory(), currentUsage.Memory())
+			machineResourceUsage.Memory(), quota.Memory, currentMem.String())
 	}
 
-	if quota.Storage().Cmp(*combinedUsage.Storage()) < 0 {
+	if quota.Storage != nil && quota.Storage.Cmp(*combinedUsage.Storage()) < 0 {
 		log.Debugw("requested disk size would exceed current quota", "request",
-			quotaReq.Storage(), "quota", quota.Storage(), "used", currentUsage.Storage())
+			machineResourceUsage.Storage(), "quota", quota.Storage, "used", currentStorage.String())
 		return fmt.Errorf("requested disk size %q would exceed current quota (quota/used %q/%q)",
-			quotaReq.Storage(), quota.Storage(), currentUsage.Storage())
+			machineResourceUsage.Storage(), quota.Storage, currentStorage.String())
 	}
 
 	return nil
-}
-
-// TODO we should get it from the ResourceQuota CRD for the project, for now just some hardcoded values for tests.
-func getResourceQuota() (*ResourceDetails, *ResourceDetails, error) {
-	cpu, err := resource.ParseQuantity("50")
-
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
-	}
-	cpuUsed, err := resource.ParseQuantity("3")
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
-	}
-
-	mem, err := resource.ParseQuantity("50G")
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
-	}
-	memUsed, err := resource.ParseQuantity("3G")
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
-	}
-
-	storage, err := resource.ParseQuantity("1000G")
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
-	}
-	storageUsed, err := resource.ParseQuantity("60G")
-	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing quantity: %w", err)
-	}
-
-	return NewResourceDetails(cpu, mem, storage),
-		NewResourceDetails(cpuUsed, memUsed, storageUsed), nil
 }
 
 type ResourceDetails struct {
@@ -173,6 +111,26 @@ func NewResourceDetails(cpu resource.Quantity, mem resource.Quantity, storage re
 		mem:     mem,
 		storage: storage,
 	}
+}
+
+func NewResourceDetailsFromCapacity(capacity *provider.NodeCapacity) (*ResourceDetails, error) {
+	if capacity.CPUCores == nil {
+		return nil, errors.New("CPUs must not be nil")
+	}
+
+	if capacity.Memory == nil {
+		return nil, errors.New("memory must not be nil")
+	}
+
+	if capacity.Storage == nil {
+		return nil, errors.New("storage must not be nil")
+	}
+
+	return &ResourceDetails{
+		cpu:     *capacity.CPUCores,
+		mem:     *capacity.Memory,
+		storage: *capacity.Storage,
+	}, nil
 }
 
 func (r *ResourceDetails) Cpu() *resource.Quantity {

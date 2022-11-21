@@ -27,15 +27,12 @@ import (
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -53,15 +50,6 @@ import (
 
 const (
 	ControllerName = "kkp-cloud-controller"
-	// icmpMigrationRevision is the migration revision that will be set on the cluster after its
-	// security group was migrated to contain allow rules for ICMP.
-	icmpMigrationRevision = 1
-	// awsHarcodedAZMigrationRevision is the migration revision for moving AWS clusters away from
-	// hardcoded AZs and Subnets towards multi-AZ support.
-	awsHarcodedAZMigrationRevision = 2
-	// currentMigrationRevision describes the current migration revision. If this is set on the
-	// cluster, certain migrations won't get executed. This must never be decremented.
-	CurrentMigrationRevision = awsHarcodedAZMigrationRevision
 )
 
 // Check if the Reconciler fulfills the interface
@@ -106,8 +94,8 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	log := r.log.With("cluster", request.Name)
+	log.Debug("Reconciling")
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
@@ -116,7 +104,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, err
 	}
-	log = log.With("cluster", cluster.Name)
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -158,7 +145,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		log.Debug("Cleaning up cloud provider")
 
 		// in-cluster resources, like nodes, are still being cleaned up
-		if kuberneteshelper.HasAnyFinalizer(cluster, apiv1.InClusterLBCleanupFinalizer, apiv1.InClusterPVCleanupFinalizer, apiv1.NodeDeletionFinalizer) {
+		if kuberneteshelper.HasAnyFinalizer(cluster, kubermaticv1.InClusterLBCleanupFinalizer, kubermaticv1.InClusterPVCleanupFinalizer, kubermaticv1.NodeDeletionFinalizer) {
 			log.Debug("Cluster still has in-cluster cleanup finalizers, retrying later")
 			return &reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 		}
@@ -170,20 +157,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, nil
 	}
 
-	// We do the migration inside the controller because it has a decent potential to fail (e.G. due
-	// to invalid credentials) and may take some time and we do not want to block the startup just
-	// because one cluster can not be migrated
-	if cluster.Status.CloudMigrationRevision < icmpMigrationRevision {
-		if err := r.migrateICMP(ctx, log, cluster, prov); err != nil {
-			return nil, err
-		}
-	}
-
 	handleProviderError := func(err error) (*reconcile.Result, error) {
 		if apierrors.IsConflict(err) {
 			// In case of conflict we just re-enqueue the item for later
 			// processing without returning an error.
-			r.log.Infow("failed to run cloud provider", zap.Error(err))
+			log.Infow("failed to run cloud provider", zap.Error(err))
 			return &reconcile.Result{Requeue: true}, nil
 		}
 
@@ -207,7 +185,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		// default the interval to a safe value
 		interval := datacenter.Spec.ProviderReconciliationInterval
 		if interval == nil || interval.Duration == 0 {
-			interval = &metav1.Duration{Duration: defaults.DefaultCloudProviderReconciliationInterval}
+			interval = &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval}
 		}
 
 		// reconcile if the lastTime isn't set (= first time init or a forced reconciliation) or too long ago
@@ -215,7 +193,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			log.Info("Reconciling cloud provider for cluster")
 
 			// update metrics
-			providerName, _ := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+			providerName, _ := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
 
 			// reconcile
@@ -252,30 +230,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return nil, nil
 }
 
-func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, cloudProvider provider.CloudProvider) error {
-	switch prov := cloudProvider.(type) {
-	case *openstack.Provider:
-		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
-		}
-		log.Info("Successfully ensured ICMP rules in security group of cluster")
-	case *azure.Azure:
-		if err := prov.AddICMPRulesIfRequired(ctx, cluster); err != nil {
-			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %w", cluster.Name, err)
-		}
-		log.Info("Successfully ensured ICMP rules in security group of cluster %q", cluster.Name)
-	}
-
-	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-		c.Status.CloudMigrationRevision = icmpMigrationRevision
-	}); err != nil {
-		return fmt.Errorf("failed to update cluster after successfully executing its cloud provider migration: %w", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify func(*kubermaticv1.Cluster), options ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: name}, cluster); err != nil {
 		return nil, err
@@ -291,15 +246,16 @@ func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify fun
 		return nil, errors.New("updateCluster must not change cluster status")
 	}
 
-	opts := (&provider.UpdaterOptions{}).Apply(options...)
-	var patch ctrlruntimeclient.Patch
-	if opts.OptimisticLock {
-		patch = ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})
-	} else {
-		patch = ctrlruntimeclient.MergeFrom(oldCluster)
+	// When finalizers were changed, we must force optimistic locking,
+	// as we do not exclusively own the metadata.finalizers field and do not
+	// want to risk overwriting other finalizers. Labels and annotations are
+	// maps and so not affected.
+	var opts []ctrlruntimeclient.MergeFromOption
+	if !reflect.DeepEqual(oldCluster.Finalizers, cluster.Finalizers) {
+		opts = append(opts, ctrlruntimeclient.MergeFromWithOptimisticLock{})
 	}
 
-	if err := r.Patch(ctx, cluster, patch); err != nil {
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...)); err != nil {
 		return nil, err
 	}
 

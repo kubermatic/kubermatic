@@ -30,7 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
@@ -45,7 +45,9 @@ const (
 
 func txtFuncMap(overwriteRegistry string) template.FuncMap {
 	funcs := sprig.TxtFuncMap()
+	// Registry is deprecated and should not be used anymore.
 	funcs["Registry"] = registry.GetOverwriteFunc(overwriteRegistry)
+	funcs["Image"] = registry.GetImageRewriterFunc(overwriteRegistry)
 	funcs["join"] = strings.Join
 	return funcs
 }
@@ -69,9 +71,10 @@ func NewTemplateData(
 	kubeconfig string,
 	dnsClusterIP string,
 	dnsResolverIP string,
+	ipamAllocations *kubermaticv1.IPAMAllocationList,
 	variables map[string]interface{},
 ) (*TemplateData, error) {
-	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+	providerName, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine cloud provider name: %w", err)
 	}
@@ -95,6 +98,11 @@ func NewTemplateData(
 		csiOptions.SsSegmentedIscsiNetwork = cluster.Spec.Cloud.Nutanix.CSI.SsSegmentedIscsiNetwork
 	}
 
+	if cluster.Spec.Cloud.VMwareCloudDirector != nil && cluster.Spec.Cloud.VMwareCloudDirector.CSI != nil {
+		csiOptions.Filesystem = cluster.Spec.Cloud.VMwareCloudDirector.CSI.Filesystem
+		csiOptions.StorageProfile = cluster.Spec.Cloud.VMwareCloudDirector.CSI.StorageProfile
+	}
+
 	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 
 	var ipvs kubermaticv1.IPVSConfiguration
@@ -105,6 +113,18 @@ func NewTemplateData(
 	var kubeVirtStorageClasses []string
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.InfraStorageClasses
+	}
+
+	var ipamAllocationsData map[string]IPAMAllocation
+	if ipamAllocations != nil {
+		ipamAllocationsData = make(map[string]IPAMAllocation, len(ipamAllocations.Items))
+		for _, ipamAllocation := range ipamAllocations.Items {
+			ipamAllocationsData[ipamAllocation.Name] = IPAMAllocation{
+				Type:      ipamAllocation.Spec.Type,
+				CIDR:      ipamAllocation.Spec.CIDR,
+				Addresses: ipamAllocation.Spec.Addresses,
+			}
+		}
 	}
 
 	return &TemplateData{
@@ -119,10 +139,10 @@ func NewTemplateData(
 			Labels:            cluster.Labels,
 			Annotations:       cluster.Annotations,
 			Kubeconfig:        kubeconfig,
-			// nolint:staticcheck
+			//nolint:staticcheck
 			OwnerName:         cluster.Status.UserName,
 			OwnerEmail:        cluster.Status.UserEmail,
-			Address:           cluster.GetAddress(),
+			Address:           cluster.Status.Address,
 			CloudProviderName: providerName,
 			Version:           semverlib.MustParse(cluster.Status.Versions.ControlPlane.String()),
 			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),
@@ -140,6 +160,7 @@ func NewTemplateData(
 				PodCIDRIPv6:          cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR(),
 				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),
 				NodeCIDRMaskSizeIPv6: resources.GetClusterNodeCIDRMaskSizeIPv6(cluster),
+				IPAMAllocations:      ipamAllocationsData,
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
@@ -225,6 +246,13 @@ type ClusterNetwork struct {
 	PodCIDRIPv6          string
 	NodeCIDRMaskSizeIPv4 int32
 	NodeCIDRMaskSizeIPv6 int32
+	IPAMAllocations      map[string]IPAMAllocation
+}
+
+type IPAMAllocation struct {
+	Type      kubermaticv1.IPAMPoolAllocationType
+	CIDR      kubermaticv1.SubnetCIDR
+	Addresses []string
 }
 
 type CNIPlugin struct {
@@ -249,6 +277,10 @@ type CSIOptions struct {
 	StorageContainer        string
 	Fstype                  string
 	SsSegmentedIscsiNetwork *bool
+
+	// vmware Cloud Director
+	StorageProfile string
+	Filesystem     string
 }
 
 type Manifest struct {

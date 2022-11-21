@@ -33,6 +33,7 @@ import (
 )
 
 // embeddedFS is an embedded fs that contains kubermatic CRD manifest
+//
 //go:embed k8c.io/*
 var embeddedFS embed.FS
 

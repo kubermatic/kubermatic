@@ -23,7 +23,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/uuid"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,31 +37,12 @@ const (
 )
 
 func getFakeCredentials() (*Credentials, error) {
-	tenantID, err := uuid.UUID()
-	if err != nil {
-		return nil, err
-	}
-
-	subscriptionID, err := uuid.UUID()
-	if err != nil {
-		return nil, err
-	}
-
-	clientID, err := uuid.UUID()
-	if err != nil {
-		return nil, err
-	}
-
-	clientSecret, err := uuid.UUID()
-	if err != nil {
-		return nil, err
-	}
-
+	// All of these UUIDs are meaningless and generated with `uuidgen`.
 	return &Credentials{
-		TenantID:       tenantID,
-		SubscriptionID: subscriptionID,
-		ClientID:       clientID,
-		ClientSecret:   clientSecret,
+		TenantID:       "f2ff9b16-5461-48a1-9b4f-a47b1acd6371",
+		SubscriptionID: "39b60bc3-21c1-4eee-9940-c46e41fc18b1",
+		ClientID:       "f40312ea-a69c-4f4a-9c21-2f1d890135ff",
+		ClientSecret:   "f1c5b2df-9ed9-4d17-bb4a-8e8e0ff7cb9f",
 	}, nil
 }
 
@@ -87,7 +67,7 @@ func makeCluster(name string, cloudSpec *kubermaticv1.AzureCloudSpec, credential
 }
 
 func testClusterUpdater(cluster *kubermaticv1.Cluster) provider.ClusterUpdater {
-	return func(_ context.Context, clusterName string, patcher func(*kubermaticv1.Cluster), opts ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+	return func(_ context.Context, clusterName string, patcher func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 		patcher(cluster)
 		return cluster, nil
 	}

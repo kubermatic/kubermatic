@@ -68,6 +68,8 @@ type dummySharedIndexInformer struct {
 	indexer cache.Indexer
 }
 
+var _ cache.SharedIndexInformer = &dummySharedIndexInformer{}
+
 func (i *dummySharedIndexInformer) AddEventHandler(handler cache.ResourceEventHandler) {
 	panic("implement me")
 }
@@ -101,6 +103,10 @@ func (i *dummySharedIndexInformer) LastSyncResourceVersion() string {
 }
 
 func (i *dummySharedIndexInformer) AddIndexers(indexers cache.Indexers) error {
+	panic("implement me")
+}
+
+func (i *dummySharedIndexInformer) SetTransform(handler cache.TransformFunc) error {
 	panic("implement me")
 }
 

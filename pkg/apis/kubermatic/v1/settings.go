@@ -28,6 +28,8 @@ const GlobalSettingsName = "globalsettings"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticSetting is the type representing a KubermaticSetting.
+// These settings affect the KKP dashboard and are not relevant when
+// using the Kube API on the master/seed clusters directly.
 type KubermaticSetting struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -36,17 +38,31 @@ type KubermaticSetting struct {
 }
 
 type SettingSpec struct {
-	CustomLinks                 CustomLinks `json:"customLinks"`
-	DefaultNodeCount            int8        `json:"defaultNodeCount"`
-	DisplayDemoInfo             bool        `json:"displayDemoInfo"`
-	DisplayAPIDocs              bool        `json:"displayAPIDocs"`
-	DisplayTermsOfService       bool        `json:"displayTermsOfService"`
-	EnableDashboard             bool        `json:"enableDashboard"`
-	EnableOIDCKubeconfig        bool        `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
-	UserProjectsLimit           int64       `json:"userProjectsLimit"`
-	RestrictProjectCreation     bool        `json:"restrictProjectCreation"`
-	EnableExternalClusterImport bool        `json:"enableExternalClusterImport"`
+	// CustomLinks are additional links that can be shown the dashboard's footer.
+	CustomLinks CustomLinks `json:"customLinks"`
+	// DefaultNodeCount is the default number of replicas for the initial MachineDeployment.
+	DefaultNodeCount int8 `json:"defaultNodeCount"`
+	// DisplayDemoInfo controls whether a "Demo System" hint is shown in the footer.
+	DisplayDemoInfo bool `json:"displayDemoInfo"`
+	// DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.
+	DisplayAPIDocs bool `json:"displayAPIDocs"`
+	// DisplayDemoInfo controls whether a a link to TOS is shown in the footer.
+	DisplayTermsOfService bool `json:"displayTermsOfService"`
+	// EnableDashboard enables the link to the Kubernetes dashboard for a user cluster.
+	EnableDashboard bool `json:"enableDashboard"`
 
+	// +kubebuilder:default=false
+
+	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
+	EnableWebTerminal bool `json:"enableWebTerminal,omitempty"`
+
+	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
+	// UserProjectsLimit is the maximum number of projects a user can create.
+	UserProjectsLimit           int64 `json:"userProjectsLimit"`
+	RestrictProjectCreation     bool  `json:"restrictProjectCreation"`
+	EnableExternalClusterImport bool  `json:"enableExternalClusterImport"`
+
+	// CleanupOptions control what happens when a cluster is deleted via the dashboard.
 	// +optional
 	CleanupOptions CleanupOptions `json:"cleanupOptions,omitempty"`
 	// +optional
@@ -57,7 +73,16 @@ type SettingSpec struct {
 	MlaAlertmanagerPrefix string `json:"mlaAlertmanagerPrefix"`
 	MlaGrafanaPrefix      string `json:"mlaGrafanaPrefix"`
 
-	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
+	// Notifications are the configuration for notifications on dashboard.
+	// +optional
+	Notifications NotificationsOptions `json:"notifications,omitempty"`
+
+	// ProviderConfiguration are the cloud provider specific configurations on dashboard.
+	// +optional
+	ProviderConfiguration ProviderConfiguration `json:"providerConfiguration,omitempty"`
+
+	// MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+	MachineDeploymentVMResourceQuota *MachineFlavorFilter `json:"machineDeploymentVMResourceQuota,omitempty"`
 
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
@@ -72,21 +97,12 @@ type CustomLink struct {
 }
 
 type CleanupOptions struct {
-	Enabled  bool `json:"enabled,omitempty"`
+	// Enable checkboxes that allow the user to ask for LoadBalancers and PVCs
+	// to be deleted in order to not leave potentially expensive resources behind.
+	Enabled bool `json:"enabled,omitempty"`
+	// If enforced is set to true, the cleanup of LoadBalancers and PVCs is
+	// enforced.
 	Enforced bool `json:"enforced,omitempty"`
-}
-
-type MachineDeploymentVMResourceQuota struct {
-	// Minimal number of vCPU
-	MinCPU int `json:"minCPU"`
-	// Maximal number of vCPU
-	MaxCPU int `json:"maxCPU"`
-	// Minimal RAM size in GB
-	MinRAM int `json:"minRAM"`
-	// Maximum RAM size in GB
-	MaxRAM int `json:"maxRAM"`
-
-	EnableGPU bool `json:"enableGPU"` //nolint:tagliatelle
 }
 
 type OpaOptions struct {
@@ -99,6 +115,23 @@ type MlaOptions struct {
 	LoggingEnforced    bool `json:"loggingEnforced,omitempty"`
 	MonitoringEnabled  bool `json:"monitoringEnabled,omitempty"`
 	MonitoringEnforced bool `json:"monitoringEnforced,omitempty"`
+}
+
+type NotificationsOptions struct {
+	// HideErrors will silence error notifications for the dashboard.
+	HideErrors bool `json:"hideErrors,omitempty"`
+	// HideErrorEvents will silence error events for the dashboard.
+	HideErrorEvents bool `json:"hideErrorEvents,omitempty"`
+}
+
+type ProviderConfiguration struct {
+	// OpenStack are the configurations for openstack provider.
+	OpenStack OpenStack `json:"openStack,omitempty"`
+}
+
+type OpenStack struct {
+	// EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
+	EnforceCustomDisk bool `json:"enforceCustomDisk,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

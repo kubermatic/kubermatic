@@ -3,7 +3,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.10.0
+    kubermatic.k8c.io/location: master,seed
   creationTimestamp: null
   name: applicationdefinitions.apps.kubermatic.k8c.io
 spec:
@@ -15,336 +16,239 @@ spec:
     singular: applicationdefinition
   scope: Cluster
   versions:
-  - name: v1
-    schema:
-      openAPIV3Schema:
-        description: ApplicationDefinition is the Schema for the applicationdefinitions
-          API.
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
-            properties:
-              description:
-                description: Description of the application. what is its purpose
-                type: string
-              versions:
-                description: available version for this application
-                items:
-                  properties:
-                    constraints:
-                      description: Constraints defined criteria that a user cluster
-                        must satisfy for the application to be installed
-                      properties:
-                        k8sVersion:
-                          description: Version of K8s version that a user cluster
-                            must satisfy for the application to be installed. Wildcards
-                            are allowed  e.g. "1.18.*" Range are allowed e.g." >=
-                            1.19.0, < 1.19.15"
-                          type: string
-                        kkpVersion:
-                          description: Version of KKP version that a user cluster
-                            must satisfy for the application to be installed. Wildcards
-                            are allowed  e.g. "2.18.*" Range are allowed e.g.">= 2.16,
-                            < 2.18.0"
-                          type: string
-                      type: object
-                    template:
-                      description: Template defines how application is installed (source
-                        provenance, Method...)
-                      properties:
-                        formSpec:
-                          description: Define the valued that can be override for
-                            the installation
-                          items:
-                            properties:
-                              displayName:
-                                description: DisplayName is visible in the UI
-                                type: string
-                              helpText:
-                                description: HelpText is visible in the UI next to
-                                  the field
-                                type: string
-                              internalName:
-                                description: InternalName is used internally to save
-                                  in the ApplicationInstallation object
-                                type: string
-                              required:
-                                description: Required indicates if the control has
-                                  to be set
-                                type: boolean
-                              type:
-                                description: Type of displayed control
-                                enum:
-                                - number
-                                - boolean
-                                - text
-                                - text-area
-                                type: string
-                            required:
-                            - displayName
-                            - internalName
-                            - type
-                            type: object
-                          type: array
-                        method:
-                          description: Method used to install the application
-                          enum:
-                          - helm
-                          type: string
-                        source:
-                          description: Defined how the source of the application (e.g
-                            Helm chart) is retrieved
-                          properties:
-                            git:
-                              description: Get application to install from a Git repository
-                              properties:
-                                credentials:
-                                  description: Credentials holds the git credentials
-                                  properties:
-                                    method:
-                                      description: Authentication method
-                                      enum:
-                                      - password
-                                      - token
-                                      - ssh-key
-                                      type: string
-                                    password:
-                                      description: Password holds the ref and key
-                                        in the secret for the Password credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
-                                      properties:
-                                        key:
-                                          description: The key of the secret to select
-                                            from.  Must be a valid secret key.
-                                          type: string
-                                        name:
-                                          description: 'Name of the referent. More
-                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                            TODO: Add other useful fields. apiVersion,
-                                            kind, uid?'
-                                          type: string
-                                        optional:
-                                          description: Specify whether the Secret
-                                            or its key must be defined
-                                          type: boolean
-                                      required:
-                                      - key
-                                      type: object
-                                    sshKey:
-                                      description: SSHKey holds the ref and key in
-                                        the secret for the SshKey credential. Secret
-                                        must exist in the namespace where KKP is installed.
-                                      properties:
-                                        key:
-                                          description: The key of the secret to select
-                                            from.  Must be a valid secret key.
-                                          type: string
-                                        name:
-                                          description: 'Name of the referent. More
-                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                            TODO: Add other useful fields. apiVersion,
-                                            kind, uid?'
-                                          type: string
-                                        optional:
-                                          description: Specify whether the Secret
-                                            or its key must be defined
-                                          type: boolean
-                                      required:
-                                      - key
-                                      type: object
-                                    token:
-                                      description: Token holds the ref and key in
-                                        the secret for the token credential. Secret
-                                        must exist in the namespace where KKP is installed.
-                                      properties:
-                                        key:
-                                          description: The key of the secret to select
-                                            from.  Must be a valid secret key.
-                                          type: string
-                                        name:
-                                          description: 'Name of the referent. More
-                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                            TODO: Add other useful fields. apiVersion,
-                                            kind, uid?'
-                                          type: string
-                                        optional:
-                                          description: Specify whether the Secret
-                                            or its key must be defined
-                                          type: boolean
-                                      required:
-                                      - key
-                                      type: object
-                                    username:
-                                      description: Username holds the ref and key
-                                        in the secret for the username credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
-                                      properties:
-                                        key:
-                                          description: The key of the secret to select
-                                            from.  Must be a valid secret key.
-                                          type: string
-                                        name:
-                                          description: 'Name of the referent. More
-                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                            TODO: Add other useful fields. apiVersion,
-                                            kind, uid?'
-                                          type: string
-                                        optional:
-                                          description: Specify whether the Secret
-                                            or its key must be defined
-                                          type: boolean
-                                      required:
-                                      - key
-                                      type: object
-                                  required:
-                                  - method
-                                  type: object
-                                path:
-                                  description: Path of the "source" in the repository.
-                                    default is repository root
-                                  type: string
-                                ref:
-                                  description: Git reference to checkout
-                                  properties:
-                                    branch:
-                                      description: Branch to checkout. Only the last
-                                        commit of the branch will be checkout in order
-                                        to reduce the amount of data to download.
-                                      type: string
-                                    commit:
-                                      description: "Commit SHA to checkout. \n It
-                                        can be used in conjunction with branch to
-                                        to avoid to clone the all repository. The
-                                        commit must belong to this branch."
-                                      pattern: ^[a-f0-9]{40}$
-                                      type: string
-                                    tag:
-                                      description: Tag to check out. It can not be
-                                        used in conjunction with commit or branch.
-                                      type: string
-                                  type: object
-                                remote:
-                                  description: URL to the repository (e.g. git://host.xz[:port]/path/to/repo.git/)
-                                  minLength: 1
-                                  type: string
-                              required:
-                              - ref
-                              - remote
-                              type: object
-                            helm:
-                              description: Get application to install from a Helm
-                                repository
-                              properties:
-                                chartName:
-                                  description: Name of the Chart
-                                  minLength: 1
-                                  type: string
-                                chartVersion:
-                                  description: Version of the Chart
-                                  minLength: 1
-                                  type: string
-                                credentials:
-                                  description: Credentials hold the ref to the secret
-                                    with helm credentials
-                                  properties:
-                                    password:
-                                      description: Password holds the ref and key
-                                        in the secret for the Password credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
-                                      properties:
-                                        key:
-                                          description: The key of the secret to select
-                                            from.  Must be a valid secret key.
-                                          type: string
-                                        name:
-                                          description: 'Name of the referent. More
-                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                            TODO: Add other useful fields. apiVersion,
-                                            kind, uid?'
-                                          type: string
-                                        optional:
-                                          description: Specify whether the Secret
-                                            or its key must be defined
-                                          type: boolean
-                                      required:
-                                      - key
-                                      type: object
-                                    username:
-                                      description: Username holds the ref and key
-                                        in the secret for the username credential.
-                                        Secret must exist in the namespace where KKP
-                                        is installed.
-                                      properties:
-                                        key:
-                                          description: The key of the secret to select
-                                            from.  Must be a valid secret key.
-                                          type: string
-                                        name:
-                                          description: 'Name of the referent. More
-                                            info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                            TODO: Add other useful fields. apiVersion,
-                                            kind, uid?'
-                                          type: string
-                                        optional:
-                                          description: Specify whether the Secret
-                                            or its key must be defined
-                                          type: boolean
-                                      required:
-                                      - key
-                                      type: object
-                                  required:
-                                  - password
-                                  - username
-                                  type: object
-                                url:
-                                  description: URl of the helm repository. It can
-                                    be an HTTP(s) repository (e.g. https://localhost/myrepo)
-                                    or on OCI repository (e.g. oci://localhost:5000/myrepo).
-                                  pattern: ^(http|https|oci)://.+
-                                  type: string
-                              required:
-                              - chartName
-                              - chartVersion
-                              - url
-                              type: object
-                          type: object
-                      required:
-                      - method
-                      - source
-                      type: object
-                    version:
-                      description: Version of the application (eg v1.2.3)
-                      type: string
-                  required:
-                  - template
-                  - version
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: ApplicationDefinition is the Schema for the applicationdefinitions API.
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
+              properties:
+                defaultValues:
+                  description: DefaultValues describe overrides for manifest-rendering in UI when creating an application.
                   type: object
-                type: array
-            required:
-            - description
-            - versions
-            type: object
-        type: object
-    served: true
-    storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
+                  x-kubernetes-preserve-unknown-fields: true
+                description:
+                  description: Description of the application. what is its purpose
+                  type: string
+                method:
+                  description: Method used to install the application
+                  enum:
+                    - helm
+                  type: string
+                versions:
+                  description: Available version for this application
+                  items:
+                    properties:
+                      template:
+                        description: Template defines how application is installed (source provenance, Method...)
+                        properties:
+                          source:
+                            description: Defined how the source of the application (e.g Helm chart) is retrieved. Exactly one type of source must be defined.
+                            properties:
+                              git:
+                                description: Install application from a Git repository
+                                properties:
+                                  credentials:
+                                    description: Credentials are optional and holds the git credentials
+                                    properties:
+                                      method:
+                                        description: Authentication method. Either password or token or ssh-key. if method is password then username and password must be defined. if method is token then token must be defined. if method is ssh-key then ssh-key must be defined.
+                                        enum:
+                                          - password
+                                          - token
+                                          - ssh-key
+                                        type: string
+                                      password:
+                                        description: Password holds the ref and key in the secret for the Password credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        properties:
+                                          key:
+                                            description: The key of the secret to select from.  Must be a valid secret key.
+                                            type: string
+                                          name:
+                                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret or its key must be defined
+                                            type: boolean
+                                        required:
+                                          - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      sshKey:
+                                        description: SSHKey holds the ref and key in the secret for the SshKey credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        properties:
+                                          key:
+                                            description: The key of the secret to select from.  Must be a valid secret key.
+                                            type: string
+                                          name:
+                                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret or its key must be defined
+                                            type: boolean
+                                        required:
+                                          - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      token:
+                                        description: Token holds the ref and key in the secret for the token credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        properties:
+                                          key:
+                                            description: The key of the secret to select from.  Must be a valid secret key.
+                                            type: string
+                                          name:
+                                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret or its key must be defined
+                                            type: boolean
+                                        required:
+                                          - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      username:
+                                        description: Username holds the ref and key in the secret for the username credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        properties:
+                                          key:
+                                            description: The key of the secret to select from.  Must be a valid secret key.
+                                            type: string
+                                          name:
+                                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret or its key must be defined
+                                            type: boolean
+                                        required:
+                                          - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    required:
+                                      - method
+                                    type: object
+                                  path:
+                                    description: Path of the "source" in the repository. default is repository root
+                                    type: string
+                                  ref:
+                                    description: Git reference to checkout. For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance
+                                    properties:
+                                      branch:
+                                        description: Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.
+                                        type: string
+                                      commit:
+                                        description: "Commit SHA in a Branch to checkout. \n It must be used in conjunction with branch field."
+                                        pattern: ^[a-f0-9]{40}$
+                                        type: string
+                                      tag:
+                                        description: Tag to check out. It can not be used in conjunction with commit or branch.
+                                        type: string
+                                    type: object
+                                  remote:
+                                    description: URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)
+                                    minLength: 1
+                                    type: string
+                                required:
+                                  - ref
+                                  - remote
+                                type: object
+                              helm:
+                                description: Install Application from a Helm repository
+                                properties:
+                                  chartName:
+                                    description: Name of the Chart.
+                                    minLength: 1
+                                    type: string
+                                  chartVersion:
+                                    description: Version of the Chart.
+                                    minLength: 1
+                                    type: string
+                                  credentials:
+                                    description: Credentials are optional and hold the ref to the secret with helm credentials. Either username / Password or registryConfigFile can be defined.
+                                    properties:
+                                      password:
+                                        description: Password holds the ref and key in the secret for the Password credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        properties:
+                                          key:
+                                            description: The key of the secret to select from.  Must be a valid secret key.
+                                            type: string
+                                          name:
+                                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret or its key must be defined
+                                            type: boolean
+                                        required:
+                                          - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      registryConfigFile:
+                                        description: RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg file that follows the same format rules as ~/.docker/config.json The The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        properties:
+                                          key:
+                                            description: The key of the secret to select from.  Must be a valid secret key.
+                                            type: string
+                                          name:
+                                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret or its key must be defined
+                                            type: boolean
+                                        required:
+                                          - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      username:
+                                        description: Username holds the ref and key in the secret for the username credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        properties:
+                                          key:
+                                            description: The key of the secret to select from.  Must be a valid secret key.
+                                            type: string
+                                          name:
+                                            description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret or its key must be defined
+                                            type: boolean
+                                        required:
+                                          - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                  url:
+                                    description: URl of the helm repository. It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
+                                    pattern: ^(http|https|oci)://.+
+                                    type: string
+                                required:
+                                  - chartName
+                                  - chartVersion
+                                  - url
+                                type: object
+                            type: object
+                        required:
+                          - source
+                        type: object
+                      version:
+                        description: Version of the application (e.g. v1.2.3)
+                        pattern: v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
+                        type: string
+                    required:
+                      - template
+                      - version
+                    type: object
+                  type: array
+              required:
+                - description
+                - method
+                - versions
+              type: object
+          type: object
+      served: true
+      storage: true

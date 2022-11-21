@@ -23,7 +23,7 @@ containerize ./hack/update-prometheus-rules.sh
 
 promtool=promtool
 if ! [ -x "$(command -v $promtool)" ]; then
-  version=2.35.0
+  version=2.37.0
   url="https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz"
   promtool=/tmp/promtool
 
@@ -45,7 +45,7 @@ for file in */*.yaml; do
   echo "$file => $newfile"
 
   echo -e "# This file has been generated, DO NOT EDIT.\n" > "../$newfile"
-  yq d "$file" 'groups.*.rules.*.runbook' >> "../$newfile"
+  yq 'del(.groups.[].rules.[].runbook)' "$file" >> "../$newfile"
 done
 
 cd ..

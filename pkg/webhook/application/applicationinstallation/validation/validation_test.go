@@ -21,7 +21,6 @@ import (
 	"context"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/go-logr/logr"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -48,7 +47,7 @@ func init() {
 	_ = appskubermaticv1.AddToScheme(testScheme)
 }
 
-func TestValidateApplicationInsallation(t *testing.T) {
+func TestValidateApplicationInstallation(t *testing.T) {
 	ad := getApplicationDefinition(defaultAppName)
 	fakeClient := fakectrlruntimeclient.
 		NewClientBuilder().
@@ -181,13 +180,13 @@ func getApplicationInstallation(name string, appName string, appVersion string) 
 			Namespace: "kube-system",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.NamespaceSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name:   "default",
 				Create: true,
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    appName,
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse(appVersion)},
+				Version: appVersion,
 			},
 		},
 	}

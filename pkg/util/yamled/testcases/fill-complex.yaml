@@ -16,20 +16,20 @@ foo:
   bar:
     mumble: foobar
     array:
-    - 1
-    - 2
-    - 3
+      - 1
+      - 2
+      - 3
     deeper:
       key: value
 ###
 foo:
   bar:
-    mumble: foobar
     array:
-    - 1
-    - 2
-    - 3
+      - 1
+      - 2
+      - 3
     deeper:
-      key: value
       deepest: new value
+      key: value
+    mumble: foobar
     newKey: new value

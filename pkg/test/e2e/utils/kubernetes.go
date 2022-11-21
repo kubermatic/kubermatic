@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -29,13 +30,15 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	kwait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/util/podutils"
@@ -65,18 +68,18 @@ type TestPodConfig struct {
 }
 
 // DeployTestPod deploys the pod to be used to run the test command.
-func (t *TestPodConfig) DeployTestPod(ctx context.Context) error {
+func (t *TestPodConfig) DeployTestPod(ctx context.Context, log *zap.SugaredLogger) error {
 	testPod := t.CreatePodFunc(t.Namespace)
 	if err := t.Client.Create(ctx, testPod); err != nil {
-		return fmt.Errorf("failed to create host test pod: %w", err)
+		return fmt.Errorf("failed to create host test Pod: %w", err)
 	}
 
 	// Use default timeout of 5 minutes if not otherwise specified.
 	if t.PodReadinessTimeout == 0 {
 		t.PodReadinessTimeout = 5 * time.Minute
 	}
-	if !CheckPodsRunningReady(ctx, t.Client, t.Namespace, []string{testPod.Name}, t.PodReadinessTimeout) {
-		return errors.New("timeout occurred while waiting for host test pod readiness")
+	if !CheckPodsRunningReady(ctx, t.Client, log, t.Namespace, []string{testPod.Name}, t.PodReadinessTimeout) {
+		return errors.New("timeout occurred while waiting for host test Pod readiness")
 	}
 
 	if err := t.Client.Get(ctx, ctrlruntimeclient.ObjectKey{
@@ -120,7 +123,7 @@ func (t *TestPodConfig) Exec(container string, command ...string) (string, strin
 	}, scheme.ParameterCodec)
 
 	var stdout, stderr bytes.Buffer
-	err := execute("POST", req.URL(), t.Config, nil, &stdout, &stderr, tty)
+	err := execute(http.MethodPost, req.URL(), t.Config, nil, &stdout, &stderr, tty)
 
 	return stdout.String(), stderr.String(), err
 }
@@ -151,33 +154,36 @@ func GetClientsOrDie() (ctrlruntimeclient.Client, rest.Interface, *rest.Config) 
 // GetClients returns the clients used for testing or an error if something
 // goes wrong during the clients creation.
 func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error) {
-	scheme := runtime.NewScheme()
-	if err := clientgoscheme.AddToScheme(scheme); err != nil {
+	sc := runtime.NewScheme()
+	if err := scheme.AddToScheme(sc); err != nil {
 		return nil, nil, nil, err
 	}
-	if err := kubermaticv1.AddToScheme(scheme); err != nil {
+	if err := kubermaticv1.AddToScheme(sc); err != nil {
 		return nil, nil, nil, err
 	}
-	if err := constrainttemplatev1.AddToScheme(scheme); err != nil {
+	if err := constrainttemplatev1.AddToScheme(sc); err != nil {
 		return nil, nil, nil, err
 	}
 
-	config := ctrlruntime.GetConfigOrDie()
+	config, err := ctrlruntime.GetConfig()
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get kube config: %w", err)
+	}
 	mapper, err := apiutil.NewDynamicRESTMapper(config)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create dynamic REST mapper: %w", err)
 	}
-	gvk, err := apiutil.GVKForObject(&corev1.Pod{}, scheme)
+	gvk, err := apiutil.GVKForObject(&corev1.Pod{}, sc)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to get pod GVK: %w", err)
 	}
-	podRestClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(scheme))
+	podRestClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(sc))
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create pod rest client: %w", err)
 	}
 	c, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{
 		Mapper: mapper,
-		Scheme: scheme,
+		Scheme: sc,
 	})
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create client: %w", err)
@@ -188,111 +194,155 @@ func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error
 // WaitForPodsCreated waits for the given replicas number of pods matching the
 // given set of labels to be created, and returns the names of the matched
 // pods.
-func WaitForPodsCreated(ctx context.Context, c ctrlruntimeclient.Client, replicas int, namespace string, matchLabels map[string]string) ([]string, error) {
+func WaitForPodsCreated(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, replicas int, namespace string, matchLabels map[string]string) ([]string, error) {
 	timeout := 2 * time.Minute
+	listOpts := []ctrlruntimeclient.ListOption{
+		ctrlruntimeclient.InNamespace(namespace),
+		ctrlruntimeclient.MatchingLabels(matchLabels),
+	}
+
+	logger := log.With("namespace", namespace, "timeout", timeout)
+	logger.Infof("Waiting for %d Pod(s) to be created...", replicas)
+
 	// List the pods, making sure we observe all the replicas.
-	DefaultLogger.Debugf("Waiting up to %v for %d pods to be created", timeout, replicas)
-	for start := time.Now(); time.Since(start) < timeout; time.Sleep(2 * time.Second) {
+	foundPods := []string{}
+
+	err := kwait.PollImmediate(2*time.Second, timeout, func() (done bool, err error) {
 		pods := corev1.PodList{}
-		if err := c.List(ctx, &pods,
-			ctrlruntimeclient.InNamespace(namespace),
-			ctrlruntimeclient.MatchingLabels(matchLabels)); err != nil {
-			return nil, err
+		if err := c.List(ctx, &pods, listOpts...); err != nil {
+			return false, fmt.Errorf("failed to list Pods: %w", err)
 		}
 
-		found := []string{}
+		foundPods = []string{}
 		for _, pod := range pods.Items {
 			if pod.DeletionTimestamp != nil {
 				continue
 			}
-			found = append(found, pod.Name)
+			foundPods = append(foundPods, pod.Name)
 		}
-		if len(found) == replicas {
-			DefaultLogger.Infof("Found all %d pods", replicas)
-			return found, nil
+
+		if len(foundPods) >= replicas {
+			logger.Info("Found all expected Pods")
+			return true, nil
 		}
-		DefaultLogger.Debugf("Found %d/%d pods - will retry", len(found), replicas)
-	}
-	return nil, fmt.Errorf("timeout waiting for %d pods to be created", replicas)
+
+		logger.Debugf("Found %d/%d Pods", len(foundPods), replicas)
+
+		return false, nil
+	})
+
+	return foundPods, err
 }
 
 // CheckPodsRunningReady returns whether all pods whose names are listed in
 // podNames in namespace ns are running and ready, using c and waiting at most
 // timeout.
-func CheckPodsRunningReady(ctx context.Context, c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration) bool {
-	return checkPodsCondition(ctx, c, ns, podNames, timeout, PodRunningReady, "running and ready")
-}
-
-// WaitForPodCondition waits a pods to be matched to the given condition.
-func WaitForPodCondition(ctx context.Context, c ctrlruntimeclient.Client, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
-	DefaultLogger.Infof("Waiting up to %v for pod %q in namespace %q to be %q", timeout, podName, ns, desc)
-	for start := time.Now(); time.Since(start) < timeout; time.Sleep(pollPeriod) {
-		pod := corev1.Pod{}
-		if err := c.Get(ctx, ctrlruntimeclient.ObjectKey{Name: podName, Namespace: ns}, &pod); err != nil {
-			if apierrors.IsNotFound(err) {
-				DefaultLogger.Debugf("Pod %q in namespace %q not found. Error: %v", podName, ns, err)
-				return err
-			}
-			DefaultLogger.Debugf("Get pod %q in namespace %q failed, ignoring for %v. Error: %v", podName, ns, pollPeriod, err)
-			continue
-		}
-		// log now so that current pod info is reported before calling `condition()`
-		DefaultLogger.Debugf("Pod %q: Phase=%q, Reason=%q, readiness=%t. Elapsed: %v",
-			podName, pod.Status.Phase, pod.Status.Reason, podutils.IsPodReady(&pod), time.Since(start))
-		if done, err := condition(&pod); done {
-			if err == nil {
-				DefaultLogger.Infof("Pod %q satisfied condition %q", podName, desc)
-			}
-			return err
-		}
+func CheckPodsRunningReady(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns string, podNames []string, timeout time.Duration) bool {
+	condition := func(pod *corev1.Pod) (bool, error) {
+		err := PodRunningReady(pod)
+		return err == nil, nil
 	}
-	return fmt.Errorf("Gave up after waiting %v for pod %q to be %q", timeout, podName, desc)
+
+	return checkPodsCondition(ctx, c, log, ns, podNames, timeout, condition, "running and ready")
 }
 
 type podCondition func(pod *corev1.Pod) (bool, error)
 
+// WaitForPodCondition waits a pods to be matched to the given condition.
+func WaitForPodCondition(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
+	key := ctrlruntimeclient.ObjectKey{Name: podName, Namespace: ns}
+
+	// namespace and timeout are already set in the log's context
+	logger := log.With("pod", podName)
+	logger.Infof("Waiting for Pod to be %q...", desc)
+
+	return kwait.PollImmediate(pollPeriod, timeout, func() (bool, error) {
+		pod := corev1.Pod{}
+		if err := c.Get(ctx, key, &pod); err != nil {
+			if apierrors.IsNotFound(err) {
+				logger.Debugw("Pod not found")
+				return false, err
+			}
+			logger.Debugw("Failed to get Pod", zap.Error(err))
+			return false, nil
+		}
+
+		logger.Debugw(
+			"Pod status",
+			"phase", pod.Status.Phase,
+			"reason", pod.Status.Reason,
+			"ready", podutils.IsPodReady(&pod),
+		)
+
+		return condition(&pod)
+	})
+}
+
 // checkPodsCondition returns whether all pods whose names are listed in podNames
 // in namespace ns are in the condition, using c and waiting at most timeout.
-func checkPodsCondition(ctx context.Context, c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration, condition podCondition, desc string) bool {
-	np := len(podNames)
-	DefaultLogger.Infof("Waiting up to %v for %d pods to be %s: %s", timeout, np, desc, podNames)
+func checkPodsCondition(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns string, podNames []string, timeout time.Duration, condition podCondition, desc string) bool {
+	logger := log.With("namespace", ns, "timeout", timeout)
+	logger.Infof("Waiting for Pods to be %q...", desc)
+
 	type waitPodResult struct {
 		success bool
 		podName string
 	}
+
 	result := make(chan waitPodResult, len(podNames))
 	for _, podName := range podNames {
 		// Launch off pod readiness checkers.
 		go func(name string) {
-			err := WaitForPodCondition(ctx, c, ns, name, desc, timeout, condition)
+			err := WaitForPodCondition(ctx, c, logger, ns, name, desc, timeout, condition)
 			result <- waitPodResult{err == nil, name}
 		}(podName)
 	}
+
 	// Wait for them all to finish.
 	success := true
 	for range podNames {
 		res := <-result
 		if !res.success {
-			DefaultLogger.Debugf("Pod %[1]s failed to be %[2]s.", res.podName, desc)
+			logger.Errorw("Pod failed to reach desired condition.", "pod", res.podName)
 			success = false
 		}
 	}
-	DefaultLogger.Infof("Wanted all %d pods to be %s. Result: %t. Pods: %v", np, desc, success, podNames)
+
 	return success
 }
 
 // PodRunningReady checks whether pod p's phase is running and it has a ready
 // condition of status true.
-func PodRunningReady(p *corev1.Pod) (bool, error) {
-	// Check the phase is running.
+func PodRunningReady(p *corev1.Pod) error {
 	if p.Status.Phase != corev1.PodRunning {
-		return false, fmt.Errorf("want pod '%s' on '%s' to be '%v' but was '%v'",
-			p.ObjectMeta.Name, p.Spec.NodeName, corev1.PodRunning, p.Status.Phase)
+		return fmt.Errorf("Pod is not %v, but %v", corev1.PodRunning, p.Status.Phase)
 	}
-	// Check the ready condition is true.
+
 	if !podutils.IsPodReady(p) {
-		return false, fmt.Errorf("pod '%s' on '%s' didn't have condition {%v %v}; conditions: %v",
-			p.ObjectMeta.Name, p.Spec.NodeName, corev1.PodReady, corev1.ConditionTrue, p.Status.Conditions)
+		return fmt.Errorf("Pod is not ready, but: %v", p.Status.Conditions)
 	}
-	return true, nil
+
+	return nil
+}
+
+// WaitForDeploymentReady waits until the Deployment is fully ready.
+func WaitForDeploymentReady(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns, name string, timeout time.Duration) error {
+	key := ctrlruntimeclient.ObjectKey{Name: name, Namespace: ns}
+
+	// namespace and timeout are already set in the log's context
+	logger := log.With("deployment", key.String())
+	logger.Info("Waiting for Deployment to be ready...")
+
+	return wait.PollImmediateLog(ctx, log, 5*time.Second, timeout, func() (error, error) {
+		status, err := resources.HealthyDeployment(ctx, c, key, -1)
+		if err != nil {
+			return nil, err
+		}
+
+		if status != kubermaticv1.HealthStatusUp {
+			return fmt.Errorf("Deployment is %v", status), nil
+		}
+
+		return nil, nil
+	})
 }

@@ -19,18 +19,19 @@ docker:
 	docker build -t $(DOCKER_REPO)/addons:$(TAG) .
 
 .PHONY: hubble
-hubble: OUTPUT_FILE=hubble/hubble.yaml
+hubble: OUTPUT_FILE=hubble/hubble_v1.12.yaml
 hubble:
 	helm repo add cilium https://helm.cilium.io/ || true
 	helm repo update
 	cat hubble/_header.txt > $(OUTPUT_FILE)
 	helm template cilium cilium/cilium \
-	  --version 1.11.0 \
+	  --version 1.12.2 \
 	  --namespace kube-system \
 	  --values values-hubble.yaml \
 	  >> $(OUTPUT_FILE)
+	cat hubble/_extras.txt >> $(OUTPUT_FILE)
 	cat hubble/_footer.txt >> $(OUTPUT_FILE)
-	sed -i 's/quay.io/{{ Registry "quay.io" }}/g' $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
 
 .PHONY: aws-node-termination-handler
 aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-termination-handler.yaml
@@ -44,4 +45,38 @@ aws-node-termination-handler:
 	  --values values-aws-node-termination-handler.yaml \
 	  >> $(OUTPUT_FILE)
 	cat aws-node-termination-handler/_footer.txt >> $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
+
+.PHONY: aws-ebs-csi-driver
+aws-ebs-csi-driver: OUTPUT_FILE=csi/aws-ebs/driver.yaml
+aws-ebs-csi-driver:
+	helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver || true
+	helm repo update
+	mkdir -p csi/aws-ebs
+	cat csi/aws-ebs/_header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
+	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
+	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
+	  >> $(OUTPUT_FILE)
+	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
 	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
+	sed -i 's/k8s.gcr.io/{{ Registry "registry.k8s.io" }}/g' $(OUTPUT_FILE)
+
+.PHONY: gcp-csi-driver
+gcp-csi-driver: OUTPUT_FILE=csi/gcp/driver.yaml
+gcp-csi-driver:
+	mkdir -p csi/gcp
+	cp gcp-csi-driver-kustomization.yaml csi/gcp/kustomization.yaml
+	cat csi/gcp/_header.txt > $(OUTPUT_FILE)
+	kubectl kustomize csi/gcp/ >> $(OUTPUT_FILE)
+	cat csi/gcp/_footer.txt >> $(OUTPUT_FILE)
+	rm csi/gcp/kustomization.yaml
+	./templatify-images.sh $(OUTPUT_FILE)
+
+.PHONY: metallb
+metallb: OUTPUT_FILE=metallb/00_metallb.yaml
+metallb:
+	cat metallb/_header.txt > $(OUTPUT_FILE)
+	wget -q -O- https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml >> $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)

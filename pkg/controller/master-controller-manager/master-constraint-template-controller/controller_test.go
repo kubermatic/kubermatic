@@ -18,22 +18,20 @@ package masterconstrainttemplatecontroller
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,7 +57,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genConstraintTemplate(ctName, false), test.GenTestSeed()).
+				WithObjects(genConstraintTemplate(ctName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -73,7 +71,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(genConstraintTemplate(ctName, true), test.GenTestSeed()).
+				WithObjects(genConstraintTemplate(ctName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -90,10 +88,7 @@ func TestReconcile(t *testing.T) {
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: tc.masterClient,
-				seedsGetter:  test.CreateTestSeedsGetter(ctx, tc.masterClient),
-				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-					return tc.seedClient, nil
-				},
+				seedClients:  map[string]ctrlruntimeclient.Client{"first": tc.seedClient},
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
@@ -118,12 +113,13 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint template: %v", err)
 			}
 
-			if !reflect.DeepEqual(ct.Spec, tc.expectedCT.Spec) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
-			}
+			ct.ResourceVersion = tc.expectedCT.ResourceVersion
+			ct.Namespace = tc.expectedCT.Namespace
+			ct.APIVersion = ""
+			ct.Kind = ""
 
-			if !reflect.DeepEqual(ct.Name, tc.expectedCT.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			if !diff.SemanticallyEqual(tc.expectedCT, ct) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedCT, ct))
 			}
 		})
 	}
@@ -137,7 +133,7 @@ func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTe
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
-		ct.Finalizers = append(ct.Finalizers, apiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
+		ct.Finalizers = append(ct.Finalizers, cleanupFinalizer)
 	}
 
 	return ct

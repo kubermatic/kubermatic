@@ -18,19 +18,17 @@ package presetsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -59,7 +57,7 @@ func TestReconcile(t *testing.T) {
 			expectedPreset: generatePreset(presetName, false),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generatePreset(presetName, false), test.GenTestSeed()).
+				WithObjects(generatePreset(presetName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -71,11 +69,11 @@ func TestReconcile(t *testing.T) {
 			expectedPreset: nil,
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generatePreset(presetName, true), test.GenTestSeed()).
+				WithObjects(generatePreset(presetName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generatePreset(presetName, false), test.GenTestSeed()).
+				WithObjects(generatePreset(presetName, false), generator.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -107,11 +105,13 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get template: %v", err)
 				}
-				if !reflect.DeepEqual(seedPreset.Spec, tc.expectedPreset.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedPreset, tc.expectedPreset))
-				}
-				if !reflect.DeepEqual(seedPreset.Name, tc.expectedPreset.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedPreset, tc.expectedPreset))
+
+				seedPreset.ResourceVersion = ""
+				seedPreset.APIVersion = ""
+				seedPreset.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedPreset, seedPreset) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedPreset, seedPreset))
 				}
 			}
 		})
@@ -132,7 +132,7 @@ func generatePreset(name string, deleted bool) *kubermaticv1.Preset {
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		pr.DeletionTimestamp = &deleteTime
-		pr.Finalizers = append(pr.Finalizers, apiv1.PresetSeedCleanupFinalizer)
+		pr.Finalizers = append(pr.Finalizers, cleanupFinalizer)
 	}
 	return pr
 }

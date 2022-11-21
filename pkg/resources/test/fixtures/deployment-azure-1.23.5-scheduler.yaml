@@ -5,6 +5,7 @@ metadata:
   labels:
     app: scheduler
   name: scheduler
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -61,7 +62,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
-        image: k8s.gcr.io/kube-scheduler:v1.23.5
+        image: registry.k8s.io/kube-scheduler:v1.23.5
         livenessProbe:
           failureThreshold: 8
           httpGet:

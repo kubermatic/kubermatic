@@ -21,12 +21,13 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -69,35 +70,28 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				return nil, err
 			}
 
-			f := false
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get credentials: %w", err)
-			}
-
 			network := data.Cluster().Spec.Cloud.Hetzner.Network
 			if network == "" {
 				network = data.DC().Spec.Hetzner.Network
 			}
 
-			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
-
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), false)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:" + hetznerCCMVersion,
+					Image: registry.Must(data.RewriteImage(resources.RegistryDocker + "/hetznercloud/hcloud-cloud-controller-manager:" + hetznerCCMVersion)),
 					Command: []string{
 						"/bin/hcloud-cloud-controller-manager",
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 						"--cloud-provider=hcloud",
 						"--allow-untagged-cloud",
-						"--allocate-node-cidrs=true",
-						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0]),
+						// "false" as we use IPAM in kube-controller-manager
+						"--allocate-node-cidrs=false",
 					},
-					Env: []corev1.EnvVar{
-						{
+					Env: append(
+						getEnvVars(),
+						corev1.EnvVar{
 							Name: "NODE_NAME",
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
@@ -105,15 +99,22 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 								},
 							},
 						},
-						{
-							Name:  "HCLOUD_TOKEN",
-							Value: credentials.Hetzner.Token,
+						corev1.EnvVar{
+							Name: "HCLOUD_TOKEN",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.ClusterCloudCredentialsSecretName,
+									},
+									Key: resources.HetznerToken,
+								},
+							},
 						},
-						{
+						corev1.EnvVar{
 							Name:  "HCLOUD_NETWORK",
 							Value: network,
 						},
-						{
+						corev1.EnvVar{
 							// Required since Hetzner CCM v1.11.0.
 							// By default, the Hetzner CCM tries to validate is the control plane node
 							// attached to the configured Hetzner network. This is causing the Hetzner
@@ -123,21 +124,20 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 							Name:  "HCLOUD_NETWORK_DISABLE_ATTACHED_CHECK",
 							Value: "true",
 						},
-					},
-					VolumeMounts: getVolumeMounts(),
+					),
+					VolumeMounts: getVolumeMounts(false),
 				},
 			}
-			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				ccmContainerName: hetznerResourceRequirements.DeepCopy(),
+
+			if data.Cluster().IsDualStack() {
+				dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+					Name:  "HCLOUD_INSTANCES_ADDRESS_FAMILY",
+					Value: "dualstack",
+				})
 			}
 
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
+			defResourceRequirements := map[string]*corev1.ResourceRequirements{
+				ccmContainerName: hetznerResourceRequirements.DeepCopy(),
 			}
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)

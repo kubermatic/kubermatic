@@ -18,19 +18,17 @@ package clustertemplatesynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -59,7 +57,7 @@ func TestReconcile(t *testing.T) {
 			expectedClusterTemplate: generateClusterTemplate(clusterTemplateName, false),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateClusterTemplate(clusterTemplateName, false), test.GenTestSeed()).
+				WithObjects(generateClusterTemplate(clusterTemplateName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -71,11 +69,11 @@ func TestReconcile(t *testing.T) {
 			expectedClusterTemplate: nil,
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateClusterTemplate(clusterTemplateName, true), test.GenTestSeed()).
+				WithObjects(generateClusterTemplate(clusterTemplateName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
-				WithObjects(generateClusterTemplate(clusterTemplateName, false), test.GenTestSeed()).
+				WithObjects(generateClusterTemplate(clusterTemplateName, false), generator.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -107,11 +105,13 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get template: %v", err)
 				}
-				if !reflect.DeepEqual(seedClusterTemplate.Spec, tc.expectedClusterTemplate.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedClusterTemplate, tc.expectedClusterTemplate))
-				}
-				if !reflect.DeepEqual(seedClusterTemplate.Name, tc.expectedClusterTemplate.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedClusterTemplate, tc.expectedClusterTemplate))
+
+				seedClusterTemplate.ResourceVersion = ""
+				seedClusterTemplate.APIVersion = ""
+				seedClusterTemplate.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedClusterTemplate, seedClusterTemplate) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedClusterTemplate, seedClusterTemplate))
 				}
 			}
 		})
@@ -124,13 +124,13 @@ func generateClusterTemplate(name string, deleted bool) *kubermaticv1.ClusterTem
 			Name: name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud: test.GenDefaultCluster().Spec.Cloud,
+			Cloud: generator.GenDefaultCluster().Spec.Cloud,
 		},
 	}
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
-		ct.Finalizers = append(ct.Finalizers, apiv1.ClusterTemplateSeedCleanupFinalizer)
+		ct.Finalizers = append(ct.Finalizers, cleanupFinalizer)
 	}
 	return ct
 }

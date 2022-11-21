@@ -129,7 +129,7 @@ func (p *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 
 	vAppName := cluster.Spec.Cloud.VMwareCloudDirector.VApp
 	if vAppName == "" {
-		vAppName = fmt.Sprintf(resourceNamePattern, cluster.Name)
+		vAppName = fmt.Sprintf(ResourceNamePattern, cluster.Name)
 	}
 
 	vapp, err := vdc.GetVAppByNameOrId(vAppName, true)
@@ -356,4 +356,36 @@ func ListOVDCNetworks(ctx context.Context, auth Auth) (apiv1.VMwareCloudDirector
 	}
 
 	return orgVDCNetworks, nil
+}
+
+func ListStorageProfiles(ctx context.Context, auth Auth) (apiv1.VMwareCloudDirectorStorageProfileList, error) {
+	client, err := NewClientWithAuth(auth)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
+	}
+
+	org, err := client.GetOrganization()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization %s: %w", auth.Organization, err)
+	}
+
+	orgVDC, err := client.GetVDCForOrg(*org)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get organization VDC %q: %w", auth.VDC, err)
+	}
+
+	var storageProfiles apiv1.VMwareCloudDirectorStorageProfileList
+	if orgVDC.Vdc.VdcStorageProfiles == nil {
+		return storageProfiles, nil
+	}
+
+	for _, reference := range orgVDC.Vdc.VdcStorageProfiles.VdcStorageProfile {
+		if reference.HREF != "" {
+			storageProfiles = append(storageProfiles, apiv1.VMwareCloudDirectorStorageProfile{
+				Name: reference.Name,
+			})
+		}
+	}
+
+	return storageProfiles, nil
 }

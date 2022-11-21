@@ -34,7 +34,7 @@ import (
 
 const (
 	imageName     = "prometheus/prometheus"
-	tag           = "v2.31.1"
+	tag           = "v2.37.0"
 	appName       = "mla-prometheus"
 	containerName = "prometheus"
 
@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
@@ -77,17 +77,17 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
 			}
-			deployment.Spec.Replicas = pointer.Int32Ptr(2)
+			deployment.Spec.Replicas = pointer.Int32(2)
 			if replicas != nil {
 				deployment.Spec.Replicas = replicas
 			}
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
 			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterPrometheusServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsUser:    pointer.Int64Ptr(65534),
-				RunAsGroup:   pointer.Int64Ptr(65534),
-				FSGroup:      pointer.Int64Ptr(65534),
-				RunAsNonRoot: pointer.BoolPtr(true),
+				RunAsUser:    pointer.Int64(65534),
+				RunAsGroup:   pointer.Int64(65534),
+				FSGroup:      pointer.Int64(65534),
+				RunAsNonRoot: pointer.Bool(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -95,7 +95,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), imageName, tag),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, tag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						fmt.Sprintf("--config.file=%s/prometheus.yaml", configPath),
@@ -158,7 +158,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 				},
 				{
 					Name:            "prometheus-config-reloader",
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryQuay), reloaderImageName, reloaderTag),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, reloaderImageName, reloaderTag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						// Full usage of prometheus-config-reloader:
@@ -216,7 +216,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.UserClusterPrometheusCertificatesSecretName,
-							DefaultMode: pointer.Int32Ptr(0400),
+							DefaultMode: pointer.Int32(0400),
 						},
 					},
 				},

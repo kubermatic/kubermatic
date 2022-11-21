@@ -53,10 +53,6 @@ $(BUILD_DEST)/%: cmd/% download-gocache
 install:
 	go install $(GOTOOLFLAGS) ./cmd/...
 
-.PHONY: showenv
-showenv:
-	@go env
-
 download-gocache:
 	@./hack/ci/download-gocache.sh
 	@# Prevent this from getting executed multiple times
@@ -67,17 +63,14 @@ test: download-gocache run-tests build-tests
 
 .PHONY:  run-tests
 run-tests:
-	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./pkg/... ./cmd/... ./codegen/...
+	./hack/run-tests.sh
 
 .PHONY: build-tests
 build-tests:
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
-	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
+	@# **Important:** Do not replace this with one `go test` with multiple tags,
 	@# as that doesn't properly reflect if each individual tag still builds
-	go test -tags "cloud,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
-	go test -tags "create,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
-	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
 	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/nodeport-proxy/...
 	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
 
@@ -145,10 +138,6 @@ cover:
 run-controller-manager:
 	./hack/run-controller.sh
 
-.PHONY: run-api-server
-run-api-server:
-	./hack/run-api.sh
-
 .PHONY: run-operator
 run-operator:
 	./hack/run-operator.sh
@@ -161,18 +150,12 @@ run-master-controller-manager:
 verify:
 	./hack/verify-codegen.sh
 	./hack/verify-import-order.sh
-	./hack/verify-swagger.sh
-	./hack/verify-api-client.sh
 
 .PHONY: check-dependencies
 check-dependencies:
 	go mod tidy
 	go mod verify
 	git diff --exit-code
-
-.PHONY: gen-api-client
-gen-api-client:
-	./hack/gen-api-client.sh
 
 .PHONY: shfmt
 shfmt:

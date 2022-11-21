@@ -29,15 +29,32 @@ import (
 	"fmt"
 	"strconv"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
+	anexiatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azuretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
+	digitaloceantypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	equinixtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	gcptypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
+	hetznertypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirttypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	nutanixtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	openstacktypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	vmwareclouddirectortypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	vspheretypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
+	awsdata "k8c.io/kubermatic/v2/pkg/provider/cloud/aws/data"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
@@ -45,8 +62,84 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+const (
+	// GCP credential env.
+	envGoogleServiceAccount = "GOOGLE_SERVICE_ACCOUNT"
+	// Azure credential env.
+	envAzureClientID       = "AZURE_CLIENT_ID"
+	envAzureClientSecret   = "AZURE_CLIENT_SECRET"
+	envAzureTenantID       = "AZURE_TENANT_ID"
+	envAzureSubscriptionID = "AZURE_SUBSCRIPTION_ID"
+	// Openstack credential env.
+	envOSUsername                    = "OS_USER_NAME"
+	envOSPassword                    = "OS_PASSWORD"
+	envOSDomain                      = "OS_DOMAIN_NAME"
+	envOSApplicationCredentialID     = "OS_APPLICATION_CREDENTIAL_ID"
+	envOSApplicationCredentialSecret = "OS_APPLICATION_CREDENTIAL_SECRET"
+	envOSToken                       = "OS_TOKEN"
+	envOSProjectName                 = "OS_PROJECT_NAME"
+	envOSProjectID                   = "OS_PROJECT_ID"
+	// DigitalOcean credential env.
+	envDOToken = "DO_TOKEN"
+	// Hetzner credential env.
+	envHZToken = "HZ_TOKEN"
+	// Alibaba credential env.
+	envAlibabaAccessKeyID     = "ALIBABA_ACCESS_KEY_ID"
+	envAlibabaAccessKeySecret = "ALIBABA_ACCESS_KEY_SECRET"
+	// Packet credential env.
+	envPacketToken     = "PACKET_API_KEY"
+	envPacketProjectID = "PACKET_PROJECT_ID"
+	// KubeVirt credential env.
+	envKubeVirtKubeConfig = "KUBEVIRT_KUBECONFIG"
+)
+
+func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+	config, err := types.GetConfig(machine.Spec.ProviderSpec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
+	}
+
+	var quotaUsage *ResourceDetails
+	switch config.CloudProvider {
+	case types.CloudProviderFake:
+		quotaUsage, err = getFakeQuotaRequest(config)
+	case types.CloudProviderAWS:
+		quotaUsage, err = getAWSResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderGoogle:
+		quotaUsage, err = getGCPResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderAzure:
+		quotaUsage, err = getAzureResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderKubeVirt:
+		quotaUsage, err = getKubeVirtResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderVsphere:
+		quotaUsage, err = getVsphereResourceRequirements(config)
+	case types.CloudProviderOpenstack:
+		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+	case types.CloudProviderAlibaba:
+		quotaUsage, err = getAlibabaResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderHetzner:
+		quotaUsage, err = getHetznerResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderNutanix:
+		quotaUsage, err = getNutanixResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderDigitalocean:
+		quotaUsage, err = getDigitalOceanResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderVMwareCloudDirector:
+		quotaUsage, err = getVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderAnexia:
+		quotaUsage, err = getAnexiaResourceRequirements(ctx, userClient, config)
+	case types.CloudProviderEquinixMetal, types.CloudProviderPacket:
+		// Name Packet has been replaced at some point by Equinix Metal.
+		// We are in the process of migration to the new name, meaning that both names appear in our sourcecode.
+		quotaUsage, err = getPacketResourceRequirements(ctx, userClient, config)
+	default:
+		return nil, fmt.Errorf("Provider %s not supported", config.CloudProvider)
+	}
+
+	return quotaUsage, err
+}
+
+func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := awstypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting aws raw config: %w", err)
@@ -57,40 +150,31 @@ func getAWSResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 		return nil, fmt.Errorf("error getting AWS instance type from machine config: %w", err)
 	}
 
-	awsSize, err := provider.GetAWSInstance(instanceType)
+	instanceSize, err := awsdata.GetInstanceSize(instanceType)
 	if err != nil {
 		return nil, fmt.Errorf("error getting AWS instance type data: %w", err)
 	}
 
-	// parse the AWS resource requests
-	// memory and storage are given in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(awsSize.VCPUs))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%fG", awsSize.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
-	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
-	if err != nil {
+	// overwrite the reported disk size with the configured one
+	if err := instanceSize.WithStorage(int(rawConfig.DiskSize), "G"); err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
 
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetailsFromCapacity(instanceSize)
 }
 
-func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := gcptypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("error getting GCP raw config: %w", err)
+		return nil, fmt.Errorf("error getting gcp raw config: %w", err)
 	}
 
-	serviceAccount, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServiceAccount)
+	serviceAccount, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ServiceAccount, envGoogleServiceAccount)
 	if err != nil {
-		return nil, fmt.Errorf("error getting GCP service account from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"serviceAccount\" field, error = %w", err)
 	}
+
 	machineType, err := configVarResolver.GetConfigVarStringValue(rawConfig.MachineType)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP machine type from machine config: %w", err)
@@ -100,158 +184,162 @@ func getGCPResourceRequirements(ctx context.Context, client ctrlruntimeclient.Cl
 		return nil, fmt.Errorf("error getting GCP zone from machine config: %w", err)
 	}
 
-	machineSize, err := provider.GetGCPInstanceSize(ctx, machineType, serviceAccount, zone)
+	capacity, err := gcp.GetMachineSize(ctx, machineType, serviceAccount, zone)
 	if err != nil {
 		return nil, fmt.Errorf("error getting GCP machine size data %w", err)
 	}
 
 	// parse the GCP resource requests
 	// memory is given in MB and storage in GB
-	cpuReq, err := resource.ParseQuantity(strconv.FormatInt(machineSize.VCPUs, 10))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", machineSize.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
-	}
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
 	}
+	capacity.Storage = &storageReq
 
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getAzureResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := azuretypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure raw config: %w", err)
+		return nil, fmt.Errorf("failed to get azure raw config: %w", err)
 	}
 
-	subId, err := configVarResolver.GetConfigVarStringValue(rawConfig.SubscriptionID)
+	subscriptionID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.SubscriptionID, envAzureSubscriptionID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure subscription ID from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of azure \"subscriptionID\" field: %w", err)
 	}
-	clientId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ClientID)
+
+	tenantID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TenantID, envAzureTenantID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure client ID from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"tenantID\" field: %w", err)
 	}
-	clientSecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.ClientSecret)
+
+	clientID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientID, envAzureClientID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure client secret from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of azure \"clientID\" field: %w", err)
 	}
-	tenantId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
+
+	clientSecret, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ClientSecret, envAzureClientSecret)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure tenant ID from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of azure \"clientSecret\" field: %w", err)
 	}
+
 	location, err := configVarResolver.GetConfigVarStringValue(rawConfig.Location)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure location from machine config: %w", err)
+		return nil, fmt.Errorf("error getting azure  \"location\" from machine config: %w", err)
 	}
 	vmSizeName, err := configVarResolver.GetConfigVarStringValue(rawConfig.VMSize)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Azure vm size name from machine config: %w", err)
+		return nil, fmt.Errorf("error getting azure \"vmSizeName\" from machine config, error : %w", err)
 	}
 
-	vmSize, err := provider.GetAzureVMSize(ctx, subId, clientId, clientSecret, tenantId, location, vmSizeName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting Azure vm size data %w", err)
+	creds := azure.Credentials{
+		TenantID:       tenantID,
+		SubscriptionID: subscriptionID,
+		ClientID:       clientID,
+		ClientSecret:   clientSecret,
 	}
 
-	// parse the Azure resource requests
-	// memory is given in MB and storage in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(int(vmSize.NumberOfCores)))
+	vmSize, err := azure.GetVMSize(ctx, creds, location, vmSizeName)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", vmSize.MemoryInMB))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+		return nil, fmt.Errorf("failed to get Azure VM size: %w", err)
 	}
 
 	// Azure allows for setting os and data disk size separately
 	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DataDiskSize))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}
 	osDiskStorageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.OSDiskSize))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}
 	storageReq.Add(osDiskStorageReq)
+	vmSize.Storage = &storageReq
 
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetailsFromCapacity(vmSize)
 }
 
 func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("error getting kubevirt raw config: %w", err)
+		return nil, fmt.Errorf("failed to get kubevirt raw config: %w", err)
 	}
 
 	// KubeVirt machine size can be configured either directly or through a flavor
 	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Flavor.Name)
 	if err != nil {
-		return nil, fmt.Errorf("error getting KubeVirt flavor from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get KubeVirt \"flavor\" from machine config: %w", err)
 	}
 
 	var cpuReq, memReq resource.Quantity
-	// if flavor is set, then take the resource details from the vmi preset, otherwise take it from the config
-	if len(flavor) != 0 {
-		kubeconfig, err := configVarResolver.GetConfigVarStringValue(rawConfig.Auth.Kubeconfig)
+	// If VM templating (Instancetype or Preset) is set then read cpu and memory from it.
+	// Flavors (Presets) are depracted in favor of Instancetypes, so the latter has a higher priority.
+	// We keep flavors for the current UI compatibility.
+	switch {
+	case rawConfig.VirtualMachine.Instancetype != nil && len(rawConfig.VirtualMachine.Instancetype.Name) != 0:
+		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
 		if err != nil {
-			return nil, fmt.Errorf("error getting KubeVirt kubeconfig from machine config: %w", err)
+			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
 		}
-		preset, err := provider.KubeVirtVMIPreset(ctx, kubeconfig, flavor)
+		capacity, err := kubevirt.DescribeInstanceType(ctx, kubeconfig, rawConfig.VirtualMachine.Instancetype)
 		if err != nil {
-			return nil, fmt.Errorf("error getting KubeVirt VMI Preset: %w", err)
+			return nil, fmt.Errorf("failed to get KubeVirt VMI instancetype: %w", err)
 		}
-
-		cpuReq, memReq, err = provider.GetKubeVirtPresetResourceDetails(preset.Spec)
+		cpuReq = *capacity.CPUCores
+		memReq = *capacity.Memory
+	case len(flavor) != 0:
+		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config: %w", err)
 		}
-	} else {
+		capacity, err := kubevirt.DescribeFlavor(ctx, kubeconfig, flavor) //nolint:staticcheck
+		if err != nil {
+			return nil, fmt.Errorf("failed to get KubeVirt VMI Preset: %w", err)
+		}
+		cpuReq = *capacity.CPUCores
+		memReq = *capacity.Memory
+	default:
 		cpu, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.CPUs)
 		if err != nil {
-			return nil, fmt.Errorf("error getting KubeVirt cpu request from machine config: %w", err)
+			return nil, fmt.Errorf("failed to get KubeVirt cpu request from machine config: %w", err)
 		}
 		memory, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.Memory)
 		if err != nil {
-			return nil, fmt.Errorf("error getting KubeVirt memory request from machine config: %w", err)
+			return nil, fmt.Errorf("failed to get KubeVirt memory request from machine config: %w", err)
 		}
-		// parse the KubeVirt resource requests
 		cpuReq, err = resource.ParseQuantity(cpu)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
+			return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
 		}
 		memReq, err = resource.ParseQuantity(memory)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+			return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
 		}
 	}
 
 	storage, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.PrimaryDisk.Size)
 	if err != nil {
-		return nil, fmt.Errorf("error getting KubeVirt primary disk size from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get KubeVirt primary disk size from machine config: %w", err)
 	}
 	storageReq, err := resource.ParseQuantity(storage)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}
 
 	// Add all secondary disks
 	for _, d := range rawConfig.VirtualMachine.Template.SecondaryDisks {
 		secondaryStorage, err := configVarResolver.GetConfigVarStringValue(d.Size)
 		if err != nil {
-			return nil, fmt.Errorf("error getting KubeVirt secondary disk size from machine config: %w", err)
+			return nil, fmt.Errorf("failed to get KubeVirt secondary disk size from machine config: %w", err)
 		}
 		secondaryStorageReq, err := resource.ParseQuantity(secondaryStorage)
 		if err != nil {
-			return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+			return nil, fmt.Errorf("failed to get machine storage request to quantity: %w", err)
 		}
 		storageReq.Add(secondaryStorageReq)
 	}
@@ -263,126 +351,313 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	// extract storage and image info from provider config
 	rawConfig, err := vspheretypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("error getting vsphere raw config: %w", err)
+		return nil, fmt.Errorf("failed to get vsphere raw config: %w", err)
 	}
 
-	// parse the vSphere resource requests
-	// memory is in MB and storage is given in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(int(rawConfig.CPUs)))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(rawConfig.CPUs))
+
+	if err := capacity.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", rawConfig.MemoryMB))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+
+	if err := capacity.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse disk size: %w", err)
 	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSizeGB))
+
+	return NewResourceDetailsFromCapacity(capacity)
+}
+
+func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+	// extract storage and image info from provider config
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	rawConfig, err := openstacktypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
+		return nil, fmt.Errorf("failed to get openstack raw config: %w", err)
+	}
+
+	creds := &resources.OpenstackCredentials{}
+
+	creds.Username, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Username, envOSUsername)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"username\" field: %w", err)
+	}
+	creds.Password, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Password, envOSPassword)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"password\" field: %w", err)
+	}
+	creds.ProjectID, err = getProjectIDOrTenantID(configVarResolver, rawConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"projectID\" or fallback to\"tenantID\" field: %w", err)
+	}
+	creds.Project, err = getProjectNameOrTenantName(configVarResolver, rawConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"projectName\" field or fallback to \"tenantName\" field: %w", err)
+	}
+	creds.ApplicationCredentialID, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ApplicationCredentialID, envOSApplicationCredentialID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"applicationCredentialID\" field: %w", err)
+	}
+	if creds.ApplicationCredentialID != "" {
+		creds.ApplicationCredentialSecret, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ApplicationCredentialSecret, envOSApplicationCredentialSecret)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get the value of openstack \"applicationCredentialSecret\" field: %w", err)
+		}
+	}
+	creds.Domain, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.DomainName, envOSDomain)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"domainName\" field: %w", err)
+	}
+	creds.Token, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.TokenID, envOSToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"token\" field: %w", err)
+	}
+
+	flavorName, err := configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"flavor\" field: %w", err)
+	}
+	identityEndpoint, err := configVarResolver.GetConfigVarStringValue(rawConfig.IdentityEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"identityEndpoint\" field: %w", err)
+	}
+	region, err := configVarResolver.GetConfigVarStringValue(rawConfig.Region)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"region\" field: %w", err)
+	}
+
+	flavor, err := openstack.DescribeFlavor(creds, identityEndpoint, region, caBundle.CertPool(), flavorName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of openstack \"flavorSize\" field: %w", err)
+	}
+
+	return NewResourceDetailsFromCapacity(flavor)
+}
+
+// Get the Project name from config or env var. If not defined fallback to tenant name.
+func getProjectNameOrTenantName(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+	projectName, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectName, envOSProjectName)
+	if err == nil && len(projectName) > 0 {
+		return projectName, nil
+	}
+
+	// fallback to tenantName.
+	return configVarResolver.GetConfigVarStringValue(rawConfig.TenantName)
+}
+
+// Get the Project id from config or env var. If not defined fallback to tenant id.
+func getProjectIDOrTenantID(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envOSProjectID)
+	if err == nil && len(projectID) > 0 {
+		return projectID, nil
+	}
+
+	// fallback to tenantID.
+	return configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
+}
+
+func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	rawConfig, err := alibabatypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get alibaba raw config: %w", err)
+	}
+
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	instanceType, err := configVarResolver.GetConfigVarStringValue(rawConfig.InstanceType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of alibaba \"instanceType\" field: %w", err)
+	}
+	accessKeyID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.AccessKeyID, envAlibabaAccessKeyID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of alibaba \"accessKeyID\" field: %w", err)
+	}
+	accessKeySecret, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.AccessKeySecret, envAlibabaAccessKeySecret)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of alibaba \"accessKeySecret\" field: %w", err)
+	}
+	region, err := configVarResolver.GetConfigVarStringValue(rawConfig.RegionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of  alibaba \"region\" from machine config: %w", err)
+	}
+	disk, err := configVarResolver.GetConfigVarStringValue(rawConfig.DiskSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of alibaba \"disk\" from machine config: %w", err)
+	}
+	diskGB, err := strconv.ParseInt(disk, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("invalid disk size %q: %w", disk, err)
+	}
+
+	capacity, err := alibaba.DescribeInstanceType(accessKeyID, accessKeySecret, region, instanceType)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := capacity.WithStorage(int(diskGB), "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
+	}
+
+	return NewResourceDetailsFromCapacity(capacity)
+}
+
+func getHetznerResourceRequirements(ctx context.Context,
+	userClient ctrlruntimeclient.Client,
+	config *types.Config,
+) (*ResourceDetails, error) {
+	rawConfig, err := hetznertypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get hetzner raw config: %w", err)
+	}
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+
+	serverTypeName, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServerType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of \"serverType\" field: %w", err)
+	}
+	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envHZToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of hetzner \"token\" field: %w", err)
+	}
+
+	capacity, err := hetzner.GetServerType(ctx, token, serverTypeName)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewResourceDetailsFromCapacity(capacity)
+}
+
+func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	rawConfig, err := nutanixtypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nutanix raw config: %w", err)
+	}
+
+	var totalCPUCores int64
+	switch {
+	case rawConfig.CPUs == 0:
+		return nil, fmt.Errorf("found invalid value of nutanix \"cpus\" from machine config, %v", rawConfig.CPUs)
+	case rawConfig.CPUCores != nil:
+		totalCPUCores = rawConfig.CPUs * (*rawConfig.CPUCores)
+	default:
+		totalCPUCores = rawConfig.CPUs
+	}
+
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(totalCPUCores))
+
+	if err := capacity.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
+	}
+
+	if err := capacity.WithStorage(int(*rawConfig.DiskSize), "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse disk size: %w", err)
+	}
+
+	return NewResourceDetailsFromCapacity(capacity)
+}
+
+func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	rawConfig, err := digitaloceantypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get digitalOcean raw config: %w", err)
+	}
+	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+
+	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envDOToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of digitalOcean \"token\" field: %w", err)
+	}
+	sizeName, err := configVarResolver.GetConfigVarStringValue(rawConfig.Size)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of digitalOcean \"size\" field: %w", err)
+	}
+
+	capacity, err := digitalocean.DescribeDropletSize(ctx, token, sizeName)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewResourceDetailsFromCapacity(capacity)
+}
+
+func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	rawConfig, err := vmwareclouddirectortypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get vmwareclouddirector raw config: %w", err)
+	}
+
+	var totalCPUCores int64
+	switch {
+	case rawConfig.CPUs == 0:
+		return nil, fmt.Errorf("found invalid value of vmwareclouddirector \"cpus\" from machine config, %v", rawConfig.CPUs)
+	case rawConfig.CPUCores != 0:
+		totalCPUCores = rawConfig.CPUs * rawConfig.CPUCores
+	default:
+		totalCPUCores = rawConfig.CPUs
+	}
+
+	capacity := provider.NewNodeCapacity()
+	capacity.WithCPUCount(int(totalCPUCores))
+
+	if err := capacity.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
+		return nil, fmt.Errorf("failed to parse memory size: %w", err)
+	}
+
+	if err := capacity.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
+		return nil, fmt.Errorf("failed to parse disk size: %w", err)
+	}
+
+	return NewResourceDetailsFromCapacity(capacity)
+}
+
+func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+	rawConfig, err := anexiatypes.GetConfig(*config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anexia raw config: %w", err)
+	}
+	cpuReq, err := resource.ParseQuantity(fmt.Sprintf("%d", rawConfig.CPUs))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
+	}
+	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", rawConfig.Memory))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine memory request to quantity: %w", err)
+	}
+	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", rawConfig.DiskSize))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
 	}
 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getOpenstackResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
-	// extract storage and image info from provider config
+func getPacketResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
-	rawConfig, err := openstacktypes.GetConfig(*config)
+	rawConfig, err := equinixtypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Openstack raw config: %w", err)
+		return nil, fmt.Errorf("failed to get packet raw config: %w", err)
 	}
 
-	identityEndpoint, err := configVarResolver.GetConfigVarStringValue(rawConfig.IdentityEndpoint)
+	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envPacketToken)
 	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack identity endpoint from machine config: %w", err)
-	}
-	region, err := configVarResolver.GetConfigVarStringValue(rawConfig.Region)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack region from machine config: %w", err)
-	}
-	username, err := configVarResolver.GetConfigVarStringValue(rawConfig.Username)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack username from machine config: %w", err)
-	}
-	password, err := configVarResolver.GetConfigVarStringValue(rawConfig.Password)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack password from machine config: %w", err)
-	}
-	tenantId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack tenant ID from machine config: %w", err)
-	}
-	projectId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ProjectID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack project ID from machine config: %w", err)
-	}
-	tenantName, err := configVarResolver.GetConfigVarStringValue(rawConfig.TenantName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack tenant name from machine config: %w", err)
-	}
-	projectName, err := configVarResolver.GetConfigVarStringValue(rawConfig.ProjectName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack tenant name from machine config: %w", err)
-	}
-	appCredId, err := configVarResolver.GetConfigVarStringValue(rawConfig.ApplicationCredentialID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack application credential ID from machine config: %w", err)
-	}
-	appCredSecret, err := configVarResolver.GetConfigVarStringValue(rawConfig.ApplicationCredentialSecret)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack application credential secret from machine config: %w", err)
-	}
-	tokenId, err := configVarResolver.GetConfigVarStringValue(rawConfig.TokenID)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack token ID from machine config: %w", err)
-	}
-	domainName, err := configVarResolver.GetConfigVarStringValue(rawConfig.DomainName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack domain name from machine config: %w", err)
-	}
-	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.Flavor)
-	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack flavor from machine config: %w", err)
+		return nil, fmt.Errorf("failed to get the value of packet \"apiKey\": %w", err)
 	}
 
-	creds := &resources.OpenstackCredentials{
-		Username:                    username,
-		Password:                    password,
-		Domain:                      domainName,
-		ProjectID:                   projectId,
-		Project:                     projectName,
-		ApplicationCredentialID:     appCredId,
-		ApplicationCredentialSecret: appCredSecret,
-		Token:                       tokenId,
+	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envPacketProjectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of packet \"projectID\": %w", err)
 	}
 
-	// if projectName and projectId are empty, fallback to tenantName and tenantId
-	if len(projectId) == 0 {
-		creds.Project = tenantId
-	}
-	if len(projectName) == 0 {
-		creds.Project = tenantName
+	instanceType, err := configVarResolver.GetConfigVarStringValue(rawConfig.InstanceType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the value of packet \"instanceType\": %w", err)
 	}
 
-	flavorSize, err := provider.GetOpenStackFlavorSize(creds, identityEndpoint, region, caBundle.CertPool(), flavor)
+	capacity, err := packet.DescribeSize(token, projectID, instanceType)
 	if err != nil {
-		return nil, fmt.Errorf("error getting OpenStack flavor size data %w", err)
+		return nil, err
 	}
 
-	// parse the Openstack resource requests
-	// memory is in MB and storage is in GB
-	cpuReq, err := resource.ParseQuantity(strconv.Itoa(flavorSize.VCPUs))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine cpu request to quantity: %w", err)
-	}
-	memReq, err := resource.ParseQuantity(fmt.Sprintf("%dM", flavorSize.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
-	}
-	storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", flavorSize.Disk))
-	if err != nil {
-		return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
-	}
-
-	return NewResourceDetails(cpuReq, memReq, storageReq), nil
+	return NewResourceDetailsFromCapacity(capacity)
 }

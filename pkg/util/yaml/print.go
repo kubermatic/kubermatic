@@ -32,7 +32,7 @@ func Encode(resource interface{}, output io.Writer) error {
 	encoder := yaml3.NewEncoder(output)
 	encoder.SetIndent(2)
 
-	cm, err := genyaml.NewCommentMap()
+	cm, err := genyaml.NewCommentMap(nil)
 	if err != nil {
 		return err
 	}

@@ -32,7 +32,6 @@ import (
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -42,6 +41,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -85,13 +85,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, allowedRegistry)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Eventf(allowedRegistry, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(allowedRegistry, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	return reconcile.Result{}, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv1.AllowedRegistry) error {
-	finalizer := apiv1.AllowedRegistryCleanupFinalizer
+	finalizer := cleanupFinalizer
 
 	regSet, err := r.getRegistrySet(ctx)
 	if err != nil {
@@ -153,7 +153,9 @@ func allowedRegistryCTCreatorGetter() reconciling.NamedKubermaticV1ConstraintTem
 							Kind: AllowedRegistryCTName,
 						},
 						Validation: &constrainttemplatev1.Validation{
+							LegacySchema: pointer.Bool(false),
 							OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+								Type: "object",
 								Properties: map[string]apiextensionsv1.JSONSchemaProps{
 									AllowedRegistryField: {
 										Type: "array",

@@ -20,14 +20,8 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 if ! [ -x "$(command -v gimps)" ]; then
-  version=0.4.1
-
-  echodate "Downloading gimps v$version..."
-
-  curl -L https://github.com/xrstf/gimps/releases/download/v$version/gimps_${version}_linux_amd64.tar.gz | tar -xz gimps
-  mv gimps /usr/local/bin/
-
-  echodate "Done!"
+  echodate "You need to have gimps installed before running this script. Please install it: https://github.com/xrstf/gimps"
+  exit 1
 fi
 
 echodate "Sorting import statements..."

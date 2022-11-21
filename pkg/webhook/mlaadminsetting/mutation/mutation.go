@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -77,7 +78,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		// apply defaults to the existing MLAAdminSetting
 		err := h.ensureClusterReference(ctx, adminSetting)
 		if err != nil {
-			h.log.Info("MLAAdminSetting mutation failed", "error", err)
+			h.log.Error(err, "MLAAdminSetting mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("MLAAdminSetting mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -94,7 +95,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 		err := h.validateUpdate(ctx, oldSetting, adminSetting)
 		if err != nil {
-			h.log.Info("MLAAdminSetting mutation failed", "error", err)
+			h.log.Error(err, "MLAAdminSetting mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("MLAAdminSetting mutation request %s failed: %w", req.UID, err))
 		}
 
@@ -127,17 +128,9 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, adminSett
 		return fmt.Errorf("failed to get Seed client: %w", err)
 	}
 
-	clusters := kubermaticv1.ClusterList{}
-	if err := client.List(ctx, &clusters); err != nil {
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, client, adminSetting.Namespace)
+	if err != nil {
 		return fmt.Errorf("failed to list Cluster objects: %w", err)
-	}
-
-	var cluster *kubermaticv1.Cluster
-	for i, c := range clusters.Items {
-		if c.Status.NamespaceName == adminSetting.Namespace {
-			cluster = &clusters.Items[i]
-			break
-		}
 	}
 
 	if cluster == nil {

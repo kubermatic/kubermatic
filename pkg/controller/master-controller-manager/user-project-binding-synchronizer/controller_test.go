@@ -18,20 +18,18 @@ package userprojectbindingsynchronizer
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -61,7 +59,7 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateUserProjectBinding(userProjectBindingName, false), test.GenTestSeed()).
+				WithObjects(generateUserProjectBinding(userProjectBindingName, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -75,12 +73,12 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateUserProjectBinding(userProjectBindingName, true), test.GenTestSeed()).
+				WithObjects(generateUserProjectBinding(userProjectBindingName, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateUserProjectBinding(userProjectBindingName, false), test.GenTestSeed()).
+				WithObjects(generateUserProjectBinding(userProjectBindingName, false), generator.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -112,11 +110,13 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to get userProjectBinding: %v", err)
 				}
-				if !reflect.DeepEqual(seedUserProjectBinding.Spec, tc.expectedUserProjectBinding.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedUserProjectBinding, tc.expectedUserProjectBinding))
-				}
-				if !reflect.DeepEqual(seedUserProjectBinding.Name, tc.expectedUserProjectBinding.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedUserProjectBinding, tc.expectedUserProjectBinding))
+
+				seedUserProjectBinding.ResourceVersion = ""
+				seedUserProjectBinding.APIVersion = ""
+				seedUserProjectBinding.Kind = ""
+
+				if !diff.SemanticallyEqual(tc.expectedUserProjectBinding, seedUserProjectBinding) {
+					t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedUserProjectBinding, seedUserProjectBinding))
 				}
 			}
 		})
@@ -137,7 +137,7 @@ func generateUserProjectBinding(name string, deleted bool) *kubermaticv1.UserPro
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		userProjectBinding.DeletionTimestamp = &deleteTime
-		userProjectBinding.Finalizers = append(userProjectBinding.Finalizers, apiv1.SeedUserProjectBindingCleanupFinalizer)
+		userProjectBinding.Finalizers = append(userProjectBinding.Finalizers, cleanupFinalizer)
 	}
 	return userProjectBinding
 }

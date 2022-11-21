@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-rootIntKey: 12
-rootStringKey: a string
-rootNullKey: null
 rootBoolKey: true
+rootIntKey: 12
+rootNullKey: null
+rootStringKey: a string
 ###
-rootIntKey: 12
-rootStringKey: a string
-rootNullKey: null
-rootBoolKey: true
 newKey: new value
+rootBoolKey: true
+rootIntKey: 12
+rootNullKey: null
+rootStringKey: a string

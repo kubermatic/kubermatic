@@ -6,6 +6,7 @@ metadata:
     app: prometheus
     cluster: de-test-01
   name: prometheus
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -33,7 +34,7 @@ spec:
         - --web.enable-lifecycle
         - --storage.tsdb.no-lockfile
         - --web.route-prefix=/
-        image: quay.io/prometheus/prometheus:v2.34.0
+        image: quay.io/prometheus/prometheus:v2.37.0
         livenessProbe:
           failureThreshold: 10
           httpGet:

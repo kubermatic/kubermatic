@@ -34,33 +34,47 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string, versions *kubermaticversion.Versions) error {
+func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string, versions *kubermaticversion.Versions, kind crd.ClusterKind) error {
 	crds, err := crd.LoadFromDirectory(directory)
 	if err != nil {
 		return fmt.Errorf("failed to load CRDs: %w", err)
 	}
 
-	for _, crd := range crds {
-		log.WithField("name", crd.GetName()).Debug("Creating CRD…")
+	for _, crdObject := range crds {
+		logger := log.WithField("name", crdObject.GetName())
+
+		if crd.SkipCRDOnCluster(crdObject, kind) {
+			logger.Debug("Skipping CRD")
+			continue
+		}
+
+		logger.Debug("Creating CRD…")
 
 		if versions != nil {
 			// inject the current KKP version, so the operator and other controllers
 			// can react to the changed CRDs (the seed-operator will do the same when
 			// updating CRDs on seed clusters)
-			annotations := crd.GetAnnotations()
+			annotations := crdObject.GetAnnotations()
+			if annotations == nil {
+				annotations = map[string]string{}
+			}
 			annotations[resources.VersionLabel] = versions.KubermaticCommit
-			crd.SetAnnotations(annotations)
+			crdObject.SetAnnotations(annotations)
 		}
 
-		if err := DeployCRD(ctx, kubeClient, crd); err != nil {
-			return fmt.Errorf("failed to deploy CRD %s: %w", crd.GetName(), err)
+		if err := DeployCRD(ctx, kubeClient, crdObject); err != nil {
+			return fmt.Errorf("failed to deploy CRD %s: %w", crdObject.GetName(), err)
 		}
 	}
 
 	// wait for CRDs to be established
-	for _, crd := range crds {
-		if err := WaitForReadyCRD(ctx, kubeClient, crd.GetName(), 30*time.Second); err != nil {
-			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crd.GetName(), err)
+	for _, crdObject := range crds {
+		if crd.SkipCRDOnCluster(crdObject, kind) {
+			continue
+		}
+
+		if err := WaitForReadyCRD(ctx, kubeClient, crdObject.GetName(), 30*time.Second); err != nil {
+			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crdObject.GetName(), err)
 		}
 	}
 

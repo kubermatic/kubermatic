@@ -38,10 +38,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 var (
@@ -180,6 +182,36 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 			return true, nil
 		}
 	}
+
+	// authorize through group project bindings
+	allGroupBindings := &kubermaticv1.GroupProjectBindingList{}
+	if err := a.client.List(ctx, allGroupBindings, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
+		return false, fmt.Errorf("listing groupProjectBinding: %w", err)
+	}
+
+	groupSet := sets.NewString()
+	for _, gpb := range allGroupBindings.Items {
+		a.log.Debugf("found group project binding %q for project %q with group %q", gpb.Name, projectID, gpb.Spec.Group)
+		groupSet.Insert(gpb.Spec.Group)
+	}
+
+	if groupSet.Len() == 0 {
+		a.log.Debugf("user %q is NOT authorized for project: %s, cluster %s", userEmail, projectID, clusterID)
+		return false, nil
+	}
+
+	allUsers := &kubermaticv1.UserList{}
+	if err := a.client.List(ctx, allUsers); err != nil {
+		return false, fmt.Errorf("listing users: %w", err)
+	}
+
+	for _, user := range allUsers.Items {
+		if strings.EqualFold(user.Spec.Email, userEmail) && groupSet.HasAny(user.Spec.Groups...) {
+			a.log.Debugf("user %q authorized for project: %s, cluster: %s", userEmail, projectID, clusterID)
+			return true, nil
+		}
+	}
+
 	a.log.Debugf("user %q is NOT authorized for project: %s, cluster %s", userEmail, projectID, clusterID)
 	return false, nil
 }
@@ -233,7 +265,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to create cache", zap.Error(err))
 	}
-	ctx := context.Background()
+	ctx := signals.SetupSignalHandler()
 	go func() {
 		if err := cache.Start(ctx); err != nil {
 			log.Fatalw("failed to start cache", zap.Error(err))

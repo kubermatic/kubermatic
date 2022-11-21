@@ -29,7 +29,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -47,7 +47,7 @@ const (
 func EnvoyDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32Ptr(3)
+			d.Spec.Replicas = pointer.Int32(3)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: EnvoyDeploymentName,
@@ -223,7 +223,7 @@ func hostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
 func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	maxUnavailable := intstr.FromInt(1)
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return EnvoyDeploymentName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return EnvoyDeploymentName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			pdb.Spec.MaxUnavailable = &maxUnavailable
 			pdb.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -238,7 +238,7 @@ func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return UpdaterDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32Ptr(1)
+			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: UpdaterDeploymentName,

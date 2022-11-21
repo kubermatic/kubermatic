@@ -18,6 +18,7 @@ package helper
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -59,45 +60,12 @@ func UpdateClusterStatus(ctx context.Context, client ctrlruntimeclient.Client, c
 	})
 }
 
-// UpdateExternalClusterStatus will attempt to patch the external cluster status
-// of the given external cluster.
-func UpdateExternalClusterStatus(ctx context.Context,
-	client ctrlruntimeclient.Client,
-	externalCluster *kubermaticv1.ExternalCluster,
-	phase kubermaticv1.ExternalClusterPhase,
-	phaseMsg string,
-) error {
-	key := ctrlruntimeclient.ObjectKeyFromObject(externalCluster)
-
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// fetch the current state of the external cluster
-		if err := client.Get(ctx, key, externalCluster); err != nil {
-			return err
-		}
-
-		// modify it
-		original := externalCluster.DeepCopy()
-		externalCluster.Status.Condition = kubermaticv1.ExternalClusterCondition{
-			Phase:   phase,
-			Message: phaseMsg,
-		}
-
-		// save some work
-		if reflect.DeepEqual(original.Status, externalCluster.Status) {
-			return nil
-		}
-
-		// update the status
-		return client.Status().Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(original))
-	})
-}
-
 // ClusterReconcileWrapper is a wrapper that should be used around
 // any cluster reconciliaton. It:
-// * Checks if the cluster is paused
-// * Checks if the worker-name matches
-// * Sets the ReconcileSuccess condition for the controller by fetching
-//   the current Cluster object and patching its status.
+//   - Checks if the cluster is paused
+//   - Checks if the worker-name matches
+//   - Sets the ReconcileSuccess condition for the controller by fetching
+//     the current Cluster object and patching its status.
 func ClusterReconcileWrapper(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -126,6 +94,13 @@ func ClusterReconcileWrapper(
 	if conditionType != kubermaticv1.ClusterConditionNone {
 		err = UpdateClusterStatus(ctx, client, cluster, func(c *kubermaticv1.Cluster) {
 			SetClusterCondition(c, versions, conditionType, reconcilingStatus, "", "")
+
+			// In KKP 2.21, the ClusterConditionCloudControllerReconcilingSuccess was renamed
+			// due to a typo; this code ensures that we remove the old condition so that in
+			// KKP 2.22, we can removed the misspelling from the ENUM in the CRD.
+			if conditionType == kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess {
+				delete(c.Status.Conditions, "CloudControllerReconcilledSuccessfully")
+			}
 		})
 		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			errs = append(errs, err)
@@ -187,7 +162,7 @@ func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster, versions kub
 			continue
 		}
 
-		if !clusterHasCurrentSuccessfullConditionType(cluster, versions, conditionType, ignoreKubermaticVersion) {
+		if !clusterHasCurrentSuccessfulConditionType(cluster, versions, conditionType, ignoreKubermaticVersion) {
 			missingConditions = append(missingConditions, conditionType)
 		}
 	}
@@ -207,7 +182,7 @@ func conditionTypeListHasConditionType(
 	return false
 }
 
-func clusterHasCurrentSuccessfullConditionType(
+func clusterHasCurrentSuccessfulConditionType(
 	cluster *kubermaticv1.Cluster,
 	versions kubermatic.Versions,
 	conditionType kubermaticv1.ClusterConditionType,
@@ -290,6 +265,34 @@ func UpdateSeedStatus(ctx context.Context, client ctrlruntimeclient.Client, seed
 	})
 }
 
+type KubermaticConfigurationPatchFunc func(kc *kubermaticv1.KubermaticConfiguration)
+
+func UpdateKubermaticConfigurationStatus(ctx context.Context,
+	client ctrlruntimeclient.Client,
+	kc *kubermaticv1.KubermaticConfiguration,
+	patch KubermaticConfigurationPatchFunc,
+) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(kc)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the Kubermatic Configuration
+		if err := client.Get(ctx, key, kc); err != nil {
+			return err
+		}
+
+		// modify it
+		original := kc.DeepCopy()
+		patch(kc)
+
+		if reflect.DeepEqual(original.Status, kc.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Patch(ctx, kc, ctrlruntimeclient.MergeFrom(original))
+	})
+}
+
 // SetSeedCondition sets a condition on the given seed using the provided type, status,
 // reason and message.
 func SetSeedCondition(seed *kubermaticv1.Seed, conditionType kubermaticv1.SeedConditionType, status corev1.ConditionStatus, reason string, message string) {
@@ -323,4 +326,57 @@ func SetSeedCondition(seed *kubermaticv1.Seed, conditionType kubermaticv1.SeedCo
 		seed.Status.Conditions = map[kubermaticv1.SeedConditionType]kubermaticv1.SeedCondition{}
 	}
 	seed.Status.Conditions[conditionType] = newCondition
+}
+
+type ResourceQuotaPatchFunc func(resourceQuota *kubermaticv1.ResourceQuota)
+
+// UpdateResourceQuotaStatus will attempt to patch the resource quota status
+// of the given resource quota.
+func UpdateResourceQuotaStatus(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota, patch ResourceQuotaPatchFunc) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(resourceQuota)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the resourceQuota
+		if err := client.Get(ctx, key, resourceQuota); err != nil {
+			return err
+		}
+
+		// modify it
+		original := resourceQuota.DeepCopy()
+		patch(resourceQuota)
+
+		// save some work
+		if reflect.DeepEqual(original.Status, resourceQuota.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Status().Patch(ctx, resourceQuota, ctrlruntimeclient.MergeFrom(original))
+	})
+}
+
+func HasClusters(ctx context.Context, client ctrlruntimeclient.Client, projectID string) (bool, error) {
+	clusterList := &kubermaticv1.ClusterList{}
+
+	if err := client.List(ctx,
+		clusterList,
+		&ctrlruntimeclient.ListOptions{Limit: 1},
+		ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
+		return false, fmt.Errorf("failed to list clusters: %w", err)
+	}
+
+	return len(clusterList.Items) > 0, nil
+}
+
+func HasExternalClusters(ctx context.Context, client ctrlruntimeclient.Client, projectID string) (bool, error) {
+	extClusterList := &kubermaticv1.ExternalClusterList{}
+
+	if err := client.List(ctx,
+		extClusterList,
+		&ctrlruntimeclient.ListOptions{Limit: 1},
+		ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
+		return false, fmt.Errorf("failed to list external clusters: %w", err)
+	}
+
+	return len(extClusterList.Items) > 0, nil
 }

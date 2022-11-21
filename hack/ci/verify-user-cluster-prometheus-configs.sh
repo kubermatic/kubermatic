@@ -35,8 +35,8 @@ touch /etc/kubernetes/prometheus-client.key
 for configMap in pkg/resources/test/fixtures/configmap-*-prometheus.yaml; do
   echodate "Checking $configMap ..."
 
-  yq read "$configMap" 'data."rules.yaml"' > rules.yaml
-  yq read "$configMap" 'data."prometheus.yaml"' > prometheus.yaml
+  yq '.data."rules.yaml"' "$configMap" > rules.yaml
+  yq '.data."prometheus.yaml"' "$configMap" > prometheus.yaml
 
   promtool check rules rules.yaml
   promtool check config prometheus.yaml

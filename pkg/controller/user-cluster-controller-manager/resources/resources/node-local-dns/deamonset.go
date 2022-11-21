@@ -31,10 +31,10 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-			maxUnvailable := intstr.FromString("10%")
+			maxUnavailable := intstr.FromString("10%")
 
 			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
 
@@ -43,7 +43,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 			if ds.Spec.UpdateStrategy.RollingUpdate == nil {
 				ds.Spec.UpdateStrategy.RollingUpdate = &appsv1.RollingUpdateDaemonSet{}
 			}
-			ds.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &maxUnvailable
+			ds.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &maxUnavailable
 
 			labels := resources.BaseAppLabels(resources.NodeLocalDNSDaemonSetName,
 				map[string]string{"app.kubernetes.io/name": resources.NodeLocalDNSDaemonSetName})
@@ -69,7 +69,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 			}
 			ds.Spec.Template.Spec.HostNetwork = true
 			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault
-			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(0)
+			ds.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(0)
 			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
 				{
 					Effect:   corev1.TaintEffectNoSchedule,
@@ -87,7 +87,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "node-cache",
-					Image:           fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.21.1", registryWithOverwrite(resources.RegistryK8SGCR)),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.22.13", resources.RegistryK8S))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",
@@ -145,7 +145,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 					},
 
 					SecurityContext: &corev1.SecurityContext{
-						Privileged: pointer.BoolPtr(true),
+						Privileged: pointer.Bool(true),
 					},
 				},
 			}

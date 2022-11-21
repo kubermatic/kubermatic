@@ -24,11 +24,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2020-10-01/resources"
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
+	"k8s.io/utils/pointer"
 )
 
 func TestReconcileResourceGroup(t *testing.T) {
@@ -41,7 +42,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 		name                      string
 		clusterName               string
 		azureCloudSpec            *kubermaticv1.AzureCloudSpec
-		existingResourceGroup     *resources.Group
+		existingResourceGroup     *armresources.ResourceGroup
 		clientMode                fakeClientMode
 		overrideTags              bool
 		expectedError             bool
@@ -93,14 +94,14 @@ func TestReconcileResourceGroup(t *testing.T) {
 			azureCloudSpec: &kubermaticv1.AzureCloudSpec{
 				ResourceGroup: customExistingResourceGroup,
 			},
-			existingResourceGroup: &resources.Group{
-				ID:        to.StringPtr(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", credentials.SubscriptionID, customExistingResourceGroup)),
-				Name:      to.StringPtr(customExistingResourceGroup),
-				Location:  to.StringPtr(testLocation),
-				Type:      to.StringPtr("Microsoft.Resources/resourceGroups"),
+			existingResourceGroup: &armresources.ResourceGroup{
+				ID:        pointer.String(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", credentials.SubscriptionID, customExistingResourceGroup)),
+				Name:      pointer.String(customExistingResourceGroup),
+				Location:  pointer.String(testLocation),
+				Type:      pointer.String("Microsoft.Resources/resourceGroups"),
 				ManagedBy: nil,
-				Properties: &resources.GroupProperties{
-					ProvisioningState: to.StringPtr("Succeeded"),
+				Properties: &armresources.ResourceGroupProperties{
+					ProvisioningState: pointer.String("Succeeded"),
 				},
 			},
 			clientMode:                fakeClientModeOkay,
@@ -130,7 +131,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 
 			// prepare cluster resource and client set
 			cluster := makeCluster(tc.clusterName, tc.azureCloudSpec, credentials)
-			clientSet := getFakeClientSetWithGroupsClient(*credentials, testLocation, cluster, tc.existingResourceGroup, tc.clientMode)
+			clientSet := getFakeClientSetWithGroupsClient(tc.existingResourceGroup, tc.clientMode)
 
 			fakeClient, ok := clientSet.Groups.(*fakeGroupsClient)
 			if !ok {
@@ -184,64 +185,49 @@ func TestReconcileResourceGroup(t *testing.T) {
 const customExistingResourceGroup = "custom-existing-resource-group"
 
 type fakeGroupsClient struct {
-	resources.GroupsClient
-	location    string
-	credentials Credentials
-	mode        fakeClientMode
-	cluster     *kubermaticv1.Cluster
+	armresources.ResourceGroupsClient
 
-	Group *resources.Group
-
+	mode                      fakeClientMode
+	Group                     *armresources.ResourceGroup
 	CreateOrUpdateCalledCount int
 }
 
-func getFakeClientSetWithGroupsClient(credentials Credentials, location string, cluster *kubermaticv1.Cluster, existingGroup *resources.Group, mode fakeClientMode) *ClientSet {
+func getFakeClientSetWithGroupsClient(existingGroup *armresources.ResourceGroup, mode fakeClientMode) *ClientSet {
 	return &ClientSet{
 		Groups: &fakeGroupsClient{
-			location:    location,
-			credentials: credentials,
-			mode:        mode,
-			cluster:     cluster,
-			Group:       existingGroup,
+			mode:  mode,
+			Group: existingGroup,
 		},
 	}
 }
 
-func (c *fakeGroupsClient) Get(ctx context.Context, groupName string) (result resources.Group, err error) {
-	switch c.mode {
-	case fakeClientModeOkay:
-		if c.Group != nil && c.Group.Name != nil && groupName == *c.Group.Name {
-			return *c.Group, nil
-		} else {
-			resp := autorest.Response{
-				Response: &http.Response{
-					StatusCode: 404,
-				},
-			}
-
-			return resources.Group{
-				Response: resp,
-			}, autorest.NewErrorWithError(fmt.Errorf("not found"), "resources.GroupsClient", "Get", resp.Response, "Failure responding to request")
-		}
-
-	case fakeClientModeAuthFail:
-		resp := autorest.Response{
-			Response: &http.Response{
-				StatusCode: 403,
-			},
-		}
-
-		return resources.Group{
-			Response: resp,
-		}, autorest.NewErrorWithError(fmt.Errorf("unauthorized"), "resources.GroupsClient", "Get", resp.Response, "Failure responding to request")
-	}
-
-	return resources.Group{}, fmt.Errorf("unknown fake client mode: %s", c.mode)
-}
-
-func (c *fakeGroupsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, parameters resources.Group) (result resources.Group, err error) {
+func (c *fakeGroupsClient) CreateOrUpdate(ctx context.Context, resourceGroupName string, parameters armresources.ResourceGroup, options *armresources.ResourceGroupsClientCreateOrUpdateOptions) (armresources.ResourceGroupsClientCreateOrUpdateResponse, error) {
 	c.CreateOrUpdateCalledCount++
 	c.Group = &parameters
 
-	return *c.Group, nil
+	return armresources.ResourceGroupsClientCreateOrUpdateResponse{
+		ResourceGroup: *c.Group,
+	}, nil
+}
+
+func (c *fakeGroupsClient) Get(ctx context.Context, resourceGroupName string, options *armresources.ResourceGroupsClientGetOptions) (armresources.ResourceGroupsClientGetResponse, error) {
+	switch c.mode {
+	case fakeClientModeOkay:
+		if c.Group != nil && c.Group.Name != nil && resourceGroupName == *c.Group.Name {
+			return armresources.ResourceGroupsClientGetResponse{
+				ResourceGroup: *c.Group,
+			}, nil
+		}
+
+		return armresources.ResourceGroupsClientGetResponse{}, &azcore.ResponseError{
+			StatusCode: http.StatusNotFound,
+		}
+
+	case fakeClientModeAuthFail:
+		return armresources.ResourceGroupsClientGetResponse{}, &azcore.ResponseError{
+			StatusCode: http.StatusForbidden,
+		}
+	}
+
+	return armresources.ResourceGroupsClientGetResponse{}, fmt.Errorf("unknown fake client mode: %s", c.mode)
 }

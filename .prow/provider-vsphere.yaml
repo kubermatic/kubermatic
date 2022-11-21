@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.24
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.25
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -30,12 +30,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.0"
+            - name: RELEASES_TO_TEST
+              value: "1.25"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
@@ -55,9 +55,9 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.24-customfolder
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.25-customfolder
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -74,12 +74,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.0"
+            - name: RELEASES_TO_TEST
+              value: "1.25"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
@@ -101,9 +101,9 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.24-datastore-cluster
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.25-datastore-cluster
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -120,12 +120,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.18-node-16-kind-0.14-7
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
-            - name: VERSIONS_TO_TEST
-              value: "v1.24.0"
+            - name: RELEASES_TO_TEST
+              value: "1.25"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
@@ -147,4 +147,4 @@ presubmits:
               memory: 4Gi
               cpu: 3.5
             limits:
-              memory: 4Gi
+              memory: 6Gi

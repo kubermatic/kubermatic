@@ -22,9 +22,12 @@ import (
 	"context"
 	"flag"
 
+	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func addFlags(fs *flag.FlagSet) {
@@ -37,9 +40,21 @@ func setupControllers(ctrlCtx *controllerContext) error {
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
-	return provider.SeedsGetterFactory(ctx, client, namespace)
+	return kubernetes.SeedsGetterFactory(ctx, client, namespace)
 }
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt controllerRunOptions) (provider.SeedKubeconfigGetter, error) {
-	return provider.SeedKubeconfigGetterFactory(ctx, client)
+	return kubernetes.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func resourceQuotaSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(_ context.Context, _ manager.Manager, _ map[string]manager.Manager) (string, error) {
+		return "", nil
+	}
+}
+
+func resourceQuotaControllerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(_ context.Context, _ manager.Manager, _ map[string]manager.Manager) (string, error) {
+		return "", nil
+	}
 }

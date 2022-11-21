@@ -20,9 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-test/deep"
-
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,8 +74,8 @@ func TestExtractExposeType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			e := extractExposeTypes(tt.svc, nodeportproxy.DefaultExposeAnnotationKey)
 
-			if diff := deep.Equal(tt.wantExposeTypes, e); diff != nil {
-				t.Errorf("Got export types. Diff to expected: %v", diff)
+			if d := diff.ObjectDiff(tt.wantExposeTypes, e); d != "" {
+				t.Errorf("Got export types:\n%v", d)
 			}
 		})
 	}
@@ -127,8 +126,8 @@ func TestExtractPortHostMappingFromService(t *testing.T) {
 				t.Fatalf("wantErr: %t, got %v", tt.wantErr, err)
 			}
 
-			if diff := deep.Equal(tt.wantMapping, p); diff != nil {
-				t.Errorf("Got unexpected host port mapping. Diff to expected: %v", diff)
+			if d := diff.ObjectDiff(tt.wantMapping, p); d != "" {
+				t.Errorf("Got unexpected host port mapping:\n%v", d)
 			}
 		})
 	}
@@ -220,8 +219,9 @@ func TestSortServicesByCreationTimestamp(t *testing.T) {
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
 			SortServicesByCreationTimestamp(tt.items)
-			if diff := deep.Equal(tt.wantOrderedItems, tt.items); diff != nil {
-				t.Errorf("Unexpected order of items. Diff to expected: %v", diff)
+
+			if d := diff.ObjectDiff(tt.wantOrderedItems, tt.items); d != "" {
+				t.Errorf("Unexpected order of items:\n%v", d)
 			}
 		})
 	}

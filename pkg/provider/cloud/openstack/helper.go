@@ -388,7 +388,7 @@ func createKubermaticIPv6Subnet(netClient *gophercloud.ServiceClient, clusterNam
 		NetworkID:       networkID,
 		IPVersion:       gophercloud.IPv6,
 		GatewayIP:       nil,
-		EnableDHCP:      pointer.BoolPtr(true),
+		EnableDHCP:      pointer.Bool(true),
 		IPv6AddressMode: "dhcpv6-stateless",
 		IPv6RAMode:      "dhcpv6-stateless",
 	}
@@ -405,7 +405,7 @@ func createKubermaticIPv6Subnet(netClient *gophercloud.ServiceClient, clusterNam
 
 	// if IPv6 subnet pool name is not provided - look for the default IPv6 subnet pool
 	if subnetPoolID == "" {
-		pools, err := getAllSubnetPools(netClient, subnetpools.ListOpts{IPVersion: 6, IsDefault: pointer.BoolPtr(true)})
+		pools, err := getAllSubnetPools(netClient, subnetpools.ListOpts{IPVersion: 6, IsDefault: pointer.Bool(true)})
 		if err != nil {
 			return nil, err
 		}
@@ -605,7 +605,10 @@ func isNotFoundErr(err error) bool {
 }
 
 func isEndpointNotFoundErr(err error) bool {
-	return errors.As(err, &gophercloud.ErrEndpointNotFound{})
+	var endpointNotFoundErr *gophercloud.ErrEndpointNotFound
+	// left side of the || to catch any error returned as pointer to struct (current case of gophercloud)
+	// right side of the || to catch any error returned as struct (in case...)
+	return errors.As(err, &endpointNotFoundErr) || errors.As(err, &gophercloud.ErrEndpointNotFound{})
 }
 
 func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID string) (string, error) {

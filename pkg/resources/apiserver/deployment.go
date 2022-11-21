@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -53,7 +54,8 @@ var (
 )
 
 const (
-	name = "apiserver"
+	name                 = "apiserver"
+	auditLogsSidecarName = "audit-logs"
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment.
@@ -75,7 +77,9 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
+			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
+
+			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditLogEnabled)
 			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
@@ -87,7 +91,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				return nil, err
 			}
 
-			address := data.Cluster().GetAddress()
+			address := data.Cluster().Status.Address
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Labels: podLabels,
@@ -135,7 +139,6 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				}
 			}
 
-			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
 			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, version)
 			if err != nil {
 				return nil, err
@@ -148,7 +151,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 			apiserverContainer := &corev1.Container{
 				Name:    resources.ApiserverDeploymentName,
-				Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-apiserver:v" + version.String(),
+				Image:   registry.Must(data.RewriteImage(resources.RegistryK8S + "/kube-apiserver:v" + version.String())),
 				Command: []string{"/usr/local/bin/kube-apiserver"},
 				Env:     envVars,
 				Args:    flags,
@@ -212,37 +215,49 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				}
 			}
 
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
-			if err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
-			}
+			overrides := resources.GetOverrides(data.Cluster().Spec.ComponentsOverride)
 
 			if auditLogEnabled {
+				defResourceRequirements[auditLogsSidecarName] = &corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("10Mi"),
+						corev1.ResourceCPU:    resource.MustParse("5m"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse("60Mi"),
+						corev1.ResourceCPU:    resource.MustParse("50m"),
+					},
+				}
+
+				if data.Cluster().Spec.AuditLogging.SidecarSettings != nil && data.Cluster().Spec.AuditLogging.SidecarSettings.Resources != nil {
+					overrides[auditLogsSidecarName] = data.Cluster().Spec.AuditLogging.SidecarSettings.Resources
+				}
+
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
-						Name:    "audit-logs",
-						Image:   data.ImageRegistry(resources.RegistryDocker) + "/fluent/fluent-bit:1.2.2",
+						Name:    auditLogsSidecarName,
+						Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/fluent/fluent-bit:1.9.5")),
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
-						Args:    []string{"-i", "tail", "-p", "path=/var/log/kubernetes/audit/audit.log", "-p", "db=/var/log/kubernetes/audit/fluentbit.db", "-o", "stdout"},
+						Args:    []string{"-c", "/etc/fluent-bit/fluent-bit.conf"},
 						VolumeMounts: []corev1.VolumeMount{
 							{
 								Name:      resources.AuditLogVolumeName,
 								MountPath: "/var/log/kubernetes/audit",
 								ReadOnly:  false,
 							},
-						},
-						Resources: corev1.ResourceRequirements{
-							Requests: corev1.ResourceList{
-								corev1.ResourceMemory: resource.MustParse("10Mi"),
-								corev1.ResourceCPU:    resource.MustParse("5m"),
-							},
-							Limits: corev1.ResourceList{
-								corev1.ResourceMemory: resource.MustParse("60Mi"),
-								corev1.ResourceCPU:    resource.MustParse("50m"),
+							{
+								Name:      resources.FluentBitSecretName,
+								MountPath: "/etc/fluent-bit/",
+								ReadOnly:  true,
 							},
 						},
 					},
 				)
+			}
+
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, overrides, dep.Annotations)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
@@ -285,7 +300,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	admissionPlugins.Insert(cluster.Spec.AdmissionPlugins...)
 
-	address := data.Cluster().GetAddress()
+	address := data.Cluster().Status.Address
 
 	serviceAccountKeyFile := filepath.Join("/etc/kubernetes/service-account-key", resources.ServiceAccountKeySecretKey)
 	flags := []string{
@@ -330,6 +345,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+		"--endpoint-reconciler-type", "none",
 		// this can't be passed as two strings as the other parameters
 		"--profiling=false",
 	)
@@ -348,12 +364,6 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	if auditLogEnabled {
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
-	}
-
-	// kubernetes service endpoints are reconciled by KKP user-cluster-controller for kubernetes versions v1.21+
-	// TODO: This condition can be removed after KKP support for k8s versions below 1.21 is removed.
-	if (version.Major() >= 1 && version.Minor() > 20) || *overrideFlags.EndpointReconcilingDisabled {
-		flags = append(flags, "--endpoint-reconciler-type", "none")
 	}
 
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
@@ -385,23 +395,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--api-audiences", strings.Join(audiences, ","),
 	)
 
-	if cluster.Spec.Cloud.GCP != nil {
-		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
-	} else {
-		// KAS tries to connect to kubelet via konnectivity-agent in the user-cluster.
-		// This request fails because of security policies disallow external traffic to the node.
-		// So we prefer InternalIP for contacting kubelet when konnectivity is enabled.
-		// Refer: https://github.com/kubermatic/kubermatic/pull/7504#discussion_r700992387
-		// and https://kubermatic.slack.com/archives/C01EWQZEW69/p1628769575001400
-		if data.IsKonnectivityEnabled() {
-			flags = append(flags, "--kubelet-preferred-address-types", "InternalIP,ExternalIP")
-		} else {
-			flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
-		}
-	}
+	flags = append(flags, "--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(cluster, data.IsKonnectivityEnabled()))
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
-	if cloudProviderName != "" && cloudProviderName != "external" {
+	if cloudProviderName != "" && cloudProviderName != resources.CloudProviderExternalFlag {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
@@ -501,7 +498,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 			ReadOnly:  true,
 		},
 		{
-			Name:      resources.CloudConfigConfigMapName,
+			Name:      resources.CloudConfigSeedSecretName,
 			MountPath: "/etc/kubernetes/cloud",
 			ReadOnly:  true,
 		},
@@ -562,7 +559,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 	return vms
 }
 
-func getVolumes(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.Volume {
+func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -621,12 +618,10 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.Volume
 			},
 		},
 		{
-			Name: resources.CloudConfigConfigMapName,
+			Name: resources.CloudConfigSeedSecretName,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.CloudConfigConfigMapName,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.CloudConfigSeedSecretName,
 				},
 			},
 		},
@@ -753,19 +748,26 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.Volume
 		})
 	}
 
+	if isAuditEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.FluentBitSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.FluentBitSecretName,
+				},
+			},
+		})
+	}
+
 	return vs
 }
 
 type kubeAPIServerEnvData interface {
-	resources.CredentialsData
+	Cluster() *kubermaticv1.Cluster
 	Seed() *kubermaticv1.Seed
 }
 
 func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
-	}
 	cluster := data.Cluster()
 
 	vars := []corev1.EnvVar{
@@ -775,15 +777,26 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 		},
 	}
 
+	refTo := func(key string) *corev1.EnvVarSource {
+		return &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: resources.ClusterCloudCredentialsSecretName,
+				},
+				Key: key,
+			},
+		}
+	}
+
 	if cluster.Spec.Cloud.AWS != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
-		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", ValueFrom: refTo(resources.AWSAccessKeyID)})
+		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", ValueFrom: refTo(resources.AWSSecretAccessKey)})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_ARN", Value: cluster.Spec.Cloud.AWS.AssumeRoleARN})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
 
-	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().GetAddress().InternalName)...), nil
+	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...), nil
 }
 
 func intPtr(n int32) *int32 {

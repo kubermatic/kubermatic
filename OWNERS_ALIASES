@@ -3,10 +3,11 @@
 
 aliases:
   sig-api:
-    - floreks
+    - ahmedwaleedmalik
+    - hbernardo
     - lsviben
     - pkprzekwas
-    - zreigz
+    - simontheleg
   sig-app-management:
     - ahmedwaleedmalik
     - dermorz
@@ -27,6 +28,7 @@ aliases:
     - kron4eg
     - moadqassem
     - moelsayed
+    - pratikdeoghare
     - xmudrii
     - xrstf
   sig-networking:
@@ -36,11 +38,11 @@ aliases:
     - rastislavs
     - weirdmachine
   sig-ui:
-    - floreks
+    - ahmedwaleedmalik
     - khizerrehan
     - waseem826
   sig-virtualization:
+    - dermorz
     - hdurand0710
     - mfranczy
-    - moadqassem
     - sankalp-r

@@ -15,23 +15,27 @@
 # limitations under the License.
 
 ### This script is used as a postsubmit job and updates the dev master
-### cluster after every commit to master.
+### cluster after every commit to main.
 
 set -euo pipefail
 
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-function cleanup() {
-  if [[ -n "${TMP:-}" ]]; then
-    rm -rf "${TMP}"
-  fi
-}
-trap cleanup EXIT SIGINT SIGTERM
+TEST_NAME="Pre-warm Go build cache"
+echodate "Attempting to pre-warm Go build cache"
+
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_konnectivity.yaml
 source hack/ci/setup-kind-cluster.sh
+
+# gather the logs of all things in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
@@ -39,13 +43,14 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
 
-export AWS_ACCESS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws)
-export AWS_SECRET_ACCESS_KEY=$(vault kv get -field=secretAccessKey dev/e2e-aws)
+export AWS_E2E_TESTS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
+export AWS_E2E_TESTS_SECRET=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
 
 echodate "Successfully got secrets for dev from Vault"
 
-echodate "Running konnectivity tests..."
+echodate "Running Konnectivity tests..."
 
-go test -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity/... -args -seedconfig=${KUBECONFIG}
+go_test konnectivity_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity \
+  -aws-kkp-datacenter aws-eu-central-1a
 
 echodate "Konnectivity tests done."

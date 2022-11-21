@@ -25,7 +25,12 @@ import (
 	"sort"
 	"time"
 
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -46,12 +51,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
 	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/usercluster-webhook"
-	webterminal "k8c.io/kubermatic/v2/pkg/resources/web-terminal"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -86,7 +92,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// We should not proceed without having an IP address unless tunneling
 	// strategy is used. Its required for all Kubeconfigs & triggers errors
 	// otherwise.
-	if cluster.GetAddress().IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+	if cluster.Status.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
 		// This can happen e.g. if a LB external IP address has not yet been allocated by a CCM.
 		// Try to reconcile after some time and do not return an error.
 		r.log.Debugf("Cluster IP address not known, retry after %.0f s", clusterIPUnknownRetryTimeout.Seconds())
@@ -108,7 +114,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	// check that all StatefulSets are created
 	if ok, err := r.statefulSetHealthCheck(ctx, cluster); !ok || err != nil {
-		r.log.Info("Skipping reconcile for StatefulSets, not healthy yet")
+		r.log.Debug("Skipping reconcile for StatefulSets, etcd is not healthy yet")
 	} else if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
 		return nil, err
 	}
@@ -172,14 +178,14 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	// Ensure that OSM is completely removed, when disabled
-	if !cluster.Spec.EnableOperatingSystemManager {
+	if !cluster.Spec.IsOperatingSystemManagerEnabled() {
 		if err := r.ensureOSMResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
 	}
 
 	// Ensure that kubernetes-dashboard is completely removed, when disabled
-	if !cluster.Spec.KubernetesDashboard.Enabled {
+	if !cluster.Spec.IsKubernetesDashboardEnabled() {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
@@ -236,10 +242,39 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		Build(), nil
 }
 
+// reconcileClusterNamespace will ensure that the cluster namespace is
+// correctly initialized and created.
+func (r *Reconciler) reconcileClusterNamespace(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.NamespaceCleanupFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to set %q finalizer: %w", kubermaticv1.NamespaceCleanupFinalizer, err)
+	}
+
+	namespace, err := r.ensureNamespaceExists(ctx, log, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
+	}
+
+	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if c.Status.NamespaceName != namespace.Name {
+			c.Status.NamespaceName = namespace.Name
+		}
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update cluster namespace status: %w", err)
+	}
+
+	return namespace, nil
+}
+
 // ensureNamespaceExists will create the cluster namespace.
-func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
+func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*corev1.Namespace, error) {
+	namespace := cluster.Status.NamespaceName
+	if namespace == "" {
+		namespace = kubernetesprovider.NamespaceName(cluster.Name)
+	}
+
 	ns := &corev1.Namespace{}
-	err := r.Get(ctx, types.NamespacedName{Name: cluster.Status.NamespaceName}, ns)
+	err := r.Get(ctx, types.NamespacedName{Name: namespace}, ns)
 	if err == nil {
 		return ns, nil // found it
 	}
@@ -247,14 +282,34 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 		return nil, err // something bad happened when trying to get the namespace
 	}
 
+	log.Infow("Creating cluster namespace", "namespace", namespace)
 	ns = &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            cluster.Status.NamespaceName,
+			Name:            namespace,
 			OwnerReferences: []metav1.OwnerReference{r.getOwnerRefForCluster(cluster)},
 		},
 	}
-	if err := r.Create(ctx, ns); err != nil {
-		return nil, fmt.Errorf("failed to create Namespace %s: %w", cluster.Status.NamespaceName, err)
+	if err := r.Create(ctx, ns); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return nil, fmt.Errorf("failed to create Namespace %s: %w", namespace, err)
+	}
+
+	// before returning the namespace and putting its name into the cluster status,
+	// ensure that the namespace is in our cache, or else other controllers that
+	// want to reconcile might get confused
+	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
+		ns := &corev1.Namespace{}
+		err := r.Get(ctx, types.NamespacedName{Name: namespace}, ns)
+		if err == nil {
+			return true, nil
+		}
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to wait for cluster namespace to appear in cache: %w", err)
 	}
 
 	// Creating() an object does not set the type meta, in fact it _resets_ it.
@@ -270,7 +325,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 
 // GetServiceCreators returns all service creators that are currently in use.
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
-	extName := data.Cluster().GetAddress().ExternalName
+	extName := data.Cluster().Status.Address.ExternalName
 
 	creators := []reconciling.NamedServiceCreatorGetter{
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, extName),
@@ -293,6 +348,10 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator(data))
 	}
 
+	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
+		creators = append(creators, operatingsystemmanager.ServiceCreator())
+	}
+
 	return creators
 }
 
@@ -311,10 +370,9 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		machinecontroller.WebhookDeploymentCreator(data),
 		usercluster.DeploymentCreator(data),
 		userclusterwebhook.DeploymentCreator(data),
-		webterminal.DeploymentCreator(data),
 	}
 
-	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		deployments = append(deployments, kubernetesdashboard.DeploymentCreator(data))
 	}
 
@@ -335,8 +393,9 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
 	}
 
-	if data.Cluster().Spec.EnableOperatingSystemManager {
+	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
 		deployments = append(deployments, operatingsystemmanager.DeploymentCreator(data))
+		deployments = append(deployments, operatingsystemmanager.WebhookDeploymentCreator(data))
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -359,6 +418,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 	namespace := data.Cluster().Status.NamespaceName
 
 	creators := []reconciling.NamedSecretCreatorGetter{
+		cloudconfig.SecretCreator(data),
 		certificates.RootCACreator(data),
 		certificates.FrontProxyCACreator(),
 		resources.ImagePullSecretCreator(r.dockerPullConfigJSON),
@@ -385,9 +445,16 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		resources.ViewerKubeconfigCreator(data),
 	}
 
-	if data.Cluster().Spec.KubernetesDashboard.Enabled {
+	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
 			resources.GetInternalKubeconfigCreator(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
+		)
+	}
+
+	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
+		creators = append(creators,
+			resources.GetInternalKubeconfigCreator(namespace, resources.OperatingSystemManagerWebhookKubeconfigSecretName, resources.OperatingSystemManagerWebhookCertUsername, nil, data, r.log),
+			operatingsystemmanager.TLSServingCertificateCreator(data),
 		)
 	}
 
@@ -407,6 +474,10 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		)
 	}
 
+	if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled {
+		creators = append(creators, apiserver.FluentBitSecretCreator(data))
+	}
+
 	if data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive() {
 		creators = append(creators, apiserver.EncryptionConfigurationSecretCreator(data))
 	}
@@ -415,10 +486,26 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		creators = append(creators, resources.GetInternalKubeconfigCreator(
 			namespace, resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data, r.log,
 		))
+
+		if data.Cluster().Spec.Cloud.Kubevirt != nil {
+			creators = append(creators, cloudconfig.KubeVirtInfraSecretCreator(data))
+		}
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		creators = append(creators, resources.ServiceAccountSecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		creators = append(creators, cloudconfig.VsphereCSISecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
+		creators = append(creators, cloudconfig.NutanixCSISecretCreator(data))
+	}
+
+	if data.Cluster().Spec.Cloud.VMwareCloudDirector != nil {
+		creators = append(creators, cloudconfig.VMwareCloudDirectorCSISecretCreator(data))
 	}
 
 	return creators
@@ -443,7 +530,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		userclusterwebhook.ServiceAccountCreator,
 	}
 
-	if c.Spec.EnableOperatingSystemManager {
+	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, operatingsystemmanager.ServiceAccountCreator)
 	}
 
@@ -464,7 +551,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 		machinecontroller.WebhookRoleCreator,
 	}
 
-	if c.Spec.EnableOperatingSystemManager {
+	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedRoleCreatorGetters = append(namedRoleCreatorGetters, operatingsystemmanager.RoleCreator)
 	}
 
@@ -485,7 +572,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 		machinecontroller.WebhookRoleBindingCreator,
 	}
 
-	if c.Spec.EnableOperatingSystemManager {
+	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, operatingsystemmanager.RoleBindingCreator)
 	}
 
@@ -530,6 +617,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			apiserver.DNSAllowCreator(c, data),
 			apiserver.EctdAllowCreator(c),
 			apiserver.MachineControllerWebhookCreator(c),
+			apiserver.UserClusterWebhookCreator(c),
 		}
 
 		// one shared limited context for all hostname resolutions
@@ -537,7 +625,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 		defer cancel()
 
 		if data.IsKonnectivityEnabled() {
-			extName := data.Cluster().GetAddress().ExternalName
+			extName := data.Cluster().Status.Address.ExternalName
 
 			// allow egress traffic to all resolved cluster external IPs
 			ipList, err := hostnameToIPList(resolverCtx, extName)
@@ -584,7 +672,6 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use.
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		cloudconfig.ConfigMapCreator(data),
 		apiserver.AuditConfigMapCreator(data),
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
@@ -597,14 +684,6 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 			openvpn.ServerClientConfigsConfigMapCreator(data),
 			dns.ConfigMapCreator(data),
 		)
-	}
-
-	if data.Cluster().Spec.Cloud.VSphere != nil {
-		creators = append(creators, cloudconfig.VsphereCSIConfigMapCreator(data))
-	}
-
-	if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
-		creators = append(creators, cloudconfig.NutanixCSIConfigMapCreator(data))
 	}
 
 	return creators

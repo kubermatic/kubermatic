@@ -27,7 +27,8 @@ import (
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
-	kubeone "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
+	kcstatuscontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kc-status-controller"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
 	presetsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/preset-synchronizer"
@@ -64,7 +65,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeySynchronizerFactory := userSSHKeySynchronizerFactoryCreator(ctrlCtx)
-	masterconstraintSynchronizerFactory := masterconstraintSynchronizerFactoryCreator(ctrlCtx)
+	masterConstraintSynchronizerFactory := masterConstraintSynchronizerFactoryCreator(ctrlCtx)
+	masterConstraintTemplateSynchronizerFactory := masterConstraintTemplateSynchronizerFactoryCreator(ctrlCtx)
 	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
 	clusterTemplateSynchronizerFactory := clusterTemplateSynchronizerFactoryCreator(ctrlCtx)
 	userProjectBindingSynchronizerFactory := userProjectBindingSynchronizerFactoryCreator(ctrlCtx)
@@ -72,6 +74,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
 	applicationSecretSynchronizerFactor := applicationSecretSynchronizerFactoryCreator(ctrlCtx)
 	presetSynchronizerFactory := presetSynchronizerFactoryCreator(ctrlCtx)
+	resourceQuotaSynchronizerFactory := resourceQuotaSynchronizerFactoryCreator(ctrlCtx)
+	resourceQuotaControllerFactory := resourceQuotaControllerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		ctrlCtx.log,
@@ -82,7 +86,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory,
 		userSSHKeySynchronizerFactory,
-		masterconstraintSynchronizerFactory,
+		masterConstraintSynchronizerFactory,
+		masterConstraintTemplateSynchronizerFactory,
 		userSynchronizerFactory,
 		clusterTemplateSynchronizerFactory,
 		userProjectBindingSynchronizerFactory,
@@ -90,6 +95,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		applicationdefinitionsynchronizerFactory,
 		applicationSecretSynchronizerFactor,
 		presetSynchronizerFactory,
+		resourceQuotaSynchronizerFactory,
+		resourceQuotaControllerFactory,
 	); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)
@@ -112,14 +119,14 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.configGetter); err != nil {
 		return fmt.Errorf("failed to create seedproxy controller: %w", err)
 	}
-	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create master constraint template controller: %w", err)
-	}
 	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create external cluster controller: %w", err)
 	}
 	if err := kubeone.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create kubeone controller: %w", err)
+	}
+	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
+		return fmt.Errorf("failed to create kubermatic configuration controller: %w", err)
 	}
 
 	// init CE/EE-only controllers
@@ -177,7 +184,7 @@ func userSSHKeySynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontro
 	}
 }
 
-func masterconstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+func masterConstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return masterconstraintsynchronizer.ControllerName, masterconstraintsynchronizer.Add(
 			ctrlCtx.ctx,
@@ -185,6 +192,19 @@ func masterconstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seed
 			ctrlCtx.namespace,
 			seedManagerMap,
 			ctrlCtx.log,
+		)
+	}
+}
+
+func masterConstraintTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return masterconstrainttemplatecontroller.ControllerName, masterconstrainttemplatecontroller.Add(
+			ctrlCtx.ctx,
+			ctrlCtx.mgr,
+			ctrlCtx.log,
+			1,
+			ctrlCtx.namespace,
+			seedManagerMap,
 		)
 	}
 }

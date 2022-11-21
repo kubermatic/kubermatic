@@ -23,7 +23,6 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -49,10 +48,12 @@ import (
 const (
 	// This controller syncs the kubermatic constraints to constraint on the user cluster.
 	ControllerName = "kkp-constraint-synchronizer"
-	finalizer      = apiv1.KubermaticUserClusterNsDefaultConstraintCleanupFinalizer
 	Key            = "default"
 	AddAction      = "add"
 	RemoveAction   = "remove"
+
+	// cleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup.
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-usercluster-ns-default-constraints"
 )
 
 type reconciler struct {
@@ -167,7 +168,7 @@ func ByLabel(key string) predicate.Funcs {
 // Reconcile reconciles the kubermatic constraints in the seed cluster and syncs them to all user clusters namespace
 // which have opa integration enabled.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("constraint", request)
 	log.Debug("Reconciling")
 
 	constraint := &kubermaticv1.Constraint{}
@@ -178,7 +179,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, constraint, log)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
-		r.recorder.Eventf(constraint, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(constraint, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return reconcile.Result{}, err
@@ -208,9 +209,9 @@ func (r *reconciler) patchFinalizer(ctx context.Context, constraint *kubermaticv
 	oldconstraint := constraint.DeepCopy()
 
 	if action == AddAction {
-		kuberneteshelper.AddFinalizer(constraint, finalizer)
+		kuberneteshelper.AddFinalizer(constraint, cleanupFinalizer)
 	} else if action == RemoveAction {
-		kuberneteshelper.RemoveFinalizer(constraint, finalizer)
+		kuberneteshelper.RemoveFinalizer(constraint, cleanupFinalizer)
 	}
 
 	if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldconstraint)); err != nil {
@@ -233,7 +234,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 
 	// constraint deletion
 	if !constraint.DeletionTimestamp.IsZero() {
-		if !kuberneteshelper.HasFinalizer(constraint, finalizer) {
+		if !kuberneteshelper.HasFinalizer(constraint, cleanupFinalizer) {
 			return nil
 		}
 
@@ -249,7 +250,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 	}
 
 	// constraint initialization
-	if !kuberneteshelper.HasFinalizer(constraint, finalizer) {
+	if !kuberneteshelper.HasFinalizer(constraint, cleanupFinalizer) {
 		if err := r.patchFinalizer(ctx, constraint, AddAction); err != nil {
 			return err
 		}
@@ -297,7 +298,7 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogg
 			return ctrlruntimeclient.IgnoreNotFound(err)
 		}
 
-		log.Debugw("cleanup processing:", namespace)
+		log.Debug("Deleting constraint")
 		err = seedClient.Delete(ctx, constraint)
 
 		return ctrlruntimeclient.IgnoreNotFound(err)
@@ -320,21 +321,22 @@ func (r *reconciler) syncAllClustersNS(
 	actionFunc func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error,
 ) error {
 	for _, userCluster := range clusterList {
-		clusterName := userCluster.Spec.HumanReadableName
+		clusterName := userCluster.Name
+		clusterLog := log.With("cluster", clusterName)
 
 		// cluster Validation
 		if userCluster.Spec.Pause {
-			log.Debugw("Cluster paused, skipping", "cluster", clusterName)
+			clusterLog.Debug("Cluster paused, skipping")
 			continue
 		}
 
 		if userCluster.Status.NamespaceName == "" {
-			log.Debugw("Cluster has no namespace name yet, skipping", "cluster", clusterName)
+			clusterLog.Debug("Cluster has no namespace name yet, skipping")
 			continue
 		}
 
 		if !userCluster.DeletionTimestamp.IsZero() {
-			log.Debugw("Cluster deletion in progress, skipping", "cluster", clusterName)
+			clusterLog.Debug("Cluster deletion in progress, skipping")
 			continue
 		}
 
@@ -343,9 +345,9 @@ func (r *reconciler) syncAllClustersNS(
 				return fmt.Errorf("failed syncing constraint for cluster %s namespace: %w", clusterName, err)
 			}
 
-			log.Debugw("Reconciled constraint with cluster", "cluster", clusterName)
+			clusterLog.Debug("Reconciled constraint with cluster")
 		} else {
-			log.Debugw("Cluster does not integrate with OPA, skipping", "cluster", clusterName)
+			clusterLog.Debug("Cluster does not integrate with OPA, skipping")
 		}
 	}
 

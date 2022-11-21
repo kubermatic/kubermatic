@@ -22,16 +22,16 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -67,7 +67,7 @@ func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
 }
 
 func TestEnsureBackupCronJob(t *testing.T) {
-	version := *semver.NewSemverOrDie("1.22.5")
+	version := *defaulting.DefaultKubernetesVersioning.Default
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
@@ -108,7 +108,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		},
 	}
 
-	configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(&kubermaticv1.KubermaticConfiguration{
+	configGetter, err := kubernetesprovider.StaticKubermaticConfigurationGetterFactory(&kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
 				BackupStoreContainer:   encodeContainerAsYAML(t, &testStoreContainer),
@@ -129,7 +129,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		caBundle:             certificates.NewFakeCABundle(),
 		configGetter:         configGetter,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return test.GenTestSeed(), nil
+			return generator.GenTestSeed(), nil
 		},
 	}
 
@@ -137,7 +137,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		t.Fatalf("Error syncing cluster: %v", err)
 	}
 
-	cronJobs := &batchv1beta1.CronJobList{}
+	cronJobs := &batchv1.CronJobList{}
 	if err := reconciler.List(ctx, cronJobs); err != nil {
 		t.Fatalf("Error listing cronjobs: %v", err)
 	}

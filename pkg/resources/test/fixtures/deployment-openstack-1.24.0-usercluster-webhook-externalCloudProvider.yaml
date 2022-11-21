@@ -3,6 +3,7 @@
 metadata:
   creationTimestamp: null
   name: usercluster-webhook
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -21,15 +22,77 @@ spec:
     spec:
       containers:
       - args:
-        - -kubeconfig
-        - /etc/kubernetes/kubeconfig/kubeconfig
-        - -webhook-cert-dir=/opt/webhook-serving-cert/
-        - -webhook-cert-name=serving.crt
-        - -webhook-key-name=serving.key
-        - -ca-bundle=/opt/ca-bundle/ca-bundle.pem
-        - -v=2
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"user-cluster-webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-seed-webhook-listen-port=9443","-seed-webhook-cert-dir=/opt/webhook-serving-cert/","-seed-webhook-cert-name=serving.crt","-seed-webhook-key-name=serving.key","-user-webhook-listen-port=19443","-user-webhook-cert-dir=/opt/webhook-serving-cert/","-user-webhook-cert-name=serving.crt","-user-webhook-key-name=serving.key","-ca-bundle=/opt/ca-bundle/ca-bundle.pem","-project-id=my-project","-v=2"]}'
         command:
-        - user-cluster-webhook
+        - /http-prober-bin/http-prober
+        env:
+        - name: OS_AUTH_URL
+          value: https://example.com:8000/v3
+        - name: OS_USER_NAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cloud-credentials
+        - name: OS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cloud-credentials
+        - name: OS_DOMAIN_NAME
+          valueFrom:
+            secretKeyRef:
+              key: domain
+              name: cloud-credentials
+        - name: OS_PROJECT_NAME
+          valueFrom:
+            secretKeyRef:
+              key: project
+              name: cloud-credentials
+              optional: true
+        - name: OS_PROJECT_ID
+          valueFrom:
+            secretKeyRef:
+              key: projectID
+              name: cloud-credentials
+              optional: true
+        - name: OS_APPLICATION_CREDENTIAL_ID
+          valueFrom:
+            secretKeyRef:
+              key: applicationCredentialID
+              name: cloud-credentials
+              optional: true
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: applicationCredentialSecret
+              name: cloud-credentials
+              optional: true
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
+        - name: NO_PROXY
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: no_proxy
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: quay.io/kubermatic/kubermatic:v0.0.0-test
         name: usercluster-controller
         ports:
@@ -64,8 +127,21 @@ spec:
         - mountPath: /opt/ca-bundle/
           name: ca-bundle
           readOnly: true
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
       imagePullSecrets:
       - name: dockercfg
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.3.3
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
       serviceAccountName: usercluster-webhook
       volumes:
       - name: webhook-serving-cert
@@ -77,4 +153,6 @@ spec:
       - configMap:
           name: ca-bundle
         name: ca-bundle
+      - emptyDir: {}
+        name: http-prober-bin
 status: {}

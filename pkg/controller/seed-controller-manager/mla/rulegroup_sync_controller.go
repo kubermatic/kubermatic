@@ -63,7 +63,7 @@ func newRuleGroupSyncReconciler(
 
 	reconciler := &ruleGroupSyncReconciler{
 		Client:                  client,
-		log:                     log,
+		log:                     log.Named("rulegroup-sync"),
 		workerName:              workerName,
 		recorder:                mgr.GetEventRecorderFor(ControllerName),
 		versions:                versions,
@@ -126,7 +126,7 @@ func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconci
 		}
 		return reconciling.ReconcileKubermaticV1RuleGroups(ctx, ruleGroupCreatorGetter, cluster.Status.NamespaceName, seedClient)
 	}); err != nil {
-		r.recorder.Eventf(ruleGroup, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Event(ruleGroup, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcle rulegroup %s: %w", ruleGroup.Name, err)
 	}
 	return reconcile.Result{}, nil

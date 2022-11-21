@@ -13,13 +13,12 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://github.com/kubernetes-csi/external-snapshotter/blob/release-4.2/deploy/kubernetes/webhook-example/webhook.yaml
+# - https://github.com/kubernetes-csi/external-snapshotter/blob/v5.0.1/deploy/kubernetes/webhook-example/webhook.yaml
 # Modifications:
 #   - change namespace
 #   - template function to replace base registry
 #   - change webhook-certs secret name
 #   - add seccomp profile
-
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "openstack" }}
@@ -46,7 +45,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-validation
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-validation-webhook:v4.2.1' # change the image if you wish to use your own custom validation server image
+          image: '{{ Image "registry.k8s.io/sig-storage/snapshot-validation-webhook:v5.0.1" }}' # change the image if you wish to use your own custom validation server image
           imagePullPolicy: IfNotPresent
           args: ['--tls-cert-file=/etc/snapshot-validation-webhook/certs/cert.pem', '--tls-private-key-file=/etc/snapshot-validation-webhook/certs/key.pem']
           ports:

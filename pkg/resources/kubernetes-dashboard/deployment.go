@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,7 +62,7 @@ const (
 type kubernetesDashboardData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 }
 
 // DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment.
@@ -121,9 +122,9 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 	if len(existingContainers) == 1 && existingContainers[0].SecurityContext != nil {
 		securityContext = existingContainers[0].SecurityContext
 	}
-	securityContext.RunAsUser = pointer.Int64Ptr(1001)
-	securityContext.ReadOnlyRootFilesystem = pointer.BoolPtr(true)
-	securityContext.AllowPrivilegeEscalation = pointer.BoolPtr(false)
+	securityContext.RunAsUser = pointer.Int64(1001)
+	securityContext.ReadOnlyRootFilesystem = pointer.Bool(true)
+	securityContext.AllowPrivilegeEscalation = pointer.Bool(false)
 
 	tag, err := getDashboardVersion(data.Cluster().Status.Versions.ControlPlane)
 	if err != nil {
@@ -132,7 +133,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 
 	return []corev1.Container{{
 		Name:            name,
-		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryDocker), imageName, tag),
+		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag))),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/dashboard"},
 		Args: []string{
@@ -183,16 +184,14 @@ func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
 	// https://github.com/kubernetes/dashboard/releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.20":
-		return "v2.4.0", nil
-	case "1.21":
-		return "v2.4.0", nil
 	case "1.22":
-		return "v2.5.0", nil
+		return "v2.5.1", nil
 	case "1.23":
-		return "v2.5.0", nil
+		return "v2.5.1", nil
 	case "1.24":
 		return "v2.6.0", nil
+	case "1.25":
+		return "v2.7.0", nil
 	default:
 		return "", fmt.Errorf("no compatible version defined for Kubernetes %q", clusterVersion.MajorMinor())
 	}

@@ -20,184 +20,286 @@ package nodeportproxy
 
 import (
 	"context"
+	"errors"
+	"flag"
 	"fmt"
+	"testing"
+	"time"
 
-	"github.com/onsi/ginkgo"
-	"github.com/onsi/gomega"
-
+	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	k8swait "k8s.io/apimachinery/pkg/util/wait"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
-var _ = ginkgo.Describe("NodeportProxy", func() {
-	ctx := context.Background()
+const (
+	// serviceName is the service that is exposed and then queried during
+	// the tests N times until all expected endpoints have responded at
+	// least once.
+	serviceName = "test-service"
 
-	ginkgo.Describe("all services", func() {
-		var svcJig *ServiceJig
-		ginkgo.BeforeEach(func() {
-			k8scli, _, _ := e2eutils.GetClientsOrDie()
-			svcJig = &ServiceJig{
-				Log:    e2eutils.DefaultLogger,
+	// replicas must be > 1 to ensure the tests check that the proxy
+	// proxies not just to the first endpoint of a service.
+	replicas = 2
+)
+
+type testcase struct {
+	name              string
+	exposeType        nodeportproxy.ExposeType
+	extraAnnotations  map[string]string
+	serviceType       corev1.ServiceType
+	servicePort       corev1.ServicePort // should never have .NodePort set, so it gets allocated dynamically
+	dialConfigCreator func(svc *corev1.Service, lbSvc *corev1.Service) DialConfig
+}
+
+var (
+	versions   = kubermatic.NewDefaultVersions()
+	logOptions = e2eutils.DefaultLogOptions
+	testcases  = []testcase{
+		{
+			name:        "type NodePort, having the NodePort expose annotation",
+			exposeType:  nodeportproxy.NodePortType,
+			serviceType: corev1.ServiceTypeNodePort,
+			servicePort: corev1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
+			dialConfigCreator: func(svc *corev1.Service, lbSvc *corev1.Service) DialConfig {
+				targetNp := findExposingNodePort(lbSvc, svc.Spec.Ports[0].NodePort)
+
+				return DialConfig{
+					TargetIP:   "127.0.0.1",
+					TargetPort: int(targetNp),
+					HTTPS:      false,
+				}
+			},
+		},
+		{
+			name:             "type ClusterIP, having the SNI expose annotation",
+			exposeType:       nodeportproxy.SNIType,
+			serviceType:      corev1.ServiceTypeClusterIP,
+			extraAnnotations: map[string]string{nodeportproxy.PortHostMappingAnnotationKey: fmt.Sprintf(`{"https":"%s.example.com"}`, serviceName)},
+			servicePort:      corev1.ServicePort{Name: "https", Port: 6443, TargetPort: intstr.FromInt(6443), Protocol: corev1.ProtocolTCP},
+			dialConfigCreator: func(svc *corev1.Service, lbSvc *corev1.Service) DialConfig {
+				targetNp := findExposingNodePort(lbSvc, 6443)
+
+				return DialConfig{
+					TargetIP:   fmt.Sprintf("%s.example.com", svc.Name),
+					TargetPort: int(targetNp),
+					HTTPS:      true,
+					ExtraCurlArguments: []string{
+						"--resolve",
+						fmt.Sprintf("%s.example.com:%d:127.0.0.1", svc.Name, targetNp),
+					},
+				}
+			},
+		},
+		{
+			name:        "type ClusterIP, having the Tunneling expose annotation",
+			exposeType:  nodeportproxy.TunnelingType,
+			serviceType: corev1.ServiceTypeClusterIP,
+			servicePort: corev1.ServicePort{Name: "https", Port: 8080, TargetPort: intstr.FromInt(8088), Protocol: corev1.ProtocolTCP},
+			dialConfigCreator: func(svc *corev1.Service, lbSvc *corev1.Service) DialConfig {
+				targetNp := findExposingNodePort(lbSvc, 8088)
+
+				return DialConfig{
+					TargetIP:   fmt.Sprintf("%s.%s.svc.cluster.local", svc.Name, svc.Namespace),
+					TargetPort: 8080,
+					HTTPS:      true,
+					ExtraCurlArguments: []string{
+						"--proxy",
+						fmt.Sprintf("127.0.0.1:%d", targetNp),
+					},
+				}
+			},
+		},
+	}
+)
+
+func init() {
+	flag.StringVar(&versions.Kubermatic, "kubermatic-tag", "latest", "Kubermatic image tag to be used for the tests")
+	logOptions.AddFlags(flag.CommandLine)
+}
+
+func TestNodeportProxy(t *testing.T) {
+	ctx := signals.SetupSignalHandler()
+	logger := log.NewFromOptions(logOptions).Sugar()
+
+	k8scli, podRestCli, config, err := e2eutils.GetClients()
+	if err != nil {
+		t.Fatalf("failed to get client for seed cluster: %v", err)
+	}
+
+	// setup the nodeport-proxy
+	npp := &NodeportProxy{
+		Log:      logger,
+		Client:   k8scli,
+		Versions: versions,
+	}
+
+	logger.Info("Setting up nodeport-proxy…")
+
+	if err := npp.Setup(ctx); err != nil {
+		t.Fatalf("Failed to setup nodeport-proxy: %v", err)
+	}
+	defer func() {
+		// use a fresh context to run the cleanup when the root context was cancelled (e.g. via Ctrl-C)
+		if err := npp.Cleanup(context.Background()); err != nil {
+			t.Fatalf("Failed to cleanup nodeport-proxy: %v", err)
+		}
+	}()
+
+	// prepare the test pod
+	networkingTest := &networkingTestConfig{
+		TestPodConfig: e2eutils.TestPodConfig{
+			Log:           logger,
+			Client:        k8scli,
+			Namespace:     npp.Namespace,
+			Config:        config,
+			PodRestClient: podRestCli,
+			CreatePodFunc: newAgnhostPod,
+		},
+	}
+
+	logger.Info("Setting up test pod…")
+
+	if err := networkingTest.DeployTestPod(ctx, logger); err != nil {
+		t.Fatalf("Failed to setup test pod: %v", err)
+	}
+	defer func() {
+		// use a fresh context to run the cleanup when the root context was cancelled (e.g. via Ctrl-C)
+		if err := networkingTest.CleanUp(context.Background()); err != nil {
+			t.Fatalf("Failed to cleanup test pod: %v", err)
+		}
+	}()
+
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			svcJig := &ServiceJig{
+				Log:    logger,
 				Client: k8scli,
 			}
-		})
-		ginkgo.AfterEach(func() {
-			if !skipCleanup {
-				gomega.Expect(svcJig.CleanUp(ctx)).NotTo(gomega.HaveOccurred())
+
+			// create service with multiple endpoints
+			svc, endpoints, err := createTestServiceWithPods(ctx, svcJig, testcase)
+			if err != nil {
+				t.Fatalf("Failed to create service with pods: %v", err)
 			}
-		})
-		ginkgo.Context("of type NodePort, having the NodePort expose annotation", func() {
-			ginkgo.BeforeEach(func() {
-				// nodePort set to 0 so that it gets allocated dynamically.
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.NodePortType.String()).
-						WithSelector(map[string]string{"apps": "app-a"}).
-						WithServiceType(corev1.ServiceTypeNodePort).
-						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).
-						Build(), 1, false)).
-					NotTo(gomega.BeNil(), "NodePort service creation failed")
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "true").
-						WithSelector(map[string]string{"apps": "app-b"}).
-						WithServiceType(corev1.ServiceTypeNodePort).
-						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).
-						Build(), 2, false)).
-					NotTo(gomega.BeNil(), "NodePort service creation failed")
-			})
-
-			ginkgo.It("should be exposed", func() {
-				ginkgo.By("updating the lb service")
-				portsToBeExposed := sets.NewInt32()
-				e2eutils.DefaultLogger.Debugw("computing ports to be exposed", "services", svcJig.Services)
-				for _, svc := range svcJig.Services {
-					portsToBeExposed = ExtractNodePorts(svc).Union(portsToBeExposed)
+			defer func() {
+				if err := svcJig.Cleanup(context.Background()); err != nil {
+					t.Fatalf("Failed to cleanup: %v", err)
 				}
-				gomega.Eventually(func() sets.Int32 {
-					// When the difference between the node ports of the
-					// service to be exposed and the ports of the lb server is
-					// empty, it means that all ports was exposed.
-					lbSvc := deployer.GetLbService(ctx)
-					gomega.Expect(lbSvc).ShouldNot(gomega.BeNil())
-					return portsToBeExposed.Difference(ExtractPorts(lbSvc))
-				}, "2m", "1s").Should(gomega.HaveLen(0), "All exposed service ports should be reflected in the lb service")
+			}()
 
-				ginkgo.By("by load-balancing on available endpoints")
-				for _, svc := range svcJig.Services {
-					lbSvc := deployer.GetLbService(ctx)
-					targetNp := FindExposingNodePort(lbSvc, svc.Spec.Ports[0].NodePort)
-					e2eutils.DefaultLogger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
-					gomega.Expect(networkingTest.DialFromNode("127.0.0.1", int(targetNp), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...), false)).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
+			// tests for NodePort Services need to wait until all ports are exposed
+			// in the LoadBalancer
+			if testcase.serviceType == corev1.ServiceTypeNodePort {
+				logger.Info("Waiting for ports to be exposed…")
+				portsToBeExposed := extractNodePorts(svc)
+
+				err = wait.PollLog(ctx, logger, 2*time.Second, 2*time.Minute, func() (transient error, terminal error) {
+					lbSvc := npp.GetLoadBalancer(ctx)
+					if remaining := portsToBeExposed.Difference(extractPorts(lbSvc)); remaining.Len() > 0 {
+						return fmt.Errorf("ports %v are not yet exposed", remaining.List()), nil
+					}
+
+					return nil, nil
+				})
+				if err != nil {
+					t.Fatalf("Failed to expose ports: %v", err)
 				}
-			})
-		})
+			}
 
-		ginkgo.Context("of type ClusterIP, having the SNI expose annotation", func() {
-			ginkgo.BeforeEach(func() {
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.SNIType.String()).
-						WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https":"service-a.example.com"}`).
-						WithSelector(map[string]string{"apps": "app-a"}).
-						WithServiceType(corev1.ServiceTypeClusterIP).
-						WithServicePort("https", 6443, 0, intstr.FromInt(6443), corev1.ProtocolTCP).
-						Build(), 1, true)).
-					NotTo(gomega.BeNil(), "ClusterIP service creation failed")
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.SNIType.String()).
-						WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https":"service-b.example.com"}`).
-						WithSelector(map[string]string{"apps": "app-b"}).
-						WithServiceType(corev1.ServiceTypeClusterIP).
-						WithServicePort("https", 6443, 0, intstr.FromInt(6443), corev1.ProtocolTCP).
-						Build(), 2, true)).
-					NotTo(gomega.BeNil(), "ClusterIP service creation failed")
-			})
+			// wait until we have reached every endpoint at least once
+			unverifiedEndpoints := sets.NewString(endpoints...)
 
-			ginkgo.It("should be exposed", func() {
-				ginkgo.By("load-balancing on available endpoints")
-				for _, svc := range svcJig.Services {
-					lbSvc := deployer.GetLbService(ctx)
-					targetNp := FindExposingNodePort(lbSvc, 6443)
-					e2eutils.DefaultLogger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
-					gomega.Expect(networkingTest.DialFromNode(fmt.Sprintf("%s.example.com", svc.Name), int(targetNp), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...), true, "-k", "--resolve", fmt.Sprintf("%s.example.com:%d:127.0.0.1", svc.Name, targetNp))).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
+			logger.Info("Waiting until we have reached every endpoint at least once…")
+			err = wait.PollImmediateLog(ctx, logger, 2*time.Second, 2*time.Minute, func() (transient error, terminal error) {
+				// get the current state of the nodeport-proxy's LoadBalancer service
+				lbSvc := npp.GetLoadBalancer(ctx)
+
+				// let the test decide how we try to reach the service
+				dialConfig := testcase.dialConfigCreator(svc, lbSvc)
+
+				// try to reach the service
+				endpoint, err := networkingTest.Dial(dialConfig)
+				if err != nil {
+					return err, nil
 				}
-			})
-		})
 
-		ginkgo.Context("of type ClusterIP, having the Tunneling expose annotation", func() {
-			ginkgo.BeforeEach(func() {
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.TunnelingType.String()).
-						WithSelector(map[string]string{"apps": "app-a"}).
-						WithServiceType(corev1.ServiceTypeClusterIP).
-						WithServicePort("https", 8080, 0, intstr.FromInt(8088), corev1.ProtocolTCP).
-						Build(), 1, true)).
-					NotTo(gomega.BeNil(), "ClusterIP service creation failed")
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.TunnelingType.String()).
-						WithSelector(map[string]string{"apps": "app-b"}).
-						WithServiceType(corev1.ServiceTypeClusterIP).
-						WithServicePort("https", 8080, 0, intstr.FromInt(8088), corev1.ProtocolTCP).
-						Build(), 2, true)).
-					NotTo(gomega.BeNil(), "ClusterIP service creation failed")
-			})
-
-			ginkgo.It("should be exposed", func() {
-				ginkgo.By("load-balancing on available endpoints")
-				for _, svc := range svcJig.Services {
-					lbSvc := deployer.GetLbService(ctx)
-					targetNp := FindExposingNodePort(lbSvc, 8088)
-					e2eutils.DefaultLogger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
-					gomega.Expect(networkingTest.DialFromNode(fmt.Sprintf("%s.%s.svc.cluster.local", svc.Name, svc.Namespace), 8080, 15, 1, sets.NewString(svcJig.ServicePods[svc.Name]...), true, "--proxy", fmt.Sprintf("127.0.0.1:%d", targetNp))).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
+				unverifiedEndpoints.Delete(endpoint)
+				if unverifiedEndpoints.Len() > 0 {
+					return fmt.Errorf("not all endpoints reached yet: %v", unverifiedEndpoints.List()), nil
 				}
+
+				return nil, nil
 			})
+			if err != nil {
+				t.Fatalf("Connectivity check failed: %v", err)
+			}
+
+			logger.Info("All endpoints reachable, tests passed successfully.")
 		})
+	}
 
-		ginkgo.Context("not having the proper annotation", func() {
-			ginkgo.BeforeEach(func() {
-				// nodePort set to 0 so that it gets allocated dynamically.
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithSelector(map[string]string{"apps": "app-a"}).
-						WithServiceType(corev1.ServiceTypeNodePort).
-						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).
-						Build(), 1, false)).
-					NotTo(gomega.BeNil(), "NodePort service creation failed")
-				gomega.Expect(svcJig.CreateServiceWithPods(ctx,
-					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "false").
-						WithSelector(map[string]string{"apps": "app-b"}).
-						WithServiceType(corev1.ServiceTypeNodePort).
-						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).
-						Build(), 1, false)).
-					NotTo(gomega.BeNil(), "NodePort service creation failed")
-			})
+	// one extra test that has a different check, put here to keep the loop above easier to read
 
-			ginkgo.It("should not be exposed", func() {
-				portsNotToBeExposed := sets.NewInt32()
-				for _, svc := range svcJig.Services {
-					portsNotToBeExposed = ExtractNodePorts(svc).Union(portsNotToBeExposed)
-				}
-				gomega.Consistently(func() sets.Int32 {
-					// When the difference between the node ports of the
-					// service to be exposed and the ports of the lb server is
-					// empty, it means that all ports was exposed.
-					lbSvc := deployer.GetLbService(ctx)
-					gomega.Expect(lbSvc).ShouldNot(gomega.BeNil())
-					return portsNotToBeExposed.Intersection(ExtractPorts(lbSvc))
-				}, "10s", "1s").Should(gomega.HaveLen(0), "None of the ports should be reflected in the lb service")
-			})
+	t.Run("service without the proper annotation should not be exposed", func(t *testing.T) {
+		svcJig := &ServiceJig{
+			Log:    logger,
+			Client: k8scli,
+		}
+
+		svc, _, err := createTestServiceWithPods(ctx, svcJig, testcase{
+			exposeType:  -1, // this skips the expose annotation
+			serviceType: corev1.ServiceTypeNodePort,
+			servicePort: corev1.ServicePort{Name: "http", Port: 80, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
 		})
+		if err != nil {
+			t.Fatalf("Failed to create service with pods: %v", err)
+		}
 
+		// none of the ports of our service should be exposed in the load balancer
+		logger.Info("Ensuring ports are not exposed…")
+		portsNotToBeExposed := extractNodePorts(svc)
+
+		err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func() (transient error, terminal error) {
+			lbSvc := npp.GetLoadBalancer(ctx)
+			if exposed := portsNotToBeExposed.Intersection(extractPorts(lbSvc)); exposed.Len() > 0 {
+				// if a port appears, it's not a transient error that might go away, having
+				// the port exposed once is already a terminal issue
+				return nil, fmt.Errorf("ports %v have been exposed when they should not have", exposed.List())
+			}
+
+			return errors.New("nothing exposed, all good"), nil
+		})
+		if err != nil && !errors.Is(err, k8swait.ErrWaitTimeout) {
+			t.Fatalf("Should not have exposed a service, but %v", err)
+		}
+
+		logger.Info("Endpoints not accidentally exposed, tests passed successfully.")
 	})
+}
 
-})
+func createTestServiceWithPods(ctx context.Context, svcJig *ServiceJig, tc testcase) (*corev1.Service, []string, error) {
+	svcBuilder := test.NewServiceBuilder(test.NamespacedName{Name: serviceName}).
+		WithServiceType(tc.serviceType).
+		WithServicePorts(tc.servicePort).
+		WithSelector(map[string]string{"apps": "test"})
+
+	// only expose if a valid type is given, some tests rely on creating unexposed services
+	if tc.exposeType >= 0 {
+		svcBuilder.WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, tc.exposeType.String())
+	}
+
+	for k, v := range tc.extraAnnotations {
+		svcBuilder.WithAnnotation(k, v)
+	}
+
+	return svcJig.CreateServiceWithPods(ctx, svcBuilder.Build(), int32(replicas), tc.servicePort.Name == "https")
+}

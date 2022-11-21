@@ -19,13 +19,16 @@ package azure
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-05-01/network"
-	"github.com/Azure/go-autorest/autorest/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
 func routeTableName(cluster *kubermaticv1.Cluster) string {
@@ -39,15 +42,15 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 		cluster.Spec.Cloud.Azure.RouteTableName = routeTableName(cluster)
 	}
 
-	routeTable, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, "")
-	if err != nil && !isNotFound(routeTable.Response) {
+	_, err := clients.RouteTables.Get(ctx, cluster.Spec.Cloud.Azure.ResourceGroup, cluster.Spec.Cloud.Azure.RouteTableName, nil)
+	if err != nil && !isNotFound(err) {
 		return nil, err
 	}
 
 	// usually, we check for ownership tags here and then compare attributes of interest to a target representation
 	// of the resource. Since there is nothing in the route table we could compare to eventually reconcile (the subnet setting
 	// you see later on is ineffective), we skip all of that and return early if we found a route table during our API call earlier.
-	if !isNotFound(routeTable.Response) {
+	if !isNotFound(err) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
 			// this is a special case; because we cannot determine if a route table was created by
@@ -70,50 +73,40 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 	})
 }
 
-func targetRouteTable(cloud kubermaticv1.CloudSpec, location string) *network.RouteTable {
-	return &network.RouteTable{
-		Name:     to.StringPtr(cloud.Azure.RouteTableName),
-		Location: to.StringPtr(location),
+func targetRouteTable(cloud kubermaticv1.CloudSpec, location string) *armnetwork.RouteTable {
+	return &armnetwork.RouteTable{
+		Name:     pointer.String(cloud.Azure.RouteTableName),
+		Location: pointer.String(location),
 	}
 }
 
 // ensureRouteTable will create or update an Azure route table attached to the specified subnet. The call is idempotent.
-func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, rt *network.RouteTable) error {
+func ensureRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec, rt *armnetwork.RouteTable) error {
 	if rt == nil {
 		return fmt.Errorf("invalid network.RouteTable passed")
 	}
 
-	future, err := clients.RouteTables.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, *rt)
+	future, err := clients.RouteTables.BeginCreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, *rt, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create or update route table %q: %w", cloud.Azure.RouteTableName, err)
 	}
 
-	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return fmt.Errorf("failed to create or update route table %q: %w", cloud.Azure.RouteTableName, err)
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	return nil
+	return err
 }
 
 func deleteRouteTable(ctx context.Context, clients *ClientSet, cloud kubermaticv1.CloudSpec) error {
-	// We first do Get to check existence of the route table to see if its already gone or not.
-	// We could also directly call delete but the error response would need to be unpacked twice to get the correct error message.
-	res, err := clients.RouteTables.Get(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, "")
+	future, err := clients.RouteTables.BeginDelete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName, nil)
 	if err != nil {
-		if isNotFound(res.Response) {
-			return nil
-		}
-		return err
+		return ignoreNotFound(err)
 	}
 
-	future, err := clients.RouteTables.Delete(ctx, cloud.Azure.ResourceGroup, cloud.Azure.RouteTableName)
-	if err != nil {
-		return err
-	}
+	_, err = future.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 5 * time.Second,
+	})
 
-	if err = future.WaitForCompletionRef(ctx, *clients.Autorest); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

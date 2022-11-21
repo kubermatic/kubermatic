@@ -20,18 +20,16 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 # To support a wider range of Kubernetes userclusters, we ship multiple
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.23.6/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.23
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.21.11/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.21
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.25.3/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.25
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.23.13/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.23
 
-RUN wget -O- https://get.helm.sh/helm-v3.8.1-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
+RUN wget -O- https://get.helm.sh/helm-v3.10.1-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
-# We need the ca-certs so they api doesn't crash because it can't verify the certificate of Dex
+# We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
 
 # Do not needless copy all binaries into the image.
-COPY ./_build/image-loader \
-     ./_build/kubermatic-api \
-     ./_build/kubermatic-operator \
+COPY ./_build/kubermatic-operator \
      ./_build/kubermatic-installer \
      ./_build/kubermatic-webhook \
      ./_build/master-controller-manager \
@@ -40,7 +38,6 @@ COPY ./_build/image-loader \
      ./_build/user-cluster-webhook \
      /usr/local/bin/
 
-COPY ./cmd/kubermatic-api/swagger.json /opt/swagger.json
 COPY ./charts /opt/charts
 
 USER nobody

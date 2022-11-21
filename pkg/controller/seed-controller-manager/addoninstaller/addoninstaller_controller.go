@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"time"
 
@@ -28,17 +27,17 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -50,7 +49,7 @@ import (
 )
 
 const (
-	ControllerName  = "kubermatic_addoninstaller_controller"
+	ControllerName  = "kkp-addoninstaller-controller"
 	addonDefaultKey = ".spec.isDefault"
 
 	kubeProxyAddonName = "kube-proxy"
@@ -103,24 +102,10 @@ func Add(
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for clusters: %w", err)
+		return fmt.Errorf("failed to create watch for Clusters: %w", err)
 	}
 
-	enqueueClusterForNamespacedObject := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
-			log.Errorw("Failed to list clusters", zap.Error(err))
-			return []reconcile.Request{}
-		}
-		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.GetNamespace() {
-				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
-			}
-		}
-		return []reconcile.Request{}
-	})
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, enqueueClusterForNamespacedObject); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, util.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 		return fmt.Errorf("failed to create watch for Addons: %w", err)
 	}
 
@@ -128,7 +113,7 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("cluster", request.Name)
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
@@ -138,6 +123,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
+	}
+
+	if cluster.DeletionTimestamp != nil {
+		return reconcile.Result{}, nil
 	}
 
 	// Add a wrapping here so we can emit an event on error
@@ -240,7 +229,7 @@ func (r *Reconciler) getAddons(ctx context.Context) (*kubermaticv1.AddonList, er
 // mechanism where instead of an AddonList, only a []string is given.
 func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 	defaultAddonList := kubermaticv1.AddonList{}
-	if err := yaml.UnmarshalStrict([]byte(defaults.DefaultKubernetesAddons), &defaultAddonList); err != nil {
+	if err := yaml.UnmarshalStrict([]byte(defaulting.DefaultKubernetesAddons), &defaultAddonList); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal default addon list: %w", err)
 	}
 
@@ -248,38 +237,20 @@ func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 }
 
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {
-	ensuredAddonsMap := map[string]struct{}{}
-	for _, addon := range addons.Items {
+	ensuredAddonsMap := sets.NewString()
+	creators := []reconciling.NamedKubermaticV1AddonCreatorGetter{}
+
+	for i, addon := range addons.Items {
 		if skipAddonInstallation(addon, cluster) {
 			continue
 		}
-		ensuredAddonsMap[addon.Name] = struct{}{}
-		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}
-		addonLog := log.With("addon", name)
-		existingAddon := &kubermaticv1.Addon{}
-		err := r.Get(ctx, name, existingAddon)
-		if err != nil {
-			if !apierrors.IsNotFound(err) {
-				return fmt.Errorf("failed to get addon %q: %w", addon.Name, err)
-			}
-			if err := r.createAddon(ctx, addonLog, addon, cluster); err != nil {
-				return fmt.Errorf("failed to create addon %q: %w", addon.Name, err)
-			}
-		} else {
-			addonLog.Debug("Addon already exists")
-			if !reflect.DeepEqual(addon.Labels, existingAddon.Labels) || !reflect.DeepEqual(addon.Annotations, existingAddon.Annotations) || !reflect.DeepEqual(addon.Spec.Variables, existingAddon.Spec.Variables) || !reflect.DeepEqual(addon.Spec.RequiredResourceTypes, existingAddon.Spec.RequiredResourceTypes) {
-				updatedAddon := existingAddon.DeepCopy()
-				updatedAddon.Labels = addon.Labels
-				updatedAddon.Annotations = addon.Annotations
-				updatedAddon.Spec.Name = addon.Name
-				updatedAddon.Spec.Variables = addon.Spec.Variables
-				updatedAddon.Spec.RequiredResourceTypes = addon.Spec.RequiredResourceTypes
-				updatedAddon.Spec.IsDefault = true
-				if err := r.Patch(ctx, updatedAddon, ctrlruntimeclient.MergeFrom(existingAddon)); err != nil {
-					return fmt.Errorf("failed to update addon %q: %w", addon.Name, err)
-				}
-			}
-		}
+
+		ensuredAddonsMap.Insert(addon.Name)
+		creators = append(creators, r.addonCreator(ctx, cluster, addons.Items[i]))
+	}
+
+	if err := reconciling.ReconcileKubermaticV1Addons(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
+		return fmt.Errorf("failed to ensure addons: %w", err)
 	}
 
 	currentAddons := kubermaticv1.AddonList{}
@@ -298,48 +269,29 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 	return nil
 }
 
-func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, addon kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	addon.Namespace = cluster.Status.NamespaceName
-	if addon.Labels == nil {
-		addon.Labels = map[string]string{}
-	}
-	addon.Spec.Name = addon.Name
-	addon.Spec.Cluster = corev1.ObjectReference{
-		Name:       cluster.Name,
-		Namespace:  "",
-		UID:        cluster.UID,
-		APIVersion: cluster.APIVersion,
-		Kind:       "Cluster",
-	}
-	addon.Spec.IsDefault = true
+func (r *Reconciler) addonCreator(ctx context.Context, cluster *kubermaticv1.Cluster, addon kubermaticv1.Addon) reconciling.NamedKubermaticV1AddonCreatorGetter {
+	return func() (name string, create reconciling.KubermaticV1AddonCreator) {
+		return addon.Name, func(existing *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
+			existing.Labels = addon.Labels
+			existing.Annotations = addon.Annotations
 
-	// Swallow IsAlreadyExists, we have predictable names and our cache may not be
-	// up to date, leading us to think the addon wasn't installed yet.
-	if err := r.Create(ctx, &addon); err != nil && !apierrors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create addon: %w", err)
-	}
-
-	log.Info("Addon successfully created")
-
-	err := wait.Poll(10*time.Millisecond, 10*time.Second, func() (bool, error) {
-		err := r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}, &kubermaticv1.Addon{})
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return false, nil
+			existing.Spec.IsDefault = true
+			existing.Spec.Variables = addon.Spec.Variables
+			existing.Spec.RequiredResourceTypes = addon.Spec.RequiredResourceTypes
+			existing.Spec.Name = addon.Name
+			existing.Spec.Cluster = corev1.ObjectReference{
+				APIVersion: cluster.APIVersion,
+				Kind:       kubermaticv1.ClusterKindName,
+				Name:       cluster.Name,
 			}
-			return false, err
-		}
-		return true, nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed waiting for addon %s to exist in the lister", addon.Name)
-	}
 
-	return nil
+			return existing, nil
+		}
+	}
 }
 
 func (r *Reconciler) deleteAddon(ctx context.Context, log *zap.SugaredLogger, addon kubermaticv1.Addon) error {
-	log.Infof("deleting addon %s from cluster %s", addon.Name, addon.Namespace)
+	log.Infow("Deleting addon", "addon", addon.Name)
 	err := r.Delete(ctx, &addon)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete addon %s from cluster %s: %w", addon.Name, addon.Spec.Cluster.Name, err)

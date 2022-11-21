@@ -22,18 +22,13 @@ import (
 	"errors"
 	"fmt"
 
-	kubevirtv1 "kubevirt.io/api/core/v1"
-	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -54,10 +49,16 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 var _ provider.ReconcilingCloudProvider = &kubevirt{}
 
 func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
-	if spec.Kubevirt != nil {
-		return updateInfraStorageClassesInfo(ctx, spec, k.secretKeySelector)
+	if spec.Kubevirt == nil {
+		return errors.New("KubeVirt cloud provider spec is empty")
 	}
-	return nil
+
+	client, err := k.GetClientForCluster(*spec)
+	if err != nil {
+		return err
+	}
+
+	return updateInfraStorageClassesInfo(ctx, client, spec)
 }
 
 func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
@@ -78,6 +79,8 @@ func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clou
 		return err
 	}
 
+	// TODO: (mfranczy) this has to be changed
+	// it is wrong to mutate the value of kubeconfig in the validation method
 	spec.Kubevirt.Kubeconfig = string(config)
 
 	return nil
@@ -92,10 +95,15 @@ func (k *kubevirt) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	// Reconcile CSI access: Role and Rolebinding
-	client, restConfig, err := k.GetClientWithRestConfigForCluster(cluster)
+	client, err := k.GetClientForCluster(cluster.Spec.Cloud)
 	if err != nil {
 		return cluster, err
+	}
+
+	// If the cluster NamespaceName is not filled yet, return a conflict error:
+	// will requeue but not send an error event
+	if cluster.Status.NamespaceName == "" {
+		return cluster, apierrors.NewConflict(kubermaticv1.Resource("cluster"), cluster.Name, fmt.Errorf("cluster.Status.NamespaceName for cluster %s", cluster.Name))
 	}
 
 	cluster, err = reconcileNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
@@ -103,7 +111,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcileCSIRoleRoleBinding(ctx, cluster.Status.NamespaceName, client, restConfig)
+	err = reconcileCSIRoleRoleBinding(ctx, cluster.Status.NamespaceName, client)
 	if err != nil {
 		return cluster, err
 	}
@@ -112,56 +120,63 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if err != nil {
 		return cluster, err
 	}
+
+	err = reconcileInstancetypes(ctx, cluster.Status.NamespaceName, client)
+	if err != nil {
+		return cluster, err
+	}
+
+	err = reconcilePreferences(ctx, cluster.Status.NamespaceName, client)
+	if err != nil {
+		return cluster, err
+	}
+
 	err = reconcilePreAllocatedDataVolumes(ctx, cluster, client)
+	if err != nil {
+		return cluster, err
+	}
+
+	err = reconcileNetworkPolicy(ctx, cluster, client)
 
 	return cluster, err
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	client, _, err := k.GetClientWithRestConfigForCluster(cluster)
+	if !kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
+		return cluster, nil
+	}
+
+	client, err := k.GetClientForCluster(cluster.Spec.Cloud)
 	if err != nil {
 		return cluster, err
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, FinalizerNamespace) {
-		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
-			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
-		}
-		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
-		})
+	if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
+		return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 
-	return cluster, nil
+	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
+	})
 }
 
 func (k *kubevirt) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// GetClientWithRestConfigForCluster returns the kubernetes client and the rest config for the KubeVirt underlying cluster.
-func (k *kubevirt) GetClientWithRestConfigForCluster(cluster *kubermaticv1.Cluster) (ctrlruntimeclient.Client, *restclient.Config, error) {
-	if cluster.Spec.Cloud.Kubevirt == nil {
-		return nil, nil, errors.New("No KubeVirt provider spec")
-	}
-	kubeconfig, err := GetCredentialsForCluster(cluster.Spec.Cloud, k.secretKeySelector)
+// GetClientForCluster returns the kubernetes client the KubeVirt underlying cluster.
+func (k *kubevirt) GetClientForCluster(spec kubermaticv1.CloudSpec) (*Client, error) {
+	kubeconfig, err := GetCredentialsForCluster(spec, k.secretKeySelector)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	client, restConfig, err := NewClientWithRestConfig(kubeconfig)
+	client, err := NewClient(kubeconfig, ClientOptions{})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	if err := kubevirtv1.AddToScheme(client.Scheme()); err != nil {
-		return nil, nil, err
-	}
-	if err = cdiv1beta1.AddToScheme(client.Scheme()); err != nil {
-		return nil, nil, err
-	}
-
-	return client, restConfig, nil
+	return client, nil
 }
 
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.

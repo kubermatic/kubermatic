@@ -42,7 +42,6 @@ import (
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -168,7 +167,7 @@ func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *c
 
 // build returns a new Snapshot from the resources derived by the Services
 // provided so far.
-func (sb *snapshotBuilder) build(version string) (envoycachev3.Snapshot, error) {
+func (sb *snapshotBuilder) build(version string) (*envoycachev3.Snapshot, error) {
 	l, c := sb.makeInitialResources()
 
 	l = append(l, sb.listeners...)
@@ -196,7 +195,7 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 
 	accessLog := []*envoyaccesslogv3.AccessLog{
 		{
-			Name: wellknown.FileAccessLog,
+			Name: envoywellknown.FileAccessLog,
 			ConfigType: &envoyaccesslogv3.AccessLog_TypedConfig{
 				TypedConfig: stdoutAccessLog,
 			},
@@ -331,7 +330,7 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 		AccessLog: makeAccessLog(),
 		HttpFilters: []*envoyhttpconnectionmanagerv3.HttpFilter{
 			{
-				Name: wellknown.Router,
+				Name: envoywellknown.Router,
 			},
 		},
 		Http2ProtocolOptions: &envoycorev3.Http2ProtocolOptions{
@@ -675,7 +674,7 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 	return upsServers
 }
 
-func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) (envoycachev3.Snapshot, error) {
+func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) (*envoycachev3.Snapshot, error) {
 	return envoycachev3.NewSnapshot(
 		version,
 		map[envoyresourcev3.Type][]envoycachetype.Resource{

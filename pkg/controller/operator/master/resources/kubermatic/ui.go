@@ -24,7 +24,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
@@ -47,8 +47,8 @@ func UIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kub
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsNonRoot: pointer.BoolPtr(true),
-				RunAsUser:    pointer.Int64Ptr(65534),
+				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    pointer.Int64(65534),
 			}
 
 			tag := versions.UI
@@ -58,9 +58,10 @@ func UIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kub
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  "webserver",
-					Image: cfg.Spec.UI.DockerRepository + ":" + tag,
-					Env:   common.ProxyEnvironmentVars(cfg),
+					Name:    "webserver",
+					Image:   cfg.Spec.UI.DockerRepository + ":" + tag,
+					Command: []string{"dashboard"},
+					Env:     common.ProxyEnvironmentVars(cfg),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
@@ -97,7 +98,7 @@ func UIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kub
 
 func UIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return "kubermatic-dashboard", func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return "kubermatic-dashboard", func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			// To prevent the PDB from blocking node rotations, we accept
 			// 0 minAvailable if the replica count is only 1.
 			// NB: The cfg is defaulted, so Replicas==nil cannot happen.

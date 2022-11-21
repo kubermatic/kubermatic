@@ -23,7 +23,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/go-test/deep"
 	"github.com/gophercloud/gophercloud"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -32,6 +31,7 @@ import (
 	ostesting "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack/internal/testing"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/test"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -451,9 +451,10 @@ func TestInitializeCloudProvider(t *testing.T) {
 				c.Finalizers = nil
 			}
 
-			if diff := deep.Equal(tt.wantCluster, *c); len(diff) > 0 {
-				t.Errorf("Diff found between actual and wanted cluster: %v", diff)
+			if !diff.SemanticallyEqual(tt.wantCluster, *c) {
+				t.Errorf("Diff found between actual and expected cluster:\n%v", diff.ObjectDiff(tt.wantCluster, *c))
 			}
+
 			rc := s.GetRequestCounters()
 			for req, e := range tt.wantRequests {
 				if a := rc[req]; a != e {
@@ -472,7 +473,7 @@ func TestGetCredentialsForCluster(t *testing.T) {
 		want    *resources.OpenstackCredentials
 		wantErr bool
 	}{
-		// there are 3 kinds of auth mode for openstack which are mutualy exclusive
+		// there are 3 kinds of auth mode for openstack which are mutually exclusive
 		//   * domain + token
 		//   * ApplicationCredential (ApplicationCredentialID and ApplicationCredentialSecret)
 		//   * domain + user (ie  Username, Password, (Project or Tenant) and (ProjectID or tenantID))
@@ -587,7 +588,7 @@ type fakeClusterUpdater struct {
 	c *kubermaticv1.Cluster
 }
 
-func (f *fakeClusterUpdater) update(_ context.Context, _ string, updateFn func(c *kubermaticv1.Cluster), _ ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
+func (f *fakeClusterUpdater) update(_ context.Context, _ string, updateFn func(c *kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 	updateFn(f.c)
 	return f.c, nil
 }

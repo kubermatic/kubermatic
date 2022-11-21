@@ -22,17 +22,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
-	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -310,7 +308,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0644),
+							DefaultMode: pointer.Int32(0644),
 						},
 					},
 				}},
@@ -322,7 +320,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				},
@@ -336,7 +334,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				}},
@@ -360,7 +358,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0644),
+							DefaultMode: pointer.Int32(0644),
 						},
 					},
 				}},
@@ -372,7 +370,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				},
@@ -386,7 +384,7 @@ func TestDefaultPodSpec(t *testing.T) {
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: utilpointer.Int32Ptr(0600),
+							DefaultMode: pointer.Int32(0600),
 						},
 					},
 				}},
@@ -431,8 +429,8 @@ func TestDefaultPodSpec(t *testing.T) {
 				t.Errorf("DefaultPodSpec returned an unexpected error: %v", err)
 			}
 
-			if diff := deep.Equal(result, test.expectedObject); diff != nil {
-				t.Errorf("The PodSpec from the client does not match the expected PodSpec. Diff: \n%v", diff)
+			if !diff.SemanticallyEqual(test.expectedObject, result) {
+				t.Fatalf("The PodSpec from the client does not match the expected PodSpec:\n%v", diff.ObjectDiff(test.expectedObject, result))
 			}
 		})
 	}
@@ -519,8 +517,8 @@ func TestDefaultDeployment(t *testing.T) {
 	actualDeployment.TypeMeta = metav1.TypeMeta{}
 	actualDeployment.ResourceVersion = ""
 
-	if diff := deep.Equal(actualDeployment, expectedObject); diff != nil {
-		t.Errorf("The Deployment from the client does not match the expected Deployment. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualDeployment) {
+		t.Fatalf("The Deployment from the client does not match the expected Deployment:\n%v", diff.ObjectDiff(expectedObject, actualDeployment))
 	}
 }
 
@@ -592,8 +590,8 @@ func TestDefaultStatefulSet(t *testing.T) {
 	actualStatefulSet.TypeMeta = metav1.TypeMeta{}
 	actualStatefulSet.ResourceVersion = ""
 
-	if diff := deep.Equal(actualStatefulSet, expectedObject); diff != nil {
-		t.Errorf("The StatefulSet from the client does not match the expected StatefulSet. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualStatefulSet) {
+		t.Fatalf("The StatefulSet from the client does not match the expected StatefulSet:\n%v", diff.ObjectDiff(expectedObject, actualStatefulSet))
 	}
 }
 
@@ -665,8 +663,8 @@ func TestDefaultDaemonSet(t *testing.T) {
 	actualDaemonSet.TypeMeta = metav1.TypeMeta{}
 	actualDaemonSet.ResourceVersion = ""
 
-	if diff := deep.Equal(actualDaemonSet, expectedObject); diff != nil {
-		t.Errorf("The DaemonSet from the client does not match the expected DaemonSet. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualDaemonSet) {
+		t.Fatalf("The DaemonSet from the client does not match the expected DaemonSet:\n%v", diff.ObjectDiff(expectedObject, actualDaemonSet))
 	}
 }
 
@@ -678,19 +676,19 @@ func TestDefaultCronJob(t *testing.T) {
 
 	creators := []NamedCronJobCreatorGetter{
 		func() (string, CronJobCreator) {
-			return testResourceName, func(d *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+			return testResourceName, func(d *batchv1.CronJob) (*batchv1.CronJob, error) {
 				return d, nil
 			}
 		},
 	}
 
-	existingObject := &batchv1beta1.CronJob{
+	existingObject := &batchv1.CronJob{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testResourceName,
 			Namespace: testNamespace,
 		},
-		Spec: batchv1beta1.CronJobSpec{
-			JobTemplate: batchv1beta1.JobTemplateSpec{
+		Spec: batchv1.CronJobSpec{
+			JobTemplate: batchv1.JobTemplateSpec{
 				Spec: batchv1.JobSpec{
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
@@ -704,10 +702,10 @@ func TestDefaultCronJob(t *testing.T) {
 		},
 	}
 
-	expectedObject := &batchv1beta1.CronJob{
+	expectedObject := &batchv1.CronJob{
 		ObjectMeta: existingObject.ObjectMeta,
-		Spec: batchv1beta1.CronJobSpec{
-			JobTemplate: batchv1beta1.JobTemplateSpec{
+		Spec: batchv1.CronJobSpec{
+			JobTemplate: batchv1.JobTemplateSpec{
 				Spec: batchv1.JobSpec{
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
@@ -737,7 +735,7 @@ func TestDefaultCronJob(t *testing.T) {
 
 	key := ctrlruntimeclient.ObjectKeyFromObject(expectedObject)
 
-	actualCronJob := &batchv1beta1.CronJob{}
+	actualCronJob := &batchv1.CronJob{}
 	if err := client.Get(context.Background(), key, actualCronJob); err != nil {
 		t.Fatalf("Failed to get the CronJob from the client: %v", err)
 	}
@@ -746,8 +744,8 @@ func TestDefaultCronJob(t *testing.T) {
 	actualCronJob.TypeMeta = metav1.TypeMeta{}
 	actualCronJob.ResourceVersion = ""
 
-	if diff := deep.Equal(actualCronJob, expectedObject); diff != nil {
-		t.Errorf("The CronJob from the client does not match the expected CronJob. Diff: \n%v", diff)
+	if !diff.SemanticallyEqual(expectedObject, actualCronJob) {
+		t.Fatalf("The CronJob from the client does not match the expected CronJob:\n%v", diff.ObjectDiff(expectedObject, actualCronJob))
 	}
 }
 

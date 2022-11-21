@@ -19,6 +19,7 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -28,12 +29,12 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -49,6 +50,11 @@ type metricsData struct {
 // includes kubelets, so nodes must have been ready for at least 30 seconds
 // before this can succeed.
 func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client) error {
+	if !opts.Tests.Has(ctypes.MetricsTests) {
+		log.Info("Metrics tests disabled, skipping.")
+		return nil
+	}
+
 	log.Info("Testing user cluster metrics availability...")
 
 	res := opts.SeedGeneratedClient.CoreV1().RESTClient().Get().
@@ -91,6 +97,7 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		"replicaset_controller_rate_limiter_use",
 		"apiserver_request_total",
 		"workqueue_retries_total",
+		"machine_cpu_cores",
 	)
 
 	if cluster.Spec.Version.LessThan(semver.NewSemverOrDie("v1.23.0")) {
@@ -112,22 +119,34 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 }
 
 func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
+	if !opts.Tests.Has(ctypes.MetricsTests) {
+		log.Info("Metrics tests disabled, skipping.")
+		return nil
+	}
+
 	log.Info("Testing user cluster pod and node metrics availability...")
 
 	// check node metrics
-	allNodeMetricsList := &v1beta1.NodeMetricsList{}
-	if err := userClusterClient.List(ctx, allNodeMetricsList); err != nil {
-		return fmt.Errorf("error getting node metrics list: %w", err)
-	}
-	if len(allNodeMetricsList.Items) == 0 {
-		return fmt.Errorf("node metrics list is empty")
-	}
-
-	for _, nodeMetric := range allNodeMetricsList.Items {
-		// check a metric to see if it works
-		if nodeMetric.Usage.Memory().IsZero() {
-			return fmt.Errorf("node %q memory usage metric is 0", nodeMetric.Name)
+	err := wait.PollLog(ctx, log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
+		allNodeMetricsList := &v1beta1.NodeMetricsList{}
+		if err := userClusterClient.List(ctx, allNodeMetricsList); err != nil {
+			return fmt.Errorf("error getting node metrics list: %w", err), nil
 		}
+		if len(allNodeMetricsList.Items) == 0 {
+			return fmt.Errorf("node metrics list is empty"), nil
+		}
+
+		for _, nodeMetric := range allNodeMetricsList.Items {
+			// check a metric to see if it works
+			if nodeMetric.Usage.Memory().IsZero() {
+				return fmt.Errorf("node %q memory usage metric is 0", nodeMetric.Name), nil
+			}
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to check if test node metrics: %w", err)
 	}
 
 	// create pod to check metrics
@@ -153,41 +172,40 @@ func TestUserClusterPodAndNodeMetrics(ctx context.Context, log *zap.SugaredLogge
 		},
 	}
 
-	if err := userClusterClient.Create(ctx, pod); err != nil {
+	if err := userClusterClient.Create(ctx, pod); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 		return fmt.Errorf("failed to create Pod: %w", err)
 	}
 
-	err := wait.Poll(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (done bool, err error) {
+	err = wait.PollLog(ctx, log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		metricPod := &corev1.Pod{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, metricPod); err != nil {
-			log.Warnw("Failed to get test metric pod", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to get test metric pod: %w", err), nil
 		}
 
 		if !util.PodIsReady(metricPod) {
-			return false, nil
+			return errors.New("Pod is not ready"), nil
 		}
 
-		return true, nil
+		return nil, nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to check if test metrics pod is ready: %w", err)
 	}
 
 	// check pod metrics
-	err = wait.Poll(opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (done bool, err error) {
+	err = wait.PollLog(ctx, log, opts.UserClusterPollInterval, opts.CustomTestTimeout, func() (transient error, terminal error) {
 		podMetrics := &v1beta1.PodMetrics{}
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, podMetrics); err != nil {
-			log.Warnw("Failed to get test metric pod metrics", zap.Error(err))
-			return false, nil
+			return fmt.Errorf("failed to get test metric pod metrics: %w", err), nil
 		}
+
 		for _, cont := range podMetrics.Containers {
 			if cont.Usage.Memory().IsZero() {
-				log.Warnw("Metrics test pod memory usage is 0", zap.Error(err))
-				return false, nil
+				return errors.New("metrics test pod memory usage is 0"), nil
 			}
 		}
-		return true, nil
+
+		return nil, nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get metric test pod metrics: %w", err)

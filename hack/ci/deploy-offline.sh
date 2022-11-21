@@ -67,14 +67,19 @@ function finish {
 }
 trap finish EXIT
 
-# build the image loader
+# dashboard's primary branch was renamed before KKP's, so until KKP follows suite,
+# we have to temporarily adjust the branch name here
+UIBRANCH="${PULL_BASE_REF:-master}"
+if [ "$UIBRANCH" == "master" ]; then
+  UIBRANCH=main
+fi
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
 # or the name of the base branch in case of a PR.
-export UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+export UIDOCKERTAG="$(get_latest_dashboard_hash "${UIBRANCH}")"
 export KUBERMATICCOMMIT="${GIT_HEAD_HASH}"
 
-make image-loader
+make kubermatic-installer
 
 # push all images from KKP and Helm charts to the local registry;
 # do not use the VALUES_FILE for the loading process, as it already
@@ -105,13 +110,12 @@ iap:
         annotations: {}
 EOF
 
-_build/image-loader \
-  -configuration-file /dev/null \
-  -addons-path addons \
-  -charts-path charts \
-  -helm-values-file "${LOADER_VALUES_FILE}" \
-  -registry "${REGISTRY}" \
-  -log-format=JSON
+_build/kubermatic-installer mirror-images \
+  --configuration-file /dev/null \
+  --addons-path addons \
+  --charts-path charts \
+  --helm-values-file "${LOADER_VALUES_FILE}" \
+  --registry "${REGISTRY}"
 
 # Push a tiller image
 docker pull gcr.io/kubernetes-helm/tiller:${HELM_VERSION}

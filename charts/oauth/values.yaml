@@ -15,7 +15,7 @@
 dex:
   image:
     repository: "ghcr.io/dexidp/dex"
-    tag: "v2.31.1"
+    tag: "v2.32.0"
   replicas: 2
   # this options allows setting custom envvars in the dex container
   # this list is directly handed to the container spec
@@ -89,6 +89,11 @@ dex:
           topologyKey: kubernetes.io/hostname
         weight: 10
   tolerations: []
+
+  # mount additional volumes into the dex Pod to provide data from outside the chart
+  # (for example a service account file for Google provider group support).
+  extraVolumes: []
+  extraVolumeMounts: []
 
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
   # If you want to deploy your own certificate without relying on cert-manager

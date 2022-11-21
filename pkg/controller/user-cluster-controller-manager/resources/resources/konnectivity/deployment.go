@@ -25,7 +25,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -48,11 +48,11 @@ var (
 )
 
 // DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
-			version = "v0.0.26"
+			version = "v0.0.33"
 		)
 
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -73,16 +73,18 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 				},
 			}
 
+			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			ds.Spec.Template.Spec.ServiceAccountName = resources.KonnectivityServiceAccountName
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            resources.KonnectivityAgentContainer,
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryEUGCR), name, version),
-					ImagePullPolicy: corev1.PullAlways,
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryEUGCR, name, version))),
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/proxy-agent"},
 					Args: []string{
 						"--logtostderr=true",
 						"-v=3",
+						"--sync-forever=true",
 						"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 						fmt.Sprintf("--proxy-server-host=%s", kServerHost),
 						fmt.Sprintf("--proxy-server-port=%d", kServerPort),
@@ -128,11 +130,11 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 									ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 										Audience:          resources.KonnectivityClusterRoleBindingUsername,
 										Path:              resources.KonnectivityAgentToken,
-										ExpirationSeconds: pointer.Int64Ptr(3600),
+										ExpirationSeconds: pointer.Int64(3600),
 									},
 								},
 							},
-							DefaultMode: pointer.Int32Ptr(420),
+							DefaultMode: pointer.Int32(420),
 						},
 					},
 				},
@@ -172,9 +174,9 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 // PodDisruptionBudgetCreator returns a func to create/update the Konnectivity agent's PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return resources.KonnectivityPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return resources.KonnectivityPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)
-			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
+			pdb.Spec = policyv1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil),
 				},

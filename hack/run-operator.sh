@@ -44,12 +44,12 @@ export KUBERMATICDOCKERTAG="${KUBERMATICDOCKERTAG:-}"
 export UIDOCKERTAG="${UIDOCKERTAG:-}"
 
 if [ -z "$KUBERMATICDOCKERTAG" ]; then
-  KUBERMATICDOCKERTAG=$(git rev-parse master)
+  KUBERMATICDOCKERTAG=$(git rev-parse main)
 fi
 
 if [ -z "$UIDOCKERTAG" ]; then
-  echo "Finding latest dashboard master revision..."
-  UIDOCKERTAG=$(git ls-remote https://github.com/kubermatic/dashboard refs/heads/master | awk '{print $1}')
+  echo "Finding latest dashboard main revision..."
+  UIDOCKERTAG=$(git ls-remote https://github.com/kubermatic/dashboard refs/heads/main | awk '{print $1}')
   echo
 fi
 

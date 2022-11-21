@@ -20,23 +20,24 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/utils/pointer"
 )
 
-func reconcileRouteTable(ctx context.Context, client ec2iface.EC2API, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func reconcileRouteTable(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	vpcID := cluster.Spec.Cloud.AWS.VPCID
 	tableID := cluster.Spec.Cloud.AWS.RouteTableID
 
 	// check if the RT exists, if we have an ID cached
 	if tableID != "" {
-		out, err := client.DescribeRouteTablesWithContext(ctx, &ec2.DescribeRouteTablesInput{
-			RouteTableIds: aws.StringSlice([]string{cluster.Spec.Cloud.AWS.RouteTableID}),
-			Filters:       []*ec2.Filter{ec2VPCFilter(vpcID)},
+		out, err := client.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{
+			RouteTableIds: []string{cluster.Spec.Cloud.AWS.RouteTableID},
+			Filters:       []ec2types.Filter{ec2VPCFilter(vpcID)},
 		})
 		if err != nil && !isNotFound(err) {
 			return nil, fmt.Errorf("failed to list route tables: %w", err)
@@ -64,13 +65,13 @@ func reconcileRouteTable(ctx context.Context, client ec2iface.EC2API, cluster *k
 	})
 }
 
-func getDefaultRouteTable(ctx context.Context, client ec2iface.EC2API, vpcID string) (*ec2.RouteTable, error) {
-	out, err := client.DescribeRouteTablesWithContext(ctx, &ec2.DescribeRouteTablesInput{
-		Filters: []*ec2.Filter{
+func getDefaultRouteTable(ctx context.Context, client *ec2.Client, vpcID string) (*ec2types.RouteTable, error) {
+	out, err := client.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{
+		Filters: []ec2types.Filter{
 			ec2VPCFilter(vpcID),
 			{
-				Name:   aws.String("association.main"),
-				Values: aws.StringSlice([]string{"true"}),
+				Name:   pointer.String("association.main"),
+				Values: []string{"true"},
 			},
 		},
 	})
@@ -82,5 +83,5 @@ func getDefaultRouteTable(ctx context.Context, client ec2iface.EC2API, vpcID str
 		return nil, fmt.Errorf("could not get default route table in VPC %s; make sure you have exactly one main route table for the VPC", vpcID)
 	}
 
-	return out.RouteTables[0], nil
+	return &out.RouteTables[0], nil
 }

@@ -40,31 +40,8 @@ fi
 # NB: The CE requires Seeds to be named this way
 export SEED_NAME=kubermatic
 
-# This defines the Kubermatic API endpoint the e2e tests will communicate with.
-# The api service is kubectl-proxied later on.
-export KUBERMATIC_API_ENDPOINT="http://localhost:8080"
-
-# Tell the conformance tester what dummy account we configure for the e2e tests.
-export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
-export KUBERMATIC_OIDC_LOGIN="roxy@kubermatic.com"
-export KUBERMATIC_OIDC_PASSWORD="password"
-
 # Set docker config
 echo "$IMAGE_PULL_SECRET_DATA" | base64 -d > /config.json
-
-# The alias makes it easier to access the port-forwarded Dex inside the Kind cluster;
-# the token issuer cannot be localhost:5556, because pods inside the cluster would not
-# find Dex anymore. As this script can be run multiple times in the same CI job,
-# we must make sure to only add the alias once.
-if ! grep oauth /etc/hosts > /dev/null; then
-  echodate "Setting dex.oauth alias in /etc/hosts"
-  # The container runtime allows us to change the content but not to change the inode
-  # which is what sed -i does, so write to a tempfile and write the tempfiles content back.
-  temp_hosts="$(mktemp)"
-  sed 's/localhost/localhost dex.oauth/' /etc/hosts > $temp_hosts
-  cat $temp_hosts > /etc/hosts
-  echodate "Set dex.oauth alias in /etc/hosts"
-fi
 
 # Build binaries and load the Docker images into the kind cluster
 echodate "Building binaries for $KUBERMATIC_VERSION"
@@ -110,16 +87,6 @@ beforeDockerBuild=$(nowms)
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
 (
-  echodate "Building user-ssh-keys-agent image"
-  TEST_NAME="Build user-ssh-keys-agent Docker image"
-  retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-  cd cmd/user-ssh-keys-agent
-  make build
-  IMAGE_NAME="quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 docker push "${IMAGE_NAME}"
-)
-(
   echodate "Building etcd-launcher image"
   TEST_NAME="Build etcd-launcher Docker image"
   IMAGE_NAME="quay.io/kubermatic/etcd-launcher:${KUBERMATIC_VERSION}"
@@ -147,20 +114,15 @@ kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
-
-nginx:
-  controller:
-    replicaCount: 1
 EOF
-
-# append custom Dex configuration
-cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
 # prepare CRDs
 copy_crds_to_chart
 set_crds_version_annotation
 
 # install dependencies and Kubermatic Operator into cluster
+TEST_NAME="Install KKP into kind"
+
 ./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
@@ -175,6 +137,7 @@ retry 10 check_all_deployments_ready kubermatic
 
 echodate "Finished installing Kubermatic"
 
+TEST_NAME="Setup KKP Seed"
 echodate "Installing Seed..."
 SEED_MANIFEST="$(mktemp)"
 SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
@@ -185,25 +148,47 @@ sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
 sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
 sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
 
-retry 8 kubectl apply -f $SEED_MANIFEST
+retry 8 kubectl apply --filename $SEED_MANIFEST
+retry 8 check_seed_ready kubermatic "$SEED_NAME"
 echodate "Finished installing Seed"
 
 sleep 5
-echodate "Waiting for Kubermatic Operator to deploy Seed components..."
-retry 8 check_all_deployments_ready kubermatic
-echodate "Kubermatic Seed is ready."
-
-echodate "Waiting for VPA to be ready..."
-retry 8 check_all_deployments_ready kube-system
-echodate "VPA is ready."
+echodate "Waiting for Deployments to roll out..."
+retry 9 check_all_deployments_ready kubermatic
+echodate "Kubermatic is ready."
 
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
-echodate "Exposing Dex and Kubermatic API to localhost..."
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null &
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null &
+echodate "Starting the deployment of User Cluster MLA..."
+MLA_HELM_VALUES_FILE="$(mktemp)"
+cat > "${MLA_HELM_VALUES_FILE}" << EOF
+cortex:
+  ingester:
+    replicas: 1
+  distributor:
+    replicas: 1
+  alertmanager:
+    replicas: 1
+  nginx:
+    replicas: 1
 
-hack/ci/setup-mla.sh
+loki-distributed:
+  ingester:
+    replicas: 1
+  distributor:
+    replicas: 1
+EOF
+
+./_build/kubermatic-installer deploy usercluster-mla \
+  --config "$KUBERMATIC_CONFIG" \
+  --helm-values "$MLA_HELM_VALUES_FILE" \
+  --helm-timeout 1500s
+
+sleep 5
+echodate "Waiting for MLA to deploy Seed components..."
+retry 8 check_all_deployments_ready mla
+
+echodate "MLA is ready."
 
 echodate "Exposing Grafana to localhost..."
 kubectl port-forward --address 0.0.0.0 -n mla svc/grafana 3000:80 > /dev/null &

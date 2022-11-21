@@ -17,128 +17,115 @@ limitations under the License.
 package yamled
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 
-	"k8s.io/apimachinery/pkg/api/equality"
+	"k8c.io/kubermatic/v2/pkg/apis/equality"
 )
 
 type Document struct {
-	root *yaml.MapSlice
+	// root is the first real node, i.e. the documentNode's
+	// first and only child
+	root *yaml.Node
 }
 
 func Load(r io.Reader) (*Document, error) {
-	var data yaml.MapSlice
+	var data yaml.Node
 	if err := yaml.NewDecoder(r).Decode(&data); err != nil {
 		return nil, fmt.Errorf("failed to decode input YAML: %w", err)
 	}
 
-	return NewFromMapSlice(&data)
+	return NewDocumentFromNode(&data)
 }
 
-func NewFromMapSlice(m *yaml.MapSlice) (*Document, error) {
+func NewDocumentFromNode(m *yaml.Node) (*Document, error) {
+	if m.Kind != yaml.DocumentNode {
+		return nil, errors.New("node must be a DocumentNode")
+	}
+
+	if len(m.Content) == 0 {
+		return nil, errors.New("documentNode must not be empty")
+	}
+
 	return &Document{
-		root: m,
+		root: m.Content[0],
 	}, nil
 }
 
 func (d *Document) MarshalYAML() (interface{}, error) {
-	return d.root, nil
+	var data interface{}
+	if err := d.root.Decode(&data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (d *Document) Has(path Path) bool {
-	_, exists := d.Get(path)
+	_, exists := traversePath(d.root, path)
 
 	return exists
 }
 
-func (d *Document) Get(path Path) (interface{}, bool) {
-	result := interface{}(*d.root)
-
-	for _, step := range path {
-		stepFound := false
-
-		if sstep, ok := step.(string); ok {
-			// step is string => try descending down a map
-			node, ok := result.(yaml.MapSlice)
-			if !ok {
-				return nil, false
-			}
-
-			for _, item := range node {
-				if item.Key.(string) == sstep {
-					stepFound = true
-					result = item.Value
-					break
-				}
-			}
-		} else if istep, ok := step.(int); ok {
-			// step is int => try getting Nth element of list
-			node, ok := result.([]interface{})
-			if !ok {
-				return nil, false
-			}
-
-			if istep < 0 || istep >= len(node) {
-				return nil, false
-			}
-
-			stepFound = true
-			result = node[istep]
-		}
-
-		if !stepFound {
-			return nil, false
-		}
+func (d *Document) DecodeAtPath(path Path, dst interface{}) error {
+	node, ok := d.GetNode(path)
+	if !ok {
+		return nil
 	}
 
-	return result, true
+	return node.Decode(dst)
 }
 
-func (d *Document) GetString(path Path) (string, bool) {
-	val, exists := d.Get(path)
-	if !exists {
-		return "", exists
-	}
-
-	asserted, ok := val.(string)
-
-	return asserted, ok
+func (d *Document) GetNode(path Path) (*yaml.Node, bool) {
+	return traversePath(d.root, path)
 }
 
-func (d *Document) GetInt(path Path) (int, bool) {
-	val, exists := d.Get(path)
-	if !exists {
-		return 0, exists
-	}
-
-	asserted, ok := val.(int)
-
-	return asserted, ok
-}
-
-func (d *Document) GetBool(path Path) (bool, bool) {
-	val, exists := d.Get(path)
-	if !exists {
-		return false, exists
-	}
-
-	asserted, ok := val.(bool)
-
-	return asserted, ok
-}
-
-func (d *Document) GetArray(path Path) ([]interface{}, bool) {
-	val, exists := d.Get(path)
+func (d *Document) GetValue(path Path) (interface{}, bool) {
+	node, exists := d.GetNode(path)
 	if !exists {
 		return nil, exists
 	}
 
-	asserted, ok := val.([]interface{})
+	return scalarNodeToGo(node)
+}
 
-	return asserted, ok
+func (d *Document) GetString(path Path) (string, bool) {
+	node, exists := d.GetNode(path)
+	if !exists {
+		return "", exists
+	}
+
+	return nodeToString(node)
+}
+
+func (d *Document) GetInt(path Path) (int, bool) {
+	node, exists := d.GetNode(path)
+	if !exists {
+		return 0, exists
+	}
+
+	return nodeToInt(node)
+}
+
+func (d *Document) GetBool(path Path) (bool, bool) {
+	node, exists := d.GetNode(path)
+	if !exists {
+		return false, exists
+	}
+
+	return nodeToBool(node)
+}
+
+func (d *Document) GetArray(path Path) ([]interface{}, bool) {
+	node, exists := d.GetNode(path)
+	if !exists {
+		return nil, exists
+	}
+
+	return sequenceNodeToGo(node)
 }
 
 func (d *Document) Set(path Path, newValue interface{}) bool {
@@ -147,95 +134,10 @@ func (d *Document) Set(path Path, newValue interface{}) bool {
 		return false
 	}
 
-	return d.setInternal(path, newValue)
-}
+	newRoot, ok := setValue(d.root, path, newValue)
+	d.root = newRoot
 
-func (d *Document) setInternal(path Path, newValue interface{}) bool {
-	// when we have reached the root level,
-	// replace our root element with the new data structure
-	if len(path) == 0 {
-		return d.setRoot(newValue)
-	}
-
-	leafKey := path.Tail()
-	parentPath := path.Parent()
-	target := interface{}(d.root)
-
-	// check if the parent element exists;
-	// create parent if missing
-
-	if len(parentPath) > 0 {
-		var exists bool
-
-		target, exists = d.Get(parentPath)
-		if !exists {
-			if _, ok := leafKey.(int); ok {
-				// this slice can be empty for now because we will extend it later
-				if !d.setInternal(parentPath, []interface{}{}) {
-					return false
-				}
-			} else if _, ok := leafKey.(string); ok {
-				if !d.setInternal(parentPath, yaml.MapSlice{}) {
-					return false
-				}
-			} else {
-				return false
-			}
-
-			target, _ = d.Get(parentPath)
-		}
-	}
-
-	// Now we know that the parent element exists.
-
-	if pos, ok := leafKey.(int); ok {
-		// check if we are really in an array
-		if array, ok := target.([]interface{}); ok {
-			for i := len(array); i <= pos; i++ {
-				array = append(array, nil)
-			}
-
-			array[pos] = newValue
-
-			return d.setInternal(parentPath, array)
-		}
-	} else if key, ok := leafKey.(string); ok {
-		// check if we are really in a map
-		if m, ok := target.(map[string]interface{}); ok {
-			m[key] = newValue
-			return d.setInternal(parentPath, m)
-		}
-
-		if m, ok := target.(*yaml.MapSlice); ok {
-			target = *m
-		}
-
-		if m, ok := target.(yaml.MapSlice); ok {
-			return d.setInternal(parentPath, setValueInMapSlice(m, key, newValue))
-		}
-	}
-
-	return false
-}
-
-func (d *Document) setRoot(newValue interface{}) bool {
-	if asserted, ok := newValue.(yaml.MapSlice); ok {
-		d.root = &asserted
-		return true
-	}
-
-	if asserted, ok := newValue.(*yaml.MapSlice); ok {
-		d.root = asserted
-		return true
-	}
-
-	if asserted, ok := newValue.(map[string]interface{}); ok {
-		d.root = makeMapSlice(asserted)
-		return true
-	}
-
-	// attempted to set something that's not a map
-	return false
+	return ok
 }
 
 func (d *Document) Append(path Path, newValue interface{}) bool {
@@ -244,50 +146,64 @@ func (d *Document) Append(path Path, newValue interface{}) bool {
 		return false
 	}
 
-	node, ok := d.Get(path)
+	node, ok := d.GetNode(path)
 	if !ok {
 		return d.Set(path, []interface{}{newValue})
 	}
 
-	array, ok := node.([]interface{})
+	if node.Kind != yaml.SequenceNode {
+		return false
+	}
+
+	newNode, ok := createNode(newValue)
 	if !ok {
 		return false
 	}
 
-	return d.Set(path, append(array, newValue))
+	node.Content = append(node.Content, newNode)
+
+	return true
 }
 
 func (d *Document) Remove(path Path) bool {
 	// nuke everything
 	if len(path) == 0 {
-		return d.setRoot(yaml.MapSlice{})
+		newNode, ok := createNode(map[string]interface{}{})
+		if !ok {
+			return false
+		}
+
+		d.root = newNode
+		return true
 	}
 
-	leafKey := path.Tail()
+	endKey := path.End()
 	parentPath := path.Parent()
 
-	parent, exists := d.Get(parentPath)
+	parent, exists := d.GetNode(parentPath)
 	if !exists {
 		return true
 	}
 
-	if pos, ok := leafKey.(int); ok {
-		if array, ok := parent.([]interface{}); ok {
-			return d.setInternal(parentPath, removeArrayItem(array, pos))
+	if pos, ok := endKey.(int); ok {
+		if parent.Kind == yaml.SequenceNode {
+			if pos >= 0 && pos < len(parent.Content) {
+				parent.Content = append(parent.Content[:pos], parent.Content[pos+1:]...)
+			}
+
+			return true
 		}
-	} else if key, ok := leafKey.(string); ok {
+	} else if key, ok := endKey.(string); ok {
 		// check if we are really in a map
-		if m, ok := parent.(map[string]interface{}); ok {
-			delete(m, key)
-			return d.setInternal(parentPath, m)
-		}
+		if parent.Kind == yaml.MappingNode {
+			for i, node := range parent.Content {
+				if i%2 == 0 && node.Kind == yaml.ScalarNode && node.Value == key {
+					parent.Content = append(parent.Content[:i], parent.Content[i+2:]...)
+					break
+				}
+			}
 
-		if m, ok := parent.(*yaml.MapSlice); ok {
-			parent = *m
-		}
-
-		if m, ok := parent.(yaml.MapSlice); ok {
-			return d.setInternal(parentPath, removeKeyFromMapSlice(m, key))
+			return true
 		}
 	}
 
@@ -297,57 +213,22 @@ func (d *Document) Remove(path Path) bool {
 // Fill will set the value at the path to the newValue, but keeps any existing
 // sub values intact.
 func (d *Document) Fill(path Path, newValue interface{}) bool {
-	node, exists := d.Get(path)
-	if !exists {
-		// exit early if there is nothing fancy to do
-		return d.Set(path, newValue)
-	}
-
-	if source, ok := unifyMapType(node); ok {
-		if newMap, ok := unifyMapType(newValue); ok {
-			node = d.fillMap(source, newMap)
-		}
-	}
-
-	// persist changes to the node
-	return d.setInternal(path, node)
+	return mergeIntoPath(d.root, path, newValue)
 }
 
-func (d *Document) fillMap(source yaml.MapSlice, newMap yaml.MapSlice) yaml.MapSlice {
-	for _, newItem := range newMap {
-		key := newItem.Key
-		newValue := newItem.Value
-		existingValue, existed := mapSliceGet(source, key)
-
-		if existed {
-			if subSource, ok := unifyMapType(existingValue); ok {
-				if newSubMap, ok := unifyMapType(newValue); ok {
-					source = setValueInMapSlice(source, key, d.fillMap(subSource, newSubMap))
-				}
-			}
-		} else {
-			source = setValueInMapSlice(source, key, newValue)
-		}
-	}
-
-	return source
-}
-
-// Equal checks if d is semantically equivalent to other.
-// This means memory equality is not checked, but rather the
-// actual values.
 func (d *Document) Equal(other *Document) bool {
-	return equality.Semantic.DeepEqual(d.normalize(), other.normalize())
-}
+	var (
+		dData     interface{}
+		otherData interface{}
+	)
 
-// normalize is needed to convert the various different representations
-// of a YAML structure into a unified form (that is, a map of strings
-// to interfaces).
-func (d *Document) normalize() interface{} {
-	encoded, _ := yaml.Marshal(d.root)
+	if d.DecodeAtPath(nil, &dData) != nil {
+		return false
+	}
 
-	var normal interface{}
-	_ = yaml.UnmarshalStrict(encoded, &normal)
+	if other.DecodeAtPath(nil, &otherData) != nil {
+		return false
+	}
 
-	return normal
+	return equality.Semantic.DeepEqual(dData, otherData)
 }

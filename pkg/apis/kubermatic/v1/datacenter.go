@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmware-cloud-director
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
 
 type ProviderType string
 
@@ -51,7 +51,7 @@ const (
 	NutanixCloudProvider             ProviderType = "nutanix"
 	OpenstackCloudProvider           ProviderType = "openstack"
 	PacketCloudProvider              ProviderType = "packet"
-	VMwareCloudDirectorCloudProvider ProviderType = "vmware-cloud-director"
+	VMwareCloudDirectorCloudProvider ProviderType = "vmwareclouddirector"
 	VSphereCloudProvider             ProviderType = "vsphere"
 
 	DefaultSSHPort     = 22
@@ -117,7 +117,7 @@ const (
 	SeedPausedPhase SeedPhase = "Paused"
 )
 
-// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled
+// +kubebuilder:validation:Enum="";KubeconfigValid;ResourcesReconciled;ClusterInitialized
 
 // SeedConditionType is used to indicate the type of a seed condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered
@@ -131,6 +131,12 @@ const (
 	// SeedConditionResourcesReconciled indicates that the KKP operator has finished setting up the
 	// resources inside the seed cluster.
 	SeedConditionResourcesReconciled SeedConditionType = "ResourcesReconciled"
+	// SeedConditionClusterInitialized indicates that the KKP operator has finished setting up the
+	// CRDs and other prerequisites on the Seed cluster. After this condition is true, other
+	// controllers can begin to create watches and reconcile resources (i.e. this condition is
+	// a precondition to ResourcesReconciled). Once this condition is true, it is never set to false
+	// again.
+	SeedConditionClusterInitialized SeedConditionType = "ClusterInitialized"
 )
 
 var AllSeedConditionTypes = []SeedConditionType{
@@ -175,7 +181,8 @@ type SeedList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a Seed cluster.
+// Seed is the type representing a Seed cluster. Seed clusters host the the control planes
+// for KKP user clusters.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -242,6 +249,12 @@ func (ss *SeedStatus) HasConditionValue(conditionType SeedConditionType, conditi
 	}
 
 	return condition.Status == conditionStatus
+}
+
+// IsInitialized returns true if the seed cluster was successfully initialized and
+// is ready for controllers to operate on it.
+func (ss *SeedStatus) IsInitialized() bool {
+	return ss.Conditions[SeedConditionClusterInitialized].Status == corev1.ConditionTrue
 }
 
 // The spec for a seed cluster.
@@ -379,7 +392,7 @@ type DatacenterSpec struct {
 	Packet              *DatacenterSpecPacket              `json:"packet,omitempty"`
 	Hetzner             *DatacenterSpecHetzner             `json:"hetzner,omitempty"`
 	VSphere             *DatacenterSpecVSphere             `json:"vsphere,omitempty"`
-	VMwareCloudDirector *DatacenterSpecVMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *DatacenterSpecVMwareCloudDirector `json:"vmwareclouddirector,omitempty"`
 	GCP                 *DatacenterSpecGCP                 `json:"gcp,omitempty"`
 	Kubevirt            *DatacenterSpecKubevirt            `json:"kubevirt,omitempty"`
 	Alibaba             *DatacenterSpecAlibaba             `json:"alibaba,omitempty"`
@@ -413,10 +426,84 @@ type DatacenterSpec struct {
 	// too high means that *if* a resource at a cloud provider is removed/changed outside
 	// of KKP, it will take this long to fix it.
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
+
+	// DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+	DefaultOperatingSystemProfiles OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
+
+	// MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+	MachineFlavorFilter *MachineFlavorFilter `json:"machineFlavorFilter,omitempty"`
+}
+
+var (
+	// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
+	knownIPv6CloudProviders = map[ProviderType]struct {
+		ipv6EnabledForAllDatacenters bool
+	}{
+		AWSCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		AzureCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		BringYourOwnCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		DigitaloceanCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		GCPCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		HetznerCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		OpenstackCloudProvider: {
+			ipv6EnabledForAllDatacenters: false,
+		},
+		PacketCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		VSphereCloudProvider: {
+			ipv6EnabledForAllDatacenters: false,
+		},
+	}
+)
+
+func (cloudProvider ProviderType) IsIPv6KnownProvider() bool {
+	_, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
+	return isIPv6KnownProvider
+}
+
+// IsIPv6Enabled returns true if ipv6 is enabled for the datacenter.
+func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
+	cloudProviderCfg, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
+	if !isIPv6KnownProvider {
+		return false
+	}
+
+	if cloudProviderCfg.ipv6EnabledForAllDatacenters {
+		return true
+	}
+
+	switch cloudProvider {
+	case OpenstackCloudProvider:
+		if d.Spec.Openstack != nil && d.Spec.Openstack.IPv6Enabled != nil && *d.Spec.Openstack.IPv6Enabled {
+			return true
+		}
+	case VSphereCloudProvider:
+		if d.Spec.VSphere != nil && d.Spec.VSphere.IPv6Enabled != nil && *d.Spec.VSphere.IPv6Enabled {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
+
+// OperatingSystemProfileList defines a map of operating system and the OperatingSystemProfile to use.
+type OperatingSystemProfileList map[providerconfig.OperatingSystem]string
 
 // DatacenterSpecHetzner describes a Hetzner cloud datacenter.
 type DatacenterSpecHetzner struct {
@@ -453,7 +540,6 @@ type DatacenterSpecOpenstack struct {
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
 	ManageSecurityGroups *bool `json:"manageSecurityGroups,omitempty"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
@@ -461,12 +547,13 @@ type DatacenterSpecOpenstack struct {
 	// default with the in-tree cloud provider.
 	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
 	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
 	// Optional: List of enabled flavors for the given datacenter
 	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
@@ -512,6 +599,8 @@ type DatacenterSpecVSphere struct {
 	// except the cloud provider functionality, which will still use the credentials
 	// passed in via the Kubermatic dashboard/API.
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
+	// Optional: defines if the IPv6 is enabled for the datacenter
+	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
 }
 
 type DatacenterSpecVMwareCloudDirector struct {
@@ -548,8 +637,11 @@ type DatacenterSpecBringYourOwn struct {
 // DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
-	// facilities see https://support.packet.com/kb/articles/data-centers
-	Facilities []string `json:"facilities"`
+	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
+	Facilities []string `json:"facilities,omitempty"`
+	// Metros are facilities that are grouped together geographically and share capacity
+	// and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
+	Metro string `json:"metro,omitempty"`
 }
 
 // DatacenterSpecGCP describes a GCP datacenter.
@@ -676,6 +768,20 @@ type NodeSettings struct {
 	// Optional: Translates to --pod-infra-container-image on the kubelet.
 	// If not set, the kubelet will default it.
 	PauseImage string `json:"pauseImage,omitempty"`
+	// Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
+	ContainerdRegistryMirrors *ContainerRuntimeContainerd `json:"containerdRegistryMirrors,omitempty"`
+}
+
+// ContainerRuntimeContainerd defines containerd container runtime registries configs.
+type ContainerRuntimeContainerd struct {
+	// A map of registries to use to render configs and mirrors for containerd registries
+	Registries map[string]ContainerdRegistry `json:"registries,omitempty"`
+}
+
+// ContainerdRegistry defines endpoints and security for given container registry.
+type ContainerdRegistry struct {
+	// List of registry mirrors to use
+	Mirrors []string `json:"mirrors,omitempty"`
 }
 
 // SeedMLASettings allow configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
@@ -687,13 +793,13 @@ type SeedMLASettings struct {
 // MeteringConfiguration contains all the configuration for the metering tool.
 type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
-	// StorageClassName is the name of the storage class that the metering tool uses to save processed files before
-	// exporting it to s3 bucket. Default value is kubermatic-fast.
+
+	// StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
 	StorageClassName string `json:"storageClassName"`
 	// StorageSize is the size of the storage class. Default value is 100Gi.
 	StorageSize string `json:"storageSize"`
 
-	// +kubebuilder:default:={kubermatic-metering-report-weekly: {schedule: "0 1 * * 6", interval: 7}}
+	// +kubebuilder:default:={weekly: {schedule: "0 1 * * 6", interval: 7}}
 
 	// ReportConfigurations is a map of report configuration definitions.
 	ReportConfigurations map[string]*MeteringReportConfiguration `json:"reports,omitempty"`
@@ -718,6 +824,12 @@ type MeteringReportConfiguration struct {
 	// Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever.
 	// Please note that this functionality works only for object storage that supports an object lifecycle management mechanism.
 	Retention *uint32 `json:"retention,omitempty"`
+
+	// +optional
+	// +kubebuilder:default:={"cluster","namespace"}
+
+	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
+	Types []string `json:"type,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

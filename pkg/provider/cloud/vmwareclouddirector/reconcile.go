@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	resourceNamePattern    = "kubernetes-%s"
+	ResourceNamePattern    = "kubernetes-%s"
 	vappDescriptionPattern = "Kubernetes cluster %s"
 )
 
@@ -48,7 +48,7 @@ func reconcileVApp(ctx context.Context, cluster *kubermaticv1.Cluster, update pr
 	// Check if the vApp already exists
 	vAppName := cluster.Spec.Cloud.VMwareCloudDirector.VApp
 	if vAppName == "" {
-		vAppName = fmt.Sprintf(resourceNamePattern, cluster.Name)
+		vAppName = fmt.Sprintf(ResourceNamePattern, cluster.Name)
 	}
 
 	_, err = vdc.GetVAppByNameOrId(vAppName, true)

@@ -18,13 +18,15 @@ package operatingsystemmanager
 
 import (
 	"fmt"
+	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -51,17 +54,21 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v0.4.3"
+	// TODO: pin to a released version again.
+	Tag = "192412d78cbfb9d826fbc7cf7e077cfe7629d6ba"
 )
 
 type operatingSystemManagerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	Cluster() *kubermaticv1.Cluster
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	NodeLocalDNSCacheEnabled() bool
+	GetCSIMigrationFeatureGates() []string
 	DC() *kubermaticv1.Datacenter
 	ComputedNodePortRange() string
+	OperatingSystemManagerImageTag() string
+	OperatingSystemManagerImageRepository() string
 }
 
 // DeploymentCreator returns the function to create and update the operating system manager deployment.
@@ -130,9 +137,7 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/operating-system-manager"
-
-			cloudProviderName, err := provider.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
+			cloudProviderName, err := kubermaticv1helper.ClusterCloudProviderName(data.Cluster().Spec.Cloud)
 			if err != nil {
 				return nil, err
 			}
@@ -151,12 +156,20 @@ func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconc
 				nodePortRange:    data.ComputedNodePortRange(),
 			}
 
+			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/operating-system-manager"))
+			if r := data.OperatingSystemManagerImageRepository(); r != "" {
+				repository = r
+			}
+			tag := Tag
+			if t := data.OperatingSystemManagerImageTag(); t != "" {
+				tag = t
+			}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
-					Image:   repository + ":" + Tag,
+					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
-					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]),
+					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(), data.Cluster().Spec.ImagePullSecret),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -217,12 +230,10 @@ type clusterSpec struct {
 	podCidr          string
 }
 
-func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool) []string {
+func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool, csiMigrationFeatureGates []string, imagePullSecret *corev1.SecretReference) []string {
 	flags := []string{
 		"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 		"-cluster-dns", cs.clusterDNSIP,
-		"-logtostderr",
-		"-v", "4",
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
 		"-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
@@ -233,6 +244,15 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 	}
 
 	if nodeSettings != nil {
+		if len(nodeSettings.InsecureRegistries) > 0 {
+			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
+		}
+		if nodeSettings.ContainerdRegistryMirrors != nil {
+			flags = append(flags, getContainerdFlags(nodeSettings.ContainerdRegistryMirrors)...)
+		}
+		if len(nodeSettings.RegistryMirrors) > 0 {
+			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
+		}
 		if !nodeSettings.HTTPProxy.Empty() {
 			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
 		}
@@ -244,6 +264,14 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 		}
 	}
 
+	if len(csiMigrationFeatureGates) > 0 {
+		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(csiMigrationFeatureGates, ","))
+	}
+
+	if imagePullSecret != nil {
+		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
+	}
+
 	if cs.containerRuntime != "" {
 		flags = append(flags, "-container-runtime", cs.containerRuntime)
 	}
@@ -252,38 +280,65 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 }
 
 func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, err
+	refTo := func(key string) *corev1.EnvVarSource {
+		return &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: resources.ClusterCloudCredentialsSecretName,
+				},
+				Key: key,
+			},
+		}
+	}
+
+	optionalRefTo := func(key string) *corev1.EnvVarSource {
+		ref := refTo(key)
+		ref.SecretKeyRef.Optional = pointer.Bool(true)
+
+		return ref
 	}
 
 	var vars []corev1.EnvVar
 	if data.Cluster().Spec.Cloud.Azure != nil {
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", Value: credentials.Azure.ClientID})
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_SECRET", Value: credentials.Azure.ClientSecret})
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", Value: credentials.Azure.TenantID})
-		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", Value: credentials.Azure.SubscriptionID})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_ID", ValueFrom: refTo(resources.AzureClientID)})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_CLIENT_SECRET", ValueFrom: refTo(resources.AzureClientSecret)})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", ValueFrom: refTo(resources.AzureTenantID)})
+		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", ValueFrom: refTo(resources.AzureSubscriptionID)})
 	}
 	if data.Cluster().Spec.Cloud.Openstack != nil {
 		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
-		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: credentials.Openstack.Username})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: credentials.Openstack.Password})
-		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: credentials.Openstack.Domain})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", Value: credentials.Openstack.Project})
-		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", Value: credentials.Openstack.ProjectID})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", Value: credentials.Openstack.ApplicationCredentialID})
-		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", Value: credentials.Openstack.ApplicationCredentialSecret})
+		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(resources.OpenstackUsername)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(resources.OpenstackPassword)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(resources.OpenstackDomain)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_NAME", ValueFrom: optionalRefTo(resources.OpenstackProject)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PROJECT_ID", ValueFrom: optionalRefTo(resources.OpenstackProjectID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_ID", ValueFrom: optionalRefTo(resources.OpenstackApplicationCredentialID)})
+		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", ValueFrom: optionalRefTo(resources.OpenstackApplicationCredentialSecret)})
 	}
 	if data.Cluster().Spec.Cloud.VSphere != nil {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", Value: credentials.VSphere.Username})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", Value: credentials.VSphere.Password})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(resources.VsphereUsername)})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(resources.VspherePassword)})
 	}
 	if data.Cluster().Spec.Cloud.GCP != nil {
-		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", Value: credentials.GCP.ServiceAccount})
+		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(resources.GCPServiceAccount)})
 	}
 	if data.Cluster().Spec.Cloud.Kubevirt != nil {
-		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", Value: credentials.Kubevirt.KubeConfig})
+		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(resources.KubevirtKubeConfig)})
 	}
+
 	return resources.SanitizeEnvVars(vars), nil
+}
+
+func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
+	var flags []string
+	for registry, mirror := range crid.Registries {
+		var flag string
+		for _, endpoint := range mirror.Mirrors {
+			flag = fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint)
+			flags = append(flags, flag)
+		}
+	}
+
+	return flags
 }

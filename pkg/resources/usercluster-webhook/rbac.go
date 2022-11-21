@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,6 +47,15 @@ func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
 				{
 					APIGroups: []string{appskubermaticv1.GroupName},
 					Resources: []string{"applicationdefinitions", "applicationdefinitions/status"},
+					Verbs: []string{
+						"get",
+						"list",
+						"watch",
+					},
+				},
+				{
+					APIGroups: []string{kubermaticv1.GroupName},
+					Resources: []string{"resourcequotas", "resourcequotas/status"},
 					Verbs: []string{
 						"get",
 						"list",

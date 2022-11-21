@@ -35,7 +35,7 @@ const (
 	controllerName = resources.GatekeeperControllerDeploymentName
 	auditName      = resources.GatekeeperAuditDeploymentName
 	imageName      = "openpolicyagent/gatekeeper"
-	tag            = "v3.6.0"
+	tag            = "v3.7.2"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
@@ -81,7 +81,7 @@ var (
 )
 
 // ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment.
-func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
+func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -101,7 +101,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 				Labels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
 			}
 
-			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
+			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
@@ -110,7 +110,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
 			}
-			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, registryWithOverwrite)
+			dep.Spec.Template.Spec.Containers = getControllerContainers(enableMutation, imageRewriter)
 			var err error
 			if resourceOverride != nil {
 				overridesRequirements := map[string]*corev1.ResourceRequirements{
@@ -141,7 +141,7 @@ func ControllerDeploymentCreator(enableMutation bool, registryWithOverwrite regi
 }
 
 // AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment.
-func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
+func AuditDeploymentCreator(registryWithOverwrite registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -161,10 +161,10 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, re
 				Labels: resources.BaseAppLabels(auditName, gatekeeperAuditLabels),
 			}
 
-			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
+			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(true)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(true)
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 
 			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
@@ -186,10 +186,10 @@ func AuditDeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc, re
 	}
 }
 
-func getControllerContainers(enableMutation bool, registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
+func getControllerContainers(enableMutation bool, imageRewriter registry.ImageRewriter) []corev1.Container {
 	return []corev1.Container{{
 		Name:            controllerName,
-		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
+		Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, tag))),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
@@ -259,24 +259,24 @@ func getControllerContainers(enableMutation bool, registryWithOverwrite registry
 			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: pointer.BoolPtr(false),
+			AllowPrivilegeEscalation: pointer.Bool(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"all",
 				},
 			},
-			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
-			RunAsGroup:             pointer.Int64Ptr(999),
-			RunAsNonRoot:           pointer.BoolPtr(true),
-			RunAsUser:              pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.Bool(true),
+			RunAsGroup:             pointer.Int64(999),
+			RunAsNonRoot:           pointer.Bool(true),
+			RunAsUser:              pointer.Int64(1000),
 		},
 	}}
 }
 
-func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []corev1.Container {
+func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 	return []corev1.Container{{
 		Name:            auditName,
-		Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, tag),
+		Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, tag))),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
@@ -334,16 +334,16 @@ func getAuditContainers(registryWithOverwrite registry.WithOverwriteFunc) []core
 			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: pointer.BoolPtr(false),
+			AllowPrivilegeEscalation: pointer.Bool(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"all",
 				},
 			},
-			ReadOnlyRootFilesystem: pointer.BoolPtr(true),
-			RunAsGroup:             pointer.Int64Ptr(999),
-			RunAsNonRoot:           pointer.BoolPtr(true),
-			RunAsUser:              pointer.Int64Ptr(1000),
+			ReadOnlyRootFilesystem: pointer.Bool(true),
+			RunAsGroup:             pointer.Int64(999),
+			RunAsNonRoot:           pointer.Bool(true),
+			RunAsUser:              pointer.Int64(1000),
 		},
 	}}
 }

@@ -22,7 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -76,38 +76,21 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
-
 			version, err := getAzureVersion(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
-				corev1.Volume{
-					Name: resources.CloudConfigConfigMapName,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.CloudConfigConfigMapName,
-							},
-						},
-					},
-				})
-
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    ccmContainerName,
-					Image:   data.ImageRegistry(resources.RegistryMCR) + "/oss/kubernetes/azure-cloud-controller-manager:v" + version,
-					Command: []string{"cloud-controller-manager"},
-					Args:    getAzureFlags(data),
-					VolumeMounts: append(getVolumeMounts(),
-						corev1.VolumeMount{
-							Name:      resources.CloudConfigConfigMapName,
-							MountPath: "/etc/kubernetes/cloud",
-							ReadOnly:  true,
-						},
-					),
+					Name:         ccmContainerName,
+					Image:        registry.Must(data.RewriteImage(resources.RegistryMCR + "/oss/kubernetes/azure-cloud-controller-manager:v" + version)),
+					Command:      []string{"cloud-controller-manager"},
+					Args:         getAzureFlags(data),
+					Env:          getEnvVars(),
+					VolumeMounts: getVolumeMounts(true),
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -129,19 +112,11 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 				ccmContainerName: azureResourceRequirements.DeepCopy(),
 			}
 
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
-			}
-
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
+
 			return dep, nil
 		}
 	}
@@ -150,8 +125,6 @@ func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeplo
 func getAzureVersion(version semver.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
-	case v121:
-		return "1.0.18", nil
 	case v122:
 		return "1.1.14", nil
 	case v123:
@@ -164,12 +137,11 @@ func getAzureVersion(version semver.Semver) (string, error) {
 }
 
 func getAzureFlags(data *resources.TemplateData) []string {
-	clusterCIDR := data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()
 	flags := []string{
-		// "false" for Azure CNI and "true" for other network plugins
-		"--allocate-node-cidrs=true",
-		// "false" for Azure CNI and "true" for other network plugins
-		"--configure-cloud-routes=true",
+		// "false" as we use IPAM in kube-controller-manager
+		"--allocate-node-cidrs=false",
+		// "false" as we use VXLAN overlay for pod network for all clusters ATM
+		"--configure-cloud-routes=false",
 		"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		"--v=4",
 		"--cloud-config=/etc/kubernetes/cloud/config",
@@ -178,19 +150,9 @@ func getAzureFlags(data *resources.TemplateData) []string {
 		"--route-reconciliation-period=10s",
 		"--port=10267",
 		"--controllers=*,-cloud-node",
-		fmt.Sprintf("--cluster-cidr=%s", clusterCIDR),
 	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
 		flags = append(flags, "--cluster-name", data.Cluster().Name)
 	}
 	return flags
-}
-
-// AzureCloudControllerSupported checks if this version of Kubernetes is supported
-// by our implementation of the external cloud controller.
-func AzureCloudControllerSupported(version semver.Semver) bool {
-	if _, err := getAzureVersion(version); err != nil {
-		return false
-	}
-	return true
 }

@@ -23,7 +23,7 @@ containerize ./hack/update-velero-crds.sh
 
 velero=velero
 if ! [ -x "$(command -v $velero)" ]; then
-  version=v1.8.1
+  version=v1.9.0
   url="https://github.com/vmware-tanzu/velero/releases/download/$version/velero-$version-linux-amd64.tar.gz"
   velero=/tmp/velero
 
@@ -43,11 +43,11 @@ while IFS= read -r crd; do
   name=$(echo "$crd" | jq -r '.spec.names.plural')
   filename="crd/$name.yaml"
 
-  pretty=$(echo "$crd" | yq -P r -)
+  pretty=$(echo "$crd" | yq --prettyPrint)
 
   echo "# This file has been generated with Velero $version. Do not edit." > $filename
   echo -e "---\n$pretty" >> $filename
 
   # remove misleading values
-  yq delete -i -d'*' $filename 'metadata.creationTimestamp'
+  yq --inplace 'del(.metadata.creationTimestamp)' $filename
 done <<< "$crds"

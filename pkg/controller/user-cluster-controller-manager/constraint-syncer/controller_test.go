@@ -19,25 +19,24 @@ limitations under the License.
 package constraintsyncer
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"reflect"
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
-	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +50,7 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	if err := test.RegisterScheme(test.SchemeBuilder); err != nil {
+	if err := generator.RegisterScheme(test.GatekeeperSchemeBuilder); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,13 +68,13 @@ func TestReconcile(t *testing.T) {
 				Namespace: "namespace",
 				Name:      constraintName,
 			},
-			expectedConstraint: test.GenDefaultAPIConstraint(constraintName, kind),
+			expectedConstraint: generator.GenDefaultAPIConstraint(constraintName, kind),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
 					func() ctrlruntimeclient.Object {
-						c := test.GenConstraint(constraintName, "namespace", kind)
+						c := generator.GenConstraint(constraintName, "namespace", kind)
 						c.Spec.Parameters = map[string]json.RawMessage{
 							"rawJSON": []byte(`"{\"labels\":[\"gatekeeper\",\"opa\"]}"`),
 						}
@@ -98,10 +97,10 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
-					c.Finalizers = []string{apiv1.GatekeeperConstraintCleanupFinalizer}
+					c.Finalizers = []string{kubermaticv1.GatekeeperConstraintCleanupFinalizer}
 					return c
 				}()).
 				Build(),
@@ -126,10 +125,10 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
-					c.Finalizers = []string{apiv1.GatekeeperConstraintCleanupFinalizer}
+					c.Finalizers = []string{kubermaticv1.GatekeeperConstraintCleanupFinalizer}
 					return c
 				}()).
 				Build(),
@@ -144,11 +143,11 @@ func TestReconcile(t *testing.T) {
 				Namespace: "namespace",
 				Name:      constraintName,
 			},
-			expectedConstraint: test.GenDefaultAPIConstraint(constraintName, kind),
+			expectedConstraint: generator.GenDefaultAPIConstraint(constraintName, kind),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(test.GenConstraint(constraintName, "namespace", kind)).
+				WithObjects(generator.GenConstraint(constraintName, "namespace", kind)).
 				Build(),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -166,7 +165,7 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
 				}()).
@@ -187,7 +186,7 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *kubermaticv1.Constraint {
-					c := test.GenConstraint(constraintName, "namespace", kind)
+					c := generator.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
 				}()).
@@ -224,8 +223,8 @@ func TestReconcile(t *testing.T) {
 
 			reqLabel := &unstructured.Unstructured{}
 			reqLabel.SetGroupVersionKind(schema.GroupVersionKind{
-				Group:   constrainthandler.ConstraintsGroup,
-				Version: constrainthandler.ConstraintsVersion,
+				Group:   "constraints.gatekeeper.sh",
+				Version: "v1beta1",
 				Kind:    kind,
 			})
 			err := tc.userClient.Get(ctx, types.NamespacedName{Name: constraintName}, reqLabel)
@@ -260,8 +259,8 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// compare
-			if !reflect.DeepEqual(matchMap, resultMatch) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(matchMap, matchMap))
+			if !diff.SemanticallyEqual(matchMap, resultMatch) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(matchMap, resultMatch))
 			}
 			// cast params to bytes for comparison
 			expectedParamsBytes, err := json.Marshal(tc.expectedConstraint.Spec.Parameters)
@@ -274,12 +273,12 @@ func TestReconcile(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(expectedParamsBytes, resultParamsBytes) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedConstraint.Spec.Parameters, resultParamsBytes))
+			if !bytes.Equal(expectedParamsBytes, resultParamsBytes) {
+				t.Fatalf("Parameters differ:\n%v", diff.ObjectDiff(tc.expectedConstraint.Spec.Parameters, resultParamsBytes))
 			}
 
-			if !reflect.DeepEqual(reqLabel.GetName(), tc.expectedConstraint.Name) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(reqLabel.GetName(), tc.expectedConstraint.Name))
+			if reqLabel.GetName() != tc.expectedConstraint.Name {
+				t.Fatalf("Expected name %q, got %q", tc.expectedConstraint.Name, reqLabel.GetName())
 			}
 		})
 	}

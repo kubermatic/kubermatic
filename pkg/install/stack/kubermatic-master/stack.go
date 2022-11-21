@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/util/crd"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	corev1 "k8s.io/api/core/v1"
@@ -138,7 +139,7 @@ func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, TelemetryNamespace, TelemetryReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, TelemetryNamespace, TelemetryReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
@@ -221,7 +222,7 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, DexNamespace, DexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, DexNamespace, DexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
@@ -244,16 +245,6 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 
-	sublogger.Info("Migrating UserSSHKeys…")
-	if err := s.migrateUserSSHKeyProjects(ctx, kubeClient, sublogger, opt); err != nil {
-		return fmt.Errorf("failed to migrate keys: %w", err)
-	}
-
-	sublogger.Info("Migrating Users…")
-	if err := s.migrateUserProjects(ctx, kubeClient, sublogger, opt); err != nil {
-		return fmt.Errorf("failed to migrate users: %w", err)
-	}
-
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KubermaticOperatorNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
@@ -264,7 +255,7 @@ func (s *MasterStack) deployKubermaticOperator(ctx context.Context, logger *logr
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KubermaticOperatorNamespace, KubermaticOperatorReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KubermaticOperatorNamespace, KubermaticOperatorReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
@@ -277,17 +268,17 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 	crdDirectory := filepath.Join(opt.ChartsDirectory, "kubermatic-operator", "crd")
 
 	// install KKP CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8c.io"), &opt.Versions, crd.MasterCluster); err != nil {
 		return err
 	}
 
 	// install VPA CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io"), nil); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io"), nil, crd.MasterCluster); err != nil {
 		return err
 	}
 
 	// install OSM CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io"), nil); err != nil {
+	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io"), nil, crd.MasterCluster); err != nil {
 		return err
 	}
 
@@ -295,6 +286,15 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 }
 
 func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	// if no --config was given, no opt.RawKubermaticConfiguration is set and we
+	// auto-detected the configuration; in this case we do not want to update
+	// the config in the cluster (which would be bad because an auto-detected
+	// KubermaticConfiguration is also defaulted and we do not want to persist
+	// the defaulted values).
+	if opt.RawKubermaticConfiguration == nil {
+		return nil
+	}
+
 	logger.Info("📝 Applying Kubermatic Configuration…")
 
 	existingConfig := &kubermaticv1.KubermaticConfiguration{}

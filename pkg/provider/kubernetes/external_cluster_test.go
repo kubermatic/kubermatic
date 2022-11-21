@@ -19,17 +19,16 @@ package kubernetes_test
 import (
 	"context"
 	"encoding/base64"
-	"reflect"
 	"testing"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,7 +73,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Namespace:       resources.KubermaticNamespace,
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 		{
@@ -92,7 +90,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 						Namespace:       resources.KubermaticNamespace,
 					},
 					Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte("abc")},
-					Type: corev1.SecretTypeOpaque,
 				},
 			},
 			externalCluster: genExternalCluster(defaultClusterName, defaultProjectID),
@@ -107,7 +104,6 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Namespace:       resources.KubermaticNamespace,
 					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 	}
@@ -142,8 +138,9 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 				t.Fatal(err)
 			}
 			tc.expectedSecret.Data = map[string][]byte{resources.ExternalClusterKubeconfig: kubeconfig}
-			if !reflect.DeepEqual(secret, tc.expectedSecret) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedSecret, secret))
+
+			if !diff.SemanticallyEqual(tc.expectedSecret, secret) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSecret, secret))
 			}
 		})
 	}
@@ -183,10 +180,9 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					ResourceVersion: "1",
 					Name:            genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, kubermaticv1.AWSCloudProvider).GetSecretName(),
 					Namespace:       resources.KubermaticNamespace,
-					Labels:          map[string]string{"name": genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, kubermaticv1.AWSCloudProvider).GetSecretName(), kubermaticv1.ProjectIDLabelKey: defaultProjectID},
+					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
 				Data: map[string][]byte{resources.ExternalEKSClusterAccessKeyID: []byte(defaultAccessKeyID), resources.ExternalEKSClusterSecretAccessKey: []byte(defaultSecretAccessKey)},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 		{
@@ -211,10 +207,9 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					ResourceVersion: "1",
 					Name:            genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, kubermaticv1.GCPCloudProvider).GetSecretName(),
 					Namespace:       resources.KubermaticNamespace,
-					Labels:          map[string]string{"name": genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, kubermaticv1.GCPCloudProvider).GetSecretName(), kubermaticv1.ProjectIDLabelKey: defaultProjectID},
+					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
 				Data: map[string][]byte{resources.ExternalGKEClusterSeriveAccount: []byte(defaultAccessKeyID)},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 		{
@@ -242,10 +237,9 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 					ResourceVersion: "1",
 					Name:            genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, kubermaticv1.AzureCloudProvider).GetSecretName(),
 					Namespace:       resources.KubermaticNamespace,
-					Labels:          map[string]string{"name": genCloudCluster(defaultClusterName, defaultRegion, defaultProjectID, kubermaticv1.AzureCloudProvider).GetSecretName(), kubermaticv1.ProjectIDLabelKey: defaultProjectID},
+					Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: defaultProjectID},
 				},
 				Data: map[string][]byte{resources.ExternalAKSClusterTenantID: []byte(defaultTenantID), resources.ExternalAKSClusterSubscriptionID: []byte(defaultSubscriptionID), resources.ExternalAKSClusterClientID: []byte(defaultClientID), resources.ExternalAKSClusterClientSecret: []byte(defaultClientSecret)},
-				Type: corev1.SecretTypeOpaque,
 			},
 		},
 	}
@@ -276,8 +270,8 @@ func TestCreateOrUpdateCloudSecretForCluster(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !reflect.DeepEqual(tc.expectedSecret, secret) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(tc.expectedSecret, secret))
+			if !diff.SemanticallyEqual(tc.expectedSecret, secret) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedSecret, secret))
 			}
 		})
 	}

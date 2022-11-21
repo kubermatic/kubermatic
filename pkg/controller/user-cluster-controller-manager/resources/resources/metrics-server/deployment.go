@@ -26,7 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -62,7 +62,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 }
 
 // DeploymentCreator returns the function to create and update the metrics server deployment.
-func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName
@@ -91,7 +91,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.MetricsServerDeploymentName,
-					Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryK8SGCR), imageName, imageTag),
+					Image:   registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryK8S, imageName, imageTag))),
 					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubelet-insecure-tls",
@@ -181,9 +181,9 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 // PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
 func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)
-			pdb.Spec = policyv1beta1.PodDisruptionBudgetSpec{
+			pdb.Spec = policyv1.PodDisruptionBudgetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: resources.BaseAppLabels(resources.MetricsServerDeploymentName, nil),
 				},

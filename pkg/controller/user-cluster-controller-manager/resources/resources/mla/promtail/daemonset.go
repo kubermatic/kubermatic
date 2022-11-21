@@ -34,7 +34,7 @@ import (
 
 const (
 	imageName     = "grafana/promtail"
-	imageTag      = "2.4.1"
+	imageTag      = "2.5.0"
 	initImageName = "busybox"
 	initImageTag  = "1.34"
 	appName       = "mla-promtail"
@@ -72,7 +72,7 @@ var (
 	}
 )
 
-func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.PromtailDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Labels = resources.BaseAppLabels(appName, nil)
@@ -84,8 +84,8 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 			ds.Spec.Template.ObjectMeta.Labels = controllerLabels
 			ds.Spec.Template.Spec.ServiceAccountName = resources.PromtailServiceAccountName
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsUser:  pointer.Int64Ptr(0),
-				RunAsGroup: pointer.Int64Ptr(0),
+				RunAsUser:  pointer.Int64(0),
+				RunAsGroup: pointer.Int64(0),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -93,7 +93,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:            "init-inotify",
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), initImageName, initImageTag),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", initImageName, initImageTag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Command: []string{
 						"sh",
@@ -101,14 +101,14 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 						fmt.Sprintf("sysctl -w fs.inotify.max_user_instances=%d", inotifyMaxUserInstances),
 					},
 					SecurityContext: &corev1.SecurityContext{
-						Privileged: pointer.BoolPtr(true),
+						Privileged: pointer.Bool(true),
 					},
 				},
 			}
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), imageName, imageTag),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, imageTag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-config.file=/etc/promtail/promtail.yaml",
@@ -155,13 +155,13 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
-						AllowPrivilegeEscalation: pointer.BoolPtr(false),
+						AllowPrivilegeEscalation: pointer.Bool(false),
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
 								"all",
 							},
 						},
-						ReadOnlyRootFilesystem: pointer.BoolPtr(true),
+						ReadOnlyRootFilesystem: pointer.Bool(true),
 					},
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -214,7 +214,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.PromtailCertificatesSecretName,
-							DefaultMode: pointer.Int32Ptr(0400),
+							DefaultMode: pointer.Int32(0400),
 						},
 					},
 				},

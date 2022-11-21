@@ -26,7 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -73,12 +73,6 @@ func MasterControllerManagerDeploymentCreator(cfg *kubermaticv1.KubermaticConfig
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
-			// since #8556, this Deployment doesn't use the webhook-cert Secret
-			// anymore, but if we don't explicitly set the volumes to empty,
-			// the volume will never be removed from the Deployment;
-			// this line can be removed in KKP 2.22+
-			d.Spec.Template.Spec.Volumes = []corev1.Volume{}
-
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",
@@ -106,7 +100,7 @@ func MasterControllerManagerPDBCreator(cfg *kubermaticv1.KubermaticConfiguration
 	name := "kubermatic-master-controller-manager"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return name, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			// To prevent the PDB from blocking node rotations, we accept
 			// 0 minAvailable if the replica count is only 1.
 			// NB: The cfg is defaulted, so Replicas==nil cannot happen.

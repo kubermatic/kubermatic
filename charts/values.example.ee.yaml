@@ -34,7 +34,7 @@ dex:
 
     # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
     # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
-    # More about this configuration at https://docs.kubermatic.com/kubermatic/master/tutorials_howtos/oidc_provider_configuration/share-_clusters_via_delegated_oidc_authentication/
+    # More about this configuration at https://docs.kubermatic.com/kubermatic/main/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
   - id: kubermaticIssuer
     name: Kubermatic OIDC Issuer
     # Generate a secure secret key
@@ -44,6 +44,8 @@ dex:
     RedirectURIs:
       # ensure the URLs below use the dex.ingress.host configured above
       - https://cluster.example.dev/api/v1/kubeconfig
+      - https://cluster.example.dev/api/v2/kubeconfig/secret
+      - https://cluster.example.dev/api/v2/dashboard/login
 
   # Depending on your chosen login method, you need to configure either an OAuth provider like
   # Google or GitHub, or configure a set of static passwords. Check the `charts/oauth/values.yaml`

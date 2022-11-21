@@ -17,6 +17,9 @@ limitations under the License.
 package apiserver
 
 import (
+	"bytes"
+	"html/template"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -105,6 +108,45 @@ rules:
 `,
 }
 
+const fluentBitConfigTemplate = `
+{{- if .Service }}
+[SERVICE]
+{{- range $key, $value := .Service }}
+    {{ $key }}      {{ $value }}
+{{- end }}
+{{- end }}
+
+[INPUT]
+    Name    tail
+    Path    /var/log/kubernetes/audit/audit.log
+    DB      /var/log/kubernetes/audit/fluentbit.db
+
+{{- if .Filters }}
+{{- range $filter := .Filters }}
+[FILTER]
+{{- range $key, $value := $filter }}
+    {{ $key }}      {{ $value }}
+{{- end }}
+
+{{- end }}
+{{- end }}
+
+{{- if .Outputs }}
+{{- range $output := .Outputs }}
+[OUTPUT]
+{{- range $key, $value := $output }}
+    {{ $key }}      {{ $value }}
+{{- end }}
+
+{{- end }}
+{{- else }}
+[OUTPUT]
+    Name    stdout
+    Match   *
+{{- end }}
+
+`
+
 func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -127,6 +169,37 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 				}
 			}
 			return cm, nil
+		}
+	}
+}
+
+// FluentBitSecretCreator returns a reconciling.NamedSecretCreatorGetter for a secret that contains
+// fluent-bit configuration for the audit-logs sidecar.
+func FluentBitSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.FluentBitSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
+			if secret.Data == nil {
+				secret.Data = map[string][]byte{}
+			}
+
+			config := &kubermaticv1.AuditSidecarConfiguration{}
+			if data.Cluster().Spec.AuditLogging.SidecarSettings != nil && data.Cluster().Spec.AuditLogging.SidecarSettings.Config != nil {
+				config = data.Cluster().Spec.AuditLogging.SidecarSettings.Config
+			}
+
+			t, err := template.New("fluent-bit.conf").Parse(fluentBitConfigTemplate)
+			if err != nil {
+				return nil, err
+			}
+
+			configBuf := bytes.Buffer{}
+			if err := t.Execute(&configBuf, config); err != nil {
+				return nil, err
+			}
+
+			secret.Data["fluent-bit.conf"] = configBuf.Bytes()
+
+			return secret, nil
 		}
 	}
 }

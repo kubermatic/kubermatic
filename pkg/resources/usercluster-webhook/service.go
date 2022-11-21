@@ -42,10 +42,16 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 			}
 			se.Spec.Ports = []corev1.ServicePort{
 				{
-					Name:       "",
-					Port:       443,
+					Name:       "seed",
+					Port:       resources.UserClusterWebhookSeedListenPort,
 					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(9443),
+					TargetPort: intstr.FromInt(seedWebhookListenPort),
+				},
+				{
+					Name:       "user",
+					Port:       resources.UserClusterWebhookUserListenPort,
+					Protocol:   corev1.ProtocolTCP,
+					TargetPort: intstr.FromInt(userWebhookListenPort),
 				},
 			}
 

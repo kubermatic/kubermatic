@@ -19,33 +19,50 @@ package validation
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // validator for validating Kubermatic Machine CRD.
 type validator struct {
-	log        *zap.SugaredLogger
-	seedClient ctrlruntimeclient.Client
-	userClient ctrlruntimeclient.Client
-	caBundle   *certificates.CABundle
+	log             *zap.SugaredLogger
+	seedClient      ctrlruntimeclient.Client
+	userClient      ctrlruntimeclient.Client
+	caBundle        *certificates.CABundle
+	subjectSelector labels.Selector
 }
 
 // NewValidator returns a new Machine validator.
-func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *certificates.CABundle) *validator {
-	return &validator{
-		log:        log,
-		seedClient: seedClient,
-		userClient: userClient,
-		caBundle:   caBundle,
+func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *certificates.CABundle,
+	projectID string) (*validator, error) {
+	subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectID})
+	if err != nil {
+		return nil, fmt.Errorf("error creating resource quota subject name requirement: %w", err)
 	}
+	subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{kubermaticv1.ProjectSubjectKind})
+	if err != nil {
+		return nil, fmt.Errorf("error creating resource quota subject kind requirement: %w", err)
+	}
+	subjectSelector := labels.NewSelector().Add(*subjectNameReq, *subjectKindReq)
+
+	return &validator{
+		log:             log,
+		seedClient:      seedClient,
+		userClient:      userClient,
+		caBundle:        caBundle,
+		subjectSelector: subjectSelector,
+	}, nil
 }
 
 var _ admission.CustomValidator = &validator{}
@@ -59,9 +76,12 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	log := v.log.With("machine", machine.Name)
 	log.Debug("validating create")
 
-	quota := getResourceQuota()
+	quota, err := getResourceQuota(ctx, v.seedClient, v.subjectSelector)
+	if err != nil {
+		return err
+	}
 	if quota != nil {
-		return validateQuota(ctx, log, v.seedClient, v.userClient, machine, v.caBundle)
+		return validateQuota(ctx, log, v.userClient, machine, v.caBundle, quota)
 	}
 	return nil
 }
@@ -73,12 +93,5 @@ func (v *validator) ValidateUpdate(_ context.Context, _, _ runtime.Object) error
 }
 
 func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
-	return nil
-}
-
-// Gets resource quota for the project. Not implemented yet because the ResourceQuota CRD is not implemented.
-// For now this just stops resource quota check, as there are no resource quotas.
-// TODO implement when ResourceQuota CRD is available.
-func getResourceQuota() runtime.Object {
 	return nil
 }

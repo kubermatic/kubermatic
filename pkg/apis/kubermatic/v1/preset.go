@@ -37,7 +37,9 @@ type PresetList struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// Preset is the type representing a Preset.
+// Presets are preconfigured cloud provider credentials that can be applied
+// to new clusters. This frees end users from having to know the actual
+// credentials used for their clusters.
 type Preset struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -59,14 +61,24 @@ type PresetSpec struct {
 	Alibaba             *Alibaba             `json:"alibaba,omitempty"`
 	Anexia              *Anexia              `json:"anexia,omitempty"`
 	Nutanix             *Nutanix             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareclouddirector,omitempty"`
 	GKE                 *GKE                 `json:"gke,omitempty"`
 	EKS                 *EKS                 `json:"eks,omitempty"`
 	AKS                 *AKS                 `json:"aks,omitempty"`
 
-	Fake           *Fake    `json:"fake,omitempty"`
+	Fake *Fake `json:"fake,omitempty"`
+
+	// RequiredEmails is a list of e-mail addresses that this presets should
+	// be restricted to. Each item in the list can be either a full e-mail
+	// address or just a domain name. This restriction is only enforced in the
+	// KKP API.
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
-	Enabled        *bool    `json:"enabled,omitempty"`
+
+	// Projects is a list of project IDs that this preset is limited to.
+	Projects []string `json:"projects,omitempty"`
+
+	// Only enabled presets will be available in the KKP dashboard.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 func (s PresetSpec) IsEnabled() bool {
@@ -82,7 +94,10 @@ func (s *PresetSpec) SetEnabled(enabled bool) {
 }
 
 type ProviderPreset struct {
-	Enabled    *bool  `json:"enabled,omitempty"`
+	// Only enabled presets will be available in the KKP dashboard.
+	Enabled *bool `json:"enabled,omitempty"`
+	// If datacenter is set, this preset is only applicable to the
+	// configured datacenter.
 	Datacenter string `json:"datacenter,omitempty"`
 }
 
@@ -184,16 +199,27 @@ func (s VMwareCloudDirector) IsValid() bool {
 type AWS struct {
 	ProviderPreset `json:",inline"`
 
-	AccessKeyID     string `json:"accessKeyID"`
+	// Access Key ID to authenticate against AWS.
+	AccessKeyID string `json:"accessKeyID"`
+	// Secret Access Key to authenticate against AWS.
 	SecretAccessKey string `json:"secretAccessKey"`
 
 	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 
-	VPCID               string `json:"vpcID,omitempty"`
-	RouteTableID        string `json:"routeTableID,omitempty"`
+	// AWS VPC to use. Must be configured.
+	VPCID string `json:"vpcID,omitempty"`
+	// Route table to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
+	RouteTableID string `json:"routeTableID,omitempty"`
+	// Instance profile to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
-	SecurityGroupID     string `json:"securityGroupID,omitempty"`
+	// Security group to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
+	SecurityGroupID string `json:"securityGroupID,omitempty"`
+	// ARN to use. This can be configured, but if left empty will be
+	// automatically filled in during reconciliation.
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"` //nolint:tagliatelle
 }
 
@@ -286,7 +312,9 @@ func (s Kubevirt) IsValid() bool {
 type Alibaba struct {
 	ProviderPreset `json:",inline"`
 
-	AccessKeyID     string `json:"accessKeyID"`
+	// Access Key ID to authenticate against Alibaba.
+	AccessKeyID string `json:"accessKeyID"`
+	// Access Key Secret to authenticate against Alibaba.
 	AccessKeySecret string `json:"accessKeySecret"`
 }
 
@@ -352,15 +380,15 @@ func (s GKE) IsValid() bool {
 type EKS struct {
 	ProviderPreset `json:",inline"`
 
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
-	Region          string `json:"region"`
+	AccessKeyID          string `json:"accessKeyID"`
+	SecretAccessKey      string `json:"secretAccessKey"`
+	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 }
 
 func (s EKS) IsValid() bool {
 	return len(s.AccessKeyID) > 0 &&
-		len(s.SecretAccessKey) > 0 &&
-		len(s.Region) > 0
+		len(s.SecretAccessKey) > 0
 }
 
 type AKS struct {

@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +61,7 @@ var (
 type etcdStatefulSetCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
+	RewriteImage(string) (string, error)
 	EtcdDiskSize() resource.Quantity
 	EtcdLauncherImage() string
 	EtcdLauncherTag() string
@@ -216,7 +216,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				}
 			}
 
-			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks, launcherEnabled)
+			etcdStartCmd, err := getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled)
 			if err != nil {
 				return nil, err
 			}
@@ -224,7 +224,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				{
 					Name: resources.EtcdStatefulSetName,
 
-					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + imageTag,
+					Image:           registry.Must(data.RewriteImage(resources.RegistryGCR + "/etcd-development/etcd:" + imageTag)),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         etcdStartCmd,
 					Env:             etcdEnv,
@@ -388,10 +388,13 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// during updates lacks behind the apiserver by one minor version; this is so that
 	// also external components like the kubernetes dashboard or external ccms wait for
 	// the new apiserver to be ready; etcd however is different and gets updated together
-	// with the apiserver
-	if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
-		return "v3.4.3"
-	}
+	// with the apiserver;
+	// As of now, all supported Kubernetes versions use the same etcd release, but the
+	// comment above is left as a reminder in case future versions switches will be needed
+	// again.
+	// if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
+	// 	return "v3.4.3"
+	// }
 
 	return "v3.5.4"
 }
@@ -441,14 +444,15 @@ type commandTplData struct {
 	EnableCorruptionCheck bool
 }
 
-func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
+func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
-			"-namespace", "$(NAMESPACE)",
+			"-cluster", cluster.Name,
 			"-pod-name", "$(POD_NAME)",
 			"-pod-ip", "$(POD_IP)",
 			"-api-version", "$(ETCDCTL_API)",
-			"-token", "$(TOKEN)"}
+			"-token", "$(TOKEN)",
+		}
 		if enableCorruptionCheck {
 			command = append(command, "-enable-corruption-check")
 		}
@@ -462,8 +466,8 @@ func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabl
 
 	tplData := commandTplData{
 		ServiceName:           resources.EtcdServiceName,
-		Token:                 name,
-		Namespace:             namespace,
+		Token:                 cluster.Name,
+		Namespace:             cluster.Status.NamespaceName,
 		DataDir:               dataDir,
 		EnableCorruptionCheck: enableCorruptionCheck,
 	}

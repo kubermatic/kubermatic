@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 groups:
   - name: node-exporter
     rules:
@@ -33,12 +32,12 @@ groups:
             rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m])
           * on (namespace, pod) group_left(node)
             node_namespace_pod:kube_pod_info:)
-      - record: ':node_cpu_saturation_load1:'
+      - record: ":node_cpu_saturation_load1:"
         expr: |
           sum(node_load1{app="node-exporter"})
           /
           sum(node:node_num_cpu:sum)
-      - record: 'node:node_cpu_saturation_load1:'
+      - record: "node:node_cpu_saturation_load1:"
         expr: |
           sum by (node) (
             node_load1{app="node-exporter"}
@@ -54,7 +53,7 @@ groups:
           node:node_num_cpu:sum
             /
           scalar(sum(node:node_num_cpu:sum))
-      - record: ':node_memory_utilisation:'
+      - record: ":node_memory_utilisation:"
         expr: |
           1 -
           sum(node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
@@ -85,7 +84,7 @@ groups:
             (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
             + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
           )
-      - record: 'node:node_memory_utilisation:'
+      - record: "node:node_memory_utilisation:"
         expr: |
           1 -
           sum by (node) (
@@ -99,7 +98,7 @@ groups:
           * on (namespace, pod) group_left(node)
             node_namespace_pod:kube_pod_info:
           )
-      - record: 'node:node_memory_utilisation_2:'
+      - record: "node:node_memory_utilisation_2:"
         expr: |
           1 - (node:node_memory_bytes_available:sum / node:node_memory_bytes_total:sum)
       - record: node:node_memory_swap_io_bytes:sum_rate
@@ -135,12 +134,12 @@ groups:
           * on (namespace, pod) group_left(node)
             node_namespace_pod:kube_pod_info:
           )
-      - record: 'node:node_filesystem_usage:'
+      - record: "node:node_filesystem_usage:"
         expr: |
           max by (namespace, pod, device) ((node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"}
           - node_filesystem_avail_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
           / node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
-      - record: 'node:node_filesystem_avail:'
+      - record: "node:node_filesystem_avail:"
         expr: |
           max by (namespace, pod, device) (node_filesystem_avail_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"} / node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
       - record: :node_net_utilisation:sum_irate
@@ -173,7 +172,7 @@ groups:
       - alert: NodeFilesystemSpaceFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemspacefillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
         expr: |
           predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
           and
@@ -183,12 +182,12 @@ groups:
         for: 1h
         labels:
           severity: warning
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeFilesystemSpaceFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 4 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemspacefillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
         expr: |
           predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
           and
@@ -198,12 +197,12 @@ groups:
         for: 1h
         labels:
           severity: critical
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeFilesystemOutOfSpace
         annotations:
           message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemoutofspace
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
         expr: |
           node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
           and
@@ -211,12 +210,12 @@ groups:
         for: 30m
         labels:
           severity: warning
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeFilesystemOutOfSpace
         annotations:
           message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemoutofspace
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
         expr: |
           node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
           and
@@ -224,12 +223,12 @@ groups:
         for: 10m
         labels:
           severity: critical
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeFilesystemFilesOutOfSpace
         annotations:
           message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemfilesoutofspace
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesoutofspace
         expr: |
           node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
           and
@@ -237,12 +236,12 @@ groups:
         for: 1h
         labels:
           severity: critical
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeFilesystemFilesFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemfilesfillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
         expr: |
           predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
           and
@@ -252,12 +251,12 @@ groups:
         for: 1h
         labels:
           severity: warning
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeFilesystemFilesFillingUp
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 4 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemfilesfillingup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
         expr: |
           predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
           and
@@ -267,12 +266,12 @@ groups:
         for: 1h
         labels:
           severity: critical
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeFilesystemOutOfFiles
         annotations:
           message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available inodes left.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodefilesystemoutoffiles
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutoffiles
         expr: |
           node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
           and
@@ -280,25 +279,25 @@ groups:
         for: 1h
         labels:
           severity: warning
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeNetworkReceiveErrs
         annotations:
-          message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors while receiving packets ({{ $value }} errors in two minutes).'
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodenetworkreceiveerrs
+          message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while receiving packets ({{ $value }} errors in two minutes)."
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworkreceiveerrs
         expr: increase(node_network_receive_errs_total[2m]) > 10
         for: 1h
         labels:
           severity: critical
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"
       - alert: NodeNetworkTransmitErrs
         annotations:
-          message: '{{ $labels.instance }} interface {{ $labels.device }} shows errors while transmitting packets ({{ $value }} errors in two minutes).'
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-nodenetworktransmiterrs
+          message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while transmitting packets ({{ $value }} errors in two minutes)."
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworktransmiterrs
         expr: increase(node_network_transmit_errs_total[2m]) > 10
         for: 1h
         labels:
           severity: critical
-          resource: '{{ $labels.instance }} {{ $labels.device }}'
-          service: 'node-exporter'
+          resource: "{{ $labels.instance }} {{ $labels.device }}"
+          service: "node-exporter"

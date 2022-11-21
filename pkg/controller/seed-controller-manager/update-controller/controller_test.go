@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -794,7 +794,7 @@ func TestReconcile(t *testing.T) {
 				},
 			}
 
-			configGetter, err := provider.StaticKubermaticConfigurationGetterFactory(config)
+			configGetter, err := kubernetesprovider.StaticKubermaticConfigurationGetterFactory(config)
 			if err != nil {
 				t.Fatalf("Failed to create config getter: %v", err)
 			}

@@ -22,469 +22,570 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"sync"
+	"strings"
 	"testing"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
+	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
+	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
+	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
+	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
+	"k8c.io/operating-system-manager/pkg/providerconfig/sles"
+	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/pointer"
+	"k8s.io/apimachinery/pkg/util/sets"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
-var operatingSystems = map[string]models.OperatingSystemSpec{
-	"centos":  centos(),
-	"flatcar": flatcar(),
-	"rhel":    rhel(),
-	"sles":    sles(),
-	"ubuntu":  ubuntu(),
+const (
+	CanalCNI  string = "canal"
+	CiliumCNI string = "cilium"
+)
+
+type testCase struct {
+	cloudProvider          kubermaticv1.ProviderType
+	operatingSystems       []providerconfig.OperatingSystem
+	cni                    string
+	ipFamily               util.IPFamily
+	skipNodes              bool
+	skipHostNetworkPods    bool
+	skipEgressConnectivity bool
 }
 
-var cloudProviders = map[string]clusterSpec{
-	"azure": azure{},
-	"gcp":   gcp{},
-	"aws":   aws{},
+func (t *testCase) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
+	return log.With("provider", t.cloudProvider, "cni", t.cni, "ipfamily", t.ipFamily)
 }
 
-var cnis = map[string]models.CNIPluginSettings{
-	"cilium": cilium(),
-	"canal":  canal(),
+var (
+	osSpecs = map[providerconfig.OperatingSystem]interface{}{
+		providerconfig.OperatingSystemCentOS:     centos.Config{},
+		providerconfig.OperatingSystemFlatcar:    flatcar.Config{},
+		providerconfig.OperatingSystemRHEL:       rhel.Config{},
+		providerconfig.OperatingSystemRockyLinux: rockylinux.Config{},
+		providerconfig.OperatingSystemSLES:       sles.Config{},
+		providerconfig.OperatingSystemUbuntu:     ubuntu.Config{},
+	}
+
+	cloudProviderJiggers = map[kubermaticv1.ProviderType]CreateJigFunc{
+		kubermaticv1.AlibabaCloudProvider:      newAlibabaTestJig,
+		kubermaticv1.AWSCloudProvider:          newAWSTestJig,
+		kubermaticv1.AzureCloudProvider:        newAzureTestJig,
+		kubermaticv1.DigitaloceanCloudProvider: newDigitaloceanTestJig,
+		kubermaticv1.GCPCloudProvider:          newGCPTestJig,
+		kubermaticv1.HetznerCloudProvider:      newHetznerTestJig,
+		kubermaticv1.OpenstackCloudProvider:    newOpenstackTestJig,
+		kubermaticv1.PacketCloudProvider:       newEquinixMetalTestJig,
+		kubermaticv1.VSphereCloudProvider:      newVSphereTestJig,
+	}
+
+	cnis = map[string]*kubermaticv1.CNIPluginSettings{
+		CanalCNI: {
+			Type: "canal",
+		},
+		CiliumCNI: {
+			Type: "cilium",
+		},
+	}
+
+	tests = []testCase{
+		{
+			cloudProvider: kubermaticv1.AlibabaCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:      CiliumCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.AlibabaCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:      CanalCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.AWSCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:                 CiliumCNI,
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.AWSCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:                 CanalCNI,
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.AzureCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemRockyLinux,
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:      CiliumCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.AzureCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemCentOS,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemRockyLinux,
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:      CanalCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.GCPCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:                 CiliumCNI,
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.GCPCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:                 CanalCNI,
+			ipFamily:            util.DualStack,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.OpenstackCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+			},
+			cni:      CiliumCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.OpenstackCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+			},
+			cni:      CanalCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.HetznerCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:      CiliumCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.HetznerCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:      CanalCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:      CiliumCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemCentOS,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:      CanalCNI,
+			ipFamily: util.DualStack,
+		},
+		{
+			cloudProvider: kubermaticv1.PacketCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemCentOS,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:       CanalCNI,
+			ipFamily:  util.DualStack,
+			skipNodes: true,
+		},
+		{
+			cloudProvider: kubermaticv1.PacketCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:       CiliumCNI,
+			ipFamily:  util.DualStack,
+			skipNodes: true,
+		},
+		{
+			cloudProvider: kubermaticv1.VSphereCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:                    CanalCNI,
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
+		{
+			cloudProvider: kubermaticv1.VSphereCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:                    CiliumCNI,
+			ipFamily:               util.DualStack,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
+	}
+)
+
+func isAll(s sets.String) bool {
+	return s.Len() == 0 || (s.Len() == 1 && s.Has("all"))
 }
 
-// TestCloudClusterIPFamily creates clusters and runs dualstack tests against them.
-func TestCloudClusterIPFamily(t *testing.T) {
-	// export KUBERMATIC_API_ENDPOINT=https://dev.kubermatic.io
-	// export KKP_API_TOKEN=<steal token>
-	token := os.Getenv("KKP_API_TOKEN")
+func osToStringSet(os []providerconfig.OperatingSystem) sets.String {
+	result := sets.NewString()
+	for _, o := range os {
+		result.Insert(string(o))
+	}
+	return result
+}
 
-	if token == "" {
-		var err error
-		token, err = utils.RetrieveMasterToken(context.Background())
-		if err != nil {
-			t.Fatalf("failed to retrieve master token: %v", err)
+func stringToOSSet(os sets.String) []providerconfig.OperatingSystem {
+	result := []providerconfig.OperatingSystem{}
+	for _, o := range os.List() {
+		result = append(result, providerconfig.OperatingSystem(o))
+	}
+	return result
+}
+
+// removeDisabledTests removes tests with criteria that are not enabled via
+// CLI flags and also adjusts the list of OS's per test to match what is
+// enabled via CLI.
+func removeDisabledTests(allTests []testCase, log *zap.SugaredLogger) []testCase {
+	result := []testCase{}
+
+	for _, test := range allTests {
+		testLog := test.Log(log)
+
+		if !isAll(enabledCNIs) && !enabledCNIs.Has(test.cni) {
+			testLog.Info("Skipping scenario because CNI is not enabled.")
+			continue
 		}
-	} else {
-		t.Logf("token found in env")
-	}
 
-	apicli := utils.NewTestClient(token, t)
-
-	type testCase struct {
-		cloudName           string
-		osNames             []string
-		cni                 string
-		ipFamily            util.IPFamily
-		skipNodes           bool
-		skipHostNetworkPods bool
-	}
-
-	tests := []testCase{
-		{
-			cloudName: "azure",
-			osNames: []string{
-				// "centos", // cilium agent crash
-				// "flatcar", // dhcpv6 bug
-				// "rhel", // fails only in ci
-				// "sles", // unsupported in kkp
-				"ubuntu",
-			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-		},
-		{
-			cloudName: "azure",
-			osNames: []string{
-				"centos",
-				// "flatcar", // dhcpv6 bug
-				// "rhel", // node local dns cache crashing
-				// "sles", // unsupported in kkp
-				"ubuntu",
-			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-		},
-		{
-			cloudName: "aws",
-			osNames: []string{
-				// "centos",
-				// "flatcar", //
-				"rhel",
-				// "sles", // unsupported in kkp
-				"ubuntu",
-			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-		},
-		{
-			cloudName: "aws",
-			osNames: []string{
-				// "centos", // works when instance is created with ssh keypair
-				// "flatcar",
-				// "rhel", // works when instance is created with ssh keypair
-				// "sles",
-				"ubuntu",
-			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-		},
-		{
-			cloudName: "gcp",
-			osNames: []string{
-				// "centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", //  others are unsupported in kkp
-			},
-			cni:                 "cilium",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-		},
-		{
-			cloudName: "gcp",
-			osNames: []string{
-				// "centos",
-				// "flatcar",
-				// "rhel",
-				// "sles",
-				"ubuntu", //  others are unsupported in kkp
-			},
-			cni:                 "canal",
-			ipFamily:            util.DualStack,
-			skipNodes:           true,
-			skipHostNetworkPods: true,
-		},
-	}
-
-	retestBudget := 2
-	ch := make(chan int, retestBudget)
-	for i := 0; i < retestBudget; i++ {
-		ch <- i
-	}
-	close(ch)
-	var retested sync.Map
-	var mu sync.Mutex
-
-	for _, test := range tests {
-		test := test
-		name := fmt.Sprintf("c-%s-%s-%s", test.cloudName, test.cni, test.ipFamily)
-		cloud := cloudProviders[test.cloudName]
-		cloudSpec := cloud.CloudSpec()
-		cniSpec := cnis[test.cni]
-		netConfig := defaultClusterNetworkingConfig()
-		switch test.cni {
-		case "canal":
-			netConfig = netConfig.WithProxyMode("ipvs")
-		case "cilium":
-			netConfig = netConfig.WithProxyMode("ebpf")
+		if !isAll(enabledProviders) && !enabledProviders.Has(string(test.cloudProvider)) {
+			testLog.Info("Skipping scenario because cloud provider is not enabled.")
+			continue
 		}
 
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+		var operatingSystems []providerconfig.OperatingSystem
+		if isAll(enabledOperatingSystems) {
+			operatingSystems = test.operatingSystems
+		} else {
+			testOperatingSystems := osToStringSet(test.operatingSystems)
+			operatingSystems = stringToOSSet(testOperatingSystems.Intersection(enabledOperatingSystems))
+		}
 
-		retest:
-			clusterSpec := defaultClusterRequest().WithName(name).
-				WithCloud(cloudSpec).
-				WithCNI(cniSpec).
-				WithNetworkConfig(models.ClusterNetworkingConfig(netConfig))
-			spec := models.CreateClusterSpec(clusterSpec)
+		if len(operatingSystems) == 0 {
+			testLog.Info("Skipping scenario because no OS specified to test.")
+			continue
+		}
 
-			mu.Lock()
-			name := fmt.Sprintf("%s-%s", name, rand.String(4))
-			config, projectID, clusterID, cleanup, err := createUsercluster(t, apicli, name, spec)
-			mu.Unlock()
-			if err != nil {
-				respErr := new(project.CreateClusterV2Default)
-				if errors.As(err, &respErr) {
-					errData, err := respErr.GetPayload().MarshalBinary()
-					if err != nil {
-						t.Fatalf("failed to marshal error response")
-					}
-					t.Fatalf(string(errData))
-				}
-				t.Fatalf("failed to create cluster: %v", err)
+		result = append(result, testCase{
+			cloudProvider:          test.cloudProvider,
+			operatingSystems:       operatingSystems, // NB: here we override the OS list
+			cni:                    test.cni,
+			ipFamily:               test.ipFamily,
+			skipNodes:              test.skipNodes,
+			skipHostNetworkPods:    test.skipHostNetworkPods,
+			skipEgressConnectivity: test.skipEgressConnectivity,
+		})
+	}
+
+	for _, test := range result {
+		test.Log(log).Info("Enabled scenario")
+	}
+
+	return result
+}
+
+// TestNewClusters creates clusters and runs dualstack tests against them.
+func TestNewClusters(t *testing.T) {
+	ctx := signals.SetupSignalHandler()
+	log := log.NewFromOptions(logOptions).Sugar()
+
+	parseProviderCredentials(t)
+
+	seedClient, _, _, err := utils.GetClients()
+	if err != nil {
+		t.Fatalf("Failed to get client for seed cluster: %v", err)
+	}
+
+	filteredTests := removeDisabledTests(tests, log)
+
+	for _, test := range filteredTests {
+		testName := fmt.Sprintf("%s-%s-%s", test.cloudProvider, test.cni, test.ipFamily)
+
+		t.Run(testName, func(t *testing.T) {
+			testLog := log.With("provider", test.cloudProvider, "cni", test.cni, "ipfamily", test.ipFamily)
+
+			jigCreator := cloudProviderJiggers[test.cloudProvider]
+			clusterName := fmt.Sprintf("dualstack-e2e-%s", rand.String(5))
+			clusterName = strings.ReplaceAll(strings.ToLower(clusterName), "+", "-")
+
+			// setup a test jig for the given provider, using the default e2e test settings
+			testLog = testLog.With("cluster", clusterName)
+			testJig := jigCreator(seedClient, testLog)
+
+			// customize the default cluster config to be suitable for dualstack networking
+			testJig.ClusterJig.
+				WithName(clusterName).
+				WithHumanReadableName(fmt.Sprintf("Dualstack E2E (%s, %s, %s)", test.cloudProvider, test.cni, test.ipFamily)).
+				WithKonnectivity(true).
+				WithCNIPlugin(cnis[test.cni]).
+				WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+					c.ClusterNetwork.IPFamily = "IPv4+IPv6"
+					c.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16", "fd01::/48"}
+					c.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20", "fd02::/120"}
+					return c
+				})
+
+			// change proxy mode depending on the CNI
+			switch test.cni {
+			case CanalCNI:
+				testJig.ClusterJig.WithProxyMode("ipvs")
+			case CiliumCNI:
+				testJig.ClusterJig.WithProxyMode("ebpf")
 			}
-			defer func() {
-				mu.Lock()
-				cleanup()
-				mu.Unlock()
-			}()
 
-			for _, osName := range test.osNames {
-				err := createMachineDeployment(t, apicli, defaultCreateMachineDeploymentParams().
+			// we create the machines later ourselves, so for now we do not want the jig to create them
+			machineJig := testJig.MachineJig
+			testJig.MachineJig = nil
+
+			// create the project and cluster (waits until the control plane is healthy, the WaitForNothing
+			// has no effect since no machines are being created)
+			_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+			if err != nil {
+				t.Fatalf("Failed to create cluster: %v", err)
+			}
+
+			// The cleanup uses a background context so that when the tests are cancelled,
+			// the cleanup is *not* interrupted, otherwise on CI we leak lots of cloud resources.
+			defer testJig.Cleanup(context.Background(), t, true)
+
+			// create a MachineDeployment with 1 replica each per operating system, do not yet wait for anything
+			for _, osName := range test.operatingSystems {
+				osSpec := osSpecs[osName]
+
+				if osName == providerconfig.OperatingSystemRHEL {
+					osSpec = addRHELSubscriptionInfo(osSpec)
+				}
+
+				osMachineJig := machineJig.Clone()
+				osMachineJig.
 					WithName(fmt.Sprintf("md-%s", osName)).
-					WithProjectID(projectID).
-					WithClusterID(clusterID).
-					WithOS(operatingSystems[osName]).
-					WithNodeSpec(cloud.NodeSpec()),
-				)
-				if err != nil {
-					t.Fatalf("failed to create machine deployment: %v", err)
+					WithOSSpec(osSpec).
+					WithNetworkConfig(&providerconfig.NetworkConfig{
+						IPFamily: "IPv4+IPv6",
+					})
+
+				// no need to keep track of machine cleanups, as KKP will delete all machines in the
+				// cluster when the cluster itself is being deleted
+				if err := osMachineJig.Create(ctx, jig.WaitForNothing, cluster.Spec.Cloud.DatacenterName); err != nil {
+					t.Fatalf("Failed to create machine deployment: %v", err)
 				}
 			}
 
-			userclusterClient, err := kubernetes.NewForConfig(config)
+			userclusterClient, err := testJig.ClusterClient(ctx)
 			if err != nil {
-				t.Fatalf("failed to create usercluster client: %s", err)
+				t.Fatalf("Failed to create usercluster client: %v", err)
 			}
 
-			t.Logf("waiting for nodes to come up")
-			err = checkNodeReadiness(t, userclusterClient, len(test.osNames))
-			if err != nil {
-				go func() {
-					mu.Lock()
-					cleanup()
-					mu.Unlock()
-				}()
-
-				_, ok := retested.Load(name)
-				if !ok {
-					retested.Store(name, true)
-					_, ok := <-ch
-					if !ok {
-						t.Log("out of retest budget")
-						t.Fatalf("nodes never became ready: %v", err)
-					}
-					t.Logf("retesting...")
-					goto retest
-				}
-				t.Fatalf("nodes never became ready: %v", err)
+			// now we wait for all nodes to become ready; we cheat a bit and abuse a MachineJig
+			testLog.Info("Waiting for all nodes to be ready...")
+			if err := machineJig.WithReplicas(len(test.operatingSystems)).WaitForReadyNodes(ctx, userclusterClient); err != nil {
+				t.Fatalf("Not all nodes did get ready: %v", err)
 			}
+			testLog.Info("All nodes are ready.")
 
-			t.Logf("nodes ready")
-			t.Logf("sleeping for 4m...")
-			time.Sleep(time.Minute * 4)
+			// give things time to settle
+			duration := 4 * time.Minute
+			testLog.Infow("Letting things settle down...", "wait", duration)
+			time.Sleep(duration)
 
-			err = waitForPods(t, userclusterClient, kubeSystem, "app", []string{
+			log.Infow("Checking pod readiness...", "namespace", metav1.NamespaceSystem)
+			err = waitForPods(t, ctx, log, userclusterClient, metav1.NamespaceSystem, "app", []string{
 				"coredns", "konnectivity-agent", "kube-proxy", "metrics-server",
 				"node-local-dns", "user-ssh-keys-agent",
 			})
-
 			if err != nil {
-				t.Fatalf("pods never became ready: %v", err)
+				t.Fatalf("Pods never became ready: %v", err)
 			}
 
-			testUserCluster(t, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods)
+			// and now run the actual test logic, which is shared between this test and the one for
+			// existing clusters
+			testUserCluster(t, ctx, testLog, userclusterClient, test.ipFamily, test.skipNodes, test.skipHostNetworkPods, test.skipEgressConnectivity)
 		})
 	}
 }
 
-func waitForPods(t *testing.T, client *kubernetes.Clientset, namespace string, key string, names []string) error {
-	t.Log("checking pod readiness...", namespace, key, names)
+func waitForPods(t *testing.T, ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
+	r, err := labels.NewRequirement(key, selection.In, names)
+	if err != nil {
+		return fmt.Errorf("failed to build requirement: %w", err)
+	}
+	l := labels.NewSelector().Add(*r)
 
-	return wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
-		r, err := labels.NewRequirement(key, selection.In, names)
-		if err != nil {
-			t.Logf("failed to build requirement: %v", err)
-			return false, nil
-		}
-		l := labels.NewSelector().Add(*r)
-		pods, err := client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
-			LabelSelector: l.String(),
+	return wait.PollImmediateLog(ctx, log, 10*time.Second, 15*time.Minute, func() (error, error) {
+		pods := corev1.PodList{}
+		err := client.List(ctx, &pods, &ctrlruntimeclient.ListOptions{
+			Namespace:     namespace,
+			LabelSelector: l,
 		})
 		if err != nil {
-			t.Logf("failed to get pod list: %s", err)
-			return false, nil
+			return fmt.Errorf("failed to list pods: %w", err), nil
 		}
 
 		if len(pods.Items) == 0 {
-			t.Logf("no pods found")
-			return false, nil
+			return errors.New("no pods founds"), nil
 		}
 
-		if !allPodsHealthy(t, pods) {
-			t.Logf("not all pods healthy yet...")
-			return false, nil
-		}
-
-		t.Logf("all pods healthy")
-
-		return true, nil
+		return allPodsHealthy(t, &pods), nil
 	})
 }
 
-func allPodsHealthy(t *testing.T, pods *corev1.PodList) bool {
-	allHealthy := true
+func allPodsHealthy(t *testing.T, pods *corev1.PodList) error {
+	unhealthy := sets.NewString()
+
 	for _, pod := range pods.Items {
-		podHealthy := true
 		if pod.Status.Phase != corev1.PodRunning {
-			podHealthy = false
-			t.Log("not running", pod.Name, pod.Status.Phase)
+			unhealthy.Insert(pod.Name)
+			continue
 		}
+
+		healthy := true
 		for _, c := range pod.Status.Conditions {
-			if c.Type == corev1.PodReady {
+			if c.Type == corev1.PodReady || c.Type == corev1.ContainersReady {
 				if c.Status != corev1.ConditionTrue {
-					podHealthy = false
-					t.Log("not ready", pod.Name, c.Type, c.Status)
-				}
-			} else if c.Type == corev1.ContainersReady {
-				if c.Status != corev1.ConditionTrue {
-					podHealthy = false
-					t.Log("not container ready", pod.Name, c.Type, c.Status)
+					healthy = false
 				}
 			}
 		}
 
-		if !podHealthy {
-			t.Logf("%q not healthy", pod.Name)
+		if !healthy {
+			unhealthy.Insert(pod.Name)
 		}
-
-		allHealthy = allHealthy && podHealthy
 	}
 
-	return allHealthy
+	if unhealthy.Len() > 0 {
+		return fmt.Errorf("not all pods are ready: %v", unhealthy.List())
+	}
+
+	return nil
 }
 
-func checkNodeReadiness(t *testing.T, userClient *kubernetes.Clientset, expectedNodes int) error {
-	return wait.Poll(30*time.Second, 15*time.Minute, func() (bool, error) {
-		nodes, err := userClient.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-		if err != nil {
-			t.Logf("failed to get nodes list: %s", err)
-			return false, nil
-		}
-		if len(nodes.Items) != expectedNodes {
-			t.Logf("node count: %d, expected: %d", len(nodes.Items), expectedNodes)
-			return false, nil
-		}
-
-		readyNodeCount := 0
-
-		for _, node := range nodes.Items {
-			for _, c := range node.Status.Conditions {
-				if c.Type == corev1.NodeReady {
-					readyNodeCount++
-				}
-			}
-		}
-
-		if readyNodeCount != expectedNodes {
-			t.Logf("%d out of %d nodes are ready", readyNodeCount, expectedNodes)
-			return false, nil
-		}
-
-		return true, nil
-	})
-}
-
-func createUsercluster(t *testing.T, apicli *utils.TestClient, projectName string, clusterSpec models.CreateClusterSpec) (*rest.Config, string, string, func(), error) {
-	var teardowns []func()
-	cleanup := func() {
-		n := len(teardowns)
-		for i := range teardowns {
-			teardowns[n-1-i]()
+func parseProviderCredentials(t *testing.T) {
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AlibabaCloudProvider)) {
+		if err := alibabaCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get alibaba credentials: %v", err)
 		}
 	}
 
-	// create a project
-	proj, err := apicli.CreateProject(projectName)
-	if err != nil {
-		return nil, "", "", nil, err
-	}
-	teardowns = append(teardowns, func() {
-		err := apicli.DeleteProject(proj.ID)
-		if err != nil {
-			t.Errorf("failed to delete project %s: %s", proj.ID, err)
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AWSCloudProvider)) {
+		if err := awsCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get aws credentials: %v", err)
 		}
-	})
-
-	// create a usercluster on aws
-	resp, err := apicli.GetKKPAPIClient().Project.CreateClusterV2(&project.CreateClusterV2Params{
-		Body:       &clusterSpec,
-		ProjectID:  proj.ID,
-		Context:    context.Background(),
-		HTTPClient: http.DefaultClient,
-	}, apicli.GetBearerToken())
-	if err != nil {
-		return nil, "", "", nil, err
 	}
 
-	cluster := resp.Payload
-	teardowns = append(teardowns, func() {
-		_, err := apicli.GetKKPAPIClient().Project.DeleteClusterV2(&project.DeleteClusterV2Params{
-			DeleteLoadBalancers: pointer.Bool(true),
-			DeleteVolumes:       pointer.Bool(true),
-			ClusterID:           cluster.ID,
-			ProjectID:           proj.ID,
-			Context:             context.Background(),
-			HTTPClient:          http.DefaultClient,
-		}, apicli.GetBearerToken())
-		if err != nil {
-			t.Errorf("failed to delete cluster %s/%s: %s", proj.ID, cluster.ID, err)
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AzureCloudProvider)) {
+		if err := azureCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get azure credentials: %v", err)
 		}
-	})
-
-	// try to get kubeconfig
-	var userconfig string
-	err = wait.Poll(30*time.Second, 30*time.Minute, func() (bool, error) {
-		t.Logf("trying to get kubeconfig...")
-		// construct clients
-		resp, err := apicli.GetKKPAPIClient().Project.GetClusterKubeconfigV2(&project.GetClusterKubeconfigV2Params{
-			ClusterID:  cluster.ID,
-			ProjectID:  proj.ID,
-			Context:    context.Background(),
-			HTTPClient: http.DefaultClient,
-		}, apicli.GetBearerToken())
-		if err != nil {
-			t.Logf("error trying to get kubeconfig: %s", err)
-			return false, nil
-		}
-
-		userconfig = string(resp.Payload)
-
-		return true, nil
-	})
-	if err != nil {
-		return nil, "", "", nil, err
 	}
 
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(userconfig))
-	if err != nil {
-		t.Fatalf("failed to build config: %s", err)
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.DigitaloceanCloudProvider)) {
+		if err := digitaloceanCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get digitalocean credentials: %v", err)
+		}
 	}
 
-	return config, proj.ID, cluster.ID, cleanup, nil
-}
-
-func createMachineDeployment(t *testing.T, apicli *utils.TestClient, params createMachineDeploymentParams) error {
-	mdParams := project.CreateMachineDeploymentParams(params)
-	return wait.Poll(30*time.Second, 10*time.Minute, func() (bool, error) {
-		_, err := apicli.GetKKPAPIClient().Project.CreateMachineDeployment(
-			&mdParams,
-			apicli.GetBearerToken())
-		if err != nil {
-			respErr := new(project.CreateMachineDeploymentDefault)
-			if errors.As(err, &respErr) {
-				errData, err := respErr.GetPayload().MarshalBinary()
-				if err != nil {
-					t.Log("failed to marshal error response")
-				}
-				t.Log(string(errData))
-			}
-			t.Logf("failed to create machine deployment: %v", err)
-			return false, nil
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.PacketCloudProvider)) {
+		if err := equinixMetalCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get equinixMetal credentials: %v", err)
 		}
-		return true, nil
-	})
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.GCPCloudProvider)) {
+		if err := gcpCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get gcp credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.HetznerCloudProvider)) {
+		if err := hetznerCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get hetzner credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.OpenstackCloudProvider)) {
+		if err := openstackCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get openstack credentials: %v", err)
+		}
+	}
+
+	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.VSphereCloudProvider)) {
+		if err := vsphereCredentials.Parse(); err != nil {
+			t.Fatalf("Failed to get vsphere credentials: %v", err)
+		}
+	}
 }

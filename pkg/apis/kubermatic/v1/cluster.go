@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -27,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -102,53 +104,18 @@ var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKe
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Cluster represents a Kubermatic Kubernetes Platform user cluster.
+// Cluster objects exist on Seed clusters and each user cluster consists
+// of a namespace containing the Kubernetes control plane and additional
+// pods (like Prometheus or the machine-controller).
 type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterSpec   `json:"spec,omitempty"`
+	// Spec describes the desired cluster state.
+	Spec ClusterSpec `json:"spec,omitempty"`
+
+	// Status contains reconciliation information for the cluster.
 	Status ClusterStatus `json:"status,omitempty"`
-
-	// Address contains the IPs/URLs to access the cluster control plane.
-	// This field is optional and replaced by the identical struct in the
-	// ClusterStatus. No code should rely on these fields anymore.
-	// +optional
-	Address ClusterAddress `json:"address,omitempty"`
-}
-
-// GetAddress returns the address and can handle both KKP 2.20 clusters
-// (where the address is a top-level element in the CRD) and 2.21+ clusters
-// (where the address is part of the ClusterStatus). In KKP 2.22+ this function
-// should be removed and all components should just use cluster.Status.Address
-// directly.
-func (c *Cluster) GetAddress() ClusterAddress {
-	address := c.Status.Address.DeepCopy()
-
-	if address.AdminToken == "" {
-		address.AdminToken = c.Address.AdminToken
-	}
-
-	if address.URL == "" {
-		address.URL = c.Address.URL
-	}
-
-	if address.ExternalName == "" {
-		address.ExternalName = c.Address.ExternalName
-	}
-
-	if address.InternalName == "" {
-		address.InternalName = c.Address.InternalName
-	}
-
-	if address.IP == "" {
-		address.IP = c.Address.IP
-	}
-
-	if address.Port == 0 {
-		address.Port = c.Address.Port
-	}
-
-	return *address
 }
 
 // +kubebuilder:object:generate=true
@@ -170,6 +137,8 @@ type ClusterSpec struct {
 	// Version defines the wanted version of the control plane.
 	Version semver.Semver `json:"version"`
 
+	// Cloud contains information regarding the cloud provider that
+	// is responsible for hosting the cluster's workload.
 	Cloud CloudSpec `json:"cloud"`
 
 	// +kubebuilder:validation:Enum=docker;containerd
@@ -186,7 +155,13 @@ type ClusterSpec struct {
 	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
+	// ExposeStrategy is the strategy used to expose a cluster control plane.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy"`
+
+	// Optional: APIServerAllowedIPRanges is a list of IP ranges allowed to access the API server.
+	// Applicable only if the expose strategy of the cluster is LoadBalancer.
+	// If not configured, access to the API server is unrestricted.
+	APIServerAllowedIPRanges *NetworkRanges `json:"apiServerAllowedIPRanges,omitempty"`
 
 	// Optional: Component specific overrides that allow customization of control plane components.
 	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
@@ -232,11 +207,11 @@ type ClusterSpec struct {
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
 	// Optional: Enables operating-system-manager (OSM), which is responsible for creating and managing worker node configuration.
-	// This is an experimental feature.
-	EnableOperatingSystemManager bool `json:"enableOperatingSystemManager,omitempty"`
+	// This field is enabled(true) by default.
+	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
-	KubernetesDashboard KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
+	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
 
 	// Optional: AuditLogging configures Kubernetes API audit logging (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/)
 	// for the user cluster.
@@ -253,14 +228,16 @@ type ClusterSpec struct {
 	// Optional: MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
 
+	// Optional: ApplicationSettings contains the settings relative to the application feature.
+	ApplicationSettings *ApplicationSettings `json:"applicationSettings,omitempty"`
+
 	// Optional: Configures encryption-at-rest for Kubernetes API data. This needs the `encryptionAtRest` feature gate.
-	// THIS IS A PLACEHOLDER AND NOT FUNCTIONAL YET.
 	EncryptionConfiguration *EncryptionConfiguration `json:"encryptionConfiguration,omitempty"`
 
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	// +kubebuilder:default=false
-	Pause bool `json:"pause"`
+	Pause bool `json:"pause,omitempty"`
 	// PauseReason is the reason why the cluster is not being managed. This field is for informational
 	// purpose only and can be set by a user or a controller to communicate the reason for pausing the cluster.
 	PauseReason string `json:"pauseReason,omitempty"`
@@ -269,12 +246,19 @@ type ClusterSpec struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 }
 
+func (c ClusterSpec) IsOperatingSystemManagerEnabled() bool {
+	return c.EnableOperatingSystemManager == nil || *c.EnableOperatingSystemManager
+}
+
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
 type KubernetesDashboard struct {
-	// +kubebuilder:default=true
-
 	// Controls whether kubernetes-dashboard is deployed to the user cluster or not.
+	// Enabled by default.
 	Enabled bool `json:"enabled,omitempty"`
+}
+
+func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
+	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
@@ -344,7 +328,10 @@ const (
 	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
 )
 
-// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;EncryptionControllerReconciledSuccessfully;
+// This ENUM contains the misspelling CloudControllerReconcilledSuccessfully (double L);
+// this is so that KKP can slowly migrate and in KKP 2.22 we will remove the misspelling.
+
+// +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconciledSuccessfully;CloudControllerReconcilledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;EncryptionControllerReconciledSuccessfully;IPAMControllerReconciledSuccessfully;
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition
 // types, the `true` value must indicate success. All condition types must be registered within
@@ -412,7 +399,7 @@ const (
 	ClusterConditionAddonControllerReconcilingSuccess                   ClusterConditionType = "AddonControllerReconciledSuccessfully"
 	ClusterConditionAddonInstallerControllerReconcilingSuccess          ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
 	ClusterConditionBackupControllerReconcilingSuccess                  ClusterConditionType = "BackupControllerReconciledSuccessfully"
-	ClusterConditionCloudControllerReconcilingSuccess                   ClusterConditionType = "CloudControllerReconcilledSuccessfully"
+	ClusterConditionCloudControllerReconcilingSuccess                   ClusterConditionType = "CloudControllerReconciledSuccessfully"
 	ClusterConditionUpdateControllerReconcilingSuccess                  ClusterConditionType = "UpdateControllerReconciledSuccessfully"
 	ClusterConditionMonitoringControllerReconcilingSuccess              ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess       ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
@@ -420,6 +407,7 @@ const (
 	ClusterConditionMLAControllerReconcilingSuccess                     ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionEncryptionControllerReconcilingSuccess              ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"
+	ClusterConditionIPAMControllerReconcilingSuccess                    ClusterConditionType = "IPAMControllerReconciledSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"
@@ -532,11 +520,6 @@ type ClusterStatus struct {
 	// +optional
 	Phase ClusterPhase `json:"phase,omitempty"`
 
-	// CloudMigrationRevision describes the latest version of the migration that has been done
-	// It is used to avoid redundant and potentially costly migrations.
-	// +optional
-	CloudMigrationRevision int `json:"cloudMigrationRevision,omitempty"`
-
 	// InheritedLabels are labels the cluster inherited from the project. They are read-only for users.
 	// +optional
 	InheritedLabels map[string]string `json:"inheritedLabels,omitempty"`
@@ -630,26 +613,6 @@ type OIDCSettings struct {
 	ExtraScopes   string `json:"extraScopes,omitempty"`
 }
 
-// +kubebuilder:validation:Enum="";metadata;recommended;minimal
-
-// AuditPolicyPreset refers to a pre-defined set of audit policy rules. Supported values
-// are `metadata`, `recommended` and `minimal`. See KKP documentation for what each policy preset includes.
-type AuditPolicyPreset string
-
-const (
-	AuditPolicyMetadata    AuditPolicyPreset = "metadata"
-	AuditPolicyRecommended AuditPolicyPreset = "recommended"
-	AuditPolicyMinimal     AuditPolicyPreset = "minimal"
-)
-
-// AuditLoggingSettings configures audit logging functionality.
-type AuditLoggingSettings struct {
-	// Enabled will enable or disable audit logging.
-	Enabled bool `json:"enabled,omitempty"`
-	// Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.
-	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
-}
-
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.
 // More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
@@ -704,6 +667,11 @@ type MLASettings struct {
 	LoggingResources *corev1.ResourceRequirements `json:"loggingResources,omitempty"`
 	// MonitoringReplicas is the number of desired pods of user cluster prometheus deployment.
 	MonitoringReplicas *int32 `json:"monitoringReplicas,omitempty"`
+}
+
+type ApplicationSettings struct {
+	// CacheSize is the size of the cache used to download application's sources.
+	CacheSize *resource.Quantity `json:"cacheSize,omitempty"`
 }
 
 type ComponentSettings struct {
@@ -911,7 +879,7 @@ type CloudSpec struct {
 	Alibaba             *AlibabaCloudSpec             `json:"alibaba,omitempty"`
 	Anexia              *AnexiaCloudSpec              `json:"anexia,omitempty"`
 	Nutanix             *NutanixCloudSpec             `json:"nutanix,omitempty"`
-	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareCloudDirector,omitempty"`
+	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
 }
 
 // FakeCloudSpec specifies access data for a fake cloud.
@@ -1046,7 +1014,10 @@ type VSphereCloudSpec struct {
 	// This user will be used for everything except cloud provider functionality
 	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`
 
-	// This is category for the machine deployment tags
+	// TagCategoryName represents the name of vSphere tag category that will be used to create and attach tags on VMS.
+	TagCategoryName string `json:"tagCategoryName,omitempty"`
+
+	// TagCategoryID represents the category id for the machine deployment tags.
 	TagCategoryID string `json:"tagCategoryID,omitempty"`
 }
 
@@ -1061,7 +1032,7 @@ type VMwareCloudDirectorCloudSpec struct {
 	// +optional
 	Password string `json:"password,omitempty"`
 
-	// Password is the VMware Cloud Director user password.
+	// Organization is the name of organization to use.
 	// +optional
 	Organization string `json:"organization,omitempty"`
 
@@ -1075,6 +1046,18 @@ type VMwareCloudDirectorCloudSpec struct {
 	// VApp used for isolation of VMs and their associated network
 	// +optional
 	VApp string `json:"vapp,omitempty"`
+
+	// Config for CSI driver
+	CSI *VMwareCloudDirectorCSIConfig `json:"csi"`
+}
+
+type VMwareCloudDirectorCSIConfig struct {
+	// The name of the storage profile to use for disks created by CSI driver
+	StorageProfile string `json:"storageProfile"`
+
+	// Filesystem to use for named disks, defaults to "ext4"
+	// +optional
+	Filesystem string `json:"filesystem,omitempty"`
 }
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
@@ -1102,6 +1085,9 @@ type AWSCloudSpec struct {
 	// the security group is generated by KKP and not preexisting.
 	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set,  the node port range can be accessed from anywhere.
 	NodePortsAllowedIPRanges *NetworkRanges `json:"nodePortsAllowedIPRanges,omitempty"`
+	// DisableIAMReconciling is used to disable reconciliation for IAM related configuration. This is useful in air-gapped
+	// setups where access to IAM service is not possible.
+	DisableIAMReconciling bool `json:"disableIAMReconciling,omitempty"` //nolint:tagliatelle
 }
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.
@@ -1135,7 +1121,7 @@ type OpenstackCloudSpec struct {
 	NodePortsAllowedIPRange string `json:"nodePortsAllowedIPRange,omitempty"`
 	// Optional: CIDR ranges that will be used to allow access to the node port range in the security group to. Only applies if
 	// the security group is generated by KKP and not preexisting.
-	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set,  the node port range can be accessed from anywhere.
+	// If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.
 	NodePortsAllowedIPRanges *NetworkRanges `json:"nodePortsAllowedIPRanges,omitempty"`
 	// FloatingIPPool holds the name of the public network
 	// The public network is reachable from the outside world
@@ -1164,6 +1150,16 @@ type OpenstackCloudSpec struct {
 	// level if both are specified.
 	// +optional
 	UseOctavia *bool `json:"useOctavia,omitempty"`
+
+	// Enable the `enable-ingress-hostname` cloud provider option on the Openstack CCM. Can only be used with the
+	// external CCM and might be deprecated and removed in future versions as it is considered a workaround for the PROXY
+	// protocol to preserve client IPs.
+	// +optional
+	EnableIngressHostname *bool `json:"enableIngressHostname,omitempty"`
+	// Set a specific suffix for the hostnames used for the PROXY protocol workaround that is enabled by EnableIngressHostname.
+	// The suffix is set to `nip.io` by default. Can only be used with the external CCM and might be deprecated and removed in
+	// future versions as it is considered a workaround only.
+	IngressHostnameSuffix *string `json:"ingressHostnameSuffix,omitempty"`
 }
 
 // PacketCloudSpec specifies access data to a Packet cloud.
@@ -1179,6 +1175,7 @@ type PacketCloudSpec struct {
 type GCPCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
+	// The Google Service Account (JSON format), encoded with base64.
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 	Network        string `json:"network"`
 	Subnetwork     string `json:"subnetwork"`
@@ -1194,6 +1191,7 @@ type GCPCloudSpec struct {
 type KubevirtCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
+	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig    string `json:"kubeconfig,omitempty"`
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
 	// PreAllocatedDataVolumes holds list of preallocated DataVolumes which can be used as reference for DataVolume cloning.
@@ -1297,13 +1295,15 @@ type ExtendedClusterHealth struct {
 	Konnectivity                 HealthStatus  `json:"konnectivity,omitempty"`
 	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure,omitempty"`
 	UserClusterControllerManager HealthStatus  `json:"userClusterControllerManager,omitempty"`
+	ApplicationController        HealthStatus  `json:"applicationController,omitempty"`
 	GatekeeperController         *HealthStatus `json:"gatekeeperController,omitempty"`
 	GatekeeperAudit              *HealthStatus `json:"gatekeeperAudit,omitempty"`
 	Monitoring                   *HealthStatus `json:"monitoring,omitempty"`
 	Logging                      *HealthStatus `json:"logging,omitempty"`
 	AlertmanagerConfig           *HealthStatus `json:"alertmanagerConfig,omitempty"`
 	MLAGateway                   *HealthStatus `json:"mlaGateway,omitempty"`
-	ApplicationController        HealthStatus  `json:"applicationController,omitempty"`
+	OperatingSystemManager       *HealthStatus `json:"operatingSystemManager,omitempty"`
+	KubernetesDashboard          *HealthStatus `json:"kubernetesDashboard,omitempty"`
 }
 
 // ControlPlaneHealthy returns if all Kubernetes control plane components are healthy.
@@ -1374,44 +1374,55 @@ func NewBytes(b64 string) Bytes {
 }
 
 func (cluster *Cluster) GetSecretName() string {
+	// new clusters might not have a name yet (if the user used GenerateName),
+	// so we must be careful when constructing the Secret name
+	clusterName := cluster.Name
+	if clusterName == "" {
+		clusterName = rand.String(5)
+
+		if cluster.GenerateName != "" {
+			clusterName = fmt.Sprintf("%s-%s", strings.TrimSuffix(cluster.GenerateName, "-"), clusterName)
+		}
+	}
+
 	if cluster.Spec.Cloud.AWS != nil {
-		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Azure != nil {
-		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
-		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.GCP != nil {
-		return fmt.Sprintf("%s-gcp-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-gcp-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
-		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
-		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
-		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
-		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
-		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
-		return fmt.Sprintf("%s-alibaba-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-alibaba-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Anexia != nil {
-		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Nutanix != nil {
-		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
-		return fmt.Sprintf("%s-vmware-cloud-director-%s", CredentialPrefix, cluster.Name)
+		return fmt.Sprintf("%s-vmware-cloud-director-%s", CredentialPrefix, clusterName)
 	}
 	return ""
 }

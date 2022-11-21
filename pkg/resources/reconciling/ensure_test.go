@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -114,6 +114,51 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			},
 		},
 		{
+			name: "Object update stopped by annotation",
+			existingObject: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testResourceName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
+				},
+			},
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+				var sa *corev1.ConfigMap
+				if existing == nil {
+					sa = &corev1.ConfigMap{}
+				} else {
+					sa = existing.(*corev1.ConfigMap)
+				}
+				sa.Name = testResourceName
+				sa.Namespace = testNamespace
+				sa.Data = map[string]string{
+					"foo": "bar",
+				}
+				return sa, nil
+			},
+			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testResourceName,
+					Namespace: testNamespace,
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
+				},
+			},
+		},
+		{
 			name: "Object does not get updated",
 			existingObject: &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -194,6 +239,56 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "Object recreation stopped by annotation",
+			recreate: true,
+			existingObject: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            testResourceName,
+					Namespace:       testNamespace,
+					ResourceVersion: "123",
+					UID:             "abcd-1234",
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
+				},
+			},
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+				var sa *corev1.ConfigMap
+				if existing == nil {
+					sa = &corev1.ConfigMap{}
+				} else {
+					sa = existing.(*corev1.ConfigMap)
+				}
+				sa.Name = testResourceName
+				sa.Namespace = testNamespace
+				sa.Data = map[string]string{
+					"foo": "bar",
+				}
+				return sa, nil
+			},
+			expectedObject: &corev1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "ConfigMap",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:            testResourceName,
+					Namespace:       testNamespace,
+					ResourceVersion: "123",
+					UID:             "abcd-1234",
+					Annotations: map[string]string{
+						ResourceReconciliationPausedAnnotation: "true",
+					},
+				},
+				Data: map[string]string{
+					"foo": "hopefully-does-not-get-overwritten",
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -221,8 +316,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			test.expectedObject.SetUID(gotConfigMap.UID)
 			test.expectedObject.SetGeneration(gotConfigMap.Generation)
 
-			if diff := deep.Equal(gotConfigMap, test.expectedObject); diff != nil {
-				t.Errorf("The ConfigMap from the client does not match the expected ConfigMap. Diff: \n%v", diff)
+			if !diff.SemanticallyEqual(test.expectedObject, gotConfigMap) {
+				t.Fatalf("The ConfigMap from the client does not match the expected ConfigMap:\n%v", diff.ObjectDiff(test.expectedObject, gotConfigMap))
 			}
 		})
 	}

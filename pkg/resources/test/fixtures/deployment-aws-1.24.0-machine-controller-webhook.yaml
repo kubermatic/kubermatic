@@ -5,6 +5,7 @@ metadata:
   labels:
     app: machine-controller-webhook
   name: machine-controller-webhook
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -33,16 +34,22 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-namespace","cluster-de-test-01","-node-kubelet-feature-gates","CSIMigrationAWS=false"]}'
+        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-namespace","cluster-de-test-01","-use-osm","-node-kubelet-feature-gates","CSIMigrationAWS=false"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
         - /http-prober-bin/http-prober
         env:
         - name: AWS_ACCESS_KEY_ID
-          value: aws-access-key-id
+          valueFrom:
+            secretKeyRef:
+              key: accessKeyId
+              name: cloud-credentials
         - name: AWS_SECRET_ACCESS_KEY
-          value: aws-secret-access-key
+          valueFrom:
+            secretKeyRef:
+              key: secretAccessKey
+              name: cloud-credentials
         - name: AWS_ASSUME_ROLE_ARN
           value: aws-assume-role-arn
         - name: AWS_ASSUME_ROLE_EXTERNAL_ID
@@ -65,7 +72,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/worker-kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:v1.51.0
+        image: quay.io/kubermatic/machine-controller:7784255e05d856f53399d591c3387dcc651f3ae9
         livenessProbe:
           failureThreshold: 8
           httpGet:

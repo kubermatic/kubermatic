@@ -30,6 +30,12 @@ const (
 
 	// UserKindName represents "Kind" defined in Kubernetes.
 	UserKindName = "User"
+
+	// ServiceAccountInitialGroupLabel is the name of the label on a KKP User object
+	// that contains the initial group for a ServiceAccount. If a User is
+	// a ServiceAccount, the the serviceaccount-projectbinding-controller will
+	// create a matching ProjectBinding for the User.
+	ServiceAccountInitialGroupLabel = "initialGroup"
 )
 
 // +kubebuilder:resource:scope=Cluster
@@ -37,10 +43,12 @@ const (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".spec.email",name="Email",type="string"
-// +kubebuilder:printcolumn:JSONPath=".spec.name",name="Name",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.name",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".spec.admin",name="Admin",type="boolean"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// User specifies a user.
+// User specifies a KKP user. Users can be either humans or KKP service
+// accounts.
 type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -57,7 +65,7 @@ type UserStatus struct {
 
 // UserSpec specifies a user.
 type UserSpec struct {
-	// ID is an unnused legacy field.
+	// ID is an unused legacy field.
 	// Deprecated: do not set this field anymore.
 	ID string `json:"id,omitempty"`
 	// Name is the full name of this user.
@@ -69,13 +77,21 @@ type UserSpec struct {
 	// Admins can for example see all projects and clusters in the KKP dashboard.
 	// +kubebuilder:default=false
 	IsAdmin bool `json:"admin"`
+	// Groups holds the information to which groups the user belongs to. Set automatically when logging in to the
+	// KKP API, and used by the KKP API.
+	Groups []string `json:"groups,omitempty"`
 
 	// Project is the name of the project that this service account user is tied to. This
 	// field is only applicable to service accounts and regular users must not set this field.
 	// +optional
 	Project string `json:"project,omitempty"`
 
-	Settings               *UserSettings                           `json:"settings,omitempty"`
+	// Settings contains both user-configurable and system-owned configuration for the
+	// KKP dashboard.
+	Settings *UserSettings `json:"settings,omitempty"`
+
+	// InvalidTokensReference is a reference to a Secret that contains invalidated
+	// login tokens. The tokens are used to provide a safe logout mechanism.
 	InvalidTokensReference *providerconfig.GlobalSecretKeySelector `json:"invalidTokensReference,omitempty"`
 }
 

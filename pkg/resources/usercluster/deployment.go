@@ -22,6 +22,7 @@ import (
 	"net"
 	"strings"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -60,7 +61,8 @@ const name = "usercluster-controller"
 // easier as only have to implement the parts that are actually in use.
 type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
+	GetLegacyOverwriteRegistry() string
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	NodeLocalDNSCacheEnabled() bool
 	GetOpenVPNServerPort() (int32, error)
@@ -71,10 +73,14 @@ type userclusterControllerData interface {
 	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
 	IsKonnectivityEnabled() bool
+	DC() *kubermaticv1.Datacenter
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
-// nolint:gocyclo
+//
+//nolint:gocyclo
 func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -100,7 +106,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
+			volumes := getVolumes(data)
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
@@ -124,10 +130,10 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			enableUserSSHKeyAgent := data.Cluster().Spec.EnableUserSSHKeyAgent
 			if enableUserSSHKeyAgent == nil {
-				enableUserSSHKeyAgent = pointer.BoolPtr(true)
+				enableUserSSHKeyAgent = pointer.Bool(true)
 			}
 
-			address := data.Cluster().GetAddress()
+			address := data.Cluster().Status.Address
 
 			args := append([]string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -137,8 +143,9 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-cluster-url", address.URL,
 				"-cluster-name", data.Cluster().Name,
 				"-dns-cluster-ip", dnsClusterIP,
-				"-overwrite-registry", data.ImageRegistry(""),
+				"-overwrite-registry", data.GetLegacyOverwriteRegistry(),
 				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
+				"-application-cache", resources.ApplicationCacheMountPath,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
@@ -222,10 +229,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				}
 			}
 
-			if data.Cluster().Spec.EnableOperatingSystemManager {
-				args = append(args, "-operating-system-manager-enabled")
-			}
-
 			if kubermaticv1helper.NeedCCMMigration(data.Cluster()) {
 				args = append(args, "-ccm-migration")
 			}
@@ -242,6 +245,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-node-labels", labelArgsValue)
 			}
 
+			envVars, err := data.GetEnvVars()
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -249,17 +257,15 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args:    args,
-					Env: []corev1.EnvVar{
-						{
-							Name: "NAMESPACE",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath:  "metadata.namespace",
-									APIVersion: "v1",
-								},
+					Env: append(envVars, corev1.EnvVar{
+						Name: "NAMESPACE",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath:  "metadata.namespace",
+								APIVersion: "v1",
 							},
 						},
-					},
+					}),
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -284,6 +290,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 							MountPath: "/opt/ca-bundle/",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.ApplicationCacheVolumeName,
+							MountPath: resources.ApplicationCacheMountPath,
+							ReadOnly:  false,
+						},
 					},
 				},
 			}
@@ -304,7 +315,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 	}
 }
 
-func getVolumes() []corev1.Volume {
+func getVolumes(data userclusterControllerData) []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: resources.InternalUserClusterAdminKubeconfigSecretName,
@@ -321,6 +332,14 @@ func getVolumes() []corev1.Volume {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.CABundleConfigMapName,
 					},
+				},
+			},
+		},
+		{
+			Name: resources.ApplicationCacheVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: resources.GetApplicationCacheSize(data.Cluster().Spec.ApplicationSettings),
 				},
 			},
 		},

@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -38,21 +37,21 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	testCluster := genExternalCluster("test", metav1.Now())
-
 	tests := []struct {
 		name                      string
 		clusterName               string
+		isDelete                  bool
 		existingKubermaticObjects []ctrlruntimeclient.Object
 	}{
 		{
 			name:        "scenario 1: cleanup finalizer and kubeconfig secret",
 			clusterName: "test",
+			isDelete:    true,
 			existingKubermaticObjects: []ctrlruntimeclient.Object{
-				testCluster,
+				genExternalCluster("test", true),
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      testCluster.GetKubeconfigSecretName(),
+						Name:      genExternalCluster("test", true).GetKubeconfigSecretName(),
 						Namespace: resources.KubermaticNamespace,
 					},
 				},
@@ -76,17 +75,19 @@ func TestReconcile(t *testing.T) {
 				log:    kubermaticlog.Logger,
 			}
 
-			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}})
+			// finalizers are removed step by step and this takes multiple reconciliations
+			if _, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}}); err != nil {
+				t.Fatal(err)
+			}
 
-			// validate
-			if err != nil {
+			if _, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}}); err != nil {
 				t.Fatal(err)
 			}
 
 			// ensure the ExternalCluster is gone (the controller removed the finalizer, and since a
 			// DeletionTimestamp was set, it should now be gone)
 			cluster := &kubermaticv1.ExternalCluster{}
-			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: test.clusterName}, cluster)
+			err := kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: test.clusterName}, cluster)
 			if err == nil {
 				t.Fatal("expected ExternalCluster to be gone, but found it anyway")
 			}
@@ -107,19 +108,23 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func genExternalCluster(name string, deletionTimestamp metav1.Time) *kubermaticv1.ExternalCluster {
+func genExternalCluster(name string, isDelete bool) *kubermaticv1.ExternalCluster {
 	cluster := &kubermaticv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              name,
-			DeletionTimestamp: &deletionTimestamp,
+			Name: name,
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
+			CloudSpec:         kubermaticv1.ExternalClusterCloudSpec{},
 		},
 	}
+	kuberneteshelper.AddFinalizer(cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer)
 
-	kuberneteshelper.AddFinalizer(cluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
-
+	if isDelete {
+		deletionTimestamp := metav1.Now()
+		cluster.DeletionTimestamp = &deletionTimestamp
+	}
 	cluster.Spec.KubeconfigReference = &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
 			Namespace: resources.KubermaticNamespace,

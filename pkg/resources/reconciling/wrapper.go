@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -138,10 +138,10 @@ func DefaultPodSpec(oldPodSpec, newPodSpec corev1.PodSpec) (corev1.PodSpec, erro
 
 	for idx, vol := range newPodSpec.Volumes {
 		if vol.VolumeSource.Secret != nil && vol.VolumeSource.Secret.DefaultMode == nil {
-			newPodSpec.Volumes[idx].Secret.DefaultMode = utilpointer.Int32Ptr(corev1.SecretVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].Secret.DefaultMode = utilpointer.Int32(corev1.SecretVolumeSourceDefaultMode)
 		}
 		if vol.VolumeSource.ConfigMap != nil && vol.VolumeSource.ConfigMap.DefaultMode == nil {
-			newPodSpec.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32Ptr(corev1.ConfigMapVolumeSourceDefaultMode)
+			newPodSpec.Volumes[idx].ConfigMap.DefaultMode = utilpointer.Int32(corev1.ConfigMapVolumeSourceDefaultMode)
 		}
 	}
 
@@ -240,7 +240,7 @@ func DefaultDaemonSet(creator DaemonSetCreator) DaemonSetCreator {
 // DefaultCronJob defaults all CronJob attributes to the same values as they would get from the Kubernetes API.
 // In addition, the CronJob's PodSpec template gets defaulted with KKP-specific values (see DefaultPodSpec for details).
 func DefaultCronJob(creator CronJobCreator) CronJobCreator {
-	return func(cj *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error) {
+	return func(cj *batchv1.CronJob) (*batchv1.CronJob, error) {
 		old := cj.DeepCopy()
 
 		cj, err := creator(cj)

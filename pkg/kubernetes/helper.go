@@ -24,6 +24,8 @@ import (
 	"strconv"
 	"strings"
 
+	"go.uber.org/zap"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -60,10 +62,15 @@ func HasAnyFinalizer(o metav1.Object, names ...string) bool {
 	return sets.NewString(o.GetFinalizers()...).HasAny(names...)
 }
 
-// HasOnlyFinalizer tells if an object has only the given finalizer.
-func HasOnlyFinalizer(o metav1.Object, name string) bool {
-	set := sets.NewString(o.GetFinalizers()...)
-	return set.Has(name) && set.Len() == 1
+// HasOnlyFinalizer tells if an object has only the given finalizer(s).
+func HasOnlyFinalizer(o metav1.Object, names ...string) bool {
+	return sets.NewString(o.GetFinalizers()...).Equal(sets.NewString(names...))
+}
+
+// HasFinalizerSuperset tells if the given finalizer(s) are a superset
+// of the actual finalizers.
+func HasFinalizerSuperset(o metav1.Object, names ...string) bool {
+	return sets.NewString(names...).IsSuperset(sets.NewString(o.GetFinalizers()...))
 }
 
 // RemoveFinalizer removes the given finalizers from the object.
@@ -87,6 +94,8 @@ func TryRemoveFinalizer(ctx context.Context, client ctrlruntimeclient.Client, ob
 			return err
 		}
 
+		original := obj.DeepCopyObject().(ctrlruntimeclient.Object)
+
 		// modify it
 		previous := sets.NewString(obj.GetFinalizers()...)
 		RemoveFinalizer(obj, finalizers...)
@@ -98,7 +107,7 @@ func TryRemoveFinalizer(ctx context.Context, client ctrlruntimeclient.Client, ob
 		}
 
 		// update the object
-		return client.Update(ctx, obj)
+		return client.Patch(ctx, obj, ctrlruntimeclient.MergeFromWithOptions(original, ctrlruntimeclient.MergeFromWithOptimisticLock{}))
 	})
 
 	if err != nil {
@@ -130,6 +139,8 @@ func TryAddFinalizer(ctx context.Context, client ctrlruntimeclient.Client, obj c
 			return nil
 		}
 
+		original := obj.DeepCopyObject().(ctrlruntimeclient.Object)
+
 		// modify it
 		previous := sets.NewString(obj.GetFinalizers()...)
 		AddFinalizer(obj, finalizers...)
@@ -141,7 +152,7 @@ func TryAddFinalizer(ctx context.Context, client ctrlruntimeclient.Client, obj c
 		}
 
 		// update the object
-		return client.Update(ctx, obj)
+		return client.Patch(ctx, obj, ctrlruntimeclient.MergeFromWithOptions(original, ctrlruntimeclient.MergeFromWithOptimisticLock{}))
 	})
 
 	if err != nil {
@@ -209,15 +220,15 @@ func IsDeploymentRolloutComplete(deployment *appsv1.Deployment, revision int64) 
 		)
 
 		if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
-			logger.Info("deployment rollout did not complete: not all replicas have been updated")
+			logger.Debug("deployment rollout did not complete: not all replicas have been updated")
 			return false, nil
 		}
 		if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
-			logger.Infow("deployment rollout did not complete: old replicas are pending termination", "pending", deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
+			logger.Debugw("deployment rollout did not complete: old replicas are pending termination", "pending", deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
 			return false, nil
 		}
 		if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
-			logger.Info("deployment rollout did not complete: not enough updated replicas available")
+			logger.Debug("deployment rollout did not complete: not enough updated replicas available")
 			return false, nil
 		}
 
@@ -382,4 +393,55 @@ func CheckContainerRuntime(ctx context.Context,
 		}
 	}
 	return "", fmt.Errorf("failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
+}
+
+func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
+	labels := o.GetLabels()
+
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+	for key, value := range toEnsure {
+		labels[key] = value
+	}
+	o.SetLabels(labels)
+}
+
+type SeedClientMap map[string]ctrlruntimeclient.Client
+
+type SeedVisitorFunc func(seedName string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error
+
+func (m SeedClientMap) Each(ctx context.Context, log *zap.SugaredLogger, visitor SeedVisitorFunc) error {
+	for seedName, seedClient := range m {
+		err := visitor(seedName, seedClient, log.With("seed", seedName))
+		if err != nil {
+			return fmt.Errorf("failed processing Seed %s: %w", seedName, err)
+		}
+	}
+
+	return nil
+}
+
+// IsNodeReady returns true if a node is ready; false otherwise.
+func IsNodeReady(node *corev1.Node) bool {
+	if node == nil {
+		return false
+	}
+	for _, c := range node.Status.Conditions {
+		if c.Type == corev1.NodeReady {
+			return c.Status == corev1.ConditionTrue
+		}
+	}
+	return false
+}
+
+func GetNodeGroupReadyCount(nodes *corev1.NodeList, providerNodeLabel, providerNodePoolName string) int32 {
+	var readyReplicasCount int32
+	for _, node := range nodes.Items {
+		if node.Labels[providerNodeLabel] == providerNodePoolName && IsNodeReady(&node) {
+			readyReplicasCount++
+		}
+	}
+
+	return readyReplicasCount
 }

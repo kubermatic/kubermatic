@@ -25,7 +25,7 @@ This can easily be done with the `--signoff` option to `git commit`.
 Note that we're requiring all commits in a PR to be signed-off. If you already created a PR, you can sign-off all existing commits by rebasing with the `--signoff` flag.
 
 ```
-git rebase --signoff origin/master
+git rebase --signoff origin/main
 ```
 
 By doing this you state that you can certify the following (from https://developercertificate.org/):
@@ -73,7 +73,7 @@ By making a contribution to this project, I certify that:
 
 Kubermatic Kubernetes Platform currently uses the general Kubermatic email list and Slack channel:
 - Email: [kubermatic-dev](https://groups.google.com/forum/#!forum/kubermatic-dev)
-- Slack: #[Slack](http://slack.kubermatic.io/) on Slack
+- Slack: #[Slack](https://join.slack.com/t/kubermatic-community/shared_invite/zt-vqjjqnza-dDw8BuUm3HvD4VGrVQ_ptw%20) on Slack
 
 Please avoid emailing maintainers found in the MAINTAINERS file directly. They
 are very busy and read the mailing lists.
@@ -92,7 +92,7 @@ Due to their public nature, GitHub and mailing lists are not appropriate places 
 
 This is a rough outline of what a contributor's workflow looks like:
 
-- Create a topic branch from where you want to base your work (usually master).
+- Create a topic branch from where you want to base your work (usually main).
 - Make commits of logical units.
 - Make sure your commit messages are in the proper format (see below).
 - Push your changes to a topic branch in your fork of the repository.

@@ -5,6 +5,7 @@ metadata:
   labels:
     app: apiserver
   name: apiserver
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -28,7 +29,7 @@ spec:
         audit-config-configmap-revision: "123456"
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
-        cloud-config-configmap-revision: "123456"
+        cloud-config-secret-revision: "123456"
         cluster: de-test-01
         front-proxy-ca-secret-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
@@ -205,9 +206,9 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
-        - --profiling=false
         - --endpoint-reconciler-type
         - none
+        - --profiling=false
         - --service-account-issuer
         - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000
         - --service-account-signing-key-file
@@ -240,9 +241,15 @@ spec:
         - name: SSL_CERT_FILE
           value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         - name: AWS_ACCESS_KEY_ID
-          value: aws-access-key-id
+          valueFrom:
+            secretKeyRef:
+              key: accessKeyId
+              name: cloud-credentials
         - name: AWS_SECRET_ACCESS_KEY
-          value: aws-secret-access-key
+          valueFrom:
+            secretKeyRef:
+              key: secretAccessKey
+              name: cloud-credentials
         - name: AWS_VPC_ID
           value: aws-vpn-id
         - name: AWS_ASSUME_ROLE_ARN
@@ -261,7 +268,7 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: no_proxy
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
-        image: k8s.gcr.io/kube-apiserver:v1.23.5
+        image: registry.k8s.io/kube-apiserver:v1.23.5
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -383,9 +390,9 @@ spec:
       - name: service-account-key
         secret:
           secretName: service-account-key
-      - configMap:
-          name: cloud-config
-        name: cloud-config
+      - name: cloud-config
+        secret:
+          secretName: cloud-config
       - name: apiserver-etcd-client-certificate
         secret:
           secretName: apiserver-etcd-client-certificate

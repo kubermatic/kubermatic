@@ -26,7 +26,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -43,7 +42,7 @@ import (
 )
 
 const (
-	controllerName       = "constraint_controller"
+	controllerName       = "kkp-constraint-synchronizer"
 	constraintAPIVersion = "constraints.gatekeeper.sh/v1beta1"
 	spec                 = "spec"
 	parametersField      = "parameters"
@@ -86,6 +85,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("constraint", request)
+	log.Debug("Reconciling")
+
 	paused, err := r.clusterIsPaused(ctx)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
@@ -93,9 +95,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if paused {
 		return reconcile.Result{}, nil
 	}
-
-	log := r.log.With("resource", request)
-	log.Debug("Reconciling")
 
 	constraint := &kubermaticv1.Constraint{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, constraint); err != nil {
@@ -115,8 +114,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
-	log = log.With("constraint", constraint)
-
 	constraintCreatorGetters := []reconciling.NamedUnstructuredCreatorGetter{
 		constraintCreatorGetter(constraint),
 	}
@@ -124,26 +121,24 @@ func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermati
 	if err := reconciling.ReconcileUnstructureds(ctx, constraintCreatorGetters, "", r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile constraint: %w", err)
 	}
-	log.Debugw("constraint created")
+
 	return nil
 }
 
 func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
-	log = log.With("constraint", constraint)
-	log.Debugw("cleanup processing:")
-
 	toDelete := &unstructured.Unstructured{}
 	toDelete.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   constrainthandler.ConstraintsGroup,
-		Version: constrainthandler.ConstraintsVersion,
+		Group:   "constraints.gatekeeper.sh",
+		Version: "v1beta1",
 		Kind:    constraint.Spec.ConstraintType,
 	})
 	toDelete.SetName(constraint.Name)
 
-	if err := r.userClient.Delete(ctx, toDelete); err != nil && !apierrors.IsNotFound(err) {
+	log.Info("Deleting Constraint")
+	if err := r.userClient.Delete(ctx, toDelete); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("failed to delete constraint: %w", err)
 	}
-	log.Debugw("constraint deleted")
+
 	return nil
 }
 

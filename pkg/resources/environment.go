@@ -25,14 +25,9 @@ import (
 // SanitizeEnvVar will take the value of an environment variable and sanitize it.
 // the need for this comes from github.com/kubermatic/kubermatic/issues/7960.
 func SanitizeEnvVars(envVars []corev1.EnvVar) []corev1.EnvVar {
-	sanitizedEnvVars := make([]corev1.EnvVar, len(envVars))
-
-	for idx, envVar := range envVars {
-		sanitizedEnvVars[idx] = corev1.EnvVar{
-			Name:  envVar.Name,
-			Value: strings.ReplaceAll(envVar.Value, "$", "$$"),
-		}
+	for idx := range envVars {
+		envVars[idx].Value = strings.ReplaceAll(envVars[idx].Value, "$", "$$")
 	}
 
-	return sanitizedEnvVars
+	return envVars
 }

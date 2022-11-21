@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 
 	appsv1 "k8s.io/api/apps/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -72,7 +72,7 @@ func TestMeteringReconciling(t *testing.T) {
 
 				seedClient := reconciler.seedClients[test.seedToReconcile]
 
-				cronJob := batchv1beta1.CronJob{}
+				cronJob := batchv1.CronJob{}
 				err := seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob)
 				if err != nil {
 					return fmt.Errorf("failed to find reporting cronjob: %w", err)
@@ -98,7 +98,7 @@ func TestMeteringReconciling(t *testing.T) {
 				seedClient := reconciler.seedClients[test.seedToReconcile]
 
 				// asserting that reporting cron job exists
-				cronJob := batchv1beta1.CronJob{}
+				cronJob := batchv1.CronJob{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
 
 				seed := &kubermaticv1.Seed{}
@@ -123,7 +123,7 @@ func TestMeteringReconciling(t *testing.T) {
 					}
 				}
 
-				return fmt.Errorf("failed to remove an orpahned reporting cron job")
+				return fmt.Errorf("failed to remove an orphaned reporting cron job")
 			},
 		},
 
@@ -144,15 +144,15 @@ func TestMeteringReconciling(t *testing.T) {
 				seedClient := reconciler.seedClients[test.seedToReconcile]
 
 				// asserting that reporting cron job exists
-				cronJob := batchv1beta1.CronJob{}
+				cronJob := batchv1.CronJob{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
 
-				// asserting that metering deployment exists
-				deployment := appsv1.Deployment{}
+				// asserting that metering statefulSet exists
+				statefulSet := appsv1.StatefulSet{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
-					Name:      "kubermatic-metering",
-				}, &deployment))
+					Name:      "metering-prometheus",
+				}, &statefulSet))
 
 				seed := &kubermaticv1.Seed{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: test.seedToReconcile}, seed))
@@ -179,9 +179,9 @@ func TestMeteringReconciling(t *testing.T) {
 				if err := seedClient.Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      "kubermatic-metering",
-				}, &deployment); err != nil {
+				}, &statefulSet); err != nil {
 					if !apierrors.IsNotFound(err) {
-						return fmt.Errorf("failed to remove metering deployment")
+						return fmt.Errorf("failed to remove metering statefulSet")
 					}
 				}
 

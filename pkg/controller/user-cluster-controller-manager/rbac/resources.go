@@ -23,8 +23,8 @@ import (
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	configv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -77,6 +77,11 @@ func CreateClusterRole(resourceName string, cr *rbacv1.ClusterRole) (*rbacv1.Clu
 		{
 			APIGroups: []string{clusterPolicyAPIGroup},
 			Resources: []string{"machinedeployments", "machinesets", "machines"},
+			Verbs:     verbs,
+		},
+		{
+			APIGroups: []string{appskubermaticv1.GroupName},
+			Resources: []string{appskubermaticv1.ApplicationInstallationResourceName},
 			Verbs:     verbs,
 		},
 		{
@@ -145,7 +150,7 @@ func CreateClusterRole(resourceName string, cr *rbacv1.ClusterRole) (*rbacv1.Clu
 			Verbs:     verbs,
 		},
 		{
-			APIGroups: []string{constraint.ConstraintsGroup},
+			APIGroups: []string{"constraints.gatekeeper.sh"},
 			Resources: []string{"*"},
 			Verbs:     verbs,
 		},

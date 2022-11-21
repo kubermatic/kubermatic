@@ -28,8 +28,8 @@ import (
 func PrintCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "print [config | kubermaticconfiguration]",
-		Short: "prints example configuration manifest",
-		Long:  "Print an example configuration manifest with defaults for the given resource.\n   Supported resources are \"seed\" and \"kubermaticconfiguration\".",
+		Short: "Print example configuration manifest",
+		Long:  "Prints an example configuration manifest with defaults for the given resource.\n   Supported resources are \"seed\" and \"kubermaticconfiguration\".",
 		RunE:  PrintFunc(),
 	}
 

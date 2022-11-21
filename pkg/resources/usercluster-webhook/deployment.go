@@ -19,8 +19,10 @@ package webhook
 import (
 	"fmt"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,7 +30,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
+)
+
+const (
+	seedWebhookListenPort = 9443
+	userWebhookListenPort = 19443
 )
 
 var (
@@ -45,9 +53,13 @@ var (
 )
 
 type webhookData interface {
+	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
+	DC() *kubermaticv1.Datacenter
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
+	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
 func webhookPodLabels() map[string]string {
@@ -61,7 +73,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterWebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Name = resources.UserClusterWebhookDeploymentName
-			d.Spec.Replicas = pointer.Int32Ptr(1)
+			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: webhookPodLabels(),
 			}
@@ -75,18 +87,34 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 				"fluentbit.io/parser":  "json_iso",
 			}
 
+			projectID, ok := data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]
+			if !ok {
+				return nil, fmt.Errorf("no project-id label on cluster %q", data.Cluster().Name)
+			}
+
 			args := []string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-				"-webhook-cert-dir=/opt/webhook-serving-cert/",
-				fmt.Sprintf("-webhook-cert-name=%s", resources.ServingCertSecretKey),
-				fmt.Sprintf("-webhook-key-name=%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-seed-webhook-listen-port=%d", seedWebhookListenPort),
+				"-seed-webhook-cert-dir=/opt/webhook-serving-cert/",
+				fmt.Sprintf("-seed-webhook-cert-name=%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-seed-webhook-key-name=%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-user-webhook-listen-port=%d", userWebhookListenPort),
+				"-user-webhook-cert-dir=/opt/webhook-serving-cert/",
+				fmt.Sprintf("-user-webhook-cert-name=%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-user-webhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
+				fmt.Sprintf("-project-id=%s", projectID),
 			}
 
 			if data.Cluster().Spec.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {
 				args = append(args, "-v=2")
+			}
+
+			envVars, err := data.GetEnvVars()
+			if err != nil {
+				return nil, err
 			}
 
 			volumes := []corev1.Volume{
@@ -143,6 +171,7 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"user-cluster-webhook"},
 					Args:    args,
+					Env:     envVars,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "admission",
@@ -171,6 +200,12 @@ func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGette
 					},
 				},
 			}
+
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(resources.UserClusterControllerDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
+			}
+			d.Spec.Template.Spec = *wrappedPodSpec
 
 			return d, nil
 		}

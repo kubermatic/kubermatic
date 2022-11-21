@@ -28,8 +28,8 @@ GIT_HEAD_TAG="$(git tag -l "$PULL_BASE_REF")"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
-# we only want to create the "latest" tag if we're building the master branch
-if [ "$GIT_BRANCH" == "master" ]; then
+# we only want to create the "latest" tag if we're building the main branch
+if [ "$GIT_BRANCH" == "main" ]; then
   TAGS="$TAGS latest"
 fi
 
@@ -55,9 +55,9 @@ if [ -z "$GIT_HEAD_TAG" ]; then
   UIBRANCH="${PULL_BASE_REF:-$GIT_BRANCH}"
 
   # the dasboard only publishes Docker images for tagged releases and all
-  # master branch revisions; this means for Kubermatic tests in release branches
+  # main branch revisions; this means for Kubermatic tests in release branches
   # we need to use the latest tagged dashboard of the same branch
-  if [ "$UIBRANCH" == "master" ]; then
+  if [ "$UIBRANCH" == "main" ]; then
     UIDOCKERTAG="$(get_latest_dashboard_hash "${UIBRANCH}")"
   else
     UIDOCKERTAG="$(get_latest_dashboard_tag "${UIBRANCH}")"
@@ -83,6 +83,11 @@ if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
   # prepare Helm charts, do not use $KUBERMATICDOCKERTAG for the chart version,
   # as it could just be a git hash and we need to ensure a proper semver version
   set_helm_charts_version "${GIT_HEAD_TAG:-v9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCKERTAG"
+
+  # make sure that the main Docker image contains ready made CRDs, as the installer
+  # will take them from the operator chart and not use the compiled-in versions.
+  copy_crds_to_chart
+  set_crds_version_annotation
 
   set -f # prevent globbing, do word splitting
   # shellcheck disable=SC2086

@@ -20,10 +20,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-test/deep"
-
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,13 +49,13 @@ func TestReconcile(t *testing.T) {
 			name: "role binding created with cluster owner subject",
 			clusterRole: &rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{
 				Name:   "cluster-admin",
-				Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+				Labels: map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 			}},
 			requestName: "cluster-admin",
 			ownerEmail:  "test@test.com",
 			expectedBinding: rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:          map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+					Labels:          map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterBindingComponentValue},
 					ResourceVersion: "1",
 				},
 				RoleRef: rbacv1.RoleRef{
@@ -77,13 +76,13 @@ func TestReconcile(t *testing.T) {
 			name: "role binding created for no admin role",
 			clusterRole: &rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{
 				Name:   "view",
-				Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+				Labels: map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue},
 			}},
 			requestName: "view",
 			ownerEmail:  "test@test.com",
 			expectedBinding: rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:          map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+					Labels:          map[string]string{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterBindingComponentValue},
 					ResourceVersion: "1",
 				},
 				RoleRef: rbacv1.RoleRef{
@@ -127,7 +126,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-			if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
+			if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterBindingComponentValue}); err != nil {
 				t.Fatalf("failed to list cluster role bindigs: %v", err)
 			}
 
@@ -138,8 +137,8 @@ func TestReconcile(t *testing.T) {
 			existingBinding := clusterRoleBindingList.Items[0]
 			existingBinding.Name = tc.expectedBinding.Name
 
-			if diff := deep.Equal(existingBinding, tc.expectedBinding); diff != nil {
-				t.Errorf("bindings are not equal, diff: %v", diff)
+			if !diff.SemanticallyEqual(tc.expectedBinding, existingBinding) {
+				t.Fatalf("bindings are not equal:\n%v", diff.ObjectDiff(tc.expectedBinding, existingBinding))
 			}
 		})
 	}

@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +46,7 @@ const ControllerName = "kkp-project-label-synchronizer"
 type reconciler struct {
 	log                     *zap.SugaredLogger
 	masterClient            ctrlruntimeclient.Client
-	seedClients             map[string]ctrlruntimeclient.Client
+	seedClients             kuberneteshelper.SeedClientMap
 	workerNameLabelSelector labels.Selector
 }
 
@@ -89,7 +90,7 @@ func Add(
 	r := &reconciler{
 		log:                     log,
 		masterClient:            masterManager.GetClient(),
-		seedClients:             map[string]ctrlruntimeclient.Client{},
+		seedClients:             kuberneteshelper.SeedClientMap{},
 		workerNameLabelSelector: workerSelector,
 	}
 

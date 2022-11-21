@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,7 +32,7 @@ import (
 
 const (
 	name = "prometheus"
-	tag  = "v2.34.0"
+	tag  = "v2.37.0"
 
 	volumeConfigName = "config"
 	volumeDataName   = "data"
@@ -98,7 +99,7 @@ func StatefulSetCreator(data *resources.TemplateData) reconciling.NamedStatefulS
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  resources.PrometheusStatefulSetName,
-					Image: data.ImageRegistry(resources.RegistryQuay) + "/prometheus/prometheus:" + tag,
+					Image: registry.Must(data.RewriteImage(resources.RegistryQuay + "/prometheus/prometheus:" + tag)),
 					Args: []string{
 						"--config.file=/etc/prometheus/config/prometheus.yaml",
 						"--storage.tsdb.path=/var/prometheus/data",

@@ -23,11 +23,18 @@ import (
 	"flag"
 	"fmt"
 
+	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
+	groupprojectbinding "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
+	groupprojectbindingsyncer "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/sync-controller"
+	resourcequotalabelownercontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/label-owner-controller"
+	resourcequotamastercontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/master-controller"
+	resourcequotasynchronizer "k8c.io/kubermatic/v2/pkg/ee/resource-quota/resource-quota-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func addFlags(fs *flag.FlagSet) {
@@ -39,6 +46,18 @@ func setupControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create allowedregistry controller: %w", err)
 	}
 
+	if err := groupprojectbindingsyncer.Add(ctrlCtx.mgr, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, ctrlCtx.log, ctrlCtx.workerCount); err != nil {
+		return fmt.Errorf("failed to create GroupProjectBinding sync controller: %w", err)
+	}
+
+	if err := groupprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.workerCount, true); err != nil {
+		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
+	}
+
+	if err := resourcequotalabelownercontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1); err != nil {
+		return fmt.Errorf("failed to create ResourceQuota label and owner ref controller: %w", err)
+	}
+
 	return nil
 }
 
@@ -48,4 +67,25 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt controllerRunOptions) (provider.SeedKubeconfigGetter, error) {
 	return eemasterctrlmgr.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+func resourceQuotaSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return resourcequotasynchronizer.ControllerName, resourcequotasynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+		)
+	}
+}
+
+func resourceQuotaControllerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return resourcequotamastercontroller.ControllerName, resourcequotamastercontroller.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+		)
+	}
 }

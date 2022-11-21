@@ -102,9 +102,14 @@ write_junit() {
 EOF
 }
 
+is_containerized() {
+  # we're inside a Kubernetes pod/container or inside a container launched by containerize()
+  [ -n "${KUBERNETES_SERVICE_HOST:-}" ] || [ -n "${CONTAINERIZED:-}" ]
+}
+
 containerize() {
   local cmd="$1"
-  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.1.0}"
+  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.2.0}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
   local gomodcache="${CONTAINERIZE_GOMODCACHE:-/tmp/.gomodcache}"
   local skip="${NO_CONTAINERIZE:-}"
@@ -112,7 +117,7 @@ containerize() {
   # short-circuit containerize when in some cases it needs to be avoided
   [ -n "$skip" ] && return
 
-  if ! [ -f /.dockerenv ]; then
+  if ! is_containerized; then
     echodate "Running $cmd in a Docker container using $image..."
     mkdir -p "$gocache"
     mkdir -p "$gomodcache"
@@ -124,6 +129,7 @@ containerize() {
       -w /go/src/k8c.io/kubermatic \
       -e "GOCACHE=$gocache" \
       -e "GOMODCACHE=$gomodcache" \
+      -e "CONTAINERIZED=true" \
       -u "$(id -u):$(id -g)" \
       --entrypoint="$cmd" \
       --rm \
@@ -352,6 +358,16 @@ check_all_deployments_ready() {
   return 0
 }
 
+check_seed_ready() {
+  status="$(kubectl --namespace "$1" get seed "$2" --output json | jq -r '.status.conditions.ResourcesReconciled.status')"
+  if [ "$status" != "True" ]; then
+    echodate "Seed does not yet have ResourcesReconciled=True condition."
+    return 1
+  fi
+
+  return 0
+}
+
 cleanup_kubermatic_clusters_in_kind() {
   # Tolerate errors and just continue
   set +e
@@ -423,11 +439,14 @@ set_helm_charts_version() {
 
   while IFS= read -r -d '' chartFile; do
     chart="$(basename $(dirname "$chartFile"))"
+    if [ "$chart" = "mla-secrets" ]; then
+      continue
+    fi
 
-    yq write --inplace "$chartFile" version "$version"
+    yq --inplace ".version = \"$version\"" "$chartFile"
     if [ "$chart" = "kubermatic-operator" ]; then
-      yq write --inplace "$chartFile" appVersion "$version"
-      yq write --inplace "$(dirname "$chartFile")/values.yaml" kubermaticOperator.image.tag "$dockerTag"
+      yq --inplace ".appVersion = \"$version\"" "$chartFile"
+      yq --inplace ".kubermaticOperator.image.tag = \"$dockerTag\"" "$(dirname "$chartFile")/values.yaml"
     fi
   done < <(find charts -name 'Chart.yaml' -print0 | sort --zero-terminated)
 }
@@ -456,6 +475,38 @@ set_crds_version_annotation() {
   fi
 
   while IFS= read -r -d '' filename; do
-    yq write --inplace --doc '*' "$filename" metadata.annotations.'"app.kubernetes.io/version"' "$version"
+    yq --inplace ".metadata.annotations.\"app.kubernetes.io/version\" = \"$version\"" "$filename"
   done < <(find "$directory" -name '*.yaml' -print0 | sort --zero-terminated)
+}
+
+# go_test wraps running `go test` commands. The first argument needs to be file name
+# for a junit result file that will be generated if go-junit-report is present and
+# $ARTIFACTS is set. The remaining arguments are passed to `go test`.
+go_test() {
+  local junit_name="${1:-}"
+  shift
+
+  # only run go-junit-report if binary is present and we're in CI / the ARTIFACTS environment is set
+  if [ -x "$(command -v go-junit-report)" ] && [ ! -z "${ARTIFACTS:-}" ]; then
+    go test "$@" 2>&1 | go-junit-report -set-exit-code -iocopy -out ${ARTIFACTS}/junit.${junit_name}.xml
+  else
+    go test "$@"
+  fi
+}
+
+# safebase64 ensures the given value is base64-encoded.
+# If the given value is already encoded, it will be echoed
+# unchanged.
+safebase64() {
+  local value="$1"
+
+  set +e
+  decoded="$(echo "$value" | base64 -d 2> /dev/null)"
+  if [ $? -eq 0 ]; then
+    echo "$value"
+    return 0
+  fi
+
+  echo "$value" | base64 -w0
+  echo
 }

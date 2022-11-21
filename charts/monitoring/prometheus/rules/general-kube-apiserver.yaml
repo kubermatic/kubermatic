@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 groups:
   - name: kube-apiserver
     rules:
@@ -38,22 +37,9 @@ groups:
       - alert: KubernetesApiserverDown
         annotations:
           message: KubernetesApiserver has disappeared from Prometheus target discovery.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubernetesapiserverdown
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubernetesapiserverdown
         expr: absent(up{job="apiserver"} == 1)
         for: 15m
-        labels:
-          severity: critical
-          resource: apiserver
-          service: kubernetes
-      - alert: KubeAPIErrorsHigh
-        annotations:
-          message: API server is returning errors for {{ $value }}% of requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapierrorshigh
-        expr: |
-          sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
-            /
-          sum(rate(apiserver_request_total{job="apiserver"}[5m])) without(instance, pod) * 100 > 10
-        for: 10m
         labels:
           severity: critical
           resource: apiserver
@@ -61,7 +47,7 @@ groups:
       - alert: KubeAPITerminatedRequests
         annotations:
           message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapiterminatedrequests
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
         expr: |
           sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
             /
@@ -74,7 +60,7 @@ groups:
       - alert: KubeAPITerminatedRequests
         annotations:
           message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapiterminatedrequests
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
         expr: |
           sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
             /
@@ -84,23 +70,10 @@ groups:
           severity: critical
           resource: apiserver
           service: kubernetes
-      - alert: KubeAPIErrorsHigh
-        annotations:
-          message: API server is returning errors for {{ $value }}% of requests.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeapierrorshigh
-        expr: |
-          sum(rate(apiserver_request_total{job="apiserver",code=~"^(?:5..)$"}[5m])) without(instance, pod)
-            /
-          sum(rate(apiserver_request_total{job="apiserver"}[5m])) without(instance, pod) * 100 > 5
-        for: 10m
-        labels:
-          severity: warning
-          resource: apiserver
-          service: kubernetes
       - alert: KubeClientCertificateExpiration
         annotations:
           message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeclientcertificateexpiration
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
         expr: |
           apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
           and
@@ -112,7 +85,7 @@ groups:
       - alert: KubeClientCertificateExpiration
         annotations:
           message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-kubeclientcertificateexpiration
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
         expr: |
           apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
           and

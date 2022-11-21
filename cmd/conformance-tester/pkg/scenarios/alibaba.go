@@ -18,130 +18,59 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 )
-
-const (
-	alibabaDatacenter = "alibaba-eu-central-1a"
-)
-
-// GetAlibabaScenarios returns a matrix of (version x operating system).
-func GetAlibabaScenarios(versions []*semver.Semver) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &alibabaScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &alibabaScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
-		})
-	}
-	return scenarios
-}
 
 type alibabaScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
-}
-
-func (s *alibabaScenario) Name() string {
-	return fmt.Sprintf("alibaba-%s-%s", getOSNameFromSpec(s.osSpec), s.version.String())
-}
-
-func (s *alibabaScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	return &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: alibabaDatacenter,
-					Alibaba: &apimodels.AlibabaCloudSpec{
-						AccessKeySecret: secrets.Alibaba.AccessKeySecret,
-						AccessKeyID:     secrets.Alibaba.AccessKeyID,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
+	baseScenario
 }
 
 func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: alibabaDatacenter,
+			DatacenterName: secrets.Alibaba.KKPDatacenter,
 			Alibaba: &kubermaticv1.AlibabaCloudSpec{
 				AccessKeySecret: secrets.Alibaba.AccessKeySecret,
 				AccessKeyID:     secrets.Alibaba.AccessKeyID,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
-func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
-	replicas := int32(num)
+func (s *alibabaScenario) MachineDeployments(_ context.Context, replicas int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Alibaba: &apimodels.AlibabaNodeSpec{
-							InstanceType:            "ecs.c6.xsmall",
-							DiskSize:                "40",
-							DiskType:                "cloud_efficiency",
-							VSwitchID:               "vsw-gw8g8mn4ohmj483hsylmn",
-							InternetMaxBandwidthOut: "10",
-							ZoneID:                  alibabaDatacenter,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: &s.osSpec,
-				},
+	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
+		Cloud: apiv1.NodeCloudSpec{
+			Alibaba: &apiv1.AlibabaNodeSpec{
+				InstanceType:            "ecs.c6.xsmall",
+				DiskSize:                "40",
+				DiskType:                "cloud_efficiency",
+				VSwitchID:               "vsw-gw8g8mn4ohmj483hsylmn",
+				InternetMaxBandwidthOut: "10",
+				ZoneID:                  s.getZoneID(),
 			},
 		},
-	}, nil
-}
+	}
 
-func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// It is unfortunately not possible to convert an apimodels.NodeDeployment into anything
-	// useful for GitOps, so this function has to completely reimplement everything (most of
-	// the logic from pkg/resources/machine/common.go); since #9541 focused only on AWS, the
-	// following code is most likely incomplete and to ensure that nobody gets tripped up by
-	// that, we instead return a very clear error message right away. We leave the code stub
-	// behind so that when someone wants to implement this specific scenario for GitOps, they
-	// have a starting point.
-	return nil, errors.New("not implemented for gitops yet")
+	config, err := machine.GetAlibabaProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
 
-	//nolint:govet
-	md, err := createMachineDeployment(num, s.version, getOSNameFromSpec(s.osSpec), s.osSpec, providerconfig.CloudProviderAlibaba, alibabatypes.RawConfig{
-		InstanceType:            providerconfig.ConfigVarString{Value: "ecs.c6.xsmall"},
-		DiskSize:                providerconfig.ConfigVarString{Value: "40"},
-		DiskType:                providerconfig.ConfigVarString{Value: "cloud_efficiency"},
-		VSwitchID:               providerconfig.ConfigVarString{Value: "vsw-gw8g8mn4ohmj483hsylmn"},
-		InternetMaxBandwidthOut: providerconfig.ConfigVarString{Value: "10"},
-		ZoneID:                  providerconfig.ConfigVarString{Value: alibabaDatacenter},
-	})
+	md, err := s.createMachineDeployment(replicas, config)
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +78,6 @@ func (s *alibabaScenario) MachineDeployments(_ context.Context, num int, secrets
 	return []clusterv1alpha1.MachineDeployment{md}, nil
 }
 
-func (s *alibabaScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
+func (s *alibabaScenario) getZoneID() string {
+	return fmt.Sprintf("%sa", s.datacenter.Spec.Alibaba.Region)
 }

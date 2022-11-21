@@ -91,8 +91,8 @@ func main() {
 			},
 			{
 				ResourceName:       "PodDisruptionBudget",
-				ImportAlias:        "policyv1beta1",
-				ResourceImportPath: "k8s.io/api/policy/v1beta1",
+				ImportAlias:        "policyv1",
+				ResourceImportPath: "k8s.io/api/policy/v1",
 				RequiresRecreate:   true,
 			},
 			{
@@ -127,8 +127,8 @@ func main() {
 			},
 			{
 				ResourceName:       "CronJob",
-				ImportAlias:        "batchv1beta1",
-				ResourceImportPath: "k8s.io/api/batch/v1beta1",
+				ImportAlias:        "batchv1",
+				ResourceImportPath: "k8s.io/api/batch/v1",
 				DefaultingFunc:     "DefaultCronJob",
 			},
 			{
@@ -173,6 +173,11 @@ func main() {
 				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1",
 			},
 			{
+				ResourceName:       "OperatingSystemProfile",
+				ImportAlias:        "osmv1alpha1",
+				ResourceImportPath: "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1",
+			},
+			{
 				ResourceName:     "ConstraintTemplate",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
@@ -188,12 +193,22 @@ func main() {
 				APIVersionPrefix: "KubermaticV1",
 			},
 			{
+				ResourceName:     "GroupProjectBinding",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
 				ResourceName:     "Constraint",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
 			},
 			{
 				ResourceName:     "User",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
+				ResourceName:     "Cluster",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
 			},
@@ -226,6 +241,18 @@ func main() {
 				APIVersionPrefix:   "KubeVirtV1",
 			},
 			{
+				ResourceName:       "VirtualMachineInstancetype",
+				ImportAlias:        "kvinstancetypev1alpha1",
+				ResourceImportPath: "kubevirt.io/api/instancetype/v1alpha1",
+				APIVersionPrefix:   "KvInstancetypeV1alpha1",
+			},
+			{
+				ResourceName:       "VirtualMachinePreference",
+				ImportAlias:        "kvinstancetypev1alpha1",
+				ResourceImportPath: "kubevirt.io/api/instancetype/v1alpha1",
+				APIVersionPrefix:   "KvInstancetypeV1alpha1",
+			},
+			{
 				ResourceName:     "Preset",
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
@@ -235,6 +262,26 @@ func main() {
 				ImportAlias:        "cdiv1beta1",
 				ResourceImportPath: "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1",
 				APIVersionPrefix:   "CDIv1beta1",
+			},
+			{
+				ResourceName:     "ResourceQuota",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
+				ResourceName:     "UserSSHKey",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
+				ResourceName:     "Addon",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
+			{
+				ResourceName:     "AddonConfig",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
 			},
 		},
 	}

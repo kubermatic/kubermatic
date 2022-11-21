@@ -4,10 +4,10 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -26,10 +26,10 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -42,10 +42,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -59,10 +59,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
   name: nginx-ingress
@@ -76,6 +76,13 @@ rules:
       - pods
       - secrets
       - namespaces
+    verbs:
+      - list
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
     verbs:
       - list
       - watch
@@ -122,16 +129,24 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - list
+      - watch
+      - get
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
   name: nginx-ingress
@@ -149,10 +164,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -206,6 +221,11 @@ rules:
       - get
       - list
       - watch
+  # TODO(Jintao Zhang)
+  # Once we release a new version of the controller,
+  # we will be able to remove the configmap related permissions
+  # We have used the Lease API for selection
+  # ref: https://github.com/kubernetes/ingress-nginx/pull/8921
   - apiGroups:
       - ""
     resources:
@@ -222,22 +242,45 @@ rules:
     verbs:
       - create
   - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    resourceNames:
+      - ingress-controller-leader
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+  - apiGroups:
       - ""
     resources:
       - events
     verbs:
       - create
       - patch
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - list
+      - watch
+      - get
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -257,10 +300,10 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -283,10 +326,10 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -311,10 +354,10 @@ metadata:
   annotations:
     helm.sh/resource-policy: "keep"
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -346,10 +389,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -377,7 +420,7 @@ spec:
       dnsPolicy: ClusterFirst
       containers:
         - name: controller
-          image: "k8s.gcr.io/ingress-nginx/controller:v1.2.1@sha256:5516d103a9c2ecc4f026efbd4b40662ce22dc1f824fb129ed121460aaa5c47f8"
+          image: "registry.k8s.io/ingress-nginx/controller:v1.4.0@sha256:34ee929b111ffc7aa426ffd409af44da48e5a0eea1eb2207994d9e0c0882d143"
           imagePullPolicy: IfNotPresent
           lifecycle: 
             preStop:
@@ -488,10 +531,10 @@ apiVersion: networking.k8s.io/v1
 kind: IngressClass
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -506,10 +549,10 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -547,10 +590,10 @@ metadata:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -564,10 +607,10 @@ metadata:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -589,10 +632,10 @@ metadata:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -615,10 +658,10 @@ metadata:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -641,10 +684,10 @@ metadata:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -667,10 +710,10 @@ metadata:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -679,17 +722,17 @@ spec:
     metadata:
       name: nginx-ingress-admission-create
       labels:
-        helm.sh/chart: nginx-4.1.3
+        helm.sh/chart: nginx-4.3.0
         app.kubernetes.io/name: nginx
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "1.2.1"
+        app.kubernetes.io/version: "1.4.0"
         app.kubernetes.io/part-of: nginx
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: admission-webhook
     spec:
       containers:
         - name: create
-          image: "k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1@sha256:64d8c73dca984af206adf9d6d7e46aa550362b1d7a01f3a0a91b20cc67868660"
+          image: "registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20220916-gd32f8c343@sha256:39c5b2e3310dc4264d638ad28d9d1d96c4cbb2b2dcfb52368fe4e3c63f61e10f"
           imagePullPolicy: IfNotPresent
           args:
             - create
@@ -708,9 +751,9 @@ spec:
       nodeSelector: 
         kubernetes.io/os: linux
       securityContext:
+        fsGroup: 2000
         runAsNonRoot: true
         runAsUser: 2000
-        fsGroup: 2000
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/admission-webhooks/job-patch/job-patchWebhook.yaml
 apiVersion: batch/v1
@@ -722,10 +765,10 @@ metadata:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
-    helm.sh/chart: nginx-4.1.3
+    helm.sh/chart: nginx-4.3.0
     app.kubernetes.io/name: nginx
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "1.2.1"
+    app.kubernetes.io/version: "1.4.0"
     app.kubernetes.io/part-of: nginx
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -734,17 +777,17 @@ spec:
     metadata:
       name: nginx-ingress-admission-patch
       labels:
-        helm.sh/chart: nginx-4.1.3
+        helm.sh/chart: nginx-4.3.0
         app.kubernetes.io/name: nginx
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "1.2.1"
+        app.kubernetes.io/version: "1.4.0"
         app.kubernetes.io/part-of: nginx
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: admission-webhook
     spec:
       containers:
         - name: patch
-          image: "k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.1.1@sha256:64d8c73dca984af206adf9d6d7e46aa550362b1d7a01f3a0a91b20cc67868660"
+          image: "registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20220916-gd32f8c343@sha256:39c5b2e3310dc4264d638ad28d9d1d96c4cbb2b2dcfb52368fe4e3c63f61e10f"
           imagePullPolicy: IfNotPresent
           args:
             - patch
@@ -765,6 +808,6 @@ spec:
       nodeSelector: 
         kubernetes.io/os: linux
       securityContext:
+        fsGroup: 2000
         runAsNonRoot: true
         runAsUser: 2000
-        fsGroup: 2000

@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/util/crd"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -98,7 +99,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		}
 	} else {
 		sublogger.Info("Deploying Custom Resource Definitions…")
-		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd"), nil); err != nil {
+		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd"), nil, crd.MasterCluster); err != nil {
 			return fmt.Errorf("failed to deploy CRDs: %w", err)
 		}
 	}
@@ -124,7 +125,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CertManagerNamespace, CertManagerReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CertManagerNamespace, CertManagerReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
@@ -243,7 +244,7 @@ func migrateCertManagerV2(
 
 	// step 6: install new CRDs
 	logger.Info("Deploying new Custom Resource Definitions…")
-	if err := util.DeployCRDs(ctx, kubeClient, logger, filepath.Join(chart.Directory, "crd"), nil); err != nil {
+	if err := util.DeployCRDs(ctx, kubeClient, logger, filepath.Join(chart.Directory, "crd"), nil, crd.MasterCluster); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 

@@ -17,16 +17,10 @@ limitations under the License.
 package utils
 
 import (
-	"github.com/onsi/ginkgo"
-	"go.uber.org/zap"
-
-	ctrlruntimelogzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"k8c.io/kubermatic/v2/pkg/log"
 )
 
-// DefaultLogger to be used in e2e tests.
-var DefaultLogger = CreateLogger(false)
-
-// CreateLogger creates a new Logger.
-func CreateLogger(debug bool) *zap.SugaredLogger {
-	return ctrlruntimelogzap.NewRaw(ctrlruntimelogzap.UseDevMode(debug), ctrlruntimelogzap.WriteTo(ginkgo.GinkgoWriter)).Sugar()
+var DefaultLogOptions = log.Options{
+	Debug:  false,
+	Format: log.FormatConsole,
 }

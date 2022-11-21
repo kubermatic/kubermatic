@@ -48,7 +48,7 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 		{
 			name:              "scenario 3: check resources for viewers",
 			resourceName:      genResourceName(rbac.ViewerGroupNamePrefix),
-			expectedResources: []string{"machinedeployments", "machinesets", "machines"},
+			expectedResources: []string{"applicationinstallations", "machinedeployments", "machinesets", "machines"},
 			expectError:       false,
 		},
 		{
@@ -71,12 +71,31 @@ func TestGeneratedResourcesForGroups(t *testing.T) {
 				return
 			}
 
-			actualResources := cr.Rules[0].Resources
-			if !equality.Semantic.DeepEqual(actualResources, test.expectedResources) {
-				t.Fatalf("incorrect resources were returned, got: %v, want: %v", actualResources, test.expectedResources)
+			// check across all rules if the expected resource exists
+			for _, resource := range test.expectedResources {
+				found := false
+				for _, rule := range cr.Rules {
+					if contains(rule.Resources, resource) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("Expected resource %q was not found in rulegroup %+v\n", resource, cr.Rules)
+				}
 			}
 		})
 	}
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }
 
 func TestGenerateVerbsForGroup(t *testing.T) {

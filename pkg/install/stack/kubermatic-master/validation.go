@@ -26,16 +26,19 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
@@ -55,9 +58,57 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 		return nil // nothing to do
 	}
 
+	// Ensure that no KKP upgrade was skipped.
+	kkpMinorVersion := semverlib.MustParse(opt.Versions.KubermaticCommit).Minor()
+	minMinorRequired := kkpMinorVersion - 1
+
+	// The configured KubermaticConfiguration might be a static YAML file,
+	// which would not have a status set at all. To ensure that we always
+	// get the currently live config, we fetch it from the cluster. This
+	// dynamically fetched config is only relevant to the version check, all
+	// other validations are supposed to be based on the given config.
+	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, opt.KubeClient, KubermaticOperatorNamespace)
+	if err != nil && !errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
+		return append(errs, fmt.Errorf("failed to create fetch KubermaticConfiguration: %w", err))
+	}
+
+	var currentVersion string
+	if config != nil {
+		currentVersion = config.Status.KubermaticVersion
+	}
+
+	if currentVersion != "" {
+		currentSemver, err := semverlib.NewVersion(currentVersion)
+		if err != nil {
+			return append(errs, fmt.Errorf("failed to parse existing KKP version %q: %w", currentVersion, err))
+		}
+
+		if currentSemver.Minor() < minMinorRequired {
+			return append(errs, fmt.Errorf("existing installation is on version %s and must be updated to KKP 2.%d first (sequentially to all minor releases in-between)", currentVersion, kkpMinorVersion))
+		}
+	}
+
+	// If a KubermaticConfiguration exists, check its status to compare editions.
+	if config != nil && config.Status.KubermaticEdition != "" {
+		currentEdition, err := edition.FromString(config.Status.KubermaticEdition)
+		if err != nil {
+			return append(errs, fmt.Errorf("failed to validate KKP edition: %w", err))
+		}
+
+		installerEdition := opt.Versions.KubermaticEdition
+
+		if currentEdition != installerEdition {
+			if opt.AllowEditionChange {
+				opt.Logger.Warnf("This installation will change KKP to the %s.", installerEdition)
+			} else {
+				return append(errs, fmt.Errorf("existing installation uses the %s, refusing to change to %s (if this is intended, please add the --allow-edition-change flag)", currentEdition, installerEdition))
+			}
+		}
+	}
+
 	// we need the actual, effective versioning configuration, which most users will
 	// probably not override
-	defaulted, err := defaults.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
+	defaulted, err := defaulting.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
 	if err != nil {
 		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
 	}
@@ -67,13 +118,37 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 		return append(errs, fmt.Errorf("failed to list Seeds: %w", err))
 	}
 
-	upgradeConstraints, contraintErrs := getAutoUpdateConstraints(defaulted)
-	if len(contraintErrs) > 0 {
-		return contraintErrs
+	upgradeConstraints, constraintErrs := getAutoUpdateConstraints(defaulted)
+	if len(constraintErrs) > 0 {
+		return constraintErrs
 	}
 
 	for seedName, seed := range allSeeds {
 		opt.Logger.WithField("seed", seedName).Info("Checking seed cluster…")
+
+		// ensure seeds are also up-to-date before we continue
+		seedVersion := seed.Status.Versions.Kubermatic
+		if seedVersion != "" {
+			seedSemver, err := semverlib.NewVersion(seedVersion)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("Seed cluster %q version %q is invalid: %w", seedName, seedVersion, err))
+				continue
+			}
+
+			if seedSemver.Minor() < minMinorRequired {
+				errs = append(errs, fmt.Errorf("Seed cluster %q is on version %s and must be updated first", seedName, seedVersion))
+				continue
+			}
+		}
+
+		// if the operator has the chance to reconcile the seed...
+		if conditions := seed.Status.Conditions; conditions[kubermaticv1.SeedConditionKubeconfigValid].Status == corev1.ConditionTrue {
+			// ... it should be healthy
+			if conditions[kubermaticv1.SeedConditionResourcesReconciled].Status != corev1.ConditionTrue {
+				errs = append(errs, fmt.Errorf("Seed cluster %q is not healthy, please verify the operator logs or events on the Seed object", seedName))
+				continue
+			}
+		}
 
 		// create client into seed
 		seedClient, err := opt.SeedClientGetter(seed)
@@ -175,7 +250,7 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
 
-		if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
+		if err := validateServiceAccountKey(config.Spec.Auth.ServiceAccountKey); err != nil {
 			failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
 		}
 
@@ -186,6 +261,16 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 	}
 
 	return failures
+}
+
+func validateServiceAccountKey(privateKey string) error {
+	if len(privateKey) == 0 {
+		return errors.New("the signing key cannot be empty")
+	}
+	if len(privateKey) < 32 {
+		return errors.New("the signing key is too short, use 32 bytes or longer")
+	}
+	return nil
 }
 
 func validateRandomSecret(config *kubermaticv1.KubermaticConfiguration, value string, path string, failures []error) []error {
@@ -199,6 +284,10 @@ func validateRandomSecret(config *kubermaticv1.KubermaticConfiguration, value st
 	}
 
 	return failures
+}
+
+type dexClient struct {
+	ID string `yaml:"id"`
 }
 
 func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
@@ -218,7 +307,7 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		}
 	}
 
-	defaultedConfig, err := defaults.DefaultConfiguration(config, zap.NewNop().Sugar())
+	defaultedConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading
@@ -227,22 +316,18 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
+		clients := []dexClient{}
 
-		clients, ok := helmValues.GetArray(yamled.Path{"dex", "clients"})
-		if !ok {
+		if err := helmValues.DecodeAtPath(yamled.Path{"dex", "clients"}, &clients); err != nil {
 			hasDexIssues = true
 			logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
 		} else {
 			hasMatchingClient := false
 
 			for _, client := range clients {
-				if mapSlice, ok := client.(yaml.MapSlice); ok {
-					for _, item := range mapSlice {
-						if item.Key == "id" && item.Value == clientID {
-							hasMatchingClient = true
-							break
-						}
-					}
+				if client.ID == clientID {
+					hasMatchingClient = true
+					break
 				}
 			}
 

@@ -17,14 +17,14 @@ limitations under the License.
 package yamled
 
 import (
-	"fmt"
+	"bytes"
 	"os"
-	"sort"
 	"strings"
 	"testing"
 
-	"github.com/pmezard/go-difflib/difflib"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
+
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
 func getTestcaseYAML(t *testing.T, filename string) string {
@@ -58,22 +58,19 @@ func loadTestcase(t *testing.T, name string) (*Document, string) {
 }
 
 func assertEqualYAML(t *testing.T, actual *Document, expected string) {
-	out, _ := yaml.Marshal(actual)
+	var buf bytes.Buffer
 
-	diff := difflib.UnifiedDiff{
-		A:        difflib.SplitLines(expected),
-		B:        difflib.SplitLines(strings.TrimSpace(string(out))),
-		FromFile: "Expected",
-		ToFile:   "Actual",
-		Context:  3,
-	}
-	diffStr, err := difflib.GetUnifiedDiffString(diff)
-	if err != nil {
-		t.Fatal(err)
+	encoder := yaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+
+	if err := encoder.Encode(actual); err != nil {
+		t.Fatalf("Failed to encode YAML: %v", err)
 	}
 
-	if diffStr != "" {
-		t.Fatalf("got diff between expected and actual result: \n%s\n", diffStr)
+	out := buf.String()
+
+	if d := diff.StringDiff(expected, strings.TrimSpace(out)); d != "" {
+		t.Fatalf("got diff between expected and actual result:\n%v", d)
 	}
 }
 
@@ -122,7 +119,7 @@ func TestGetRootBoolKey(t *testing.T) {
 func TestGetRootNullKey(t *testing.T) {
 	doc, _ := loadTestcase(t, "")
 
-	val, ok := doc.Get(Path{"rootNullKey"})
+	val, ok := doc.GetValue(Path{"rootNullKey"})
 	if !ok {
 		t.Fatal("should have been able to retrieve root-level null, but failed")
 	}
@@ -383,9 +380,6 @@ func TestFillTwoNewRootKeys(t *testing.T) {
 		t.Fatal("should have been able to fill in stuff")
 	}
 
-	// as Fill is iterating over a map we don't have ordering guarantees, we
-	// sort the document to have a predictable output
-	sort.Sort(byKeyString(*doc.root))
 	assertEqualYAML(t, doc, expected)
 }
 
@@ -449,19 +443,72 @@ func TestMarshalling(t *testing.T) {
 	assertEqualYAML(t, doc, expected)
 }
 
-type byKeyString yaml.MapSlice
+func TestDecodeAtPathWithMap(t *testing.T) {
+	doc, _ := loadTestcase(t, "")
 
-// Len is part of sort.Interface.
-func (b byKeyString) Len() int {
-	return len(b)
+	type subStruct struct {
+		Second string `yaml:"second"`
+		Number int    `yaml:"number"`
+	}
+
+	subObj := subStruct{}
+	err := doc.DecodeAtPath(Path{"rootMapKey", "subKey3", 1}, &subObj)
+	if err != nil {
+		t.Fatalf("should have been able to decode a subtree into a struct, but got: %v", err)
+	}
+
+	if subObj.Number != 123 {
+		t.Fatalf("Expected number to be 123, but got %v", subObj.Number)
+	}
+
+	if subObj.Second != "value" {
+		t.Fatalf("Expected number to be \"value\", but got %q", subObj.Second)
+	}
 }
 
-// Swap is part of sort.Interface.
-func (b byKeyString) Swap(i, j int) {
-	b[i], b[j] = b[j], b[i]
+func TestDecodeAtPathWithSlice(t *testing.T) {
+	doc, _ := loadTestcase(t, "")
+
+	slice := []interface{}{}
+	err := doc.DecodeAtPath(Path{"rootMapKey", "subKey3"}, &slice)
+	if err != nil {
+		t.Fatalf("should have been able to decode a subtree into a slice, but got: %v", err)
+	}
+
+	if len(slice) != 3 {
+		t.Fatalf("Expected 3 slice items, but got %d", len(slice))
+	}
+
+	first := slice[0]
+	s, ok := first.(string)
+	if !ok {
+		t.Fatalf("Expected first item to be a string, but got %v", s)
+	}
+	if s != "first" {
+		t.Fatalf("Expected first value to be \"first\", but got %q", s)
+	}
 }
 
-// Less is part of sort.Interface.
-func (b byKeyString) Less(i, j int) bool {
-	return fmt.Sprintf("%s", b[i].Key) < fmt.Sprintf("%s", b[j].Key)
+func TestEqual(t *testing.T) {
+	docA, _ := loadTestcase(t, "")
+	docB, _ := loadTestcase(t, "")
+
+	//nolint:gocritic
+	if !docA.Equal(docA) {
+		t.Fatal("A document must be equal to itself.")
+	}
+
+	if !docA.Equal(docB) {
+		t.Fatal("Loading the same document twice should mean they are equal, but were not.")
+	}
+
+	docA.Set(Path{"rootIntKey"}, 13)
+	if docA.Equal(docB) {
+		t.Fatal("After editing one of the documents, they should not be equal anymore.")
+	}
+
+	docA.Set(Path{"rootIntKey"}, 12)
+	if !docA.Equal(docB) {
+		t.Fatal("After un-editing one of the documents, they should be equal again.")
+	}
 }

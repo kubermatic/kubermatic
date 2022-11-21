@@ -25,13 +25,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/generator"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,23 +97,19 @@ func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 				t.Fatalf("wrong number of bindigs, expected 1 got %d", len(bindings.Items))
 			}
 
-			if !equality.Semantic.DeepEqual(bindings.Items[0].Labels, test.expectedBinding.Labels) {
-				t.Fatalf("%v", diff.ObjectDiff(bindings.Items[0].Labels, test.expectedBinding.Labels))
-			}
+			binding := bindings.Items[0]
+			binding.Name = test.expectedBinding.Name
+			binding.ResourceVersion = ""
 
-			if !equality.Semantic.DeepEqual(bindings.Items[0].OwnerReferences, test.expectedBinding.OwnerReferences) {
-				t.Fatalf("%v", diff.ObjectDiff(bindings.Items[0].OwnerReferences, test.expectedBinding.OwnerReferences))
-			}
-
-			if !equality.Semantic.DeepEqual(bindings.Items[0].Spec, test.expectedBinding.Spec) {
-				t.Fatalf("%v", diff.ObjectDiff(bindings.Items[0].Spec, test.expectedBinding.Spec))
+			if !diff.SemanticallyEqual(*test.expectedBinding, binding) {
+				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedBinding, binding))
 			}
 		})
 	}
 }
 
 func genSABinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
-	binding := test.GenBinding(projectID, email, group)
+	binding := generator.GenBinding(projectID, email, group)
 	binding.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
 	binding.Spec.Group = fmt.Sprintf("%s-%s", group, projectID)
 	return binding
@@ -144,7 +138,7 @@ func genProject(name string) *kubermaticv1.Project {
 
 func genServiceAccount(id, group, projectName string) *kubermaticv1.User {
 	user := &kubermaticv1.User{}
-	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
+	user.Labels = map[string]string{kubermaticv1.ServiceAccountInitialGroupLabel: fmt.Sprintf("%s-%s", group, projectName)}
 	user.Name = kubermaticv1helper.EnsureProjectServiceAccountPrefix(id)
 	user.Spec.Email = fmt.Sprintf("%s@sa.kubermatic.io", user.Name)
 	user.Spec.Project = projectName

@@ -17,6 +17,7 @@ limitations under the License.
 package kubectl
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -25,30 +26,53 @@ import (
 
 const (
 	kubectl123 = "kubectl-1.23"
+	kubectl125 = "kubectl-1.25"
 )
 
 // BinaryForClusterVersion returns the full path to a kubectl binary
 // that shall be used to communicate with a usercluster. An error is
 // returned if no suitable kubectl can be determined.
-// We take advantage of version skew policy for kubectl, v1.1.1 would support v1.2.x and v1.0.x, to ship
-// only mandatory variants for kubectl.
+// We take advantage of version skew policy for kubectl, v1.1.1 would
+// support v1.2.x and v1.0.x, to ship only mandatory variants for kubectl.
+// See https://kubernetes.io/releases/version-skew-policy/#kubectl for
+// more information.
 func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	var binary string
 
 	switch version.MajorMinor() {
-	case "1.20":
-		binary = "kubectl-1.21"
-	case "1.21":
-		binary = "kubectl-1.21"
 	case "1.22":
 		binary = kubectl123
 	case "1.23":
 		binary = kubectl123
 	case "1.24":
-		binary = kubectl123
+		binary = kubectl125
+	case "1.25":
+		binary = kubectl125
 	default:
 		return "", fmt.Errorf("unsupported Kubernetes version %v", version)
 	}
 
 	return filepath.Join("/usr/local/bin/", binary), nil
+}
+
+func VerifyVersionSkew(clusterVersion, kubectlVersion semver.Semver) error {
+	clusterMajor := clusterVersion.Semver().Major()
+	kubectlMajor := kubectlVersion.Semver().Major()
+
+	if clusterMajor != kubectlMajor {
+		return errors.New("major versions are different between cluster and kubectl")
+	}
+
+	clusterMinor := clusterVersion.Semver().Minor()
+	kubectlMinor := kubectlVersion.Semver().Minor()
+
+	if kubectlMinor < (clusterMinor - 1) {
+		return fmt.Errorf("kubectl would support down to v%d.%d, but cluster is %v", kubectlMajor, kubectlMinor-1, clusterVersion.Semver())
+	}
+
+	if kubectlMinor > (clusterMinor + 1) {
+		return fmt.Errorf("kubectl would support up to v%d.%d, but cluster is %v", kubectlMajor, kubectlMinor+1, clusterVersion.Semver())
+	}
+
+	return nil
 }

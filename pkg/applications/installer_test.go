@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
@@ -42,14 +40,14 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 	testCases := []struct {
 		name          string
 		userClient    ctrlruntimeclient.Client
-		namespaceSpec appskubermaticv1.NamespaceSpec
+		namespaceSpec appskubermaticv1.AppNamespaceSpec
 	}{
 		{
-			name: "scenario 1: when Namespace.create=true and no labels or annotations are defined then namespace should be cretated without labels or annotations",
+			name: "scenario 1: when Namespace.create=true and no labels or annotations are defined then namespace should be created without labels or annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      nil,
@@ -57,11 +55,11 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 2: when Namespace.create=true, labels field is defined and annotations field nil then namespace should be cretated with labels",
+			name: "scenario 2: when Namespace.create=true, labels field is defined and annotations field nil then namespace should be created with labels",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      map[string]string{"label-1": "value-1", "label-2": "value-2"},
@@ -69,11 +67,11 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 3: when Namespace.create=true, labels field is nil and annotations field is defined then namespace should be cretated with annotations",
+			name: "scenario 3: when Namespace.create=true, labels field is nil and annotations field is defined then namespace should be created with annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      nil,
@@ -81,11 +79,11 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 			},
 		},
 		{
-			name: "scenario 4: when Namespace.create=true, labels and annotations are defined then namespace should be cretated with labels and annotations",
+			name: "scenario 4: when Namespace.create=true, labels and annotations are defined then namespace should be created with labels and annotations",
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				Build(),
-			namespaceSpec: appskubermaticv1.NamespaceSpec{
+			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
 				Name:        "foo",
 				Create:      true,
 				Labels:      map[string]string{"label-1": "value-1", "label-2": "value-2"},
@@ -124,7 +122,7 @@ func TestApplicationManager_applyNamespaceDoNotCreateNsWhenCreateNamespaceFlagIs
 		NewClientBuilder().
 		Build()
 
-	namespaceSpec := appskubermaticv1.NamespaceSpec{
+	namespaceSpec := appskubermaticv1.AppNamespaceSpec{
 		Name:        "foo",
 		Create:      false,
 		Labels:      nil,
@@ -156,7 +154,7 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 			genNamespace(nsName), genNamespace(defaultNamespace)).
 		Build()
 
-	namespaceSpec := appskubermaticv1.NamespaceSpec{
+	namespaceSpec := appskubermaticv1.AppNamespaceSpec{
 		Name:        nsName,
 		Create:      false,
 		Labels:      nil,
@@ -179,71 +177,6 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 	}
 	if ns.Annotations != nil {
 		t.Errorf("Annotations should not have been set. actual=%v", ns.Labels)
-	}
-}
-
-func TestApplicationManager_deleteNamespace(t *testing.T) {
-	nsName := "foo"
-	testCases := []struct {
-		name            string
-		userClient      ctrlruntimeclient.Client
-		createNamespace bool
-	}{
-		{
-			name: "scenario 1: when Namespace.create=true then namespace should be deleted",
-			userClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithObjects(
-					genNamespace(nsName), genNamespace(defaultNamespace)).
-				Build(),
-			createNamespace: true,
-		},
-		{
-			name: "scenario 2: when Namespace.create=false then namespace should not be deleted",
-			userClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithObjects(
-					&corev1.Namespace{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: nsName,
-						},
-					}).
-				Build(),
-			createNamespace: false,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			app := genApplicationInstallation(appskubermaticv1.NamespaceSpec{
-				Name:        nsName,
-				Create:      tc.createNamespace,
-				Labels:      nil,
-				Annotations: nil,
-			})
-			appManager := &ApplicationManager{}
-			if err := appManager.deleteNamespace(ctx, kubermaticlog.Logger, app, tc.userClient); err != nil {
-				t.Errorf("unexpected error when calling 'appManager.deleteNamespace(...)': %v", err)
-			}
-
-			ns := &corev1.Namespace{}
-			err := tc.userClient.Get(ctx, types.NamespacedName{Name: nsName}, ns)
-			if tc.createNamespace {
-				if err == nil {
-					t.Error("namespace should have been delete")
-				}
-				if !apierrors.IsNotFound(err) {
-					t.Errorf("can not check that namespace has been deleted: %v", err)
-				}
-			} else if err != nil {
-				if apierrors.IsNotFound(err) {
-					t.Error("namespace should not have been delete")
-				} else {
-					t.Errorf("can not check that namespace has not been deleted: %v", err)
-				}
-			}
-		})
 	}
 }
 
@@ -272,7 +205,7 @@ func contains(actual map[string]string, expected map[string]string) error {
 	return nil
 }
 
-func genApplicationInstallation(namspaceSpec appskubermaticv1.NamespaceSpec) *appskubermaticv1.ApplicationInstallation {
+func genApplicationInstallation(namspaceSpec appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-",
@@ -282,7 +215,7 @@ func genApplicationInstallation(namspaceSpec appskubermaticv1.NamespaceSpec) *ap
 			Namespace: namspaceSpec,
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    "applicationDef1",
-				Version: appskubermaticv1.Version{Version: *semverlib.MustParse("1.0.0")},
+				Version: "1.0.0",
 			},
 		},
 		Status: appskubermaticv1.ApplicationInstallationStatus{},

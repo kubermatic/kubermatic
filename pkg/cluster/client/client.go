@@ -26,6 +26,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -85,7 +86,7 @@ func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
-	address := c.GetAddress()
+	address := c.Status.Address
 	for _, cluster := range cfg.Clusters {
 		cluster.Server = address.URL
 	}
@@ -113,7 +114,7 @@ func (p *Provider) GetClientConfig(ctx context.Context, c *kubermaticv1.Cluster,
 	}
 
 	if p.useExternalAddress {
-		address := c.GetAddress()
+		address := c.Status.Address
 		for _, cluster := range cfg.Clusters {
 			cluster.Server = address.URL
 		}
@@ -151,4 +152,14 @@ func (p *Provider) GetClient(ctx context.Context, c *kubermaticv1.Cluster, optio
 	}
 
 	return p.restMapperCache.Client(config)
+}
+
+// GetK8sClient returns a k8s go client.
+func (p *Provider) GetK8sClient(ctx context.Context, c *kubermaticv1.Cluster, options ...ConfigOption) (kubernetes.Interface, error) {
+	config, err := p.GetClientConfig(ctx, c, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	return kubernetes.NewForConfig(config)
 }

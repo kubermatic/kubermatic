@@ -5,6 +5,7 @@ metadata:
   labels:
     app: usercluster-controller
   name: usercluster-controller
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -40,10 +41,26 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000","-cluster-name","de-test-01","-dns-cluster-ip","10.240.16.10","-overwrite-registry","","-version","1.23.5","-enable-ssh-key-agent=true","-opa-integration=false","-ca-bundle=/opt/ca-bundle/ca-bundle.pem","-node-local-dns-cache=true","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8","-openvpn-server-port","30003","-cloud-provider-name","bringyourown","-user-cluster-monitoring=true","-user-cluster-logging=false","-mla-gateway-url","https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30005","-node-labels","{\"my-label\":\"my-value\"}"]}'
+        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000","-cluster-name","de-test-01","-dns-cluster-ip","10.240.16.10","-overwrite-registry","","-version","1.23.5","-application-cache","/applications-cache","-enable-ssh-key-agent=true","-opa-integration=false","-ca-bundle=/opt/ca-bundle/ca-bundle.pem","-node-local-dns-cache=true","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8","-openvpn-server-port","30003","-cloud-provider-name","bringyourown","-user-cluster-monitoring=true","-user-cluster-logging=false","-mla-gateway-url","https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30005","-node-labels","{\"my-label\":\"my-value\"}"]}'
         command:
         - /http-prober-bin/http-prober
         env:
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
+        - name: NO_PROXY
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: no_proxy
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: NAMESPACE
           valueFrom:
             fieldRef:
@@ -74,6 +91,8 @@ spec:
         - mountPath: /opt/ca-bundle/
           name: ca-bundle
           readOnly: true
+        - mountPath: /applications-cache
+          name: applications-cache
         - mountPath: /http-prober-bin
           name: http-prober-bin
       imagePullSecrets:
@@ -97,6 +116,9 @@ spec:
       - configMap:
           name: ca-bundle
         name: ca-bundle
+      - emptyDir:
+          sizeLimit: 300Mi
+        name: applications-cache
       - emptyDir: {}
         name: http-prober-bin
 status: {}

@@ -13,26 +13,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 groups:
   - name: velero
     rules:
       - alert: VeleroBackupTakesTooLong
         annotations:
           message: Last backup with schedule {{ $labels.schedule }} has not finished successfully within 60min.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-velerobackuptakestoolong
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-velerobackuptakestoolong
         expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600
         for: 5m
         labels:
           severity: warning
-          resource: '{{ $labels.schedule }}'
-          service: 'velero'
+          resource: "{{ $labels.schedule }}"
+          service: "velero"
       - alert: VeleroNoRecentBackup
         annotations:
           message: There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours.
-          runbook_url: https://docs.kubermatic.com/kubermatic/master/cheat_sheets/alerting_runbook/#alert-veleronorecentbackup
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-veleronorecentbackup
         expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
         labels:
           severity: critical
-          resource: '{{ $labels.schedule }}'
-          service: 'velero'
+          resource: "{{ $labels.schedule }}"
+          service: "velero"

@@ -18,91 +18,32 @@ package scenarios
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	nutanixtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 
 	"k8s.io/utils/pointer"
 )
 
 const (
-	nutanixDatacenter = "nutanix-ger"
-	nutanixCPUs       = 2
-	nutanixMemoryMB   = 4096
-	nutanixDiskSize   = 40
+	nutanixCPUs     = 2
+	nutanixMemoryMB = 4096
+	nutanixDiskSize = 40
 )
 
-// GetNutanixScenarios returns a matrix of (version x operating system).
-func GetNutanixScenarios(versions []*semver.Semver) []Scenario {
-	var scenarios []Scenario
-	for _, v := range versions {
-		// Ubuntu
-		scenarios = append(scenarios, &nutanixScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Ubuntu: &apimodels.UbuntuSpec{},
-			},
-		})
-		// CentOS
-		scenarios = append(scenarios, &nutanixScenario{
-			version: v,
-			osSpec: apimodels.OperatingSystemSpec{
-				Centos: &apimodels.CentOSSpec{},
-			},
-		})
-	}
-
-	return scenarios
-}
-
 type nutanixScenario struct {
-	version *semver.Semver
-	osSpec  apimodels.OperatingSystemSpec
-}
-
-func (s *nutanixScenario) Name() string {
-	return fmt.Sprintf("nutanix-%s-%s", getOSNameFromSpec(s.osSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
-}
-
-func (s *nutanixScenario) APICluster(secrets types.Secrets) *apimodels.CreateClusterSpec {
-	spec := &apimodels.CreateClusterSpec{
-		Cluster: &apimodels.Cluster{
-			Spec: &apimodels.ClusterSpec{
-				Cloud: &apimodels.CloudSpec{
-					DatacenterName: nutanixDatacenter,
-					Nutanix: &apimodels.NutanixCloudSpec{
-						Username: secrets.Nutanix.Username,
-						Password: secrets.Nutanix.Password,
-						Csi: &apimodels.NutanixCSIConfig{
-							Endpoint: secrets.Nutanix.CSIEndpoint,
-							Password: secrets.Nutanix.CSIPassword,
-							Username: secrets.Nutanix.CSIUsername,
-						},
-						ProxyURL:    secrets.Nutanix.ProxyURL,
-						ClusterName: secrets.Nutanix.ClusterName,
-						ProjectName: secrets.Nutanix.ProjectName,
-					},
-				},
-				Version: apimodels.Semver(s.version.String()),
-			},
-		},
-	}
-
-	return spec
+	baseScenario
 }
 
 func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
+		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
-			DatacenterName: nutanixDatacenter,
+			DatacenterName: secrets.Nutanix.KKPDatacenter,
 			Nutanix: &kubermaticv1.NutanixCloudSpec{
 				Username: secrets.Nutanix.Username,
 				Password: secrets.Nutanix.Password,
@@ -116,59 +57,38 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				ProjectName: secrets.Nutanix.ProjectName,
 			},
 		},
-		Version: *s.version,
+		Version: s.version,
 	}
 }
 
-func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets types.Secrets) ([]apimodels.NodeDeployment, error) {
-	osName := getOSNameFromSpec(s.osSpec)
-	replicas := int32(num)
+func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+	osSpec, err := s.OperatingSystemSpec()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build OS spec: %w", err)
+	}
 
-	return []apimodels.NodeDeployment{
-		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Nutanix: &apimodels.NutanixNodeSpec{
-							SubnetName: secrets.Nutanix.SubnetName,
-							ImageName:  fmt.Sprintf("machine-controller-e2e-%s", osName),
-							CPUs:       nutanixCPUs,
-							MemoryMB:   nutanixMemoryMB,
-							DiskSize:   nutanixDiskSize,
-						},
-					},
-					Versions: &apimodels.NodeVersionInfo{
-						Kubelet: s.version.String(),
-					},
-					OperatingSystem: &s.osSpec,
-				},
+	nodeSpec := apiv1.NodeSpec{
+		OperatingSystem: *osSpec,
+		Cloud: apiv1.NodeCloudSpec{
+			Nutanix: &apiv1.NutanixNodeSpec{
+				SubnetName: secrets.Nutanix.SubnetName,
+				ImageName:  s.datacenter.Spec.Nutanix.Images[s.operatingSystem],
+				CPUs:       nutanixCPUs,
+				MemoryMB:   nutanixMemoryMB,
+				DiskSize:   pointer.Int64(nutanixDiskSize),
 			},
 		},
-	}, nil
-}
+	}
 
-func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	// See alibaba provider for more info on this.
-	return nil, errors.New("not implemented for gitops yet")
+	config, err := machine.GetNutanixProviderConfig(cluster, nodeSpec, s.datacenter)
+	if err != nil {
+		return nil, err
+	}
 
-	//nolint:govet
-	os := getOSNameFromSpec(s.osSpec)
-
-	md, err := createMachineDeployment(num, s.version, os, s.osSpec, providerconfig.CloudProviderNutanix, nutanixtypes.RawConfig{
-		SubnetName: providerconfig.ConfigVarString{Value: secrets.Nutanix.SubnetName},
-		ImageName:  providerconfig.ConfigVarString{Value: fmt.Sprintf("machine-controller-e2e-%s", os)},
-		CPUs:       nutanixCPUs,
-		MemoryMB:   nutanixMemoryMB,
-		DiskSize:   pointer.Int64(nutanixDiskSize),
-	})
+	md, err := s.createMachineDeployment(num, config)
 	if err != nil {
 		return nil, err
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *nutanixScenario) OS() apimodels.OperatingSystemSpec {
-	return s.osSpec
 }

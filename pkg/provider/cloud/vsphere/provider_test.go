@@ -40,14 +40,14 @@ func TestGetCredentialsForCluster(t *testing.T) {
 		secretKeySelector provider.SecretKeySelectorValueFunc
 		dc                *kubermaticv1.DatacenterSpecVSphere
 		expectedUser      string
-		expectedPasword   string
+		expectedPassword  string
 		expectedError     string
 	}{
 		{
-			name:            "User from cluster",
-			cloudspec:       testVsphereCloudSpec("user", "pass", "", "", true),
-			expectedUser:    "user",
-			expectedPasword: "pass",
+			name:             "User from cluster",
+			cloudspec:        testVsphereCloudSpec("user", "pass", "", "", true),
+			expectedUser:     "user",
+			expectedPassword: "pass",
 		},
 		{
 			name:      "User from secret",
@@ -56,20 +56,20 @@ func TestGetCredentialsForCluster(t *testing.T) {
 				resources.VsphereUsername: "user",
 				resources.VspherePassword: "pass",
 			}),
-			expectedUser:    "user",
-			expectedPasword: "pass",
+			expectedUser:     "user",
+			expectedPassword: "pass",
 		},
 		{
-			name:            "InfraManagementUser from clusters InfraManagementUser field",
-			cloudspec:       testVsphereCloudSpec("a", "b", "infraManagementUser", "infraManagementUserPass", true),
-			expectedUser:    "infraManagementUser",
-			expectedPasword: "infraManagementUserPass",
+			name:             "InfraManagementUser from clusters InfraManagementUser field",
+			cloudspec:        testVsphereCloudSpec("a", "b", "infraManagementUser", "infraManagementUserPass", true),
+			expectedUser:     "infraManagementUser",
+			expectedPassword: "infraManagementUserPass",
 		},
 		{
-			name:            "InfraManagementUser from clusters user field",
-			cloudspec:       testVsphereCloudSpec("user", "pass", "", "", false),
-			expectedUser:    "user",
-			expectedPasword: "pass",
+			name:             "InfraManagementUser from clusters user field",
+			cloudspec:        testVsphereCloudSpec("user", "pass", "", "", false),
+			expectedUser:     "user",
+			expectedPassword: "pass",
 		},
 		{
 			name:      "InfraManagementUser from secrets InfraManagementUser field",
@@ -78,8 +78,8 @@ func TestGetCredentialsForCluster(t *testing.T) {
 				resources.VsphereInfraManagementUserUsername: "user",
 				resources.VsphereInfraManagementUserPassword: "pass",
 			}),
-			expectedUser:    "user",
-			expectedPasword: "pass",
+			expectedUser:     "user",
+			expectedPassword: "pass",
 		},
 		{
 			name:      "InfraManagementUser from secrets User field",
@@ -88,8 +88,8 @@ func TestGetCredentialsForCluster(t *testing.T) {
 				resources.VsphereUsername: "user",
 				resources.VspherePassword: "pass",
 			}),
-			expectedUser:    "user",
-			expectedPasword: "pass",
+			expectedUser:     "user",
+			expectedPassword: "pass",
 		},
 		{
 			name:      "InfraManagementUser from DC takes precedence",
@@ -104,11 +104,11 @@ func TestGetCredentialsForCluster(t *testing.T) {
 					Password: "dc-pass",
 				},
 			},
-			expectedUser:    "dc-user",
-			expectedPasword: "dc-pass",
+			expectedUser:     "dc-user",
+			expectedPassword: "dc-pass",
 		},
 		{
-			name:      "InfraManagementUser from DC takes precedence over InfraMangementUser from cluster",
+			name:      "InfraManagementUser from DC takes precedence over InfraManagementUser from cluster",
 			cloudspec: testVsphereCloudSpec("", "", "cluster-infra-user", "cluster-infra-pass", true),
 			dc: &kubermaticv1.DatacenterSpecVSphere{
 				InfraManagementUser: &kubermaticv1.VSphereCredentials{
@@ -116,8 +116,8 @@ func TestGetCredentialsForCluster(t *testing.T) {
 					Password: "dc-pass",
 				},
 			},
-			expectedUser:    "dc-user",
-			expectedPasword: "dc-pass",
+			expectedUser:     "dc-user",
+			expectedPassword: "dc-pass",
 		},
 	}
 
@@ -137,8 +137,8 @@ func TestGetCredentialsForCluster(t *testing.T) {
 			if user != tc.expectedUser {
 				t.Errorf("expected user %q, got user %q", tc.expectedUser, user)
 			}
-			if password != tc.expectedPasword {
-				t.Errorf("expected password %q, got password %q", tc.expectedPasword, password)
+			if password != tc.expectedPassword {
+				t.Errorf("expected password %q, got password %q", tc.expectedPassword, password)
 			}
 		})
 	}

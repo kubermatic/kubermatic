@@ -15,7 +15,7 @@
 # This does not work, as the chart's templating explodes if
 # we inject a templating directive here. `sed` it is, then.
 #image:
-#  repository: '{{ Registry "public.ecr.aws" }}/aws-ec2/aws-node-termination-handler'
+#  repository: '{{ Image "public.ecr.aws/aws-ec2/aws-node-termination-handler" }}'
 
 fullnameOverride: "aws-node-termination-handler"
 

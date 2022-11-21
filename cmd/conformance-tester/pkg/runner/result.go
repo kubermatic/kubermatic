@@ -18,6 +18,7 @@ package runner
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/onsi/ginkgo/reporters"
 
@@ -26,6 +27,7 @@ import (
 
 type testResult struct {
 	report   *reporters.JUnitTestSuite
+	duration time.Duration
 	err      error
 	scenario scenarios.Scenario
 }
@@ -65,7 +67,7 @@ func printDetailedReport(report *reporters.JUnitTestSuite) {
 			}
 
 			fmt.Printf("[FAIL] - %s\n", t.Name)
-			fmt.Printf("      %s\n", t.FailureMessage.Message)
+			fmt.Printf("         %s\n", t.FailureMessage.Message)
 		}
 	}
 

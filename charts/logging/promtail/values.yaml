@@ -54,26 +54,26 @@ promtail:
     effect: NoSchedule
 
   config:
-    lokiAddress: http://loki:3100/loki/api/v1/push
-    client:
-      # Maximum wait period before sending batch
-      batchwait: 1s
-      # Maximum batch size to accrue before sending, unit is byte
-      batchsize: 102400
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+        # Maximum wait period before sending batch
+        batchwait: 1s
+        # Maximum batch size to accrue before sending, unit is byte
+        batchsize: 102400
 
-      # Maximum time to wait for server to respond to a request
-      timeout: 10s
+        # Maximum time to wait for server to respond to a request
+        timeout: 10s
 
-      backoff_config:
-        # Initial backoff time between retries
-        min_period: 100ms
-        # Maximum backoff time between retries
-        max_period: 5s
-        # Maximum number of retries when sending batches, 0 means infinite retries
-        max_retries: 20
+        backoff_config:
+          # Initial backoff time between retries
+          min_period: 100ms
+          # Maximum backoff time between retries
+          max_period: 5s
+          # Maximum number of retries when sending batches, 0 means infinite retries
+          max_retries: 20
 
-      # The labels to add to any time series or alerts when communicating with loki
-      external_labels: {}
+        # The labels to add to any time series or alerts when communicating with loki
+        external_labels: {}
 
     serverPort: 3101
     positions:
@@ -101,6 +101,8 @@ promtail:
         - job_name: kubernetes-pods-name
           kubernetes_sd_configs:
           - role: pod
+          pipeline_stages:
+          - cri: {}
           relabel_configs:
           - source_labels:
             - __meta_kubernetes_pod_label_name
@@ -142,6 +144,20 @@ promtail:
         - job_name: kubernetes-pods-app
           kubernetes_sd_configs:
           - role: pod
+          pipeline_stages:
+          - cri: {}
+          - match:
+              selector: '{app="k8c-events-lokiloader"}'
+              stages:
+                - json:
+                    expressions:
+                      clusterID: clusterID
+                      projectID: projectID
+                      seed: seed
+                - labels:
+                    clusterID:
+                    projectID:
+                    seed:
           relabel_configs:
           - action: drop
             regex: .+
@@ -187,6 +203,8 @@ promtail:
         - job_name: kubernetes-pods-direct-controllers
           kubernetes_sd_configs:
           - role: pod
+          pipeline_stages:
+          - cri: {}
           relabel_configs:
           - action: drop
             regex: .+
@@ -238,6 +256,8 @@ promtail:
         - job_name: kubernetes-pods-indirect-controller
           kubernetes_sd_configs:
           - role: pod
+          pipeline_stages:
+          - cri: {}
           relabel_configs:
           - action: drop
             regex: .+
@@ -291,6 +311,8 @@ promtail:
         - job_name: kubernetes-pods-static
           kubernetes_sd_configs:
           - role: pod
+          pipeline_stages:
+          - cri: {}
           relabel_configs:
           - action: drop
             regex: ''

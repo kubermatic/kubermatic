@@ -28,7 +28,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -36,6 +37,118 @@ import (
 func apiPodLabels() map[string]string {
 	return map[string]string{
 		common.NameLabel: APIDeploymentName,
+	}
+}
+
+func APIServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+	return func() (string, reconciling.ServiceAccountCreator) {
+		return apiServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			return sa, nil
+		}
+	}
+}
+
+func APIClusterRoleName(cfg *kubermaticv1.KubermaticConfiguration) string {
+	return fmt.Sprintf("%s:%s-api", cfg.Namespace, cfg.Name)
+}
+
+func APIClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleCreatorGetter {
+	name := APIClusterRoleName(cfg)
+
+	return func() (string, reconciling.ClusterRoleCreator) {
+		return name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+			cr.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"kubermatic.k8c.io", "apps.kubermatic.k8c.io"},
+					Resources: []string{"*"},
+					Verbs:     []string{"*"},
+				},
+				{
+					APIGroups: []string{"operatingsystemmanager.k8c.io"},
+					Resources: []string{"operatingsystemprofiles"},
+					Verbs:     []string{"get", "list"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"events"},
+					Verbs:     []string{"get", "list", "watch", "create", "patch"},
+				},
+				// TODO: Maybe split this out into a dedicated ClusterRole and
+				// dynamically manage the resourceNames, so this isn't too broad
+				{
+					APIGroups: []string{""},
+					Resources: []string{"users", "groups", "serviceaccounts"},
+					Verbs:     []string{"impersonate"},
+				},
+			}
+
+			return cr, nil
+		}
+	}
+}
+
+func APIRoleCreator() reconciling.NamedRoleCreatorGetter {
+	return func() (string, reconciling.RoleCreator) {
+		return apiServiceAccountName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Rules = []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{""},
+					Resources: []string{"secrets"},
+					Verbs:     []string{"*"},
+				},
+			}
+
+			return r, nil
+		}
+	}
+}
+
+func APIClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
+	return fmt.Sprintf("%s:%s-api", cfg.Namespace, cfg.Name)
+}
+
+func APIClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
+	name := APIClusterRoleBindingName(cfg)
+
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
+		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+			crb.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "ClusterRole",
+				Name:     APIClusterRoleName(cfg),
+			}
+
+			crb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      apiServiceAccountName,
+					Namespace: cfg.Namespace,
+				},
+			}
+
+			return crb, nil
+		}
+	}
+}
+
+func APIRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+	return func() (string, reconciling.RoleBindingCreator) {
+		return apiServiceAccountName, func(crb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			crb.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.GroupName,
+				Kind:     "Role",
+				Name:     apiServiceAccountName,
+			}
+
+			crb.Subjects = []rbacv1.Subject{
+				{
+					Kind: rbacv1.ServiceAccountKind,
+					Name: apiServiceAccountName,
+				},
+			}
+
+			return crb, nil
+		}
 	}
 }
 
@@ -69,7 +182,7 @@ func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName 
 				"fluentbit.io/parser":  "json_iso",
 			}
 
-			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			d.Spec.Template.Spec.ServiceAccountName = apiServiceAccountName
 
 			volumes := []corev1.Volume{
 				{
@@ -129,11 +242,16 @@ func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName 
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
+			tag := versions.UI
+			if cfg.Spec.UI.DockerTag != "" {
+				tag = cfg.Spec.UI.DockerTag
+			}
+
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "api",
-					Image:   cfg.Spec.API.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.API.DockerRepository + ":" + tag,
 					Command: []string{"kubermatic-api"},
 					Args:    args,
 					Env:     common.ProxyEnvironmentVars(cfg),
@@ -164,7 +282,7 @@ func APIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedP
 	name := "kubermatic-api"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
-		return name, func(pdb *policyv1beta1.PodDisruptionBudget) (*policyv1beta1.PodDisruptionBudget, error) {
+		return name, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			// To prevent the PDB from blocking node rotations, we accept
 			// 0 minAvailable if the replica count is only 1.
 			// NB: The cfg is defaulted, so Replicas==nil cannot happen.

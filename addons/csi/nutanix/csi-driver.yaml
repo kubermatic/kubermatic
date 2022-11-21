@@ -158,7 +158,7 @@ spec:
       hostNetwork: true
       containers:
         - name: driver-registrar
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.2.0
+          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.2.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --v=5
@@ -189,7 +189,7 @@ spec:
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
-          image: {{ Registry "quay.io" }}/karbon/ntnx-csi:v2.5.0
+          image: {{ Image "quay.io/karbon/ntnx-csi:v2.6.0" }}
           imagePullPolicy: IfNotPresent
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -250,7 +250,7 @@ spec:
           volumeMounts:
             - mountPath: /csi
               name: plugin-dir
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.3.0
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.3.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=/csi/csi.sock
@@ -310,7 +310,7 @@ spec:
       hostNetwork: true
       containers:
         - name: csi-provisioner
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v2.2.2
+          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v2.2.2" }}
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
@@ -336,7 +336,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-resizer
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.2.0
+          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.2.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --v=5
@@ -353,7 +353,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v4.2.1
+          image: {{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v4.2.1" }}
           imagePullPolicy: IfNotPresent
           args:
           - --csi-address=$(ADDRESS)
@@ -367,7 +367,7 @@ spec:
           - name: socket-dir
             mountPath: /csi
         - name: ntnx-csi-plugin
-          image: {{ Registry "quay.io" }}/karbon/ntnx-csi:v2.5.0
+          image: {{ Image "quay.io/karbon/ntnx-csi:v2.6.0" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: true
@@ -417,7 +417,7 @@ spec:
           volumeMounts:
             - mountPath: /csi
               name: socket-dir
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.3.0
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.3.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=/csi/csi.sock

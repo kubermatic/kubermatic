@@ -5,6 +5,7 @@ metadata:
   labels:
     app: dns-resolver
   name: dns-resolver
+  namespace: cluster-de-test-01
 spec:
   replicas: 2
   selector:
@@ -45,7 +46,7 @@ spec:
       - args:
         - -conf
         - /etc/coredns/Corefile
-        image: k8s.gcr.io/coredns/coredns:v1.8.4
+        image: registry.k8s.io/coredns/coredns:v1.8.6
         name: dns-resolver
         readinessProbe:
           failureThreshold: 3

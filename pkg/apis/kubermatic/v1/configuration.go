@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=always;externalCloudProvider
+// +kubebuilder:validation:Enum=always;externalCloudProvider;nonAMD64WithCanalAndIPVS
 
 // ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version.
 type ConditionType string
@@ -61,7 +61,16 @@ type KubermaticConfiguration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec KubermaticConfigurationSpec `json:"spec,omitempty"`
+	Spec   KubermaticConfigurationSpec   `json:"spec,omitempty"`
+	Status KubermaticConfigurationStatus `json:"status,omitempty"`
+}
+
+// KubermaticConfigurationStatus stores status information about a KubermaticConfiguration.
+type KubermaticConfigurationStatus struct {
+	// KubermaticVersion current Kubermatic Version.
+	KubermaticVersion string `json:"kubermaticVersion,omitempty"`
+	// KubermaticEdition current Kubermatic Edition , i.e. Community Edition or Enterprise Edition.
+	KubermaticEdition string `json:"kubermaticEdition,omitempty"`
 }
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.
@@ -210,7 +219,7 @@ type KubermaticUserClusterConfiguration struct {
 	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
-	// NodePortRange is the port range for customer clusters - this must match the NodePort
+	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
 	NodePortRange string `json:"nodePortRange,omitempty"`
 	// Monitoring can be used to fine-tune to in-cluster Prometheus.
@@ -224,6 +233,8 @@ type KubermaticUserClusterConfiguration struct {
 	APIServerReplicas *int32 `json:"apiserverReplicas,omitempty"`
 	// MachineController configures the Machine Controller
 	MachineController MachineControllerConfiguration `json:"machineController,omitempty"`
+	// OperatingSystemManager configures the image repo and the tag version for osm deployment.
+	OperatingSystemManager OperatingSystemManager `json:"operatingSystemManager,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -234,14 +245,14 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	DisableDefaultScrapingConfigs bool `json:"disableDefaultScrapingConfigs,omitempty"`
 	// CustomRules can be used to inject custom recording and alerting rules. This field
 	// must be a YAML-formatted string with a `group` element at its root, as documented
-	// on https://prometheus.io/docs/prometheus/2.14/configuration/alerting_rules/.
+	// on https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/.
 	// This value is treated as a Go template, which allows to inject dynamic values like
 	// the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
 	// and the documentation for more information on the available fields.
 	CustomRules string `json:"customRules,omitempty"`
 	// CustomScrapingConfigs can be used to inject custom scraping rules. This must be a
 	// YAML-formatted string containing an array of scrape configurations as documented
-	// on https://prometheus.io/docs/prometheus/2.14/configuration/configuration/#scrape_config.
+	// on https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config.
 	// This value is treated as a Go template, which allows to inject dynamic values like
 	// the internal cluster address or the cluster ID. Refer to pkg/resources/prometheus
 	// and the documentation for more information on the available fields.
@@ -258,6 +269,18 @@ type MachineControllerConfiguration struct {
 	ImageRepository string `json:"imageRepository,omitempty"`
 	// ImageTag is used to override the Machine Controller image.
 	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
+	ImageTag string `json:"imageTag,omitempty"`
+}
+
+// OperatingSystemManager configures the image repo and the tag version for osm deployment.
+type OperatingSystemManager struct {
+	// ImageRepository is used to override the OperatingSystemManager image repository.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
+	ImageRepository string `json:"imageRepository,omitempty"`
+	// ImageTag is used to override the OperatingSystemManager image.
+	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
+	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
 	ImageTag string `json:"imageTag,omitempty"`
 }
 
@@ -344,6 +367,28 @@ type KubermaticVersioningConfiguration struct {
 
 	// ProviderIncompatibilities lists all the Kubernetes version incompatibilities
 	ProviderIncompatibilities []Incompatibility `json:"providerIncompatibilities,omitempty"`
+
+	// ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
+	ExternalClusters map[ExternalClusterProviderType]ExternalClusterProviderVersioningConfiguration `json:"externalClusters,omitempty"`
+}
+
+// ExternalClusterProviderType is used to indicate ExternalCluster Provider Types.
+type ExternalClusterProviderType string
+
+const (
+	EKSProviderType ExternalClusterProviderType = "eks"
+	GKEProviderType ExternalClusterProviderType = "gke"
+	AKSProviderType ExternalClusterProviderType = "aks"
+)
+
+// ExternalClusterProviderVersioningConfiguration configures the available and default Kubernetes versions for ExternalCluster Providers.
+type ExternalClusterProviderVersioningConfiguration struct {
+	// Versions lists the available versions.
+	Versions []semver.Semver `json:"versions,omitempty"`
+	// Default is the default version to offer users.
+	Default *semver.Semver `json:"default,omitempty"`
+	// Updates is a list of available upgrades.
+	Updates []semver.Semver `json:"updates,omitempty"`
 }
 
 // Update represents an update option for a user cluster.
@@ -373,7 +418,7 @@ type Incompatibility struct {
 	// Provider to which to apply the compatibility check.
 	// Empty string matches all providers
 	Provider ProviderType `json:"provider,omitempty"`
-	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
+	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
 	Version string `json:"version,omitempty"`
 	// Condition is the cluster or datacenter condition that must be met to block a specific version
 	Condition ConditionType `json:"condition,omitempty"`

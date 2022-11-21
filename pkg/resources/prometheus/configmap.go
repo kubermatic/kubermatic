@@ -23,7 +23,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -86,7 +86,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 			// get custom scraping configs and rules
 			customData := &CustomizationData{
 				Cluster:                  cluster,
-				APIServerHost:            cluster.GetAddress().InternalName,
+				APIServerHost:            cluster.Status.Address.InternalName,
 				EtcdTLS:                  etcdTLS,
 				ApiserverTLS:             apiserverTLS,
 				ScrapingAnnotationPrefix: scrapeAnnotationPrefix,
@@ -386,6 +386,29 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
+
+# scrape kubelet resources
+- job_name: resources
+  scheme: https
+  tls_config:
+{{ .ApiserverTLSConfig | indent 4 }}
+
+  kubernetes_sd_configs:
+  - role: node
+    api_server: 'https://{{ .APIServerHost }}'
+    tls_config:
+{{ .ApiserverTLSConfig | indent 6 }}
+
+  relabel_configs:
+  - action: labelmap
+    regex: __meta_kubernetes_node_label_(.+)
+  - target_label: __address__
+    replacement: '{{ .APIServerHost }}'
+  - source_labels: [__meta_kubernetes_node_name]
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics/resource
+
 {{- end }}
 
 {{- with .CustomScrapingConfigs }}

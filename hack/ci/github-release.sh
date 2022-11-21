@@ -142,13 +142,6 @@ function build_installer() {
   fi
 }
 
-function build_tools() {
-  make clean image-loader
-  if [ "$GOOS" == "windows" ]; then
-    mv _build/image-loader _build/image-loader.exe
-  fi
-}
-
 function ship_archive() {
   local archive="$1"
   local buildTarget="$2"
@@ -243,13 +236,14 @@ for buildTarget in $RELEASE_PLATFORMS; do
   echodate "Creating CE archive..."
 
   # switch Docker repository used by the operator to the CE repository
-  yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic'
+  yq --inplace '.kubermaticOperator.image.repository = "quay.io/kubermatic/kubermatic"' charts/kubermatic-operator/values.yaml
 
   archive="_dist/kubermatic-ce-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
     --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/values.example.mla.yaml|examples/values.example.mla.yaml|' \
     --transform='flags=r;s|charts/kubermatic.example.ce.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
     _build/kubermatic-installer* \
@@ -259,12 +253,14 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/kubermatic-operator \
     charts/logging \
     charts/minio \
+    charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
     charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ce.yaml \
+    charts/values.example.mla.yaml \
     charts/kubermatic.example.ce.yaml \
     charts/seed.example.yaml \
     LICENSE \
@@ -278,13 +274,14 @@ for buildTarget in $RELEASE_PLATFORMS; do
   echodate "Creating EE archive..."
 
   # switch Docker repository used by the operator to the EE repository
-  yq write --inplace charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
+  yq --inplace '.kubermaticOperator.image.repository = "quay.io/kubermatic/kubermatic-ee"' charts/kubermatic-operator/values.yaml
 
   archive="_dist/kubermatic-ee-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
     --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/values.example.mla.yaml|examples/values.example.mla.yaml|' \
     --transform='flags=r;s|charts/kubermatic.example.ee.yaml|examples/kubermatic.example.yaml|' \
     --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
     --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
@@ -295,33 +292,19 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/kubermatic-operator \
     charts/logging \
     charts/minio \
+    charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
     charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ee.yaml \
+    charts/values.example.mla.yaml \
     charts/kubermatic.example.ee.yaml \
     charts/seed.example.yaml \
     LICENSE \
     pkg/ee/LICENSE \
     CHANGELOG.md
-
-  ship_archive "$archive" "$buildTarget"
-
-  # tools do not have CE/EE dependencies, so it's enough to build
-  # one archive per build target
-  echodate "Compiling Tools ($buildTarget)..."
-  KUBERMATIC_EDITION=ce build_tools
-
-  echodate "Creating Tools archive..."
-
-  archive="_dist/tools-$RELEASE_NAME-$buildTarget.tar.gz"
-  # GNU tar is required
-  tar czf "$archive" \
-    --transform='flags=r;s|_build/||' \
-    _build/image-loader* \
-    LICENSE
 
   ship_archive "$archive" "$buildTarget"
 done

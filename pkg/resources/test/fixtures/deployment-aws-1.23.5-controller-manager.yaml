@@ -5,6 +5,7 @@ metadata:
   labels:
     app: controller-manager
   name: controller-manager
+  namespace: cluster-de-test-01
 spec:
   replicas: 1
   selector:
@@ -23,7 +24,7 @@ spec:
         app.kubernetes.io/version: 1.23.5
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
-        cloud-config-configmap-revision: "123456"
+        cloud-config-secret-revision: "123456"
         cluster: de-test-01
         controllermanager-kubeconfig-secret-revision: "123456"
         openvpn-client-certificates-secret-revision: "123456"
@@ -64,9 +65,15 @@ spec:
         - name: SSL_CERT_FILE
           value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         - name: AWS_ACCESS_KEY_ID
-          value: aws-access-key-id
+          valueFrom:
+            secretKeyRef:
+              key: accessKeyId
+              name: cloud-credentials
         - name: AWS_SECRET_ACCESS_KEY
-          value: aws-secret-access-key
+          valueFrom:
+            secretKeyRef:
+              key: secretAccessKey
+              name: cloud-credentials
         - name: AWS_VPC_ID
           value: aws-vpn-id
         - name: AWS_ASSUME_ROLE_ARN
@@ -85,7 +92,7 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: no_proxy
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
-        image: k8s.gcr.io/kube-controller-manager:v1.23.5
+        image: registry.k8s.io/kube-controller-manager:v1.23.5
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -219,9 +226,9 @@ spec:
       - name: service-account-key
         secret:
           secretName: service-account-key
-      - configMap:
-          name: cloud-config
-        name: cloud-config
+      - name: cloud-config
+        secret:
+          secretName: cloud-config
       - name: controllermanager-kubeconfig
         secret:
           secretName: controllermanager-kubeconfig

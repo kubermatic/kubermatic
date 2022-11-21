@@ -21,7 +21,6 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
-{{ if gt .Cluster.Version.Minor 19 }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -138,7 +137,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.2.1'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.2.1" }}'
           volumeMounts:
             - name: socket-dir
               mountPath: /run/csi
@@ -148,7 +147,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
         - name: csi-resizer
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.2.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.2.0" }}'
           volumeMounts:
             - name: socket-dir
               mountPath: /run/csi
@@ -158,7 +157,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
         - name: csi-provisioner
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v2.2.2'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v2.2.2" }}'
           args:
             - --feature-gates=Topology=true
             - --default-fstype=ext4
@@ -171,7 +170,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
         - name: hcloud-csi-driver
-          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.6.0'
+          image: '{{ Image "hetznercloud/hcloud-csi-driver:1.6.0" }}'
           imagePullPolicy: Always
           env:
             - name: CSI_ENDPOINT
@@ -214,7 +213,7 @@ spec:
             allowPrivilegeEscalation: true
         - name: liveness-probe
           imagePullPolicy: Always
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.3.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.3.0" }}'
           volumeMounts:
             - mountPath: /run/csi
               name: socket-dir
@@ -260,7 +259,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-node-driver-registrar
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.2.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.2.0" }}'
           args:
             - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.hetzner.cloud/socket
           env:
@@ -277,7 +276,7 @@ spec:
           securityContext:
             privileged: true
         - name: hcloud-csi-driver
-          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.6.0'
+          image: '{{ Image "hetznercloud/hcloud-csi-driver:1.6.0" }}'
           imagePullPolicy: Always
           env:
             - name: CSI_ENDPOINT
@@ -322,7 +321,7 @@ spec:
             periodSeconds: 2
         - name: liveness-probe
           imagePullPolicy: Always
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.3.0'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.3.0" }}'
           volumeMounts:
             - mountPath: /run/csi
               name: plugin-dir
@@ -391,7 +390,6 @@ spec:
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
-{{ end }}
 {{ end }}
 {{ end }}
 {{ end }}

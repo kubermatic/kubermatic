@@ -20,22 +20,13 @@ cd $(dirname $0)/../..
 source hack/lib.sh
 
 KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-kubermatic.local}"
+KUBERMATIC_OSM_ENABLED="${KUBERMATIC_OSM_ENABLED:-false}"
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
-export SERVICE_ACCOUNT_KEY="${SERVICE_ACCOUNT_KEY:-69860bda5563ac81e3c0057d654b52532}"
 export BUILD_ID="${BUILD_ID:-abc}"
 export KUBECONFIG=${KUBECONFIG:-~/.kube/config}
 export SEED_NAME=kubermatic
 export DATA_FILE=$(realpath hack/local/data)
-
-# This defines the Kubermatic API endpoint the e2e tests will communicate with.
-# The api service is kubectl-proxied later on.
-export KUBERMATIC_API_ENDPOINT="http://localhost:8080"
-
-# Tell the conformance tester what dummy account we configure for the e2e tests.
-export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
-export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
-export KUBERMATIC_OIDC_PASSWORD="password"
 
 # The Kubermatic version to build.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
@@ -74,20 +65,6 @@ pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate
 if [ -z "${KIND_CLUSTER_NAME:-}" ]; then
   echodate "KIND_CLUSTER_NAME must be set by calling setup-kind-cluster.sh first."
   exit 1
-fi
-
-# The alias makes it easier to access the port-forwarded Dex inside the Kind cluster;
-# the token issuer cannot be localhost:5556, because pods inside the cluster would not
-# find Dex anymore. As this script can be run multiple times in the same CI job,
-# we must make sure to only add the alias once.
-if ! grep oauth /etc/hosts > /dev/null; then
-  echodate "Setting dex.oauth alias in /etc/hosts"
-  # The container runtime allows us to change the content but not to change the inode
-  # which is what sed -i does, so write to a tempfile and write the tempfiles content back.
-  temp_hosts="$(mktemp)"
-  sed "s/localhost/localhost dex.oauth/" /etc/hosts > $temp_hosts
-  sudo -- bash -c "cat $temp_hosts > /etc/hosts"
-  echodate "Set dex.oauth alias in /etc/hosts"
 fi
 
 # Build binaries and load the Docker images into the kind cluster
@@ -173,9 +150,9 @@ IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | jq --compact-output
 
 cp hack/ci/testdata/kubermatic.yaml $KUBERMATIC_CONFIG
 
-sed -i "s;__SERVICE_ACCOUNT_KEY__;$SERVICE_ACCOUNT_KEY;g" $KUBERMATIC_CONFIG
 sed -i "s;__IMAGE_PULL_SECRET__;$IMAGE_PULL_SECRET_INLINE;g" $KUBERMATIC_CONFIG
 sed -i "s;__KUBERMATIC_DOMAIN__;$KUBERMATIC_DOMAIN;g" $KUBERMATIC_CONFIG
+sed -i "s;__KUBERMATIC_OSM_ENABLED__;$KUBERMATIC_OSM_ENABLED;g" $KUBERMATIC_CONFIG
 
 HELM_VALUES_FILE="$(mktemp)"
 cat << EOF > $HELM_VALUES_FILE
@@ -184,9 +161,6 @@ kubermaticOperator:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
 EOF
-
-# append custom Dex configuration
-cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
 echodate "Debug HELM_VALUES_FILE=$HELM_VALUES_FILE"
 echodate "Debug KUBERMATIC_CONFIG=$KUBERMATIC_CONFIG"
@@ -220,13 +194,14 @@ sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
 sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
 sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
 
-retry 8 kubectl apply -f $SEED_MANIFEST
+retry 8 kubectl apply --filename $SEED_MANIFEST
+retry 5 check_seed_ready kubermatic "$SEED_NAME"
 echodate "Finished installing Seed"
 
 sleep 5
-echodate "Waiting for Kubermatic Operator to deploy Seed components..."
+echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
-echodate "Kubermatic Seed is ready."
+echodate "Kubermatic is ready."
 
 echodate "Waiting for VPA to be ready..."
 retry 9 check_all_deployments_ready kube-system
@@ -240,8 +215,3 @@ echodate "Waiting for load balancer to be ready..."
 retry 10 check_all_deployments_ready metallb-system
 echodate "Load balancer is ready."
 kubectl apply -f "$DATA_FILE"/metallb-configmap.yaml
-
-echodate "Exposing Dex and Kubermatic API to localhost..."
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 > /dev/null &
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 > /dev/null &
-echodate "Finished exposing components"

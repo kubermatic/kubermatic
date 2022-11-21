@@ -21,6 +21,7 @@
 #   - template function to replace base registry
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
+#   - set "improved-csi-idempotency": "false"
 #   - set "block-volume-snapshot": "true"
 #   - add csi-snapshotter container
 
@@ -184,7 +185,7 @@ data:
   "online-volume-extend": "true"
   "trigger-csi-fullsync": "false"
   "async-query-volume": "true"
-  "improved-csi-idempotency": "true"
+  "improved-csi-idempotency": "false"
   "improved-volume-topology": "false"
   "block-volume-snapshot": "true"
   "csi-windows-support": "false"
@@ -268,7 +269,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.4.0
+          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.4.0" }}
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -283,7 +284,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-resizer
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.4.0
+          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.4.0" }}
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -299,11 +300,10 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: vsphere-csi-controller
-          image: {{ Registry "gcr.io" }}/cloud-provider-vsphere/csi/release/driver:v2.5.1
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.6.1" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
-            - "--use-gocsi=false"
           imagePullPolicy: "Always"
           env:
             - name: CSI_ENDPOINT
@@ -353,7 +353,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.6.0
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.6.0" }}
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
@@ -361,7 +361,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: vsphere-syncer
-          image: {{ Registry "gcr.io" }}/cloud-provider-vsphere/csi/release/syncer:v2.5.1
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/syncer:v2.5.1" }}
           args:
             - "--leader-election"
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
@@ -396,7 +396,7 @@ spec:
               name: ca-bundle
               readOnly: true
         - name: csi-provisioner
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v3.1.0
+          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.1.0" }}
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -415,7 +415,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-snapshotter
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v5.0.1
+          image: {{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v5.0.1" }}
           args:
             - "--v=4"
             - "--kube-api-qps=100"
@@ -468,7 +468,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: node-driver-registrar
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.5.0
+          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.0" }}
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -491,11 +491,10 @@ spec:
                 - --mode=kubelet-registration-probe
             initialDelaySeconds: 3
         - name: vsphere-csi-node
-          image: {{ Registry "gcr.io" }}/cloud-provider-vsphere/csi/release/driver:v2.5.1
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.6.1" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
-            - "--use-gocsi=false"
           imagePullPolicy: "Always"
           env:
             - name: NODE_NAME
@@ -557,7 +556,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.6.0
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.6.0" }}
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
