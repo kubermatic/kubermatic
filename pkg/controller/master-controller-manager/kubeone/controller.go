@@ -919,7 +919,7 @@ func (r *reconciler) generateKubeOneActionPod(ctx context.Context, log *zap.Suga
 			Containers: []corev1.Container{
 				{
 					Name:    "kubeone",
-					Image:   resources.KubeOneImage,
+					Image:   resources.KubeOneImage + ":" + resources.KubeOneImageTag,
 					Command: []string{"/bin/sh"},
 					Args: []string{
 						"-c",
