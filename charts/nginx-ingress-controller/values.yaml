@@ -18,6 +18,8 @@ nginx:
   # values for the ingress-nginx chart start below
   # reference: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
   controller:
+    image:
+      registry: registry.k8s.io
     hostNetwork: false
     replicaCount: 3
     config: {}
