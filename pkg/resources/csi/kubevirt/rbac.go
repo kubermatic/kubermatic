@@ -28,13 +28,13 @@ import (
 // ServiceAccountsCreators returns the CSI serviceaccounts for KubeVirt.
 func ServiceAccountsCreators(c *kubermaticv1.Cluster) []reconciling.NamedServiceAccountCreatorGetter {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
-		ServiceAccountCreator(c),
+		ControllerServiceAccountCreator(c),
 	}
 	return creators
 }
 
-// ServiceAccountCreator returns the CSI serviceaccount for KubeVirt.
-func ServiceAccountCreator(c *kubermaticv1.Cluster) reconciling.NamedServiceAccountCreatorGetter {
+// ControllerServiceAccountCreator returns the CSI serviceaccount for KubeVirt.
+func ControllerServiceAccountCreator(c *kubermaticv1.Cluster) reconciling.NamedServiceAccountCreatorGetter {
 	return func() (name string, create reconciling.ServiceAccountCreator) {
 		return resources.KubeVirtCSIServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(resources.KubeVirtCSIServiceAccountName, nil)
