@@ -77,7 +77,7 @@ spec:
         vsphere:
           cluster: Kubermatic
           datacenter: Hamburg
-          datastore: alpha1
+          datastore: ceph-vm
           endpoint: https://vcenter.dc.k8c.io
           root_path: /Hamburg/vm/Kubermatic-dev
           templates:
