@@ -22,8 +22,6 @@ import (
 	"context"
 	"os"
 	"path"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -360,7 +358,7 @@ func buildHelClient(t *testing.T, ctx context.Context, ns *corev1.Namespace, cha
 	var chartFullPath = chartPath
 	if fi.IsDir() {
 		chartFullPath = path.Join(tempDir, path.Base(chartPath))
-		if err := copyDir(chartPath, chartFullPath); err != nil {
+		if err := test.CopyDir(chartPath, chartFullPath); err != nil {
 			t.Fatalf("failed to copy chart directory to temp dir: %s", err)
 		}
 	}
@@ -375,23 +373,4 @@ func buildHelClient(t *testing.T, ctx context.Context, ns *corev1.Namespace, cha
 		t.Fatalf("failed to create helm client: %s", err)
 	}
 	return helmClient, chartFullPath
-}
-
-func copyDir(source string, destination string) error {
-	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
-		// error may occurred if path is not accessible
-		if err != nil {
-			return err
-		}
-		relPath := strings.Replace(path, source, "", 1)
-		if info.IsDir() {
-			return os.Mkdir(filepath.Join(destination, relPath), 0755)
-		} else {
-			data, err := os.ReadFile(filepath.Join(source, relPath))
-			if err != nil {
-				return err
-			}
-			return os.WriteFile(filepath.Join(destination, relPath), data, 0755)
-		}
-	})
 }
