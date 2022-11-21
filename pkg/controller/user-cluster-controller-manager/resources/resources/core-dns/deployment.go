@@ -130,7 +130,7 @@ func getContainers(
 	return []corev1.Container{
 		{
 			Name:            resources.CoreDNSDeploymentName,
-			Image:           fmt.Sprintf("%s/%s", registryWithOverwrite(resources.RegistryK8SGCR), dns.GetCoreDNSImage(clusterVersion)),
+			Image:           fmt.Sprintf("%s/%s", registryWithOverwrite(resources.RegistryK8S), dns.GetCoreDNSImage(clusterVersion)),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			Args: []string{"-conf", "/etc/coredns/Corefile"},
