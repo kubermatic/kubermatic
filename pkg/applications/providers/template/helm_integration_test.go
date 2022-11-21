@@ -133,7 +133,7 @@ func TestHelmProvider(t *testing.T) {
 				}
 				statusUpdater(&app.Status)
 
-				//check configmap is removed
+				// check configmap is removed
 				cm := &corev1.ConfigMap{}
 				if !utils.WaitFor(interval, timeout, func() bool {
 					err := client.Get(ctx, types.NamespacedName{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)

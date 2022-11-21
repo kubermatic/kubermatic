@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -82,7 +82,7 @@ func StartTestEnvWithCleanup(t *testing.T, crdPath string) (context.Context, ctr
 		t.Fatalf("failed to start envTest: %s", err)
 	}
 
-	if err := v1.AddToScheme(scheme.Scheme); err != nil {
+	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
 		t.Fatalf("failed to add kubermaticv1 scheme: %s", err)
 	}
 

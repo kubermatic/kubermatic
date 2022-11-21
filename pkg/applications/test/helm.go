@@ -41,7 +41,7 @@ import (
 
 // Const relative to pkg/applications/helmclient/testdata/examplechart chart.
 const (
-	// ConfigmapName is the Name of the config map deployed by the examplechart and examplechart-v2
+	// ConfigmapName is the Name of the config map deployed by the examplechart and examplechart-v2.
 	ConfigmapName = "testcm"
 
 	// CmDataKey is the key in the values.yaml of examplechart / examplechart-v2 that holds custom configmap data.
@@ -108,7 +108,7 @@ func StartHttpRegistryWithCleanup(t *testing.T, glob string) string {
 }
 
 // StartHttpRegistryWithAuthAndCleanup starts a Helm http registry with basic auth enabled and uploads charts archives matching glob and returns the registry URL.
-// the basic auth is hardcoded to Username: "username", Password: "password"
+// the basic auth is hardcoded to Username: "username", Password: "password".
 func StartHttpRegistryWithAuthAndCleanup(t *testing.T, glob string) string {
 	srvWithAuth := repotest.NewTempServerWithCleanupAndBasicAuth(t, glob)
 	t.Cleanup(func() {
