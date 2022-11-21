@@ -338,7 +338,7 @@ spec:
             - /manager
           args:
             - --leader-elect
-          image: quay.io/kubermatic/kubevirt-csi-driver-operator:v0.1.1
+          image: quay.io/kubermatic/kubevirt-csi-driver-operator:v0.1.3
           imagePullPolicy: Always
           name: manager
           securityContext:
