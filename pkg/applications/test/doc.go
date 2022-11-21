@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package test constains helper functions for tests related to helm.
+// Package test contains helper functions for tests related to helm.
 package test
