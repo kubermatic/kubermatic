@@ -51,6 +51,6 @@ echodate "Successfully got secrets for dev from Vault"
 echodate "Running Konnectivity tests..."
 
 go_test konnectivity_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/konnectivity \
-  -aws-kkp-datacenter aws-eu-central-1a
+  -aws-kkp-datacenter aws-eu-west-1a
 
 echodate "Konnectivity tests done."

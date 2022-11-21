@@ -46,7 +46,7 @@ if [[ $provider == "anexia" ]]; then
 elif [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}
-    -aws-kkp-datacenter=aws-eu-central-1a"
+    -aws-kkp-datacenter=aws-eu-west-1a"
 elif [[ $provider == "packet" ]]; then
   maxDuration=90
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}

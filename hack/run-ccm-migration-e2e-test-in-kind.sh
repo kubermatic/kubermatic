@@ -66,7 +66,7 @@ azure)
 aws)
   # default version is 1.23, but AWS CCM requires 1.24, so we must explicitly
   # ask for a 1.24.x cluster
-  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-central-1a -cluster-version=1.24"
+  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-west-1a -cluster-version=1.24"
   ;;
 esac
 

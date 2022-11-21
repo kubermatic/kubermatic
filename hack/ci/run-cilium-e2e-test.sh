@@ -50,6 +50,6 @@ echodate "Successfully got secrets for dev from Vault"
 echodate "Running Cilium tests..."
 
 go_test cilium_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium \
-  -aws-kkp-datacenter aws-eu-central-1a
+  -aws-kkp-datacenter aws-eu-west-1a
 
 echodate "Cilium tests done."
