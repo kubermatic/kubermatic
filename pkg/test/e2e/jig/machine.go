@@ -671,7 +671,7 @@ func (j *MachineJig) enrichAWSProviderSpec(cluster *kubermaticv1.Cluster, datace
 	}
 
 	if awsConfig.InstanceType.Value == "" {
-		awsConfig.InstanceType.Value = "t3.small"
+		awsConfig.InstanceType.Value = "t3a.small"
 	}
 
 	if awsConfig.VpcID.Value == "" {
