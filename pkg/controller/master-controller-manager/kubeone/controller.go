@@ -208,10 +208,30 @@ func withEventFilter() predicate.Predicate {
 	}
 }
 
+func (r *reconciler) clusterPausedChecker(ctx context.Context, clusterName string) (bool, error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get cluster %q: %w", clusterName, err)
+	}
+
+	return cluster.Spec.Pause || cluster.Status.NamespaceName == "", nil
+}
+
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := r.clusterPausedChecker(ctx, request.Name)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check kubeone external cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("cluster", request.Name)
 	log.Info("Processing...")
-
 	externalCluster := &kubermaticv1.ExternalCluster{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: request.Name}, externalCluster); err != nil {
 		if !apierrors.IsNotFound(err) {
