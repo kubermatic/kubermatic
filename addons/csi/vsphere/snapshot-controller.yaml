@@ -157,7 +157,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-controller
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/snapshot-controller:{{ $controllerVersion }}
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/snapshot-controller:{{ $controllerVersion }}
           args:
             - "--v=5"
             - "--leader-election=true"
