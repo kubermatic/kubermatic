@@ -19,6 +19,8 @@ package cni
 import (
 	"fmt"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -152,10 +154,17 @@ func GetAllowedCNIVersionTransitions(cniPluginType kubermaticv1.CNIPluginType) [
 // false if it is managed as a KKP Addon.
 func IsManagedByAppInfra(cniType kubermaticv1.CNIPluginType, cniVersion string) bool {
 	if cniType == kubermaticv1.CNIPluginTypeCilium {
-		if cniVersion == "v1.12" { // TODO: use smever to check >= 1.13
+		verConstraint, err := semverlib.NewConstraint(">= 1.13.0")
+		if err != nil {
+			return false
+		}
+		ver, err := semverlib.NewVersion(cniVersion)
+		if err != nil {
+			return false
+		}
+		if verConstraint.Check(ver) {
 			return true
 		}
-		return false
 	}
 	return false
 }
