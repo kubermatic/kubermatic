@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 24) }}
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -39,3 +40,4 @@ spec:
     rule: 'RunAsAny'
   fsGroup:
     rule: 'RunAsAny'
+{{- end }}

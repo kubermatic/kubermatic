@@ -25,3 +25,6 @@ podSecurityContext:
 
 nodeSelector:
   k8c.io/aws-spot: aws-node-termination-handler
+
+rbac:
+  pspEnabled: false

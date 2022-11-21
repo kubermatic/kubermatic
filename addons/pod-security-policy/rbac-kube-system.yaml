@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 24) }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -38,3 +39,4 @@ subjects:
   - kind: Group
     apiGroup: rbac.authorization.k8s.io
     name: system:serviceaccounts
+{{- end }}
