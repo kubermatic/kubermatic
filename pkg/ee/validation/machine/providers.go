@@ -90,7 +90,7 @@ const (
 	envPacketToken     = "PACKET_API_KEY"
 	envPacketProjectID = "PACKET_PROJECT_ID"
 	// KubeVirt credential env.
-	envKubeVirtKubeConfig = "KUBEVIRT_KUBECONFIG"
+	envKubeVirtKubeconfig = "KUBEVIRT_KUBECONFIG"
 )
 
 func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) (*ResourceDetails, error) {
@@ -274,7 +274,7 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 	// KubeVirt machine size can be configured either directly or through instancetypes.
 	// If VM templating (Instancetype) is set then read cpu and memory from it.
 	if rawConfig.VirtualMachine.Instancetype != nil && len(rawConfig.VirtualMachine.Instancetype.Name) != 0 {
-		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
+		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeconfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
 		}

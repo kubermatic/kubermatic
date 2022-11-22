@@ -116,6 +116,11 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
+	err = reconcileInfraTokenAccess(ctx, cluster.Status.NamespaceName, client)
+	if err != nil {
+		return cluster, err
+	}
+
 	err = reconcileInstancetypes(ctx, cluster.Status.NamespaceName, client)
 	if err != nil {
 		return cluster, err
@@ -182,7 +187,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		if cloud.Kubevirt.CredentialsReference == nil {
 			return "", errors.New("no credentials provided")
 		}
-		kubeconfig, err = secretKeySelector(cloud.Kubevirt.CredentialsReference, resources.KubevirtKubeConfig)
+		kubeconfig, err = secretKeySelector(cloud.Kubevirt.CredentialsReference, resources.KubeVirtKubeconfig)
 		if err != nil {
 			return "", err
 		}

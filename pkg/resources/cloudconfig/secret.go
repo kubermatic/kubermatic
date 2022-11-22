@@ -17,14 +17,11 @@ limitations under the License.
 package cloudconfig
 
 import (
-	"errors"
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	vmwareclouddirectorcloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vmwareclouddirector"
-	vspherecloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +34,7 @@ const (
 	// manager on a non-ESXi host
 	// Upstream issue: https://github.com/kubernetes/kubernetes/issues/65145
 	FakeVMWareUUIDKeyName = "fakeVmwareUUID"
-	fakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
+	FakeVMWareUUID        = "VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00"
 )
 
 type creatorData interface {
@@ -66,89 +63,7 @@ func SecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
 
 			cm.Labels = resources.BaseAppLabels(resources.CloudConfigSeedSecretName, nil)
 			cm.Data[resources.CloudConfigKey] = []byte(cloudConfig)
-			cm.Data[FakeVMWareUUIDKeyName] = []byte(fakeVMWareUUID)
-
-			return cm, nil
-		}
-	}
-}
-
-func VsphereCSISecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.CSICloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			if cm.Data == nil {
-				cm.Data = map[string][]byte{}
-			}
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-
-			vsphereCloudConfig, err := getVSphereCloudConfig(data.Cluster(), data.DC(), credentials)
-			if err != nil {
-				return nil, err
-			}
-
-			cloudConfig, err := vspherecloudconfig.CloudConfigCSIToString(vsphereCloudConfig)
-			if err != nil {
-				return nil, err
-			}
-
-			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigSecretName, nil)
-			cm.Data[resources.CloudConfigKey] = []byte(cloudConfig)
-			cm.Data[FakeVMWareUUIDKeyName] = []byte(fakeVMWareUUID)
-
-			return cm, nil
-		}
-	}
-}
-
-func VMwareCloudDirectorCSISecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.CSICloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			if cm.Data == nil {
-				cm.Data = map[string][]byte{}
-			}
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-
-			vcdCloudConfig, err := vmwareclouddirectorcloudconfig.GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.DC(), credentials)
-			if err != nil {
-				return nil, err
-			}
-
-			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigSecretName, nil)
-			cm.Data[resources.CloudConfigKey] = []byte(vcdCloudConfig)
-
-			return cm, nil
-		}
-	}
-}
-
-func NutanixCSISecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.CSICloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			if cm.Data == nil {
-				cm.Data = map[string][]byte{}
-			}
-
-			credentials, err := resources.GetCredentials(data)
-			if err != nil {
-				return nil, err
-			}
-
-			if data.Cluster().Spec.Cloud.Nutanix.CSI.Port == nil {
-				return nil, errors.New("CSI Port must not be nil")
-			}
-
-			nutanixCsiConf := fmt.Sprintf("%s:%d:%s:%s", data.Cluster().Spec.Cloud.Nutanix.CSI.Endpoint, *data.Cluster().Spec.Cloud.Nutanix.CSI.Port, credentials.Nutanix.CSIUsername, credentials.Nutanix.CSIPassword)
-
-			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigSecretName, nil)
-			cm.Data[resources.CloudConfigKey] = []byte(nutanixCsiConf)
+			cm.Data[FakeVMWareUUIDKeyName] = []byte(FakeVMWareUUID)
 
 			return cm, nil
 		}

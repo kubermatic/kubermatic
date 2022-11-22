@@ -56,13 +56,6 @@ spec:
                 imageTag:
                   description: Image tag that should be used for all csi driver components
                   type: string
-                infraClusterLabels:
-                  description: The driver creates resources in the infra cluster. These
-                    resources are labeled with the values you supply in infraClusterLabels.
-                  type: string
-                infraClusterNamespace:
-                  description: Set infraClusterNamespace to the KubeVirt cluster namespace.
-                  type: string
                 storageClasses:
                   description: StorageClasses represents storage classes that the tenant
                     operator should create.
@@ -81,9 +74,6 @@ spec:
                       - infraStorageClassName
                     type: object
                   type: array
-              required:
-                - infraClusterLabels
-                - infraClusterNamespace
               type: object
             status:
               description: TenantStatus defines the observed state of Tenant.
@@ -149,157 +139,163 @@ metadata:
   creationTimestamp: null
   name: kubevirt-csi-driver-operator
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - events
-      - secrets
-      - serviceaccounts
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - nodes
-      - persistentvolumeclaims
-      - persistentvolumeclaims/status
-    verbs:
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - persistentvolumes
-    verbs:
-      - '*'
-  - apiGroups:
-      - apiextensions.k8s.io
-    resources:
-      - customresourcedefinitions
-    verbs:
-      - create
-      - list
-  - apiGroups:
-      - apps
-      - extensions
-    resources:
-      - daemonsets
-      - deployments
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - '*'
-  - apiGroups:
-      - csi.storage.k8s.io
-      - storage.k8s.io
-    resources:
-      - csidrivers
-    verbs:
-      - create
-      - get
-      - list
-      - update
-      - watch
-  - apiGroups:
-      - csi.storage.k8s.io
-      - storage.k8s.io
-    resources:
-      - csinodeinfos
-      - csinodes
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - csiprovisioner.kubevirt.io
-    resources:
-      - tenants
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - csiprovisioner.kubevirt.io
-    resources:
-      - tenants/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - csiprovisioner.kubevirt.io
-    resources:
-      - tenants/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterrolebindings
-      - clusterroles
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - snapshot.storage.k8s.io
-    resources:
-      - volumesnapshotclasses
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - snapshot.storage.k8s.io
-    resources:
-      - volumesnapshotcontents
-    verbs:
-      - '*'
-  - apiGroups:
-      - snapshot.storage.k8s.io
-    resources:
-      - volumesnapshots
-      - volumesnapshots/status
-    verbs:
-      - get
-      - list
-      - update
-      - watch
-  - apiGroups:
-      - storage.k8s.io
-    resources:
-      - csidrivers
-      - storageclasses
-      - volumeattachments
-      - volumeattachments/status
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - events
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - persistentvolumeclaims/status
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - '*'
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - delete
+- apiGroups:
+  - apps
+  - extensions
+  resources:
+  - daemonsets
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - '*'
+- apiGroups:
+  - csi.storage.k8s.io
+  - storage.k8s.io
+  resources:
+  - csinodeinfos
+  - csinodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - csiprovisioner.kubevirt.io
+  resources:
+  - tenants
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - csiprovisioner.kubevirt.io
+  resources:
+  - tenants/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - csiprovisioner.kubevirt.io
+  resources:
+  - tenants/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - csidrivers
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - create
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - volumeattachments/status
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -338,7 +334,7 @@ spec:
             - /manager
           args:
             - --leader-elect
-          image: quay.io/kubermatic/kubevirt-csi-driver-operator:v0.1.1
+          image: quay.io/kubermatic/kubevirt-csi-driver-operator:v0.2.0
           imagePullPolicy: Always
           name: manager
           securityContext:
@@ -370,19 +366,9 @@ kind: Tenant
 metadata:
   name: tenant
 spec:
-  infraClusterNamespace: {{ .Cluster.Namespace }}
-  infraClusterLabels: cluster-name={{ .Cluster.Name }}
   storageClasses:
 {{- range  .Cluster.KubeVirtInfraStorageClasses }}
    - infraStorageClassName: {{ . }}
      bus: scsi
 {{- end }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: infra-cluster-credentials
-  namespace: kubevirt-csi-driver
-data:
-  kubeconfig: {{ .Credentials.Kubevirt.CSIKubeConfig | b64enc }}
 {{end}}

@@ -130,7 +130,7 @@ func CloudConfig(
 		}
 
 	case cloud.VSphere != nil:
-		vsphereCloudConfig, err := getVSphereCloudConfig(cluster, dc, credentials)
+		vsphereCloudConfig, err := GetVSphereCloudConfig(cluster, dc, credentials)
 		if err != nil {
 			return cloudConfig, err
 		}
@@ -216,7 +216,7 @@ func CloudConfig(
 	return cloudConfig, err
 }
 
-func getVSphereCloudConfig(
+func GetVSphereCloudConfig(
 	cluster *kubermaticv1.Cluster,
 	dc *kubermaticv1.Datacenter,
 	credentials resources.Credentials,

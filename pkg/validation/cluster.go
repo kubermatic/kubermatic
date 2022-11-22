@@ -944,7 +944,7 @@ func validateFakeCloudSpec(spec *kubermaticv1.FakeCloudSpec) error {
 
 func validateKubevirtCloudSpec(spec *kubermaticv1.KubevirtCloudSpec) error {
 	if spec.Kubeconfig == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.KubevirtKubeConfig); err != nil {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.KubeVirtKubeconfig); err != nil {
 			return err
 		}
 	}

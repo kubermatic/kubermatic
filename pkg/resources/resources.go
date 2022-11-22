@@ -496,6 +496,24 @@ const (
 	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
 	// KubeVirtInfraSecretKey infra kubeconfig.
 	KubeVirtInfraSecretKey = "infra-kubeconfig"
+	// KubeVirtCSISecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster for the CSI controller.
+	KubeVirtCSISecretName = "csi-infra-kubeconfig"
+	// KubeVirtCSISecretKey is the key in the previous secret.
+	KubeVirtCSISecretKey = "kubeconfig"
+	// KubeVirtCSINamespaceKey  is the key name of the field containing the infra cluster namespace in the CSI ConfigMap.
+	KubeVirtCSINamespaceKey = "infraClusterNamespace"
+	// KubeVirtCSIClusterLabelKey  is the key name of the field containing the infra cluster labels in the CSI ConfigMap.
+	KubeVirtCSIClusterLabelKey = "infraClusterLabels"
+	// KubeVirtCSIConfigMapName is the name of the configmap for the CSI controller.
+	KubeVirtCSIConfigMapName = "csi-driver-config"
+	// KubeVirtCSIControllerName is the name of the deployment of the CSI controller.
+	KubeVirtCSIControllerName = "csi-controller"
+	// KubeVirtCSIServiceAccountName is the name of the service account of the CSI controller.
+	KubeVirtCSIServiceAccountName = "kubevirt-csi"
+	// KubeVirtCSIClusterRoleName is the name of the deployment of the CSI controller.
+	KubeVirtCSIClusterRoleName = "kubevirt-csi-controller"
+	// KubeVirtCSIRoleBindingName is the name of the deployment of the CSI controller.
+	KubeVirtCSIRoleBindingName = "csi-controller"
 
 	// DefaultNodePortRange is a Kubernetes cluster's default nodeport range.
 	DefaultNodePortRange = "30000-32767"
@@ -667,8 +685,7 @@ const (
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 
-	KubevirtKubeConfig    = "kubeConfig"
-	KubevirtCSIKubeConfig = "csiKubeConfig"
+	KubeVirtKubeconfig = "kubeConfig"
 
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"

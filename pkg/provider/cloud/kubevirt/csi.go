@@ -18,25 +18,23 @@ package kubevirt
 
 import (
 	"context"
-	"encoding/base64"
 
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	csiServiceAccountNamespace = metav1.NamespaceDefault
-	csiResourceName            = "kubevirt-csi"
+	csiResourceName = "kubevirt-csi"
 )
 
-func csiServiceAccountCreator(name string) reconciling.NamedServiceAccountCreatorGetter {
+func csiServiceAccountCreator(name, namespace string) reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			sa.Namespace = namespace
 			return sa, nil
 		}
 	}
@@ -113,7 +111,7 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 	}
 
 	roleBindingCreators := []reconciling.NamedRoleBindingCreatorGetter{
-		csiRoleBindingCreator(csiResourceName, csiServiceAccountNamespace),
+		csiRoleBindingCreator(csiResourceName, namespace),
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, namespace, client); err != nil {
 		return err
@@ -122,55 +120,30 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 	return nil
 }
 
-// EnsureCSIInfraTokenAccess generates a service account token for KubeVirt CSI access.
-func EnsureCSIInfraTokenAccess(ctx context.Context, infraKubeconfig string) ([]byte, error) {
-	client, err := NewClient(infraKubeconfig, ClientOptions{})
-	if err != nil {
-		return nil, err
-	}
-
+// reconcileInfraTokenAccess generates a service account token for KubeVirt CSI access.
+func reconcileInfraTokenAccess(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
 	saCreators := []reconciling.NamedServiceAccountCreatorGetter{
-		csiServiceAccountCreator(csiResourceName),
+		csiServiceAccountCreator(csiResourceName, namespace),
 	}
-	if err = reconciling.ReconcileServiceAccounts(ctx, saCreators, csiServiceAccountNamespace, client); err != nil {
-		return nil, err
+	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, namespace, client); err != nil {
+		return err
 	}
 
 	sa := corev1.ServiceAccount{}
-	err = client.Get(ctx, types.NamespacedName{Name: csiResourceName, Namespace: csiServiceAccountNamespace}, &sa)
+	err := client.Get(ctx, types.NamespacedName{Name: csiResourceName, Namespace: namespace}, &sa)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	sName := ""
 	if len(sa.Secrets) == 0 {
 		// k8s 1.24 by default disabled automatic token creation for service accounts
-		sName = csiResourceName
 		seCreators := []reconciling.NamedSecretCreatorGetter{
 			csiSecretTokenCreator(csiResourceName),
 		}
-		if err = reconciling.ReconcileSecrets(ctx, seCreators, csiServiceAccountNamespace, client); err != nil {
-			return nil, err
+		if err := reconciling.ReconcileSecrets(ctx, seCreators, namespace, client); err != nil {
+			return err
 		}
-	} else {
-		sName = sa.Secrets[0].Name
 	}
 
-	s := corev1.Secret{}
-	err = client.Get(ctx, types.NamespacedName{Name: sName, Namespace: csiServiceAccountNamespace}, &s)
-	if err != nil {
-		return nil, err
-	}
-
-	token, err := base64.StdEncoding.DecodeString(string(s.Data["token"]))
-	if err != nil {
-		token = s.Data["token"]
-	}
-
-	csiKubeconfig, err := generateKubeconfigWithToken(client.RestConfig, &sa, string(token))
-	if err != nil {
-		return nil, err
-	}
-
-	return csiKubeconfig, nil
+	return nil
 }
