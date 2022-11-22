@@ -28,10 +28,6 @@ import (
 )
 
 var (
-	//go:embed presets
-	standardPresetsFs embed.FS
-	standardPresetDir = "presets"
-
 	//go:embed instancetypes
 	standardInstancetypeFs  embed.FS
 	standardInstancetypeDir = "instancetypes"
@@ -48,15 +44,6 @@ type ManifestFS struct {
 
 type ManifestFSGetter interface {
 	GetManifestFS() *ManifestFS
-}
-
-type StandardPresetGetter struct{}
-
-func (s *StandardPresetGetter) GetManifestFS() *ManifestFS {
-	return &ManifestFS{
-		Fs:  standardPresetsFs,
-		Dir: standardPresetDir,
-	}
 }
 
 type StandardInstancetypeGetter struct{}

@@ -23,7 +23,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	kubevirtv1 "kubevirt.io/api/core/v1"
 	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
@@ -1432,43 +1431,6 @@ func ReconcileAppsKubermaticV1ApplicationDefinitions(ctx context.Context, namedG
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appskubermaticv1.ApplicationDefinition{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ApplicationDefinition %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// KubeVirtV1VirtualMachineInstancePresetCreator defines an interface to create/update VirtualMachineInstancePresets
-type KubeVirtV1VirtualMachineInstancePresetCreator = func(existing *kubevirtv1.VirtualMachineInstancePreset) (*kubevirtv1.VirtualMachineInstancePreset, error)
-
-// NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter returns the name of the resource and the corresponding creator function
-type NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter = func() (name string, create KubeVirtV1VirtualMachineInstancePresetCreator)
-
-// KubeVirtV1VirtualMachineInstancePresetObjectWrapper adds a wrapper so the KubeVirtV1VirtualMachineInstancePresetCreator matches ObjectCreator.
-// This is needed as Go does not support function interface matching.
-func KubeVirtV1VirtualMachineInstancePresetObjectWrapper(create KubeVirtV1VirtualMachineInstancePresetCreator) ObjectCreator {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return create(existing.(*kubevirtv1.VirtualMachineInstancePreset))
-		}
-		return create(&kubevirtv1.VirtualMachineInstancePreset{})
-	}
-}
-
-// ReconcileKubeVirtV1VirtualMachineInstancePresets will create and update the KubeVirtV1VirtualMachineInstancePresets coming from the passed KubeVirtV1VirtualMachineInstancePresetCreator slice
-func ReconcileKubeVirtV1VirtualMachineInstancePresets(ctx context.Context, namedGetters []NamedKubeVirtV1VirtualMachineInstancePresetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-		createObject := KubeVirtV1VirtualMachineInstancePresetObjectWrapper(create)
-		createObject = createWithNamespace(createObject, namespace)
-		createObject = createWithName(createObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubevirtv1.VirtualMachineInstancePreset{}, false); err != nil {
-			return fmt.Errorf("failed to ensure VirtualMachineInstancePreset %s/%s: %w", namespace, name, err)
 		}
 	}
 

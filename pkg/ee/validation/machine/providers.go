@@ -270,18 +270,10 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		return nil, fmt.Errorf("failed to get kubevirt raw config: %w", err)
 	}
 
-	// KubeVirt machine size can be configured either directly or through a flavor
-	flavor, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Flavor.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get KubeVirt \"flavor\" from machine config: %w", err)
-	}
-
 	var cpuReq, memReq resource.Quantity
-	// If VM templating (Instancetype or Preset) is set then read cpu and memory from it.
-	// Flavors (Presets) are depracted in favor of Instancetypes, so the latter has a higher priority.
-	// We keep flavors for the current UI compatibility.
-	switch {
-	case rawConfig.VirtualMachine.Instancetype != nil && len(rawConfig.VirtualMachine.Instancetype.Name) != 0:
+	// KubeVirt machine size can be configured either directly or through instancetypes.
+	// If VM templating (Instancetype) is set then read cpu and memory from it.
+	if rawConfig.VirtualMachine.Instancetype != nil && len(rawConfig.VirtualMachine.Instancetype.Name) != 0 {
 		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config, error: %w", err)
@@ -292,18 +284,7 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		}
 		cpuReq = *capacity.CPUCores
 		memReq = *capacity.Memory
-	case len(flavor) != 0:
-		kubeconfig, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Auth.Kubeconfig, envKubeVirtKubeConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get KubeVirt kubeconfig from machine config: %w", err)
-		}
-		capacity, err := kubevirt.DescribeFlavor(ctx, kubeconfig, flavor) //nolint:staticcheck
-		if err != nil {
-			return nil, fmt.Errorf("failed to get KubeVirt VMI Preset: %w", err)
-		}
-		cpuReq = *capacity.CPUCores
-		memReq = *capacity.Memory
-	default:
+	} else {
 		cpu, err := configVarResolver.GetConfigVarStringValue(rawConfig.VirtualMachine.Template.CPUs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt cpu request from machine config: %w", err)

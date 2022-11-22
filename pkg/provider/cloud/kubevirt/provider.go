@@ -116,11 +116,6 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcilePresets(ctx, cluster.Status.NamespaceName, client)
-	if err != nil {
-		return cluster, err
-	}
-
 	err = reconcileInstancetypes(ctx, cluster.Status.NamespaceName, client)
 	if err != nil {
 		return cluster, err
