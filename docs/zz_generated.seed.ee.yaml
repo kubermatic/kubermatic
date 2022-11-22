@@ -271,6 +271,9 @@ spec:
           rootPath: ""
           # The name of the storage policy to use for the storage class created in the user cluster.
           storagePolicy: ""
+          # TagCategoryID is the tag category id that will be used as default, if users don't specify it on a cluster level,
+          # and they don't wish KKP to create default generated tag category, upon cluster creation.
+          tagCategoryID: ""
           # A list of VM templates to use for a given operating system. You must
           # define at least one template.
           # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
