@@ -46,9 +46,10 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		return nil, err
 	}
 
-	// if we found a security group, we can check for the ownership tag to determine
-	// if the referenced security group is owned by this cluster and should be reconciled
-	if !isNotFound(err) && !hasOwnershipTag(securityGroup.Tags, cluster) {
+	// if we found a security group (no error), we can check for the ownership tag to determine
+	// if the referenced security group is owned by this cluster and should be reconciled. We return
+	// early in this condition if the security group is not owned by us.
+	if err == nil && !hasOwnershipTag(securityGroup.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.SecurityGroup = cluster.Spec.Cloud.Azure.SecurityGroup
 		})

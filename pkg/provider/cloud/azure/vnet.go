@@ -51,9 +51,10 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 		return cluster, err
 	}
 
-	// if we found a VNET, we can check for the ownership tag to determine
-	// if the referenced VNET is owned by this cluster and should be reconciled
-	if !isNotFound(err) && !hasOwnershipTag(vnet.Tags, cluster) {
+	// if we found a VNET (no error), we can check for the ownership tag to determine
+	// if the referenced VNET is owned by this cluster and should be reconciled. We return
+	// early if the vnet is not owned by us.
+	if err == nil && !hasOwnershipTag(vnet.Tags, cluster) {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.VNetName = cluster.Spec.Cloud.Azure.VNetName
 		})

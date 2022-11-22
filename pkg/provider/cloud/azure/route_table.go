@@ -47,10 +47,11 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 		return nil, err
 	}
 
+	// if the request returned no error, it means the route table already exists and we can return early.
 	// usually, we check for ownership tags here and then compare attributes of interest to a target representation
 	// of the resource. Since there is nothing in the route table we could compare to eventually reconcile (the subnet setting
 	// you see later on is ineffective), we skip all of that and return early if we found a route table during our API call earlier.
-	if !isNotFound(err) {
+	if err == nil {
 		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 			updatedCluster.Spec.Cloud.Azure.RouteTableName = cluster.Spec.Cloud.Azure.RouteTableName
 			// this is a special case; because we cannot determine if a route table was created by
