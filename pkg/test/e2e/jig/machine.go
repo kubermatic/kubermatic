@@ -194,6 +194,10 @@ func (j *MachineJig) WithAWS(instanceType string, spotMaxPriceUSD *string) *Mach
 func (j *MachineJig) WithAzure(vmSize string) *MachineJig {
 	return j.WithProviderSpec(azuretypes.RawConfig{
 		VMSize: providerconfig.ConfigVarString{Value: vmSize},
+		// From Azure VM there is no IPv6-only route to the internet
+		// unless the VM has a globally routable IPv6 address.
+		// We set this to make IPv6 egress work in dualstack tests.
+		AssignPublicIP: providerconfig.ConfigVarBool{Value: pointer.Bool(true)},
 	})
 }
 

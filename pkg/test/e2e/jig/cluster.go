@@ -434,7 +434,7 @@ func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
 	if synchronous {
 		log.Info("Waiting for cluster to be gone...")
 
-		err = wait.PollLog(ctx, log, 20*time.Second, 10*time.Minute, func() (transient error, terminal error) {
+		err = wait.PollLog(ctx, log, 20*time.Second, 30*time.Minute, func() (transient error, terminal error) {
 			c := &kubermaticv1.Cluster{}
 			err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, c)
 

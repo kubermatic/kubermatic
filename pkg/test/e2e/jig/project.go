@@ -144,9 +144,8 @@ func (j *ProjectJig) Delete(ctx context.Context, synchronous bool) error {
 	if synchronous {
 		log.Info("Waiting for project to be gone...")
 
-		err := wait.PollLog(ctx, log, 5*time.Second, 10*time.Minute, func() (transient error, terminal error) {
+		err := wait.PollLog(ctx, log, 5*time.Second, 30*time.Minute, func() (transient error, terminal error) {
 			project := &kubermaticv1.Project{}
-
 			err := j.client.Get(ctx, types.NamespacedName{Name: j.projectName}, project)
 			if err == nil {
 				return errors.New("project still exists"), nil
