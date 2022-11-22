@@ -1,30 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "iteration": 1669052261170,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -33,6 +14,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -114,7 +96,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Events count (Seed cluster)",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -122,6 +106,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -203,7 +188,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Events count aggregated (Seed cluster)",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -211,6 +198,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -293,7 +281,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Events count (User clusters)",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -301,6 +291,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -354,7 +345,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Events share by projects (User clusters)",
+      "transparent": true,
       "type": "piechart"
     },
     {
@@ -362,6 +355,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -440,7 +434,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Event reason = Pulled (Seed cluster) ",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -448,6 +444,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -475,7 +472,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Event reason logs (Seed cluster) ",
+      "transparent": true,
       "type": "logs"
     },
     {
@@ -483,6 +482,7 @@
         "type": "loki",
         "uid": "P982945308D3682D1"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -561,22 +561,20 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Event reason = MachineDeploymentCreated (Seed cluster) ",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": "30s",
   "schemaVersion": 36,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Data Source",
@@ -592,7 +590,7 @@
     ]
   },
   "time": {
-    "from": "now-30d",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
