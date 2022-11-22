@@ -20,8 +20,8 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 if [ $# -ne 1 ]; then
-    echo "Usage: ./hack/fmt-grafana-dashboard.sh /path/to/some/grafana-dashboard-file.json"
-    exit
+  echo "Usage: ./hack/fmt-grafana-dashboard.sh /path/to/some/grafana-dashboard-file.json"
+  exit
 fi
 
 format_dashboard $1
