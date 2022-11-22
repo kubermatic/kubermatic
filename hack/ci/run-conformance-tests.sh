@@ -97,7 +97,7 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
     -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}
     -nutanix-kkp-datacenter=nutanix-ger"
-elif [[ $provider == "vmware-cloud-director" ]]; then
+elif [[ $provider == "vmwareclouddirector" ]]; then
   EXTRA_ARGS="-vmware-cloud-director-username=${VCD_USER}
     -vmware-cloud-director-password=${VCD_PASSWORD}
     -vmware-cloud-director-organization=${VCD_ORG}
