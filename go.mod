@@ -61,10 +61,10 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.5
 	github.com/vmware/govmomi v0.23.1
-	go.etcd.io/etcd/api/v3 v3.5.3
-	go.etcd.io/etcd/client/pkg/v3 v3.5.3
-	go.etcd.io/etcd/client/v3 v3.5.3
-	go.etcd.io/etcd/etcdutl/v3 v3.5.3
+	go.etcd.io/etcd/api/v3 v3.5.6
+	go.etcd.io/etcd/client/pkg/v3 v3.5.6
+	go.etcd.io/etcd/client/v3 v3.5.6
+	go.etcd.io/etcd/etcdutl/v3 v3.5.6
 	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
@@ -151,6 +151,7 @@ require (
 	github.com/gobuffalo/flect v0.2.3 // indirect
 	github.com/gofrs/flock v0.8.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/btree v1.0.1 // indirect
@@ -213,17 +214,15 @@ require (
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.3 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.3 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.3 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.3 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.6 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.6 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.6 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.6 // indirect
 	go.mongodb.org/mongo-driver v1.5.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/contrib v0.20.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0 // indirect
-	go.opentelemetry.io/otel v0.20.0 // indirect
-	go.opentelemetry.io/otel/metric v0.20.0 // indirect
-	go.opentelemetry.io/otel/trace v0.20.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.25.0 // indirect
+	go.opentelemetry.io/otel v1.0.1 // indirect
+	go.opentelemetry.io/otel/trace v1.0.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
