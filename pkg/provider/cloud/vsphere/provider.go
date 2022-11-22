@@ -249,7 +249,7 @@ func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, u
 // DefaultCloudSpec adds defaults to the cloud spec.
 func (v *Provider) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSpec) error {
 	if spec.VSphere.TagCategoryID == "" {
-		spec.VSphere.TagCategoryID = v.dc.TagCategoryID
+		spec.VSphere.TagCategoryID = v.dc.DefaultTagCategoryID
 	}
 
 	return nil
