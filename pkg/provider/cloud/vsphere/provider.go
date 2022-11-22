@@ -301,14 +301,14 @@ func (v *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clou
 		}
 	}
 
-	restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
-	if err != nil {
-		return fmt.Errorf("failed to create REST client session: %w", err)
-	}
-	defer restSession.Logout(ctx)
-
-	tagManager := tags.NewManager(restSession.Client)
 	if tagCategoryID := spec.VSphere.TagCategoryID; tagCategoryID != "" {
+		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
+		if err != nil {
+			return fmt.Errorf("failed to create REST client session: %w", err)
+		}
+		defer restSession.Logout(ctx)
+
+		tagManager := tags.NewManager(restSession.Client)
 		if _, err := tagManager.GetCategory(ctx, tagCategoryID); err != nil {
 			return fmt.Errorf("failed to get tag categories %w", err)
 		}
