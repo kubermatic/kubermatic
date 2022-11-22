@@ -98,7 +98,7 @@ spec:
           value: /etc/etcd/pki/client/apiserver-etcd-client.crt
         - name: ETCDCTL_KEY
           value: /etc/etcd/pki/client/apiserver-etcd-client.key
-        image: gcr.io/etcd-development/etcd:v3.5.4
+        image: gcr.io/etcd-development/etcd:v3.5.6
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
