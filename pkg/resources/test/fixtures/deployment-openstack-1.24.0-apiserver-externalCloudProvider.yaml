@@ -339,7 +339,7 @@ spec:
           put kubermatic/quorum-check something; then echo "etcd ready"; exit 0; fi;
           echo "waiting for etcd. retry=$i/100"; sleep 2; done; echo "error: etcd
           not ready"; exit 1;'
-        image: gcr.io/etcd-development/etcd:v3.5.4
+        image: gcr.io/etcd-development/etcd:v3.5.6
         name: etcd-running
         resources: {}
         volumeMounts:
