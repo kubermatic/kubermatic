@@ -67,7 +67,7 @@ spec:
       country: DE
       spec:
         vsphere:
-          cluster: vcenter.dc.k8c.io
+          cluster: Kubermatic
           datacenter: Hamburg
           datastore: ceph-vm
           endpoint: https://10.10.0.100
