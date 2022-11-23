@@ -1010,6 +1010,9 @@ spec:
                       required:
                         - cidrBlocks
                       type: object
+                    tunnelingAgentIP:
+                      description: TunnelingAgentIP is the address used by the tunneling agents
+                      type: string
                   required:
                     - dnsDomain
                     - pods

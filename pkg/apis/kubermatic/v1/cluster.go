@@ -809,6 +809,9 @@ type ClusterNetworkingConfig struct {
 
 	// KonnectivityEnabled enables konnectivity for controlplane to node network communication.
 	KonnectivityEnabled *bool `json:"konnectivityEnabled,omitempty"`
+
+	// TunnelingAgentIP is the address used by the tunneling agents
+	TunnelingAgentIP string `json:"tunnelingAgentIP,omitempty"`
 }
 
 // MachineNetworkingConfig specifies the networking parameters used for IPAM.

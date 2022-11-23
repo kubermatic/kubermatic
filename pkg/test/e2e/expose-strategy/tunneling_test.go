@@ -69,6 +69,10 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
 			cs.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = pointer.Bool(true)
 			return cs
+		}).
+		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
+			cs.ClusterNetwork.TunnelingAgentIP = "192.168.30.10"
+			return cs
 		})
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
