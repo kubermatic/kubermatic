@@ -22,7 +22,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.18.23
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.1
 	github.com/aws/smithy-go v1.13.4
-	github.com/cert-manager/cert-manager v1.10.0
+	github.com/cert-manager/cert-manager v1.10.1
 	github.com/cilium/cilium v1.12.3 // need 1.12.x because 1.11.x is incompatible with k8s 1.24
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20220804141719-da3da500d587
