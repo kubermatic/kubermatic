@@ -15,7 +15,7 @@
 apiVersion: v1
 name: oauth
 version: v9.9.9-dev
-appVersion: v2.32.0
+appVersion: v2.35.3
 description: Dex
 keywords:
   - kubermatic
