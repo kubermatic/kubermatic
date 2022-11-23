@@ -287,7 +287,6 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluste
 func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegistry string, initialValues map[string]interface{}) reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter {
 	return func() (string, reconciling.AppsKubermaticV1ApplicationInstallationCreator) {
 		return cluster.Spec.CNIPlugin.Type.String(), func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
-
 			app.Labels = map[string]string{
 				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
 				appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,

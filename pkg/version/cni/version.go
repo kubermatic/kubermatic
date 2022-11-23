@@ -51,7 +51,7 @@ var (
 		kubermaticv1.CNIPluginTypeCilium: sets.NewString(
 			"v1.11",
 			"v1.12",
-			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using true smever
+			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
 			"1.13.0",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.NewString(""),
