@@ -39,6 +39,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -174,24 +175,45 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 
 	log.Debugf("Reconciling CNI")
 
-	// Ensure CNI addon is removed if it was deployed before
-	if err := r.ensureCNIAddonIsRemoved(ctx, cluster); err != nil {
+	// Ensure legacy CNI addon is removed if it was deployed as older CNI version
+	if err := r.ensureLegacyCNIAddonIsRemoved(ctx, cluster); err != nil {
 		return &reconcile.Result{}, err
 	}
 
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
+	// Prepare initialValues for the CNI ApplicationInstallation. These values will be used if the ApplicationInstallation does not exist yet.
+	initialValues := make(map[string]interface{})
+
+	// Try to load the initial values form the annotation
+	if err := r.parseCNIValuesAnnotation(cluster, initialValues); err != nil {
+		return &reconcile.Result{}, err
+	}
+	removeAnnotation := false
+	if len(initialValues) > 0 {
+		removeAnnotation = true
 	}
 
-	if err := r.ensreCNIApplicationInstallation(ctx, userClusterClient, cluster); err != nil {
+	// If initial values were not loaded from the annotation, use the default values from the ApplicationDefinition
+	if len(initialValues) == 0 {
+		if err := r.parseAppDefDefaultValues(ctx, cluster, initialValues); err != nil {
+			return &reconcile.Result{}, err
+		}
+	}
+
+	// Ensure ApplicationInstallation of the CNI
+	if err := r.ensreCNIApplicationInstallation(ctx, cluster, initialValues); err != nil {
 		return &reconcile.Result{}, err
+	}
+
+	if removeAnnotation {
+		if err := r.removeCNIValuesAnnotation(ctx, cluster); err != nil {
+			return nil, fmt.Errorf("failed to remove initial CNI values annotation: %w", err)
+		}
 	}
 
 	return nil, nil
 }
 
-func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	cniAddon := &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cluster.Spec.CNIPlugin.Type.String(),
@@ -219,14 +241,50 @@ func (r *Reconciler) ensureCNIAddonIsRemoved(ctx context.Context, cluster *kuber
 	return nil
 }
 
-func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	creators := []reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter{
-		ApplicationInstallationCreator(cluster, r.overwriteRegistry),
+func (r *Reconciler) parseCNIValuesAnnotation(cluster *kubermaticv1.Cluster, values map[string]interface{}) error {
+	annotation := cluster.Annotations[kubermaticv1.InitialCNIValuesRequestAnnotation]
+	if annotation != "" {
+		if err := json.Unmarshal([]byte(annotation), &values); err != nil {
+			return fmt.Errorf("cannot unmarshal initial CNI values annotation: %w", err)
+		}
 	}
-	return reconciling.ReconcileAppsKubermaticV1ApplicationInstallations(ctx, creators, cniPluginNamespace, client)
+	return nil
 }
 
-func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegistry string) reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter {
+func (r *Reconciler) removeCNIValuesAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	oldCluster := cluster.DeepCopy()
+	delete(cluster.Annotations, kubermaticv1.InitialCNIValuesRequestAnnotation)
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+}
+
+func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster, values map[string]interface{}) error {
+	appDef := &appskubermaticv1.ApplicationDefinition{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
+		return ctrlruntimeclient.IgnoreNotFound(err)
+	}
+	if appDef.Spec.DefaultValues != nil {
+		if len(appDef.Spec.DefaultValues.Raw) > 0 {
+			if err := json.Unmarshal(appDef.Spec.DefaultValues.Raw, &values); err != nil {
+				return fmt.Errorf("failed to unmarshall ApplicationDefinition default values: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]interface{}) error {
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	creators := []reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter{
+		ApplicationInstallationCreator(cluster, r.overwriteRegistry, initialValues),
+	}
+	return reconciling.ReconcileAppsKubermaticV1ApplicationInstallations(ctx, creators, cniPluginNamespace, userClusterClient)
+}
+
+func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegistry string, initialValues map[string]interface{}) reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter {
 	return func() (string, reconciling.AppsKubermaticV1ApplicationInstallationCreator) {
 		return cluster.Spec.CNIPlugin.Type.String(), func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
 
@@ -248,6 +306,11 @@ func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegi
 				if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
 					return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
 				}
+			}
+
+			// If (and only if) existing values is empty, use the initial values
+			if len(values) == 0 {
+				values = initialValues
 			}
 
 			// Override values with necessary CNI config

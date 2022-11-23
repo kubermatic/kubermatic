@@ -46,9 +46,11 @@ func CiliumCNIApplicationDefinitionCreator() reconciling.NamedAppsKubermaticV1Ap
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
-								ChartName:    ciliumHelmChartName,
-								ChartVersion: "1.13.0-rc2",              // TODO (rastislavs): bump to a release version once it is out
-								URL:          "https://helm.cilium.io/", // TODO (rastislavs): use Kubermatic OCI chart and allow overriding the registry
+								ChartName: ciliumHelmChartName,
+								// TODO (rastislavs): bump to the release version once it is out
+								ChartVersion: "1.13.0-rc2",
+								// TODO (rastislavs): Use Kubermatic OCI chart instead and allow overriding the registry
+								URL: "https://helm.cilium.io/",
 							},
 						},
 					},
