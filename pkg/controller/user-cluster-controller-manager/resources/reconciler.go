@@ -47,7 +47,7 @@ import (
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
-	userclusterprometheus "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/prometheus"
+	userclustermonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/promtail"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
@@ -234,7 +234,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 	if !r.userClusterMLA.Monitoring {
-		if err := r.ensureUserClusterPrometheusIsRemoved(ctx); err != nil {
+		if err := r.ensureUserClusterMonitoringAgentIsRemoved(ctx); err != nil {
+			return err
+		}
+	} else {
+		// remove legacy prometheus installation in user cluster
+		if err := r.ensureLegacyPrometheusIsRemoved(ctx); err != nil {
 			return err
 		}
 	}
@@ -349,7 +354,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 	}
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators,
-			userclusterprometheus.ServiceAccountCreator(),
+			userclustermonitoringagent.ServiceAccountCreator(),
 		)
 	}
 
@@ -551,7 +556,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		creators = append(creators, promtail.ClusterRoleCreator())
 	}
 	if r.userClusterMLA.Monitoring {
-		creators = append(creators, userclusterprometheus.ClusterRoleCreator())
+		creators = append(creators, userclustermonitoringagent.ClusterRoleCreator())
 	}
 
 	if data.operatingSystemManagerEnabled {
@@ -597,7 +602,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 	}
 
 	if r.userClusterMLA.Monitoring {
-		creators = append(creators, userclusterprometheus.ClusterRoleBindingCreator())
+		creators = append(creators, userclustermonitoringagent.ClusterRoleBindingCreator())
 	}
 
 	if r.isKonnectivityEnabled {
@@ -815,16 +820,16 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	}
 
 	if r.userClusterMLA.Monitoring {
-		customScrapeConfigs, err := r.getUserClusterPrometheusCustomScrapeConfigs(ctx)
+		customScrapeConfigs, err := r.getUserClusterMonitoringAgentCustomScrapeConfigs(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get user cluster prometheus custom scrape configs: %w", err)
 		}
 		creators = []reconciling.NamedConfigMapCreatorGetter{
-			userclusterprometheus.ConfigMapCreator(userclusterprometheus.Config{
+			userclustermonitoringagent.ConfigMapCreator(userclustermonitoringagent.Config{
 				MLAGatewayURL:       r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
-				TLSCertFile:         fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientCertSecretKey),
-				TLSKeyFile:          fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientKeySecretKey),
-				TLSCACertFile:       fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.MLAGatewayCACertKey),
+				TLSCertFile:         fmt.Sprintf("%s/%s", resources.UserClusterMonitoringAgentClientCertMountPath, resources.UserClusterMonitoringAgentClientCertSecretKey),
+				TLSKeyFile:          fmt.Sprintf("%s/%s", resources.UserClusterMonitoringAgentClientCertMountPath, resources.UserClusterMonitoringAgentClientKeySecretKey),
+				TLSCACertFile:       fmt.Sprintf("%s/%s", resources.UserClusterMonitoringAgentClientCertMountPath, resources.MLAGatewayCACertKey),
 				CustomScrapeConfigs: customScrapeConfigs,
 				HAClusterIdentifier: r.clusterName,
 			}),
@@ -902,7 +907,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	if r.userClusterMLA.Monitoring {
 		creators = []reconciling.NamedSecretCreatorGetter{
-			userclusterprometheus.ClientCertificateCreator(data.mlaGatewayCACert),
+			userclustermonitoringagent.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -1043,7 +1048,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclusterprometheus.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
+			userclustermonitoringagent.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -1242,11 +1247,11 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kuberm
 func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (health kubermaticv1.HealthStatus, err error) {
 	health, err = resources.HealthyDeployment(ctx,
 		r.Client,
-		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.UserClusterPrometheusDeploymentName},
+		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.UserClusterMonitoringAgentDeploymentName},
 		1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterPrometheusDeploymentName, err)
+			fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterMonitoringAgentDeploymentName, err)
 	}
 
 	return health, nil
@@ -1276,14 +1281,27 @@ func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) ensureUserClusterPrometheusIsRemoved(ctx context.Context) error {
-	for _, resource := range userclusterprometheus.ResourcesOnDeletion() {
+func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Context) error {
+	for _, resource := range userclustermonitoringagent.ResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
 		}
 		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure user cluster prometheus is removed/not present: %w", err)
+			return fmt.Errorf("failed to ensure user cluster monitring agent is removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureLegacyPrometheusIsRemoved(ctx context.Context) error {
+	for _, resource := range userclustermonitoringagent.LegacyResourcesOnDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
+			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
+		}
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure user cluster monitring agent is removed/not present: %w", err)
 		}
 	}
 	return nil
@@ -1338,8 +1356,8 @@ func (r *reconciler) ensureOSMResourcesAreRemoved(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Context) (string, error) {
-	if r.userClusterMLA.PrometheusScrapeConfigPrefix == "" {
+func (r *reconciler) getUserClusterMonitoringAgentCustomScrapeConfigs(ctx context.Context) (string, error) {
+	if r.userClusterMLA.MonitoringAgentScrapeConfigPrefix == "" {
 		return "", nil
 	}
 	configMapList := &corev1.ConfigMapList{}
@@ -1348,7 +1366,7 @@ func (r *reconciler) getUserClusterPrometheusCustomScrapeConfigs(ctx context.Con
 	}
 	customScrapeConfigs := ""
 	for _, configMap := range configMapList.Items {
-		if !strings.HasPrefix(configMap.GetName(), r.userClusterMLA.PrometheusScrapeConfigPrefix) {
+		if !strings.HasPrefix(configMap.GetName(), r.userClusterMLA.MonitoringAgentScrapeConfigPrefix) {
 			continue
 		}
 		for _, v := range configMap.Data {

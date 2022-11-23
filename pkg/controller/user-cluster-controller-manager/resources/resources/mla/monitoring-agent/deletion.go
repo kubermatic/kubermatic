@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package prometheus
+package monitoringagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -30,36 +30,36 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterPrometheusDeploymentName,
+				Name:      resources.UserClusterMonitoringAgentDeploymentName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterPrometheusConfigMapName,
+				Name:      resources.UserClusterMonitoringAgentConfigMapName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterPrometheusCertificatesSecretName,
+				Name:      resources.UserClusterMonitoringAgentCertificatesSecretName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterPrometheusServiceAccountName,
+				Name:      resources.UserClusterMonitoringAgentServiceAccountName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.UserClusterPrometheusClusterRoleName,
+				Name: resources.UserClusterMonitoringAgentClusterRoleName,
 			},
 		},
 		&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.UserClusterPrometheusClusterRoleBindingName,
+				Name: resources.UserClusterMonitoringAgentClusterRoleBindingName,
 			},
 		},
 	}
