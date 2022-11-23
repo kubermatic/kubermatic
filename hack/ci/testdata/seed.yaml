@@ -71,7 +71,7 @@ spec:
           datacenter: Hamburg
           datastore: ceph-vm
           endpoint: https://10.10.0.100
-          allowInsecure: true
+          allow_insecure: true
           rootPath: /Hamburg/vm/Kubermatic-ci
           templates:
             centos: kkp-centos-7
