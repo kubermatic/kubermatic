@@ -130,24 +130,10 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter re
 	// interface in a loop.
 	return []corev1.Container{
 		{
-			Name:    resources.EnvoyAgentCreateInterfaceInitContainerName,
-			Image:   image,
-			Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
-			SecurityContext: &corev1.SecurityContext{
-				Capabilities: &corev1.Capabilities{
-					Add: []corev1.Capability{
-						"NET_ADMIN",
-					},
-					Drop: []corev1.Capability{
-						"all",
-					},
-				},
-			},
-		},
-		{
-			Name:    resources.EnvoyAgentAssignAddressInitContainerName,
-			Image:   image,
-			Command: []string{"sh", "-c", fmt.Sprintf("ip addr add %s/32 dev envoyagent scope host || true", ip.String())},
+			Name:  resources.EnvoyAgentCreateInterfaceInitContainerName,
+			Image: image,
+			// Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
+			Command: []string{"sh", "-c", fmt.Sprintf("network-interface-manager -mode init -if envoyagent -addr %s", ip.String())},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{

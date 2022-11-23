@@ -741,7 +741,7 @@ const (
 	EnvoyAgentDaemonSetName                    = "envoy-agent"
 	EnvoyAgentCreateInterfaceInitContainerName = "create-dummy-interface"
 	EnvoyAgentAssignAddressInitContainerName   = "assign-address"
-	EnvoyAgentDeviceSetupImage                 = "kubermatic/kubeletdnat-controller"
+	EnvoyAgentDeviceSetupImage                 = "kubermatic/network-interface-manager"
 	// Default tunneling agent IP address.
 	DefaultTunnelingAgentIP = "192.168.30.10"
 )

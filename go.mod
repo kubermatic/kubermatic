@@ -340,3 +340,9 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
+
+require github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
+
+require github.com/vishvananda/netlink v1.1.1-0.20220125195016-0639e7e787ba
+
+require github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
