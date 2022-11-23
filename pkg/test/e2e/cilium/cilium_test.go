@@ -44,6 +44,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -441,12 +442,11 @@ func createUserCluster(
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("cilium").
-		WithAddons(jig.Addon{Name: "hubble"}).
 		WithProxyMode(proxyMode).
 		WithKonnectivity(true).
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
-			Version: "v1.11",
+			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 		})
 
 	cleanup := func() {
