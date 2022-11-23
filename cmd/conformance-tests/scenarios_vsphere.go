@@ -79,10 +79,10 @@ func (s *vSphereScenario) Name() string {
 
 func (s *vSphereScenario) getTemplate() string {
 	if s.nodeOsSpec.Centos != nil {
-		return "centos-7"
+		return "kkp-centos-7"
 	}
 
-	return "ubuntu-20.04"
+	return "kkp-ubuntu-20.04"
 }
 
 func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
