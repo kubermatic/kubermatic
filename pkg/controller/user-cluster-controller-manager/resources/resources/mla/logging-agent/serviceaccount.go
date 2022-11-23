@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package promtail
+package loggingagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -25,7 +25,7 @@ import (
 
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
-		return resources.PromtailServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+		return resources.MLALoggingAgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(appName, nil)
 			return sa, nil
 		}

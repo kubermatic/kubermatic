@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package promtail
+package loggingagent
 
 import (
 	"fmt"
@@ -33,31 +33,32 @@ import (
 )
 
 const (
-	imageName     = "grafana/promtail"
-	imageTag      = "2.5.0"
-	initImageName = "busybox"
-	initImageTag  = "1.34"
-	appName       = "mla-promtail"
-	containerName = "promtail"
+	imageName     = "grafana/agent"
+	imageTag      = "v0.29.0"
+	appName       = "mla-logging-agent"
+	containerName = "grafana-agent"
+
+	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
+	reloaderTag       = "v0.60.1"
 
 	configVolumeName         = "config"
-	configVolumeMountPath    = "/etc/promtail"
+	configVolumeMountPath    = "/etc/agent"
+	configFileName           = "agent.yaml"
 	certificatesVolumeName   = "certificates"
 	runVolumeName            = "run"
-	runVolumeMountPath       = "/run/promtail"
+	runVolumeMountPath       = "/run/grafana-agent"
 	containerVolumeName      = "containers"
 	containerVolumeMountPath = "/var/lib/docker/containers"
 	podVolumeName            = "pods"
 	podVolumeMountPath       = "/var/log/pods"
 	metricsPortName          = "http-metrics"
-
-	inotifyMaxUserInstances = 256
+	containerPort            = 3101
 )
 
 var (
 	controllerLabels = map[string]string{
-		common.NameLabel:      resources.PromtailDaemonSetName,
-		common.InstanceLabel:  resources.PromtailDaemonSetName,
+		common.NameLabel:      resources.MLALoggingAgentDaemonSetName,
+		common.InstanceLabel:  resources.MLALoggingAgentDaemonSetName,
 		common.ComponentLabel: resources.MLAComponentName,
 	}
 	defaultResourceRequirements = corev1.ResourceRequirements{
@@ -74,7 +75,7 @@ var (
 
 func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
-		return resources.PromtailDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
+		return resources.MLALoggingAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Labels = resources.BaseAppLabels(appName, nil)
 
 			ds.Spec.Selector = &metav1.LabelSelector{
@@ -82,27 +83,12 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 			}
 
 			ds.Spec.Template.ObjectMeta.Labels = controllerLabels
-			ds.Spec.Template.Spec.ServiceAccountName = resources.PromtailServiceAccountName
+			ds.Spec.Template.Spec.ServiceAccountName = resources.MLALoggingAgentServiceAccountName
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:  pointer.Int64(0),
 				RunAsGroup: pointer.Int64(0),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
-				},
-			}
-			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
-				{
-					Name:            "init-inotify",
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", initImageName, initImageTag))),
-					ImagePullPolicy: corev1.PullAlways,
-					Command: []string{
-						"sh",
-						"-c",
-						fmt.Sprintf("sysctl -w fs.inotify.max_user_instances=%d", inotifyMaxUserInstances),
-					},
-					SecurityContext: &corev1.SecurityContext{
-						Privileged: pointer.Bool(true),
-					},
 				},
 			}
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
@@ -111,7 +97,9 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, imageTag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
-						"-config.file=/etc/promtail/promtail.yaml",
+						fmt.Sprintf("-config.file=%s/%s", configVolumeMountPath, configFileName),
+						fmt.Sprintf("-server.http.address=0.0.0.0:%d", containerPort),
+						"-disable-reporting",
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -120,7 +108,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 						},
 						{
 							Name:      certificatesVolumeName,
-							MountPath: resources.PromtailClientCertMountPath,
+							MountPath: resources.MLALoggingAgentClientCertMountPath,
 						},
 						{
 							Name:      runVolumeName,
@@ -150,7 +138,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          metricsPortName,
-							ContainerPort: 3101,
+							ContainerPort: containerPort,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
@@ -176,6 +164,57 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 						PeriodSeconds:       10,
 						SuccessThreshold:    1,
 						TimeoutSeconds:      1,
+					},
+				},
+				{
+					Name:            "prometheus-config-reloader",
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, reloaderImageName, reloaderTag))),
+					ImagePullPolicy: corev1.PullAlways,
+					Args: []string{
+						// Full usage of prometheus-config-reloader:
+						// https://github.com/prometheus-operator/prometheus-operator/blob/v0.49.0/cmd/prometheus-config-reloader/main.go#L72-L108
+						"--listen-address=:8080",
+						"--watch-interval=10s",
+						fmt.Sprintf("--config-file=%s/%s.yaml", configVolumeMountPath, configFileName),
+						fmt.Sprintf("--reload-url=http://localhost:%d/-/reload", containerPort),
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name: "POD_NAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.name",
+								},
+							},
+						},
+						{
+							Name: "HOSTNAME",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "spec.nodeName",
+								},
+							},
+						},
+						{
+							Name:  "SHARD",
+							Value: "0",
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      configVolumeName,
+							MountPath: configVolumeMountPath,
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("10Mi"),
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("100Mi"),
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+						},
 					},
 				},
 			}
@@ -205,7 +244,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 					Name: configVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: resources.PromtailSecretName,
+							SecretName: resources.MLALoggingAgentSecretName,
 						},
 					},
 				},
@@ -213,7 +252,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 					Name: certificatesVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.PromtailCertificatesSecretName,
+							SecretName:  resources.MLALoggingAgentCertificatesSecretName,
 							DefaultMode: pointer.Int32(0400),
 						},
 					},

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package promtail
+package loggingagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -23,24 +23,34 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return resources.PromtailClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabels(appName, nil)
+func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+	return func() (string, reconciling.ClusterRoleCreator) {
+		return resources.MLALoggingAgentClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+			cr.Labels = resources.BaseAppLabels(appName, nil)
 
-			crb.RoleRef = rbacv1.RoleRef{
-				Name:     resources.PromtailClusterRoleName,
-				Kind:     "ClusterRole",
-				APIGroup: rbacv1.GroupName,
-			}
-			crb.Subjects = []rbacv1.Subject{
+			cr.Rules = []rbacv1.PolicyRule{
 				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      resources.PromtailServiceAccountName,
-					Namespace: resources.UserClusterMLANamespace,
+					APIGroups: []string{""},
+					Resources: []string{
+						"endpoints",
+						"nodes",
+						"nodes/proxy",
+						"pods",
+						"services",
+						"events",
+					},
+					Verbs: []string{
+						"get",
+						"list",
+						"watch",
+					},
+				},
+				{
+					NonResourceURLs: []string{"/metrics"},
+					Verbs:           []string{"get"},
 				},
 			}
-			return crb, nil
+			return cr, nil
 		}
 	}
 }

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package promtail
+package loggingagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -23,29 +23,24 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
-	return func() (string, reconciling.ClusterRoleCreator) {
-		return resources.PromtailClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Labels = resources.BaseAppLabels(appName, nil)
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+	return func() (string, reconciling.ClusterRoleBindingCreator) {
+		return resources.MLALoggingAgentClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+			crb.Labels = resources.BaseAppLabels(appName, nil)
 
-			cr.Rules = []rbacv1.PolicyRule{
+			crb.RoleRef = rbacv1.RoleRef{
+				Name:     resources.MLALoggingAgentClusterRoleName,
+				Kind:     "ClusterRole",
+				APIGroup: rbacv1.GroupName,
+			}
+			crb.Subjects = []rbacv1.Subject{
 				{
-					APIGroups: []string{""},
-					Resources: []string{
-						"endpoints",
-						"nodes",
-						"nodes/proxy",
-						"pods",
-						"services",
-					},
-					Verbs: []string{
-						"get",
-						"list",
-						"watch",
-					},
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      resources.MLALoggingAgentServiceAccountName,
+					Namespace: resources.UserClusterMLANamespace,
 				},
 			}
-			return cr, nil
+			return crb, nil
 		}
 	}
 }

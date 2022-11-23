@@ -893,11 +893,11 @@ const (
 	UserClusterMLANamespace = "mla-system"
 	MLAComponentName        = "mla"
 
-	PromtailServiceAccountName     = "promtail"
-	PromtailClusterRoleName        = "system:mla:promtail"
-	PromtailClusterRoleBindingName = "system:mla:promtail"
-	PromtailSecretName             = "promtail"
-	PromtailDaemonSetName          = "promtail"
+	MLALoggingAgentServiceAccountName     = "mla-logging-agent"
+	MLALoggingAgentClusterRoleName        = "system:mla:mla-logging-agent"
+	MLALoggingAgentClusterRoleBindingName = "system:mla:mla-logging-agent"
+	MLALoggingAgentSecretName             = "mla-logging-agent"
+	MLALoggingAgentDaemonSetName          = "mla-logging-agent"
 
 	UserClusterMonitoringAgentConfigMapName          = "mla-monitoring-agent"
 	UserClusterMonitoringAgentServiceAccountName     = "mla-monitoring-agent"
@@ -927,12 +927,12 @@ const (
 	UserClusterMonitoringAgentClientCertSecretKey    = "client.crt"
 	UserClusterMonitoringAgentClientCertMountPath    = "/etc/ssl/mla"
 
-	// PromtailCertificatesSecretName is the name for the secret containing the promtail client certificates.
-	PromtailCertificatesSecretName = "promtail-certificates"
-	PromtailCertificateCommonName  = "promtail"
-	PromtailClientKeySecretKey     = "client.key"
-	PromtailClientCertSecretKey    = "client.crt"
-	PromtailClientCertMountPath    = "/etc/ssl/mla"
+	// MLALoggingAgentCertificatesSecretName is the name for the secret containing the Logging Agent client certificates.
+	MLALoggingAgentCertificatesSecretName = "logging-agent-certificates"
+	MLALoggingAgentCertificateCommonName  = "logging-agent"
+	MLALoggingAgentClientKeySecretKey     = "client.key"
+	MLALoggingAgentClientCertSecretKey    = "client.crt"
+	MLALoggingAgentClientCertMountPath    = "/etc/ssl/mla"
 
 	AlertmanagerName                    = "alertmanager"
 	DefaultAlertmanagerConfigSecretName = "alertmanager"
@@ -974,6 +974,14 @@ const (
 	UserClusterLegacyPrometheusClusterRoleBindingName = "system:mla:prometheus"
 	UserClusterLegacyPrometheusDeploymentName         = "prometheus"
 	UserClusterLegacyPrometheusCertificatesSecretName = "prometheus-certificates"
+
+	// Legacy Promtail resource names, used only for cleanup/migration purposes.
+	UserClusterLegacyPromtailServiceAccountName     = "promtail"
+	UserClusterLegacyPromtailClusterRoleName        = "system:mla:promtail"
+	UserClusterLegacyPromtailClusterRoleBindingName = "system:mla:promtail"
+	UserClusterLegacyPromtailSecretName             = "promtail"
+	UserClusterLegacyPromtailDaemonSetName          = "promtail"
+	UserClusterLegacyPromtailCertificatesSecretName = "promtail-certificates"
 )
 
 const (

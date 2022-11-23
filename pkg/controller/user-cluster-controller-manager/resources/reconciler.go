@@ -47,8 +47,8 @@ import (
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
+	userclusterloggingagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent"
 	userclustermonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/promtail"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
 	operatingsystemmanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/operating-system-manager"
@@ -229,7 +229,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if !r.userClusterMLA.Logging {
-		if err := r.ensurePromtailIsRemoved(ctx); err != nil {
+		if err := r.ensureLoggingAgentIsRemoved(ctx); err != nil {
+			return err
+		}
+	} else {
+		// remove legacy promtail installation in user cluster
+		if err := r.ensureLegacyPromtailIsRemoved(ctx); err != nil {
 			return err
 		}
 	}
@@ -349,7 +354,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 	creators = []reconciling.NamedServiceAccountCreatorGetter{}
 	if r.userClusterMLA.Logging {
 		creators = append(creators,
-			promtail.ServiceAccountCreator(),
+			userclusterloggingagent.ServiceAccountCreator(),
 		)
 	}
 	if r.userClusterMLA.Monitoring {
@@ -553,7 +558,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 	}
 
 	if r.userClusterMLA.Logging {
-		creators = append(creators, promtail.ClusterRoleCreator())
+		creators = append(creators, userclusterloggingagent.ClusterRoleCreator())
 	}
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators, userclustermonitoringagent.ClusterRoleCreator())
@@ -598,7 +603,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 	}
 
 	if r.userClusterMLA.Logging {
-		creators = append(creators, promtail.ClusterRoleBindingCreator())
+		creators = append(creators, userclusterloggingagent.ClusterRoleBindingCreator())
 	}
 
 	if r.userClusterMLA.Monitoring {
@@ -915,13 +920,13 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 	if r.userClusterMLA.Logging {
 		creators = []reconciling.NamedSecretCreatorGetter{
-			promtail.SecretCreator(promtail.Config{
+			userclusterloggingagent.SecretCreator(userclusterloggingagent.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
-				TLSCertFile:   fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.PromtailClientCertSecretKey),
-				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.PromtailClientKeySecretKey),
-				TLSCACertFile: fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.MLAGatewayCACertKey),
+				TLSCertFile:   fmt.Sprintf("%s/%s", resources.MLALoggingAgentClientCertMountPath, resources.MLALoggingAgentClientCertSecretKey),
+				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.MLALoggingAgentClientCertMountPath, resources.MLALoggingAgentClientKeySecretKey),
+				TLSCACertFile: fmt.Sprintf("%s/%s", resources.MLALoggingAgentClientCertMountPath, resources.MLAGatewayCACertKey),
 			}),
-			promtail.ClientCertificateCreator(data.mlaGatewayCACert),
+			userclusterloggingagent.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -967,7 +972,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 
 	if r.userClusterMLA.Logging {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
-			promtail.DaemonSetCreator(data.loggingRequirements, r.imageRewriter),
+			userclusterloggingagent.DaemonSetCreator(data.loggingRequirements, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
@@ -1260,16 +1265,29 @@ func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (health kuberma
 func (r *reconciler) getMLALoggingHealth(ctx context.Context) (kubermaticv1.HealthStatus, error) {
 	loggingHealth, err := resources.HealthyDaemonSet(ctx,
 		r.Client,
-		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.PromtailDaemonSetName},
+		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.MLALoggingAgentDaemonSetName},
 		1)
 	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get ds health %s: %w", resources.PromtailDaemonSetName, err)
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to get ds health %s: %w", resources.MLALoggingAgentDaemonSetName, err)
 	}
 	return loggingHealth, nil
 }
 
-func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
-	for _, resource := range promtail.ResourcesOnDeletion() {
+func (r *reconciler) ensureLoggingAgentIsRemoved(ctx context.Context) error {
+	for _, resource := range userclusterloggingagent.ResourcesOnDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
+			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
+		}
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure promtail is removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureLegacyPromtailIsRemoved(ctx context.Context) error {
+	for _, resource := range userclusterloggingagent.LegacyResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
 			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
