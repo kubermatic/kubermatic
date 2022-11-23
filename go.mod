@@ -70,10 +70,10 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.15.0
 	github.com/vmware/govmomi v0.29.0
 	go.anx.io/go-anxcloud v0.4.4
-	go.etcd.io/etcd/api/v3 v3.5.4
-	go.etcd.io/etcd/client/pkg/v3 v3.5.4
-	go.etcd.io/etcd/client/v3 v3.5.4
-	go.etcd.io/etcd/etcdutl/v3 v3.5.4
+	go.etcd.io/etcd/api/v3 v3.5.6
+	go.etcd.io/etcd/client/pkg/v3 v3.5.6
+	go.etcd.io/etcd/client/v3 v3.5.6
+	go.etcd.io/etcd/etcdutl/v3 v3.5.6
 	go.uber.org/zap v1.21.0
 	go.universe.tf/metallb v0.13.3
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
@@ -210,7 +210,6 @@ require (
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
-	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/fvbommel/sortorder v1.0.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
@@ -228,7 +227,7 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
-	github.com/golang-jwt/jwt/v4 v4.3.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gomodule/redigo v1.8.5 // indirect
@@ -329,10 +328,10 @@ require (
 	github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.4 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.4 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.4 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.4 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.6 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.6 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.6 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.6 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/contrib v0.20.0 // indirect
