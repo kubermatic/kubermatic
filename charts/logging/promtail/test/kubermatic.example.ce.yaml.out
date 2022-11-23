@@ -383,16 +383,6 @@ spec:
         prometheus.io/scrape: "true"
     spec:
       serviceAccountName: promtail
-      initContainers:
-        - name: init
-          image: "docker.io/library/busybox:1.33"
-          imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - sysctl -w fs.inotify.max_user_instances=256
-          securityContext:
-            privileged: true
       securityContext:
         runAsGroup: 0
         runAsUser: 0
