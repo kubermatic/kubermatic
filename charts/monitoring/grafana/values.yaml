@@ -75,7 +75,6 @@ grafana:
       # and the service name itself must be unique.
       prometheusServices:
       - prometheus
-      # - prometheus-thanos-query:10902
 
       lokiServices: []
       # - loki

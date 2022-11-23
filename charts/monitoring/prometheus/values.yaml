@@ -144,87 +144,6 @@ prometheus:
   ##
   extraArgs: {}
 
-  # Thanos can be used to handle long-term storage of metrics by
-  # shipping the data blocks into an object storage like Minio. Note that
-  # this is considered EXPERIMENTAL and can be removed or significantly
-  # altered in future Kubermatic releases.
-  # When enabling Thanos it's advised to disable backups, as blocks
-  # are already backed up, and to lower the retentionTime to something
-  # short like 24 hours.
-  # Enabling Thanos always disables block compaction in Prometheus and
-  # enables the lifecycle and admin API.
-  thanos:
-    enabled: false
-    image:
-      repository: quay.io/thanos/thanos
-      tag: v0.17.2
-
-    store:
-      replicas: 2
-      indexCacheSize: 500MB
-      chunkPoolSize: 2GB
-
-      # Thanos Store downloads blocks from the storage to create its local
-      # cache before enabling the readiness/liveness endpoints, see
-      # https://github.com/thanos-io/thanos/pull/1460
-      # This means that pods can stay un-ready for quite some time, which
-      # can slow down rollouts significantly. By default the probes for
-      # Thanos Store are therefore disabled, but you can re-enable them
-      # by setting probeDelaySeconds to any value >= 0.
-      probeDelaySeconds: -1
-
-      nodeSelector: {}
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: thanos-store
-                  app.kubernetes.io/instance: '{{ template "name" . }}'
-              topologyKey: kubernetes.io/hostname
-            weight: 100
-      tolerations: []
-
-    query:
-      replicas: 2
-
-      nodeSelector: {}
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: thanos-query
-                  app.kubernetes.io/instance: '{{ template "name" . }}'
-              topologyKey: kubernetes.io/hostname
-            weight: 100
-      tolerations: []
-
-    compact:
-      retention:
-        # Setting any of these to "0d" disables the compaction level.
-        resolutionRaw: 7d
-        resolution5m: 30d
-        resolution1h: 90d
-
-      nodeSelector: {}
-      affinity: {}
-      tolerations: []
-
-    ui:
-      replicas: 2
-      nodeSelector: {}
-      affinity: {}
-      tolerations: []
-
-    # Configure the target object score according to https://thanos.io/tip/thanos/storage.md/.
-    # Make sure to manually create the target bucket.
-    objstore:
-      # type:
-      # config:
-
   containers:
     prometheus:
       resources:
@@ -250,47 +169,6 @@ prometheus:
         limits:
           cpu: 5m
           memory: 32Mi
-    thanosSidecar:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 32Mi
-        limits:
-          cpu: 300m
-          memory: 1Gi
-    thanosStore:
-      resources:
-        requests:
-          # Rationalized based on real world usage
-          cpu: 5m
-          memory: 150Mi
-        limits:
-          cpu: 1
-          memory: 3Gi
-    thanosQuery:
-      resources:
-        requests:
-          cpu: 50m
-          memory: 64Mi
-        limits:
-          cpu: 1
-          memory: 1Gi
-    thanosCompact:
-      resources:
-        requests:
-          cpu: 500m
-          memory: 2Gi
-        limits:
-          cpu: 2
-          memory: 4Gi
-    thanosUI:
-      resources:
-        requests:
-          cpu: 10m
-          memory: 32Mi
-        limits:
-          cpu: 250m
-          memory: 128Mi
 
   nodeSelector: {}
   affinity:

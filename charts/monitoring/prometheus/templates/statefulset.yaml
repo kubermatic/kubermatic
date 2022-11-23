@@ -31,9 +31,6 @@ spec:
         app: {{ template "name" . }} # deprecated
         app.kubernetes.io/name: prometheus
         app.kubernetes.io/instance: {{ template "name" . }}
-        {{- if .Values.prometheus.thanos.enabled }}
-        thanos.io/store-api: 'true'
-        {{- end }}
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9090'
@@ -57,38 +54,6 @@ spec:
           echo "Cleaning up block compaction leftovers..."
           find /var/prometheus/data -type d -name '*.tmp' -maxdepth 1 -print -exec rm -r {} \;
 
-          {{- if .Values.prometheus.thanos.enabled }}
-          config=/etc/prometheus-shared/prometheus.yaml
-
-          echo "Waiting up to 60 seconds for $config..."
-          for i in $(seq 60); do
-            [ -f $config ] && break
-            sleep 1
-          done
-
-          if [ ! -f $config ]; then
-            echo "File does not exist, giving up. Check the Thanos sidecar for possible errors."
-            exit 1
-          fi
-
-          echo "Configuration found, starting Prometheus..."
-          exec /bin/prometheus \
-            --config.file=$config \
-            --storage.tsdb.no-lockfile \
-            --storage.tsdb.path=/var/prometheus/data \
-            --storage.tsdb.retention.time={{ .Values.prometheus.tsdb.retentionTime | default "24h" }} \
-            --storage.tsdb.min-block-duration=2h \
-            --storage.tsdb.max-block-duration=2h \
-            {{- if .Values.prometheus.tsdb.compressWAL }}
-            --storage.tsdb.wal-compression \
-            {{- end }}
-            --web.enable-lifecycle \
-            --web.external-url=https://{{ .Values.prometheus.host | trim }} \
-            --web.enable-admin-api \
-          {{- range $key, $value := .Values.prometheus.extraArgs }}
-            --{{ $key }}={{ $value }} \
-          {{ end }}
-          {{- else }}
           echo "Starting Prometheus..."
           exec /bin/prometheus \
             --config.file=/etc/prometheus/config/prometheus.yaml \
@@ -106,7 +71,6 @@ spec:
             {{- range $key, $value := .Values.prometheus.extraArgs }}
             --{{ $key }}={{ $value }} \
             {{ end }}
-          {{- end }}
         ports:
         - containerPort: 9090
           name: web
@@ -131,15 +95,9 @@ spec:
         resources:
 {{ toYaml .Values.prometheus.containers.prometheus.resources | indent 10 }}
         volumeMounts:
-        {{- if .Values.prometheus.thanos.enabled }}
-        - name: config-shared
-          mountPath: /etc/prometheus-shared/
-          readOnly: false
-        {{- else }}
         - name: config
           mountPath: /etc/prometheus/config/
           readOnly: false
-        {{- end }}
         - name: rules
           mountPath: /etc/prometheus/rules/
           readOnly: false
@@ -155,7 +113,6 @@ spec:
         {{- end }}
         {{- end }}
 
-      {{- if not .Values.prometheus.thanos.enabled }}
       - name: reloader
         image: '{{ .Values.prometheus.configReloaderImage.repository }}:{{ .Values.prometheus.configReloaderImage.tag }}'
         imagePullPolicy: {{ .Values.prometheus.configReloaderImage.pullPolicy }}
@@ -179,7 +136,6 @@ spec:
           readOnly: true
         {{- end }}
         {{- end }}
-      {{- end }}
 
       {{- if .Values.prometheus.backup.enabled }}
       - name: backup
@@ -201,54 +157,6 @@ spec:
           runAsUser: 0
         resources:
 {{ toYaml .Values.prometheus.containers.backup.resources | indent 10 }}
-      {{- end }}
-
-      {{- if .Values.prometheus.thanos.enabled }}
-      - name: thanos
-        image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
-        args:
-        - sidecar
-        - --tsdb.path=/prometheus
-        - --prometheus.url=http://localhost:9090
-        - --objstore.config-file=/etc/thanos/objstore.yaml
-        - --reloader.config-file=/etc/prometheus/config/prometheus.yaml
-        - --reloader.config-envsubst-file=/etc/prometheus-shared/prometheus.yaml
-        # New flag for migrating old blocks.
-        #- --shipper.upload-compacted-once
-        env:
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        ports:
-        - name: http-sidecar
-          containerPort: 10902
-        - name: grpc
-          containerPort: 10901
-        volumeMounts:
-        - name: db
-          mountPath: /prometheus
-          readOnly: false
-          subPath: prometheus-db
-        - name: config-shared
-          mountPath: /etc/prometheus-shared
-        - name: config
-          mountPath: /etc/prometheus/config
-        - name: thanos
-          mountPath: /etc/thanos
-        securityContext:
-          runAsNonRoot: false
-          runAsUser: 0
-        livenessProbe:
-          httpGet:
-            path: /-/healthy
-            port: http-sidecar
-        readinessProbe:
-          httpGet:
-            path: /-/ready
-            port: http-sidecar
-        resources:
-{{ toYaml .Values.prometheus.containers.thanosSidecar.resources | indent 10 }}
       {{- end }}
 
       serviceAccountName: '{{ template "name" . }}'
@@ -278,13 +186,6 @@ spec:
       {{- if .Values.prometheus.backup.enabled }}
       - name: backup
         emptyDir: {}
-      {{- end }}
-      {{- if .Values.prometheus.thanos.enabled }}
-      - name: config-shared
-        emptyDir: {}
-      - name: thanos
-        secret:
-          secretName: '{{ template "name" . }}-thanos'
       {{- end }}
       nodeSelector:
 {{ toYaml .Values.prometheus.nodeSelector | indent 8 }}
