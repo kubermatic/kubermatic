@@ -123,10 +123,11 @@ func TestCiliumClusters(t *testing.T) {
 			name:      "ebpf proxy mode test",
 			proxyMode: resources.EBPFProxyMode,
 		},
-		{
-			name:      "ipvs proxy mode test",
-			proxyMode: resources.IPVSProxyMode,
-		},
+		// IPVS is not supported ATM due to https://github.com/cilium/cilium/issues/18610
+		//{
+		//	name:      "ipvs proxy mode test",
+		//	proxyMode: resources.IPVSProxyMode,
+		//},
 		{
 			name:      "iptables proxy mode test",
 			proxyMode: resources.IPTablesProxyMode,
