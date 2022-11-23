@@ -29,6 +29,7 @@ import (
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/session"
+	"github.com/vmware/govmomi/vapi/tags"
 	"github.com/vmware/govmomi/vim25"
 	"github.com/vmware/govmomi/vim25/soap"
 
@@ -246,7 +247,11 @@ func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, u
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
-func (v *Provider) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
+func (v *Provider) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSpec) error {
+	if spec.VSphere.TagCategoryID == "" {
+		spec.VSphere.TagCategoryID = v.dc.DefaultTagCategoryID
+	}
+
 	return nil
 }
 
@@ -293,6 +298,19 @@ func (v *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clou
 	if ds := spec.VSphere.Datastore; ds != "" {
 		if _, err = session.Finder.Datastore(ctx, ds); err != nil {
 			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %w", ds, err)
+		}
+	}
+
+	if tagCategoryID := spec.VSphere.TagCategoryID; tagCategoryID != "" {
+		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
+		if err != nil {
+			return fmt.Errorf("failed to create REST client session: %w", err)
+		}
+		defer restSession.Logout(ctx)
+
+		tagManager := tags.NewManager(restSession.Client)
+		if _, err := tagManager.GetCategory(ctx, tagCategoryID); err != nil {
+			return fmt.Errorf("failed to get tag categories %w", err)
 		}
 	}
 

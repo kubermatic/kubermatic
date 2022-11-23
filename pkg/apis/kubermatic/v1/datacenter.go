@@ -601,6 +601,9 @@ type DatacenterSpecVSphere struct {
 	InfraManagementUser *VSphereCredentials `json:"infraManagementUser,omitempty"`
 	// Optional: defines if the IPv6 is enabled for the datacenter
 	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
+	// DefaultTagCategoryID is the tag category id that will be used as default, if users don't specify it on a cluster level,
+	// and they don't wish KKP to create default generated tag category, upon cluster creation.
+	DefaultTagCategoryID string `json:"defaultTagCategoryID,omitempty"`
 }
 
 type DatacenterSpecVMwareCloudDirector struct {
