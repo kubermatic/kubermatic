@@ -64,7 +64,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil)
 
-				installorUpgradeTest(t, ctx, client, testNs, app, test.DefaultData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, test.DefaultData, test.DefaultVerionLabel, 1)
 			},
 		},
 		{
@@ -75,7 +75,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData))
 
 				appendDefaultValues(customCmData, test.DefaultData) // its check that object values are merged with default object values
-				installorUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
 			},
 		},
 		{
@@ -86,7 +86,7 @@ func TestHelmProvider(t *testing.T) {
 				customVersionLabel := "1.2.3"
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.VersionLabelKey, customVersionLabel))
 
-				installorUpgradeTest(t, ctx, client, testNs, app, test.DefaultData, customVersionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, test.DefaultData, customVersionLabel, 1)
 			},
 		},
 		{
@@ -97,13 +97,13 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData))
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installorUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
 
 				// Upgrade application
 				newCustomCmData := map[string]string{"c": "d", "e": "f"}
 				app.Spec.Values.Raw = toHelmRawValues(t, test.CmDataKey, newCustomCmData)
 				appendDefaultValues(newCustomCmData, test.DefaultData)
-				installorUpgradeTest(t, ctx, client, testNs, app, newCustomCmData, test.DefaultVerionLabel, 2)
+				installOrUpgradeTest(t, ctx, client, testNs, app, newCustomCmData, test.DefaultVerionLabel, 2)
 			},
 		},
 		{
@@ -114,7 +114,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData))
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installorUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
 
 				// test uninstall app
 				template := HelmTemplate{
@@ -152,7 +152,7 @@ func TestHelmProvider(t *testing.T) {
 	}
 }
 
-func installorUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, expectedData map[string]string, expectedVersionLabel string, expectedVersion int) {
+func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, expectedData map[string]string, expectedVersionLabel string, expectedVersion int) {
 	template := HelmTemplate{
 		Ctx:                     context.Background(),
 		Kubeconfig:              kubeconfigPath,
