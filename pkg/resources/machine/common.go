@@ -520,10 +520,6 @@ func getGCPProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *ku
 func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*kubevirt.RawConfig, error) {
 	config := &kubevirt.RawConfig{
 		VirtualMachine: kubevirt.VirtualMachine{
-			Flavor: kubevirt.Flavor{
-				Name:    providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorName},
-				Profile: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.FlavorProfile},
-			},
 			Instancetype: nodeSpec.Cloud.Kubevirt.Instancetype,
 			Preference:   nodeSpec.Cloud.Kubevirt.Preference,
 			Template: kubevirt.Template{
@@ -541,8 +537,6 @@ func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.Nod
 			DNSConfig: dc.Spec.Kubevirt.DNSConfig.DeepCopy(),
 		},
 		Affinity: kubevirt.Affinity{
-			PodAffinityPreset:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAffinityPreset},     //nolint:staticcheck
-			PodAntiAffinityPreset: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.PodAntiAffinityPreset}, //nolint:staticcheck
 			NodeAffinityPreset: kubevirt.NodeAffinityPreset{
 				Type: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Type},
 				Key:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Kubevirt.NodeAffinityPreset.Key},
