@@ -21,10 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/version/cni"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
 	"testing"
 
 	"go.uber.org/zap"
@@ -34,13 +30,17 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -112,6 +112,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 	}
 }
 
+//gocyclo:ignore
 func TestReconcile(t *testing.T) {
 	log := zap.NewNop().Sugar()
 
@@ -239,7 +240,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:                          "invalid annotation",
-			cluster:                       genCluster(fmt.Sprintf("INVALID")),
+			cluster:                       genCluster("INVALID"),
 			appDefinitionDefaultValues:    map[string]interface{}{appDefDefaultCNIValue: "true"},
 			existingAppInstallationValues: nil,
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
