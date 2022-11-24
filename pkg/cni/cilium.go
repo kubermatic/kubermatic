@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	ciliumAppDefName    = "cilium"
 	ciliumHelmChartName = "cilium"
 )
 
@@ -37,7 +36,7 @@ const (
 // for installing Cilium CNI into KKP usr clusters.
 func CiliumApplicationDefinitionCreator() reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter {
 	return func() (string, reconciling.AppsKubermaticV1ApplicationDefinitionCreator) {
-		return ciliumAppDefName, func(app *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
+		return kubermaticv1.CNIPluginTypeCilium.String(), func(app *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			app.Labels = map[string]string{
 				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
 				appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,

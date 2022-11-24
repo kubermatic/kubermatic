@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 /*
-Package cni contains supported sCNI version definitions and helpers for managing
-CNIs in KKP.
+Package cni contains supported CNI version definitions and helpers for managing CNIs in KKP.
 */
 package cni

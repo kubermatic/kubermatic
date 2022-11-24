@@ -31,6 +31,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
+	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -92,6 +93,15 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
+	// Predicate for filtering out events for clusters whose CNI is not managed by Applications infra
+	cniManagedByAppInfraPredicate := kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
+		cluster, ok := o.(*kubermaticv1.Cluster)
+		if !ok {
+			return false
+		}
+		return cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version)
+	})
+
 	// Predicate for reacting to cluster update events only when CNIPlugin or ClusterNetwork config changed, or cluster Address changed
 	clusterUpdatePredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -111,7 +121,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 	}
 
 	// Watch on cluster events
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterUpdatePredicate, workerlabel.Predicates(workerName)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, cniManagedByAppInfraPredicate, clusterUpdatePredicate, workerlabel.Predicates(workerName)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
@@ -161,19 +171,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	log := logger.With("CNIType", cluster.Spec.CNIPlugin.Type, "CNIVersion", cluster.Spec.CNIPlugin.Version)
 
-	// Do not reconcile the cluster if the CNI is not managed by Applications infra
-	if !cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
-		log.Debug("CNI is not managed by Applications infra, skipping")
-		return nil, nil
-	}
-
 	// Make sure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
 		log.Debug("Requeue CNI reconciliation as Application controller is not healthy")
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil // try reconciling later
 	}
 
-	log.Debugf("Reconciling CNI")
+	log.Debug("Reconciling CNI")
 
 	// Ensure legacy CNI addon is removed if it was deployed as older CNI version
 	if err := r.ensureLegacyCNIAddonIsRemoved(ctx, cluster); err != nil {
