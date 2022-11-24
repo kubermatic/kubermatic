@@ -1280,7 +1280,7 @@ func (r *reconciler) ensureLoggingAgentIsRemoved(ctx context.Context) error {
 			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
 		}
 		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure promtail is removed/not present: %w", err)
+			return fmt.Errorf("failed to ensure logging agent is removed/not present: %w", err)
 		}
 	}
 	return nil
@@ -1289,9 +1289,6 @@ func (r *reconciler) ensureLoggingAgentIsRemoved(ctx context.Context) error {
 func (r *reconciler) ensureLegacyPromtailIsRemoved(ctx context.Context) error {
 	for _, resource := range mlaloggingagent.LegacyResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
-		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
-			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
-		}
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure promtail is removed/not present: %w", err)
 		}
@@ -1306,7 +1303,7 @@ func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Conte
 			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
 		}
 		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure user cluster monitring agent is removed/not present: %w", err)
+			return fmt.Errorf("failed to ensure user cluster monitoring agent is removed/not present: %w", err)
 		}
 	}
 	return nil
@@ -1315,11 +1312,8 @@ func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Conte
 func (r *reconciler) ensureLegacyPrometheusIsRemoved(ctx context.Context) error {
 	for _, resource := range mlamonitoringagent.LegacyResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
-		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
-			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
-		}
 		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure user cluster monitring agent is removed/not present: %w", err)
+			return fmt.Errorf("failed to ensure user cluster monitoring agent is removed/not present: %w", err)
 		}
 	}
 	return nil
