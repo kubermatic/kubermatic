@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cni
+package cniapplicationinstallationcontroller
 
 import (
 	"context"
@@ -29,9 +29,9 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,7 +54,7 @@ const (
 	datacenterName = "testdc"
 	projectID      = "testproject"
 
-	overrideCNIValue      = "kubeProxyReplacement"   // CNI value that should be always set by getCiliumOverrideValues
+	overrideCNIValue      = "kubeProxyReplacement"   // CNI value that should be always set if proxy mode == ebpf
 	appDefDefaultCNIValue = "valueFromAppDefDefault" // CNI value to be present in the default values of the ApplicationDefinition in the tests
 	annotationCNIValue    = "valueFromAnnotation"    // CNI value to be used in the initial-cni-values-request annotation by the tests
 	existingCNIValue      = "existingValue"          // CNI value to be used by the tests if the CNI ApplicationInstallation already exists

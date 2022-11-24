@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cni
+package cniapplicationinstallationcontroller
 
 import (
 	"context"
@@ -30,9 +30,9 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
-	"k8c.io/kubermatic/v2/pkg/version/cni"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -52,7 +52,7 @@ import (
 )
 
 const (
-	ControllerName = "kkp-cni-controller"
+	ControllerName = "kkp-cni-application-installation-controller"
 
 	cniPluginNamespace = "kube-system"
 )
@@ -332,7 +332,7 @@ func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegi
 
 func getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]interface{} {
 	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-		return getCiliumOverrideValues(cluster, overwriteRegistry)
+		return cni.GetCiliumAppInstallOverrideValues(cluster, overwriteRegistry)
 	}
 	return nil
 }

@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -470,7 +471,7 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 	logger.Debug("Reconciling ApplicationDefinitions")
 
 	creators := []reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter{
-		kubermatic.CiliumCNIApplicationDefinitionCreator(),
+		cni.CiliumApplicationDefinitionCreator(),
 	}
 	if err := reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
