@@ -211,6 +211,7 @@ func ControllerDeploymentCreator(data *resources.TemplateData) reconciling.Named
 					},
 				},
 				{
+					// test
 					Name:            "csi-attacher",
 					ImagePullPolicy: corev1.PullAlways,
 					Image:           "quay.io/openshift/origin-csi-external-attacher:4.13.0",
