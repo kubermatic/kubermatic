@@ -63,20 +63,20 @@ func CiliumApplicationDefinitionCreator() reconciling.NamedAppsKubermaticV1Appli
 
 			// we want to allow overriding the default values, so reconcile them only if nil
 			if app.Spec.DefaultValues == nil {
-				defaultValues := map[string]interface{}{
-					"operator": map[string]interface{}{
+				defaultValues := map[string]any{
+					"operator": map[string]any{
 						"replicas": "1",
 					},
-					"hubble": map[string]interface{}{
-						"relay": map[string]interface{}{
+					"hubble": map[string]any{
+						"relay": map[string]any{
 							"enabled": "true",
 						},
-						"ui": map[string]interface{}{
+						"ui": map[string]any{
 							"enabled": "true",
 						},
 						// cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
-						"tls": map[string]interface{}{
-							"auto": map[string]interface{}{
+						"tls": map[string]any{
+							"auto": map[string]any{
 								"method": "cronJob",
 							},
 						},
@@ -95,15 +95,15 @@ func CiliumApplicationDefinitionCreator() reconciling.NamedAppsKubermaticV1Appli
 
 // GetCiliumAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
 // of the Cilium CNI managed by KKP.
-func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]interface{} {
-	values := map[string]interface{}{
-		"cni": map[string]interface{}{
+func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
+	values := map[string]any{
+		"cni": map[string]any{
 			// we run Cilium as non-exclusive CNI to allow for Multus use-cases
 			"exclusive": "false",
 		},
-		"operator": map[string]interface{}{
-			"securityContext": map[string]interface{}{
-				"seccompProfile": map[string]interface{}{
+		"operator": map[string]any{
+			"securityContext": map[string]any{
+				"seccompProfile": map[string]any{
 					"type": "RuntimeDefault",
 				},
 			},
@@ -118,16 +118,16 @@ func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteR
 		values["kubeProxyReplacement"] = "disabled"
 	}
 
-	ipamOperator := map[string]interface{}{
+	ipamOperator := map[string]any{
 		"clusterPoolIPv4PodCIDR":  cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(),
 		"clusterPoolIPv4MaskSize": fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4),
 	}
 	if cluster.IsDualStack() {
-		values["ipv6"] = map[string]interface{}{"enabled": "true"}
+		values["ipv6"] = map[string]any{"enabled": "true"}
 		ipamOperator["clusterPoolIPv6PodCIDR"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR()
 		ipamOperator["clusterPoolIPv6MaskSize"] = fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6)
 	}
-	values["ipam"] = map[string]interface{}{"operator": ipamOperator}
+	values["ipam"] = map[string]any{"operator": ipamOperator}
 
 	// TODO (rastislavs): override *.image.repository + set *.image.useDigest=false if registry override is configured
 

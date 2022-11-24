@@ -185,7 +185,7 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	}
 
 	// Prepare initialValues for the CNI ApplicationInstallation. These values will be used if the ApplicationInstallation does not exist yet.
-	initialValues := make(map[string]interface{})
+	initialValues := make(map[string]any)
 
 	// Try to load the initial values form the annotation
 	if err := r.parseCNIValuesAnnotation(cluster, initialValues); err != nil {
@@ -245,7 +245,7 @@ func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster 
 	return nil
 }
 
-func (r *Reconciler) parseCNIValuesAnnotation(cluster *kubermaticv1.Cluster, values map[string]interface{}) error {
+func (r *Reconciler) parseCNIValuesAnnotation(cluster *kubermaticv1.Cluster, values map[string]any) error {
 	annotation := cluster.Annotations[kubermaticv1.InitialCNIValuesRequestAnnotation]
 	if annotation != "" {
 		if err := json.Unmarshal([]byte(annotation), &values); err != nil {
@@ -261,7 +261,7 @@ func (r *Reconciler) removeCNIValuesAnnotation(ctx context.Context, cluster *kub
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster, values map[string]interface{}) error {
+func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster, values map[string]any) error {
 	appDef := &appskubermaticv1.ApplicationDefinition{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
 		return ctrlruntimeclient.IgnoreNotFound(err)
@@ -276,7 +276,7 @@ func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kube
 	return nil
 }
 
-func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]interface{}) error {
+func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]any) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -288,7 +288,7 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluste
 	return reconciling.ReconcileAppsKubermaticV1ApplicationInstallations(ctx, creators, cniPluginNamespace, userClusterClient)
 }
 
-func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegistry string, initialValues map[string]interface{}) reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter {
+func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegistry string, initialValues map[string]any) reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter {
 	return func() (string, reconciling.AppsKubermaticV1ApplicationInstallationCreator) {
 		return cluster.Spec.CNIPlugin.Type.String(), func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
 			app.Labels = map[string]string{
@@ -304,7 +304,7 @@ func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegi
 			}
 
 			// Unmarshall existing values
-			values := make(map[string]interface{})
+			values := make(map[string]any)
 			if len(app.Spec.Values.Raw) > 0 {
 				if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
 					return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
@@ -334,7 +334,7 @@ func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegi
 	}
 }
 
-func getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]interface{} {
+func getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
 	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
 		return cni.GetCiliumAppInstallOverrideValues(cluster, overwriteRegistry)
 	}

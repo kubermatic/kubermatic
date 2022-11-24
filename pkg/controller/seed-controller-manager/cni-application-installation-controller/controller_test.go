@@ -119,8 +119,8 @@ func TestReconcile(t *testing.T) {
 	testCases := []struct {
 		name                          string
 		cluster                       *kubermaticv1.Cluster
-		appDefinitionDefaultValues    map[string]interface{}
-		existingAppInstallationValues map[string]interface{}
+		appDefinitionDefaultValues    map[string]any
+		existingAppInstallationValues map[string]any
 		validate                      func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
 	}{
 		{
@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:                          "no existing ApplicationInstallation, no annotation, existing ApplicationDefinition default values",
 			cluster:                       genCluster(""),
-			appDefinitionDefaultValues:    map[string]interface{}{appDefDefaultCNIValue: "true"},
+			appDefinitionDefaultValues:    map[string]any{appDefDefaultCNIValue: "true"},
 			existingAppInstallationValues: nil,
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -182,7 +182,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:                          "no existing ApplicationInstallation, existing annotation, existing ApplicationDefinition default values",
 			cluster:                       genCluster(fmt.Sprintf("{\"%s\":true}", annotationCNIValue)),
-			appDefinitionDefaultValues:    map[string]interface{}{appDefDefaultCNIValue: "true"},
+			appDefinitionDefaultValues:    map[string]any{appDefDefaultCNIValue: "true"},
 			existingAppInstallationValues: nil,
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -213,8 +213,8 @@ func TestReconcile(t *testing.T) {
 		{
 			name:                          "existing ApplicationInstallation, existing annotation, existing ApplicationDefinition default values",
 			cluster:                       genCluster(fmt.Sprintf("{\"%s\":true}", annotationCNIValue)),
-			appDefinitionDefaultValues:    map[string]interface{}{appDefDefaultCNIValue: "true"},
-			existingAppInstallationValues: map[string]interface{}{existingCNIValue: "true"},
+			appDefinitionDefaultValues:    map[string]any{appDefDefaultCNIValue: "true"},
+			existingAppInstallationValues: map[string]any{existingCNIValue: "true"},
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
 					return fmt.Errorf("reconciling should not have produced an error, but returned: %w", reconcileErr)
@@ -241,7 +241,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:                          "invalid annotation",
 			cluster:                       genCluster("INVALID"),
-			appDefinitionDefaultValues:    map[string]interface{}{appDefDefaultCNIValue: "true"},
+			appDefinitionDefaultValues:    map[string]any{appDefDefaultCNIValue: "true"},
 			existingAppInstallationValues: nil,
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr == nil {
@@ -342,12 +342,12 @@ func (f *fakeClientProvider) GetClient(ctx context.Context, c *kubermaticv1.Clus
 	return f.client, nil
 }
 
-func getApplicationInstallationValues(userClusterClient ctrlruntimeclient.Client) (map[string]interface{}, error) {
+func getApplicationInstallationValues(userClusterClient ctrlruntimeclient.Client) (map[string]any, error) {
 	app := appskubermaticv1.ApplicationInstallation{}
 	if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: cniPluginNamespace, Name: kubermaticv1.CNIPluginTypeCilium.String()}, &app); err != nil {
 		return nil, fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err)
 	}
-	values := make(map[string]interface{})
+	values := make(map[string]any)
 	if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
 		return nil, fmt.Errorf("failed to unmarshall CNI values: %w", err)
 	}
