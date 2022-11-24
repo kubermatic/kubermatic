@@ -456,7 +456,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "job:etcd_debugging_mvcc_db_total_size_in_bytes:clone{cluster=\"$cluster\"}",
+          "expr": "job:etcd_mvcc_db_total_size_in_bytes:clone{cluster=\"$cluster\"}",
           "format": "time_series",
           "hide": false,
           "interval": "$interval",
@@ -1291,7 +1291,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "job:etcd_debugging_mvcc_txn_total:rate5m{cluster=\"$cluster\"}",
+          "expr": "job:etcd_mvcc_txn_total:rate5m{cluster=\"$cluster\"}",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1387,7 +1387,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "job:etcd_debugging_mvcc_put_total:rate5m{cluster=\"$cluster\"}",
+          "expr": "job:etcd_mvcc_put_total:rate5m{cluster=\"$cluster\"}",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1483,7 +1483,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "job:etcd_debugging_mvcc_range_total:rate5m{cluster=\"$cluster\"}",
+          "expr": "job:etcd_mvcc_range_total:rate5m{cluster=\"$cluster\"}",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1579,7 +1579,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "job:etcd_debugging_mvcc_delete_total:rate5m{cluster=\"$cluster\"}",
+          "expr": "job:etcd_mvcc_delete_total:rate5m{cluster=\"$cluster\"}",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
