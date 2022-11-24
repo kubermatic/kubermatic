@@ -25,7 +25,7 @@ import (
 
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
-		return resources.UserClusterMonitoringAgentClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+		return resources.MLAMonitoringAgentClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Labels = resources.BaseAppLabels(appName, nil)
 
 			cr.Rules = []rbacv1.PolicyRule{

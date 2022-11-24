@@ -30,36 +30,36 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentDeploymentName,
+				Name:      resources.MLAMonitoringAgentDeploymentName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentConfigMapName,
+				Name:      resources.MLAMonitoringAgentConfigMapName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentCertificatesSecretName,
+				Name:      resources.MLAMonitoringAgentCertificatesSecretName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.UserClusterMonitoringAgentServiceAccountName,
+				Name:      resources.MLAMonitoringAgentServiceAccountName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.UserClusterMonitoringAgentClusterRoleName,
+				Name: resources.MLAMonitoringAgentClusterRoleName,
 			},
 		},
 		&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.UserClusterMonitoringAgentClusterRoleBindingName,
+				Name: resources.MLAMonitoringAgentClusterRoleBindingName,
 			},
 		},
 	}

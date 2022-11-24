@@ -25,7 +25,7 @@ import (
 
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
-		return resources.UserClusterMonitoringAgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+		return resources.MLAMonitoringAgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(appName, nil)
 			return sa, nil
 		}

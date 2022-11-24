@@ -899,11 +899,11 @@ const (
 	MLALoggingAgentSecretName             = "mla-logging-agent"
 	MLALoggingAgentDaemonSetName          = "mla-logging-agent"
 
-	UserClusterMonitoringAgentConfigMapName          = "mla-monitoring-agent"
-	UserClusterMonitoringAgentServiceAccountName     = "mla-monitoring-agent"
-	UserClusterMonitoringAgentClusterRoleName        = "system:mla:mla-monitoring-agent"
-	UserClusterMonitoringAgentClusterRoleBindingName = "system:mla:mla-monitoring-agent"
-	UserClusterMonitoringAgentDeploymentName         = "mla-monitoring-agent"
+	MLAMonitoringAgentConfigMapName          = "mla-monitoring-agent"
+	MLAMonitoringAgentServiceAccountName     = "mla-monitoring-agent"
+	MLAMonitoringAgentClusterRoleName        = "system:mla:mla-monitoring-agent"
+	MLAMonitoringAgentClusterRoleBindingName = "system:mla:mla-monitoring-agent"
+	MLAMonitoringAgentDeploymentName         = "mla-monitoring-agent"
 
 	// MLAGatewayExternalServiceName is the name for the MLA Gateway external service.
 	MLAGatewayExternalServiceName = "mla-gateway-ext"
@@ -920,12 +920,12 @@ const (
 	MLAGatewayKeySecretKey           = "gateway.key"
 	MLAGatewayCertSecretKey          = "gateway.crt"
 
-	// UserClusterMonitoringAgentCertificatesSecretName is the name for the secret containing the Monitoring Agent (grafana-agent) client certificates.
-	UserClusterMonitoringAgentCertificatesSecretName = "monitoring-agent-certificates"
-	UserClusterMonitoringAgentCertificateCommonName  = "grafana-agent"
-	UserClusterMonitoringAgentClientKeySecretKey     = "client.key"
-	UserClusterMonitoringAgentClientCertSecretKey    = "client.crt"
-	UserClusterMonitoringAgentClientCertMountPath    = "/etc/ssl/mla"
+	// MLAMonitoringAgentCertificatesSecretName is the name for the secret containing the Monitoring Agent (grafana-agent) client certificates.
+	MLAMonitoringAgentCertificatesSecretName = "monitoring-agent-certificates"
+	MLAMonitoringAgentCertificateCommonName  = "grafana-agent"
+	MLAMonitoringAgentClientKeySecretKey     = "client.key"
+	MLAMonitoringAgentClientCertSecretKey    = "client.crt"
+	MLAMonitoringAgentClientCertMountPath    = "/etc/ssl/mla"
 
 	// MLALoggingAgentCertificatesSecretName is the name for the secret containing the Logging Agent client certificates.
 	MLALoggingAgentCertificatesSecretName = "logging-agent-certificates"

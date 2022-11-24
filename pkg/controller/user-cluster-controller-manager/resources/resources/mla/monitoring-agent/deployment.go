@@ -52,8 +52,8 @@ const (
 
 var (
 	controllerLabels = map[string]string{
-		common.NameLabel:      resources.UserClusterMonitoringAgentDeploymentName,
-		common.InstanceLabel:  resources.UserClusterMonitoringAgentDeploymentName,
+		common.NameLabel:      resources.MLAMonitoringAgentDeploymentName,
+		common.InstanceLabel:  resources.MLAMonitoringAgentDeploymentName,
 		common.ComponentLabel: resources.MLAComponentName,
 	}
 
@@ -71,7 +71,7 @@ var (
 
 func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return resources.UserClusterMonitoringAgentDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return resources.MLAMonitoringAgentDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
 
 			deployment.Spec.Selector = &metav1.LabelSelector{
@@ -82,7 +82,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 				deployment.Spec.Replicas = replicas
 			}
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
-			deployment.Spec.Template.Spec.ServiceAccountName = resources.UserClusterMonitoringAgentServiceAccountName
+			deployment.Spec.Template.Spec.ServiceAccountName = resources.MLAMonitoringAgentServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:    pointer.Int64(65534),
 				RunAsGroup:   pointer.Int64(65534),
@@ -115,7 +115,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 						},
 						{
 							Name:      certificatesVolumeName,
-							MountPath: resources.UserClusterMonitoringAgentClientCertMountPath,
+							MountPath: resources.MLAMonitoringAgentClientCertMountPath,
 						},
 						{
 							Name:      storageVolumeName,
@@ -210,7 +210,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: resources.UserClusterMonitoringAgentConfigMapName,
+								Name: resources.MLAMonitoringAgentConfigMapName,
 							},
 						},
 					},
@@ -219,7 +219,7 @@ func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, 
 					Name: certificatesVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName:  resources.UserClusterMonitoringAgentCertificatesSecretName,
+							SecretName:  resources.MLAMonitoringAgentCertificatesSecretName,
 							DefaultMode: pointer.Int32(0400),
 						},
 					},

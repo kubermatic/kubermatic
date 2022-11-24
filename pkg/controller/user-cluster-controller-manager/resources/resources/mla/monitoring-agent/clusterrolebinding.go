@@ -25,18 +25,18 @@ import (
 
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return resources.UserClusterMonitoringAgentClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+		return resources.MLAMonitoringAgentClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(appName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
-				Name:     resources.UserClusterMonitoringAgentClusterRoleName,
+				Name:     resources.MLAMonitoringAgentClusterRoleName,
 				Kind:     "ClusterRole",
 				APIGroup: rbacv1.GroupName,
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{
 					Kind:      rbacv1.ServiceAccountKind,
-					Name:      resources.UserClusterMonitoringAgentServiceAccountName,
+					Name:      resources.MLAMonitoringAgentServiceAccountName,
 					Namespace: resources.UserClusterMLANamespace,
 				},
 			}

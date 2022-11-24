@@ -47,8 +47,8 @@ import (
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
-	userclusterloggingagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent"
-	userclustermonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
+	mlaloggingagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent"
+	mlamonitoringagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
 	operatingsystemmanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/operating-system-manager"
@@ -354,12 +354,12 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 	creators = []reconciling.NamedServiceAccountCreatorGetter{}
 	if r.userClusterMLA.Logging {
 		creators = append(creators,
-			userclusterloggingagent.ServiceAccountCreator(),
+			mlaloggingagent.ServiceAccountCreator(),
 		)
 	}
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators,
-			userclustermonitoringagent.ServiceAccountCreator(),
+			mlamonitoringagent.ServiceAccountCreator(),
 		)
 	}
 
@@ -558,10 +558,10 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 	}
 
 	if r.userClusterMLA.Logging {
-		creators = append(creators, userclusterloggingagent.ClusterRoleCreator())
+		creators = append(creators, mlaloggingagent.ClusterRoleCreator())
 	}
 	if r.userClusterMLA.Monitoring {
-		creators = append(creators, userclustermonitoringagent.ClusterRoleCreator())
+		creators = append(creators, mlamonitoringagent.ClusterRoleCreator())
 	}
 
 	if data.operatingSystemManagerEnabled {
@@ -603,11 +603,11 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 	}
 
 	if r.userClusterMLA.Logging {
-		creators = append(creators, userclusterloggingagent.ClusterRoleBindingCreator())
+		creators = append(creators, mlaloggingagent.ClusterRoleBindingCreator())
 	}
 
 	if r.userClusterMLA.Monitoring {
-		creators = append(creators, userclustermonitoringagent.ClusterRoleBindingCreator())
+		creators = append(creators, mlamonitoringagent.ClusterRoleBindingCreator())
 	}
 
 	if r.isKonnectivityEnabled {
@@ -830,11 +830,11 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 			return fmt.Errorf("failed to get user cluster prometheus custom scrape configs: %w", err)
 		}
 		creators = []reconciling.NamedConfigMapCreatorGetter{
-			userclustermonitoringagent.ConfigMapCreator(userclustermonitoringagent.Config{
+			mlamonitoringagent.ConfigMapCreator(mlamonitoringagent.Config{
 				MLAGatewayURL:       r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
-				TLSCertFile:         fmt.Sprintf("%s/%s", resources.UserClusterMonitoringAgentClientCertMountPath, resources.UserClusterMonitoringAgentClientCertSecretKey),
-				TLSKeyFile:          fmt.Sprintf("%s/%s", resources.UserClusterMonitoringAgentClientCertMountPath, resources.UserClusterMonitoringAgentClientKeySecretKey),
-				TLSCACertFile:       fmt.Sprintf("%s/%s", resources.UserClusterMonitoringAgentClientCertMountPath, resources.MLAGatewayCACertKey),
+				TLSCertFile:         fmt.Sprintf("%s/%s", resources.MLAMonitoringAgentClientCertMountPath, resources.MLAMonitoringAgentClientCertSecretKey),
+				TLSKeyFile:          fmt.Sprintf("%s/%s", resources.MLAMonitoringAgentClientCertMountPath, resources.MLAMonitoringAgentClientKeySecretKey),
+				TLSCACertFile:       fmt.Sprintf("%s/%s", resources.MLAMonitoringAgentClientCertMountPath, resources.MLAGatewayCACertKey),
 				CustomScrapeConfigs: customScrapeConfigs,
 				HAClusterIdentifier: r.clusterName,
 			}),
@@ -912,7 +912,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	if r.userClusterMLA.Monitoring {
 		creators = []reconciling.NamedSecretCreatorGetter{
-			userclustermonitoringagent.ClientCertificateCreator(data.mlaGatewayCACert),
+			mlamonitoringagent.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -920,13 +920,13 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 	if r.userClusterMLA.Logging {
 		creators = []reconciling.NamedSecretCreatorGetter{
-			userclusterloggingagent.SecretCreator(userclusterloggingagent.Config{
+			mlaloggingagent.SecretCreator(mlaloggingagent.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
 				TLSCertFile:   fmt.Sprintf("%s/%s", resources.MLALoggingAgentClientCertMountPath, resources.MLALoggingAgentClientCertSecretKey),
 				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.MLALoggingAgentClientCertMountPath, resources.MLALoggingAgentClientKeySecretKey),
 				TLSCACertFile: fmt.Sprintf("%s/%s", resources.MLALoggingAgentClientCertMountPath, resources.MLAGatewayCACertKey),
 			}),
-			userclusterloggingagent.ClientCertificateCreator(data.mlaGatewayCACert),
+			mlaloggingagent.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -972,7 +972,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 
 	if r.userClusterMLA.Logging {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
-			userclusterloggingagent.DaemonSetCreator(data.loggingRequirements, r.imageRewriter),
+			mlaloggingagent.DaemonSetCreator(data.loggingRequirements, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
@@ -1053,7 +1053,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			userclustermonitoringagent.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
+			mlamonitoringagent.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.UserClusterMLANamespace, err)
@@ -1252,11 +1252,11 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kuberm
 func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (health kubermaticv1.HealthStatus, err error) {
 	health, err = resources.HealthyDeployment(ctx,
 		r.Client,
-		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.UserClusterMonitoringAgentDeploymentName},
+		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.MLAMonitoringAgentDeploymentName},
 		1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterMonitoringAgentDeploymentName, err)
+			fmt.Errorf("failed to get dep health %s: %w", resources.MLAMonitoringAgentDeploymentName, err)
 	}
 
 	return health, nil
@@ -1274,7 +1274,7 @@ func (r *reconciler) getMLALoggingHealth(ctx context.Context) (kubermaticv1.Heal
 }
 
 func (r *reconciler) ensureLoggingAgentIsRemoved(ctx context.Context) error {
-	for _, resource := range userclusterloggingagent.ResourcesOnDeletion() {
+	for _, resource := range mlaloggingagent.ResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
 			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
@@ -1287,7 +1287,7 @@ func (r *reconciler) ensureLoggingAgentIsRemoved(ctx context.Context) error {
 }
 
 func (r *reconciler) ensureLegacyPromtailIsRemoved(ctx context.Context) error {
-	for _, resource := range userclusterloggingagent.LegacyResourcesOnDeletion() {
+	for _, resource := range mlaloggingagent.LegacyResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
 			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
@@ -1300,7 +1300,7 @@ func (r *reconciler) ensureLegacyPromtailIsRemoved(ctx context.Context) error {
 }
 
 func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Context) error {
-	for _, resource := range userclustermonitoringagent.ResourcesOnDeletion() {
+	for _, resource := range mlamonitoringagent.ResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
@@ -1313,7 +1313,7 @@ func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Conte
 }
 
 func (r *reconciler) ensureLegacyPrometheusIsRemoved(ctx context.Context) error {
-	for _, resource := range userclustermonitoringagent.LegacyResourcesOnDeletion() {
+	for _, resource := range mlamonitoringagent.LegacyResourcesOnDeletion() {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
