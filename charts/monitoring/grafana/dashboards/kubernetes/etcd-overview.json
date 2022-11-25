@@ -464,7 +464,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(job:etcd_debugging_mvcc_db_total_size_in_bytes:clone) by (cluster)",
+          "expr": "sum(job:etcd_mvcc_db_total_size_in_bytes:clone) by (cluster)",
           "format": "time_series",
           "hide": false,
           "interval": "$interval",
@@ -1073,7 +1073,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(job:etcd_debugging_mvcc_txn_total:rate5m) by (cluster)",
+          "expr": "sum(job:etcd_mvcc_txn_total:rate5m) by (cluster)",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1169,7 +1169,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(job:etcd_debugging_mvcc_put_total:rate5m) by (cluster)",
+          "expr": "sum(job:etcd_mvcc_put_total:rate5m) by (cluster)",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1265,7 +1265,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(job:etcd_debugging_mvcc_range_total:rate5m) by (cluster)",
+          "expr": "sum(job:etcd_mvcc_range_total:rate5m) by (cluster)",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1361,7 +1361,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(job:etcd_debugging_mvcc_delete_total:rate5m) by (cluster)",
+          "expr": "sum(job:etcd_mvcc_delete_total:rate5m) by (cluster)",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
