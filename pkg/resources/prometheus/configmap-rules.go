@@ -73,8 +73,8 @@ groups:
     labels:
       kubermatic: federate
 
-  - record: job:etcd_debugging_mvcc_db_total_size_in_bytes:clone
-    expr: etcd_debugging_mvcc_db_total_size_in_bytes
+  - record: job:etcd_mvcc_db_total_size_in_bytes:clone
+    expr: etcd_mvcc_db_total_size_in_bytes
     labels:
       kubermatic: federate
 
@@ -123,18 +123,18 @@ groups:
     labels:
       kubermatic: federate
 
-  - record: job:etcd_debugging_mvcc_delete_total:rate5m
-    expr: rate(etcd_debugging_mvcc_delete_total[5m])
+  - record: job:etcd_mvcc_delete_total:rate5m
+    expr: rate(etcd_mvcc_delete_total[5m])
     labels:
       kubermatic: federate
 
-  - record: job:etcd_debugging_mvcc_put_total:rate5m
-    expr: rate(etcd_debugging_mvcc_put_total[5m])
+  - record: job:etcd_mvcc_put_total:rate5m
+    expr: rate(etcd_mvcc_put_total[5m])
     labels:
       kubermatic: federate
 
-  - record: job:etcd_debugging_mvcc_range_total:rate5m
-    expr: rate(etcd_debugging_mvcc_range_total[5m])
+  - record: job:etcd_mvcc_range_total:rate5m
+    expr: rate(etcd_mvcc_range_total[5m])
     labels:
       kubermatic: federate
 
@@ -143,8 +143,8 @@ groups:
     labels:
       kubermatic: federate
 
-  - record: job:etcd_debugging_mvcc_txn_total:rate5m
-    expr: rate(etcd_debugging_mvcc_txn_total[5m])
+  - record: job:etcd_mvcc_txn_total:rate5m
+    expr: rate(etcd_mvcc_txn_total[5m])
     labels:
       kubermatic: federate
 
