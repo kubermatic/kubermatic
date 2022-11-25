@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package monitoringagent
+package loggingagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -26,40 +26,40 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResourcesOnDeletion() []ctrlruntimeclient.Object {
+func LegacyResourcesOnDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
-		&appsv1.Deployment{
+		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.MLAMonitoringAgentDeploymentName,
-				Namespace: resources.UserClusterMLANamespace,
-			},
-		},
-		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.MLAMonitoringAgentConfigMapName,
+				Name:      resources.UserClusterLegacyPromtailDaemonSetName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.MLAMonitoringAgentCertificatesSecretName,
+				Name:      resources.UserClusterLegacyPromtailSecretName,
+				Namespace: resources.UserClusterMLANamespace,
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.UserClusterLegacyPromtailCertificatesSecretName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.MLAMonitoringAgentServiceAccountName,
+				Name:      resources.UserClusterLegacyPromtailServiceAccountName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.MLAMonitoringAgentClusterRoleName,
+				Name: resources.UserClusterLegacyPromtailClusterRoleName,
 			},
 		},
 		&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.MLAMonitoringAgentClusterRoleBindingName,
+				Name: resources.UserClusterLegacyPromtailClusterRoleBindingName,
 			},
 		},
 	}
