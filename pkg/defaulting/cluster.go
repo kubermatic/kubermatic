@@ -139,6 +139,11 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName))
 
+	if spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		if spec.ClusterNetwork.TunnelingAgentIP == "" {
+			spec.ClusterNetwork.TunnelingAgentIP = resources.DefaultTunnelingAgentIP
+		}
+	}
 	return nil
 }
 
