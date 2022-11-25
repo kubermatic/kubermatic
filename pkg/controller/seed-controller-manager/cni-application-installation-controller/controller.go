@@ -31,7 +31,6 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
-	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -93,35 +92,39 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	// Predicate for filtering out events for clusters whose CNI is not managed by Applications infra
-	cniManagedByAppInfraPredicate := kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
-		cluster, ok := o.(*kubermaticv1.Cluster)
-		if !ok {
-			return false
-		}
-		return cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version)
-	})
-
-	// Predicate for reacting to cluster update events only when CNIPlugin or ClusterNetwork config changed, or cluster Address changed
-	clusterUpdatePredicate := predicate.Funcs{
+	clusterEventPredicate := predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			// Process the event only if the cluster's CNI is managed by App Infra
+			cluster := e.Object.(*kubermaticv1.Cluster)
+			return cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version)
+		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldObj := e.ObjectOld.(*kubermaticv1.Cluster)
-			newObj := e.ObjectNew.(*kubermaticv1.Cluster)
-			if !reflect.DeepEqual(oldObj.Spec.CNIPlugin, newObj.Spec.CNIPlugin) {
+			oldCluster := e.ObjectOld.(*kubermaticv1.Cluster)
+			newCluster := e.ObjectNew.(*kubermaticv1.Cluster)
+			// Process the event only if the new cluster's CNI is managed by App Infra
+			if !cni.IsManagedByAppInfra(newCluster.Spec.CNIPlugin.Type, newCluster.Spec.CNIPlugin.Version) {
+				return false
+			}
+			// Process the event only if CNIPlugin oy ClusterNetwork config changed, or if cluster Address changed
+			if !reflect.DeepEqual(oldCluster.Spec.CNIPlugin, newCluster.Spec.CNIPlugin) {
 				return true
 			}
-			if !reflect.DeepEqual(oldObj.Spec.ClusterNetwork, newObj.Spec.ClusterNetwork) {
+			if !reflect.DeepEqual(oldCluster.Spec.ClusterNetwork, newCluster.Spec.ClusterNetwork) {
 				return true
 			}
-			if !reflect.DeepEqual(oldObj.Status.Address, newObj.Status.Address) {
+			if !reflect.DeepEqual(oldCluster.Status.Address, newCluster.Status.Address) {
 				return true
 			}
+			return false
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// No action needed on Delete
 			return false
 		},
 	}
 
 	// Watch on cluster events
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, cniManagedByAppInfraPredicate, clusterUpdatePredicate, workerlabel.Predicates(workerName)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterEventPredicate, workerlabel.Predicates(workerName)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
