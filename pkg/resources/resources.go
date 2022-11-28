@@ -740,7 +740,7 @@ const (
 	EnvoyAgentConfigFileName                   = "envoy.yaml"
 	EnvoyAgentDaemonSetName                    = "envoy-agent"
 	EnvoyAgentCreateInterfaceInitContainerName = "create-dummy-interface"
-	EnvoyAgentAssignAddressInitContainerName   = "assign-address"
+	EnvoyAgentAssignAddressContainerName       = "assign-address"
 	EnvoyAgentDeviceSetupImage                 = "kubermatic/network-interface-manager"
 	// Default tunneling agent IP address.
 	DefaultTunnelingAgentIP = "192.168.30.10"

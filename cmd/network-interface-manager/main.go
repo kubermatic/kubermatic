@@ -20,6 +20,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net"
 	"time"
@@ -57,15 +58,17 @@ func main() {
 	// 'init' mode is for init containers
 	if mode == "init" {
 		link, err = createInterface(ifName)
-		if err != nil {
+		if err != nil && !errors.Is(err, fs.ErrExist) {
 			log.Fatalf("Failed to create link: %v", err)
 			return
 		}
-		err = addAddressToInterface(link, ifAddr)
-		if err != nil {
-			log.Fatalf("Failed to add address to link: %v", err)
+		if checkIfAddrExists(link, ifAddr) != nil {
+			err = addAddressToInterface(link, ifAddr)
+			if err != nil {
+				log.Fatalf("Failed to add address to link: %v", err)
+			}
+			return
 		}
-		return
 	}
 
 	// 'probe' mode is for side-car containers.
@@ -107,7 +110,19 @@ func addAddressToInterface(link *netlink.Dummy, ifAddr string) error {
 	}}
 	addr.Scope = SCOPE_HOST
 
-	err := netlink.AddrAdd(link, addr)
+	// Check for configured addresses and remove them
+	addrs, err := netlink.AddrList(link, unix.AF_INET)
+	if len(addrs) > 0 {
+		for _, val := range addrs {
+			err = netlink.AddrDel(link, &val)
+			if err != nil {
+				return fmt.Errorf("failed to delete address for link: %s err: %w", val, err)
+			}
+		}
+	}
+
+	// Add the requested address to the link
+	err = netlink.AddrAdd(link, addr)
 	if err != nil {
 		return fmt.Errorf("failed to add address to interface %s, error: %w", link.Name, err)
 	}
@@ -123,7 +138,7 @@ func checkInterfaceExists(ifName string) (*netlink.Dummy, error) {
 func checkIfAddrExists(link *netlink.Dummy, ifAddr string) error {
 	addrs, err := netlink.AddrList(link, unix.AF_INET)
 	if err != nil {
-		return fmt.Errorf("no addresses configured for interface %s: %w", link.Name, err)
+		return fmt.Errorf("failed to get addresses %s: %w", link.Name, err)
 	}
 
 	for _, addr := range addrs {
