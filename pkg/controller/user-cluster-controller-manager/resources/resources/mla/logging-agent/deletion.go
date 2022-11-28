@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package promtail
+package loggingagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -30,36 +30,36 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.PromtailDaemonSetName,
+				Name:      resources.MLALoggingAgentDaemonSetName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.PromtailSecretName,
+				Name:      resources.MLALoggingAgentSecretName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.PromtailCertificatesSecretName,
+				Name:      resources.MLALoggingAgentCertificatesSecretName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.PromtailServiceAccountName,
+				Name:      resources.MLALoggingAgentServiceAccountName,
 				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.PromtailClusterRoleName,
+				Name: resources.MLALoggingAgentClusterRoleName,
 			},
 		},
 		&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.PromtailClusterRoleBindingName,
+				Name: resources.MLALoggingAgentClusterRoleBindingName,
 			},
 		},
 	}

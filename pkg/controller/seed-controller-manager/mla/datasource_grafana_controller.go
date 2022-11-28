@@ -441,7 +441,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluste
 func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	mlaGatewayHealth, err := resources.HealthyDeployment(ctx, r.Client, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: gatewayName}, 1)
 	if err != nil {
-		return fmt.Errorf("failed to get dep health %s: %w", resources.UserClusterMonitoringAgentDeploymentName, err)
+		return fmt.Errorf("failed to get dep health %s: %w", resources.MLAMonitoringAgentDeploymentName, err)
 	}
 
 	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {

@@ -24,13 +24,13 @@ import (
 
 func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.UserClusterMonitoringAgentCertificatesSecretName,
+		return resources.MLAMonitoringAgentCertificatesSecretName,
 			certificates.GetECDSAClientCertificateCreator(
-				resources.UserClusterMonitoringAgentCertificatesSecretName,
-				resources.UserClusterMonitoringAgentCertificateCommonName,
+				resources.MLAMonitoringAgentCertificatesSecretName,
+				resources.MLAMonitoringAgentCertificateCommonName,
 				[]string{},
-				resources.UserClusterMonitoringAgentClientCertSecretKey,
-				resources.UserClusterMonitoringAgentClientKeySecretKey,
+				resources.MLAMonitoringAgentClientCertSecretKey,
+				resources.MLAMonitoringAgentClientKeySecretKey,
 				func() (*resources.ECDSAKeyPair, error) { return ca, nil })
 	}
 }

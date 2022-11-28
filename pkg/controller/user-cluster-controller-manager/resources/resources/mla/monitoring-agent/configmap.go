@@ -39,7 +39,7 @@ type Config struct {
 
 func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return resources.UserClusterMonitoringAgentConfigMapName, func(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return resources.MLAMonitoringAgentConfigMapName, func(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if configMap.Data == nil {
 				configMap.Data = map[string]string{}
 			}

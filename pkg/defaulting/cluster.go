@@ -137,7 +137,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	}
 
 	// default cluster networking parameters
-	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName))
+	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
 
 	return nil
 }
@@ -178,7 +178,7 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 	return nil, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name")
 }
 
-func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType) kubermaticv1.ClusterNetworkingConfig {
+func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, exposeStrategy kubermaticv1.ExposeStrategy) kubermaticv1.ClusterNetworkingConfig {
 	if specClusterNetwork.IPFamily == "" {
 		if len(specClusterNetwork.Pods.CIDRBlocks) < 2 {
 			// single / no pods CIDR means IPv4-only (IPv6-only is not supported yet and not allowed by cluster validation)
@@ -230,6 +230,12 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 
 	if specClusterNetwork.DNSDomain == "" {
 		specClusterNetwork.DNSDomain = "cluster.local"
+	}
+
+	if exposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		if specClusterNetwork.TunnelingAgentIP == "" {
+			specClusterNetwork.TunnelingAgentIP = resources.DefaultTunnelingAgentIP
+		}
 	}
 
 	return specClusterNetwork

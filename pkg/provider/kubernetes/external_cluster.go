@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -517,4 +518,17 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Con
 	externalCluster.Spec.CloudSpec.KubeOne.SSHReference = *credentialRef
 
 	return nil
+}
+
+func ExternalClusterPausedChecker(ctx context.Context, externalClusterName string, masterClient ctrlruntimeclient.Client) (bool, error) {
+	externalCluster := &kubermaticv1.ExternalCluster{}
+	if err := masterClient.Get(ctx, types.NamespacedName{Name: externalClusterName}, externalCluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get external cluster %q: %w", externalClusterName, err)
+	}
+
+	return externalCluster.Spec.Pause, nil
 }
