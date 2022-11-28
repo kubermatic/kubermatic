@@ -88,7 +88,6 @@ func ControllerDeploymentCreator(data *resources.TemplateData) reconciling.Named
 			if err != nil {
 				return nil, err
 			}
-			d.Spec.Template.Spec.HostNetwork = true
 			d.Spec.Template.Spec.ServiceAccountName = resources.KubeVirtCSIServiceAccountName
 			d.Spec.Template.Spec.Tolerations = []corev1.Toleration{
 				{
@@ -116,7 +115,6 @@ func ControllerDeploymentCreator(data *resources.TemplateData) reconciling.Named
 						{
 							Name:          "healthz",
 							ContainerPort: 10301,
-							HostPort:      10301,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
