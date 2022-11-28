@@ -217,17 +217,19 @@ func (b *MachineBuilder) determineDatacenter() (*kubermaticv1.Datacenter, error)
 		return nil, nil
 	}
 
+	// sanity check: make sure cluster and explicit datacenter name do not contradict each other
+	if b.datacenterName != "" && b.cluster != nil && b.cluster.Spec.Cloud.DatacenterName != b.datacenterName {
+		return nil, fmt.Errorf("explicit datacenter %q does not match cluster's datacenter %q", b.datacenterName, b.cluster.Spec.Cloud.DatacenterName)
+	}
+
 	datacenterName := b.datacenterName
 	if datacenterName == "" && b.cluster != nil {
-		if b.cluster.Spec.Cloud.DatacenterName != b.datacenterName {
-			return nil, fmt.Errorf("explicit datacenter %q does not match cluster's datacenter %q", b.datacenterName, b.cluster.Spec.Cloud.DatacenterName)
-		}
 		datacenterName = b.cluster.Spec.Cloud.DatacenterName
 	}
 	// due to the checks for dcSpecified it's now guaranteed that datacenterName is not empty
 
 	for name, dc := range b.seed.Spec.Datacenters {
-		if name == b.datacenterName {
+		if name == datacenterName {
 			return &dc, nil
 		}
 	}
