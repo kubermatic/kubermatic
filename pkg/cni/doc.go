@@ -16,5 +16,7 @@ limitations under the License.
 
 /*
 Package cni contains supported CNI version definitions and helpers for managing CNIs in KKP.
+The CNIs are manged either as addons (e.g. Canal, see the `addons` folder) or via the Applications infra (e.g. Cilium
+starting from version 1.13.0, see pkg/controller/seed-controller-manager/cni-application-installation-controller).
 */
 package cni

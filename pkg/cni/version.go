@@ -154,6 +154,7 @@ func GetAllowedCNIVersionTransitions(cniPluginType kubermaticv1.CNIPluginType) [
 // false if it is managed as a KKP Addon.
 func IsManagedByAppInfra(cniType kubermaticv1.CNIPluginType, cniVersion string) bool {
 	if cniType == kubermaticv1.CNIPluginTypeCilium {
+		// Cilium is managed by the Applications infra starting from the version 1.13.0
 		verConstraint, err := semverlib.NewConstraint(">= 1.13.0")
 		if err != nil {
 			return false
