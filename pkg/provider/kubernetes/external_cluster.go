@@ -287,8 +287,10 @@ func (p *ExternalClusterProvider) ValidateKubeconfig(ctx context.Context, kubeco
 	return nil
 }
 
-func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig []byte) error {
-	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, cluster, map[string][]byte{
+func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context,
+	cluster *kubermaticv1.ExternalCluster,
+	kubeconfig []byte, namespace string) error {
+	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, cluster, namespace, map[string][]byte{
 		resources.ExternalClusterKubeconfig: kubeconfig,
 	})
 	if err != nil {
@@ -342,20 +344,20 @@ func (p *ExternalClusterProvider) IsMetricServerAvailable(ctx context.Context, c
 	return true, nil
 }
 
-func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster, namespace string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	creator, err := kubeconfigSecretCreatorGetter(cluster, secretData)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, resources.KubermaticNamespace, p.clientPrivileged); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, namespace, p.clientPrivileged); err != nil {
 		return nil, err
 	}
 
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
 			Name:      cluster.GetKubeconfigSecretName(),
-			Namespace: resources.KubermaticNamespace,
+			Namespace: namespace,
 		},
 	}, nil
 }

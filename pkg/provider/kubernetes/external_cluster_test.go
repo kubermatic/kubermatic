@@ -129,7 +129,7 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := provider.CreateOrUpdateKubeconfigSecretForCluster(context.Background(), tc.externalCluster, kubeconfig); err != nil {
+			if err := provider.CreateOrUpdateKubeconfigSecretForCluster(context.Background(), tc.externalCluster, kubeconfig, resources.KubermaticNamespace); err != nil {
 				t.Fatal(err)
 			}
 
