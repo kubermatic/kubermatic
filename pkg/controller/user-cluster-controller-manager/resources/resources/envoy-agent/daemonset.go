@@ -179,9 +179,10 @@ func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRew
 			},
 		},
 		{
-			Name:    resources.EnvoyAgentAssignAddressContainerName,
-			Image:   image,
-			Command: []string{"sh", "-c", fmt.Sprintf("network-interface-manager -mode probe -if envoyagent -addr %s", ip.String())},
+			Name:            resources.EnvoyAgentAssignAddressContainerName,
+			Image:           image,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command:         []string{"sh", "-c", fmt.Sprintf("network-interface-manager -mode probe -if envoyagent -addr %s", ip.String())},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{

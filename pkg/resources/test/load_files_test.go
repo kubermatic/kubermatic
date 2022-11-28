@@ -746,6 +746,7 @@ func TestLoadFiles(t *testing.T) {
 						WithKubermaticImage("quay.io/kubermatic/kubermatic").
 						WithEtcdLauncherImage("quay.io/kubermatic/etcd-launcher").
 						WithDnatControllerImage("quay.io/kubermatic/kubeletdnat-controller").
+						WithNetworkIntfMgrImage("quay.io/kubermatic/network-interface-manager").
 						WithVersions(kubermaticVersions).
 						Build()
 

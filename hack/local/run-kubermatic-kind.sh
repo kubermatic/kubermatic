@@ -140,6 +140,15 @@ beforeDockerBuild=$(nowms)
   time retry 5 docker build -t "${IMAGE_NAME}" -f cmd/etcd-launcher/Dockerfile .
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
+(
+  echodate "Building network-interface-manager image"
+  TEST_NAME="Build network-interface-manager Docker image"
+  cd cmd/network-interface-manager
+  make build
+  IMAGE_NAME="quay.io/kubermatic/network-interface-manager:$KUBERMATIC_VERSION"
+  time retry 5 docker build -t "${IMAGE_NAME}" .
+  time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
+)
 
 pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild
 echodate "Successfully built and loaded all images"

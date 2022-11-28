@@ -14,11 +14,10 @@
 
 DOCKER_REPO ?= "quay.io/kubermatic"
 GOOS ?= $(shell go env GOOS)
-GOARCH ?= $(shell go env GOARCH)
 
 .PHONY: build
 build:
-	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -v -o ./_build/network-interface-manager .
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -v -o ./_build/network-interface-manager .
 
 .PHONY: docker
 docker: build

@@ -80,6 +80,10 @@ echodate "Building binaries"
   cd pkg/test/clusterexposer/cmd
   go build --tags "$KUBERMATIC_EDITION" -v .
 )
+(
+  TEST_NAME="Building network interface manager"
+  make -C cmd/network-interface-manager build
+)
 
 TEST_NAME="Build tests"
 echodate "Building tests"

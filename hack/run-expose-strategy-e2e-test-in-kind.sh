@@ -38,6 +38,7 @@ function patch_kubermatic_domain {
 DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
+FAKE_TAG="v0.0.0-test"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
@@ -82,6 +83,14 @@ make -C cmd/kubeletdnat-controller docker \
 make -C addons docker \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
+make -C cmd/network-interface-manager docker \
+  GOOS="${GOOS}" \
+  DOCKER_REPO="${DOCKER_REPO}" \
+  TAG="${TAG}"
+make -C cmd/network-interface-manager docker \
+  GOOS="${GOOS}" \
+  DOCKER_REPO="${DOCKER_REPO}" \
+  TAG="${FAKE_TAG}"
 
 # the installer should be built for the target platform.
 rm _build/kubermatic-installer
@@ -96,6 +105,8 @@ time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIN
 time kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time kind load docker-image "${DOCKER_REPO}/network-interface-manager:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time kind load docker-image "${DOCKER_REPO}/network-interface-manager:${FAKE_TAG}" --name "${KIND_CLUSTER_NAME}"
 
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way

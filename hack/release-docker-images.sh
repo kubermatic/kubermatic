@@ -22,6 +22,7 @@
 ### * quay.io/kubermatic/kubeletdnat-controller
 ### * quay.io/kubermatic/user-ssh-keys-agent
 ### * quay.io/kubermatic/etcd-launcher
+### * quay.io/kubermatic/network-interface-manager
 ###
 ### The images are tagged with all arguments given to the script, i.e
 ### `./release-docker-images.sh foo bar` will tag `kubermatic:foo` and
@@ -115,6 +116,24 @@ for ARCH in ${ARCHITECTURES}; do
   buildah manifest add "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}"
 done
 
+buildah manifest create "${DOCKER_REPO}/network-interface-manager:${PRIMARY_TAG}"
+for ARCH in ${ARCHITECTURES}; do
+  echodate "Building network-interface-manager image for $ARCH..."
+
+  buildah bud \
+    --tag "${DOCKER_REPO}/network-interface-manager-${ARCH}:${PRIMARY_TAG}" \
+    --build-arg "GOPROXY=${GOPROXY:-}" \
+    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
+    --build-arg "GOCACHE=/gocache" \
+    --arch "$ARCH" \
+    --override-arch "$ARCH" \
+    --format=docker \
+    --file cmd/network-interface-manager/Dockerfile.multiarch \
+    --volume "$gocaches/$ARCH:/gocache" \
+    .
+  buildah manifest add "${DOCKER_REPO}/network-interface-manager:${PRIMARY_TAG}" "${DOCKER_REPO}/network-interface-manager-${ARCH}:${PRIMARY_TAG}"
+done
+
 rm -rf -- "$gocaches"
 
 # for each given tag, tag and push the image
@@ -130,6 +149,7 @@ for TAG in "$@"; do
   docker tag "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" "${DOCKER_REPO}/etcd-launcher:${TAG}"
   buildah tag "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
   buildah tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
+  buildah tag "${DOCKER_REPO}/network-interface-manager:${PRIMARY_TAG}" "${DOCKER_REPO}/network-interface-manager:${TAG}"
 
   echodate "Pushing images"
   docker push "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
@@ -138,4 +158,5 @@ for TAG in "$@"; do
   docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"
   buildah manifest push --all "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" "docker://${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
   buildah manifest push --all "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" "docker://${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
+  buildah manifest push --all "${DOCKER_REPO}/network-interface-manager:${TAG}" "docker://${DOCKER_REPO}/network-interface-manager:${TAG}"
 done

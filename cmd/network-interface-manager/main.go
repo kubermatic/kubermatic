@@ -104,6 +104,7 @@ func createInterface(ifName string) (*netlink.Dummy, error) {
 
 // Adds address to the link, equalent to "ip addr add ...".
 func addAddressToInterface(link *netlink.Dummy, ifAddr string) error {
+	var err error
 	addr := &netlink.Addr{IPNet: &net.IPNet{
 		IP:   net.ParseIP(ifAddr),
 		Mask: net.CIDRMask(32, 32),
@@ -111,7 +112,7 @@ func addAddressToInterface(link *netlink.Dummy, ifAddr string) error {
 	addr.Scope = SCOPE_HOST
 
 	// Check for configured addresses and remove them
-	addrs, err := netlink.AddrList(link, unix.AF_INET)
+	addrs, _ := netlink.AddrList(link, unix.AF_INET)
 	if len(addrs) > 0 {
 		for _, val := range addrs {
 			err = netlink.AddrDel(link, &val)
