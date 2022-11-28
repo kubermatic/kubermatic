@@ -203,6 +203,14 @@ func withEventFilter() predicate.Predicate {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := kubernetesprovider.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check kubeone external cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("externalcluster", request.Name)
 	log.Info("Processing...")
 

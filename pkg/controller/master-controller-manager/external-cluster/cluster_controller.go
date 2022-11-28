@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -88,6 +89,14 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	paused, err := kubernetesprovider.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check external cluster pause status: %w", err)
+	}
+	if paused {
+		return reconcile.Result{}, nil
+	}
+
 	log := r.log.With("externalcluster", request)
 	log.Debug("Processing...")
 
