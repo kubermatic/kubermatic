@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/action"
@@ -105,6 +106,36 @@ func (a *AuthSettings) registryClientAndGetterOptions() (*registry.Client, []get
 		options = append(options, getter.WithBasicAuth(a.Username, a.Password))
 	}
 	return regClient, options, nil
+}
+
+// DeployOpts holds the options for installing or upgrading a Helm chart.
+type DeployOpts struct {
+	// wait corresponds to the --wait flag on Helm cli.
+	// if set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful. It will wait for as long as --timeout
+	wait bool
+
+	// timeout corresponds to the --timeout flag on Helm cli.
+	// time to wait for any individual Kubernetes operation.
+	timeout time.Duration
+
+	// atomic corresponds to the --timeout flag on Helm cli.
+	// if set, the installation process deletes the installation on failure; the upgrade process rolls back changes made in case of failed upgrade.
+	atomic bool
+}
+
+// NewDeployOpts creates a new DeployOpts. It raises an error if the inputs are not valid.
+func NewDeployOpts(wait bool, timeout time.Duration, atomic bool) (*DeployOpts, error) {
+	if atomic && !wait {
+		return nil, fmt.Errorf("invalid values: if atomic=true then wait must also be true")
+	}
+	if wait && timeout == 0 {
+		return nil, fmt.Errorf("invalid values: if wait = true then timeout must be greater than 0")
+	}
+	return &DeployOpts{
+		wait:    wait,
+		timeout: timeout,
+		atomic:  atomic,
+	}, nil
 }
 
 // HelmClient is a client that allows interacting with Helm.
@@ -202,16 +233,16 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 // InstallOrUpgrade installs the chart located at chartLoc into targetNamespace if it's not already installed.
 // Otherwise it upgrades the chart.
 // charLoc is the path to the chart archive (e.g. /tmp/foo/apache-1.0.0.tgz) or folder containing the chart (e.g. /tmp/mychart/apache).
-func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values map[string]interface{}, auth AuthSettings) (*release.Release, error) {
+func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values map[string]interface{}, deployOpts DeployOpts, auth AuthSettings) (*release.Release, error) {
 	if _, err := h.actionConfig.Releases.Last(releaseName); err != nil {
-		return h.Install(chartLoc, releaseName, values, auth)
+		return h.Install(chartLoc, releaseName, values, deployOpts, auth)
 	}
-	return h.Upgrade(chartLoc, releaseName, values, auth)
+	return h.Upgrade(chartLoc, releaseName, values, deployOpts, auth)
 }
 
 // Install the chart located at chartLoc into targetNamespace. If the chart was already installed, an error is returned.
 // charLoc is the path to the chart archive (eg /tmp/foo/apache-1.0.0.tgz) or folder containing the chart (e.g. /tmp/mychart/apache).
-func (h HelmClient) Install(chartLoc string, releaseName string, values map[string]interface{}, auth AuthSettings) (*release.Release, error) {
+func (h HelmClient) Install(chartLoc string, releaseName string, values map[string]interface{}, deployOpts DeployOpts, auth AuthSettings) (*release.Release, error) {
 	chartToInstall, err := h.buildDependencies(chartLoc, auth)
 	if err != nil {
 		return nil, err
@@ -220,17 +251,21 @@ func (h HelmClient) Install(chartLoc string, releaseName string, values map[stri
 	installClient := action.NewInstall(h.actionConfig)
 	installClient.Namespace = h.targetNamespace
 	installClient.ReleaseName = releaseName
+	installClient.Wait = deployOpts.wait
+	installClient.Timeout = deployOpts.timeout
+	installClient.Atomic = deployOpts.atomic
 
 	rel, err := installClient.RunWithContext(h.ctx, chartToInstall, values)
 	if err != nil {
-		return nil, err
+		// even if an error occurred release may be not null (e.g if timeout is reached)
+		return rel, err
 	}
 	return rel, nil
 }
 
 // Upgrade the chart located at chartLoc into targetNamespace. If the chart is not already installed, an error is returned.
 // charLoc is the path to the chart archive (e.g. /tmp/foo/apache-1.0.0.tgz) or folder containing the chart (e.g. /tmp/mychart/apache).
-func (h HelmClient) Upgrade(chartLoc string, releaseName string, values map[string]interface{}, auth AuthSettings) (*release.Release, error) {
+func (h HelmClient) Upgrade(chartLoc, releaseName string, values map[string]interface{}, deployOpts DeployOpts, auth AuthSettings) (*release.Release, error) {
 	chartToUpgrade, err := h.buildDependencies(chartLoc, auth)
 	if err != nil {
 		return nil, err
@@ -238,10 +273,14 @@ func (h HelmClient) Upgrade(chartLoc string, releaseName string, values map[stri
 
 	upgradeClient := action.NewUpgrade(h.actionConfig)
 	upgradeClient.Namespace = h.targetNamespace
+	upgradeClient.Wait = deployOpts.wait
+	upgradeClient.Timeout = deployOpts.timeout
+	upgradeClient.Atomic = deployOpts.atomic
 
 	rel, err := upgradeClient.RunWithContext(h.ctx, releaseName, chartToUpgrade, values)
 	if err != nil {
-		return nil, err
+		// even if an error occurred release may be not null (e.g if timeout is reached)
+		return rel, err
 	}
 	return rel, nil
 }

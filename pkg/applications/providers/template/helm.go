@@ -94,7 +94,8 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 		}
 	}
 
-	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, auth)
+	// todo vgramer: build helmclient.DeployOpts{} from application. will be done in another pr
+	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, helmclient.DeployOpts{}, auth)
 	statusUpdater := util.NoStatusUpdate
 
 	// In some case, even if an error occurred, the helmRelease is updated.
