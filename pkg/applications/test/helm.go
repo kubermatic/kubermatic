@@ -59,6 +59,12 @@ const (
 
 	// DefaultVerionLabelV2 is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart-v2 chart.
 	DefaultVerionLabelV2 = "2.0"
+
+	// SvcName is the name of the service deploy by chart chart-with-lb.
+	SvcName = "svc-1"
+
+	// DeploySvcKey is the key values.yaml of examplechart-v2 to enable / disabled the deployment of the service.
+	DeploySvcKey = "deployService"
 )
 
 var (
