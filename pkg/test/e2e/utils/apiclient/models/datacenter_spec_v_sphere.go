@@ -35,6 +35,10 @@ type DatacenterSpecVSphere struct {
 	// The name of the storage policy to use for the storage class created in the user cluster.
 	DefaultStoragePolicy string `json:"storagePolicy,omitempty"`
 
+	// DefaultTagCategoryID is the tag category id that will be used as default, if users don't specify it on a cluster level,
+	// and they don't wish KKP to create default generated tag category, upon cluster creation.
+	DefaultTagCategoryID string `json:"defaultTagCategoryID,omitempty"`
+
 	// Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
 	Endpoint string `json:"endpoint,omitempty"`
 
