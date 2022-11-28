@@ -306,13 +306,13 @@ func CompleteNetworkConfig(config *providerconfig.NetworkConfig, cluster *kuberm
 
 		switch {
 		case cluster.IsIPv4Only():
-			ipFamily = util.IPv4
+			ipFamily = util.IPFamilyIPv4
 		case cluster.IsIPv6Only():
-			ipFamily = util.IPv6
+			ipFamily = util.IPFamilyIPv6
 		case cluster.IsDualStack():
-			ipFamily = util.DualStack
+			ipFamily = util.IPFamilyIPv4IPv6
 		default:
-			ipFamily = util.Unspecified
+			ipFamily = util.IPFamilyUnspecified
 		}
 
 		config.IPFamily = ipFamily

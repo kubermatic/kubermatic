@@ -123,7 +123,7 @@ func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, re
 
 	networkConfig := &providerconfig.NetworkConfig{}
 	if s.dualstackEnabled {
-		networkConfig.IPFamily = util.DualStack
+		networkConfig.IPFamily = util.IPFamilyIPv4IPv6
 	}
 
 	providerSpec, err := machine.NewBuilder().
