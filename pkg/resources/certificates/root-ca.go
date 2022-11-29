@@ -24,14 +24,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
-// GetCACreator returns a function to create a secret containing a CA with the specified name.
-func GetCACreator(commonName string) reconciling.SecretCreator {
+// GetCAReconciler returns a function to create a secret containing a CA with the specified name.
+func GetCAReconciler(commonName string) reconciling.SecretReconciler {
 	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		if se.Data == nil {
 			se.Data = map[string][]byte{}
@@ -63,20 +63,20 @@ func GetCACreator(commonName string) reconciling.SecretCreator {
 	}
 }
 
-type caCreatorData interface {
+type caReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// RootCACreator returns a function to create a secret with the root ca.
-func RootCACreator(data caCreatorData) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.CASecretName, GetCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().Status.Address.ExternalName))
+// RootCAReconciler returns a function to create a secret with the root ca.
+func RootCAReconciler(data caReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return resources.CASecretName, GetCAReconciler(fmt.Sprintf("root-ca.%s", data.Cluster().Status.Address.ExternalName))
 	}
 }
 
-// FrontProxyCACreator returns a function to create a secret with front proxy ca.
-func FrontProxyCACreator() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.FrontProxyCASecretName, GetCACreator("front-proxy-ca")
+// FrontProxyCAReconciler returns a function to create a secret with front proxy ca.
+func FrontProxyCAReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return resources.FrontProxyCASecretName, GetCAReconciler("front-proxy-ca")
 	}
 }

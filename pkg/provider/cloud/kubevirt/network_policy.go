@@ -21,15 +21,15 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+func clusterIsolationNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return "cluster-isolation", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{},
@@ -53,7 +53,7 @@ func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyReconc
 
 func reconcileNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
 	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
-		clusterIsolationNetworkPolicyCreator(),
+		clusterIsolationNetworkPolicyReconciler(),
 	}
 	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)

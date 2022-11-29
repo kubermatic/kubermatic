@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -28,9 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world.
-func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// NetworkPolicyReconciler NetworkPolicy allows egress traffic of user ssh keys agent to the world.
+func NetworkPolicyReconciler(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		apiServicePort := intstr.FromInt(443)
 		apiPort := intstr.FromInt(k8sApiPort)
 		protoTcp := corev1.ProtocolTCP

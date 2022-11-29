@@ -26,7 +26,7 @@ package prometheus
 
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -34,7 +34,7 @@ import (
 
 // prometheusService creates the service to connect to prometheus api.
 func prometheusService() reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+	return func() (string, reconciling.ServiceReconciler) {
 		return Name, func(svc *corev1.Service) (*corev1.Service, error) {
 			if svc.Labels == nil {
 				svc.Labels = make(map[string]string)

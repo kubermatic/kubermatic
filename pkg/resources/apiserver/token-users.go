@@ -22,14 +22,14 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // TokenUsers returns a secret containing the tokens csv.
-func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+func TokenUsersReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.TokensSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
@@ -58,9 +58,9 @@ func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretReco
 	}
 }
 
-// TokenViewerCreator returns a secret containing the viewer token.
-func TokenViewerCreator() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// TokenViewerReconciler returns a secret containing the viewer token.
+func TokenViewerReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.ViewerTokenSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

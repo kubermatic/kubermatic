@@ -17,8 +17,7 @@ limitations under the License.
 package vpa
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-
+	"k8c.io/reconciler/pkg/reconciling"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,9 +32,9 @@ const (
 	StatusReaderRoleName        = "system:vpa-status-reader"
 )
 
-func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
+func ClusterRoleReconcilers() []reconciling.NamedClusterRoleReconcilerFactory {
 	return []reconciling.NamedClusterRoleReconcilerFactory{
-		clusterRoleCreator(MetricsReaderRoleName, []rbacv1.PolicyRule{
+		clusterRoleReconciler(MetricsReaderRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"metrics.k8s.io"},
 				Resources: []string{"pods"},
@@ -43,7 +42,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
 			},
 		}),
 
-		clusterRoleCreator(TargetReaderRoleName, []rbacv1.PolicyRule{
+		clusterRoleReconciler(TargetReaderRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"*"},
 				Resources: []string{"*/scale"},
@@ -66,7 +65,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
 			},
 		}),
 
-		clusterRoleCreator(ActorRoleName, []rbacv1.PolicyRule{
+		clusterRoleReconciler(ActorRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
 				Resources: []string{"pods", "nodes", "limitranges"},
@@ -89,7 +88,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
 			},
 		}),
 
-		clusterRoleCreator(CheckpointActorRoleName, []rbacv1.PolicyRule{
+		clusterRoleReconciler(CheckpointActorRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
 				Resources: []string{"namespaces"},
@@ -107,7 +106,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
 			},
 		}),
 
-		clusterRoleCreator(EvictionerRoleName, []rbacv1.PolicyRule{
+		clusterRoleReconciler(EvictionerRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
 				Resources: []string{"pods/eviction"},
@@ -120,7 +119,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
 			},
 		}),
 
-		clusterRoleCreator(AdmissionControllerRoleName, []rbacv1.PolicyRule{
+		clusterRoleReconciler(AdmissionControllerRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
 				Resources: []string{"pods", "configmaps", "nodes", "limitranges"},
@@ -148,7 +147,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
 			},
 		}),
 
-		clusterRoleCreator(StatusReaderRoleName, []rbacv1.PolicyRule{
+		clusterRoleReconciler(StatusReaderRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"coordination.k8s.io"},
 				Resources: []string{"leases"},
@@ -158,8 +157,8 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
 	}
 }
 
-func clusterRoleCreator(name string, rules []rbacv1.PolicyRule) reconciling.NamedClusterRoleReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func clusterRoleReconciler(name string, rules []rbacv1.PolicyRule) reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = rules
 			return cr, nil
@@ -167,7 +166,7 @@ func clusterRoleCreator(name string, rules []rbacv1.PolicyRule) reconciling.Name
 	}
 }
 
-func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcilerFactory {
+func ClusterRoleBindingReconcilers() []reconciling.NamedClusterRoleBindingReconcilerFactory {
 	recommender := rbacv1.Subject{
 		Kind:      "ServiceAccount",
 		Name:      RecommenderName,
@@ -187,7 +186,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 	}
 
 	return []reconciling.NamedClusterRoleBindingReconcilerFactory{
-		clusterRoleBindingCreator(MetricsReaderRoleName, rbacv1.RoleRef{
+		clusterRoleBindingReconciler(MetricsReaderRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     MetricsReaderRoleName,
@@ -195,7 +194,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 			recommender,
 		}),
 
-		clusterRoleBindingCreator(TargetReaderRoleName, rbacv1.RoleRef{
+		clusterRoleBindingReconciler(TargetReaderRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     TargetReaderRoleName,
@@ -205,7 +204,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 			admissionController,
 		}),
 
-		clusterRoleBindingCreator(ActorRoleName, rbacv1.RoleRef{
+		clusterRoleBindingReconciler(ActorRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     ActorRoleName,
@@ -214,7 +213,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 			updater,
 		}),
 
-		clusterRoleBindingCreator(CheckpointActorRoleName, rbacv1.RoleRef{
+		clusterRoleBindingReconciler(CheckpointActorRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     CheckpointActorRoleName,
@@ -222,7 +221,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 			recommender,
 		}),
 
-		clusterRoleBindingCreator(EvictionerRoleName, rbacv1.RoleRef{
+		clusterRoleBindingReconciler(EvictionerRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     EvictionerRoleName,
@@ -230,7 +229,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 			updater,
 		}),
 
-		clusterRoleBindingCreator(AdmissionControllerRoleName, rbacv1.RoleRef{
+		clusterRoleBindingReconciler(AdmissionControllerRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     AdmissionControllerRoleName,
@@ -238,7 +237,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 			admissionController,
 		}),
 
-		clusterRoleBindingCreator(StatusReaderRoleName, rbacv1.RoleRef{
+		clusterRoleBindingReconciler(StatusReaderRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     StatusReaderRoleName,
@@ -248,8 +247,8 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcile
 	}
 }
 
-func clusterRoleBindingCreator(name string, roleRef rbacv1.RoleRef, subjects []rbacv1.Subject) reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func clusterRoleBindingReconciler(name string, roleRef rbacv1.RoleRef, subjects []rbacv1.Subject) reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = roleRef
 			crb.Subjects = subjects

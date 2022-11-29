@@ -22,7 +22,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -34,8 +34,8 @@ type Config struct {
 	TLSCACertFile string
 }
 
-func SecretCreator(config Config) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+func SecretReconciler(config Config) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MLALoggingAgentSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			if secret.Data == nil {
 				secret.Data = map[string][]byte{}
@@ -378,10 +378,10 @@ logs:
 `
 )
 
-func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+func ClientCertificateReconciler(ca *resources.ECDSAKeyPair) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MLALoggingAgentCertificatesSecretName,
-			certificates.GetECDSAClientCertificateCreator(
+			certificates.GetECDSAClientCertificateReconciler(
 				resources.MLALoggingAgentCertificatesSecretName,
 				resources.MLALoggingAgentCertificateCommonName,
 				[]string{},

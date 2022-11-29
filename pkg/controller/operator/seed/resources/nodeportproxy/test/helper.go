@@ -28,9 +28,9 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -56,44 +56,44 @@ func Deploy(
 	timeout time.Duration,
 ) error {
 	if err := reconciling.ReconcileClusterRoles(ctx, []reconciling.NamedClusterRoleReconcilerFactory{
-		nodeportproxy.ClusterRoleCreator(cfg),
+		nodeportproxy.ClusterRoleReconciler(cfg),
 	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingReconcilerFactory{
-		nodeportproxy.ClusterRoleBindingCreator(cfg),
+		nodeportproxy.ClusterRoleBindingReconciler(cfg),
 	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountReconcilerFactory{
-		nodeportproxy.ServiceAccountCreator(cfg),
+		nodeportproxy.ServiceAccountReconciler(cfg),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAcconts: %w", err)
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, []reconciling.NamedRoleReconcilerFactory{
-		nodeportproxy.RoleCreator(),
+		nodeportproxy.RoleReconciler(),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %w", err)
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, []reconciling.NamedRoleBindingReconcilerFactory{
-		nodeportproxy.RoleBindingCreator(cfg),
+		nodeportproxy.RoleBindingReconciler(cfg),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBinding:s %w", err)
 	}
 
 	if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceReconcilerFactory{
-		nodeportproxy.ServiceCreator(seed)},
+		nodeportproxy.ServiceReconciler(seed)},
 		namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentReconcilerFactory{
-		nodeportproxy.EnvoyDeploymentCreator(cfg, seed, false, versions),
-		nodeportproxy.UpdaterDeploymentCreator(cfg, seed, versions),
+		nodeportproxy.EnvoyDeploymentReconciler(cfg, seed, false, versions),
+		nodeportproxy.UpdaterDeploymentReconciler(cfg, seed, versions),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}

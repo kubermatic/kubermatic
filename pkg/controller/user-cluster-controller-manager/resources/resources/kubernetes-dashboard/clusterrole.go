@@ -18,14 +18,14 @@ package kubernetesdashboard
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRoleCreator returns a cluster role for the Dashboard Metrics Scraper.
-func ClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleCreator) {
+// ClusterRoleReconciler returns a cluster role for the Dashboard Metrics Scraper.
+func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return resources.MetricsScraperClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Labels = resources.BaseAppLabels(scraperName, nil)
 

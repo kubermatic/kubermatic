@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,17 +29,17 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// DeploymentsCreators returns the CSI controller Deployments for KubeVirt.
-func DeploymentsCreators(data *resources.TemplateData) []reconciling.NamedDeploymentReconcilerFactory {
+// DeploymentsReconcilers returns the CSI controller Deployments for KubeVirt.
+func DeploymentsReconcilers(data *resources.TemplateData) []reconciling.NamedDeploymentReconcilerFactory {
 	creators := []reconciling.NamedDeploymentReconcilerFactory{
-		ControllerDeploymentCreator(data),
+		ControllerDeploymentReconciler(data),
 	}
 	return creators
 }
 
-// ControllerDeploymentCreator returns the CSI controller Deployment for KubeVirt.
-func ControllerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (name string, create reconciling.DeploymentCreator) {
+// ControllerDeploymentReconciler returns the CSI controller Deployment for KubeVirt.
+func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (name string, create reconciling.DeploymentReconciler) {
 		return resources.KubeVirtCSIControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			version := data.Cluster().Status.Versions.ControllerManager.Semver()
 			volumes := []corev1.Volume{

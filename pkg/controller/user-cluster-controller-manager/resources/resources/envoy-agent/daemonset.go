@@ -21,9 +21,9 @@ import (
 	"net"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,9 +51,9 @@ const (
 	envoyImageName = "docker.io/envoyproxy/envoy"
 )
 
-// DaemonSetCreator returns the function to create and update the Envoy DaemonSet.
-func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash string, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
-	return func() (string, reconciling.DaemonSetCreator) {
+// DaemonSetReconciler returns the function to create and update the Envoy DaemonSet.
+func DaemonSetReconciler(agentIP net.IP, versions kubermatic.Versions, configHash string, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
+	return func() (string, reconciling.DaemonSetReconciler) {
 		return resources.EnvoyAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Name = resources.EnvoyAgentDaemonSetName
 			ds.Namespace = metav1.NamespaceSystem

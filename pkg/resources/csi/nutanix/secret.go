@@ -21,22 +21,22 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // Secretsreators returns the CSI secrets for KubeVirt.
-func SecretsCreators(data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
+func SecretsReconcilers(data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
 	creators := []reconciling.NamedSecretReconcilerFactory{
-		CloudConfigSecretNameCreator(data),
+		CloudConfigSecretNameReconciler(data),
 	}
 	return creators
 }
 
-// CloudConfigSecretNameCreator returns the CSI secrets for Nutanix.
-func CloudConfigSecretNameCreator(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// CloudConfigSecretNameReconciler returns the CSI secrets for Nutanix.
+func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.CSICloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
 			if cm.Data == nil {
 				cm.Data = map[string][]byte{}

@@ -26,14 +26,14 @@ package prometheus
 
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // prometheusConfigMap creates the configmap for prometheus.
 func prometheusConfigMap() reconciling.NamedConfigMapReconcilerFactory {
-	return func() (string, reconciling.ConfigMapCreator) {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return Name, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Labels == nil {
 				cm.Labels = make(map[string]string)

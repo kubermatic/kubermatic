@@ -21,16 +21,16 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingwebhookConfigurationCreator returns the ValidatingwebhookConfiguration for the machine controller.
-func ValidatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+// ValidatingwebhookConfigurationReconciler returns the ValidatingwebhookConfiguration for the machine controller.
+func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			sideEffect := admissionregistrationv1.SideEffectClassNone
 			matchPolicy := admissionregistrationv1.Exact

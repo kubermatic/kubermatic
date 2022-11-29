@@ -22,8 +22,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -41,8 +41,8 @@ const (
 	IPAMPoolAdmissionWebhookName        = "kubermatic-ipampools"
 )
 
-func ClusterValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+func ClusterValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -95,8 +95,8 @@ func ClusterValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kube
 	}
 }
 
-func ClusterMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+func ClusterMutatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -151,8 +151,8 @@ func ClusterMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kuberm
 	}
 }
 
-func AddonMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+func AddonMutatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return AddonAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -207,8 +207,8 @@ func AddonMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermat
 	}
 }
 
-func MLAAdminSettingMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+func MLAAdminSettingMutatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return MLAAdminSettingAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -263,8 +263,8 @@ func MLAAdminSettingMutatingWebhookConfigurationCreator(ctx context.Context, cfg
 	}
 }
 
-func OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+func OperatingSystemConfigValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return OSCAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -316,8 +316,8 @@ func OperatingSystemConfigValidatingWebhookConfigurationCreator(ctx context.Cont
 	}
 }
 
-func OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+func OperatingSystemProfileValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return OSPAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -369,11 +369,11 @@ func OperatingSystemProfileValidatingWebhookConfigurationCreator(ctx context.Con
 	}
 }
 
-func IPAMPoolValidatingWebhookConfigurationCreator(ctx context.Context,
+func IPAMPoolValidatingWebhookConfigurationReconciler(ctx context.Context,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	client ctrlruntimeclient.Client,
 ) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return IPAMPoolAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail

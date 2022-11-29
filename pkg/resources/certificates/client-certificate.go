@@ -21,7 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -29,9 +29,9 @@ import (
 
 type caGetter func() (*triple.KeyPair, error)
 
-// GetClientCertificateCreator is a generic function to return a secret generator to create a client certificate signed by the cluster CA.
-func GetClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// GetClientCertificateReconciler is a generic function to return a secret generator to create a client certificate signed by the cluster CA.
+func GetClientCertificateReconciler(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			// TODO: Remove this after the backup controller has been adapter to the new reconciling behaviour
 			if se == nil {

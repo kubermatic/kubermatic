@@ -26,8 +26,8 @@ import (
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -116,41 +116,41 @@ func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
 // https://github.com/kinvolk/flatcar-linux-update-operator
 func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error {
-	saCreators := []reconciling.NamedServiceAccountReconcilerFactory{
-		resources.OperatorServiceAccountCreator(),
-		resources.AgentServiceAccountCreator(),
+	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
+		resources.OperatorServiceAccountReconciler(),
+		resources.AgentServiceAccountReconciler(),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the ServiceAccounts: %w", err)
 	}
 
-	crCreators := []reconciling.NamedClusterRoleReconcilerFactory{
-		resources.OperatorClusterRoleCreator(),
-		resources.AgentClusterRoleCreator(),
+	crReconcilers := []reconciling.NamedClusterRoleReconcilerFactory{
+		resources.OperatorClusterRoleReconciler(),
+		resources.AgentClusterRoleReconciler(),
 	}
-	if err := reconciling.ReconcileClusterRoles(ctx, crCreators, metav1.NamespaceNone, r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, crReconcilers, metav1.NamespaceNone, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the ClusterRoles: %w", err)
 	}
 
-	crbCreators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
-		resources.OperatorClusterRoleBindingCreator(),
-		resources.AgentClusterRoleBindingCreator(),
+	crbReconcilers := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+		resources.OperatorClusterRoleBindingReconciler(),
+		resources.AgentClusterRoleBindingReconciler(),
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, crbCreators, metav1.NamespaceNone, r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, crbReconcilers, metav1.NamespaceNone, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %w", err)
 	}
 
-	depCreators := []reconciling.NamedDeploymentReconcilerFactory{
-		resources.OperatorDeploymentCreator(registry.GetImageRewriterFunc(r.overwriteRegistry), r.updateWindow),
+	depReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
+		resources.OperatorDeploymentReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry), r.updateWindow),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, depReconcilers, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
-	dsCreators := []reconciling.NamedDaemonSetReconcilerFactory{
-		resources.AgentDaemonSetCreator(registry.GetImageRewriterFunc(r.overwriteRegistry)),
+	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
+		resources.AgentDaemonSetReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry)),
 	}
-	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 

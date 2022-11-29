@@ -19,16 +19,16 @@ package csi
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-// DeploymentsCreators returns the function to create and update the deployments needed for CSI.
-func DeploymentsCreators(data *resources.TemplateData) []reconciling.NamedDeploymentReconcilerFactory {
+// DeploymentsReconcilers returns the function to create and update the deployments needed for CSI.
+func DeploymentsReconcilers(data *resources.TemplateData) []reconciling.NamedDeploymentReconcilerFactory {
 	creatorGetters := []reconciling.NamedDeploymentReconcilerFactory{}
 
 	switch {
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetters = kubevirt.DeploymentsCreators(data)
+		creatorGetters = kubevirt.DeploymentsReconcilers(data)
 	}
 
 	return creatorGetters

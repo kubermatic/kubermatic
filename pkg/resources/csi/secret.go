@@ -24,22 +24,22 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/csi/nutanix"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vsphere"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-// SecretsCreators returns the function to create and update the secrets needed for CSI.
-func SecretsCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
+// SecretsReconcilers returns the function to create and update the secrets needed for CSI.
+func SecretsReconcilers(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
 	creatorGetters := []reconciling.NamedSecretReconcilerFactory{}
 
 	switch {
 	case data.Cluster().Spec.Cloud.VSphere != nil:
-		creatorGetters = vsphere.SecretsCreators(data)
+		creatorGetters = vsphere.SecretsReconcilers(data)
 	case data.Cluster().Spec.Cloud.VMwareCloudDirector != nil:
-		creatorGetters = vmwareclouddirector.SecretsCreators(data)
+		creatorGetters = vmwareclouddirector.SecretsReconcilers(data)
 	case data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil:
-		creatorGetters = nutanix.SecretsCreators(data)
+		creatorGetters = nutanix.SecretsReconcilers(data)
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetters = kubevirt.SecretsCreators(ctx, data)
+		creatorGetters = kubevirt.SecretsReconcilers(ctx, data)
 	}
 
 	return creatorGetters

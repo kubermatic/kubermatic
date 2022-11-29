@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -29,9 +29,9 @@ const (
 	Name = "openvpn"
 )
 
-// ClientConfigConfigMapCreator returns a ConfigMap containing the config for the OpenVPN client. It lives inside the user-cluster.
-func ClientConfigConfigMapCreator(hostname string, serverPort uint32) reconciling.NamedConfigMapReconcilerFactory {
-	return func() (string, reconciling.ConfigMapCreator) {
+// ClientConfigConfigMapReconciler returns a ConfigMap containing the config for the OpenVPN client. It lives inside the user-cluster.
+func ClientConfigConfigMapReconciler(hostname string, serverPort uint32) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.OpenVPNClientConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

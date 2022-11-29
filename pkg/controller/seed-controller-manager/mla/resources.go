@@ -33,8 +33,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -194,8 +194,8 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 	return strings.TrimSpace(output.String()), nil
 }
 
-func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *kubermaticv1.MLAAdminSetting) reconciling.NamedConfigMapReconcilerFactory {
-	return func() (string, reconciling.ConfigMapCreator) {
+func GatewayConfigMapReconciler(c *kubermaticv1.Cluster, mlaNamespace string, s *kubermaticv1.MLAAdminSetting) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
@@ -228,8 +228,8 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *ku
 	}
 }
 
-func GatewayInternalServiceCreator() reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+func GatewayInternalServiceReconciler() reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return gatewayName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
 			s.Spec.Selector = map[string]string{common.NameLabel: gatewayName}
@@ -248,8 +248,8 @@ func GatewayInternalServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	}
 }
 
-func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+func GatewayExternalServiceReconciler(c *kubermaticv1.Cluster) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return gatewayExternalName, func(s *corev1.Service) (*corev1.Service, error) {
 			if s.Annotations == nil {
 				s.Annotations = map[string]string{}
@@ -304,8 +304,8 @@ const (
 	version = "1.20.1-alpine"
 )
 
-func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -441,9 +441,9 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 	}
 }
 
-// GatewayCACreator returns a function to create the ECDSA-based CA to be used for MLA Gateway.
-func GatewayCACreator() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// GatewayCAReconciler returns a function to create the ECDSA-based CA to be used for MLA Gateway.
+func GatewayCAReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MLAGatewayCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
@@ -472,9 +472,9 @@ func GatewayCACreator() reconciling.NamedSecretReconcilerFactory {
 	}
 }
 
-// GatewayCertificateCreator returns a function to create/update a secret with the MLA gateway TLS certificate.
-func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func() (*resources.ECDSAKeyPair, error)) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// GatewayCertificateReconciler returns a function to create/update a secret with the MLA gateway TLS certificate.
+func GatewayCertificateReconciler(c *kubermaticv1.Cluster, mlaGatewayCAGetter func() (*resources.ECDSAKeyPair, error)) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MLAGatewayCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

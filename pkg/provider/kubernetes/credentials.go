@@ -34,8 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -115,7 +115,7 @@ func credentialSecretReconcilerFactory(secretName string, clusterLabels map[stri
 		return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
 	}
 
-	return func() (name string, create reconciling.SecretCreator) {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}

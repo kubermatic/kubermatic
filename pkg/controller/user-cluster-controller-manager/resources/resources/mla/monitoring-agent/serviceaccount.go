@@ -18,13 +18,13 @@ package monitoringagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return resources.MLAMonitoringAgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(appName, nil)
 			return sa, nil

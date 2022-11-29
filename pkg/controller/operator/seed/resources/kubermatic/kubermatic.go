@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -35,18 +35,18 @@ func ClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-seed:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
-func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedServiceAccountReconcilerFactory {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
 		}
 	}
 }
 
-func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedClusterRoleBindingReconcilerFactory {
+func ClusterRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	name := ClusterRoleBindingName(cfg)
 
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -67,8 +67,8 @@ func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *
 	}
 }
 
-func CABundleConfigMapCreator(caBundle *corev1.ConfigMap) reconciling.NamedConfigMapReconcilerFactory {
-	return func() (string, reconciling.ConfigMapCreator) {
+func CABundleConfigMapReconciler(caBundle *corev1.ConfigMap) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return caBundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = caBundle.Data
 

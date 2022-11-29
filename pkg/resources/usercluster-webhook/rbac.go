@@ -21,7 +21,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -34,14 +34,14 @@ const (
 	roleBindingName    = "kubermatic:usercluster-webhook"
 )
 
-func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }
 
 func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleCreator) {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -69,7 +69,7 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 }
 
 func ClusterRoleBinding(namespace *corev1.Namespace) reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return GenerateRoleName(namespace), func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			rb.OwnerReferences = []metav1.OwnerReference{genOwnerReference(namespace)}
 			rb.RoleRef = rbacv1.RoleRef{

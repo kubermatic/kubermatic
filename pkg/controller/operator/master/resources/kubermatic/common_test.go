@@ -25,11 +25,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TestIngressCreatorKeepsAnnotations ensures that custom annotations
+// TestIngressReconcilerKeepsAnnotations ensures that custom annotations
 // are always kept when reconciling Ingresses.
-func TestIngressCreatorKeepsAnnotations(t *testing.T) {
+func TestIngressReconcilerKeepsAnnotations(t *testing.T) {
 	cfg := &kubermaticv1.KubermaticConfiguration{}
-	creatorGetter := IngressCreator(cfg)
+	creatorGetter := IngressReconciler(cfg)
 	_, creator := creatorGetter()
 
 	testcases := []struct {
@@ -58,7 +58,7 @@ func TestIngressCreatorKeepsAnnotations(t *testing.T) {
 
 			reconciled, err := creator(test.ingress)
 			if err != nil {
-				t.Fatalf("IngressCreator failed: %v", err)
+				t.Fatalf("IngressReconciler failed: %v", err)
 			}
 
 			for k, v := range existingRules {

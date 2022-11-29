@@ -21,8 +21,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -55,15 +55,15 @@ const (
 	imageTag  = "v0.6.1"
 )
 
-// TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics server.
-func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretReconcilerFactory {
+// TLSServingCertSecretReconciler returns a function to manage the TLS serving cert for the metrics server.
+func TLSServingCertSecretReconciler(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretReconcilerFactory {
 	dnsName := "metrics-server.kube-system.svc"
-	return servingcerthelper.ServingCertSecretCreator(caGetter, servingCertSecretName, dnsName, []string{dnsName}, nil)
+	return servingcerthelper.ServingCertSecretReconciler(caGetter, servingCertSecretName, dnsName, []string{dnsName}, nil)
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment.
-func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the metrics server deployment.
+func DeploymentReconciler(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName
 			dep.Namespace = metav1.NamespaceSystem
@@ -178,9 +178,9 @@ func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDe
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+// PodDisruptionBudgetReconciler returns a func to create/update the metrics-server PodDisruptionBudget.
+func PodDisruptionBudgetReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)
 			pdb.Spec = policyv1.PodDisruptionBudgetSpec{

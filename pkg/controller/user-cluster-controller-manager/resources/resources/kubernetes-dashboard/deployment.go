@@ -21,8 +21,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -52,9 +52,9 @@ const (
 	scraperTag       = "v1.0.8"
 )
 
-// DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment.
-func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the dashboard-metrics-scraper deployment.
+func DeploymentReconciler(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = scraperName
 			dep.Labels = resources.BaseAppLabels(scraperName, nil)

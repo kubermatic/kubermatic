@@ -24,7 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -33,14 +33,14 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
-type adminKubeconfigCreatorData interface {
+type adminKubeconfigReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig.
-func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// AdminKubeconfigReconciler returns a function to create/update the secret with the admin kubeconfig.
+func AdminKubeconfigReconciler(data adminKubeconfigReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return AdminKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
@@ -71,9 +71,9 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSe
 	}
 }
 
-// ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig.
-func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// ViewerKubeconfigReconciler returns a function to create/update the secret with the viewer kubeconfig.
+func ViewerKubeconfigReconciler(data *TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return ViewerKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
@@ -107,14 +107,14 @@ func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretReconcil
 	}
 }
 
-type internalKubeconfigCreatorData interface {
+type internalKubeconfigReconcilerData interface {
 	GetRootCA() (*triple.KeyPair, error)
 	Cluster() *kubermaticv1.Cluster
 }
 
-// GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigCreator(namespace, name, commonName string, organizations []string, data internalKubeconfigCreatorData, log *zap.SugaredLogger) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// GetInternalKubeconfigReconciler is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
+func GetInternalKubeconfigReconciler(namespace, name, commonName string, organizations []string, data internalKubeconfigReconcilerData, log *zap.SugaredLogger) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

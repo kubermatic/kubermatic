@@ -29,14 +29,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type etcdBackupConfigCreatorData interface {
+type etcdBackupConfigReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	BackupSchedule() time.Duration
 }
 
-// BackupConfigCreator returns the function to reconcile the EtcdBackupConfigs.
-func BackupConfigCreator(data etcdBackupConfigCreatorData, seed *kubermaticv1.Seed) reconciling.NamedEtcdBackupConfigReconcilerFactory {
-	return func() (string, reconciling.EtcdBackupConfigCreator) {
+// BackupConfigReconciler returns the function to reconcile the EtcdBackupConfigs.
+func BackupConfigReconciler(data etcdBackupConfigReconcilerData, seed *kubermaticv1.Seed) reconciling.NamedEtcdBackupConfigReconcilerFactory {
+	return func() (string, reconciling.EtcdBackupConfigReconciler) {
 		return resources.EtcdDefaultBackupConfigName, func(config *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 			if config.Labels == nil {
 				config.Labels = make(map[string]string)

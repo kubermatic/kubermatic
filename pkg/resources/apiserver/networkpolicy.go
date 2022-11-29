@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -33,10 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// DenyAllPolicyCreator returns a func to create/update the apiserver
+// DenyAllPolicyReconciler returns a func to create/update the apiserver
 // deny all egress policy.
-func DenyAllPolicyCreator() reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+func DenyAllPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyDefaultDenyAllEgress, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -55,9 +55,9 @@ func DenyAllPolicyCreator() reconciling.NamedNetworkPolicyReconcilerFactory {
 	}
 }
 
-// EctdAllowCreator returns a func to create/update the apiserver ETCD allow egress policy.
-func EctdAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// EctdAllowReconciler returns a func to create/update the apiserver ETCD allow egress policy.
+func EctdAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyEtcdAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -89,9 +89,9 @@ func EctdAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyRec
 	}
 }
 
-// DNSAllowCreator returns a func to create/update the apiserver DNS allow egress policy.
-func DNSAllowCreator(c *kubermaticv1.Cluster, data *resources.TemplateData) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// DNSAllowReconciler returns a func to create/update the apiserver DNS allow egress policy.
+func DNSAllowReconciler(c *kubermaticv1.Cluster, data *resources.TemplateData) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyDNSAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			dnsPort := intstr.FromInt(53)
 			protoUdp := corev1.ProtocolUDP
@@ -126,9 +126,9 @@ func DNSAllowCreator(c *kubermaticv1.Cluster, data *resources.TemplateData) reco
 	}
 }
 
-// OpenVPNServerAllowCreator returns a func to create/update the apiserver OpenVPN allow egress policy.
-func OpenVPNServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// OpenVPNServerAllowReconciler returns a func to create/update the apiserver OpenVPN allow egress policy.
+func OpenVPNServerAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyOpenVPNServerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -160,8 +160,8 @@ func OpenVPNServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 	}
 }
 
-func MachineControllerWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+func MachineControllerWebhookReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyMachineControllerWebhookAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -192,8 +192,8 @@ func MachineControllerWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedN
 	}
 }
 
-func UserClusterWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+func UserClusterWebhookReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyUserClusterWebhookAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -224,8 +224,8 @@ func UserClusterWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 	}
 }
 
-func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+func MetricsServerAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyMetricsServerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -256,11 +256,11 @@ func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 	}
 }
 
-// ClusterExternalAddrAllowCreator returns a func to create/update the apiserver cluster-external-addr-allow egress policy.
+// ClusterExternalAddrAllowReconciler returns a func to create/update the apiserver cluster-external-addr-allow egress policy.
 // This policy is necessary in Konnectivity setup, so that konnectivity-server can connect to the apiserver via
 // the external URL (used as service-account-issuer) to validate konnectivity-agent authentication token.
-func ClusterExternalAddrAllowCreator(egressIPs []net.IP, exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+func ClusterExternalAddrAllowReconciler(egressIPs []net.IP, exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyClusterExternalAddrAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -308,9 +308,9 @@ func ClusterExternalAddrAllowCreator(egressIPs []net.IP, exposeStrategy kubermat
 	}
 }
 
-// OIDCIssuerAllowCreator returns a func to create/update the apiserver oidc-issuer-allow egress policy.
-func OIDCIssuerAllowCreator(egressIPs []net.IP) reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// OIDCIssuerAllowReconciler returns a func to create/update the apiserver oidc-issuer-allow egress policy.
+func OIDCIssuerAllowReconciler(egressIPs []net.IP) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyOIDCIssuerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{

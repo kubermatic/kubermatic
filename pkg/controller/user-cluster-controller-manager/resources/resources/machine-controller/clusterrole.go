@@ -18,7 +18,7 @@ package machinecontroller
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
@@ -28,8 +28,8 @@ const (
 )
 
 // ClusterRole returns a cluster role for the machine controller (user-cluster).
-func ClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return resources.MachineControllerClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Labels = resources.BaseAppLabels(Name, nil)
 

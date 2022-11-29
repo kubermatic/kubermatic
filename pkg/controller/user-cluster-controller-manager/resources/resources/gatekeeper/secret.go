@@ -18,14 +18,14 @@ package gatekeeper
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// SecretCreator creates the secret for gatekeeper webhook controller.
-func SecretCreator() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// SecretReconciler creates the secret for gatekeeper webhook controller.
+func SecretReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.GatekeeperWebhookServerCertSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Labels = resources.BaseAppLabels(resources.GatekeeperControllerDeploymentName, map[string]string{"gatekeeper.sh/system": "yes"})
 			return secret, nil

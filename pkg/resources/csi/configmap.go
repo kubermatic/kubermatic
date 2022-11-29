@@ -19,16 +19,16 @@ package csi
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-// ConfigMapsCreators returns the function to create and update the configmaps needed for CSI.
-func ConfigMapsCreators(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
+// ConfigMapsReconcilers returns the function to create and update the configmaps needed for CSI.
+func ConfigMapsReconcilers(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
 	creatorGetters := []reconciling.NamedConfigMapReconcilerFactory{}
 
 	switch {
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetters = kubevirt.ConfigMapsCreators(data)
+		creatorGetters = kubevirt.ConfigMapsReconcilers(data)
 	}
 
 	return creatorGetters

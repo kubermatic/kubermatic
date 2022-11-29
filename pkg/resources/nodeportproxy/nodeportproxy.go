@@ -21,8 +21,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -152,13 +152,13 @@ type nodePortProxyData interface {
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }
 
-func RoleCreator() (string, reconciling.RoleCreator) {
+func RoleReconciler() (string, reconciling.RoleReconciler) {
 	return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 		r.Rules = []rbacv1.PolicyRule{
 			{
@@ -177,7 +177,7 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 	}
 }
 
-func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
+func RoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
 	return name, func(r *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 		r.Subjects = []rbacv1.Subject{
 			{
@@ -194,9 +194,9 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 	}
 }
 
-func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentEnvoyReconciler(data nodePortProxyData) reconciling.NamedDeploymentReconcilerFactory {
 	volumeMountNameEnvoyConfig := "envoy-config"
-	return func() (string, reconciling.DeploymentCreator) {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Name = resources.NodePortProxyEnvoyDeploymentName
 			d.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
@@ -321,9 +321,9 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentR
 	}
 }
 
-func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentLBUpdaterReconciler(data nodePortProxyData) reconciling.NamedDeploymentReconcilerFactory {
 	deploymentName := fmt.Sprintf("%s-lb-updater", name)
-	return func() (string, reconciling.DeploymentCreator) {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return deploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Name = deploymentName
 			d.Labels = resources.BaseAppLabels(deploymentName, nil)
@@ -363,9 +363,9 @@ func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploym
 	}
 }
 
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+func PodDisruptionBudgetReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	maxUnavailable := intstr.FromInt(1)
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return name + "-envoy", func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			pdb.Spec.MaxUnavailable = &maxUnavailable
 			pdb.Spec.Selector = &metav1.LabelSelector{
@@ -376,10 +376,10 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconciler
 	}
 }
 
-// FrontLoadBalancerServiceCreator returns the creator for the LoadBalancer that fronts apiserver
+// FrontLoadBalancerServiceReconciler returns the creator for the LoadBalancer that fronts apiserver
 // and openVPN when using exposeStrategy=LoadBalancer.
-func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.FrontLoadBalancerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just
 			// must make sure that it exists

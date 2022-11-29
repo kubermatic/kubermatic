@@ -32,8 +32,8 @@ import (
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -342,7 +342,7 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 
 func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedDeploymentReconcilerFactory{
-		GatewayDeploymentCreator(data, settings),
+		GatewayDeploymentReconciler(data, settings),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
 		return err
@@ -352,7 +352,7 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 
 func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, settings *kubermaticv1.MLAAdminSetting) error {
 	creators := []reconciling.NamedConfigMapReconcilerFactory{
-		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
+		GatewayConfigMapReconciler(c, r.mlaNamespace, settings),
 	}
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
@@ -362,8 +362,8 @@ func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *k
 
 func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := []reconciling.NamedSecretReconcilerFactory{
-		GatewayCACreator(),
-		GatewayCertificateCreator(c, data.GetMLAGatewayCA),
+		GatewayCAReconciler(),
+		GatewayCertificateReconciler(c, data.GetMLAGatewayCA),
 	}
 	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the Secrets exist: %w", err)
@@ -373,8 +373,8 @@ func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kube
 
 func (r *datasourceGrafanaController) ensureServices(ctx context.Context, c *kubermaticv1.Cluster) error {
 	creators := []reconciling.NamedServiceReconcilerFactory{
-		GatewayInternalServiceCreator(),
-		GatewayExternalServiceCreator(c),
+		GatewayInternalServiceReconciler(),
+		GatewayExternalServiceReconciler(c),
 	}
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client)
 }

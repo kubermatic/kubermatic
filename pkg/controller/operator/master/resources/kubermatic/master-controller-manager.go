@@ -21,8 +21,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,8 +37,8 @@ func masterControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func MasterControllerManagerDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return common.MasterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = cfg.Spec.MasterController.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -96,10 +96,10 @@ func MasterControllerManagerDeploymentCreator(cfg *kubermaticv1.KubermaticConfig
 	}
 }
 
-func MasterControllerManagerPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+func MasterControllerManagerPDBReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	name := "kubermatic-master-controller-manager"
 
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return name, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			// To prevent the PDB from blocking node rotations, we accept
 			// 0 minAvailable if the replica count is only 1.

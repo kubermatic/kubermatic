@@ -23,9 +23,9 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -64,9 +64,9 @@ func GetCoreDNSImage(kubernetesVersion *semverlib.Version) string {
 	}
 }
 
-// ServiceCreator returns the function to reconcile the DNS service.
-func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns the function to reconcile the DNS service.
+func ServiceReconciler() reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.DNSResolverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.DNSResolverServiceName
 			se.Spec.Selector = resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil)
@@ -84,16 +84,16 @@ func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	}
 }
 
-type deploymentCreatorData interface {
+type deploymentReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	RewriteImage(string) (string, error)
 	IsKonnectivityEnabled() bool
 }
 
-// DeploymentCreator returns the function to create and update the DNS resolver deployment.
-func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the DNS resolver deployment.
+func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.DNSResolverDeploymentName
 			dep.Labels = resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil)
@@ -216,13 +216,13 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 	return vs
 }
 
-type configMapCreatorData interface {
+type configMapReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data.
-func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapReconcilerFactory {
-	return func() (string, reconciling.ConfigMapCreator) {
+// ConfigMapReconciler returns a ConfigMap containing the cloud-config for the supplied data.
+func ConfigMapReconciler(data configMapReconcilerData) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.DNSResolverConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
 			if err != nil {
@@ -256,9 +256,9 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapRecon
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+// PodDisruptionBudgetReconciler returns a func to create/update the apiserver PodDisruptionBudget.
+func PodDisruptionBudgetReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return resources.DNSResolverPodDisruptionBudetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)
 			pdb.Spec = policyv1.PodDisruptionBudgetSpec{

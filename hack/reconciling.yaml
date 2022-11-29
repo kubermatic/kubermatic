@@ -54,6 +54,7 @@ resourceTypes:
 
   # osm/v1alpha1
   - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemProfile }
+  - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemConfig }
 
   # instancetype/v1alpha1
   - { package: kubevirt.io/api/instancetype/v1alpha1, resourceName: VirtualMachineInstancetype }

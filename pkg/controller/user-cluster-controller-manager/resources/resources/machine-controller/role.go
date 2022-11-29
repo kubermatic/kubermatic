@@ -19,16 +19,16 @@ package machinecontroller
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// KubeSystemRoleCreator returns the func to create/update the Role for the machine controller
+// KubeSystemRoleReconciler returns the func to create/update the Role for the machine controller
 // to allow reading secrets/configmaps/leases for the leaderelection.
-func KubeSystemRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
 			r.Namespace = metav1.NamespaceSystem
@@ -67,9 +67,9 @@ func KubeSystemRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-// EndpointReaderRoleCreator returns the func to create/update the Role for the machine controller to allow reading the kubernetes api endpoints.
-func EndpointReaderRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+// EndpointReaderRoleReconciler returns the func to create/update the Role for the machine controller to allow reading the kubernetes api endpoints.
+func EndpointReaderRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
 			r.Namespace = metav1.NamespaceDefault
@@ -91,10 +91,10 @@ func EndpointReaderRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-// ClusterInfoReaderRoleCreator returns the func to create/update the Role for the machine controller to allow
+// ClusterInfoReaderRoleReconciler returns the func to create/update the Role for the machine controller to allow
 // the kubelet & kubeadm to read the cluster-info reading the cluster-info ConfigMap without authentication.
-func ClusterInfoReaderRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func ClusterInfoReaderRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.ClusterInfoReaderRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.ClusterInfoReaderRoleName
 			r.Namespace = metav1.NamespacePublic
@@ -113,10 +113,10 @@ func ClusterInfoReaderRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-// KubePublicRoleCreator returns the func to create/update the Role for the machine controller to allow
+// KubePublicRoleReconciler returns the func to create/update the Role for the machine controller to allow
 // reading all configmaps in kube-public.
-func KubePublicRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func KubePublicRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
 			r.Namespace = metav1.NamespacePublic

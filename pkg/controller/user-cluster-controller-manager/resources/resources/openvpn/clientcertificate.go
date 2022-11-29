@@ -19,15 +19,15 @@ package openvpn
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
 // ClientCertificate returns a function to create/update the secret with the client certificate
 // for the openvpn client in the user cluster.
 func ClientCertificate(ca *resources.ECDSAKeyPair) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.OpenVPNClientCertificatesSecretName,
-			certificates.GetECDSAClientCertificateCreator(
+			certificates.GetECDSAClientCertificateReconciler(
 				resources.OpenVPNClientCertificatesSecretName,
 				"user-cluster-client",
 				[]string{},

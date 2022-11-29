@@ -22,9 +22,9 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,9 +65,9 @@ type kubernetesDashboardData interface {
 	RewriteImage(string) (string, error)
 }
 
-// DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment.
-func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the Kubernetes Dashboard deployment.
+func DeploymentReconciler(data kubernetesDashboardData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = name
 			dep.Labels = resources.BaseAppLabels(name, nil)

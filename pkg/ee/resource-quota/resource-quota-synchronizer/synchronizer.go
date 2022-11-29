@@ -91,8 +91,8 @@ func Add(masterMgr manager.Manager,
 	return nil
 }
 
-func resourceQuotaReconcilerFactory(rq *kubermaticv1.ResourceQuota) reconciling.NamedKubermaticV1ResourceQuotaReconcilerFactory {
-	return func() (string, reconciling.KubermaticV1ResourceQuotaCreator) {
+func resourceQuotaReconcilerFactory(rq *kubermaticv1.ResourceQuota) reconciling.NamedResourceQuotaReconcilerFactory {
+	return func() (string, reconciling.ResourceQuotaReconciler) {
 		return rq.Name, func(c *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
 			c.Name = rq.Name
 			c.Labels = rq.Labels
@@ -133,13 +133,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, reso
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	resourceQuotaReconcilerFactorys := []reconciling.NamedKubermaticV1ResourceQuotaReconcilerFactory{
+	resourceQuotaReconcilerFactorys := []reconciling.NamedResourceQuotaReconcilerFactory{
 		resourceQuotaReconcilerFactory(resourceQuota),
 	}
 
 	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		// ensure resource quota
-		if err := reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaReconcilerFactorys, "", seedClient); err != nil {
+		if err := reconciling.ReconcileResourceQuotas(ctx, resourceQuotaReconcilerFactorys, "", seedClient); err != nil {
 			return err
 		}
 

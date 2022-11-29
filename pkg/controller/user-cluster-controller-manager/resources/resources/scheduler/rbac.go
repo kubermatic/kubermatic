@@ -18,15 +18,15 @@ package scheduler
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
 // RoleBindingAuthDelegator creates the RoleBinding which is needed for extension apiserver which do auth delegation.
 func RoleBindingAuthDelegator() reconciling.NamedRoleBindingReconcilerFactory {
-	return resources.RoleBindingAuthenticationReaderCreator("system:kube-scheduler")
+	return resources.RoleBindingAuthenticationReaderReconciler("system:kube-scheduler")
 }
 
-// ClusterRoleBindingAuthDelegatorCreator creates the ClusterRoleBinding which is needed for extension apiserver which do auth delegation.
-func ClusterRoleBindingAuthDelegatorCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return resources.ClusterRoleBindingAuthDelegatorCreator("system:kube-scheduler")
+// ClusterRoleBindingAuthDelegatorReconciler creates the ClusterRoleBinding which is needed for extension apiserver which do auth delegation.
+func ClusterRoleBindingAuthDelegatorReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return resources.ClusterRoleBindingAuthDelegatorReconciler("system:kube-scheduler")
 }

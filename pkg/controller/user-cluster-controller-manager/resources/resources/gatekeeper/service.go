@@ -18,15 +18,15 @@ package gatekeeper
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the gatekeeper service.
-func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns the function to reconcile the gatekeeper service.
+func ServiceReconciler() reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.GatekeeperWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.GatekeeperWebhookServiceName
 			labels := resources.BaseAppLabels(controllerName, map[string]string{"gatekeeper.sh/system": "yes"})

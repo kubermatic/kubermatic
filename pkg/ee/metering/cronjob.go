@@ -31,17 +31,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
 
-// cronJobCreator returns the func to create/update the metering report cronjob.
-func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.ImageRewriter, namespace string) reconciling.NamedCronJobReconcilerFactory {
-	return func() (string, reconciling.CronJobCreator) {
+// cronJobReconciler returns the func to create/update the metering report cronjob.
+func cronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.ImageRewriter, namespace string) reconciling.NamedCronJobReconcilerFactory {
+	return func() (string, reconciling.CronJobReconciler) {
 		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			var args []string
 			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, namespace))

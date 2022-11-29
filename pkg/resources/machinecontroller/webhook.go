@@ -24,8 +24,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -51,9 +51,9 @@ var (
 	}
 )
 
-// WebhookDeploymentCreator returns the function to create and update the machine controller webhook deployment.
-func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// WebhookDeploymentReconciler returns the function to create and update the machine controller webhook deployment.
+func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			args := []string{
 				"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
@@ -186,9 +186,9 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 	}
 }
 
-// ServiceCreator returns the function to reconcile the DNS service.
-func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns the function to reconcile the DNS service.
+func ServiceReconciler() reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.MachineControllerWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.MachineControllerWebhookServiceName
 			se.Labels = resources.BaseAppLabels(resources.MachineControllerWebhookDeploymentName, nil)
@@ -211,14 +211,14 @@ func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	}
 }
 
-type tlsServingCertCreatorData interface {
+type tlsServingCertReconcilerData interface {
 	GetRootCA() (*triple.KeyPair, error)
 	Cluster() *kubermaticv1.Cluster
 }
 
-// TLSServingCertificateCreator returns a function to create/update the secret with the machine-controller-webhook tls certificate.
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// TLSServingCertificateReconciler returns a function to create/update the secret with the machine-controller-webhook tls certificate.
+func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MachineControllerWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

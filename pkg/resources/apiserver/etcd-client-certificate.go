@@ -20,16 +20,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-type etcdClientCertificateCreatorData interface {
+type etcdClientCertificateReconcilerData interface {
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// EtcdClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against etcd.
-func EtcdClientCertificateCreator(data etcdClientCertificateCreatorData) reconciling.NamedSecretReconcilerFactory {
-	return certificates.GetClientCertificateCreator(
+// EtcdClientCertificateReconciler returns a function to create/update the secret with the client certificate for authenticating against etcd.
+func EtcdClientCertificateReconciler(data etcdClientCertificateReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return certificates.GetClientCertificateReconciler(
 		resources.ApiserverEtcdClientCertificateSecretName,
 		"apiserver",
 		nil,

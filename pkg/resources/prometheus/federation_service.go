@@ -18,15 +18,15 @@ package prometheus
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the prometheus service used for federation.
-func ServiceCreator(data *resources.TemplateData) reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns the function to reconcile the prometheus service used for federation.
+func ServiceReconciler(data *resources.TemplateData) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return name, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = name
 			se.Labels = resources.BaseAppLabels(name, nil)

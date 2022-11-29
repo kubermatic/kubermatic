@@ -22,15 +22,15 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controller.
-func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+// MutatingwebhookConfigurationReconciler returns the MutatingwebhookConfiguration for the machine controller.
+func MutatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return resources.MachineControllerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone

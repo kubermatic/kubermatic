@@ -18,16 +18,16 @@ package metricsserver
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+// PodDisruptionBudgetReconciler returns a func to create/update the metrics-server PodDisruptionBudget.
+func PodDisruptionBudgetReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)
 			pdb.Spec = policyv1.PodDisruptionBudgetSpec{

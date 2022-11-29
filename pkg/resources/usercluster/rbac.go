@@ -21,7 +21,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -34,13 +34,13 @@ const (
 	roleBindingName    = "kubermatic:usercluster-controller-manager"
 )
 
-func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }
 
-func RoleCreator() (string, reconciling.RoleCreator) {
+func RoleReconciler() (string, reconciling.RoleReconciler) {
 	return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 		r.Rules = []rbacv1.PolicyRule{
 			{
@@ -86,7 +86,7 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 	}
 }
 
-func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
+func RoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
 	return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 		rb.RoleRef = rbacv1.RoleRef{
 			Name:     roleName,
@@ -104,7 +104,7 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 }
 
 func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleCreator) {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -134,7 +134,7 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 }
 
 func ClusterRoleBinding(namespace *corev1.Namespace) reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return GenClusterRoleBindingName(namespace), func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			rb.OwnerReferences = []metav1.OwnerReference{genOwnerReference(namespace)}
 			rb.RoleRef = rbacv1.RoleRef{

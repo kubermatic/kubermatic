@@ -22,15 +22,15 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the external OpenVPN service.
-func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns the function to reconcile the external OpenVPN service.
+func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.OpenVPNServerServiceName
 			se.Labels = resources.BaseAppLabels(name, nil)

@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -80,9 +80,9 @@ var (
 	}
 )
 
-// ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment.
-func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// ControllerDeploymentReconciler returns the function to create and update the Gatekeeper controller deployment.
+func ControllerDeploymentReconciler(enableMutation bool, imageRewriter registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
 			dep.Labels = resources.BaseAppLabels(controllerName, gatekeeperControllerLabels)
@@ -140,9 +140,9 @@ func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.Ima
 	}
 }
 
-// AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment.
-func AuditDeploymentCreator(registryWithOverwrite registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// AuditDeploymentReconciler returns the function to create and update the Gatekeeper audit deployment.
+func AuditDeploymentReconciler(registryWithOverwrite registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
 			dep.Labels = resources.BaseAppLabels(auditName, gatekeeperAuditLabels)

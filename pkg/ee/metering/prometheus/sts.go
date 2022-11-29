@@ -30,8 +30,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +47,7 @@ func getPrometheusImage(overwriter registry.ImageRewriter) string {
 
 // prometheusStatefulSet creates a StatefulSet for prometheus.
 func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedStatefulSetReconcilerFactory {
-	return func() (string, reconciling.StatefulSetCreator) {
+	return func() (string, reconciling.StatefulSetReconciler) {
 		return Name, func(sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			if sts.Labels == nil {
 				sts.Labels = make(map[string]string)

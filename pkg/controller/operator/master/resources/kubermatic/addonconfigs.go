@@ -50,21 +50,21 @@ const (
 	pngFormat = "png"
 )
 
-func AddonConfigsCreators() []reconciling.NamedKubermaticV1AddonConfigReconcilerFactory {
-	return []reconciling.NamedKubermaticV1AddonConfigReconcilerFactory{
-		makeCreator(kubeStateMetricsAddonConfig),
-		makeCreator(kubeVirtAddonConfig),
-		makeCreator(kubeflowAddonConfig),
-		makeCreator(multusAddonConfig),
-		makeCreator(nodeExporterAddonConfig),
-		makeCreator(hubbleAddonConfig),
+func AddonConfigsReconcilers() []reconciling.NamedAddonConfigReconcilerFactory {
+	return []reconciling.NamedAddonConfigReconcilerFactory{
+		makeReconciler(kubeStateMetricsAddonConfig),
+		makeReconciler(kubeVirtAddonConfig),
+		makeReconciler(kubeflowAddonConfig),
+		makeReconciler(multusAddonConfig),
+		makeReconciler(nodeExporterAddonConfig),
+		makeReconciler(hubbleAddonConfig),
 	}
 }
 
-func makeCreator(addonConfigCreator func() *kubermaticv1.AddonConfig) reconciling.NamedKubermaticV1AddonConfigReconcilerFactory {
-	addonConfig := addonConfigCreator()
+func makeReconciler(addonConfigReconciler func() *kubermaticv1.AddonConfig) reconciling.NamedAddonConfigReconcilerFactory {
+	addonConfig := addonConfigReconciler()
 
-	return func() (name string, create reconciling.KubermaticV1AddonConfigCreator) {
+	return func() (name string, create reconciling.AddonConfigReconciler) {
 		return addonConfig.Name, func(existing *kubermaticv1.AddonConfig) (*kubermaticv1.AddonConfig, error) {
 			// determine whether the config was created (and is therefore managed) by KKP
 			// (this is the default for KKP 2.22+) or whether an admin has manually created it.

@@ -31,7 +31,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -42,9 +42,9 @@ const Duration365d = time.Hour * 24 * 365
 
 type ecdsaCAGetter func() (*resources.ECDSAKeyPair, error)
 
-// GetECDSAClientCertificateCreator is a generic function to return a secret generator to create a client certificate
+// GetECDSAClientCertificateReconciler is a generic function to return a secret generator to create a client certificate
 // signed by the cert returned by the passed getCA func. The resulting secret has no ownerRef.
-func GetECDSAClientCertificateCreator(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) reconciling.SecretCreator {
+func GetECDSAClientCertificateReconciler(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA ecdsaCAGetter) reconciling.SecretReconciler {
 	return func(se *corev1.Secret) (*corev1.Secret, error) {
 		ca, err := getCA()
 		if err != nil {

@@ -23,15 +23,15 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns function to create konnectivity proxy service.
-func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceReconcilerFactory {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns function to create konnectivity proxy service.
+func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.KonnectivityProxyServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: "apiserver", // because konnectivity proxy runs in sidecar in apiserver pod

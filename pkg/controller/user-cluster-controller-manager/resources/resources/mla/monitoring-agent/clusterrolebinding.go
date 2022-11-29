@@ -18,13 +18,13 @@ package monitoringagent
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resources.MLAMonitoringAgentClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(appName, nil)
 

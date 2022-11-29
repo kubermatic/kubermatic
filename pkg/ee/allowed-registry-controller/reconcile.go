@@ -104,11 +104,11 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 		}
 
 		// Ensure Constraint with registry data
-		constraintReconcilerFactorys := []reconciling.NamedKubermaticV1ConstraintReconcilerFactory{
+		constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
 			allowedRegistryConstraintReconcilerFactory(regSet),
 		}
 
-		err := reconciling.ReconcileKubermaticV1Constraints(ctx, constraintReconcilerFactorys, r.namespace, r.masterClient)
+		err := reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, r.namespace, r.masterClient)
 		if err != nil {
 			return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 		}
@@ -121,20 +121,20 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 	}
 
 	// Ensure that the Constraint Template for AllowedRegistry exists
-	ctReconcilerFactorys := []reconciling.NamedKubermaticV1ConstraintTemplateReconcilerFactory{
+	ctReconcilerFactorys := []reconciling.NamedConstraintTemplateReconcilerFactory{
 		allowedRegistryCTReconcilerFactory(),
 	}
-	err = reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctReconcilerFactorys, "", r.masterClient)
+	err = reconciling.ReconcileConstraintTemplates(ctx, ctReconcilerFactorys, "", r.masterClient)
 	if err != nil {
 		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}
 
 	// Ensure Constraint with registry data
-	constraintReconcilerFactorys := []reconciling.NamedKubermaticV1ConstraintReconcilerFactory{
+	constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
 		allowedRegistryConstraintReconcilerFactory(regSet),
 	}
 
-	err = reconciling.ReconcileKubermaticV1Constraints(ctx, constraintReconcilerFactorys, r.namespace, r.masterClient)
+	err = reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, r.namespace, r.masterClient)
 	if err != nil {
 		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}
@@ -142,8 +142,8 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 	return nil
 }
 
-func allowedRegistryCTReconcilerFactory() reconciling.NamedKubermaticV1ConstraintTemplateReconcilerFactory {
-	return func() (string, reconciling.KubermaticV1ConstraintTemplateCreator) {
+func allowedRegistryCTReconcilerFactory() reconciling.NamedConstraintTemplateReconcilerFactory {
+	return func() (string, reconciling.ConstraintTemplateReconciler) {
 		return AllowedRegistryCTName, func(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
 			ct.Name = AllowedRegistryCTName
 			ct.Spec = kubermaticv1.ConstraintTemplateSpec{
@@ -183,8 +183,8 @@ func allowedRegistryCTReconcilerFactory() reconciling.NamedKubermaticV1Constrain
 	}
 }
 
-func allowedRegistryConstraintReconcilerFactory(regSet sets.String) reconciling.NamedKubermaticV1ConstraintReconcilerFactory {
-	return func() (string, reconciling.KubermaticV1ConstraintCreator) {
+func allowedRegistryConstraintReconcilerFactory(regSet sets.String) reconciling.NamedConstraintReconcilerFactory {
+	return func() (string, reconciling.ConstraintReconciler) {
 		return AllowedRegistryCTName, func(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
 			ct.Name = AllowedRegistryCTName
 			ct.Spec.Match.Kinds = []kubermaticv1.Kind{

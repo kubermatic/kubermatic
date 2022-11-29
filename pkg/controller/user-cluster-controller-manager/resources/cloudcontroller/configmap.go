@@ -18,14 +18,14 @@ package cloudcontroller
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // VMwareCloudDirectorCSIConfig stores the VMware Cloud Director CSI configuration.
 func VMwareCloudDirectorCSIConfig(cloudConfig []byte) reconciling.NamedConfigMapReconcilerFactory {
-	return func() (string, reconciling.ConfigMapCreator) {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.VMwareCloudDirectorCSIConfigConfigMapName, func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if existing.Data == nil {
 				existing.Data = make(map[string]string)

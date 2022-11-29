@@ -83,11 +83,11 @@ Y1OSU+4JRXF62VQY
 	assert.Equal(t, []byte(caString), c.Clusters[clusterName].CertificateAuthorityData)
 }
 
-func TestGetInternalKubeconfigCreator(t *testing.T) {
+func TestGetInternalKubeconfigReconciler(t *testing.T) {
 	checkKubeConfigRegeneration(t, nil)
 }
 
-func TestGetInternalKubeconfigCreatorWithOrgs(t *testing.T) {
+func TestGetInternalKubeconfigReconcilerWithOrgs(t *testing.T) {
 	checkKubeConfigRegeneration(t, []string{"org1", "org2"})
 }
 
@@ -119,7 +119,7 @@ func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	data := &fakeDataProvider{caPair: ca}
 	assert.NotNil(t, data)
 
-	_, create := GetInternalKubeconfigCreator("some-namespace", "some-name", "test-creator-cn", orgs, data, zap.NewNop().Sugar())()
+	_, create := GetInternalKubeconfigReconciler("some-namespace", "some-name", "test-creator-cn", orgs, data, zap.NewNop().Sugar())()
 	secret, err := create(&corev1.Secret{})
 	if err != nil {
 		t.Fatal(err)

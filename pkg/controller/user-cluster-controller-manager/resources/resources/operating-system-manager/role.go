@@ -19,15 +19,15 @@ package operatingsystemmanager
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// KubeSystemRoleCreator returns the func to create/update the Role for the OSM
+// KubeSystemRoleReconciler returns the func to create/update the Role for the OSM
 // to retrieve kube-apiserver address from the cluster-info configmap.
-func KubeSystemRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
@@ -71,10 +71,10 @@ func KubeSystemRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-// KubePublicRoleCreator returns the func to create/update the Role for the OSM
+// KubePublicRoleReconciler returns the func to create/update the Role for the OSM
 // to facilitate leaderelection.
-func KubePublicRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func KubePublicRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
@@ -93,10 +93,10 @@ func KubePublicRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-// DefaultRoleCreator returns the func to create/update the Role for the OSM
+// DefaultRoleReconciler returns the func to create/update the Role for the OSM
 // to retrieve kube-apiserver address from the Kubernetes endpoint.
-func DefaultRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func DefaultRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
@@ -115,8 +115,8 @@ func DefaultRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-func CloudInitSettingsRoleCreator() reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func CloudInitSettingsRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName,
 			func(r *rbacv1.Role) (*rbacv1.Role, error) {
 				r.Rules = []rbacv1.PolicyRule{
@@ -137,8 +137,8 @@ func CloudInitSettingsRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-func MachineDeploymentsClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func MachineDeploymentsClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return resources.OperatingSystemManagerClusterRoleName,
 			func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 				r.Rules = []rbacv1.PolicyRule{

@@ -19,19 +19,19 @@ package operatingsystemmanager
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// KubeSystemRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
-func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return RoleBindingCreator()
+// KubeSystemRoleBindingReconciler returns the RoleBinding for the OSM in kube-system ns.
+func KubeSystemRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return RoleBindingReconciler()
 }
 
-func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return func() (string, reconciling.RoleBindingCreator) {
+func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
 
@@ -52,9 +52,9 @@ func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	}
 }
 
-// KubePublicRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
-func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return func() (string, reconciling.RoleBindingCreator) {
+// KubePublicRoleBindingReconciler returns the RoleBinding for the OSM in kube-system ns.
+func KubePublicRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Namespace = metav1.NamespacePublic
 
@@ -75,9 +75,9 @@ func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactor
 	}
 }
 
-// DefaultRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
-func DefaultRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return func() (string, reconciling.RoleBindingCreator) {
+// DefaultRoleBindingReconciler returns the RoleBinding for the OSM in kube-system ns.
+func DefaultRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Namespace = metav1.NamespaceDefault
 
@@ -98,8 +98,8 @@ func DefaultRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	}
 }
 
-func CloudInitSettingsRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return func() (string, reconciling.RoleBindingCreator) {
+func CloudInitSettingsRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.OperatingSystemManagerRoleName,
@@ -118,8 +118,8 @@ func CloudInitSettingsRoleBindingCreator() reconciling.NamedRoleBindingReconcile
 	}
 }
 
-func MachineDeploymentsClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func MachineDeploymentsClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resources.OperatingSystemManagerClusterRoleBindingName,
 			func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 				crb.RoleRef = rbacv1.RoleRef{

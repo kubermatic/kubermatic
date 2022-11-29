@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -77,7 +77,7 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 }
 
 func (r *reconciler) ensureRBACClusterRole(ctx context.Context, resourceName string) error {
-	creator, err := newClusterRoleCreator(resourceName)
+	creator, err := newClusterRoleReconciler(resourceName)
 	if err != nil {
 		return fmt.Errorf("failed to init ClusterRole creator: %w", err)
 	}
@@ -90,7 +90,7 @@ func (r *reconciler) ensureRBACClusterRole(ctx context.Context, resourceName str
 }
 
 func (r *reconciler) ensureRBACClusterRoleBinding(ctx context.Context, resourceName string) error {
-	creator, err := newClusterRoleBindingCreator(resourceName)
+	creator, err := newClusterRoleBindingReconciler(resourceName)
 	if err != nil {
 		return fmt.Errorf("failed to init ClusterRole creator: %w", err)
 	}

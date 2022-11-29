@@ -239,7 +239,7 @@ func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {
 	ensuredAddonsMap := sets.NewString()
-	creators := []reconciling.NamedKubermaticV1AddonReconcilerFactory{}
+	creators := []reconciling.NamedAddonReconcilerFactory{}
 
 	for i, addon := range addons.Items {
 		if skipAddonInstallation(addon, cluster) {
@@ -247,10 +247,10 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 		}
 
 		ensuredAddonsMap.Insert(addon.Name)
-		creators = append(creators, r.addonCreator(ctx, cluster, addons.Items[i]))
+		creators = append(creators, r.addonReconciler(ctx, cluster, addons.Items[i]))
 	}
 
-	if err := reconciling.ReconcileKubermaticV1Addons(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
+	if err := reconciling.ReconcileAddons(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure addons: %w", err)
 	}
 
@@ -270,8 +270,8 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 	return nil
 }
 
-func (r *Reconciler) addonCreator(ctx context.Context, cluster *kubermaticv1.Cluster, addon kubermaticv1.Addon) reconciling.NamedKubermaticV1AddonReconcilerFactory {
-	return func() (name string, create reconciling.KubermaticV1AddonCreator) {
+func (r *Reconciler) addonReconciler(ctx context.Context, cluster *kubermaticv1.Cluster, addon kubermaticv1.Addon) reconciling.NamedAddonReconcilerFactory {
+	return func() (name string, create reconciling.AddonReconciler) {
 		return addon.Name, func(existing *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
 			existing.Labels = addon.Labels
 			existing.Annotations = addon.Annotations

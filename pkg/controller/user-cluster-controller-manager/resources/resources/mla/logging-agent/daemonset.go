@@ -21,8 +21,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -73,8 +73,8 @@ var (
 	}
 )
 
-func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
-	return func() (string, reconciling.DaemonSetCreator) {
+func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
+	return func() (string, reconciling.DaemonSetReconciler) {
 		return resources.MLALoggingAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Labels = resources.BaseAppLabels(appName, nil)
 

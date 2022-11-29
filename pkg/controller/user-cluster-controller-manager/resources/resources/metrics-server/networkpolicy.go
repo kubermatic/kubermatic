@@ -19,7 +19,7 @@ package metricsserver
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -27,9 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world.
-func NetworkPolicyCreator() reconciling.NamedNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// NetworkPolicyReconciler NetworkPolicy allows egress traffic of user ssh keys agent to the world.
+func NetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return "metrics-server", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			metricsPort := intstr.FromInt(9153)
 			httpsPort := intstr.FromInt(443)

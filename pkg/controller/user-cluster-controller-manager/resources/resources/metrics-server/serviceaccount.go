@@ -18,14 +18,14 @@ package metricsserver
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ServiceAccountCreator creates the service account for the metrics-server.
-func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
-	return func() (string, reconciling.ServiceAccountCreator) {
+// ServiceAccountReconciler creates the service account for the metrics-server.
+func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return resources.MetricsServerServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(resources.MetricsServerDeploymentName, nil)
 			sa.Name = resources.MetricsServerServiceAccountName

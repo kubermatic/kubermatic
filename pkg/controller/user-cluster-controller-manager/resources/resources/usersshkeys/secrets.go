@@ -18,14 +18,14 @@ package usersshkeys
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// SecretCreator returns a function to create a secret in the usercluster containing the user ssh keys.
-func SecretCreator(userSSHKeys map[string][]byte) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// SecretReconciler returns a function to create a secret in the usercluster containing the user ssh keys.
+func SecretReconciler(userSSHKeys map[string][]byte) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.UserSSHKeys, func(sec *corev1.Secret) (*corev1.Secret, error) {
 			sec.Data = userSSHKeys
 			return sec, nil

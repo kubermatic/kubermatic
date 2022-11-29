@@ -18,14 +18,14 @@ package kubernetesdashboard
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// KeyHolderSecretCreator  creates key holder secret for the Kubernetes Dashboard.
-func KeyHolderSecretCreator() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// KeyHolderSecretReconciler  creates key holder secret for the Kubernetes Dashboard.
+func KeyHolderSecretReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.KubernetesDashboardKeyHolderSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Labels = resources.BaseAppLabels(AppName, nil)
 			return secret, nil
@@ -33,9 +33,9 @@ func KeyHolderSecretCreator() reconciling.NamedSecretReconcilerFactory {
 	}
 }
 
-// CsrfTokenSecretCreator  creates the csrf token secret for the Kubernetes Dashboard.
-func CsrfTokenSecretCreator() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+// CsrfTokenSecretReconciler  creates the csrf token secret for the Kubernetes Dashboard.
+func CsrfTokenSecretReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.KubernetesDashboardCsrfTokenSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Labels = resources.BaseAppLabels(AppName, nil)
 			return secret, nil

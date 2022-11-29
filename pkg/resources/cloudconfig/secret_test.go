@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestKubeVirtInfraSecretCreator(t *testing.T) {
+func TestKubeVirtInfraSecretReconciler(t *testing.T) {
 	testCases := []struct {
 		name               string
 		infraKubeconfig    string
@@ -43,7 +43,7 @@ func TestKubeVirtInfraSecretCreator(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			fakeTemplateData := createFakeTemplateData(test.infraKubeconfig)
-			_, creator := KubeVirtInfraSecretCreator(fakeTemplateData)()
+			_, creator := KubeVirtInfraSecretReconciler(fakeTemplateData)()
 			secret, err := creator(&corev1.Secret{})
 			assert.Equal(t, test.expectedError, err)
 			var actualSecretData string

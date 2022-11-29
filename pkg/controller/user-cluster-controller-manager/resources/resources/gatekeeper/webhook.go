@@ -18,7 +18,7 @@ package gatekeeper
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -26,9 +26,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingWebhookConfigurationCreator returns the ValidatingwebhookConfiguration for gatekeeper.
-func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+// ValidatingWebhookConfigurationReconciler returns the ValidatingwebhookConfiguration for gatekeeper.
+func ValidatingWebhookConfigurationReconciler(timeout int) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return resources.GatekeeperValidatingWebhookConfigurationName, func(validatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			failurePolicyIgnore := admissionregistrationv1.Ignore
 			sideEffectsNone := admissionregistrationv1.SideEffectClassNone
@@ -138,8 +138,8 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 	}
 }
 
-func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+func MutatingWebhookConfigurationReconciler(timeout int) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return resources.GatekeeperMutatingWebhookConfigurationName, func(mutatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			failurePolicyIgnore := admissionregistrationv1.Ignore
 			sideEffectsNone := admissionregistrationv1.SideEffectClassNone

@@ -22,8 +22,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,38 +35,38 @@ const (
 	openvpnClientContainerName = "openvpn-client"
 )
 
-// DeploymentCreator returns the function to create and update the external cloud provider deployment.
-func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
+// DeploymentReconciler returns the function to create and update the external cloud provider deployment.
+func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	var creatorGetter reconciling.NamedDeploymentReconcilerFactory
 
 	switch {
 	case data.Cluster().Spec.Cloud.AWS != nil:
-		creatorGetter = awsDeploymentCreator(data)
+		creatorGetter = awsDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Azure != nil:
-		creatorGetter = azureDeploymentCreator(data)
+		creatorGetter = azureDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Openstack != nil:
-		creatorGetter = openStackDeploymentCreator(data)
+		creatorGetter = openStackDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Hetzner != nil:
-		creatorGetter = hetznerDeploymentCreator(data)
+		creatorGetter = hetznerDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Anexia != nil:
-		creatorGetter = anexiaDeploymentCreator(data)
+		creatorGetter = anexiaDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.VSphere != nil:
-		creatorGetter = vsphereDeploymentCreator(data)
+		creatorGetter = vsphereDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetter = kubevirtDeploymentCreator(data)
+		creatorGetter = kubevirtDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Digitalocean != nil:
-		creatorGetter = digitalOceanDeploymentCreator(data)
+		creatorGetter = digitalOceanDeploymentReconciler(data)
 	}
 
 	if creatorGetter != nil {
-		return func() (name string, create reconciling.DeploymentCreator) {
+		return func() (name string, create reconciling.DeploymentReconciler) {
 			name, creator := creatorGetter()
 
 			return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -101,7 +101,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 		}
 	}
 
-	return func() (name string, create reconciling.DeploymentCreator) {
+	return func() (name string, create reconciling.DeploymentReconciler) {
 		return "unsupported", func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			return nil, errors.New("unsupported external cloud controller")
 		}

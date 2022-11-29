@@ -26,14 +26,14 @@ package prometheus
 
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // prometheusServiceAccount creates the service account used by prometheus.
 func prometheusServiceAccount() reconciling.NamedServiceAccountReconcilerFactory {
-	return func() (string, reconciling.ServiceAccountCreator) {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return Name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			if sa.Labels == nil {
 				sa.Labels = make(map[string]string)

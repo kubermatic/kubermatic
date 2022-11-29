@@ -18,14 +18,14 @@ package gatekeeper
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	policyv1 "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+func PodDisruptionBudgetReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return resources.GatekeeperPodDisruptionBudgetName, func(podDisruption *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			podDisruption.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			podDisruption.Spec.MinAvailable = &intstr.IntOrString{

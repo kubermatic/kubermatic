@@ -26,8 +26,9 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -96,8 +97,8 @@ const (
 	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
 )
 
-func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+func DockercfgSecretReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return DockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Type = corev1.SecretTypeDockerConfigJson
 
@@ -108,11 +109,11 @@ func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcili
 	}
 }
 
-// CRDCreator will reconcile a CRD, but only if the existing CRD is older or the same
+// CRDReconciler will reconcile a CRD, but only if the existing CRD is older or the same
 // version (i.e. this function will never downgrade a CRD). Up- and downgrading is only
 // defined for KKP CRDs which have a version annotation.
-func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredLogger, versions kubermaticversion.Versions) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func CRDReconciler(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredLogger, versions kubermaticversion.Versions) kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, kkpreconciling.CustomResourceDefinitionReconciler) {
 		log = log.With("crd", crd.Name)
 
 		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {

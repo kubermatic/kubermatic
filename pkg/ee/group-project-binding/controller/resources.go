@@ -30,7 +30,7 @@ import (
 	"reflect"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,9 +38,9 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, clusterRole rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingReconcilerFactory {
+func clusterRoleBindingReconciler(binding kubermaticv1.GroupProjectBinding, clusterRole rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	name := fmt.Sprintf("%s:%s", clusterRole.Name, binding.Name)
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			if crb.Labels == nil {
 				crb.Labels = map[string]string{}
@@ -75,9 +75,9 @@ func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, cluster
 	}
 }
 
-func roleBindingCreator(binding kubermaticv1.GroupProjectBinding, role rbacv1.Role) reconciling.NamedRoleBindingReconcilerFactory {
+func roleBindingReconciler(binding kubermaticv1.GroupProjectBinding, role rbacv1.Role) reconciling.NamedRoleBindingReconcilerFactory {
 	name := fmt.Sprintf("%s:%s", role.Name, binding.Name)
-	return func() (string, reconciling.RoleBindingCreator) {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return name, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			if rb.Labels == nil {
 				rb.Labels = map[string]string{}

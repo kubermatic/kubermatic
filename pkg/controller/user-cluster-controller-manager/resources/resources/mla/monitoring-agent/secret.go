@@ -19,13 +19,13 @@ package monitoringagent
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+func ClientCertificateReconciler(ca *resources.ECDSAKeyPair) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MLAMonitoringAgentCertificatesSecretName,
-			certificates.GetECDSAClientCertificateCreator(
+			certificates.GetECDSAClientCertificateReconciler(
 				resources.MLAMonitoringAgentCertificatesSecretName,
 				resources.MLAMonitoringAgentCertificateCommonName,
 				[]string{},

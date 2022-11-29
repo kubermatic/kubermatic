@@ -18,14 +18,14 @@ package dnatcontroller
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRoleBindingCreator returns the func to create/update the ClusterRoleBinding for the DNAT controller.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+// ClusterRoleBindingReconciler returns the func to create/update the ClusterRoleBinding for the DNAT controller.
+func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resources.KubeletDnatControllerClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.KubeletDnatControllerClusterRoleName,

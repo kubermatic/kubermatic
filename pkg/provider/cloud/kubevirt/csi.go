@@ -19,8 +19,7 @@ package kubevirt
 import (
 	"context"
 
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-
+	"k8c.io/reconciler/pkg/reconciling"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -31,8 +30,8 @@ const (
 	csiResourceName = "kubevirt-csi"
 )
 
-func csiServiceAccountCreator(name, namespace string) reconciling.NamedServiceAccountReconcilerFactory {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func csiServiceAccountReconciler(name, namespace string) reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Namespace = namespace
 			return sa, nil
@@ -40,8 +39,8 @@ func csiServiceAccountCreator(name, namespace string) reconciling.NamedServiceAc
 	}
 }
 
-func csiSecretTokenCreator(name string) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretCreator) {
+func csiSecretTokenReconciler(name string) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.SetAnnotations(map[string]string{
 				corev1.ServiceAccountNameKey: csiResourceName,
@@ -53,8 +52,8 @@ func csiSecretTokenCreator(name string) reconciling.NamedSecretReconcilerFactory
 	}
 }
 
-func csiRoleCreator(name string) reconciling.NamedRoleReconcilerFactory {
-	return func() (string, reconciling.RoleCreator) {
+func csiRoleReconciler(name string) reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -79,8 +78,8 @@ func csiRoleCreator(name string) reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-func csiRoleBindingCreator(name, namespace string) reconciling.NamedRoleBindingReconcilerFactory {
-	return func() (string, reconciling.RoleBindingCreator) {
+func csiRoleBindingReconciler(name, namespace string) reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return name, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Subjects = []rbacv1.Subject{
 				{
@@ -103,17 +102,17 @@ func csiRoleBindingCreator(name, namespace string) reconciling.NamedRoleBindingR
 
 // reconcileCSIRoleRoleBinding reconciles the Role and RoleBinding needed by CSI driver.
 func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
-	roleCreators := []reconciling.NamedRoleReconcilerFactory{
-		csiRoleCreator(csiResourceName),
+	roleReconcilers := []reconciling.NamedRoleReconcilerFactory{
+		csiRoleReconciler(csiResourceName),
 	}
-	if err := reconciling.ReconcileRoles(ctx, roleCreators, namespace, client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, roleReconcilers, namespace, client); err != nil {
 		return err
 	}
 
-	roleBindingCreators := []reconciling.NamedRoleBindingReconcilerFactory{
-		csiRoleBindingCreator(csiResourceName, namespace),
+	roleBindingReconcilers := []reconciling.NamedRoleBindingReconcilerFactory{
+		csiRoleBindingReconciler(csiResourceName, namespace),
 	}
-	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, namespace, client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingReconcilers, namespace, client); err != nil {
 		return err
 	}
 
@@ -122,10 +121,10 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 
 // reconcileInfraTokenAccess generates a service account token for KubeVirt CSI access.
 func reconcileInfraTokenAccess(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
-	saCreators := []reconciling.NamedServiceAccountReconcilerFactory{
-		csiServiceAccountCreator(csiResourceName, namespace),
+	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
+		csiServiceAccountReconciler(csiResourceName, namespace),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saCreators, namespace, client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, namespace, client); err != nil {
 		return err
 	}
 
@@ -137,10 +136,10 @@ func reconcileInfraTokenAccess(ctx context.Context, namespace string, client ctr
 
 	if len(sa.Secrets) == 0 {
 		// k8s 1.24 by default disabled automatic token creation for service accounts
-		seCreators := []reconciling.NamedSecretReconcilerFactory{
-			csiSecretTokenCreator(csiResourceName),
+		seReconcilers := []reconciling.NamedSecretReconcilerFactory{
+			csiSecretTokenReconciler(csiResourceName),
 		}
-		if err := reconciling.ReconcileSecrets(ctx, seCreators, namespace, client); err != nil {
+		if err := reconciling.ReconcileSecrets(ctx, seReconcilers, namespace, client); err != nil {
 			return err
 		}
 	}

@@ -19,7 +19,7 @@ package etcd
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,9 +30,9 @@ type pdbData interface {
 	Cluster() *kubermaticv1.Cluster
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the etcd PodDisruptionBudget.
-func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+// PodDisruptionBudgetReconciler returns a func to create/update the etcd PodDisruptionBudget.
+func PodDisruptionBudgetReconciler(data pdbData) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return resources.EtcdPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt((int(getClusterSize(data.Cluster().Spec.ComponentsOverride.Etcd)) / 2) + 1)
 			pdb.Spec = policyv1.PodDisruptionBudgetSpec{

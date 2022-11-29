@@ -45,11 +45,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -115,7 +115,7 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 		return nil, err
 	}
 
-	creatorImages, err := getImagesFromCreators(log, templateData, config, kubermaticVersions)
+	creatorImages, err := getImagesFromReconcilers(log, templateData, config, kubermaticVersions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %w", err)
 	}
@@ -130,48 +130,48 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 	return images, nil
 }
 
-func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
+func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
 	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
 	}
 
-	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false, false)
-	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
+	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
+	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
-	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)
-	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
-	deploymentCreators = append(deploymentCreators, masteroperator.APIDeploymentCreator(config, "", kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, masteroperator.MasterControllerManagerDeploymentCreator(config, "", kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, masteroperator.UIDeploymentCreator(config, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, seedoperatorkubermatic.SeedControllerManagerDeploymentCreator("", kubermaticVersions, config, seed))
-	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.EnvoyDeploymentCreator(config, seed, false, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.UpdaterDeploymentCreator(config, seed, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, vpa.AdmissionControllerDeploymentCreator(config, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
-	deploymentCreators = append(deploymentCreators, mla.GatewayDeploymentCreator(templateData, nil))
-	deploymentCreators = append(deploymentCreators, operatingsystemmanager.DeploymentCreator(templateData))
-	deploymentCreators = append(deploymentCreators, k8sdashboard.DeploymentCreator(templateData.RewriteImage))
+	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false)
+	deploymentReconcilers = append(deploymentReconcilers, monitoring.GetDeploymentReconcilers(templateData)...)
+	deploymentReconcilers = append(deploymentReconcilers, masteroperator.APIDeploymentReconciler(config, "", kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, masteroperator.MasterControllerManagerDeploymentReconciler(config, "", kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, masteroperator.UIDeploymentReconciler(config, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatorkubermatic.SeedControllerManagerDeploymentReconciler("", kubermaticVersions, config, seed))
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.EnvoyDeploymentReconciler(config, seed, false, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.UpdaterDeploymentReconciler(config, seed, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, vpa.AdmissionControllerDeploymentReconciler(config, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, vpa.RecommenderDeploymentReconciler(config, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, vpa.UpdaterDeploymentReconciler(config, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
+	deploymentReconcilers = append(deploymentReconcilers, operatingsystemmanager.DeploymentReconciler(templateData))
+	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-		deploymentCreators = append(deploymentCreators, cloudcontroller.DeploymentCreator(templateData))
+		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
+		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler("dummy", 0, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
 	}
 
-	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
+	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
 
-	var daemonsetCreators []reconciling.NamedDaemonSetReconcilerFactory
-	daemonsetCreators = append(daemonsetCreators, usersshkeys.DaemonSetCreator(
+	var daemonsetReconcilers []reconciling.NamedDaemonSetReconcilerFactory
+	daemonsetReconcilers = append(daemonsetReconcilers, usersshkeys.DaemonSetReconciler(
 		kubermaticVersions,
 		templateData.RewriteImage,
 	))
-	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.RewriteImage))
+	daemonsetReconcilers = append(daemonsetReconcilers, nodelocaldns.DaemonSetReconciler(templateData.RewriteImage))
 
-	for _, creatorGetter := range statefulsetCreators {
+	for _, creatorGetter := range statefulsetReconcilers {
 		_, creator := creatorGetter()
 		statefulset, err := creator(&appsv1.StatefulSet{})
 		if err != nil {
@@ -180,7 +180,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 		images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
 	}
 
-	for _, createFunc := range deploymentCreators {
+	for _, createFunc := range deploymentReconcilers {
 		_, creator := createFunc()
 		deployment, err := creator(&appsv1.Deployment{})
 		if err != nil {
@@ -189,7 +189,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
 	}
 
-	for _, createFunc := range cronjobCreators {
+	for _, createFunc := range cronjobReconcilers {
 		_, creator := createFunc()
 		cronJob, err := creator(&batchv1.CronJob{})
 		if err != nil {
@@ -198,7 +198,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 		images = append(images, getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec)...)
 	}
 
-	for _, createFunc := range daemonsetCreators {
+	for _, createFunc := range daemonsetReconcilers {
 		_, creator := createFunc()
 		daemonset, err := creator(&appsv1.DaemonSet{})
 		if err != nil {

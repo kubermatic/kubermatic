@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -144,7 +144,7 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermat
 
 // constraintReconcilerFactory returns the unstructured gatekeeper Constraint object.
 func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconciling.NamedUnstructuredReconcilerFactory {
-	return func() (string, string, string, reconciling.UnstructuredCreator) {
+	return func() (string, string, string, reconciling.UnstructuredReconciler) {
 		return constraint.Name, constraint.Spec.ConstraintType, constraintAPIVersion, func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 			if len(constraint.Spec.Parameters) > 0 {
 				var params map[string]interface{}

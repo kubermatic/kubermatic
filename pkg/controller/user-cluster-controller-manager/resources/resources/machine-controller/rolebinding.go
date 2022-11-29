@@ -19,30 +19,30 @@ package machinecontroller
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DefaultRoleBindingCreator returns the func to create/update the RoleBinding for the machine-controller.
-func DefaultRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
+// DefaultRoleBindingReconciler returns the func to create/update the RoleBinding for the machine-controller.
+func DefaultRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
 	// RoleBindingDataProvider actually not needed, no ownerrefs set in user-cluster
-	return RoleBindingCreator()
+	return RoleBindingReconciler()
 }
 
 // KubeSystemRoleBinding returns the RoleBinding for the machine-controller in kube-system ns.
-func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return RoleBindingCreator()
+func KubeSystemRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return RoleBindingReconciler()
 }
 
 // KubePublicRoleBinding returns the RoleBinding for the machine-controller in kube-public ns.
-func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return RoleBindingCreator()
+func KubePublicRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return RoleBindingReconciler()
 }
 
-func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return func() (string, reconciling.RoleBindingCreator) {
+func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.MachineControllerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
 
@@ -63,9 +63,9 @@ func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	}
 }
 
-// ClusterInfoAnonymousRoleBindingCreator returns a func to create/update the RoleBinding to allow anonymous access to the cluster-info ConfigMap.
-func ClusterInfoAnonymousRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
-	return func() (string, reconciling.RoleBindingCreator) {
+// ClusterInfoAnonymousRoleBindingReconciler returns a func to create/update the RoleBinding to allow anonymous access to the cluster-info ConfigMap.
+func ClusterInfoAnonymousRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.ClusterInfoAnonymousRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Namespace = metav1.NamespacePublic
 

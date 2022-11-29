@@ -20,16 +20,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-type frontProxyClientCertificateCreatorData interface {
+type frontProxyClientCertificateReconcilerData interface {
 	GetFrontProxyCA() (*triple.KeyPair, error)
 }
 
-// FrontProxyClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against extension apiserver.
-func FrontProxyClientCertificateCreator(data frontProxyClientCertificateCreatorData) reconciling.NamedSecretReconcilerFactory {
-	return certificates.GetClientCertificateCreator(
+// FrontProxyClientCertificateReconciler returns a function to create/update the secret with the client certificate for authenticating against extension apiserver.
+func FrontProxyClientCertificateReconciler(data frontProxyClientCertificateReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return certificates.GetClientCertificateReconciler(
 		resources.ApiserverFrontProxyClientCertificateSecretName,
 		"apiserver-aggregator",
 		nil,

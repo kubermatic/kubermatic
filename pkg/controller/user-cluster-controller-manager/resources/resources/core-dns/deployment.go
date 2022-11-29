@@ -23,8 +23,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,9 +50,9 @@ var (
 	}
 )
 
-// DeploymentCreator returns the function to create and update the CoreDNS deployment.
-func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the CoreDNS deployment.
+func DeploymentReconciler(kubernetesVersion *semverlib.Version, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.CoreDNSDeploymentName
 			dep.Namespace = metav1.NamespaceSystem
@@ -129,8 +129,8 @@ func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, im
 	}
 }
 
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+func PodDisruptionBudgetReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return resources.CoreDNSPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			iptr := intstr.FromInt(1)
 			pdb.Spec.MinAvailable = &iptr

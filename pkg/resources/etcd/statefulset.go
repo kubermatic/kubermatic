@@ -28,8 +28,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -58,7 +58,7 @@ var (
 	}
 )
 
-type etcdStatefulSetCreatorData interface {
+type etcdStatefulSetReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	RewriteImage(string) (string, error)
@@ -69,9 +69,9 @@ type etcdStatefulSetCreatorData interface {
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
-// StatefulSetCreator returns the function to reconcile the etcd StatefulSet.
-func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetReconcilerFactory {
-	return func() (string, reconciling.StatefulSetCreator) {
+// StatefulSetReconciler returns the function to reconcile the etcd StatefulSet.
+func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetReconcilerFactory {
+	return func() (string, reconciling.StatefulSetReconciler) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			replicas := computeReplicas(data, set)
 			imageTag := ImageTag(data.Cluster())
@@ -399,7 +399,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	return "v3.5.6"
 }
 
-func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int32 {
+func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet) int32 {
 	if !data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
 		return kubermaticv1.DefaultEtcdClusterSize
 	}

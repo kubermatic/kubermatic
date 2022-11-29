@@ -23,15 +23,15 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func namespaceCreator(name string) reconciling.NamedNamespaceReconcilerFactory {
-	return func() (string, reconciling.NamespaceCreator) {
+func namespaceReconciler(name string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
 		return name, func(n *corev1.Namespace) (*corev1.Namespace, error) {
 			return n, nil
 		}
@@ -48,7 +48,7 @@ func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.
 	}
 
 	creators := []reconciling.NamedNamespaceReconcilerFactory{
-		namespaceCreator(name),
+		namespaceReconciler(name),
 	}
 
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", client); err != nil {

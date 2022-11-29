@@ -38,12 +38,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -764,10 +764,10 @@ func TestLoadFiles(t *testing.T) {
 func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc testCase, fixtureDone func(string)) {
 	cluster := data.Cluster()
 
-	var deploymentCreators []reconciling.NamedDeploymentReconcilerFactory
-	deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
-	deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
-	for _, create := range deploymentCreators {
+	var deploymentReconcilers []reconciling.NamedDeploymentReconcilerFactory
+	deploymentReconcilers = append(deploymentReconcilers, kubernetescontroller.GetDeploymentReconcilers(data, true)...)
+	deploymentReconcilers = append(deploymentReconcilers, monitoringcontroller.GetDeploymentReconcilers(data)...)
+	for _, create := range deploymentReconcilers {
 		name, creator := create()
 		res, err := creator(&appsv1.Deployment{})
 		if err != nil {
@@ -784,8 +784,8 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 	}
 
 	var namedConfigMapReconcilerFactorys []reconciling.NamedConfigMapReconcilerFactory
-	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, kubernetescontroller.GetConfigMapCreators(data)...)
-	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, monitoringcontroller.GetConfigMapCreators(data)...)
+	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, kubernetescontroller.GetConfigMapReconcilers(data)...)
+	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, monitoringcontroller.GetConfigMapReconcilers(data)...)
 	for _, namedGetter := range namedConfigMapReconcilerFactorys {
 		name, create := namedGetter()
 		res, err := create(&corev1.ConfigMap{})
@@ -800,8 +800,8 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	serviceCreators := kubernetescontroller.GetServiceCreators(data)
-	for _, creatorGetter := range serviceCreators {
+	serviceReconcilers := kubernetescontroller.GetServiceReconcilers(data)
+	for _, creatorGetter := range serviceReconcilers {
 		name, create := creatorGetter()
 		res, err := create(&corev1.Service{})
 		if err != nil {
@@ -815,10 +815,10 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	var statefulSetCreators []reconciling.NamedStatefulSetReconcilerFactory
-	statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false, false)...)
-	statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
-	for _, creatorGetter := range statefulSetCreators {
+	var statefulSetReconcilers []reconciling.NamedStatefulSetReconcilerFactory
+	statefulSetReconcilers = append(statefulSetReconcilers, kubernetescontroller.GetStatefulSetReconcilers(data, false, false)...)
+	statefulSetReconcilers = append(statefulSetReconcilers, monitoringcontroller.GetStatefulSetReconcilers(data)...)
+	for _, creatorGetter := range statefulSetReconcilers {
 		name, create := creatorGetter()
 		res, err := create(&appsv1.StatefulSet{})
 		if err != nil {
@@ -844,7 +844,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetPodDisruptionBudgetCreators(data) {
+	for _, creatorGetter := range kubernetescontroller.GetPodDisruptionBudgetReconcilers(data) {
 		name, create := creatorGetter()
 		res, err := create(&policyv1.PodDisruptionBudget{})
 		if err != nil {
@@ -862,7 +862,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetCronJobCreators(data) {
+	for _, creatorGetter := range kubernetescontroller.GetCronJobReconcilers(data) {
 		name, create := creatorGetter()
 		res, err := create(&batchv1.CronJob{})
 		if err != nil {
@@ -885,7 +885,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data, generator.GenTestSeed()) {
+	for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigReconcilers(data, generator.GenTestSeed()) {
 		name, create := creatorGetter()
 		res, err := create(&kubermaticv1.EtcdBackupConfig{})
 		if err != nil {

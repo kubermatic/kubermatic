@@ -36,8 +36,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -355,7 +355,7 @@ func (r *Reconciler) ensureCronJobSecrets(ctx context.Context, cluster *kubermat
 	}
 
 	creators := []reconciling.NamedSecretReconcilerFactory{
-		certificates.GetClientCertificateCreator(
+		certificates.GetClientCertificateReconciler(
 			secretName,
 			"backup",
 			nil,
@@ -372,7 +372,7 @@ func (r *Reconciler) ensureCronJobConfigMaps(ctx context.Context, cluster *kuber
 	name := resources.BackupCABundleConfigMapName(cluster)
 
 	creators := []reconciling.NamedConfigMapReconcilerFactory{
-		certificates.CABundleConfigMapCreator(name, r.caBundle),
+		certificates.CABundleConfigMapReconciler(name, r.caBundle),
 	}
 
 	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
@@ -435,7 +435,7 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster, cleanupContainer 
 }
 
 func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster, storeContainer *corev1.Container) reconciling.NamedCronJobReconcilerFactory {
-	return func() (string, reconciling.CronJobCreator) {
+	return func() (string, reconciling.CronJobReconciler) {
 		return fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name), func(cronJob *batchv1.CronJob) (*batchv1.CronJob, error) {
 			gv := kubermaticv1.SchemeGroupVersion
 			cronJob.OwnerReferences = []metav1.OwnerReference{
