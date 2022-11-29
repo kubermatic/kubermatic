@@ -940,8 +940,6 @@ spec:
                             tagCategoryName:
                               description: TagCategoryName represents the name of vSphere tag category that will be used to create and attach tags on VMS.
                               type: string
-                          required:
-                            - tagCategoryName
                           type: object
                         tags:
                           additionalProperties:
