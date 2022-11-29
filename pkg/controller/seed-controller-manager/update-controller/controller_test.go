@@ -185,7 +185,7 @@ func TestHasOwnerRefToAny(t *testing.T) {
 	}
 }
 
-func TestGetNextApiserverVersion(t *testing.T) {
+func TestGetNextApiServerVersion(t *testing.T) {
 	// This test (and this controller, really) is not about unit testing
 	// all the possible incompatibility options, so we skip them here.
 	versions := kubermaticv1.KubermaticVersioningConfiguration{
@@ -315,7 +315,7 @@ func TestGetNextApiserverVersion(t *testing.T) {
 				},
 			}
 
-			nextVersion, err := getNextApiserverVersion(context.Background(), config, cluster)
+			nextVersion, err := getNextApiServerVersion(context.Background(), config, cluster)
 			if err != nil {
 				if !tt.expectedErr {
 					t.Fatalf("Expected next version %s, but got error: %v", tt.expected.String(), err)

@@ -615,6 +615,11 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 			return CloudProviderExternalFlag
 		}
 		return ""
+	case cluster.Spec.Cloud.Digitalocean != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return CloudProviderExternalFlag
+		}
+		return "digitalocean"
 	default:
 		return ""
 	}
