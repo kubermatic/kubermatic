@@ -26,11 +26,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
+func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var (
 		clusterTags = cluster.Spec.Cloud.VSphere.Tags
 		defaultTag  = &kubermaticv1.VSphereTag{
-			Name:       controllerOwnershipTag(cluster),
+			Name:       controllerOwnershipTag(cluster.Name),
 			CategoryID: cluster.Spec.Cloud.VSphere.TagCategory.TagCategoryID,
 		}
 	)
@@ -46,18 +46,18 @@ func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kuber
 	tagManager := vapitags.NewManager(restSession.Client)
 	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.TagCategoryID)
 	if err != nil {
-		return fmt.Errorf("failed to get tag %w", err)
+		return nil, fmt.Errorf("failed to get tag %w", err)
 	}
 
 	if err := syncCreatedClusterTags(ctx, restSession, clusterTags, categoryTags, cluster.Name, update); err != nil {
-		return fmt.Errorf("failed to sync created tags %w", err)
+		return nil, fmt.Errorf("failed to sync created tags %w", err)
 	}
 
 	if err := syncDeletedClusterTags(ctx, restSession, categoryTags, clusterTags); err != nil {
-		return fmt.Errorf("failed to sync deleted tags %w", err)
+		return nil, fmt.Errorf("failed to sync deleted tags %w", err)
 	}
 
-	return nil
+	return cluster, nil
 }
 
 func syncCreatedClusterTags(ctx context.Context, s *RESTSession, tags map[string]*kubermaticv1.VSphereTag,
@@ -104,10 +104,10 @@ func syncDeletedClusterTags(ctx context.Context, s *RESTSession, categoryTags []
 	return nil
 }
 
-func controllerOwnershipTag(cluster *kubermaticv1.Cluster) string {
+func controllerOwnershipTag(clusterName string) string {
 	return fmt.Sprintf("%s-cluster-%s",
 		defaultTagPrefix,
-		cluster.Name)
+		clusterName)
 }
 
 func filterTag(categoryTags []vapitags.Tag, tagName string) string {

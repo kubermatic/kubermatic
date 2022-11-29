@@ -21,7 +21,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"path"
 
 	"github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
@@ -37,7 +36,8 @@ const (
 	// categoryCleanupFinilizer will instruct the deletion of the default category tag.
 	tagCategoryCleanupFinilizer = "kubermatic.k8c.io/cleanup-vsphere-tag-category"
 
-	defaultCategoryPrefix = "kubermatic.k8c.io"
+	defaultCategoryPrefix = "kubermatic.k8c.io/tag-category"
+	defaultTagPrefix      = "kubermatic.k8c.io/tag"
 )
 
 // VSphere represents the vsphere provider.
@@ -75,6 +75,31 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil, err
 	}
 
+	restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create REST client session: %w", err)
+	}
+
+	if force || cluster.Spec.Cloud.VSphere.TagCategory == nil {
+		cluster, err = reconcileTagCategory(ctx, restSession, cluster, update)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reconcile cluster tag category: %w", err)
+		}
+	}
+
+	if force || cluster.Spec.Cloud.VSphere.Tags == nil {
+		cluster, err = reconcileTags(ctx, restSession, cluster, update)
+		if err != nil {
+			return nil, fmt.Errorf("failed to reconcile cluster tags: %w", err)
+		}
+	}
+
+	session, err := newSession(ctx, v.dc, username, password, v.caBundle)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
+	}
+	defer session.Logout(ctx)
+
 	rootPath := getVMRootPath(v.dc)
 	if force || cluster.Spec.Cloud.VSphere.Folder == "" {
 		logger.Infow("reconciling vsphere folder", "folder", cluster.Spec.Cloud.VSphere.Folder)
@@ -83,59 +108,11 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to create vCenter session: %w", err)
 		}
 		defer session.Logout(ctx)
-		// If the user did not specify a folder, we create a own folder for this cluster to improve
-		// the VM management in vCenter
-		clusterFolder := path.Join(rootPath, cluster.Name)
-		created, err := createVMFolder(ctx, session, clusterFolder)
+
+		cluster, err = reconcileFolder(ctx, session, restSession, rootPath, cluster, update)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
+			return nil, fmt.Errorf("failed to reconcile cluster folder: %w", err)
 		}
-
-		// We need to check if the folder has been created, however kkp failed to add the underlying finalizer, in such
-		// a case, the only way we can check that this folder has been created by kkp is, check the if the folder field
-		// has been set. If the folder field is empty, it means the contorller failed to update the cluster hence, it failed
-		// also to add the finalizer.
-		if created || cluster.Spec.Cloud.VSphere.Folder == "" {
-			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-				kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
-				cluster.Spec.Cloud.VSphere.Folder = clusterFolder
-			})
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	tagCategoryName := cluster.Spec.Cloud.VSphere.TagCategoryName
-	// We only need to fetch/create tag categories only if the user explicitly decides to use on.
-	if force || tagCategoryName != "" {
-		logger.Infow("reconciling vsphere tag category", "tagCategory", cluster.Spec.Cloud.VSphere.TagCategoryName)
-		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create REST client session: %w", err)
-		}
-		defer restSession.Logout(ctx)
-
-		categoryID, err := fetchTagCategory(ctx, restSession, tagCategoryName)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch tag category: %w", err)
-		}
-
-		if categoryID != "" {
-			return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-				cluster.Spec.Cloud.VSphere.TagCategoryID = categoryID
-			})
-		}
-
-		categoryID, err = createTagCategory(ctx, restSession, cluster)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create tag category: %w", err)
-		}
-
-		return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(cluster, tagCategoryCleanupFinilizer)
-			cluster.Spec.Cloud.VSphere.TagCategoryID = categoryID
-		})
 	}
 
 	return cluster, nil
@@ -253,17 +230,16 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	}
 	defer restSession.Logout(ctx)
 
-	if kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
-		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
-			return nil, err
-		}
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
+	if err := deleteVMFolder(ctx, session, restSession, cluster.Name, cluster.Spec.Cloud.VSphere.Folder); err != nil {
+		return nil, err
 	}
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	if kuberneteshelper.HasFinalizer(cluster, tagCategoryCleanupFinilizer) {
 		if err := deleteTagCategory(ctx, restSession, cluster); err != nil {
 			return nil, err

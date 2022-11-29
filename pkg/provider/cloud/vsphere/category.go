@@ -27,36 +27,36 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-func reconcileTagCategory(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
+func reconcileTagCategory(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	if cluster.Spec.Cloud.VSphere.TagCategory == nil {
 		defaultCategory := defaultTagCategory(cluster)
 
 		categoryID, err := fetchTagCategory(ctx, restSession, defaultCategory)
 		if err != nil {
-			return fmt.Errorf("failed to fetch tag category: %w", err)
+			return nil, fmt.Errorf("failed to fetch tag category: %w", err)
 		}
 
 		if categoryID != "" {
-			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-				if !kuberneteshelper.HasFinalizer(cluster, tagCategoryCleanupFinilizer) {
-					kuberneteshelper.AddFinalizer(cluster, tagCategoryCleanupFinilizer)
+			cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+				if !kuberneteshelper.HasFinalizer(updatedCluster, tagCategoryCleanupFinilizer) {
+					kuberneteshelper.AddFinalizer(updatedCluster, tagCategoryCleanupFinilizer)
 				}
 
-				cluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
+				updatedCluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
 					TagCategoryName: defaultCategory,
 					TagCategoryID:   categoryID,
 				}
 			})
 			if err != nil {
-				return fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
+				return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
 			}
 
-			return nil
+			return cluster, nil
 		}
 
 		categoryID, err = createTagCategory(ctx, restSession, defaultCategory)
 		if err != nil {
-			return fmt.Errorf("failed to create default tag category: %w", err)
+			return nil, fmt.Errorf("failed to create default tag category: %w", err)
 		}
 
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -69,11 +69,11 @@ func reconcileTagCategory(ctx context.Context, restSession *RESTSession, cluster
 			}
 		})
 		if err != nil {
-			return fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
+			return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
 		}
 	}
 
-	return nil
+	return cluster, nil
 }
 
 func defaultTagCategory(cluster *kubermaticv1.Cluster) string {
@@ -103,9 +103,8 @@ func createTagCategory(ctx context.Context, restSession *RESTSession, categoryNa
 	tagManager := tags.NewManager(restSession.Client)
 
 	return tagManager.CreateCategory(ctx, &tags.Category{
-		Name:            categoryName,
-		Cardinality:     "MULTIPLE",
-		AssociableTypes: []string{"Virtual Machine"},
+		Name:        categoryName,
+		Cardinality: "MULTIPLE",
 	})
 }
 

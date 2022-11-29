@@ -40,18 +40,23 @@ func TestCreateVMFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	restSession, err := newRESTSession(ctx, dc, vSphereUsername, vSpherePassword, nil)
+	if err != nil {
+		t.Fatal("failed to create REST client session: %w", err)
+	}
+
 	// Use a unique ID to prevent side effects when running this test concurrently
 	id := "kubermatic-e2e-" + rand.String(8)
 	folder := path.Join(dc.RootPath, id)
 
 	// Cheap way to test idempotency
 	for i := 0; i < 2; i++ {
-		if _, err := createVMFolder(ctx, session, folder); err != nil {
+		if err := createVMFolder(ctx, session, restSession, "mq-test-cluster", folder); err != nil {
 			t.Fatal(err)
 		}
 	}
 	for i := 0; i < 2; i++ {
-		if err := deleteVMFolder(ctx, session, folder); err != nil {
+		if err := deleteVMFolder(ctx, session, restSession, "mq-test-cluster", folder); err != nil {
 			t.Fatal(err)
 		}
 	}
