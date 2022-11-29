@@ -149,7 +149,7 @@ func CompleteVSphereProviderSpec(config *vsphere.RawConfig, cluster *kubermaticv
 
 		for i, tag := range config.Tags {
 			if tag.CategoryID == "" {
-				config.Tags[i].CategoryID = cluster.Spec.Cloud.VSphere.TagCategoryID
+				config.Tags[i].CategoryID = cluster.Spec.Cloud.VSphere.TagCategory.TagCategoryID
 			}
 		}
 	}
