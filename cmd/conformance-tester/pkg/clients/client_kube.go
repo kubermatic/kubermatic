@@ -254,7 +254,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	return cluster, nil
 }
 
-func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	c.log(log).Info("Getting existing MachineDeployments...")
 
 	mdList := &clusterv1alpha1.MachineDeploymentList{}
@@ -277,13 +277,12 @@ func (c *kubeClient) CreateNodeDeployments(ctx context.Context, log *zap.Sugared
 	}
 
 	c.log(log).Info("Preparing MachineDeployments...")
-
 	var mds []clusterv1alpha1.MachineDeployment
 	if err := wait.PollImmediate(ctx, 3*time.Second, time.Minute, func() (transient error, terminal error) {
 		mds, transient = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster)
 		return transient, nil
 	}); err != nil {
-		return fmt.Errorf("failed to create NodeDeployments from scenario: %w", err)
+		return fmt.Errorf("failed to create MachineDeployments from scenario: %w", err)
 	}
 
 	c.log(log).Info("Creating MachineDeployments...")

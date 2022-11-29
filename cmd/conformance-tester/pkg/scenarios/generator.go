@@ -100,14 +100,14 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 		}
 
 		for _, providerName := range g.cloudProviders.List() {
-			datacenter, err := g.datacenter(ctx, opts.SeedClusterClient, opts.Secrets, providerconfig.CloudProvider(providerName))
+			datacenter, err := g.datacenter(ctx, opts.SeedClusterClient, opts.Secrets, kubermaticv1.ProviderType(providerName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to determine target datacenter for provider %q: %w", providerName, err)
 			}
 
 			for _, operatingSystem := range g.operatingSystems.List() {
 				for _, cri := range g.containerRuntimes.List() {
-					scenario, err := providerScenario(opts, providerconfig.CloudProvider(providerName), providerconfig.OperatingSystem(operatingSystem), *s, cri, datacenter)
+					scenario, err := providerScenario(opts, kubermaticv1.ProviderType(providerName), providerconfig.OperatingSystem(operatingSystem), *s, cri, datacenter)
 					if err != nil {
 						return nil, err
 					}
@@ -125,35 +125,35 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 	return shuffle(scenarios), nil
 }
 
-func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Client, secrets types.Secrets, provider providerconfig.CloudProvider) (*kubermaticv1.Datacenter, error) {
+func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Client, secrets types.Secrets, provider kubermaticv1.ProviderType) (*kubermaticv1.Datacenter, error) {
 	var datacenterName string
 
 	switch provider {
-	case providerconfig.CloudProviderAlibaba:
+	case kubermaticv1.AlibabaCloudProvider:
 		datacenterName = secrets.Alibaba.KKPDatacenter
-	case providerconfig.CloudProviderAnexia:
+	case kubermaticv1.AnexiaCloudProvider:
 		datacenterName = secrets.Anexia.KKPDatacenter
-	case providerconfig.CloudProviderAWS:
+	case kubermaticv1.AWSCloudProvider:
 		datacenterName = secrets.AWS.KKPDatacenter
-	case providerconfig.CloudProviderAzure:
+	case kubermaticv1.AzureCloudProvider:
 		datacenterName = secrets.Azure.KKPDatacenter
-	case providerconfig.CloudProviderDigitalocean:
+	case kubermaticv1.DigitaloceanCloudProvider:
 		datacenterName = secrets.Digitalocean.KKPDatacenter
-	case providerconfig.CloudProviderGoogle:
+	case kubermaticv1.GCPCloudProvider:
 		datacenterName = secrets.GCP.KKPDatacenter
-	case providerconfig.CloudProviderHetzner:
+	case kubermaticv1.HetznerCloudProvider:
 		datacenterName = secrets.Hetzner.KKPDatacenter
-	case providerconfig.CloudProviderKubeVirt:
+	case kubermaticv1.KubevirtCloudProvider:
 		datacenterName = secrets.Kubevirt.KKPDatacenter
-	case providerconfig.CloudProviderNutanix:
+	case kubermaticv1.NutanixCloudProvider:
 		datacenterName = secrets.Nutanix.KKPDatacenter
-	case providerconfig.CloudProviderOpenstack:
+	case kubermaticv1.OpenstackCloudProvider:
 		datacenterName = secrets.OpenStack.KKPDatacenter
-	case providerconfig.CloudProviderPacket:
+	case kubermaticv1.PacketCloudProvider:
 		datacenterName = secrets.Packet.KKPDatacenter
-	case providerconfig.CloudProviderVMwareCloudDirector:
+	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		datacenterName = secrets.VMwareCloudDirector.KKPDatacenter
-	case providerconfig.CloudProviderVsphere:
+	case kubermaticv1.VSphereCloudProvider:
 		datacenterName = secrets.VSphere.KKPDatacenter
 	default:
 		return nil, fmt.Errorf("cloud provider %q is not supported yet in conformance-tester", provider)
@@ -164,7 +164,7 @@ func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Cli
 
 func providerScenario(
 	opts *types.Options,
-	provider providerconfig.CloudProvider,
+	provider kubermaticv1.ProviderType,
 	os providerconfig.OperatingSystem,
 	version semver.Semver,
 	containerRuntime string,
@@ -179,31 +179,31 @@ func providerScenario(
 	}
 
 	switch provider {
-	case providerconfig.CloudProviderAlibaba:
+	case kubermaticv1.AlibabaCloudProvider:
 		return &alibabaScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderAnexia:
+	case kubermaticv1.AnexiaCloudProvider:
 		return &anexiaScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderAWS:
+	case kubermaticv1.AWSCloudProvider:
 		return &awsScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderAzure:
+	case kubermaticv1.AzureCloudProvider:
 		return &azureScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderDigitalocean:
+	case kubermaticv1.DigitaloceanCloudProvider:
 		return &digitaloceanScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderGoogle:
+	case kubermaticv1.GCPCloudProvider:
 		return &googleScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderHetzner:
+	case kubermaticv1.HetznerCloudProvider:
 		return &hetznerScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderKubeVirt:
+	case kubermaticv1.KubevirtCloudProvider:
 		return &kubevirtScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderNutanix:
+	case kubermaticv1.NutanixCloudProvider:
 		return &nutanixScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderOpenstack:
+	case kubermaticv1.OpenstackCloudProvider:
 		return &openStackScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderPacket:
+	case kubermaticv1.PacketCloudProvider:
 		return &packetScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderVMwareCloudDirector:
+	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		return &vmwareCloudDirectorScenario{baseScenario: base}, nil
-	case providerconfig.CloudProviderVsphere:
+	case kubermaticv1.VSphereCloudProvider:
 		scenario := &vSphereScenario{baseScenario: base}
 		scenario.customFolder = opts.ScenarioOptions.Has("custom-folder")
 		scenario.datastoreCluster = opts.ScenarioOptions.Has("datastore-cluster")
@@ -236,7 +236,7 @@ func isValidNewScenario(opts *types.Options, log *zap.SugaredLogger, scenario Sc
 	}
 
 	if scenario.OperatingSystem() == providerconfig.OperatingSystemSLES {
-		if scenario.CloudProvider() != providerconfig.CloudProviderAWS {
+		if scenario.CloudProvider() != kubermaticv1.AWSCloudProvider {
 			scenario.Log(log).Infow("Skipping because OS is not supported on this cloud provider.")
 			return false
 		}

@@ -414,8 +414,8 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed to get the client for the cluster: %w", err)
 	}
 
-	if err := util.JUnitWrapper("[KKP] Create NodeDeployments", report, func() error {
-		return r.kkpClient.CreateNodeDeployments(ctx, log, scenario, userClusterClient, cluster)
+	if err := util.JUnitWrapper("[KKP] Create MachineDeployments", report, func() error {
+		return r.kkpClient.CreateMachineDeployments(ctx, log, scenario, userClusterClient, cluster)
 	}); err != nil {
 		return fmt.Errorf("failed to setup nodes: %w", err)
 	}

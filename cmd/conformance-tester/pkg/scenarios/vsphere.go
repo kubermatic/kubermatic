@@ -22,11 +22,8 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
-
-	"k8s.io/utils/pointer"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
 type vSphereScenario struct {
@@ -63,29 +60,13 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 }
 
 func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
+	cloudProviderSpec := provider.NewVSphereConfig().
+		WithCPUs(2).
+		WithMemoryMB(4096).
+		WithDiskSizeGB(10).
+		Build()
 
-	nodeSpec := apiv1.NodeSpec{
-		OperatingSystem: *osSpec,
-		Cloud: apiv1.NodeCloudSpec{
-			VSphere: &apiv1.VSphereNodeSpec{
-				CPUs:       2,
-				Memory:     4096,
-				DiskSizeGB: pointer.Int64(10),
-				Template:   s.datacenter.Spec.VSphere.Templates[s.operatingSystem],
-			},
-		},
-	}
-
-	config, err := machine.GetVSphereProviderConfig(cluster, nodeSpec, s.datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := s.createMachineDeployment(num, config)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
 	if err != nil {
 		return nil, err
 	}

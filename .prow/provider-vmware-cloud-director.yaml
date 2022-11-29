@@ -37,7 +37,7 @@ presubmits:
             - name: RELEASES_TO_TEST
               value: "1.25"
             - name: PROVIDER
-              value: "vmware-cloud-director"
+              value: "vmwareclouddirector"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY

@@ -1,7 +1,5 @@
-ba
-keypair
-iam
-nd
-od
-uptodate
 aks
+iam
+keypair
+shouldnot
+uptodate
