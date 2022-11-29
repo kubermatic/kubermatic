@@ -33,6 +33,10 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 
+	if spec.ReconciliationInterval.Duration < 0 {
+		allErrs = append(allErrs, field.Invalid(specPath.Child("reconciliationInterval"), spec.ReconciliationInterval.Duration.String(), "should be a positive value, or zero to disable"))
+	}
+
 	// Ensure that the referenced ApplicationDefinition exists
 	ad := &appskubermaticv1.ApplicationDefinition{}
 	err := client.Get(ctx, types.NamespacedName{Name: spec.ApplicationRef.Name}, ad)

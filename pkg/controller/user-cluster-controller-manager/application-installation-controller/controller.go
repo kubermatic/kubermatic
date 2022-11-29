@@ -139,7 +139,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	log.Debug("Processed")
-	return reconcile.Result{}, err
+	return reconcile.Result{RequeueAfter: appInstallation.Spec.ReconciliationInterval.Duration}, err
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
