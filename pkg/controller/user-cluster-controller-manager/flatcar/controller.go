@@ -116,7 +116,7 @@ func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
 // https://github.com/kinvolk/flatcar-linux-update-operator
 func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error {
-	saCreators := []reconciling.NamedServiceAccountCreatorGetter{
+	saCreators := []reconciling.NamedServiceAccountReconcilerFactory{
 		resources.OperatorServiceAccountCreator(),
 		resources.AgentServiceAccountCreator(),
 	}
@@ -124,7 +124,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		return fmt.Errorf("failed to reconcile the ServiceAccounts: %w", err)
 	}
 
-	crCreators := []reconciling.NamedClusterRoleCreatorGetter{
+	crCreators := []reconciling.NamedClusterRoleReconcilerFactory{
 		resources.OperatorClusterRoleCreator(),
 		resources.AgentClusterRoleCreator(),
 	}
@@ -132,7 +132,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		return fmt.Errorf("failed to reconcile the ClusterRoles: %w", err)
 	}
 
-	crbCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{
+	crbCreators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		resources.OperatorClusterRoleBindingCreator(),
 		resources.AgentClusterRoleBindingCreator(),
 	}
@@ -140,14 +140,14 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %w", err)
 	}
 
-	depCreators := []reconciling.NamedDeploymentCreatorGetter{
+	depCreators := []reconciling.NamedDeploymentReconcilerFactory{
 		resources.OperatorDeploymentCreator(registry.GetImageRewriterFunc(r.overwriteRegistry), r.updateWindow),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, depCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
-	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
+	dsCreators := []reconciling.NamedDaemonSetReconcilerFactory{
 		resources.AgentDaemonSetCreator(registry.GetImageRewriterFunc(r.overwriteRegistry)),
 	}
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {

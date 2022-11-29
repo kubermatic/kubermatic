@@ -764,7 +764,7 @@ func TestLoadFiles(t *testing.T) {
 func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc testCase, fixtureDone func(string)) {
 	cluster := data.Cluster()
 
-	var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
+	var deploymentCreators []reconciling.NamedDeploymentReconcilerFactory
 	deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
 	deploymentCreators = append(deploymentCreators, monitoringcontroller.GetDeploymentCreators(data)...)
 	for _, create := range deploymentCreators {
@@ -783,10 +783,10 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	var namedConfigMapCreatorGetters []reconciling.NamedConfigMapCreatorGetter
-	namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, kubernetescontroller.GetConfigMapCreators(data)...)
-	namedConfigMapCreatorGetters = append(namedConfigMapCreatorGetters, monitoringcontroller.GetConfigMapCreators(data)...)
-	for _, namedGetter := range namedConfigMapCreatorGetters {
+	var namedConfigMapReconcilerFactorys []reconciling.NamedConfigMapReconcilerFactory
+	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, kubernetescontroller.GetConfigMapCreators(data)...)
+	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, monitoringcontroller.GetConfigMapCreators(data)...)
+	for _, namedGetter := range namedConfigMapReconcilerFactorys {
 		name, create := namedGetter()
 		res, err := create(&corev1.ConfigMap{})
 		if err != nil {
@@ -815,7 +815,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	var statefulSetCreators []reconciling.NamedStatefulSetCreatorGetter
+	var statefulSetCreators []reconciling.NamedStatefulSetReconcilerFactory
 	statefulSetCreators = append(statefulSetCreators, kubernetescontroller.GetStatefulSetCreators(data, false, false)...)
 	statefulSetCreators = append(statefulSetCreators, monitoringcontroller.GetStatefulSetCreators(data)...)
 	for _, creatorGetter := range statefulSetCreators {

@@ -32,7 +32,7 @@ import (
 )
 
 // prometheusServiceAccount creates the service account used by prometheus.
-func prometheusServiceAccount() reconciling.NamedServiceAccountCreatorGetter {
+func prometheusServiceAccount() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return Name, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			if sa.Labels == nil {

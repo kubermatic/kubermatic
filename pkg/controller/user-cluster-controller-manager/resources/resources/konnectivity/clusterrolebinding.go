@@ -24,7 +24,7 @@ import (
 )
 
 // ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding for konnectivity.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.KonnectivityClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.ObjectMeta.Labels = resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)

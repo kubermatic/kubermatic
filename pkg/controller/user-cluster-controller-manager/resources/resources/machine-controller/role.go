@@ -27,7 +27,7 @@ import (
 
 // KubeSystemRoleCreator returns the func to create/update the Role for the machine controller
 // to allow reading secrets/configmaps/leases for the leaderelection.
-func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
+func KubeSystemRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
@@ -68,7 +68,7 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 }
 
 // EndpointReaderRoleCreator returns the func to create/update the Role for the machine controller to allow reading the kubernetes api endpoints.
-func EndpointReaderRoleCreator() reconciling.NamedRoleCreatorGetter {
+func EndpointReaderRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
@@ -93,7 +93,7 @@ func EndpointReaderRoleCreator() reconciling.NamedRoleCreatorGetter {
 
 // ClusterInfoReaderRoleCreator returns the func to create/update the Role for the machine controller to allow
 // the kubelet & kubeadm to read the cluster-info reading the cluster-info ConfigMap without authentication.
-func ClusterInfoReaderRoleCreator() reconciling.NamedRoleCreatorGetter {
+func ClusterInfoReaderRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.ClusterInfoReaderRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.ClusterInfoReaderRoleName
@@ -115,7 +115,7 @@ func ClusterInfoReaderRoleCreator() reconciling.NamedRoleCreatorGetter {
 
 // KubePublicRoleCreator returns the func to create/update the Role for the machine controller to allow
 // reading all configmaps in kube-public.
-func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
+func KubePublicRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName

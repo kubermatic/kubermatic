@@ -35,7 +35,7 @@ type etcdBackupConfigCreatorData interface {
 }
 
 // BackupConfigCreator returns the function to reconcile the EtcdBackupConfigs.
-func BackupConfigCreator(data etcdBackupConfigCreatorData, seed *kubermaticv1.Seed) reconciling.NamedEtcdBackupConfigCreatorGetter {
+func BackupConfigCreator(data etcdBackupConfigCreatorData, seed *kubermaticv1.Seed) reconciling.NamedEtcdBackupConfigReconcilerFactory {
 	return func() (string, reconciling.EtcdBackupConfigCreator) {
 		return resources.EtcdDefaultBackupConfigName, func(config *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 			if config.Labels == nil {

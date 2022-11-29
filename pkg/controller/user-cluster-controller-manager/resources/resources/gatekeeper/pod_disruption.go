@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.GatekeeperPodDisruptionBudgetName, func(podDisruption *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			podDisruption.Labels = map[string]string{"gatekeeper.sh/system": "yes"}

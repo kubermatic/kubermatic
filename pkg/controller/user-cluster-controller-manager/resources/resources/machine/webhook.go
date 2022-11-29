@@ -36,7 +36,7 @@ const (
 )
 
 // ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the machine CRD.
-func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return machineValidatingWebhookConfigurationName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact

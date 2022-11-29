@@ -48,7 +48,7 @@ var (
 )
 
 // DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
@@ -172,7 +172,7 @@ func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter regist
 }
 
 // PodDisruptionBudgetCreator returns a func to create/update the Konnectivity agent's PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.KonnectivityPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)

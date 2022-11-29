@@ -28,7 +28,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
+func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "cluster-isolation", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -52,10 +52,10 @@ func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreato
 }
 
 func reconcileNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
-	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
+	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		clusterIsolationNetworkPolicyCreator(),
 	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, cluster.Status.NamespaceName, client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
 	}
 	return nil

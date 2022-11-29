@@ -40,7 +40,7 @@ func apiPodLabels() map[string]string {
 	}
 }
 
-func APIServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func APIServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return apiServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -52,7 +52,7 @@ func APIClusterRoleName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-api", cfg.Namespace, cfg.Name)
 }
 
-func APIClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleCreatorGetter {
+func APIClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleReconcilerFactory {
 	name := APIClusterRoleName(cfg)
 
 	return func() (string, reconciling.ClusterRoleCreator) {
@@ -87,7 +87,7 @@ func APIClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 	}
 }
 
-func APIRoleCreator() reconciling.NamedRoleCreatorGetter {
+func APIRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return apiServiceAccountName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
@@ -107,7 +107,7 @@ func APIClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string
 	return fmt.Sprintf("%s:%s-api", cfg.Namespace, cfg.Name)
 }
 
-func APIClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
+func APIClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	name := APIClusterRoleBindingName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
@@ -131,7 +131,7 @@ func APIClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) rec
 	}
 }
 
-func APIRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func APIRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return apiServiceAccountName, func(crb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
@@ -152,7 +152,7 @@ func APIRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	}
 }
 
-func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return APIDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			probe := corev1.Probe{
@@ -278,7 +278,7 @@ func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName 
 	}
 }
 
-func APIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func APIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	name := "kubermatic-api"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
@@ -301,7 +301,7 @@ func APIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedP
 	}
 }
 
-func APIServiceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
+func APIServiceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return apiServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeNodePort

@@ -46,7 +46,7 @@ func getPrometheusImage(overwriter registry.ImageRewriter) string {
 }
 
 // prometheusStatefulSet creates a StatefulSet for prometheus.
-func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedStatefulSetCreatorGetter {
+func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedStatefulSetReconcilerFactory {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return Name, func(sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			if sts.Labels == nil {

@@ -40,7 +40,7 @@ func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
 	}
 }
 
-func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
+func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Rules = []rbacv1.PolicyRule{
@@ -68,7 +68,7 @@ func ClusterRole() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-func ClusterRoleBinding(namespace *corev1.Namespace) reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBinding(namespace *corev1.Namespace) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return GenerateRoleName(namespace), func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			rb.OwnerReferences = []metav1.OwnerReference{genOwnerReference(namespace)}

@@ -39,7 +39,7 @@ func seedControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func SeedControllerManagerDeploymentCreator(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
+func SeedControllerManagerDeploymentCreator(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = cfg.Spec.SeedController.Replicas
@@ -208,7 +208,7 @@ func getAddonDockerTag(cfg kubermaticv1.KubermaticAddonsConfiguration, version s
 	return version
 }
 
-func SeedControllerManagerPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func SeedControllerManagerPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	name := "kubermatic-seed-controller-manager"
 
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {

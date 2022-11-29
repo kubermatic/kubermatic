@@ -26,11 +26,11 @@ import (
 )
 
 // KubeSystemRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
-func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return RoleBindingCreator()
 }
 
-func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
@@ -53,7 +53,7 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 }
 
 // KubePublicRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
-func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Namespace = metav1.NamespacePublic
@@ -76,7 +76,7 @@ func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 }
 
 // DefaultRoleBindingCreator returns the RoleBinding for the OSM in kube-system ns.
-func DefaultRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func DefaultRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Namespace = metav1.NamespaceDefault
@@ -98,7 +98,7 @@ func DefaultRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	}
 }
 
-func CloudInitSettingsRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func CloudInitSettingsRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
@@ -118,7 +118,7 @@ func CloudInitSettingsRoleBindingCreator() reconciling.NamedRoleBindingCreatorGe
 	}
 }
 
-func MachineDeploymentsClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func MachineDeploymentsClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.OperatingSystemManagerClusterRoleBindingName,
 			func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

@@ -36,8 +36,8 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the external cloud provider deployment.
-func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
-	var creatorGetter reconciling.NamedDeploymentCreatorGetter
+func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
+	var creatorGetter reconciling.NamedDeploymentReconcilerFactory
 
 	switch {
 	case data.Cluster().Spec.Cloud.AWS != nil:

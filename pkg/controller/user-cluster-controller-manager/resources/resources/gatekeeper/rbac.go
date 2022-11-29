@@ -30,7 +30,7 @@ const (
 )
 
 // ServiceAccountCreator returns a func to create/update the ServiceAccount used by gatekeeper.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
@@ -40,7 +40,7 @@ func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 }
 
 // RoleCreator creates the gatekeeper Role.
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
+func RoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
@@ -73,7 +73,7 @@ func RoleCreator() reconciling.NamedRoleCreatorGetter {
 }
 
 // RoleBindingCreator creates the gatekeeper RoleBinding.
-func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
@@ -93,7 +93,7 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 }
 
 // ClusterRoleCreator creates the gatekeeper ClusterRole.
-func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func ClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
@@ -240,7 +240,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 }
 
 // ClusterRoleBindingCreator creates the gatekeeper ClusterRoleBinding.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return roleBindingName, func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{

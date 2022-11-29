@@ -164,7 +164,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 
-	var daemonsetCreators []reconciling.NamedDaemonSetCreatorGetter
+	var daemonsetCreators []reconciling.NamedDaemonSetReconcilerFactory
 	daemonsetCreators = append(daemonsetCreators, usersshkeys.DaemonSetCreator(
 		kubermaticVersions,
 		templateData.RewriteImage,

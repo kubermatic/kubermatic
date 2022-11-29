@@ -49,7 +49,7 @@ var (
 	}
 )
 
-func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func awsDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return AWSCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Labels = resources.BaseAppLabels(AWSCCMDeploymentName, nil)

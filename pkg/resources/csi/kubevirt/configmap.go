@@ -26,15 +26,15 @@ import (
 )
 
 // ConfigMapsCreators returns the CSI controller ConfigMaps for KubeVirt.
-func ConfigMapsCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
-	creators := []reconciling.NamedConfigMapCreatorGetter{
+func ConfigMapsCreators(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		ControllerConfigMapCreator(data),
 	}
 	return creators
 }
 
 // ControllerConfigMapCreator returns the CSI controller ConfigMap for KubeVirt.
-func ControllerConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
+func ControllerConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (name string, create reconciling.ConfigMapCreator) {
 		return resources.KubeVirtCSIConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {

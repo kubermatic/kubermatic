@@ -24,7 +24,7 @@ import (
 )
 
 // ClusterRole returns a cluster role for the metrics server.
-func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func ClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MetricsServerClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Labels = resources.BaseAppLabels(Name, nil)

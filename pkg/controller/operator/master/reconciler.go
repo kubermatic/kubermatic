@@ -215,7 +215,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ConfigMaps")
 
-	creators := []reconciling.NamedConfigMapCreatorGetter{}
+	creators := []reconciling.NamedConfigMapReconcilerFactory{}
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		creators = append(creators, kubermatic.UIConfigConfigMapCreator(config))
 	}
@@ -230,7 +230,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermatic
 func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Secrets")
 
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		common.WebhookServingCASecretCreator(config),
 		common.WebhookServingCertSecretCreator(ctx, config, r.Client),
 	}
@@ -249,7 +249,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.
 func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ServiceAccounts")
 
-	creators := []reconciling.NamedServiceAccountCreatorGetter{
+	creators := []reconciling.NamedServiceAccountReconcilerFactory{
 		kubermatic.ServiceAccountCreator(config),
 		kubermatic.APIServiceAccountCreator(),
 		common.WebhookServiceAccountCreator(config),
@@ -265,7 +265,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Roles")
 
-	creators := []reconciling.NamedRoleCreatorGetter{
+	creators := []reconciling.NamedRoleReconcilerFactory{
 		common.WebhookRoleCreator(config),
 		kubermatic.APIRoleCreator(),
 	}
@@ -280,7 +280,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.Ku
 func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling RoleBindings")
 
-	creators := []reconciling.NamedRoleBindingCreatorGetter{
+	creators := []reconciling.NamedRoleBindingReconcilerFactory{
 		common.WebhookRoleBindingCreator(config),
 		kubermatic.APIRoleBindingCreator(),
 	}
@@ -295,7 +295,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermat
 func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ClusterRoles")
 
-	creators := []reconciling.NamedClusterRoleCreatorGetter{
+	creators := []reconciling.NamedClusterRoleReconcilerFactory{
 		kubermatic.APIClusterRoleCreator(config),
 		common.WebhookClusterRoleCreator(config),
 	}
@@ -310,7 +310,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermat
 func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ClusterRoleBindings")
 
-	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
+	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		kubermatic.ClusterRoleBindingCreator(config),
 		kubermatic.APIClusterRoleBindingCreator(config),
 		common.WebhookClusterRoleBindingCreator(config),
@@ -326,7 +326,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *k
 func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Deployments")
 
-	creators := []reconciling.NamedDeploymentCreatorGetter{
+	creators := []reconciling.NamedDeploymentReconcilerFactory{
 		kubermatic.MasterControllerManagerDeploymentCreator(config, r.workerName, r.versions),
 		common.WebhookDeploymentCreator(config, r.versions, nil, false),
 	}
@@ -358,7 +358,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling PodDisruptionBudgets")
 
-	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		kubermatic.MasterControllerManagerPDBCreator(config),
 	}
 
@@ -379,7 +379,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *
 func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Services")
 
-	creators := []reconciling.NamedServiceCreatorGetter{
+	creators := []reconciling.NamedServiceReconcilerFactory{
 		common.WebhookServiceCreator(config, r.Client),
 	}
 
@@ -410,7 +410,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 
 	logger.Debug("Reconciling Ingresses")
 
-	creators := []reconciling.NamedIngressCreatorGetter{
+	creators := []reconciling.NamedIngressReconcilerFactory{
 		kubermatic.IngressCreator(config),
 	}
 
@@ -424,7 +424,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Validating Webhooks")
 
-	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+	creators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		common.SeedAdmissionWebhookCreator(ctx, config, r.Client),
 		common.KubermaticConfigurationAdmissionWebhookCreator(ctx, config, r.Client),
 		kubermatic.UserValidatingWebhookConfigurationCreator(ctx, config, r.Client),
@@ -444,7 +444,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Mutating Webhooks")
 
-	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
+	creators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		kubermatic.UserSSHKeyMutatingWebhookConfigurationCreator(ctx, config, r.Client),
 		kubermatic.ExternalClusterMutatingWebhookConfigurationCreator(ctx, config, r.Client),
 	}

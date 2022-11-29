@@ -33,7 +33,7 @@ type tlsServingCertCreatorData interface {
 }
 
 // TLSServingCertificateCreator returns a function to create/update a secret with the openvpn server tls certificate.
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.OpenVPNServerCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -73,7 +73,7 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 }
 
 // CACreator returns a function to create the ECDSA-based CA to be used for OpenVPN.
-func CACreator() reconciling.NamedSecretCreatorGetter {
+func CACreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.OpenVPNCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

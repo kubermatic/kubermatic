@@ -27,7 +27,7 @@ type caBundleProvider interface {
 	CABundle() resources.CABundle
 }
 
-func CABundleCreator(data caBundleProvider) reconciling.NamedConfigMapCreatorGetter {
+func CABundleCreator(data caBundleProvider) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CABundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = map[string]string{

@@ -1170,7 +1170,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r.Client)
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		certificates.GetClientCertificateCreator(
 			secretName,
 			"backup",
@@ -1191,7 +1191,7 @@ func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
 func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	name := caBundleConfigMapName(cluster)
 
-	creators := []reconciling.NamedConfigMapCreatorGetter{
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		certificates.CABundleConfigMapCreator(name, r.caBundle),
 	}
 

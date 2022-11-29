@@ -65,7 +65,7 @@ func GetCoreDNSImage(kubernetesVersion *semverlib.Version) string {
 }
 
 // ServiceCreator returns the function to reconcile the DNS service.
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.DNSResolverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.DNSResolverServiceName
@@ -92,7 +92,7 @@ type deploymentCreatorData interface {
 }
 
 // DeploymentCreator returns the function to create and update the DNS resolver deployment.
-func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.DNSResolverDeploymentName
@@ -221,7 +221,7 @@ type configMapCreatorData interface {
 }
 
 // ConfigMapCreator returns a ConfigMap containing the cloud-config for the supplied data.
-func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.DNSResolverConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			dnsIP, err := resources.UserClusterDNSResolverIP(data.Cluster())
@@ -257,7 +257,7 @@ func ConfigMapCreator(data configMapCreatorData) reconciling.NamedConfigMapCreat
 }
 
 // PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.DNSResolverPodDisruptionBudetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)

@@ -73,7 +73,7 @@ type metricsServerData interface {
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics
 // server.
-func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretReconcilerFactory {
 	dnsName := "metrics-server.kube-system.svc"
 	return servingcerthelper.ServingCertSecretCreator(caGetter,
 		ServingCertSecretName,
@@ -85,7 +85,7 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 }
 
 // DeploymentCreator returns the function to create and update the metrics server deployment.
-func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName

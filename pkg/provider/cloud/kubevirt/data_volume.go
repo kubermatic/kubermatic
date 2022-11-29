@@ -32,7 +32,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func dataVolumeCreator(datavolume *cdiv1beta1.DataVolume) reconciling.NamedCDIv1beta1DataVolumeCreatorGetter {
+func dataVolumeCreator(datavolume *cdiv1beta1.DataVolume) reconciling.NamedCDIv1beta1DataVolumeReconcilerFactory {
 	return func() (name string, create reconciling.CDIv1beta1DataVolumeCreator) {
 		return datavolume.Name, func(dv *cdiv1beta1.DataVolume) (*cdiv1beta1.DataVolume, error) {
 			dv.Spec = datavolume.Spec
@@ -47,7 +47,7 @@ func reconcilePreAllocatedDataVolumes(ctx context.Context, cluster *kubermaticv1
 		if err != nil {
 			return err
 		}
-		dvCreator := []reconciling.NamedCDIv1beta1DataVolumeCreatorGetter{
+		dvCreator := []reconciling.NamedCDIv1beta1DataVolumeReconcilerFactory{
 			dataVolumeCreator(dv),
 		}
 		if err := reconciling.ReconcileCDIv1beta1DataVolumes(ctx, dvCreator, cluster.Status.NamespaceName, client); err != nil {

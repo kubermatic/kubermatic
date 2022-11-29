@@ -24,7 +24,7 @@ import (
 )
 
 // ClusterRole returns a cluster role for the clusterautoscaler.
-func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func ClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.ClusterAutoscalerClusterRoleName,
 			func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
@@ -91,7 +91,7 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 }
 
 // ClusterRoleBinding returns a ClusterRoleBinding for clusterautoscaler.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.ClusterAutoscalerClusterRoleBindingName,
 			func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
@@ -110,7 +110,7 @@ func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGette
 	}
 }
 
-func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
+func KubeSystemRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.ClusterAutoscalerClusterRoleName,
 			func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -137,7 +137,7 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.ClusterAutoscalerClusterRoleBindingName,
 			func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
@@ -157,7 +157,7 @@ func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	}
 }
 
-func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
+func DefaultRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.ClusterAutoscalerClusterRoleName,
 			func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -173,7 +173,7 @@ func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func DefaultRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func DefaultRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.ClusterAutoscalerClusterRoleBindingName,
 			func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {

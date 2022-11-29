@@ -37,7 +37,7 @@ const (
 	clusterAPIVersion = "v1alpha1"
 )
 
-func WebhookClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func WebhookClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return webhookClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
@@ -59,7 +59,7 @@ func WebhookClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-func WebhookClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func WebhookClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return webhookClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
@@ -80,7 +80,7 @@ func WebhookClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreat
 }
 
 // MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for OSM.
-func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return resources.OperatingSystemManagerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			failurePolicy := admissionregistrationv1.Fail

@@ -28,7 +28,7 @@ type etcdClientCertificateCreatorData interface {
 }
 
 // EtcdClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against etcd.
-func EtcdClientCertificateCreator(data etcdClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
+func EtcdClientCertificateCreator(data etcdClientCertificateCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverEtcdClientCertificateSecretName,
 		"apiserver",

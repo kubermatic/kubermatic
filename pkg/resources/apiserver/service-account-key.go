@@ -29,7 +29,7 @@ import (
 )
 
 // ServiceAccountKeyCreator returns a function to create/update a secret with the ServiceAccount key.
-func ServiceAccountKeyCreator() reconciling.NamedSecretCreatorGetter {
+func ServiceAccountKeyCreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.ServiceAccountKeySecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if _, exists := se.Data[resources.ServiceAccountKeySecretKey]; exists {

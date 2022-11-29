@@ -28,7 +28,7 @@ type frontProxyClientCertificateCreatorData interface {
 }
 
 // FrontProxyClientCertificateCreator returns a function to create/update the secret with the client certificate for authenticating against extension apiserver.
-func FrontProxyClientCertificateCreator(data frontProxyClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
+func FrontProxyClientCertificateCreator(data frontProxyClientCertificateCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return certificates.GetClientCertificateCreator(
 		resources.ApiserverFrontProxyClientCertificateSecretName,
 		"apiserver-aggregator",

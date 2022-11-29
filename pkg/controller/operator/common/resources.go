@@ -96,7 +96,7 @@ const (
 	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
 )
 
-func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return DockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Type = corev1.SecretTypeDockerConfigJson
@@ -111,7 +111,7 @@ func DockercfgSecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcili
 // CRDCreator will reconcile a CRD, but only if the existing CRD is older or the same
 // version (i.e. this function will never downgrade a CRD). Up- and downgrading is only
 // defined for KKP CRDs which have a version annotation.
-func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredLogger, versions kubermaticversion.Versions) reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition, log *zap.SugaredLogger, versions kubermaticversion.Versions) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		log = log.With("crd", crd.Name)
 

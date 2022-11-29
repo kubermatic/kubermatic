@@ -26,22 +26,22 @@ import (
 )
 
 // DefaultRoleBindingCreator returns the func to create/update the RoleBinding for the machine-controller.
-func DefaultRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func DefaultRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	// RoleBindingDataProvider actually not needed, no ownerrefs set in user-cluster
 	return RoleBindingCreator()
 }
 
 // KubeSystemRoleBinding returns the RoleBinding for the machine-controller in kube-system ns.
-func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func KubeSystemRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return RoleBindingCreator()
 }
 
 // KubePublicRoleBinding returns the RoleBinding for the machine-controller in kube-public ns.
-func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func KubePublicRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return RoleBindingCreator()
 }
 
-func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.MachineControllerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(machinecontroller.Name, nil)
@@ -64,7 +64,7 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 }
 
 // ClusterInfoAnonymousRoleBindingCreator returns a func to create/update the RoleBinding to allow anonymous access to the cluster-info ConfigMap.
-func ClusterInfoAnonymousRoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func ClusterInfoAnonymousRoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.ClusterInfoAnonymousRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Namespace = metav1.NamespacePublic

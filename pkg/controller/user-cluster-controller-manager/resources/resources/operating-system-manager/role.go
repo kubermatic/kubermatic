@@ -26,7 +26,7 @@ import (
 
 // KubeSystemRoleCreator returns the func to create/update the Role for the OSM
 // to retrieve kube-apiserver address from the cluster-info configmap.
-func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
+func KubeSystemRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
@@ -73,7 +73,7 @@ func KubeSystemRoleCreator() reconciling.NamedRoleCreatorGetter {
 
 // KubePublicRoleCreator returns the func to create/update the Role for the OSM
 // to facilitate leaderelection.
-func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
+func KubePublicRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
@@ -95,7 +95,7 @@ func KubePublicRoleCreator() reconciling.NamedRoleCreatorGetter {
 
 // DefaultRoleCreator returns the func to create/update the Role for the OSM
 // to retrieve kube-apiserver address from the Kubernetes endpoint.
-func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
+func DefaultRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
@@ -115,7 +115,7 @@ func DefaultRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func CloudInitSettingsRoleCreator() reconciling.NamedRoleCreatorGetter {
+func CloudInitSettingsRoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.OperatingSystemManagerRoleName,
 			func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -137,7 +137,7 @@ func CloudInitSettingsRoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func MachineDeploymentsClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func MachineDeploymentsClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.OperatingSystemManagerClusterRoleName,
 			func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {

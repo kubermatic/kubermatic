@@ -27,7 +27,7 @@ type internalClientCertificateCreatorData interface {
 }
 
 // InternalClientCertificateCreator returns a function to create/update the secret with a client certificate for the openvpn clients in the seed cluster.
-func InternalClientCertificateCreator(data internalClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
+func InternalClientCertificateCreator(data internalClientCertificateCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.OpenVPNClientCertificatesSecretName, certificates.GetECDSAClientCertificateCreator(
 			resources.OpenVPNClientCertificatesSecretName,

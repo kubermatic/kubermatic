@@ -73,7 +73,7 @@ var (
 	}
 )
 
-func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.MLALoggingAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Labels = resources.BaseAppLabels(appName, nil)

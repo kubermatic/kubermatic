@@ -51,7 +51,7 @@ var (
 )
 
 // DeploymentCreator returns the function to create and update the CoreDNS deployment.
-func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.CoreDNSDeploymentName
@@ -129,7 +129,7 @@ func DeploymentCreator(kubernetesVersion *semverlib.Version, replicas *int32, im
 	}
 }
 
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.CoreDNSPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			iptr := intstr.FromInt(1)

@@ -89,8 +89,8 @@ func Add(ctx context.Context,
 	return nil
 }
 
-func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.NamedKubermaticV1ConstraintCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ConstraintCreator) {
+func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconciling.NamedConstraintReconcilerFactory {
+	return func() (string, reconciling.ConstraintReconciler) {
 		return constraint.Name, func(c *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
 			c.Name = constraint.Name
 			c.Spec = constraint.Spec
@@ -132,8 +132,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
-		constraintCreatorGetter(constraint),
+	constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
+		constraintReconcilerFactory(constraint),
 	}
 
 	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -149,7 +149,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return nil
 		}
 
-		return reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, r.namespace, seedClient)
+		return reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, r.namespace, seedClient)
 	})
 }
 

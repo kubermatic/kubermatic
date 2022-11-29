@@ -24,15 +24,15 @@ import (
 )
 
 // Secretsreators returns the CSI secrets for KubeVirt.
-func SecretsCreators(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
-	creators := []reconciling.NamedSecretCreatorGetter{
+func SecretsCreators(data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		CloudConfigSecretNameCreator(data),
 	}
 	return creators
 }
 
 // CloudConfigSecretNameCreator returns the CSI secrets for vmwareclouddirector.
-func CloudConfigSecretNameCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+func CloudConfigSecretNameCreator(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.CSICloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
 			if cm.Data == nil {

@@ -81,7 +81,7 @@ var (
 )
 
 // ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment.
-func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
+func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -141,7 +141,7 @@ func ControllerDeploymentCreator(enableMutation bool, imageRewriter registry.Ima
 }
 
 // AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment.
-func AuditDeploymentCreator(registryWithOverwrite registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentCreatorGetter {
+func AuditDeploymentCreator(registryWithOverwrite registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName

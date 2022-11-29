@@ -28,7 +28,7 @@ type kubeletClientCertificateCreatorData interface {
 }
 
 // KubeletClientCertificateCreator returns a function to create/update a secret with the client certificate for the apiserver -> kubelet connection.
-func KubeletClientCertificateCreator(data kubeletClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
+func KubeletClientCertificateCreator(data kubeletClientCertificateCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return certificates.GetClientCertificateCreator(
 		resources.KubeletClientCertificatesSecretName,
 		"kube-apiserver-kubelet-client",

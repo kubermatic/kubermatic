@@ -75,7 +75,7 @@ type openVPNDeploymentCreatorData interface {
 }
 
 // DeploymentCreator returns the function to create and update the openvpn server deployment.
-func DeploymentCreator(data openVPNDeploymentCreatorData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data openVPNDeploymentCreatorData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.OpenVPNServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.OpenVPNServerDeploymentName

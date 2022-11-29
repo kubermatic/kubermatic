@@ -160,7 +160,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secr
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		secretCreator(secret),
 	}
 	if err := r.syncAllClusterNs(ctx, log, func(client ctrlruntimeclient.Client, clusterNamespace string) error {
@@ -223,7 +223,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-func secretCreator(s *corev1.Secret) reconciling.NamedSecretCreatorGetter {
+func secretCreator(s *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
 	return func() (name string, create reconciling.SecretCreator) {
 		return s.Name, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Data = s.Data

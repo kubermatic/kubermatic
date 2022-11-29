@@ -55,43 +55,43 @@ func Deploy(
 	versions kubermatic.Versions,
 	timeout time.Duration,
 ) error {
-	if err := reconciling.ReconcileClusterRoles(ctx, []reconciling.NamedClusterRoleCreatorGetter{
+	if err := reconciling.ReconcileClusterRoles(ctx, []reconciling.NamedClusterRoleReconcilerFactory{
 		nodeportproxy.ClusterRoleCreator(cfg),
 	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		nodeportproxy.ClusterRoleBindingCreator(cfg),
 	}, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
+	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountReconcilerFactory{
 		nodeportproxy.ServiceAccountCreator(cfg),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAcconts: %w", err)
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, []reconciling.NamedRoleCreatorGetter{
+	if err := reconciling.ReconcileRoles(ctx, []reconciling.NamedRoleReconcilerFactory{
 		nodeportproxy.RoleCreator(),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %w", err)
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, []reconciling.NamedRoleBindingCreatorGetter{
+	if err := reconciling.ReconcileRoleBindings(ctx, []reconciling.NamedRoleBindingReconcilerFactory{
 		nodeportproxy.RoleBindingCreator(cfg),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBinding:s %w", err)
 	}
 
-	if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceCreatorGetter{
+	if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceReconcilerFactory{
 		nodeportproxy.ServiceCreator(seed)},
 		namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentCreatorGetter{
+	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentReconcilerFactory{
 		nodeportproxy.EnvoyDeploymentCreator(cfg, seed, false, versions),
 		nodeportproxy.UpdaterDeploymentCreator(cfg, seed, versions),
 	}, namespace, client); err != nil {

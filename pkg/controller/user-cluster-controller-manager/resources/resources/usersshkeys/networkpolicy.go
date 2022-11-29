@@ -29,7 +29,7 @@ import (
 )
 
 // NetworkPolicyCreator NetworkPolicy allows egress traffic of user ssh keys agent to the world.
-func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
+func NetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		apiServicePort := intstr.FromInt(443)
 		apiPort := intstr.FromInt(k8sApiPort)

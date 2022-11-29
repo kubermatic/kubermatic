@@ -33,7 +33,7 @@ import (
 
 const ApplicationInstallationAdmissionWebhookName = "kubermatic-application-installations"
 
-func ApplicationInstallationValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ApplicationInstallationValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return ApplicationInstallationAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact

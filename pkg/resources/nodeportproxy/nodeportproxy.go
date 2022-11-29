@@ -194,7 +194,7 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 	}
 }
 
-func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentReconcilerFactory {
 	volumeMountNameEnvoyConfig := "envoy-config"
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -321,7 +321,7 @@ func DeploymentEnvoyCreator(data nodePortProxyData) reconciling.NamedDeploymentC
 	}
 }
 
-func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploymentReconcilerFactory {
 	deploymentName := fmt.Sprintf("%s-lb-updater", name)
 	return func() (string, reconciling.DeploymentCreator) {
 		return deploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -363,7 +363,7 @@ func DeploymentLBUpdaterCreator(data nodePortProxyData) reconciling.NamedDeploym
 	}
 }
 
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	maxUnavailable := intstr.FromInt(1)
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return name + "-envoy", func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
@@ -378,7 +378,7 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 
 // FrontLoadBalancerServiceCreator returns the creator for the LoadBalancer that fronts apiserver
 // and openVPN when using exposeStrategy=LoadBalancer.
-func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.NamedServiceCreatorGetter {
+func FrontLoadBalancerServiceCreator(data *resources.TemplateData) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.FrontLoadBalancerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just

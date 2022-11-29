@@ -25,7 +25,7 @@ import (
 )
 
 // ServiceCreator creates the service for the CoreDNS.
-func ServiceCreator(dnsClusterIP string) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(dnsClusterIP string) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		labels := map[string]string{
 			"kubernetes.io/cluster-service": "true",

@@ -197,7 +197,7 @@ func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, log *zap.Su
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	creators := []reconciling.NamedOperatingSystemProfileCreatorGetter{
+	creators := []reconciling.NamedOperatingSystemProfileReconcilerFactory{
 		ospCreator(osp),
 	}
 
@@ -259,7 +259,7 @@ func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.Su
 	})
 }
 
-func ospCreator(osp *osmv1alpha1.OperatingSystemProfile) osmreconciling.NamedOperatingSystemProfileCreatorGetter {
+func ospCreator(osp *osmv1alpha1.OperatingSystemProfile) osmreconciling.NamedOperatingSystemProfileReconcilerFactory {
 	return func() (string, osmreconciling.OperatingSystemProfileCreator) {
 		return osp.Name, func(existing *osmv1alpha1.OperatingSystemProfile) (*osmv1alpha1.OperatingSystemProfile, error) {
 			// We need to check if the existing OperatingSystemProfile can be updated.

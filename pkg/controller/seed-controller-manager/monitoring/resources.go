@@ -68,7 +68,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 }
 
 func (r *Reconciler) ensureRoles(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	getters := []reconciling.NamedRoleCreatorGetter{
+	getters := []reconciling.NamedRoleReconcilerFactory{
 		prometheus.RoleCreator(),
 	}
 
@@ -76,7 +76,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, cluster *kubermaticv1.Clus
 }
 
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	getters := []reconciling.NamedRoleBindingCreatorGetter{
+	getters := []reconciling.NamedRoleBindingReconcilerFactory{
 		prometheus.RoleBindingCreator(cluster.Status.NamespaceName),
 	}
 
@@ -84,8 +84,8 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, cluster *kubermatic
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use.
-func GetDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
-	creators := []reconciling.NamedDeploymentCreatorGetter{
+func GetDeploymentCreators(data *resources.TemplateData) []reconciling.NamedDeploymentReconcilerFactory {
+	creators := []reconciling.NamedDeploymentReconcilerFactory{
 		kubestatemetrics.DeploymentCreator(data),
 	}
 
@@ -99,8 +99,8 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 }
 
 // GetSecretCreatorOperations returns all SecretCreators that are currently in use.
-func GetSecretCreatorOperations(data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
-	return []reconciling.NamedSecretCreatorGetter{
+func GetSecretCreatorOperations(data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
+	return []reconciling.NamedSecretReconcilerFactory{
 		certificates.GetClientCertificateCreator(
 			resources.PrometheusApiserverClientCertificateSecretName,
 			resources.PrometheusCertUsername, nil,
@@ -112,9 +112,9 @@ func GetSecretCreatorOperations(data *resources.TemplateData) []reconciling.Name
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretCreatorGetters := GetSecretCreatorOperations(data)
+	namedSecretReconcilerFactorys := GetSecretCreatorOperations(data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, cluster.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactorys, cluster.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
@@ -122,8 +122,8 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use.
-func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
-	return []reconciling.NamedConfigMapCreatorGetter{
+func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
+	return []reconciling.NamedConfigMapReconcilerFactory{
 		prometheus.ConfigMapCreator(data),
 	}
 }
@@ -139,8 +139,8 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use.
-func GetStatefulSetCreators(data *resources.TemplateData) []reconciling.NamedStatefulSetCreatorGetter {
-	return []reconciling.NamedStatefulSetCreatorGetter{
+func GetStatefulSetCreators(data *resources.TemplateData) []reconciling.NamedStatefulSetReconcilerFactory {
+	return []reconciling.NamedStatefulSetReconcilerFactory{
 		prometheus.StatefulSetCreator(data),
 	}
 }
@@ -173,8 +173,8 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *
 }
 
 // GetServiceCreators returns all service creators that are currently in use.
-func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
-	return []reconciling.NamedServiceCreatorGetter{
+func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceReconcilerFactory {
+	return []reconciling.NamedServiceReconcilerFactory{
 		prometheus.ServiceCreator(data),
 	}
 }
@@ -186,8 +186,8 @@ func (r *Reconciler) ensureServices(ctx context.Context, cluster *kubermaticv1.C
 }
 
 // GetServiceCreators returns all service creators that are currently in use.
-func GetServiceAccountCreators() []reconciling.NamedServiceAccountCreatorGetter {
-	return []reconciling.NamedServiceAccountCreatorGetter{
+func GetServiceAccountCreators() []reconciling.NamedServiceAccountReconcilerFactory {
+	return []reconciling.NamedServiceAccountReconcilerFactory{
 		prometheus.ServiceAccountCreator(),
 	}
 }

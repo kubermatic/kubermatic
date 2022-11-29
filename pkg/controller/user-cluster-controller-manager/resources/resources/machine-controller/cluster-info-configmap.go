@@ -30,7 +30,7 @@ import (
 )
 
 // ClusterInfoConfigMapCreator returns the func to create/update the ConfigMap.
-func ClusterInfoConfigMapCreator(url string, caCert *x509.Certificate) reconciling.NamedConfigMapCreatorGetter {
+func ClusterInfoConfigMapCreator(url string, caCert *x509.Certificate) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.ClusterInfoConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {

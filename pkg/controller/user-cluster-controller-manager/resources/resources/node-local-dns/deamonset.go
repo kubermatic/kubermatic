@@ -31,7 +31,7 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			maxUnavailable := intstr.FromString("10%")

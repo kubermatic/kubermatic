@@ -24,7 +24,7 @@ import (
 )
 
 // ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding for external cloud controllers.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.CloudControllerManagerRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(resources.CloudControllerManagerRoleBindingName, nil)

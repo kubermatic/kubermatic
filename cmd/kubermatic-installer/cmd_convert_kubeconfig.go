@@ -26,9 +26,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -199,13 +199,13 @@ func writeKubeconfig(kubeconfig *clientcmdapi.Config, filename string) error {
 	return nil
 }
 
-func serviceAccountCreatorGetter() (string, reconciling.ServiceAccountCreator) {
+func serviceAccountReconcilerFactory() (string, reconciling.ServiceAccountReconciler) {
 	return serviceAccountName, func(existing *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return existing, nil
 	}
 }
 
-func secretCreatorGetter() (string, reconciling.SecretCreator) {
+func secretReconcilerFactory() (string, reconciling.SecretReconciler) {
 	return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 		if existing.Annotations == nil {
 			existing.Annotations = map[string]string{}
@@ -218,8 +218,8 @@ func secretCreatorGetter() (string, reconciling.SecretCreator) {
 	}
 }
 
-func clusterRoleCreatorGetterFactory(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func clusterRoleReconcilerFactoryFactory(namespace string) reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return "kubermatic:cluster-admin", func(existing *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			existing.Subjects = []rbacv1.Subject{
 				{
@@ -261,22 +261,22 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 	client := mgr.GetClient()
 
 	log.Info("Reconciling ServiceAccount...")
-	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
-		serviceAccountCreatorGetter,
+	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountReconcilerFactory{
+		serviceAccountReconcilerFactory,
 	}, namespace, client); err != nil {
 		return "", fmt.Errorf("failed to create ServiceAccount: %w", err)
 	}
 
 	log.Info("Reconciling Secret...")
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{
-		secretCreatorGetter,
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretReconcilerFactory{
+		secretReconcilerFactory,
 	}, namespace, client); err != nil {
 		return "", fmt.Errorf("failed to create Secret: %w", err)
 	}
 
 	log.Info("Reconciling ClusterRoleBinding...")
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
-		clusterRoleCreatorGetterFactory(namespace),
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingReconcilerFactory{
+		clusterRoleReconcilerFactoryFactory(namespace),
 	}, "", client); err != nil {
 		return "", fmt.Errorf("failed to create ClusterRoleBinding: %w", err)
 	}

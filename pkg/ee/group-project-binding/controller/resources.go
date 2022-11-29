@@ -38,7 +38,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, clusterRole rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingCreatorGetter {
+func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, clusterRole rbacv1.ClusterRole) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	name := fmt.Sprintf("%s:%s", clusterRole.Name, binding.Name)
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
@@ -75,7 +75,7 @@ func clusterRoleBindingCreator(binding kubermaticv1.GroupProjectBinding, cluster
 	}
 }
 
-func roleBindingCreator(binding kubermaticv1.GroupProjectBinding, role rbacv1.Role) reconciling.NamedRoleBindingCreatorGetter {
+func roleBindingCreator(binding kubermaticv1.GroupProjectBinding, role rbacv1.Role) reconciling.NamedRoleBindingReconcilerFactory {
 	name := fmt.Sprintf("%s:%s", role.Name, binding.Name)
 	return func() (string, reconciling.RoleBindingCreator) {
 		return name, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {

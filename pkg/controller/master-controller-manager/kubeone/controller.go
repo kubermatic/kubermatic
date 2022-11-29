@@ -36,8 +36,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -647,8 +647,8 @@ func (r *reconciler) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Contex
 		resources.ExternalClusterKubeconfig: []byte(kubeconfig),
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
-		kubeconfigSecretCreatorGetter(cluster, data),
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		kubeconfigSecretReconcilerFactory(cluster, data),
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, namespace, r); err != nil {
@@ -663,8 +663,8 @@ func (r *reconciler) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Contex
 	}, nil
 }
 
-func kubeconfigSecretCreatorGetter(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func kubeconfigSecretReconcilerFactory(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.KubeOneKubeconfigSecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}

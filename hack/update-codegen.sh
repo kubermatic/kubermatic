@@ -21,8 +21,13 @@ source hack/lib.sh
 
 CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.19-node-18-2 containerize ./hack/update-codegen.sh
 
-echodate "Running go generate"
-go generate ./pkg/...
+echodate "Generating reconciling helpers"
+
+reconcileHelpers=pkg/resources/reconciling/zz_generated_reconcile.go
+go run k8c.io/reconciler/cmd/reconciler-gen --config hack/reconciling.yaml > $reconcileHelpers
+
+currentYear=$(date +%Y)
+sed -i "s/Copyright YEAR/Copyright $currentYear/g" $reconcileHelpers
 
 CRD_DIR=pkg/crd/k8c.io
 

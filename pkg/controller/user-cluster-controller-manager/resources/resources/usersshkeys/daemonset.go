@@ -40,7 +40,7 @@ var (
 	hostPathType            = corev1.HostPathDirectoryOrCreate
 )
 
-func DaemonSetCreator(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return daemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType

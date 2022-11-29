@@ -24,7 +24,7 @@ import (
 )
 
 // RoleCreator returns the func to create/update the role for Prometheus.
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
+func RoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.PrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(name, nil)

@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.MLALoggingAgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(appName, nil)

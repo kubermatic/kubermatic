@@ -31,7 +31,7 @@ import (
 const NodeLocalDNSCacheAddress = "169.254.20.10"
 
 // DefaultNetworkPolicyCreator Default policy creator denys all expect egress to kube-dns for all pods without any network policy applied.
-func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
+func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		dnsPort := intstr.FromInt(53)
 		protoUdp := corev1.ProtocolUDP

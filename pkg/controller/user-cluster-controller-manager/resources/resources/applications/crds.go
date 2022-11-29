@@ -23,7 +23,7 @@ import (
 )
 
 // CRDCreator returns a creator that will reconcile a CustomResourceDefinition.
-func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func CRDCreator(crd *apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			obj.Labels = crd.Labels

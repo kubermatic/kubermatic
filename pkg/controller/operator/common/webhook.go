@@ -51,7 +51,7 @@ func webhookPodLabels() map[string]string {
 	}
 }
 
-func WebhookServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceAccountCreatorGetter {
+func WebhookServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return WebhookServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -67,7 +67,7 @@ func WebhookClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) st
 	return fmt.Sprintf("%s:kubermatic-webhook", cfg.Namespace)
 }
 
-func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleCreatorGetter {
+func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return WebhookClusterRoleName(cfg), func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Rules = []rbacv1.PolicyRule{
@@ -88,7 +88,7 @@ func WebhookClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 	}
 }
 
-func WebhookClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
+func WebhookClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return WebhookClusterRoleBindingName(cfg), func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
@@ -110,7 +110,7 @@ func WebhookClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration)
 	}
 }
 
-func WebhookRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedRoleCreatorGetter {
+func WebhookRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return WebhookRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
@@ -131,7 +131,7 @@ func WebhookRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.N
 	}
 }
 
-func WebhookRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedRoleBindingCreatorGetter {
+func WebhookRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return WebhookRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
@@ -159,7 +159,7 @@ func WebhookRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 // the -seed-name flag must be gone. But because the creator is careful to not accidentally
 // remove the flag (so that the master-operator does not wipe the seed-operator's work),
 // a separate parameter is needed to indicate that yes, we want to in fact remove the flag.
-func WebhookDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions, seed *kubermaticv1.Seed, removeSeed bool) reconciling.NamedDeploymentCreatorGetter {
+func WebhookDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions, seed *kubermaticv1.Seed, removeSeed bool) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return WebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = cfg.Spec.Webhook.Replicas
@@ -319,7 +319,7 @@ func WebhookDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, version
 	}
 }
 
-func WebhookServingCASecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
+func WebhookServingCASecretCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretReconcilerFactory {
 	creator := certificates.GetCACreator(webhookCommonName)
 
 	return func() (string, reconciling.SecretCreator) {
@@ -334,7 +334,7 @@ func WebhookServingCASecretCreator(cfg *kubermaticv1.KubermaticConfiguration) re
 	}
 }
 
-func WebhookServingCertSecretCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
+func WebhookServingCertSecretCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretReconcilerFactory {
 	altNames := []string{
 		fmt.Sprintf("%s.%s", WebhookServiceName, cfg.Namespace),
 		fmt.Sprintf("%s.%s.svc", WebhookServiceName, cfg.Namespace),
@@ -366,7 +366,7 @@ func SeedAdmissionWebhookName(cfg *kubermaticv1.KubermaticConfiguration) string 
 	return fmt.Sprintf("kubermatic-seeds-%s", cfg.Namespace)
 }
 
-func SeedAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func SeedAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -427,7 +427,7 @@ func KubermaticConfigurationAdmissionWebhookName(cfg *kubermaticv1.KubermaticCon
 	return fmt.Sprintf("kubermatic-configuration-%s", cfg.Namespace)
 }
 
-func KubermaticConfigurationAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func KubermaticConfigurationAdmissionWebhookCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return KubermaticConfigurationAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -484,7 +484,7 @@ func KubermaticConfigurationAdmissionWebhookCreator(ctx context.Context, cfg *ku
 	}
 }
 
-func ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return ApplicationDefinitionAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -539,7 +539,7 @@ func ApplicationDefinitionValidatingWebhookConfigurationCreator(ctx context.Cont
 }
 
 // WebhookServiceCreator creates the Service for all KKP webhooks.
-func WebhookServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
+func WebhookServiceCreator(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return WebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP

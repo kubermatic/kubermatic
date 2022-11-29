@@ -49,7 +49,7 @@ const (
 	admissionControllerPort = 8944
 )
 
-func AdmissionControllerServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func AdmissionControllerServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return AdmissionControllerName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -57,7 +57,7 @@ func AdmissionControllerServiceAccountCreator() reconciling.NamedServiceAccountC
 	}
 }
 
-func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return AdmissionControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)
@@ -138,7 +138,7 @@ func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfigurat
 	}
 }
 
-func AdmissionControllerServiceCreator() reconciling.NamedServiceCreatorGetter {
+func AdmissionControllerServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return WebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Ports = []corev1.ServicePort{
@@ -156,7 +156,7 @@ func AdmissionControllerServiceCreator() reconciling.NamedServiceCreatorGetter {
 	}
 }
 
-func AdmissionControllerServingCertCreator() reconciling.NamedSecretCreatorGetter {
+func AdmissionControllerServingCertCreator() reconciling.NamedSecretReconcilerFactory {
 	altNames := certutil.AltNames{
 		DNSNames: []string{
 			fmt.Sprintf("%s.%s", WebhookServiceName, metav1.NamespaceSystem),

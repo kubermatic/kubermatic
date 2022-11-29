@@ -26,7 +26,7 @@ import (
 )
 
 // ServiceAccountSecretCreator returns a creator function to create a Google Service Account.
-func ServiceAccountSecretCreator(data CredentialsData) reconciling.NamedSecretCreatorGetter {
+func ServiceAccountSecretCreator(data CredentialsData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return GoogleServiceAccountSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			credentials, err := GetCredentials(data)

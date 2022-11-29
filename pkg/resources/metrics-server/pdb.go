@@ -26,7 +26,7 @@ import (
 )
 
 // PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)

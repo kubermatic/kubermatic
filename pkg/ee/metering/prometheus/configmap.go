@@ -32,7 +32,7 @@ import (
 )
 
 // prometheusConfigMap creates the configmap for prometheus.
-func prometheusConfigMap() reconciling.NamedConfigMapCreatorGetter {
+func prometheusConfigMap() reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return Name, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Labels == nil {
@@ -78,7 +78,7 @@ scrape_configs:
         action: replace
         regex: ([^:]+)(?::\d+)?;(\d+)
         replacement: $1:$2
-        target_label: __address__   
+        target_label: __address__
   - honor_labels: true
     job_name: cluster_node_cpu_usage_seconds_total
     kubernetes_sd_configs:

@@ -24,7 +24,7 @@ import (
 )
 
 // ServiceAccountCreator creates the service account for the dashboard-metrics-scraper.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.MetricsScraperServiceAccountUsername, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(scraperName, nil)

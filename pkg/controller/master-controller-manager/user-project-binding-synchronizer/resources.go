@@ -21,8 +21,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-func userProjectBindingCreatorGetter(userProjectBinding *kubermaticv1.UserProjectBinding) reconciling.NamedKubermaticV1UserProjectBindingCreatorGetter {
-	return func() (string, reconciling.KubermaticV1UserProjectBindingCreator) {
+func userProjectBindingReconcilerFactory(userProjectBinding *kubermaticv1.UserProjectBinding) reconciling.NamedUserProjectBindingReconcilerFactory {
+	return func() (string, reconciling.UserProjectBindingReconciler) {
 		return userProjectBinding.Name, func(p *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error) {
 			p.Name = userProjectBinding.Name
 			p.Labels = userProjectBinding.Labels

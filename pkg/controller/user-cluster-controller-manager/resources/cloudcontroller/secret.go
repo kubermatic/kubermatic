@@ -24,7 +24,7 @@ import (
 )
 
 // CloudConfig generates the cloud-config secret to be injected in the user cluster.
-func CloudConfig(cloudConfig []byte, secretName string) reconciling.NamedSecretCreatorGetter {
+func CloudConfig(cloudConfig []byte, secretName string) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Name = secretName
@@ -38,7 +38,7 @@ func CloudConfig(cloudConfig []byte, secretName string) reconciling.NamedSecretC
 }
 
 // NutanixCSIConfig stores the nutanix csi configuration.
-func NutanixCSIConfig(cloudConfig []byte) reconciling.NamedSecretCreatorGetter {
+func NutanixCSIConfig(cloudConfig []byte) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.NutanixCSIConfigSecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Data == nil {

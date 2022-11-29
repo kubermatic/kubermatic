@@ -21,8 +21,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-func userCreatorGetter(user *kubermaticv1.User) reconciling.NamedKubermaticV1UserCreatorGetter {
-	return func() (string, reconciling.KubermaticV1UserCreator) {
+func userReconcilerFactory(user *kubermaticv1.User) reconciling.NamedUserReconcilerFactory {
+	return func() (string, reconciling.UserReconciler) {
 		return user.Name, func(u *kubermaticv1.User) (*kubermaticv1.User, error) {
 			u.Name = user.Name
 			u.Spec = user.Spec

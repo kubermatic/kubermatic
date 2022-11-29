@@ -23,8 +23,8 @@ import (
 )
 
 // ServiceAccountsCreators returns the function to create and update the service accounts needed for CSI.
-func ServiceAccountCreators(cluster *kubermaticv1.Cluster) []reconciling.NamedServiceAccountCreatorGetter {
-	creatorGetters := []reconciling.NamedServiceAccountCreatorGetter{}
+func ServiceAccountCreators(cluster *kubermaticv1.Cluster) []reconciling.NamedServiceAccountReconcilerFactory {
+	creatorGetters := []reconciling.NamedServiceAccountReconcilerFactory{}
 
 	switch {
 	case cluster.Spec.Cloud.Kubevirt != nil:
@@ -35,8 +35,8 @@ func ServiceAccountCreators(cluster *kubermaticv1.Cluster) []reconciling.NamedSe
 }
 
 // ClusterRolesCreators returns the function to create and update the clusterroles needed for CSI.
-func ClusterRolesCreators(c *kubermaticv1.Cluster) []reconciling.NamedClusterRoleCreatorGetter {
-	creatorGetters := []reconciling.NamedClusterRoleCreatorGetter{}
+func ClusterRolesCreators(c *kubermaticv1.Cluster) []reconciling.NamedClusterRoleReconcilerFactory {
+	creatorGetters := []reconciling.NamedClusterRoleReconcilerFactory{}
 
 	switch {
 	case c.Spec.Cloud.Kubevirt != nil:
@@ -47,8 +47,8 @@ func ClusterRolesCreators(c *kubermaticv1.Cluster) []reconciling.NamedClusterRol
 }
 
 // RoleBindingsCreators returns the function to create and update the rolebindings needed for CSI.
-func RoleBindingsCreators(c *kubermaticv1.Cluster) []reconciling.NamedRoleBindingCreatorGetter {
-	creatorGetters := []reconciling.NamedRoleBindingCreatorGetter{}
+func RoleBindingsCreators(c *kubermaticv1.Cluster) []reconciling.NamedRoleBindingReconcilerFactory {
+	creatorGetters := []reconciling.NamedRoleBindingReconcilerFactory{}
 
 	switch {
 	case c.Spec.Cloud.Kubevirt != nil:

@@ -22,7 +22,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
+func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.MLAMonitoringAgentCertificatesSecretName,
 			certificates.GetECDSAClientCertificateCreator(

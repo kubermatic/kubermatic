@@ -25,7 +25,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -105,10 +105,10 @@ func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger,
 func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.SugaredLogger, applicationInstallation *appskubermaticv1.ApplicationInstallation, userClient ctrlruntimeclient.Client) error {
 	desiredNs := applicationInstallation.Spec.Namespace
 	if desiredNs.Create {
-		log.Infof("reconciling namespace '%s'", desiredNs.Name)
+		log.Infow("reconciling namespace", "namespace", desiredNs.Name)
 
-		creators := []reconciling.NamedNamespaceCreatorGetter{
-			func() (name string, create reconciling.NamespaceCreator) {
+		creators := []reconciling.NamedNamespaceReconcilerFactory{
+			func() (name string, reconciler reconciling.NamespaceReconciler) {
 				return desiredNs.Name, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 					if desiredNs.Labels != nil {
 						if ns.Labels == nil {

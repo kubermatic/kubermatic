@@ -70,7 +70,7 @@ type etcdStatefulSetCreatorData interface {
 }
 
 // StatefulSetCreator returns the function to reconcile the etcd StatefulSet.
-func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetCreatorGetter {
+func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetReconcilerFactory {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			replicas := computeReplicas(data, set)

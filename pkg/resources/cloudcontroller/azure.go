@@ -50,7 +50,7 @@ var (
 	}
 )
 
-func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func azureDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return AzureCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = AzureCCMDeploymentName

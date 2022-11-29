@@ -37,7 +37,7 @@ type tlsServingCertCreatorData interface {
 }
 
 // TLSServingCertificateCreator returns a function to create/update the secret with the konnectivity proxy server tls certificate used to serve https.
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KonnectivityProxyTLSSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

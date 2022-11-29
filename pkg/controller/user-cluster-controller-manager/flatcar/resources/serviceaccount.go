@@ -27,7 +27,7 @@ const (
 	AgentServiceAccountName    = "flatcar-linux-update-agent"
 )
 
-func OperatorServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func OperatorServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return OperatorServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -35,7 +35,7 @@ func OperatorServiceAccountCreator() reconciling.NamedServiceAccountCreatorGette
 	}
 }
 
-func AgentServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func AgentServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return AgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil

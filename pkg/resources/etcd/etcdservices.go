@@ -34,7 +34,7 @@ type serviceCreatorData interface {
 }
 
 // ServiceCreator returns the function to reconcile the etcd service.
-func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.EtcdServiceName

@@ -66,7 +66,7 @@ type kubernetesDashboardData interface {
 }
 
 // DeploymentCreator returns the function to create and update the Kubernetes Dashboard deployment.
-func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data kubernetesDashboardData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = name

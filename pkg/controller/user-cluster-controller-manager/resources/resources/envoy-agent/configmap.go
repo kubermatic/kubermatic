@@ -87,7 +87,7 @@ type Listener struct {
 }
 
 // ConfigMapCreator returns a ConfigMap containing the config for the Envoy agent.
-func ConfigMapCreator(cfg Config) reconciling.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(cfg Config) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.EnvoyAgentConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {

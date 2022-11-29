@@ -44,7 +44,7 @@ var (
 	}
 )
 
-func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return HetznerCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Labels = resources.BaseAppLabels(HetznerCCMDeploymentName, nil)

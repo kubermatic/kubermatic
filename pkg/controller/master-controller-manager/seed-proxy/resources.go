@@ -24,8 +24,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,8 +78,8 @@ func ownerReferences(secret *corev1.Secret) []metav1.OwnerReference {
 	}
 }
 
-func seedServiceAccountCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func seedServiceAccountReconciler(seed *kubermaticv1.Seed) reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return SeedServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = defaultLabels(SeedServiceAccountName, "")
 
@@ -88,8 +88,8 @@ func seedServiceAccountCreator(seed *kubermaticv1.Seed) reconciling.NamedService
 	}
 }
 
-func seedSecretCreator(seed *kubermaticv1.Seed) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func seedSecretReconciler(seed *kubermaticv1.Seed) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return SeedSecretName, func(sa *corev1.Secret) (*corev1.Secret, error) {
 			sa.Labels = defaultLabels(SeedSecretName, seed.Name)
 
@@ -107,10 +107,10 @@ func seedSecretCreator(seed *kubermaticv1.Seed) reconciling.NamedSecretCreatorGe
 	}
 }
 
-func seedMonitoringRoleCreator(seed *kubermaticv1.Seed) reconciling.NamedRoleCreatorGetter {
+func seedMonitoringRoleReconciler(seed *kubermaticv1.Seed) reconciling.NamedRoleReconcilerFactory {
 	name := seedMonitoringRoleName(seed)
 
-	return func() (string, reconciling.RoleCreator) {
+	return func() (string, reconciling.RoleReconciler) {
 		return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = defaultLabels(name, "")
 
@@ -131,10 +131,10 @@ func seedMonitoringRoleCreator(seed *kubermaticv1.Seed) reconciling.NamedRoleCre
 	}
 }
 
-func seedMonitoringRoleBindingCreator(seed *kubermaticv1.Seed) reconciling.NamedRoleBindingCreatorGetter {
+func seedMonitoringRoleBindingReconciler(seed *kubermaticv1.Seed) reconciling.NamedRoleBindingReconcilerFactory {
 	name := seedMonitoringRoleBindingName(seed)
 
-	return func() (string, reconciling.RoleBindingCreator) {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return name, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = defaultLabels(name, "")
 
@@ -157,11 +157,11 @@ func seedMonitoringRoleBindingCreator(seed *kubermaticv1.Seed) reconciling.Named
 	}
 }
 
-func masterSecretCreator(seed *kubermaticv1.Seed, kubeconfig *rest.Config, credentials *corev1.Secret) reconciling.NamedSecretCreatorGetter {
+func masterSecretReconciler(seed *kubermaticv1.Seed, kubeconfig *rest.Config, credentials *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
 	name := secretName(seed)
 	host := kubeconfig.Host
 
-	return func() (string, reconciling.SecretCreator) {
+	return func() (string, reconciling.SecretReconciler) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Labels = defaultLabels("seed-proxy", seed.Name)
 
@@ -208,10 +208,10 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) 
 	return clientcmd.Write(*kubeconfig)
 }
 
-func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
+func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	name := deploymentName(seed)
 
-	return func() (string, reconciling.DeploymentCreator) {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return name, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := func() map[string]string {
 				return map[string]string{
@@ -316,10 +316,10 @@ func masterDeploymentCreator(seed *kubermaticv1.Seed, secret *corev1.Secret, ima
 	}
 }
 
-func masterServiceCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) reconciling.NamedServiceCreatorGetter {
+func masterServiceReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret) reconciling.NamedServiceReconcilerFactory {
 	name := serviceName(seed)
 
-	return func() (string, reconciling.ServiceCreator) {
+	return func() (string, reconciling.ServiceReconciler) {
 		return name, func(s *corev1.Service) (*corev1.Service, error) {
 			s.OwnerReferences = ownerReferences(secret)
 			s.Labels = map[string]string{
@@ -349,8 +349,8 @@ func masterServiceCreator(seed *kubermaticv1.Seed, secret *corev1.Secret) reconc
 	}
 }
 
-func (r *Reconciler) masterGrafanaConfigmapCreator(seeds map[string]*kubermaticv1.Seed) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+func (r *Reconciler) masterGrafanaConfigmapReconciler(seeds map[string]*kubermaticv1.Seed) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			labels := func() map[string]string {
 				return map[string]string{

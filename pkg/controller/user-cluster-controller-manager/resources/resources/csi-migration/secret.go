@@ -35,7 +35,7 @@ cert-file = "/etc/webhook/cert.pem"
 key-file = "/etc/webhook/key.pem"
 `, resources.CSIMigrationWebhookPort)
 
-func TLSServingCertificateCreator(ca *triple.KeyPair) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(ca *triple.KeyPair) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.CSIMigrationWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

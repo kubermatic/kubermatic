@@ -23,8 +23,8 @@ import (
 )
 
 // ConfigMapsCreators returns the function to create and update the configmaps needed for CSI.
-func ConfigMapsCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
-	creatorGetters := []reconciling.NamedConfigMapCreatorGetter{}
+func ConfigMapsCreators(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
+	creatorGetters := []reconciling.NamedConfigMapReconcilerFactory{}
 
 	switch {
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:

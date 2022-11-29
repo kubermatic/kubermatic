@@ -344,12 +344,12 @@ func (p *ExternalClusterProvider) IsMetricServerAvailable(ctx context.Context, c
 }
 
 func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := kubeconfigSecretCreatorGetter(cluster, secretData)
+	creator, err := kubeconfigSecretReconcilerFactory(cluster, secretData)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, resources.KubermaticNamespace, p.clientPrivileged); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretReconcilerFactory{creator}, resources.KubermaticNamespace, p.clientPrivileged); err != nil {
 		return nil, err
 	}
 
@@ -361,7 +361,7 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 	}, nil
 }
 
-func kubeconfigSecretCreatorGetter(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (reconciling.NamedSecretCreatorGetter, error) {
+func kubeconfigSecretReconcilerFactory(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (reconciling.NamedSecretReconcilerFactory, error) {
 	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if len(projectID) == 0 {
 		return nil, fmt.Errorf("external cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)

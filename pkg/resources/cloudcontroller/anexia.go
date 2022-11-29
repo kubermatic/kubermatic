@@ -32,7 +32,7 @@ import (
 
 const AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
 
-func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (name string, create reconciling.DeploymentCreator) {
 		return AnexiaCCMDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(AnexiaCCMDeploymentName, nil)

@@ -32,7 +32,7 @@ import (
 )
 
 // prometheusClusterRole create a cluster role for prometheus.
-func prometheusClusterRole() reconciling.NamedClusterRoleCreatorGetter {
+func prometheusClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return Name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			if cr.Labels == nil {

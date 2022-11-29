@@ -24,7 +24,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -119,8 +119,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secr
 	seedsecret := secret.DeepCopy()
 	seedsecret.SetResourceVersion("")
 
-	namedSecretCreatorGetter := []reconciling.NamedSecretCreatorGetter{
-		secretCreator(seedsecret),
+	namedSecretReconcilerFactory := []reconciling.NamedSecretReconcilerFactory{
+		secretReconcilerFactory(seedsecret),
 	}
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		seedSecret := &corev1.Secret{}
@@ -133,7 +133,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secr
 			return nil
 		}
 
-		return reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetter, r.namespace, seedClient)
+		return reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactory, r.namespace, seedClient)
 	})
 	if err != nil {
 		return fmt.Errorf("reconciling secret %s failed: %w", seedsecret.Name, err)
@@ -142,8 +142,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secr
 	return nil
 }
 
-func secretCreator(s *corev1.Secret) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
+func secretReconcilerFactory(s *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return s.Name, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Labels = s.Labels
 			existing.Annotations = s.Annotations

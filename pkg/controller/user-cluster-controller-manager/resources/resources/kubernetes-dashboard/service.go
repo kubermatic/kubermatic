@@ -26,7 +26,7 @@ import (
 )
 
 // ServiceCreator creates the service for the dashboard-metrics-scraper.
-func ServiceCreator(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsScraperServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Name = resources.MetricsScraperServiceName

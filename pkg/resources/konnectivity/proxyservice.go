@@ -30,7 +30,7 @@ import (
 )
 
 // ServiceCreator returns function to create konnectivity proxy service.
-func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.KonnectivityProxyServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Spec.Selector = map[string]string{

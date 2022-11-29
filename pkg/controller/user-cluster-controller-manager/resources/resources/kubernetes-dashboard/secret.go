@@ -24,7 +24,7 @@ import (
 )
 
 // KeyHolderSecretCreator  creates key holder secret for the Kubernetes Dashboard.
-func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
+func KeyHolderSecretCreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardKeyHolderSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Labels = resources.BaseAppLabels(AppName, nil)
@@ -34,7 +34,7 @@ func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 }
 
 // CsrfTokenSecretCreator  creates the csrf token secret for the Kubernetes Dashboard.
-func CsrfTokenSecretCreator() reconciling.NamedSecretCreatorGetter {
+func CsrfTokenSecretCreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardCsrfTokenSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Labels = resources.BaseAppLabels(AppName, nil)

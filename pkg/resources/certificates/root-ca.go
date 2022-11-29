@@ -68,14 +68,14 @@ type caCreatorData interface {
 }
 
 // RootCACreator returns a function to create a secret with the root ca.
-func RootCACreator(data caCreatorData) reconciling.NamedSecretCreatorGetter {
+func RootCACreator(data caCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.CASecretName, GetCACreator(fmt.Sprintf("root-ca.%s", data.Cluster().Status.Address.ExternalName))
 	}
 }
 
 // FrontProxyCACreator returns a function to create a secret with front proxy ca.
-func FrontProxyCACreator() reconciling.NamedSecretCreatorGetter {
+func FrontProxyCACreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.FrontProxyCASecretName, GetCACreator("front-proxy-ca")
 	}

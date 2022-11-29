@@ -82,7 +82,7 @@ func (r *reconciler) ensureRBACClusterRole(ctx context.Context, resourceName str
 		return fmt.Errorf("failed to init ClusterRole creator: %w", err)
 	}
 
-	if err := reconciling.ReconcileClusterRoles(ctx, []reconciling.NamedClusterRoleCreatorGetter{creator}, "", r); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, []reconciling.NamedClusterRoleReconcilerFactory{creator}, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 
@@ -95,7 +95,7 @@ func (r *reconciler) ensureRBACClusterRoleBinding(ctx context.Context, resourceN
 		return fmt.Errorf("failed to init ClusterRole creator: %w", err)
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{creator}, "", r); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingReconcilerFactory{creator}, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 

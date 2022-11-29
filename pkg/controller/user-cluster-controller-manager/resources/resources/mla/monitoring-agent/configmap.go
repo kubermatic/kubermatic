@@ -37,7 +37,7 @@ type Config struct {
 	HAClusterIdentifier string
 }
 
-func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(config Config) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.MLAMonitoringAgentConfigMapName, func(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if configMap.Data == nil {

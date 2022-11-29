@@ -23,7 +23,7 @@ import (
 )
 
 // RoleBindingAuthenticationReaderCreator returns a function to create the RoleBinding which is needed for extension apiserver which do auth delegation.
-func RoleBindingAuthenticationReaderCreator(username string) reconciling.NamedRoleBindingCreatorGetter {
+func RoleBindingAuthenticationReaderCreator(username string) reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return username + "-authentication-reader", func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
@@ -44,7 +44,7 @@ func RoleBindingAuthenticationReaderCreator(username string) reconciling.NamedRo
 }
 
 // ClusterRoleBindingAuthDelegatorCreator returns a function to create the ClusterRoleBinding which is needed for extension apiserver which do auth delegation.
-func ClusterRoleBindingAuthDelegatorCreator(username string) reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingAuthDelegatorCreator(username string) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return username + "-auth-delegator", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{

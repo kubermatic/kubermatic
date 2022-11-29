@@ -28,7 +28,7 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
-func TLSServingCertificateCreator(webhookName string, ca *triple.KeyPair) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(webhookName string, ca *triple.KeyPair) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.CSISnapshotWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

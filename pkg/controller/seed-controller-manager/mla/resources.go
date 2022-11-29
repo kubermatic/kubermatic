@@ -115,7 +115,7 @@ http {
 	location ~ /api/prom/alertmanager/.* {
 	  proxy_pass      http://cortex-alertmanager.{{ .Namespace }}.svc.cluster.local:8080$request_uri;
 	}
-	
+
 	# Alertmanager Config
 	location = /api/prom/api/v1/alerts {
 	  proxy_pass      http://cortex-alertmanager.{{ .Namespace }}.svc.cluster.local:8080/api/v1/alerts;
@@ -194,7 +194,7 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 	return strings.TrimSpace(output.String()), nil
 }
 
-func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *kubermaticv1.MLAAdminSetting) reconciling.NamedConfigMapCreatorGetter {
+func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *kubermaticv1.MLAAdminSetting) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
@@ -228,7 +228,7 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string, s *ku
 	}
 }
 
-func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
+func GatewayInternalServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
@@ -248,7 +248,7 @@ func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	}
 }
 
-func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedServiceCreatorGetter {
+func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayExternalName, func(s *corev1.Service) (*corev1.Service, error) {
 			if s.Annotations == nil {
@@ -304,7 +304,7 @@ const (
 	version = "1.20.1-alpine"
 )
 
-func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentCreatorGetter {
+func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)
@@ -442,7 +442,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData, settings *kubermatic
 }
 
 // GatewayCACreator returns a function to create the ECDSA-based CA to be used for MLA Gateway.
-func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
+func GatewayCACreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.MLAGatewayCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -473,7 +473,7 @@ func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
 }
 
 // GatewayCertificateCreator returns a function to create/update a secret with the MLA gateway TLS certificate.
-func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func() (*resources.ECDSAKeyPair, error)) reconciling.NamedSecretCreatorGetter {
+func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func() (*resources.ECDSAKeyPair, error)) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.MLAGatewayCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

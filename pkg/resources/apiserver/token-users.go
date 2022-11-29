@@ -28,7 +28,7 @@ import (
 )
 
 // TokenUsers returns a secret containing the tokens csv.
-func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.TokensSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -59,7 +59,7 @@ func TokenUsersCreator(data *resources.TemplateData) reconciling.NamedSecretCrea
 }
 
 // TokenViewerCreator returns a secret containing the viewer token.
-func TokenViewerCreator() reconciling.NamedSecretCreatorGetter {
+func TokenViewerCreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.ViewerTokenSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

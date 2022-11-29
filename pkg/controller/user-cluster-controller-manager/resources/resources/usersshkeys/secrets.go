@@ -24,7 +24,7 @@ import (
 )
 
 // SecretCreator returns a function to create a secret in the usercluster containing the user ssh keys.
-func SecretCreator(userSSHKeys map[string][]byte) reconciling.NamedSecretCreatorGetter {
+func SecretCreator(userSSHKeys map[string][]byte) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.UserSSHKeys, func(sec *corev1.Secret) (*corev1.Secret, error) {
 			sec.Data = userSSHKeys

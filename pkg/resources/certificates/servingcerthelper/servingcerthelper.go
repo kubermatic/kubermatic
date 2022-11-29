@@ -32,9 +32,9 @@ import (
 // CAGetter is a func to retrieve a CACert and Key.
 type CAGetter = func() (*triple.KeyPair, error)
 
-// GetServingCertSecretCreator returns a NamedSecretCreatorGetter for a tls serving cert
+// GetServingCertSecretCreator returns a NamedSecretReconcilerFactory for a tls serving cert
 // using the config options passed in.
-func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, altNamesDNS []string, altNamesIP []net.IP) reconciling.NamedSecretCreatorGetter {
+func ServingCertSecretCreator(caGetter CAGetter, secretName, commonName string, altNamesDNS []string, altNamesIP []net.IP) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return secretName, func(s *corev1.Secret) (*corev1.Secret, error) {
 			ca, err := caGetter()

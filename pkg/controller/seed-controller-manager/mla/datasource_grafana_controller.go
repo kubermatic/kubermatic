@@ -341,7 +341,7 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 }
 
 func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) error {
-	creators := []reconciling.NamedDeploymentCreatorGetter{
+	creators := []reconciling.NamedDeploymentReconcilerFactory{
 		GatewayDeploymentCreator(data, settings),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
@@ -351,7 +351,7 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 }
 
 func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster, settings *kubermaticv1.MLAAdminSetting) error {
-	creators := []reconciling.NamedConfigMapCreatorGetter{
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		GatewayConfigMapCreator(c, r.mlaNamespace, settings),
 	}
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
@@ -361,7 +361,7 @@ func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *k
 }
 
 func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		GatewayCACreator(),
 		GatewayCertificateCreator(c, data.GetMLAGatewayCA),
 	}
@@ -372,7 +372,7 @@ func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kube
 }
 
 func (r *datasourceGrafanaController) ensureServices(ctx context.Context, c *kubermaticv1.Cluster) error {
-	creators := []reconciling.NamedServiceCreatorGetter{
+	creators := []reconciling.NamedServiceReconcilerFactory{
 		GatewayInternalServiceCreator(),
 		GatewayExternalServiceCreator(c),
 	}

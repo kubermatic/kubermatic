@@ -36,7 +36,7 @@ const (
 	recommenderPort = 8942
 )
 
-func RecommenderServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func RecommenderServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return RecommenderName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -50,7 +50,7 @@ func appPodLabels(appName string) map[string]string {
 	}
 }
 
-func RecommenderDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func RecommenderDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return RecommenderName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)

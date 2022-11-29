@@ -23,7 +23,7 @@ import (
 )
 
 // ImagePullSecretCreator returns a creator function to create a ImagePullSecret.
-func ImagePullSecretCreator(dockerPullConfigJSON []byte) reconciling.NamedSecretCreatorGetter {
+func ImagePullSecretCreator(dockerPullConfigJSON []byte) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return ImagePullSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			se.Type = corev1.SecretTypeDockerConfigJson

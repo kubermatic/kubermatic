@@ -53,7 +53,7 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the dashboard-metrics-scraper deployment.
-func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = scraperName

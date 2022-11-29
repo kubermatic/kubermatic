@@ -284,7 +284,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) error {
 	caCert := triple.EncodeCertPEM(data.caCert.Cert)
-	creators := []reconciling.NamedAPIServiceCreatorGetter{
+	creators := []reconciling.NamedAPIServiceReconcilerFactory{
 		metricsserver.APIServiceCreator(caCert),
 	}
 
@@ -296,7 +296,7 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 }
 
 func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedServiceAccountCreatorGetter{
+	creators := []reconciling.NamedServiceAccountReconcilerFactory{
 		userauth.ServiceAccountCreator(),
 		usersshkeys.ServiceAccountCreator(),
 		coredns.ServiceAccountCreator(),
@@ -316,7 +316,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
-		creators = []reconciling.NamedServiceAccountCreatorGetter{
+		creators = []reconciling.NamedServiceAccountReconcilerFactory{
 			kubernetesdashboard.ServiceAccountCreator(),
 		}
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
@@ -324,7 +324,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		}
 	}
 
-	cloudInitSACreator := []reconciling.NamedServiceAccountCreatorGetter{
+	cloudInitSACreator := []reconciling.NamedServiceAccountReconcilerFactory{
 		cloudinitsettings.ServiceAccountCreator(),
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, cloudInitSACreator, resources.CloudInitSettingsNamespace, r.Client); err != nil {
@@ -333,7 +333,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 
 	// OPA related resources
 	if r.opaIntegration {
-		creators = []reconciling.NamedServiceAccountCreatorGetter{
+		creators = []reconciling.NamedServiceAccountReconcilerFactory{
 			gatekeeper.ServiceAccountCreator(),
 		}
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -342,7 +342,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 	}
 
 	if r.isKonnectivityEnabled {
-		creators = []reconciling.NamedServiceAccountCreatorGetter{
+		creators = []reconciling.NamedServiceAccountReconcilerFactory{
 			konnectivity.ServiceAccountCreator(),
 			metricsserver.ServiceAccountCreator(), // required only if metrics-server is running in user cluster
 		}
@@ -351,7 +351,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		}
 	}
 
-	creators = []reconciling.NamedServiceAccountCreatorGetter{}
+	creators = []reconciling.NamedServiceAccountReconcilerFactory{}
 	if r.userClusterMLA.Logging {
 		creators = append(creators,
 			mlaloggingagent.ServiceAccountCreator(),
@@ -374,7 +374,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 
 func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) error {
 	// kube-system
-	creators := []reconciling.NamedRoleCreatorGetter{
+	creators := []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.KubeSystemRoleCreator(),
 		clusterautoscaler.KubeSystemRoleCreator(),
 	}
@@ -392,7 +392,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	}
 
 	// kube-public
-	creators = []reconciling.NamedRoleCreatorGetter{
+	creators = []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.ClusterInfoReaderRoleCreator(),
 		machinecontroller.KubePublicRoleCreator(),
 	}
@@ -406,7 +406,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	}
 
 	// default
-	creators = []reconciling.NamedRoleCreatorGetter{
+	creators = []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.EndpointReaderRoleCreator(),
 		clusterautoscaler.DefaultRoleCreator(),
 	}
@@ -421,7 +421,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
-		creators = []reconciling.NamedRoleCreatorGetter{
+		creators = []reconciling.NamedRoleReconcilerFactory{
 			kubernetesdashboard.RoleCreator(),
 		}
 
@@ -430,7 +430,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		}
 	}
 
-	cloudInitRoleCreator := []reconciling.NamedRoleCreatorGetter{
+	cloudInitRoleCreator := []reconciling.NamedRoleReconcilerFactory{
 		cloudinitsettings.RoleCreator(),
 	}
 
@@ -444,7 +444,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 
 	// OPA relate resources
 	if r.opaIntegration {
-		creators = []reconciling.NamedRoleCreatorGetter{
+		creators = []reconciling.NamedRoleReconcilerFactory{
 			gatekeeper.RoleCreator(),
 		}
 		if err := reconciling.ReconcileRoles(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -457,7 +457,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 
 func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileData) error {
 	// kube-system
-	creators := []reconciling.NamedRoleBindingCreatorGetter{
+	creators := []reconciling.NamedRoleBindingReconcilerFactory{
 		machinecontroller.KubeSystemRoleBindingCreator(),
 		metricsserver.RolebindingAuthReaderCreator(r.isKonnectivityEnabled),
 		scheduler.RoleBindingAuthDelegator(),
@@ -478,7 +478,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	}
 
 	// kube-public
-	creators = []reconciling.NamedRoleBindingCreatorGetter{
+	creators = []reconciling.NamedRoleBindingReconcilerFactory{
 		machinecontroller.KubePublicRoleBindingCreator(),
 		machinecontroller.ClusterInfoAnonymousRoleBindingCreator(),
 	}
@@ -491,7 +491,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	}
 
 	// Default
-	creators = []reconciling.NamedRoleBindingCreatorGetter{
+	creators = []reconciling.NamedRoleBindingReconcilerFactory{
 		machinecontroller.DefaultRoleBindingCreator(),
 		clusterautoscaler.DefaultRoleBindingCreator(),
 	}
@@ -505,7 +505,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
-		creators = []reconciling.NamedRoleBindingCreatorGetter{
+		creators = []reconciling.NamedRoleBindingReconcilerFactory{
 			kubernetesdashboard.RoleBindingCreator(),
 		}
 		if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
@@ -513,7 +513,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		}
 	}
 
-	cloudInitRoleBindingCreator := []reconciling.NamedRoleBindingCreatorGetter{
+	cloudInitRoleBindingCreator := []reconciling.NamedRoleBindingReconcilerFactory{
 		cloudinitsettings.RoleBindingCreator(),
 	}
 
@@ -527,7 +527,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 
 	// OPA relate resources
 	if r.opaIntegration {
-		creators = []reconciling.NamedRoleBindingCreatorGetter{
+		creators = []reconciling.NamedRoleBindingReconcilerFactory{
 			gatekeeper.RoleBindingCreator(),
 		}
 		if err := reconciling.ReconcileRoleBindings(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -539,7 +539,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 }
 
 func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedClusterRoleCreatorGetter{
+	creators := []reconciling.NamedClusterRoleReconcilerFactory{
 		kubestatemetrics.ClusterRoleCreator(),
 		prometheus.ClusterRoleCreator(),
 		machinecontroller.ClusterRoleCreator(),
@@ -576,7 +576,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 }
 
 func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
+	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		userauth.ClusterRoleBindingCreator(),
 		kubestatemetrics.ClusterRoleBindingCreator(),
 		prometheus.ClusterRoleBindingCreator(),
@@ -636,7 +636,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 		return fmt.Errorf("failed to get ApplicationInstallation CRD: %w", err)
 	}
 
-	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
+	creators := []reconciling.NamedCustomResourceDefinitionReconcilerFactory{
 		machinecontroller.MachineCRDCreator(),
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
@@ -663,7 +663,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 }
 
 func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
+	creators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		machinecontroller.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
 	if r.opaIntegration && r.opaEnableMutation {
@@ -680,7 +680,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 }
 
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+	creators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		applications.ApplicationInstallationValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 		machine.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
@@ -704,7 +704,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 }
 
 func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) error {
-	creatorsKubeSystem := []reconciling.NamedServiceCreatorGetter{
+	creatorsKubeSystem := []reconciling.NamedServiceReconcilerFactory{
 		coredns.ServiceCreator(r.dnsClusterIP),
 	}
 	if r.isKonnectivityEnabled {
@@ -721,7 +721,7 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
-		creators := []reconciling.NamedServiceCreatorGetter{
+		creators := []reconciling.NamedServiceReconcilerFactory{
 			kubernetesdashboard.ServiceCreator(data.ipFamily),
 		}
 		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
@@ -731,7 +731,7 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 
 	// OPA related resources
 	if r.opaIntegration {
-		creators := []reconciling.NamedServiceCreatorGetter{
+		creators := []reconciling.NamedServiceReconcilerFactory{
 			gatekeeper.ServiceCreator(),
 		}
 		if err := reconciling.ReconcileServices(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -746,13 +746,13 @@ func (r *reconciler) reconcileEndpoints(ctx context.Context, data reconcileData)
 	if !data.reconcileK8sSvcEndpoints {
 		return nil
 	}
-	epCreators := []reconciling.NamedEndpointsCreatorGetter{
+	epCreators := []reconciling.NamedEndpointsReconcilerFactory{
 		kubernetesresources.EndpointsCreator(data.clusterAddress),
 	}
 	if err := reconciling.ReconcileEndpoints(ctx, epCreators, metav1.NamespaceDefault, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Endpoints: %w", err)
 	}
-	epSliceCreators := []reconciling.NamedEndpointSliceCreatorGetter{
+	epSliceCreators := []reconciling.NamedEndpointSliceReconcilerFactory{
 		kubernetesresources.EndpointSliceCreator(data.clusterAddress),
 	}
 	if err := reconciling.ReconcileEndpointSlices(ctx, epSliceCreators, metav1.NamespaceDefault, r.Client); err != nil {
@@ -762,7 +762,7 @@ func (r *reconciler) reconcileEndpoints(ctx context.Context, data reconcileData)
 }
 
 func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedConfigMapCreatorGetter{
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		machinecontroller.ClusterInfoConfigMapCreator(r.clusterURL.String(), data.caCert.Cert),
 	}
 
@@ -792,7 +792,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 					Authority:   net.JoinHostPort(fmt.Sprintf("openvpn-server.%s.svc.cluster.local", r.namespace), "1194"),
 				})
 		}
-		creators = []reconciling.NamedConfigMapCreatorGetter{
+		creators = []reconciling.NamedConfigMapReconcilerFactory{
 			cabundle.ConfigMapCreator(r.caBundle),
 			envoyagent.ConfigMapCreator(envoyConfig),
 		}
@@ -800,7 +800,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 			creators = append(creators, openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort))
 		}
 	} else {
-		creators = []reconciling.NamedConfigMapCreatorGetter{
+		creators = []reconciling.NamedConfigMapReconcilerFactory{
 			cabundle.ConfigMapCreator(r.caBundle),
 		}
 		if !r.isKonnectivityEnabled {
@@ -829,7 +829,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		if err != nil {
 			return fmt.Errorf("failed to get user cluster prometheus custom scrape configs: %w", err)
 		}
-		creators = []reconciling.NamedConfigMapCreatorGetter{
+		creators = []reconciling.NamedConfigMapReconcilerFactory{
 			mlamonitoringagent.ConfigMapCreator(mlamonitoringagent.Config{
 				MLAGatewayURL:       r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
 				TLSCertFile:         fmt.Sprintf("%s/%s", resources.MLAMonitoringAgentClientCertMountPath, resources.MLAMonitoringAgentClientCertSecretKey),
@@ -847,7 +847,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 }
 
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		cloudcontroller.CloudConfig(data.cloudConfig, resources.CloudConfigSecretName),
 	}
 	if !r.isKonnectivityEnabled {
@@ -890,7 +890,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
-		creators = []reconciling.NamedSecretCreatorGetter{
+		creators = []reconciling.NamedSecretReconcilerFactory{
 			kubernetesdashboard.KeyHolderSecretCreator(),
 			kubernetesdashboard.CsrfTokenSecretCreator(),
 		}
@@ -902,7 +902,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	// OPA relate resources
 	if r.opaIntegration {
-		creators = []reconciling.NamedSecretCreatorGetter{
+		creators = []reconciling.NamedSecretReconcilerFactory{
 			gatekeeper.SecretCreator(),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
@@ -911,7 +911,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 
 	if r.userClusterMLA.Monitoring {
-		creators = []reconciling.NamedSecretCreatorGetter{
+		creators = []reconciling.NamedSecretReconcilerFactory{
 			mlamonitoringagent.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
@@ -919,7 +919,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 	if r.userClusterMLA.Logging {
-		creators = []reconciling.NamedSecretCreatorGetter{
+		creators = []reconciling.NamedSecretReconcilerFactory{
 			mlaloggingagent.SecretCreator(mlaloggingagent.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
 				TLSCertFile:   fmt.Sprintf("%s/%s", resources.MLALoggingAgentClientCertMountPath, resources.MLALoggingAgentClientCertSecretKey),
@@ -935,7 +935,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	// Operating System Manager
 	if data.operatingSystemManagerEnabled {
-		creators = []reconciling.NamedSecretCreatorGetter{
+		creators = []reconciling.NamedSecretReconcilerFactory{
 			cloudinitsettings.SecretCreator(),
 		}
 
@@ -948,7 +948,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 }
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData) error {
-	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
+	var dsCreators []reconciling.NamedDaemonSetReconcilerFactory
 
 	if r.nodeLocalDNSCache {
 		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator(r.imageRewriter))
@@ -971,7 +971,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 	}
 
 	if r.userClusterMLA.Logging {
-		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
+		dsCreators = []reconciling.NamedDaemonSetReconcilerFactory{
 			mlaloggingagent.DaemonSetCreator(data.loggingRequirements, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
@@ -982,7 +982,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 }
 
 func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedNamespaceCreatorGetter{
+	creators := []reconciling.NamedNamespaceReconcilerFactory{
 		cloudinitsettings.NamespaceCreator,
 	}
 	if data.kubernetesDashboardEnabled {
@@ -1023,7 +1023,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileData) error {
 	// Kubernetes Dashboard and related resources
 	if data.kubernetesDashboardEnabled {
-		creators := []reconciling.NamedDeploymentCreatorGetter{
+		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			kubernetesdashboard.DeploymentCreator(r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
@@ -1031,7 +1031,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		}
 	}
 
-	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
+	kubeSystemCreators := []reconciling.NamedDeploymentReconcilerFactory{
 		coredns.DeploymentCreator(r.clusterSemVer, data.coreDNSReplicas, r.imageRewriter),
 	}
 
@@ -1041,7 +1041,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	// OPA related resources
 	if r.opaIntegration {
-		creators := []reconciling.NamedDeploymentCreatorGetter{
+		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			gatekeeper.ControllerDeploymentCreator(r.opaEnableMutation, r.imageRewriter, data.gatekeeperCtrlRequirements),
 			gatekeeper.AuditDeploymentCreator(r.imageRewriter, data.gatekeeperAuditRequirements),
 		}
@@ -1052,7 +1052,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	}
 
 	if r.userClusterMLA.Monitoring {
-		creators := []reconciling.NamedDeploymentCreatorGetter{
+		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			mlamonitoringagent.DeploymentCreator(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
@@ -1061,7 +1061,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	}
 
 	if r.isKonnectivityEnabled {
-		creators := []reconciling.NamedDeploymentCreatorGetter{
+		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			konnectivity.DeploymentCreator(r.konnectivityServerHost, r.konnectivityServerPort, r.imageRewriter),
 			metricsserver.DeploymentCreator(r.imageRewriter), // deploy metrics-server in user cluster
 		}
@@ -1074,21 +1074,21 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 }
 
 func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
-	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
+	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		kubesystem.DefaultNetworkPolicyCreator(),
 		coredns.KubeDNSNetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()),
 	}
 
 	if r.userSSHKeyAgent {
-		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
+		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys,
 			usersshkeys.NetworkPolicyCreator(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()))
 	}
 
 	if r.isKonnectivityEnabled {
-		namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, metricsserver.NetworkPolicyCreator(), konnectivity.NetworkPolicyCreator())
+		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, metricsserver.NetworkPolicyCreator(), konnectivity.NetworkPolicyCreator())
 	}
 
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
 	}
 
@@ -1096,12 +1096,12 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 }
 
 func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
-	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		coredns.PodDisruptionBudgetCreator(),
 	}
 	// OPA relate resources
 	if r.opaIntegration {
-		creators = []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+		creators = []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 			gatekeeper.PodDisruptionBudgetCreator(),
 		}
 		if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {

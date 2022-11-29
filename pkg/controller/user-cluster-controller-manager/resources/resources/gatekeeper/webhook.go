@@ -27,7 +27,7 @@ import (
 )
 
 // ValidatingWebhookConfigurationCreator returns the ValidatingwebhookConfiguration for gatekeeper.
-func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return resources.GatekeeperValidatingWebhookConfigurationName, func(validatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			failurePolicyIgnore := admissionregistrationv1.Ignore
@@ -138,7 +138,7 @@ func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidat
 	}
 }
 
-func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func MutatingWebhookConfigurationCreator(timeout int) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return resources.GatekeeperMutatingWebhookConfigurationName, func(mutatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			failurePolicyIgnore := admissionregistrationv1.Ignore

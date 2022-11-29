@@ -29,15 +29,15 @@ import (
 )
 
 // Secretsreators returns the CSI secrets for KubeVirt.
-func SecretsCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
-	creators := []reconciling.NamedSecretCreatorGetter{
+func SecretsCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		InfraAccessSecretCreator(ctx, data),
 	}
 	return creators
 }
 
 // InfraAccessSecretCreator returns the CSI secrets for KubeVirt.
-func InfraAccessSecretCreator(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+func InfraAccessSecretCreator(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (name string, create reconciling.SecretCreator) {
 		return resources.KubeVirtCSISecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			se.Labels = resources.BaseAppLabels(resources.KubeVirtCSISecretName, nil)

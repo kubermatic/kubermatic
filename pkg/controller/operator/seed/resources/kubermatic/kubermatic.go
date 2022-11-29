@@ -35,7 +35,7 @@ func ClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-seed:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
-func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -43,7 +43,7 @@ func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kube
 	}
 }
 
-func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	name := ClusterRoleBindingName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
@@ -67,7 +67,7 @@ func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *
 	}
 }
 
-func CABundleConfigMapCreator(caBundle *corev1.ConfigMap) reconciling.NamedConfigMapCreatorGetter {
+func CABundleConfigMapCreator(caBundle *corev1.ConfigMap) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return caBundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = caBundle.Data

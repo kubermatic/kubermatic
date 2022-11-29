@@ -29,7 +29,7 @@ import (
 )
 
 // ProxyKubeconfig returns kubeconfig for konnectivity proxy server.
-func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+func ProxyKubeconfig(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KonnectivityKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			ca, err := data.GetRootCA()

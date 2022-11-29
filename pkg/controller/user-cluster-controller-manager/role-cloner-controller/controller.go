@@ -177,7 +177,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger,
 	}
 
 	for _, namespace := range namespaces {
-		creatorGetters := []reconciling.NamedRoleCreatorGetter{
+		creatorGetters := []reconciling.NamedRoleReconcilerFactory{
 			func() (name string, create func(*rbacv1.Role) (*rbacv1.Role, error)) {
 				return oldRole.Name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 					r.Rules = oldRole.Rules

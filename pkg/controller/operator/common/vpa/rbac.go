@@ -33,8 +33,8 @@ const (
 	StatusReaderRoleName        = "system:vpa-status-reader"
 )
 
-func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
-	return []reconciling.NamedClusterRoleCreatorGetter{
+func ClusterRoleCreators() []reconciling.NamedClusterRoleReconcilerFactory {
+	return []reconciling.NamedClusterRoleReconcilerFactory{
 		clusterRoleCreator(MetricsReaderRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"metrics.k8s.io"},
@@ -158,7 +158,7 @@ func ClusterRoleCreators() []reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-func clusterRoleCreator(name string, rules []rbacv1.PolicyRule) reconciling.NamedClusterRoleCreatorGetter {
+func clusterRoleCreator(name string, rules []rbacv1.PolicyRule) reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = rules
@@ -167,7 +167,7 @@ func clusterRoleCreator(name string, rules []rbacv1.PolicyRule) reconciling.Name
 	}
 }
 
-func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingReconcilerFactory {
 	recommender := rbacv1.Subject{
 		Kind:      "ServiceAccount",
 		Name:      RecommenderName,
@@ -186,7 +186,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingCreatorGe
 		Namespace: metav1.NamespaceSystem,
 	}
 
-	return []reconciling.NamedClusterRoleBindingCreatorGetter{
+	return []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		clusterRoleBindingCreator(MetricsReaderRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
@@ -248,7 +248,7 @@ func ClusterRoleBindingCreators() []reconciling.NamedClusterRoleBindingCreatorGe
 	}
 }
 
-func clusterRoleBindingCreator(name string, roleRef rbacv1.RoleRef, subjects []rbacv1.Subject) reconciling.NamedClusterRoleBindingCreatorGetter {
+func clusterRoleBindingCreator(name string, roleRef rbacv1.RoleRef, subjects []rbacv1.Subject) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = roleRef

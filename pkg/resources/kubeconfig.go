@@ -39,7 +39,7 @@ type adminKubeconfigCreatorData interface {
 }
 
 // AdminKubeconfigCreator returns a function to create/update the secret with the admin kubeconfig.
-func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSecretCreatorGetter {
+func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return AdminKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -72,7 +72,7 @@ func AdminKubeconfigCreator(data adminKubeconfigCreatorData) reconciling.NamedSe
 }
 
 // ViewerKubeconfigCreator returns a function to create/update the secret with the viewer kubeconfig.
-func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretCreatorGetter {
+func ViewerKubeconfigCreator(data *TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return ViewerKubeconfigSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
@@ -113,7 +113,7 @@ type internalKubeconfigCreatorData interface {
 }
 
 // GetInternalKubeconfigCreator is a generic function to return a secret generator to create a kubeconfig which must only be used within the seed-cluster as it uses the ClusterIP of the apiserver.
-func GetInternalKubeconfigCreator(namespace, name, commonName string, organizations []string, data internalKubeconfigCreatorData, log *zap.SugaredLogger) reconciling.NamedSecretCreatorGetter {
+func GetInternalKubeconfigCreator(namespace, name, commonName string, organizations []string, data internalKubeconfigCreatorData, log *zap.SugaredLogger) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

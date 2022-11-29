@@ -56,13 +56,13 @@ const (
 )
 
 // TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics server.
-func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretReconcilerFactory {
 	dnsName := "metrics-server.kube-system.svc"
 	return servingcerthelper.ServingCertSecretCreator(caGetter, servingCertSecretName, dnsName, []string{dnsName}, nil)
 }
 
 // DeploymentCreator returns the function to create and update the metrics server deployment.
-func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName
@@ -179,7 +179,7 @@ func DeploymentCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDe
 }
 
 // PodDisruptionBudgetCreator returns a func to create/update the metrics-server PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.MetricsServerPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)

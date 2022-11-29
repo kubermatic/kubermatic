@@ -25,7 +25,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the gatekeeper service.
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.GatekeeperWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.GatekeeperWebhookServiceName

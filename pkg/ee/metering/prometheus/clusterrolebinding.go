@@ -32,7 +32,7 @@ import (
 )
 
 // prometheusClusterRoleBinding create a cluster role binding for prometheus.
-func prometheusClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
+func prometheusClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return Name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			if crb.Labels == nil {

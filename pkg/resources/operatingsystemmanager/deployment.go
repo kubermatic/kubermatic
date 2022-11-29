@@ -72,7 +72,7 @@ type operatingSystemManagerData interface {
 }
 
 // DeploymentCreator returns the function to create and update the operating system manager deployment.
-func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.OperatingSystemManagerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
 			_, creator := DeploymentCreatorWithoutInitWrapper(data)()
@@ -94,7 +94,7 @@ func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploym
 
 // DeploymentCreatorWithoutInitWrapper returns the function to create and update the operating system manager deployment without the
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
-func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.OperatingSystemManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.OperatingSystemManagerDeploymentName

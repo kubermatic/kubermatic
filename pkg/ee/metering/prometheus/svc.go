@@ -33,7 +33,7 @@ import (
 )
 
 // prometheusService creates the service to connect to prometheus api.
-func prometheusService() reconciling.NamedServiceCreatorGetter {
+func prometheusService() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return Name, func(svc *corev1.Service) (*corev1.Service, error) {
 			if svc.Labels == nil {

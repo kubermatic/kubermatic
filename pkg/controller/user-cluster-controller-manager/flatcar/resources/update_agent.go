@@ -37,7 +37,7 @@ var (
 	hostPathType            = corev1.HostPathUnset
 )
 
-func AgentDaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
+func AgentDaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
 	var userCore int64 = 500 // UID of the flatcar admin user 'core'
 
 	return func() (string, reconciling.DaemonSetCreator) {

@@ -282,8 +282,8 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		"datacenter", j.spec.Cloud.DatacenterName,
 	)
 
-	creators := []reconciling.NamedKubermaticV1ClusterCreatorGetter{
-		j.clusterCreatorGetter(project, preset),
+	creators := []reconciling.NamedKubermaticV1ClusterReconcilerFactory{
+		j.clusterReconcilerFactory(project, preset),
 	}
 
 	if err := reconciling.ReconcileKubermaticV1Clusters(ctx, creators, "", j.client); err != nil {
@@ -309,7 +309,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 	return j.Cluster(ctx)
 }
 
-func (j *ClusterJig) clusterCreatorGetter(project *kubermaticv1.Project, preset *kubermaticv1.Preset) reconciling.NamedKubermaticV1ClusterCreatorGetter {
+func (j *ClusterJig) clusterReconcilerFactory(project *kubermaticv1.Project, preset *kubermaticv1.Preset) reconciling.NamedKubermaticV1ClusterReconcilerFactory {
 	return func() (string, reconciling.KubermaticV1ClusterCreator) {
 		return j.desiredName, func(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 			cluster.Labels = j.labels

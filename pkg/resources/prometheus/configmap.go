@@ -61,7 +61,7 @@ type configTemplateData struct {
 }
 
 // ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data.
-func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.PrometheusConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			cluster := data.Cluster()

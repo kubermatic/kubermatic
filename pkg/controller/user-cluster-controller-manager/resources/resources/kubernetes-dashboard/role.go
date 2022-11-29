@@ -24,7 +24,7 @@ import (
 )
 
 // RoleCreator creates the role for the Kubernetes Dashboard.
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
+func RoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return resources.KubernetesDashboardRoleName, func(role *rbacv1.Role) (*rbacv1.Role, error) {
 			role.Labels = resources.BaseAppLabels(AppName, nil)

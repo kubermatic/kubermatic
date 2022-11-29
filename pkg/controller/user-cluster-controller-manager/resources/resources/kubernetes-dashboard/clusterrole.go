@@ -24,7 +24,7 @@ import (
 )
 
 // ClusterRoleCreator returns a cluster role for the Dashboard Metrics Scraper.
-func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func ClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MetricsScraperClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Labels = resources.BaseAppLabels(scraperName, nil)

@@ -30,7 +30,7 @@ const (
 
 // SecretCreator returns a function to create a secret in the usercluster, for generating an API server token against
 // the cloud-init-getter service account.
-func SecretCreator() reconciling.NamedSecretCreatorGetter {
+func SecretCreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return cloudInitGetterToken, func(sec *corev1.Secret) (*corev1.Secret, error) {
 			sec.Type = resources.ServiceAccountTokenType

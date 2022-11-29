@@ -30,7 +30,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the external API server service.
-func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			if se.Annotations == nil {

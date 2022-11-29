@@ -50,7 +50,7 @@ func EncryptionResourcesForDeletion(namespace string) []ctrlruntimeclient.Object
 	}
 }
 
-func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.NamedSecretCreatorGetter {
+func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.EncryptionConfigurationSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Name = resources.EncryptionConfigurationSecretName

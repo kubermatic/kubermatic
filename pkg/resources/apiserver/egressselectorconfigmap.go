@@ -28,7 +28,7 @@ import (
 
 // EgressSelectorConfigCreator returns function to create cm that contains egress selection configuration for apiserver
 // to work with konnectivity proxy.
-func EgressSelectorConfigCreator() reconciling.NamedConfigMapCreatorGetter {
+func EgressSelectorConfigCreator() reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.KonnectivityKubeApiserverEgress, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			egressConfig := apiserver.EgressSelectorConfiguration{

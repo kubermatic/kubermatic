@@ -26,7 +26,7 @@ import (
 )
 
 // ClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return createClusterRoleBindingCreator("controller",
 		resources.MachineControllerClusterRoleName, rbacv1.Subject{
 			Kind:     "User",
@@ -36,7 +36,7 @@ func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGette
 }
 
 // NodeBootstrapperClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
-func NodeBootstrapperClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func NodeBootstrapperClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return createClusterRoleBindingCreator("kubelet-bootstrap",
 		"system:node-bootstrapper", rbacv1.Subject{
 			Kind:     "Group",
@@ -46,7 +46,7 @@ func NodeBootstrapperClusterRoleBindingCreator() reconciling.NamedClusterRoleBin
 }
 
 // NodeSignerClusterRoleBindingCreator returns a ClusterRoleBinding for the machine-controller.
-func NodeSignerClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func NodeSignerClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return createClusterRoleBindingCreator("node-signer",
 		"system:certificates.k8s.io:certificatesigningrequests:nodeclient", rbacv1.Subject{
 			Kind:     "Group",
@@ -55,7 +55,7 @@ func NodeSignerClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCr
 		})
 }
 
-func createClusterRoleBindingCreator(crbSuffix, cRoleRef string, subj rbacv1.Subject) reconciling.NamedClusterRoleBindingCreatorGetter {
+func createClusterRoleBindingCreator(crbSuffix, cRoleRef string, subj rbacv1.Subject) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return fmt.Sprintf("%s:%s", resources.MachineControllerClusterRoleBindingName, crbSuffix), func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(Name, nil)

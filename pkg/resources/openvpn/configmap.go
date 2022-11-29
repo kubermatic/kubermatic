@@ -34,7 +34,7 @@ type serverClientConfigsData interface {
 }
 
 // ServerClientConfigsConfigMapCreator returns a ConfigMap containing the ClientConfig for the OpenVPN server. It lives inside the seed-cluster.
-func ServerClientConfigsConfigMapCreator(data serverClientConfigsData) reconciling.NamedConfigMapCreatorGetter {
+func ServerClientConfigsConfigMapCreator(data serverClientConfigsData) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.OpenVPNClientConfigsConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			cm.Labels = resources.BaseAppLabels(name, nil)

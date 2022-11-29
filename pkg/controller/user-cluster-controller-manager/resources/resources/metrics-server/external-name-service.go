@@ -27,7 +27,7 @@ import (
 )
 
 // ExternalNameServiceCreator returns the function to reconcile the metrics server service.
-func ExternalNameServiceCreator(namespace string) reconciling.NamedServiceCreatorGetter {
+func ExternalNameServiceCreator(namespace string) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.MetricsServerExternalNameServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Namespace = metav1.NamespaceSystem

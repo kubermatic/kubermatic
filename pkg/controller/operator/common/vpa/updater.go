@@ -35,7 +35,7 @@ const (
 	updaterPort = 8942
 )
 
-func UpdaterServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func UpdaterServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return UpdaterName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -43,7 +43,7 @@ func UpdaterServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter
 	}
 }
 
-func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return UpdaterName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)

@@ -1,0 +1,63 @@
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This defines the reconciling helpers we generate using
+# https://github.com/kubermatic/reconciler
+
+package: reconciling
+boilerplate: hack/boilerplate/ce/boilerplate.go.txt
+resourceTypes:
+  # autoscaling/v1
+  - { package: k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1, resourceName: VerticalPodAutoscaler, importAlias: autoscalingk8siov1 }
+
+  # apiextensions/v1
+  - { package: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1, resourceName: CustomResourceDefinition }
+
+  # apiregistration/v1
+  - { package: k8s.io/kube-aggregator/pkg/apis/apiregistration/v1, resourceName: APIService }
+
+  # kubermatic/v1
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Addon }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: AddonConfig }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Cluster }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ClusterTemplate }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Constraint }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ConstraintTemplate }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: EtcdBackupConfig }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: GroupProjectBinding }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: KubermaticConfiguration }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Preset }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Project }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ResourceQuota }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: RuleGroup }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Seed }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: User }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: UserProjectBinding }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: UserSSHKey }
+
+  # appskubermatic/v1
+  - { package: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1, resourceName: ApplicationDefinition, importAlias: appskubermaticv1 }
+
+  # gatekeeper/v1
+  - { package: github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1, resourceName: ConstraintTemplate, importAlias: gatekeeperv1, apiVersionPrefix: Gatekeeper }
+
+  # osm/v1alpha1
+  - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemProfile }
+
+  # instancetype/v1alpha1
+  - { package: kubevirt.io/api/instancetype/v1alpha1, resourceName: VirtualMachineInstancetype }
+  - { package: kubevirt.io/api/instancetype/v1alpha1, resourceName: VirtualMachinePreference }
+
+  # cdi/v1beta1
+  - { package: kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1, resourceName: DataVolume, importAlias: cdiv1beta1 }

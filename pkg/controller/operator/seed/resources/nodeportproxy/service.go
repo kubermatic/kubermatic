@@ -35,7 +35,7 @@ const (
 )
 
 // ServiceCreator bootstraps the nodeport-proxy service object for a seed cluster resource.
-func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return ServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just

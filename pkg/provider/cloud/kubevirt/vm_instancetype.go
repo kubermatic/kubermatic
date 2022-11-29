@@ -33,7 +33,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func instancetypeCreator(instancetype *kvinstancetypev1alpha1.VirtualMachineInstancetype) reconciling.NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter {
+func instancetypeCreator(instancetype *kvinstancetypev1alpha1.VirtualMachineInstancetype) reconciling.NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeReconcilerFactory {
 	return func() (string, reconciling.KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator) {
 		return instancetype.Name, func(it *kvinstancetypev1alpha1.VirtualMachineInstancetype) (*kvinstancetypev1alpha1.VirtualMachineInstancetype, error) {
 			it.Labels = instancetype.Labels
@@ -51,7 +51,7 @@ func reconcileInstancetypes(ctx context.Context, namespace string, client ctrlru
 	instancetypes.Items = append(instancetypes.Items, GetKubermaticStandardInstancetypes(client, &kvmanifests.StandardInstancetypeGetter{})...)
 
 	for _, instancetype := range instancetypes.Items {
-		instancetypeCreators := []reconciling.NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeCreatorGetter{
+		instancetypeCreators := []reconciling.NamedKvInstancetypeV1alpha1VirtualMachineInstancetypeReconcilerFactory{
 			instancetypeCreator(&instancetype),
 		}
 		if err := reconciling.ReconcileKvInstancetypeV1alpha1VirtualMachineInstancetypes(ctx, instancetypeCreators, namespace, client); err != nil {

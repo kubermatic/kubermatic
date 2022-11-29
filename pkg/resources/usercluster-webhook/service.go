@@ -30,7 +30,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the usercluster webhook service.
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+func ServiceCreator() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.UserClusterWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.UserClusterWebhookServiceName
@@ -66,7 +66,7 @@ type tlsServingCertCreatorData interface {
 }
 
 // TLSServingCertificateCreator returns a function to create/update the secret with the machine-webhook tls certificate.
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.UserClusterWebhookServingCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

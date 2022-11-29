@@ -50,8 +50,8 @@ const (
 	pngFormat = "png"
 )
 
-func AddonConfigsCreators() []reconciling.NamedKubermaticV1AddonConfigCreatorGetter {
-	return []reconciling.NamedKubermaticV1AddonConfigCreatorGetter{
+func AddonConfigsCreators() []reconciling.NamedKubermaticV1AddonConfigReconcilerFactory {
+	return []reconciling.NamedKubermaticV1AddonConfigReconcilerFactory{
 		makeCreator(kubeStateMetricsAddonConfig),
 		makeCreator(kubeVirtAddonConfig),
 		makeCreator(kubeflowAddonConfig),
@@ -61,7 +61,7 @@ func AddonConfigsCreators() []reconciling.NamedKubermaticV1AddonConfigCreatorGet
 	}
 }
 
-func makeCreator(addonConfigCreator func() *kubermaticv1.AddonConfig) reconciling.NamedKubermaticV1AddonConfigCreatorGetter {
+func makeCreator(addonConfigCreator func() *kubermaticv1.AddonConfig) reconciling.NamedKubermaticV1AddonConfigReconcilerFactory {
 	addonConfig := addonConfigCreator()
 
 	return func() (name string, create reconciling.KubermaticV1AddonConfigCreator) {

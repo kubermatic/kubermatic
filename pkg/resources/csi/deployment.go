@@ -23,8 +23,8 @@ import (
 )
 
 // DeploymentsCreators returns the function to create and update the deployments needed for CSI.
-func DeploymentsCreators(data *resources.TemplateData) []reconciling.NamedDeploymentCreatorGetter {
-	creatorGetters := []reconciling.NamedDeploymentCreatorGetter{}
+func DeploymentsCreators(data *resources.TemplateData) []reconciling.NamedDeploymentReconcilerFactory {
+	creatorGetters := []reconciling.NamedDeploymentReconcilerFactory{}
 
 	switch {
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:

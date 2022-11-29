@@ -72,7 +72,7 @@ type machinecontrollerData interface {
 }
 
 // DeploymentCreator returns the function to create and update the machine controller deployment.
-func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
 			_, creator := DeploymentCreatorWithoutInitWrapper(data)()
@@ -93,7 +93,7 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 
 // DeploymentCreatorWithoutInitWrapper returns the function to create and update the machine controller deployment without the
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
-func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MachineControllerDeploymentName

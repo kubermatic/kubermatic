@@ -29,7 +29,7 @@ import (
 )
 
 // MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controller.
-func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
 		return resources.MachineControllerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			failurePolicy := admissionregistrationv1.Fail

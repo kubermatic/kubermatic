@@ -28,7 +28,7 @@ const (
 	AgentClusterRoleBindingName    = "flatcar-linux-update-agent"
 )
 
-func OperatorClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func OperatorClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return OperatorClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
@@ -48,7 +48,7 @@ func OperatorClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCrea
 	}
 }
 
-func AgentClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func AgentClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return AgentClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{

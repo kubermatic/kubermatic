@@ -325,10 +325,10 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.Sugared
 }
 
 // GetServiceCreators returns all service creators that are currently in use.
-func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
+func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceReconcilerFactory {
 	extName := data.Cluster().Status.Address.ExternalName
 
-	creators := []reconciling.NamedServiceCreatorGetter{
+	creators := []reconciling.NamedServiceReconcilerFactory{
 		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, extName),
 		etcd.ServiceCreator(data),
 		machinecontroller.ServiceCreator(),
@@ -362,8 +362,8 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 }
 
 // GetDeploymentCreators returns all DeploymentCreators that are currently in use.
-func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentCreatorGetter {
-	deployments := []reconciling.NamedDeploymentCreatorGetter{
+func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentReconcilerFactory {
+	deployments := []reconciling.NamedDeploymentReconcilerFactory{
 		apiserver.DeploymentCreator(data, enableAPIserverOIDCAuthentication),
 		scheduler.DeploymentCreator(data),
 		controllermanager.DeploymentCreator(data),
@@ -416,10 +416,10 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 }
 
 // GetSecretCreators returns all SecretCreators that are currently in use.
-func (r *Reconciler) GetSecretCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
+func (r *Reconciler) GetSecretCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
 	namespace := data.Cluster().Status.NamespaceName
 
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		cloudconfig.SecretCreator(data),
 		certificates.RootCACreator(data),
 		certificates.FrontProxyCACreator(),
@@ -503,9 +503,9 @@ func (r *Reconciler) GetSecretCreators(ctx context.Context, data *resources.Temp
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretCreatorGetters := r.GetSecretCreators(ctx, data)
+	namedSecretReconcilerFactorys := r.GetSecretCreators(ctx, data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
@@ -513,24 +513,24 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 }
 
 func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedServiceAccountCreatorGetters := []reconciling.NamedServiceAccountCreatorGetter{
+	namedServiceAccountReconcilerFactorys := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.ServiceAccountCreator,
 		usercluster.ServiceAccountCreator,
 		machinecontroller.ServiceAccountCreator,
 		machinecontroller.WebhookServiceAccountCreator,
 		userclusterwebhook.ServiceAccountCreator,
 	}
-	namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, csi.ServiceAccountCreators(c)...)
+	namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, csi.ServiceAccountCreators(c)...)
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
-		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, operatingsystemmanager.ServiceAccountCreator)
+		namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, operatingsystemmanager.ServiceAccountCreator)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, nodeportproxy.ServiceAccountCreator)
+		namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, nodeportproxy.ServiceAccountCreator)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %w", err)
 	}
 
@@ -538,20 +538,20 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 }
 
 func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
+	namedRoleReconcilerFactorys := []reconciling.NamedRoleReconcilerFactory{
 		usercluster.RoleCreator,
 		machinecontroller.WebhookRoleCreator,
 	}
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
-		namedRoleCreatorGetters = append(namedRoleCreatorGetters, operatingsystemmanager.RoleCreator)
+		namedRoleReconcilerFactorys = append(namedRoleReconcilerFactorys, operatingsystemmanager.RoleCreator)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedRoleCreatorGetters = append(namedRoleCreatorGetters, nodeportproxy.RoleCreator)
+		namedRoleReconcilerFactorys = append(namedRoleReconcilerFactorys, nodeportproxy.RoleCreator)
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, namedRoleReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Roles: %w", err)
 	}
 
@@ -559,35 +559,35 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 }
 
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
+	namedRoleBindingReconcilerFactorys := []reconciling.NamedRoleBindingReconcilerFactory{
 		usercluster.RoleBindingCreator,
 		machinecontroller.WebhookRoleBindingCreator,
 	}
-	namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, csi.RoleBindingsCreators(c)...)
+	namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, csi.RoleBindingsCreators(c)...)
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
-		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, operatingsystemmanager.RoleBindingCreator)
+		namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, operatingsystemmanager.RoleBindingCreator)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedRoleBindingCreatorGetters = append(namedRoleBindingCreatorGetters, nodeportproxy.RoleBindingCreator)
+		namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, nodeportproxy.RoleBindingCreator)
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %w", err)
 	}
 	return nil
 }
 
 func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedClusterRoleCreatorGetters := []reconciling.NamedClusterRoleCreatorGetter{
+	namedClusterRoleReconcilerFactorys := []reconciling.NamedClusterRoleReconcilerFactory{
 		usercluster.ClusterRole(),
 		userclusterwebhook.ClusterRole(),
 	}
 
-	namedClusterRoleCreatorGetters = append(namedClusterRoleCreatorGetters, csi.ClusterRolesCreators(c)...)
+	namedClusterRoleReconcilerFactorys = append(namedClusterRoleReconcilerFactorys, csi.ClusterRolesCreators(c)...)
 
-	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleReconcilerFactorys, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
 	}
 
@@ -595,11 +595,11 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 }
 
 func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
-	namedClusterRoleBindingsCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{
+	namedClusterRoleBindingsReconcilerFactorys := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		usercluster.ClusterRoleBinding(namespace),
 		userclusterwebhook.ClusterRoleBinding(namespace),
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsCreatorGetters, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsReconcilerFactorys, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Role Bindings: %w", err)
 	}
 
@@ -608,7 +608,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 
 func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
-		namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
+		namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
 			apiserver.DenyAllPolicyCreator(),
 			apiserver.DNSAllowCreator(c, data),
 			apiserver.EctdAllowCreator(c),
@@ -629,9 +629,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				return fmt.Errorf("failed to resolve cluster external name %q: %w", extName, err)
 			}
 
-			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.ClusterExternalAddrAllowCreator(ipList, c.Spec.ExposeStrategy))
+			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.ClusterExternalAddrAllowCreator(ipList, c.Spec.ExposeStrategy))
 		} else {
-			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters,
+			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys,
 				apiserver.OpenVPNServerAllowCreator(c),
 				apiserver.MetricsServerAllowCreator(c),
 			)
@@ -654,10 +654,10 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
 			}
 
-			namedNetworkPolicyCreatorGetters = append(namedNetworkPolicyCreatorGetters, apiserver.OIDCIssuerAllowCreator(ipList))
+			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.OIDCIssuerAllowCreator(ipList))
 		}
 
-		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
 	}
@@ -666,8 +666,8 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 }
 
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use.
-func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
-	creators := []reconciling.NamedConfigMapCreatorGetter{
+func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		apiserver.AuditConfigMapCreator(data),
 		apiserver.AdmissionControlCreator(data),
 		apiserver.CABundleCreator(data),
@@ -697,23 +697,23 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 }
 
 // GetStatefulSetCreators returns all StatefulSetCreators that are currently in use.
-func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetCreatorGetter {
-	return []reconciling.NamedStatefulSetCreatorGetter{
+func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetReconcilerFactory {
+	return []reconciling.NamedStatefulSetReconcilerFactory{
 		etcd.StatefulSetCreator(data, enableDataCorruptionChecks, enableTLSOnly),
 	}
 }
 
 // GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use.
-func GetEtcdBackupConfigCreators(data *resources.TemplateData, seed *kubermaticv1.Seed) []reconciling.NamedEtcdBackupConfigCreatorGetter {
-	creators := []reconciling.NamedEtcdBackupConfigCreatorGetter{
+func GetEtcdBackupConfigCreators(data *resources.TemplateData, seed *kubermaticv1.Seed) []reconciling.NamedEtcdBackupConfigReconcilerFactory {
+	creators := []reconciling.NamedEtcdBackupConfigReconcilerFactory{
 		etcd.BackupConfigCreator(data, seed),
 	}
 	return creators
 }
 
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use.
-func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		etcd.PodDisruptionBudgetCreator(data),
 		apiserver.PodDisruptionBudgetCreator(),
 	}
@@ -742,8 +742,8 @@ func (r *Reconciler) ensurePodDisruptionBudgets(ctx context.Context, c *kubermat
 }
 
 // GetCronJobCreators returns all CronJobCreators that are currently in use.
-func GetCronJobCreators(data *resources.TemplateData) []reconciling.NamedCronJobCreatorGetter {
-	return []reconciling.NamedCronJobCreatorGetter{
+func GetCronJobCreators(data *resources.TemplateData) []reconciling.NamedCronJobReconcilerFactory {
+	return []reconciling.NamedCronJobReconcilerFactory{
 		etcd.CronJobCreator(data),
 	}
 }

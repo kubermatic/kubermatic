@@ -27,7 +27,7 @@ const (
 	AgentClusterRoleName    = "flatcar-linux-update-agent"
 )
 
-func OperatorClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func OperatorClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return OperatorClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
@@ -90,7 +90,7 @@ func OperatorClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-func AgentClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
+func AgentClusterRoleCreator() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return AgentClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{

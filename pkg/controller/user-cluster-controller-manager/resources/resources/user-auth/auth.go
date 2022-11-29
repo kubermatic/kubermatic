@@ -29,7 +29,7 @@ const (
 )
 
 // ServiceAccountCreator returns a func to create/update the ServiceAccount used by the cluster user.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -38,7 +38,7 @@ func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 }
 
 // ClusterRoleBindingCreator returns a func to create/update the ClusterRoleBinding which will give the "external-admin-user" full admin access.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return "external-admin-user", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{

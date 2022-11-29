@@ -44,7 +44,7 @@ const (
 	EnvoyTunnelingPort    = 8088
 )
 
-func EnvoyDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func EnvoyDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(3)
@@ -220,7 +220,7 @@ func hostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
 	}
 }
 
-func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	maxUnavailable := intstr.FromInt(1)
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return EnvoyDeploymentName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
@@ -235,7 +235,7 @@ func EnvoyPDBCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	}
 }
 
-func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
+func UpdaterDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return UpdaterDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)

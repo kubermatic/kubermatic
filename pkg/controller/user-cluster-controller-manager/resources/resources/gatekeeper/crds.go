@@ -56,7 +56,7 @@ var (
 )
 
 // ConfigCRDCreator returns the gatekeeper config CRD definition.
-func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConfigCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -78,7 +78,7 @@ func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 }
 
 // ConstraintTemplateCRDCreator returns the gatekeeper constraintTemplate CRD definition.
-func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplateCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -100,7 +100,7 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 }
 
 // ConstraintPodStatusCRDCreator returns the gatekeeper ConstraintPodStatus CRD definition.
-func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -122,7 +122,7 @@ func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCr
 }
 
 // ConstraintTemplatePodStatusCRDCreator returns the gatekeeper ConstraintTemplatePodStatus CRD definition.
-func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperConstraintTemplatePodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -143,7 +143,7 @@ func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefi
 	}
 }
 
-func MutatorPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func MutatorPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperMutatorPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -164,7 +164,7 @@ func MutatorPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreat
 	}
 }
 
-func AssignCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func AssignCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperAssignCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -185,7 +185,7 @@ func AssignCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	}
 }
 
-func AssignMetadataCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func AssignMetadataCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperAssignMetadataCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -206,7 +206,7 @@ func AssignMetadataCRDCreator() reconciling.NamedCustomResourceDefinitionCreator
 	}
 }
 
-func ModifySetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func ModifySetCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperModifySetCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
@@ -227,7 +227,7 @@ func ModifySetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGette
 	}
 }
 
-func ProviderCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+func ProviderCRDCreator() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionCreator) {
 		return resources.GatekeeperProviderCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition

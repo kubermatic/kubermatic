@@ -31,7 +31,7 @@ type pdbData interface {
 }
 
 // PodDisruptionBudgetCreator returns a func to create/update the etcd PodDisruptionBudget.
-func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func PodDisruptionBudgetCreator(data pdbData) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	return func() (string, reconciling.PodDisruptionBudgetCreator) {
 		return resources.EtcdPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt((int(getClusterSize(data.Cluster().Spec.ComponentsOverride.Etcd)) / 2) + 1)

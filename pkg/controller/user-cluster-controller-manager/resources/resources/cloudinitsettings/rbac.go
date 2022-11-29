@@ -29,7 +29,7 @@ const (
 	roleBindingName    = "cloud-init-getter"
 )
 
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -37,7 +37,7 @@ func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	}
 }
 
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
+func RoleCreator() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleCreator) {
 		return roleName,
 			func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -56,7 +56,7 @@ func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
+func RoleBindingCreator() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{

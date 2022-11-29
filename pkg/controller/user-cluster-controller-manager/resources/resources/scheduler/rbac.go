@@ -22,11 +22,11 @@ import (
 )
 
 // RoleBindingAuthDelegator creates the RoleBinding which is needed for extension apiserver which do auth delegation.
-func RoleBindingAuthDelegator() reconciling.NamedRoleBindingCreatorGetter {
+func RoleBindingAuthDelegator() reconciling.NamedRoleBindingReconcilerFactory {
 	return resources.RoleBindingAuthenticationReaderCreator("system:kube-scheduler")
 }
 
 // ClusterRoleBindingAuthDelegatorCreator creates the ClusterRoleBinding which is needed for extension apiserver which do auth delegation.
-func ClusterRoleBindingAuthDelegatorCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingAuthDelegatorCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return resources.ClusterRoleBindingAuthDelegatorCreator("system:kube-scheduler")
 }

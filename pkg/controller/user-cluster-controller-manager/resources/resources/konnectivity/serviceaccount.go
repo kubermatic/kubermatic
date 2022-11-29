@@ -24,7 +24,7 @@ import (
 )
 
 // ServiceAccountCreator returns a func to create/update the ServiceAccount used by konnectivity agents.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.KonnectivityServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)

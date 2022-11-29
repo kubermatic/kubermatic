@@ -177,7 +177,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to retrieve credentials secret: %w", err)
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		secretCreator(secret),
 	}
 
@@ -188,7 +188,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return nil, nil
 }
 
-func secretCreator(original *corev1.Secret) reconciling.NamedSecretCreatorGetter {
+func secretCreator(original *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
 	return func() (name string, create reconciling.SecretCreator) {
 		return resources.ClusterCloudCredentialsSecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Data = original.Data

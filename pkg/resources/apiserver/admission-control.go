@@ -65,7 +65,7 @@ type EventLimit struct {
 	CacheSize int32  `yaml:"cacheSize,omitempty"`
 }
 
-func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
+func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.AdmissionControlConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {

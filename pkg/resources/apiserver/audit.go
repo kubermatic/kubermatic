@@ -147,7 +147,7 @@ const fluentBitConfigTemplate = `
 
 `
 
-func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
+func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			// set the audit policy preset so we generate a ConfigMap in any case.
@@ -173,9 +173,9 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 	}
 }
 
-// FluentBitSecretCreator returns a reconciling.NamedSecretCreatorGetter for a secret that contains
+// FluentBitSecretCreator returns a reconciling.NamedSecretReconcilerFactory for a secret that contains
 // fluent-bit configuration for the audit-logs sidecar.
-func FluentBitSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+func FluentBitSecretCreator(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.FluentBitSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			if secret.Data == nil {

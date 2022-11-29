@@ -250,7 +250,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 	// a standalone cluster, no problem, the webhook Deployment will simply be deleted when
 	// the kubermatic namespace is deleted. On shared seeds though the master-operator will
 	// continue to reconcile the Deployment, but would itself not remove the -seed-name flag.
-	creators := []reconciling.NamedDeploymentCreatorGetter{
+	creators := []reconciling.NamedDeploymentReconcilerFactory{
 		common.WebhookDeploymentCreator(cfg, r.versions, nil, true), // true is the important thing here
 	}
 
@@ -354,7 +354,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling CRDs")
 
-	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{}
+	creators := []reconciling.NamedCustomResourceDefinitionReconcilerFactory{}
 
 	groups, err := crd.Groups()
 	if err != nil {
@@ -386,7 +386,7 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Kubermatic ServiceAccounts")
 
-	creators := []reconciling.NamedServiceAccountCreatorGetter{
+	creators := []reconciling.NamedServiceAccountReconcilerFactory{
 		kubermaticseed.ServiceAccountCreator(cfg, seed),
 		common.WebhookServiceAccountCreator(cfg),
 	}
@@ -400,7 +400,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 	}
 
 	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
-		creators := []reconciling.NamedServiceAccountCreatorGetter{
+		creators := []reconciling.NamedServiceAccountReconcilerFactory{
 			vpa.RecommenderServiceAccountCreator(),
 			vpa.UpdaterServiceAccountCreator(),
 			vpa.AdmissionControllerServiceAccountCreator(),
@@ -418,7 +418,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Roles")
 
-	creators := []reconciling.NamedRoleCreatorGetter{
+	creators := []reconciling.NamedRoleReconcilerFactory{
 		common.WebhookRoleCreator(cfg),
 	}
 
@@ -436,7 +436,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.Kuber
 func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling RoleBindings")
 
-	creators := []reconciling.NamedRoleBindingCreatorGetter{
+	creators := []reconciling.NamedRoleBindingReconcilerFactory{
 		common.WebhookRoleBindingCreator(cfg),
 	}
 
@@ -454,7 +454,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv
 func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoles")
 
-	creators := []reconciling.NamedClusterRoleCreatorGetter{
+	creators := []reconciling.NamedClusterRoleReconcilerFactory{
 		common.WebhookClusterRoleCreator(cfg),
 	}
 
@@ -476,7 +476,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, cfg *kubermaticv
 func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoleBindings")
 
-	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
+	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		kubermaticseed.ClusterRoleBindingCreator(cfg, seed),
 		common.WebhookClusterRoleBindingCreator(cfg),
 	}
@@ -499,7 +499,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *kube
 func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
 	log.Debug("reconciling ConfigMaps")
 
-	creators := []reconciling.NamedConfigMapCreatorGetter{
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		kubermaticseed.CABundleConfigMapCreator(caBundle),
 	}
 
@@ -513,7 +513,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Secrets")
 
-	creators := []reconciling.NamedSecretCreatorGetter{
+	creators := []reconciling.NamedSecretReconcilerFactory{
 		common.WebhookServingCASecretCreator(cfg),
 		common.WebhookServingCertSecretCreator(ctx, cfg, client),
 	}
@@ -527,7 +527,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.Kub
 	}
 
 	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
-		creators := []reconciling.NamedSecretCreatorGetter{
+		creators := []reconciling.NamedSecretReconcilerFactory{
 			vpa.AdmissionControllerServingCertCreator(),
 		}
 
@@ -543,7 +543,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.Kub
 func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
 	log.Debug("reconciling Deployments")
 
-	creators := []reconciling.NamedDeploymentCreatorGetter{
+	creators := []reconciling.NamedDeploymentReconcilerFactory{
 		kubermaticseed.SeedControllerManagerDeploymentCreator(r.workerName, r.versions, cfg, seed),
 		common.WebhookDeploymentCreator(cfg, r.versions, seed, false),
 	}
@@ -577,7 +577,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 	}
 
 	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
-		creators = []reconciling.NamedDeploymentCreatorGetter{
+		creators = []reconciling.NamedDeploymentReconcilerFactory{
 			vpa.RecommenderDeploymentCreator(cfg, r.versions),
 			vpa.UpdaterDeploymentCreator(cfg, r.versions),
 			vpa.AdmissionControllerDeploymentCreator(cfg, r.versions),
@@ -595,7 +595,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling PodDisruptionBudgets")
 
-	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
+	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		kubermaticseed.SeedControllerManagerPDBCreator(cfg),
 	}
 
@@ -613,7 +613,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *kub
 func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Services")
 
-	creators := []reconciling.NamedServiceCreatorGetter{
+	creators := []reconciling.NamedServiceReconcilerFactory{
 		common.WebhookServiceCreator(cfg, client),
 	}
 
@@ -625,7 +625,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 	// the Seed resource, the current LoadBalancer IP is not lost. To be truly destructive, users would need to
 	// remove the entire Kubermatic namespace.
 	if !seed.Spec.NodeportProxy.Disable {
-		creators = []reconciling.NamedServiceCreatorGetter{
+		creators = []reconciling.NamedServiceReconcilerFactory{
 			nodeportproxy.ServiceCreator(seed),
 		}
 
@@ -635,7 +635,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 	}
 
 	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
-		creators := []reconciling.NamedServiceCreatorGetter{
+		creators := []reconciling.NamedServiceReconcilerFactory{
 			vpa.AdmissionControllerServiceCreator(),
 		}
 
@@ -651,7 +651,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Admission Webhooks")
 
-	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+	validatingWebhookCreators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		common.SeedAdmissionWebhookCreator(ctx, cfg, client),
 		common.KubermaticConfigurationAdmissionWebhookCreator(ctx, cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationCreator(ctx, cfg, client),
@@ -665,7 +665,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		return fmt.Errorf("failed to reconcile validating Admission Webhooks: %w", err)
 	}
 
-	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
+	mutatingWebhookCreators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		kubermaticseed.ClusterMutatingWebhookConfigurationCreator(ctx, cfg, client),
 		kubermaticseed.AddonMutatingWebhookConfigurationCreator(ctx, cfg, client),
 		kubermaticseed.MLAAdminSettingMutatingWebhookConfigurationCreator(ctx, cfg, client),

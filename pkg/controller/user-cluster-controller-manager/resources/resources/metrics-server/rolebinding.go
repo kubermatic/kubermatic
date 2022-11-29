@@ -25,7 +25,7 @@ import (
 )
 
 // RolebindingAuthReaderCreator returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API.
-func RolebindingAuthReaderCreator(isKonnectivityEnabled bool) reconciling.NamedRoleBindingCreatorGetter {
+func RolebindingAuthReaderCreator(isKonnectivityEnabled bool) reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.MetricsServerAuthReaderRoleName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(Name, nil)

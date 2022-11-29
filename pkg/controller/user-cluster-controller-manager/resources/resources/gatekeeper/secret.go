@@ -24,7 +24,7 @@ import (
 )
 
 // SecretCreator creates the secret for gatekeeper webhook controller.
-func SecretCreator() reconciling.NamedSecretCreatorGetter {
+func SecretCreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.GatekeeperWebhookServerCertSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Labels = resources.BaseAppLabels(resources.GatekeeperControllerDeploymentName, map[string]string{"gatekeeper.sh/system": "yes"})

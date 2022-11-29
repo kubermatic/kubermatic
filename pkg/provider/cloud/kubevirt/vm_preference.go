@@ -27,7 +27,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func preferenceCreator(preference *kvinstancetypev1alpha1.VirtualMachinePreference) reconciling.NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter {
+func preferenceCreator(preference *kvinstancetypev1alpha1.VirtualMachinePreference) reconciling.NamedKvInstancetypeV1alpha1VirtualMachinePreferenceReconcilerFactory {
 	return func() (string, reconciling.KvInstancetypeV1alpha1VirtualMachinePreferenceCreator) {
 		return preference.Name, func(p *kvinstancetypev1alpha1.VirtualMachinePreference) (*kvinstancetypev1alpha1.VirtualMachinePreference, error) {
 			p.Labels = preference.Labels
@@ -45,7 +45,7 @@ func reconcilePreferences(ctx context.Context, namespace string, client ctrlrunt
 	prefs.Items = append(prefs.Items, GetKubermaticStandardPreferences(client, &kvmanifests.StandardPreferenceGetter{})...)
 
 	for _, pref := range prefs.Items {
-		preferenceCreators := []reconciling.NamedKvInstancetypeV1alpha1VirtualMachinePreferenceCreatorGetter{
+		preferenceCreators := []reconciling.NamedKvInstancetypeV1alpha1VirtualMachinePreferenceReconcilerFactory{
 			preferenceCreator(&pref),
 		}
 		if err := reconciling.ReconcileKvInstancetypeV1alpha1VirtualMachinePreferences(ctx, preferenceCreators, namespace, client); err != nil {

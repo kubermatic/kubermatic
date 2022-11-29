@@ -11,7 +11,7 @@ The following will describe how we structure the code in Kubermatic to achieve a
     2. [EnsureNamedObject](#ensurenamedobject)
 3. [Typed reconcile functions](#reconcilesecrets-aka-reduce-the-type-casting)
     1. [SecretCreator](#secretcreator)
-    2. [NamedSecretCreatorGetter](#namedsecretcreatorgetter)
+    2. [NamedSecretReconcilerFactory](#namedsecretcreatorgetter)
     3. [Example](#example-namedsecretcreator-implementation)
     4. [Example with data](#template-data)
     5. [Reconcile creators inside a controller](#reconcile-the-resources-in-a-controller)
@@ -90,33 +90,33 @@ It offers:
 - Automatic nil checks & struct initialization
 - Informer allocation from a passed in `InformerFactory`
 - Unified modifier functions to allow to apply certain modifications to all passed in `SecretCreator` functions
-- Setting resource name based on the name coming from the `NamedSecretCreatorGetter`
+- Setting resource name based on the name coming from the `NamedSecretReconcilerFactory`
 
 
 ```go
-func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error
+func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretReconcilerFactory, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error
 ```
 
 ### SecretCreator
 
-A typed creator function. Prefer the [NamedSecretCreatorGetter](#namedsecretcreatorgetter) instead.
+A typed creator function. Prefer the [NamedSecretReconcilerFactory](#namedsecretcreatorgetter) instead.
 ```go
 type SecretCreator = func(existing *corev1.Secret) (*corev1.Secret, error)
 ```
 
-### NamedSecretCreatorGetter
+### NamedSecretReconcilerFactory
 
-The `NamedSecretCreatorGetter` is a simple function definition to combine the name of the resource + the creator function.
+The `NamedSecretReconcilerFactory` is a simple function definition to combine the name of the resource + the creator function.
 This avoids the need to call the creator function twice (1st time to get the objects name + second time to get the actual creator)
 
 ```go
-type NamedSecretCreatorGetter = func() (name string, create SecretCreator)
+type NamedSecretReconcilerFactory = func() (name string, create SecretCreator)
 ```
 
 ### Example NamedSecretCreator implementation
 
 ```go
-func MyWonderfulSecretCreator() reconciling.NamedSecretCreatorGetter {
+func MyWonderfulSecretCreator() reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return "my-wonderful-secret", func(existing *corev1.Secret) (*corev1.Secret, error) {
 
@@ -141,7 +141,7 @@ As the creator function does not allow passing it arbitrary data, data must be i
 This avoids to have controller specific creator functions.
 
 ```go
-func MyWonderfulSecretCreator(data dataProvider) reconciling.NamedSecretCreatorGetter {
+func MyWonderfulSecretCreator(data dataProvider) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return "my-wonderful-secret", func(existing *corev1.Secret) (*corev1.Secret, error) {
 
@@ -160,7 +160,7 @@ func MyWonderfulSecretCreator(data dataProvider) reconciling.NamedSecretCreatorG
 ### Reconcile the resources in a controller
 
 ```go
-creators := []NamedSecretCreatorGetter{
+creators := []NamedSecretReconcilerFactory{
 	MyWonderfulSecretCreator(data)
 }
 

@@ -24,7 +24,7 @@ import (
 )
 
 // ServiceAccountCreator creates the service account for Node Local DNS cache.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.NodeLocalDNSServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			if sa.Labels == nil {

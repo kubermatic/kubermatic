@@ -38,7 +38,7 @@ var (
 	deploymentMaxUnavailable       = intstr.FromString("25%")
 )
 
-func OperatorDeploymentCreator(imageRewriter registry.ImageRewriter, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
+func OperatorDeploymentCreator(imageRewriter registry.ImageRewriter, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return OperatorDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = &deploymentReplicas

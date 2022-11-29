@@ -44,7 +44,7 @@ type creatorData interface {
 }
 
 // SecretCreator returns a function to create the Secret containing the cloud-config.
-func SecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
+func SecretCreator(data creatorData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.CloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
 			if cm.Data == nil {
@@ -70,7 +70,7 @@ func SecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
 	}
 }
 
-func KubeVirtInfraSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
+func KubeVirtInfraSecretCreator(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (name string, create reconciling.SecretCreator) {
 		return resources.KubeVirtInfraSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

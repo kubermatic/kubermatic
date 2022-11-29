@@ -115,7 +115,7 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 		return fmt.Errorf("failed to prune ClusterRoleBindings: %w", err)
 	}
 
-	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{}
+	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingReconcilerFactory{}
 
 	for _, clusterRole := range clusterRoles {
 		clusterRoleBindingCreators = append(clusterRoleBindingCreators, clusterRoleBindingCreator(*binding, clusterRole))
@@ -139,7 +139,7 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 	}
 
 	for ns, roles := range rolesMap {
-		roleBindingCreators := []reconciling.NamedRoleBindingCreatorGetter{}
+		roleBindingCreators := []reconciling.NamedRoleBindingReconcilerFactory{}
 		for _, role := range roles {
 			roleBindingCreators = append(roleBindingCreators, roleBindingCreator(*binding, role))
 		}

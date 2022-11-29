@@ -45,7 +45,7 @@ func ClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-master:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
-func UIConfigConfigMapCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedConfigMapCreatorGetter {
+func UIConfigConfigMapCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return uiConfigConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if c.Data == nil {
@@ -59,7 +59,7 @@ func UIConfigConfigMapCreator(cfg *kubermaticv1.KubermaticConfiguration) reconci
 	}
 }
 
-func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceAccountCreatorGetter {
+func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -67,7 +67,7 @@ func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 	}
 }
 
-func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	name := ClusterRoleBindingName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
@@ -91,7 +91,7 @@ func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 	}
 }
 
-func IngressCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedIngressCreatorGetter {
+func IngressCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedIngressReconcilerFactory {
 	return func() (string, reconciling.IngressCreator) {
 		return ingressName, func(i *networkingv1.Ingress) (*networkingv1.Ingress, error) {
 			if i.Annotations == nil {

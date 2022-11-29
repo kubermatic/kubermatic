@@ -28,8 +28,8 @@ import (
 )
 
 // SecretsCreators returns the function to create and update the secrets needed for CSI.
-func SecretsCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
-	creatorGetters := []reconciling.NamedSecretCreatorGetter{}
+func SecretsCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
+	creatorGetters := []reconciling.NamedSecretReconcilerFactory{}
 
 	switch {
 	case data.Cluster().Spec.Cloud.VSphere != nil:

@@ -59,7 +59,7 @@ const (
 )
 
 // DeploymentCreator returns the function to create and update the API server deployment.
-func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentReconcilerFactory {
 	enableEncryptionConfiguration := data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()
 
 	return func() (string, reconciling.DeploymentCreator) {

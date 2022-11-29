@@ -40,7 +40,7 @@ type cronJobCreatorData interface {
 }
 
 // CronJobCreator returns the func to create/update the etcd defragger cronjob.
-func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGetter {
+func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobReconcilerFactory {
 	return func() (string, reconciling.CronJobCreator) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			command, err := defraggerCommand(data)

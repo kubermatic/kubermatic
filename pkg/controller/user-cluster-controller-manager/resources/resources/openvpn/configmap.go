@@ -30,7 +30,7 @@ const (
 )
 
 // ClientConfigConfigMapCreator returns a ConfigMap containing the config for the OpenVPN client. It lives inside the user-cluster.
-func ClientConfigConfigMapCreator(hostname string, serverPort uint32) reconciling.NamedConfigMapCreatorGetter {
+func ClientConfigConfigMapCreator(hostname string, serverPort uint32) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.OpenVPNClientConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {

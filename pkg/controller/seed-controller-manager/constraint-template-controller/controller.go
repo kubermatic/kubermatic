@@ -160,12 +160,12 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	ctCreatorGetters := []reconciling.NamedConstraintTemplateCreatorGetter{
-		constraintTemplateCreatorGetter(constraintTemplate),
+	ctReconcilerFactorys := []reconciling.NamedConstraintTemplateReconcilerFactory{
+		constraintTemplateReconcilerFactory(constraintTemplate),
 	}
 
 	return r.syncAllClusters(ctx, log, constraintTemplate, func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-		return reconciling.ReconcileConstraintTemplates(ctx, ctCreatorGetters, "", userClusterClient)
+		return reconciling.ReconcileConstraintTemplates(ctx, ctReconcilerFactorys, "", userClusterClient)
 	})
 }
 
@@ -220,7 +220,7 @@ func (r *reconciler) syncAllClusters(
 	return nil
 }
 
-func constraintTemplateCreatorGetter(kubeCT *kubermaticv1.ConstraintTemplate) reconciling.NamedConstraintTemplateCreatorGetter {
+func constraintTemplateReconcilerFactory(kubeCT *kubermaticv1.ConstraintTemplate) reconciling.NamedConstraintTemplateReconcilerFactory {
 	return func() (string, reconciling.ConstraintTemplateCreator) {
 		return kubeCT.Name, func(ct *v1.ConstraintTemplate) (*v1.ConstraintTemplate, error) {
 			ct.Name = kubeCT.Name

@@ -49,7 +49,7 @@ var (
 	}
 )
 
-func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func kubevirtDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentCreator) {
 		return KubeVirtCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = KubeVirtCCMDeploymentName

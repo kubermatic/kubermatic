@@ -24,7 +24,7 @@ import (
 )
 
 // VMwareCloudDirectorCSIConfig stores the VMware Cloud Director CSI configuration.
-func VMwareCloudDirectorCSIConfig(cloudConfig []byte) reconciling.NamedConfigMapCreatorGetter {
+func VMwareCloudDirectorCSIConfig(cloudConfig []byte) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.VMwareCloudDirectorCSIConfigConfigMapName, func(existing *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if existing.Data == nil {

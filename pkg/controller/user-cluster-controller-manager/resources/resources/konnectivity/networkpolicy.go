@@ -25,7 +25,7 @@ import (
 )
 
 // NetworkPolicyCreator NetworkPolicy allows all egress traffic.
-func NetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
+func NetworkPolicyCreator() reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "konnectivity", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{

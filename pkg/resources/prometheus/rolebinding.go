@@ -24,7 +24,7 @@ import (
 )
 
 // RoleBindingCreator returns the func to create/update the RoleBinding for Prometheus.
-func RoleBindingCreator(clusterNamespace string) reconciling.NamedRoleBindingCreatorGetter {
+func RoleBindingCreator(clusterNamespace string) reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingCreator) {
 		return resources.PrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(name, nil)

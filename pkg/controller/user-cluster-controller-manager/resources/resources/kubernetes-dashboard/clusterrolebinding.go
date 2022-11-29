@@ -25,7 +25,7 @@ import (
 
 // ClusterRoleBindingCreator returns the ClusterRoleBinding required by the dashboard metrics scraper to
 // read all required resources from the metrics server.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
+func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.MetricsScraperClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(scraperName, nil)

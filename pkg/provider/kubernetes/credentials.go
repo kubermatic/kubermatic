@@ -92,12 +92,12 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 }
 
 func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := credentialSecretCreatorGetter(cluster.GetSecretName(), cluster.Labels, secretData)
+	creator, err := credentialSecretReconcilerFactory(cluster.GetSecretName(), cluster.Labels, secretData)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, resources.KubermaticNamespace, seedClient); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretReconcilerFactory{creator}, resources.KubermaticNamespace, seedClient); err != nil {
 		return nil, err
 	}
 
@@ -109,7 +109,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	}, nil
 }
 
-func credentialSecretCreatorGetter(secretName string, clusterLabels map[string]string, secretData map[string][]byte) (reconciling.NamedSecretCreatorGetter, error) {
+func credentialSecretReconcilerFactory(secretName string, clusterLabels map[string]string, secretData map[string][]byte) (reconciling.NamedSecretReconcilerFactory, error) {
 	projectID := clusterLabels[kubermaticv1.ProjectIDLabelKey]
 	if len(projectID) == 0 {
 		return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
@@ -547,13 +547,13 @@ func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Cont
 }
 
 func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := credentialSecretCreatorGetter(secretName, externalcluster.Labels, secretData)
+	creator, err := credentialSecretReconcilerFactory(secretName, externalcluster.Labels, secretData)
 	if err != nil {
 		return nil, err
 	}
 
 	kubeOneNamespaceName := GetKubeOneNamespaceName(externalcluster.Name)
-	creators := []reconciling.NamedSecretCreatorGetter{creator}
+	creators := []reconciling.NamedSecretReconcilerFactory{creator}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, kubeOneNamespaceName, masterClient); err != nil {
 		return nil, err

@@ -88,7 +88,7 @@ func Add(masterMgr manager.Manager,
 	return nil
 }
 
-func resourceQuotaLabelOwnerRefCreatorGetter(rq *kubermaticv1.ResourceQuota) reconciling.NamedKubermaticV1ResourceQuotaCreatorGetter {
+func resourceQuotaLabelOwnerRefReconcilerFactory(rq *kubermaticv1.ResourceQuota) reconciling.NamedKubermaticV1ResourceQuotaReconcilerFactory {
 	return func() (string, reconciling.KubermaticV1ResourceQuotaCreator) {
 		return rq.Name, func(c *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
 			// ensure labels and owner ref
@@ -134,11 +134,11 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 			return err
 		}
 	}
-	resourceQuotaMasterCreatorGetters := []reconciling.NamedKubermaticV1ResourceQuotaCreatorGetter{
-		resourceQuotaLabelOwnerRefCreatorGetter(resourceQuota),
+	resourceQuotaMasterReconcilerFactorys := []reconciling.NamedKubermaticV1ResourceQuotaReconcilerFactory{
+		resourceQuotaLabelOwnerRefReconcilerFactory(resourceQuota),
 	}
 
-	return reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaMasterCreatorGetters, "", r.masterClient)
+	return reconciling.ReconcileKubermaticV1ResourceQuotas(ctx, resourceQuotaMasterReconcilerFactorys, "", r.masterClient)
 }
 
 func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {

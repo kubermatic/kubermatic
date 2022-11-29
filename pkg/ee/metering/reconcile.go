@@ -90,7 +90,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	}
 
 	config := lifecycle.NewConfiguration()
-	var cronJobs []reconciling.NamedCronJobCreatorGetter
+	var cronJobs []reconciling.NamedCronJobReconcilerFactory
 
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
 		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, overwriter, seed.Namespace))
