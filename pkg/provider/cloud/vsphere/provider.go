@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -147,8 +148,10 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 
 // DefaultCloudSpec adds defaults to the cloud spec.
 func (v *VSphere) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.CloudSpec) error {
-	if spec.VSphere.TagCategoryID == "" {
-		spec.VSphere.TagCategoryID = v.dc.DefaultTagCategoryID
+	if spec.VSphere.TagCategory == nil {
+		spec.VSphere.TagCategory = &kubermaticv1.TagCategory{
+			TagCategoryID: v.dc.DefaultTagCategoryID,
+		}
 	}
 
 	return nil
@@ -200,16 +203,29 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 		}
 	}
 
-	if tagCategoryID := spec.VSphere.TagCategoryID; tagCategoryID != "" {
+	if tagCategory := spec.VSphere.TagCategory; tagCategory != nil {
+		if tagCategory.TagCategoryID == "" && tagCategory.TagCategoryName == "" {
+			return errors.New("either tag category id or tag category name should be specified, when tagCategory field is set")
+		}
+
 		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return fmt.Errorf("failed to create REST client session: %w", err)
 		}
 		defer restSession.Logout(ctx)
 
-		tagManager := tags.NewManager(restSession.Client)
-		if _, err := tagManager.GetCategory(ctx, tagCategoryID); err != nil {
-			return fmt.Errorf("failed to get tag categories %w", err)
+		if tagCategory.TagCategoryID != "" {
+			tagManager := tags.NewManager(restSession.Client)
+			if _, err := tagManager.GetCategory(ctx, tagCategory.TagCategoryID); err != nil {
+				return fmt.Errorf("failed to get tag categories %w", err)
+			}
+		}
+
+		if tagCategory.TagCategoryName != "" {
+			tagManager := tags.NewManager(restSession.Client)
+			if _, err := tagManager.GetCategory(ctx, tagCategory.TagCategoryName); err != nil {
+				return fmt.Errorf("failed to get tag categories %w", err)
+			}
 		}
 	}
 

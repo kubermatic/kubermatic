@@ -1034,7 +1034,7 @@ type VSphereCloudSpec struct {
 // ownership tag, where this tag is applied on any vSphere resource that is created by KKP.
 type TagCategory struct {
 	// TagCategoryName represents the name of vSphere tag category that will be used to create and attach tags on VMS.
-	TagCategoryName string `json:"tagCategoryName"`
+	TagCategoryName string `json:"tagCategoryName,omitempty"`
 	// TagCategoryID represents the category id for the machine deployment tags.
 	TagCategoryID string `json:"tagCategoryID,omitempty"`
 }
