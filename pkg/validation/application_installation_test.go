@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
@@ -84,6 +85,36 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 				}(),
 			}, expectedError: `[spec.applicationRef.version: Not found: "3.2.3"]`,
 		},
+		{
+			name: "Create ApplicationInstallation Success - ReconciliationInterval equals 0",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.ReconciliationInterval = metav1.Duration{Duration: 0}
+					return *spec
+				}(),
+			}, expectedError: `[]`,
+		},
+		{
+			name: "Create ApplicationInstallation Success - ReconciliationInterval greater than 0",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.ReconciliationInterval = metav1.Duration{Duration: 10 * time.Minute}
+					return *spec
+				}(),
+			}, expectedError: `[]`,
+		},
+		{
+			name: "Create ApplicationInstallation Failure - Invalid ReconciliationInterval less than 0",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.ReconciliationInterval = metav1.Duration{Duration: -10}
+					return *spec
+				}(),
+			}, expectedError: `[spec.reconciliationInterval: Invalid value: "-10ns": should be a positive value, or zero to disable]`,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -140,7 +171,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					return *spec
 				}(),
 			},
-			expectedError: `[spec.namespace.name: Invalid value: "default": field is immutable]`,
+			expectedError: `[spec.namespace.name: Invalid value: "invalid": field is immutable]`,
 		},
 		{
 			name: "Update ApplicationInstallation Failure - .ApplicationRef.Name is immutable",
@@ -152,13 +183,49 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					return *spec
 				}(),
 			},
-			expectedError: `[spec.applicationRef.name: Invalid value: "app": field is immutable]`,
+			expectedError: `[spec.applicationRef.name: Invalid value: "updated-app": field is immutable]`,
+		},
+		{
+			name: "Update ApplicationInstallation Success - ReconciliationInterval equals 0",
+			ai:   ai,
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.ReconciliationInterval = metav1.Duration{Duration: 0}
+					return *spec
+				}(),
+			},
+			expectedError: "[]",
+		},
+		{
+			name: "Update ApplicationInstallation Success - ReconciliationInterval greater than 0",
+			ai:   ai,
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.ReconciliationInterval = metav1.Duration{Duration: 10 * time.Minute}
+					return *spec
+				}(),
+			},
+			expectedError: "[]",
+		},
+		{
+			name: "Update ApplicationInstallation Failure - Invalid ReconciliationInterval less than 0",
+			ai:   ai,
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.ReconciliationInterval = metav1.Duration{Duration: -10}
+					return *spec
+				}(),
+			},
+			expectedError: `[spec.reconciliationInterval: Invalid value: "-10ns": should be a positive value, or zero to disable]`,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := ValidateApplicationInstallationUpdate(context.Background(), fakeClient, *testCase.ai, *testCase.updatedAI)
+			err := ValidateApplicationInstallationUpdate(context.Background(), fakeClient, *testCase.updatedAI, *testCase.ai)
 			if fmt.Sprint(err) != testCase.expectedError {
 				if testCase.expectedError == "[]" {
 					testCase.expectedError = "nil"

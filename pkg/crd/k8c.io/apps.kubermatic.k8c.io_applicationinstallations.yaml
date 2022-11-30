@@ -73,6 +73,9 @@ spec:
                     - create
                     - name
                   type: object
+                reconciliationInterval:
+                  description: "ReconciliationInterval is the interval at which to force the reconciliation of the application. By default, Applications are only reconciled on changes on spec, annotations, or the parent application definition. Meaning that if the user manually deletes the workload deployed by the application, nothing will happen until the application CR change. \n Setting a value greater than zero force reconciliation even if no changes occurred on application CR. Setting a value equal to 0 disables the force reconciliation of the application (default behavior). Setting this too low can cause a heavy load and may disrupt your application workload depending on the template method."
+                  type: string
                 values:
                   description: Values describe overrides for manifest-rendering. It's a free yaml field.
                   type: object
