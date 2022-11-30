@@ -18,6 +18,7 @@ package vpa
 
 import (
 	"k8c.io/reconciler/pkg/reconciling"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

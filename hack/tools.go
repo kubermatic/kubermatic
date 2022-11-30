@@ -20,6 +20,7 @@ package tools
 
 import (
 	_ "k8c.io/reconciler/cmd/reconciler-gen"
+
 	_ "k8s.io/code-generator"
 	_ "k8s.io/code-generator/cmd/client-gen"
 	_ "k8s.io/code-generator/cmd/conversion-gen"
