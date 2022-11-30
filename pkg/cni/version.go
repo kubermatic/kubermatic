@@ -19,6 +19,8 @@ package cni
 import (
 	"fmt"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -31,7 +33,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.23",
-		kubermaticv1.CNIPluginTypeCilium: "v1.12",
+		kubermaticv1.CNIPluginTypeCilium: "1.13.0",
 	}
 )
 
@@ -45,9 +47,14 @@ var (
 	// supportedCNIPluginVersions contains a list of all currently supported CNI versions for each CNI type.
 	// Only supported versions are available for selection in KKP UI.
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
-		kubermaticv1.CNIPluginTypeCanal:  sets.NewString("v3.20", "v3.21", "v3.22", "v3.23"),
-		kubermaticv1.CNIPluginTypeCilium: sets.NewString("v1.11", "v1.12"),
-		kubermaticv1.CNIPluginTypeNone:   sets.NewString(""),
+		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.20", "v3.21", "v3.22", "v3.23"),
+		kubermaticv1.CNIPluginTypeCilium: sets.NewString(
+			"v1.11",
+			"v1.12",
+			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
+			"1.13.0",
+		),
+		kubermaticv1.CNIPluginTypeNone: sets.NewString(""),
 	}
 	// deprecatedCNIPluginVersions contains a list of deprecated CNI versions for each CNI type.
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
@@ -141,4 +148,24 @@ func IsSupportedCNIPluginTypeAndVersion(cni *kubermaticv1.CNIPluginSettings) boo
 // Apart from these, one minor version change is allowed for each CNI.
 func GetAllowedCNIVersionTransitions(cniPluginType kubermaticv1.CNIPluginType) []AllowedCNIVersionTransition {
 	return allowedCNIVersionTransitions[cniPluginType]
+}
+
+// IsManagedByAppInfra returns true if the given CNI type and version is managed by KKP Applications infra,
+// false if it is managed as a KKP Addon.
+func IsManagedByAppInfra(cniType kubermaticv1.CNIPluginType, cniVersion string) bool {
+	if cniType == kubermaticv1.CNIPluginTypeCilium {
+		// Cilium is managed by the Applications infra starting from the version 1.13.0
+		verConstraint, err := semverlib.NewConstraint(">= 1.13.0")
+		if err != nil {
+			return false
+		}
+		ver, err := semverlib.NewVersion(cniVersion)
+		if err != nil {
+			return false
+		}
+		if verConstraint.Check(ver) {
+			return true
+		}
+	}
+	return false
 }

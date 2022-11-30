@@ -23,4 +23,18 @@ const (
 	// ApplicationInstallationCleanupFinalizer indicates that application installed on user-cluster need cleanup
 	// ie uninstall the application, remove  namespace where application were installed ...
 	ApplicationInstallationCleanupFinalizer = "kubermatic.k8c.io/cleanup-application-installation"
+
+	// ApplicationManagedByLabel indicates the ownership of the application definition / application installation.
+	ApplicationManagedByLabel = "apps.kubermatic.k8c.io/managed-by"
+
+	// ApplicationManagedByKKPValue can be used as a value for the ApplicationManagedByLabel to indicate that the
+	// application definition / application installation is managed by KKP (i.e. it is KKP-internal).
+	ApplicationManagedByKKPValue = "kkp"
+
+	// ApplicationTypeLabel indicated the type of the application definition / application installation.
+	ApplicationTypeLabel = "apps.kubermatic.k8c.io/type"
+
+	// ApplicationTypeCNIValue can be used as a value for the ApplicationTypeLabel to indicate that the
+	// application definition / application installation type if CNI (Container Network Interface).
+	ApplicationTypeCNIValue = "cni"
 )

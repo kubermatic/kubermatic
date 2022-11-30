@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -156,6 +157,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	}
 
 	if err := r.reconcileAddonConfigs(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
+	if err := r.reconcileApplicationDefinitions(ctx, defaulted, logger); err != nil {
 		return err
 	}
 
@@ -457,6 +462,19 @@ func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermat
 	creators := kubermatic.AddonConfigsCreators()
 	if err := reconciling.ReconcileKubermaticV1AddonConfigs(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile AddonConfigs: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	logger.Debug("Reconciling ApplicationDefinitions")
+
+	creators := []reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter{
+		cni.CiliumApplicationDefinitionCreator(),
+	}
+	if err := reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
 	}
 
 	return nil

@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -307,6 +308,11 @@ func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Clust
 		}
 		if addon.Name == string(kubermaticv1.CNIPluginTypeCilium) && cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
 			return true // skip Cilium if Canal is used
+		}
+		if addon.Name == string(kubermaticv1.CNIPluginTypeCanal) || addon.Name == string(kubermaticv1.CNIPluginTypeCilium) {
+			if cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
+				return true // skip if CNI is managed by App infra
+			}
 		}
 	}
 	if addon.Name == kubeProxyAddonName && cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {

@@ -38,6 +38,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
@@ -121,10 +122,11 @@ func TestCiliumClusters(t *testing.T) {
 			name:      "ebpf proxy mode test",
 			proxyMode: resources.EBPFProxyMode,
 		},
-		{
-			name:      "ipvs proxy mode test",
-			proxyMode: resources.IPVSProxyMode,
-		},
+		// IPVS is not supported ATM due to https://github.com/cilium/cilium/issues/18610
+		// {
+		//	 name:      "ipvs proxy mode test",
+		//	 proxyMode: resources.IPVSProxyMode,
+		// },
 		{
 			name:      "iptables proxy mode test",
 			proxyMode: resources.IPTablesProxyMode,
@@ -440,12 +442,11 @@ func createUserCluster(
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("cilium").
-		WithAddons(jig.Addon{Name: "hubble"}).
 		WithProxyMode(proxyMode).
 		WithKonnectivity(true).
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
-			Version: "v1.11",
+			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 		})
 
 	cleanup := func() {

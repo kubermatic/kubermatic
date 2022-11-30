@@ -1437,6 +1437,43 @@ func ReconcileAppsKubermaticV1ApplicationDefinitions(ctx context.Context, namedG
 	return nil
 }
 
+// AppsKubermaticV1ApplicationInstallationCreator defines an interface to create/update ApplicationInstallations
+type AppsKubermaticV1ApplicationInstallationCreator = func(existing *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error)
+
+// NamedAppsKubermaticV1ApplicationInstallationCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedAppsKubermaticV1ApplicationInstallationCreatorGetter = func() (name string, create AppsKubermaticV1ApplicationInstallationCreator)
+
+// AppsKubermaticV1ApplicationInstallationObjectWrapper adds a wrapper so the AppsKubermaticV1ApplicationInstallationCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func AppsKubermaticV1ApplicationInstallationObjectWrapper(create AppsKubermaticV1ApplicationInstallationCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*appskubermaticv1.ApplicationInstallation))
+		}
+		return create(&appskubermaticv1.ApplicationInstallation{})
+	}
+}
+
+// ReconcileAppsKubermaticV1ApplicationInstallations will create and update the AppsKubermaticV1ApplicationInstallations coming from the passed AppsKubermaticV1ApplicationInstallationCreator slice
+func ReconcileAppsKubermaticV1ApplicationInstallations(ctx context.Context, namedGetters []NamedAppsKubermaticV1ApplicationInstallationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := AppsKubermaticV1ApplicationInstallationObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appskubermaticv1.ApplicationInstallation{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ApplicationInstallation %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator defines an interface to create/update VirtualMachineInstancetypes
 type KvInstancetypeV1alpha1VirtualMachineInstancetypeCreator = func(existing *kvinstancetypev1alpha1.VirtualMachineInstancetype) (*kvinstancetypev1alpha1.VirtualMachineInstancetype, error)
 
