@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
@@ -76,6 +77,8 @@ func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermati
 	if config == nil {
 		config = &kubevirt.RawConfig{}
 	}
+
+	config.ClusterName = types.ConfigVarString{Value: cluster.Name}
 
 	if datacenter != nil {
 		if config.VirtualMachine.DNSPolicy.Value == "" {
