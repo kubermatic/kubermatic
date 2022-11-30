@@ -166,7 +166,7 @@ type ApplicationTemplate struct {
 
 type TemplateCredentials struct {
 	// HelmCredentials holds the ref to the secret with helm credentials needed to build helm dependencies.
-	// It's optional and only makes sense make application source is not of type Helm (e.g. git). If  application source is Helm then dependencies are already packaged in chart archive.
+	// It's optional and only makes sense if application source is not of type Helm (e.g. git). If  application source is Helm then dependencies are already packaged in chart archive.
 	// It's Either username / Password or registryConfigFile can be defined.
 	HelmCredentials *HelmCredentials `json:"helmCredentials,omitempty"`
 }
