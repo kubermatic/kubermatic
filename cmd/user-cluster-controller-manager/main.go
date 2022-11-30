@@ -156,6 +156,7 @@ func main() {
 
 	// make sure the logging flags actually affect the global (deprecated) logger instance
 	kubermaticlog.Logger = log
+	reconciling.Configure(log)
 
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)

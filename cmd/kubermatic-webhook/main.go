@@ -30,6 +30,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
@@ -80,6 +81,7 @@ func main() {
 
 	// set the logger used by controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+	reconciling.Configure(log)
 
 	// say hello
 	versions := kubermatic.NewDefaultVersions()
