@@ -154,7 +154,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, imageRewriter regi
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/ready",
+								Path:   "/-/ready",
 								Port:   intstr.FromString(metricsPortName),
 								Scheme: corev1.URISchemeHTTP,
 							},
