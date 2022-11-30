@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
@@ -68,6 +69,11 @@ func (b *kubevirtConfig) WithDNSPolicy(dnsPolicy string) *kubevirtConfig {
 	return b
 }
 
+func (b *kubevirtConfig) WithClusterName(clusterName string) *kubevirtConfig {
+	b.ClusterName = types.ConfigVarString{Value: clusterName}
+	return b
+}
+
 func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecKubevirt) (*kubevirt.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.Kubevirt == nil {
 		return nil, fmt.Errorf("cannot use cluster to create Kubevirt cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
@@ -88,6 +94,7 @@ func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermati
 	}
 
 	if cluster != nil {
+		config.ClusterName = types.ConfigVarString{Value: cluster.Name}
 		config.VirtualMachine.Template.PrimaryDisk.OsImage.Value = extractKubeVirtOsImageURLOrDataVolumeNsName(cluster.Status.NamespaceName, config.VirtualMachine.Template.PrimaryDisk.OsImage.Value)
 	}
 

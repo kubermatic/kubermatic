@@ -80,7 +80,7 @@ func TestCompleteKubevirtProviderSpec(t *testing.T) {
 				datacenter: &kubermaticv1.DatacenterSpecKubevirt{
 					DNSPolicy: "test-dnspolicy",
 				},
-				expected: cloneBuilder(goodMachine).WithDNSPolicy("test-dnspolicy"),
+				expected: cloneBuilder(goodMachine).WithDNSPolicy("test-dnspolicy").WithClusterName(goodCluster.Name),
 			},
 		},
 		&kubevirtTestcase{
@@ -90,7 +90,7 @@ func TestCompleteKubevirtProviderSpec(t *testing.T) {
 					DNSPolicy: "test-dnspolicy",
 				},
 				inputSpec: cloneBuilder(defaultMachine).WithDNSPolicy("keep-me-kubevirt"),
-				expected:  cloneBuilder(goodMachine).WithDNSPolicy("keep-me-kubevirt"),
+				expected:  cloneBuilder(goodMachine).WithDNSPolicy("keep-me-kubevirt").WithClusterName(goodCluster.Name),
 			},
 		},
 	}
