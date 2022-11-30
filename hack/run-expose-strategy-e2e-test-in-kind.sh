@@ -87,6 +87,7 @@ make -C cmd/network-interface-manager docker \
   GOOS="${GOOS}" \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
+# image with FAKE TAG v0.0.0-test is used by envoy-agent pod in ExposeStrategyTunneling test case
 make -C cmd/network-interface-manager docker \
   GOOS="${GOOS}" \
   DOCKER_REPO="${DOCKER_REPO}" \
@@ -106,6 +107,7 @@ time kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTE
 time kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/network-interface-manager:${TAG}" --name "${KIND_CLUSTER_NAME}"
+# load network-interface-manager with FAKE TAG 'v0.0.0-test' which is used in ExposeStrategyTunneling test case
 time kind load docker-image "${DOCKER_REPO}/network-interface-manager:${FAKE_TAG}" --name "${KIND_CLUSTER_NAME}"
 
 # This is just used as a const

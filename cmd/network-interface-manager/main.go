@@ -31,10 +31,6 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 )
 
-const (
-	SCOPE_HOST = 254
-)
-
 func main() {
 	var (
 		mode   string
@@ -63,7 +59,7 @@ func main() {
 			return
 		}
 		if checkIfAddrExists(link, ifAddr) != nil {
-			err = addAddressToInterface(link, ifAddr)
+			err = setInterfaceAddress(link, ifAddr)
 			if err != nil {
 				log.Fatalf("Failed to add address to link: %v", err)
 			}
@@ -78,12 +74,17 @@ func main() {
 			<-ticker
 			link, err = checkInterfaceExists(ifName)
 			if err != nil {
-				link, _ = createInterface(ifName)
+				link, err = createInterface(ifName)
+				if err != nil {
+					log.Errorf("Failed to create link: %v", err)
+				}
 			}
 
 			err = checkIfAddrExists(link, ifAddr)
 			if err != nil {
-				_ = addAddressToInterface(link, ifAddr)
+				if setInterfaceAddress(link, ifAddr) != nil {
+					log.Errorf("Failed to add address to link: %v", err)
+				}
 			}
 		}
 	}
@@ -102,14 +103,14 @@ func createInterface(ifName string) (*netlink.Dummy, error) {
 	return link, nil
 }
 
-// Adds address to the link, equalent to "ip addr add ...".
-func addAddressToInterface(link *netlink.Dummy, ifAddr string) error {
+// Sets the link address and removes the old addresses".
+func setInterfaceAddress(link *netlink.Dummy, ifAddr string) error {
 	var err error
 	addr := &netlink.Addr{IPNet: &net.IPNet{
 		IP:   net.ParseIP(ifAddr),
 		Mask: net.CIDRMask(32, 32),
 	}}
-	addr.Scope = SCOPE_HOST
+	addr.Scope = unix.RT_SCOPE_HOST
 
 	// Check for configured addresses and remove them
 	addrs, _ := netlink.AddrList(link, unix.AF_INET)
@@ -142,6 +143,10 @@ func checkIfAddrExists(link *netlink.Dummy, ifAddr string) error {
 		return fmt.Errorf("failed to get addresses %s: %w", link.Name, err)
 	}
 
+	if len(addrs) == 0 {
+		err = errors.New("address not present")
+		return err
+	}
 	for _, addr := range addrs {
 		err = errors.New("address not present")
 		if addr.IPNet.IP.String() == ifAddr {
