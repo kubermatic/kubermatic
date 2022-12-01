@@ -317,7 +317,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 	}
 
-	newVersion, err := getNextApiserverVersion(ctx, config, cluster)
+	newVersion, err := getNextApiServerVersion(ctx, config, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to determine update path: %w", err)
 	}
@@ -489,7 +489,7 @@ func hasOwnerRefToAny(obj ctrlruntimeclient.Object, ownerKind string, ownerNames
 	return false
 }
 
-func getNextApiserverVersion(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, cluster *kubermaticv1.Cluster) (*semver.Semver, error) {
+func getNextApiServerVersion(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, cluster *kubermaticv1.Cluster) (*semver.Semver, error) {
 	var updateConditions []kubermaticv1.ConditionType
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
