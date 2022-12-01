@@ -47,7 +47,8 @@ resourceTypes:
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: UserSSHKey }
 
   # appskubermatic/v1
-  - { package: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1, resourceName: ApplicationDefinition, importAlias: appskubermaticv1 }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1, importAlias: appskubermaticv1, resourceName: ApplicationDefinition }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1, importAlias: appskubermaticv1, resourceName: ApplicationInstallation }
 
   # gatekeeper/v1
   - { package: github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1, resourceName: ConstraintTemplate, importAlias: gatekeeperv1, apiVersionPrefix: Gatekeeper }

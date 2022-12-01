@@ -812,6 +812,43 @@ func ReconcileApplicationDefinitions(ctx context.Context, namedFactories []Named
 	return nil
 }
 
+// ApplicationInstallationReconciler defines an interface to create/update ApplicationInstallations.
+type ApplicationInstallationReconciler = func(existing *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error)
+
+// NamedApplicationInstallationReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedApplicationInstallationReconcilerFactory = func() (name string, reconciler ApplicationInstallationReconciler)
+
+// ApplicationInstallationObjectWrapper adds a wrapper so the ApplicationInstallationReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func ApplicationInstallationObjectWrapper(reconciler ApplicationInstallationReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*appskubermaticv1.ApplicationInstallation))
+		}
+		return reconciler(&appskubermaticv1.ApplicationInstallation{})
+	}
+}
+
+// ReconcileApplicationInstallations will create and update the ApplicationInstallations coming from the passed ApplicationInstallationReconciler slice.
+func ReconcileApplicationInstallations(ctx context.Context, namedFactories []NamedApplicationInstallationReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := ApplicationInstallationObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &appskubermaticv1.ApplicationInstallation{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ApplicationInstallation %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // GatekeeperConstraintTemplateReconciler defines an interface to create/update ConstraintTemplates.
 type GatekeeperConstraintTemplateReconciler = func(existing *gatekeeperv1.ConstraintTemplate) (*gatekeeperv1.ConstraintTemplate, error)
 

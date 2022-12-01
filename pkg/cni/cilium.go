@@ -32,10 +32,10 @@ const (
 	ciliumHelmChartName = "cilium"
 )
 
-// CiliumApplicationDefinitionCreator creates Cilium ApplicationDefinition managed by KKP to be used
+// CiliumApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used
 // for installing Cilium CNI into KKP usr clusters.
-func CiliumApplicationDefinitionCreator() reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter {
-	return func() (string, reconciling.AppsKubermaticV1ApplicationDefinitionCreator) {
+func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinitionReconcilerFactory {
+	return func() (string, reconciling.ApplicationDefinitionReconciler) {
 		return kubermaticv1.CNIPluginTypeCilium.String(), func(app *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			app.Labels = map[string]string{
 				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,

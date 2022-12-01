@@ -216,12 +216,12 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ConfigMaps")
 
-	creators := []reconciling.NamedConfigMapReconcilerFactory{}
+	reconcilers := []reconciling.NamedConfigMapReconcilerFactory{}
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
-		creators = append(creators, kubermatic.UIConfigConfigMapReconciler(config))
+		reconcilers = append(reconcilers, kubermatic.UIConfigConfigMapReconciler(config))
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
@@ -231,16 +231,16 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermatic
 func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Secrets")
 
-	creators := []reconciling.NamedSecretReconcilerFactory{
+	reconcilers := []reconciling.NamedSecretReconcilerFactory{
 		common.WebhookServingCASecretReconciler(config),
 		common.WebhookServingCertSecretReconciler(ctx, config, r.Client),
 	}
 
 	if config.Spec.ImagePullSecret != "" {
-		creators = append(creators, common.DockercfgSecretReconciler(config))
+		reconcilers = append(reconcilers, common.DockercfgSecretReconciler(config))
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %w", err)
 	}
 
@@ -250,13 +250,13 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.
 func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ServiceAccounts")
 
-	creators := []reconciling.NamedServiceAccountReconcilerFactory{
+	reconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		kubermatic.ServiceAccountReconciler(config),
 		kubermatic.APIServiceAccountReconciler(),
 		common.WebhookServiceAccountReconciler(config),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %w", err)
 	}
 
@@ -266,12 +266,12 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Roles")
 
-	creators := []reconciling.NamedRoleReconcilerFactory{
+	reconcilers := []reconciling.NamedRoleReconcilerFactory{
 		common.WebhookRoleReconciler(config),
 		kubermatic.APIRoleReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, config.Namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, reconcilers, config.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %w", err)
 	}
 
@@ -281,12 +281,12 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.Ku
 func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling RoleBindings")
 
-	creators := []reconciling.NamedRoleBindingReconcilerFactory{
+	reconcilers := []reconciling.NamedRoleBindingReconcilerFactory{
 		common.WebhookRoleBindingReconciler(config),
 		kubermatic.APIRoleBindingReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, config.Namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, reconcilers, config.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings: %w", err)
 	}
 
@@ -296,12 +296,12 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermat
 func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ClusterRoles")
 
-	creators := []reconciling.NamedClusterRoleReconcilerFactory{
+	reconcilers := []reconciling.NamedClusterRoleReconcilerFactory{
 		kubermatic.APIClusterRoleReconciler(config),
 		common.WebhookClusterRoleReconciler(config),
 	}
 
-	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 
@@ -311,13 +311,13 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermat
 func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ClusterRoleBindings")
 
-	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+	reconcilers := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		kubermatic.ClusterRoleBindingReconciler(config),
 		kubermatic.APIClusterRoleBindingReconciler(config),
 		common.WebhookClusterRoleBindingReconciler(config),
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
@@ -327,13 +327,13 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *k
 func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Deployments")
 
-	creators := []reconciling.NamedDeploymentReconcilerFactory{
+	reconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubermatic.MasterControllerManagerDeploymentReconciler(config, r.workerName, r.versions),
 		common.WebhookDeploymentReconciler(config, r.versions, nil, false),
 	}
 
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
-		creators = append(creators,
+		reconcilers = append(reconcilers,
 			kubermatic.APIDeploymentReconciler(config, r.workerName, r.versions),
 			kubermatic.UIDeploymentReconciler(config, r.versions),
 		)
@@ -349,7 +349,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, reconcilers, config.Namespace, r.Client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}
 
@@ -359,18 +359,18 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling PodDisruptionBudgets")
 
-	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
+	reconcilers := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		kubermatic.MasterControllerManagerPDBReconciler(config),
 	}
 
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
-		creators = append(creators,
+		reconcilers = append(reconcilers,
 			kubermatic.APIPDBReconciler(config),
 			kubermatic.UIPDBReconciler(config),
 		)
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 
@@ -380,18 +380,18 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *
 func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Services")
 
-	creators := []reconciling.NamedServiceReconcilerFactory{
+	reconcilers := []reconciling.NamedServiceReconcilerFactory{
 		common.WebhookServiceReconciler(config, r.Client),
 	}
 
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
-		creators = append(creators,
+		reconcilers = append(reconcilers,
 			kubermatic.APIServiceReconciler(config),
 			kubermatic.UIServiceReconciler(config),
 		)
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServices(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
@@ -411,11 +411,11 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 
 	logger.Debug("Reconciling Ingresses")
 
-	creators := []reconciling.NamedIngressReconcilerFactory{
+	reconcilers := []reconciling.NamedIngressReconcilerFactory{
 		kubermatic.IngressReconciler(config),
 	}
 
-	if err := reconciling.ReconcileIngresses(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileIngresses(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %w", err)
 	}
 
@@ -425,7 +425,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Validating Webhooks")
 
-	creators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
+	reconcilers := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		common.SeedAdmissionWebhookReconciler(ctx, config, r.Client),
 		common.KubermaticConfigurationAdmissionWebhookReconciler(ctx, config, r.Client),
 		kubermatic.UserValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
@@ -435,7 +435,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		kubermatic.GroupProjectBindingValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 	}
 
-	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Validating Webhooks: %w", err)
 	}
 
@@ -445,12 +445,12 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Mutating Webhooks")
 
-	creators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
+	reconcilers := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.ExternalClusterMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 	}
 
-	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Mutating Webhooks: %w", err)
 	}
 
@@ -460,8 +460,8 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling AddonConfigs")
 
-	creators := kubermatic.AddonConfigsReconcilers()
-	if err := kkpreconciling.ReconcileAddonConfigs(ctx, creators, "", r.Client); err != nil {
+	reconcilers := kubermatic.AddonConfigsReconcilers()
+	if err := kkpreconciling.ReconcileAddonConfigs(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile AddonConfigs: %w", err)
 	}
 
@@ -471,10 +471,10 @@ func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermat
 func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ApplicationDefinitions")
 
-	creators := []reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter{
-		cni.CiliumApplicationDefinitionCreator(),
+	reconcilers := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{
+		cni.CiliumApplicationDefinitionReconciler(),
 	}
-	if err := reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, creators, "", r.Client); err != nil {
+	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
 	}
 
