@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -28,15 +29,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-// ValidateClusterTemplate validates a kubermaticv1.ClusterTemplate resource. For the moment,
-// this only validates ClusterTemplates not used for default cluster templates in Seeds because
-// those are a special case.
+// ValidateClusterTemplate validates a kubermaticv1.ClusterTemplate resource.
 func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	scope, ok := template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey]
+	scope := template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey]
 
-	if !ok || (scope != kubermaticv1.ProjectClusterTemplateScope && scope != kubermaticv1.UserClusterTemplateScope && scope != kubermaticv1.GlobalClusterTemplateScope) {
+	if scope == "" {
 		allErrs = append(allErrs, field.Required(
 			parentFieldPath.Child("metadata", "labels", "scope"),
 			fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateScopeLabelKey),
@@ -64,6 +63,30 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 				allErrs = append(allErrs, field.Invalid(path.Child("id"), key.ID, "SSH key ID needs to be set"))
 			}
 		}
+	}
+
+	// For seed scope ClusterTemplate, cloud provider specification configurations are not allowed.
+	if scope == kubermaticv1.SeedTemplateScope {
+		cloudSpecPath := field.NewPath("spec", "cloud")
+		if template.Spec.Cloud.ProviderName != "" {
+			allErrs = append(allErrs, field.Required(
+				cloudSpecPath.Child("providerName"),
+				"should be empty for default(seed scoped) Cluster Templates",
+			))
+		}
+
+		providerName, err := kubermaticv1helper.ClusterCloudProviderName(template.Spec.Cloud)
+		if err != nil {
+			allErrs = append(allErrs, field.InternalError(cloudSpecPath, err))
+		}
+		if providerName != "" {
+			allErrs = append(allErrs, field.Required(
+				cloudSpecPath,
+				"cloud provider configuration is not allowed for default(seed scoped) Cluster Templates",
+			))
+		}
+		// Seed ClusterTemplates are special cases which are omitted from validations for Cluster Spec apart from the Cloud Spec, for now.
+		return allErrs
 	}
 
 	// validate cluster spec passed in ClusterTemplate
