@@ -59,6 +59,11 @@ openstack)
 vsphere)
   TIMEOUT=45m
   EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
+
+  if [ -n "${VSPHERE_E2E_DISABLED:-}" ]; then
+    echodate "\$VSPHERE_E2E_DISABLED is not empty, skipping tests."
+    exit 0
+  fi
   ;;
 azure)
   TIMEOUT=45m
