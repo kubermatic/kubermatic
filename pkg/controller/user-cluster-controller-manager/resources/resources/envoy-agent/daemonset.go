@@ -79,7 +79,7 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 				return nil, err
 			}
 
-			containers, err := getContainers(versions, imageRewriter)
+			containers, err := getContainers(versions, imageRewriter, agentIP)
 			if err != nil {
 				return nil, err
 			}
@@ -122,7 +122,6 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions, configHash s
 
 func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter registry.ImageRewriter) ([]corev1.Container, error) {
 	image := registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic)))
-
 	// TODO: we are creating and configuring the a dummy interface
 	// using init containers. This approach is good enough for the tech preview
 	// but it is definitely not production ready. This should be replaced with
@@ -132,22 +131,7 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter re
 		{
 			Name:    resources.EnvoyAgentCreateInterfaceInitContainerName,
 			Image:   image,
-			Command: []string{"sh", "-c", "ip link add envoyagent type dummy || true"},
-			SecurityContext: &corev1.SecurityContext{
-				Capabilities: &corev1.Capabilities{
-					Add: []corev1.Capability{
-						"NET_ADMIN",
-					},
-					Drop: []corev1.Capability{
-						"all",
-					},
-				},
-			},
-		},
-		{
-			Name:    resources.EnvoyAgentAssignAddressInitContainerName,
-			Image:   image,
-			Command: []string{"sh", "-c", fmt.Sprintf("ip addr add %s/32 dev envoyagent scope host || true", ip.String())},
+			Command: []string{"sh", "-c", fmt.Sprintf("network-interface-manager -mode init -if envoyagent -addr %s", ip.String())},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
@@ -162,7 +146,8 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter re
 	}, nil
 }
 
-func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) ([]corev1.Container, error) {
+func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRewriter, ip net.IP) ([]corev1.Container, error) {
+	image := registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic)))
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
@@ -186,6 +171,22 @@ func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRew
 						"SETGID",
 						"SETUID",
 						"NET_BIND_SERVICE",
+					},
+					Drop: []corev1.Capability{
+						"all",
+					},
+				},
+			},
+		},
+		{
+			Name:            resources.EnvoyAgentAssignAddressContainerName,
+			Image:           image,
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Command:         []string{"sh", "-c", fmt.Sprintf("network-interface-manager -mode probe -if envoyagent -addr %s", ip.String())},
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Add: []corev1.Capability{
+						"NET_ADMIN",
 					},
 					Drop: []corev1.Capability{
 						"all",

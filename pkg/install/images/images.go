@@ -422,6 +422,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithKubermaticImage(defaulting.DefaultKubermaticImage).
 		WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
 		WithDnatControllerImage(defaulting.DefaultDNATControllerImage).
+		WithNetworkIntfMgrImage(defaulting.DefaultNetworkInterfaceManagerImage).
 		WithBackupPeriod(20 * time.Minute).
 		WithFailureDomainZoneAntiaffinity(false).
 		WithVersions(kubermaticVersions).

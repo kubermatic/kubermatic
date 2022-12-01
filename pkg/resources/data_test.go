@@ -332,3 +332,64 @@ func TestDNATControllerImage(t *testing.T) {
 		})
 	}
 }
+
+func TestNetworkInterfaceManagerImage(t *testing.T) {
+	testCases := []struct {
+		name                    string
+		templateData            *TemplateData
+		wantNetworkIntfMgrImage string
+	}{
+		{
+			name: "default image",
+			templateData: &TemplateData{
+				networkIntfMgrImage: "quay.io/kubermatic/network-interface-manager",
+			},
+			wantNetworkIntfMgrImage: "quay.io/kubermatic/network-interface-manager",
+		},
+		{
+			name: "default image with overwrite registry",
+			templateData: &TemplateData{
+				networkIntfMgrImage: "quay.io/kubermatic/network-interface-manager",
+				OverwriteRegistry:   "custom-registry.kubermatic.io",
+			},
+			wantNetworkIntfMgrImage: "custom-registry.kubermatic.io/kubermatic/network-interface-manager",
+		},
+		{
+			name: "custom image with 2 parts",
+			templateData: &TemplateData{
+				networkIntfMgrImage: "kubermatic/network-interface-manager",
+			},
+			wantNetworkIntfMgrImage: "docker.io/kubermatic/network-interface-manager",
+		},
+		{
+			name: "custom image with 2 parts with overwrite registry",
+			templateData: &TemplateData{
+				networkIntfMgrImage: "kubermatic/network-interface-manager",
+				OverwriteRegistry:   "custom-registry.kubermatic.io",
+			},
+			wantNetworkIntfMgrImage: "custom-registry.kubermatic.io/kubermatic/network-interface-manager",
+		},
+		{
+			name: "custom image with 4 parts",
+			templateData: &TemplateData{
+				networkIntfMgrImage: "registry.kubermatic.io/images/kubermatic/network-interface-manager",
+			},
+			wantNetworkIntfMgrImage: "registry.kubermatic.io/images/kubermatic/network-interface-manager",
+		},
+		{
+			name: "custom image with 4 parts with overwrite registry",
+			templateData: &TemplateData{
+				networkIntfMgrImage: "registry.kubermatic.io/images/kubermatic/network-interface-manager",
+				OverwriteRegistry:   "custom-registry.kubermatic.io",
+			},
+			wantNetworkIntfMgrImage: "custom-registry.kubermatic.io/images/kubermatic/network-interface-manager",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if img := tc.templateData.NetworkIntfMgrImage(); img != tc.wantNetworkIntfMgrImage {
+				t.Errorf("want network-interface-manager image %q, but got %q", tc.wantNetworkIntfMgrImage, img)
+			}
+		})
+	}
+}

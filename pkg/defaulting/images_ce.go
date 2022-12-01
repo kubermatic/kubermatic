@@ -35,4 +35,7 @@ const (
 
 	// DefaultKubernetesAddonImage defines the default Docker repository containing the Kubernetes addons.
 	DefaultKubernetesAddonImage = "quay.io/kubermatic/addons"
+
+	// DefaultNetworkInterfaceManagerImage defines the default Docker repository containing the network interface manager image.
+	DefaultNetworkInterfaceManagerImage = "quay.io/kubermatic/network-interface-manager"
 )

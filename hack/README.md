@@ -47,6 +47,7 @@ Builds and pushes all KKP Docker images:
 * quay.io/kubermatic/kubeletdnat-controller
 * quay.io/kubermatic/user-ssh-keys-agent
 * quay.io/kubermatic/etcd-launcher
+* quay.io/kubermatic/network-interface-manager
 
 The images are tagged with all arguments given to the script, i.e
 `./release-docker-images.sh foo bar` will tag `kubermatic:foo` and
