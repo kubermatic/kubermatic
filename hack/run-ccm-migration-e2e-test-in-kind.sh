@@ -23,6 +23,10 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+if provider_disabled $PROVIDER; then
+  exit 0
+fi
+
 export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 
@@ -59,11 +63,6 @@ openstack)
 vsphere)
   TIMEOUT=45m
   EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
-
-  if [ -n "${VSPHERE_E2E_DISABLED:-}" ]; then
-    echodate "\$VSPHERE_E2E_DISABLED is not empty, skipping tests."
-    exit 0
-  fi
   ;;
 azure)
   TIMEOUT=45m
