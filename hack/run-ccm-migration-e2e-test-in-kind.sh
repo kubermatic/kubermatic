@@ -57,6 +57,7 @@ openstack)
   EXTRA_ARGS="-openstack-kkp-datacenter=syseleven-dbl1"
   ;;
 vsphere)
+  TIMEOUT=45m
   EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
   ;;
 azure)
