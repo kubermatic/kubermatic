@@ -741,7 +741,7 @@ const (
 	EnvoyAgentAssignAddressContainerName       = "assign-address"
 	EnvoyAgentDeviceSetupImage                 = "kubermatic/network-interface-manager"
 	// Default tunneling agent IP address.
-	DefaultTunnelingAgentIP = "192.168.30.10"
+	DefaultTunnelingAgentIP = "100.64.30.10"
 )
 
 const (

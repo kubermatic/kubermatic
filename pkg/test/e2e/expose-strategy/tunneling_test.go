@@ -71,7 +71,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 			return cs
 		}).
 		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-			cs.ClusterNetwork.TunnelingAgentIP = "192.168.30.10"
+			cs.ClusterNetwork.TunnelingAgentIP = "100.64.30.10"
 			return cs
 		})
 

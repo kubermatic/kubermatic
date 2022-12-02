@@ -100,7 +100,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	c := controllerRunOptions{
 		featureGates: features.FeatureGate{},
 		// Default IP used by tunneling agents
-		tunnelingAgentIP: flagopts.IPValue{IP: net.ParseIP("192.168.30.10")},
+		tunnelingAgentIP: flagopts.IPValue{IP: net.ParseIP("100.64.30.10")},
 	}
 
 	var (
