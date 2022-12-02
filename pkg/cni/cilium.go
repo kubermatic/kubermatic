@@ -19,6 +19,7 @@ package cni
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -26,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 const (
@@ -52,7 +54,7 @@ func CiliumApplicationDefinitionCreator() reconciling.NamedAppsKubermaticV1Appli
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName: ciliumHelmChartName,
 								// TODO (rastislavs): bump to the release version once it is out
-								ChartVersion: "1.13.0-rc2",
+								ChartVersion: "1.13.0-rc3",
 								// TODO (rastislavs): Use Kubermatic OCI chart instead and allow overriding the registry
 								URL: "https://helm.cilium.io/",
 							},
@@ -132,4 +134,66 @@ func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteR
 	// TODO (rastislavs): override *.image.repository + set *.image.useDigest=false if registry override is configured
 
 	return values
+}
+
+// ValidateCiliumValuesUpdate validates the update operation on provided Cilium Helm values.
+func ValidateCiliumValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Validate immutability of specific top-level value subtrees, managed solely by KKP
+	allErrs = append(allErrs, validateImmutableValues(newValues, oldValues, fieldPath, []string{
+		"cni",
+		"ipam",
+		"ipv6",
+	})...)
+
+	// Validate that mandatory top-level values are present
+	allErrs = append(allErrs, validateMandatoryValues(newValues, fieldPath, []string{
+		"kubeProxyReplacement", // can be changed if switching KKP proxy mode, but must be present
+	})...)
+
+	// Validate config for strict kubeProxyReplacement (ebpf "proxy mode")
+	if newValues["kubeProxyReplacement"] == "strict" {
+		// Validate mandatory values for kube-proxy-replacement
+		allErrs = append(allErrs, validateMandatoryValues(newValues, fieldPath, []string{
+			"k8sServiceHost",
+			"k8sServicePort",
+		})...)
+	}
+
+	// Validate immutability of operator.securityContext
+	operPath := fieldPath.Child("operator")
+	newOperator, ok := newValues["operator"].(map[string]any)
+	if !ok {
+		allErrs = append(allErrs, field.Invalid(operPath, newValues["operator"], "value missing or incorrect"))
+	}
+	oldOperator, ok := oldValues["operator"].(map[string]any)
+	if !ok {
+		allErrs = append(allErrs, field.Invalid(operPath, oldValues["operator"], "value missing or incorrect"))
+	}
+	allErrs = append(allErrs, validateImmutableValues(newOperator, oldOperator, operPath, []string{
+		"securityContext",
+	})...)
+
+	return allErrs
+}
+
+func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	for _, v := range immutableValues {
+		if !reflect.DeepEqual(newValues[v], oldValues[v]) {
+			allErrs = append(allErrs, field.Invalid(fieldPath.Child(v), newValues[v], "value is immutable"))
+		}
+	}
+	return allErrs
+}
+
+func validateMandatoryValues(newValues map[string]any, fieldPath *field.Path, mandatoryValues []string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	for _, v := range mandatoryValues {
+		if _, ok := newValues[v]; !ok {
+			allErrs = append(allErrs, field.NotFound(fieldPath.Child(v), newValues[v]))
+		}
+	}
+	return allErrs
 }
