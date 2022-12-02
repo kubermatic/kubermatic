@@ -98,8 +98,7 @@ echodate "Running integration tests..."
 for file in $(grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ | xargs dirname | sort -u); do
   echodate "Testing package ${file}..."
 
-  if [[ "$file" =~ .*vsphere.* ]] && [ -n "${VSPHERE_E2E_DISABLED:-}" ]; then
-    echodate "\$VSPHERE_E2E_DISABLED is not empty, skipping tests."
+  if [[ "$file" =~ .*vsphere.* ]] && provider_disabled vsphere; then
     continue
   fi
 

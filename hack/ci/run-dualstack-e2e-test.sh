@@ -73,8 +73,7 @@ export METAL_PROJECT_ID="${METAL_PROJECT_ID:-$(vault kv get -field=METAL_PROJECT
 export VSPHERE_E2E_USERNAME="${VSPHERE_E2E_USERNAME:-$(vault kv get -field=username dev/e2e-vsphere)}"
 export VSPHERE_E2E_PASSWORD="${VSPHERE_E2E_PASSWORD:-$(vault kv get -field=password dev/e2e-vsphere)}"
 
-if [ "$PROVIDER" == "vsphere" ] && [ -n "${VSPHERE_E2E_DISABLED:-}" ]; then
-  echodate "\$VSPHERE_E2E_DISABLED is not empty, skipping tests."
+if provider_disabled $PROVIDER; then
   exit 0
 fi
 

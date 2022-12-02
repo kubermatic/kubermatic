@@ -38,6 +38,11 @@ echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 
 EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
 maxDuration=60 # in minutes
+
+if provider_disabled $provider; then
+  exit 0
+fi
+
 if [[ $provider == "anexia" ]]; then
   EXTRA_ARGS="-anexia-token=${ANEXIA_TOKEN}
     -anexia-template-id=${ANEXIA_TEMPLATE_ID}
@@ -78,21 +83,11 @@ elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
     -vsphere-kkp-datacenter=vsphere-ger"
-
-  if [ -n "${VSPHERE_E2E_DISABLED:-}" ]; then
-    echodate "\$VSPHERE_E2E_DISABLED is not empty, skipping tests."
-    exit 0
-  fi
 elif [[ $provider == "kubevirt" ]]; then
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"
   EXTRA_ARGS="-kubevirt-kubeconfig=$tmpFile
     -kubevirt-kkp-datacenter=kubevirt-europe-west3-c"
-
-  if [ -n "${KUBEVIRT_E2E_DISABLED:-}" ]; then
-    echodate "\$KUBEVIRT_E2E_DISABLED is not empty, skipping tests."
-    exit 0
-  fi
 elif [[ $provider == "alibaba" ]]; then
   EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}
@@ -114,11 +109,6 @@ elif [[ $provider == "vmwareclouddirector" ]]; then
     -vmware-cloud-director-vdc=${VCD_VDC}
     -vmware-cloud-director-ovdc-network=${VCD_OVDC_NETWORK}
     -vmware-cloud-director-kkp-datacenter=vmware-cloud-director-ger"
-
-  if [ -n "${VCD_E2E_DISABLED:-}" ]; then
-    echodate "\$VCD_E2E_DISABLED is not empty, skipping tests."
-    exit 0
-  fi
 fi
 
 # in periodic jobs, we run multiple scenarios (e.g. testing azure in 1.21 and 1.22),
