@@ -20,14 +20,14 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // ClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	return createClusterRoleBindingCreator("controller",
+func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return createClusterRoleBindingReconciler("controller",
 		resources.MachineControllerClusterRoleName, rbacv1.Subject{
 			Kind:     "User",
 			Name:     resources.MachineControllerCertUsername,
@@ -36,8 +36,8 @@ func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGette
 }
 
 // NodeBootstrapperClusterRoleBinding returns a ClusterRoleBinding for the machine-controller.
-func NodeBootstrapperClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	return createClusterRoleBindingCreator("kubelet-bootstrap",
+func NodeBootstrapperClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return createClusterRoleBindingReconciler("kubelet-bootstrap",
 		"system:node-bootstrapper", rbacv1.Subject{
 			Kind:     "Group",
 			Name:     "system:bootstrappers:machine-controller:default-node-token",
@@ -45,9 +45,9 @@ func NodeBootstrapperClusterRoleBindingCreator() reconciling.NamedClusterRoleBin
 		})
 }
 
-// NodeSignerClusterRoleBindingCreator returns a ClusterRoleBinding for the machine-controller.
-func NodeSignerClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	return createClusterRoleBindingCreator("node-signer",
+// NodeSignerClusterRoleBindingReconciler returns a ClusterRoleBinding for the machine-controller.
+func NodeSignerClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return createClusterRoleBindingReconciler("node-signer",
 		"system:certificates.k8s.io:certificatesigningrequests:nodeclient", rbacv1.Subject{
 			Kind:     "Group",
 			Name:     "system:bootstrappers:machine-controller:default-node-token",
@@ -55,8 +55,8 @@ func NodeSignerClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCr
 		})
 }
 
-func createClusterRoleBindingCreator(crbSuffix, cRoleRef string, subj rbacv1.Subject) reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func createClusterRoleBindingReconciler(crbSuffix, cRoleRef string, subj rbacv1.Subject) reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return fmt.Sprintf("%s:%s", resources.MachineControllerClusterRoleBindingName, crbSuffix), func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(Name, nil)
 

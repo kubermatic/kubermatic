@@ -19,15 +19,15 @@ package kubernetesdashboard
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator creates the service for the dashboard-metrics-scraper.
-func ServiceCreator(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler creates the service for the dashboard-metrics-scraper.
+func ServiceReconciler(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.MetricsScraperServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Name = resources.MetricsScraperServiceName
 			s.Labels = resources.BaseAppLabels(scraperName, nil)

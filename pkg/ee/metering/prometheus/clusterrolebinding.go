@@ -26,14 +26,14 @@ package prometheus
 
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 // prometheusClusterRoleBinding create a cluster role binding for prometheus.
-func prometheusClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func prometheusClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return Name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			if crb.Labels == nil {
 				crb.Labels = make(map[string]string)

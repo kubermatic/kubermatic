@@ -20,15 +20,15 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ExternalNameServiceCreator returns the function to reconcile the metrics server service.
-func ExternalNameServiceCreator(namespace string) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+// ExternalNameServiceReconciler returns the function to reconcile the metrics server service.
+func ExternalNameServiceReconciler(namespace string) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.MetricsServerExternalNameServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Namespace = metav1.NamespaceSystem
 			se.Labels = resources.BaseAppLabels(Name, nil)

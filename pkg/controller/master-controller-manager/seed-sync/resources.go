@@ -18,21 +18,22 @@ package seedsync
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func namespaceCreator(namespace string) reconciling.NamedNamespaceCreatorGetter {
-	return func() (string, reconciling.NamespaceCreator) {
+func namespaceReconciler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
 		return namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
 			return n, nil
 		}
 	}
 }
 
-func secretCreator(original *corev1.Secret) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func secretReconciler(original *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return original.Name, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.Labels = original.Labels
 			if s.Labels == nil {
@@ -48,8 +49,8 @@ func secretCreator(original *corev1.Secret) reconciling.NamedSecretCreatorGetter
 	}
 }
 
-func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {
-	return func() (string, reconciling.SeedCreator) {
+func seedReconciler(seed *kubermaticv1.Seed) kkpreconciling.NamedSeedReconcilerFactory {
+	return func() (string, kkpreconciling.SeedReconciler) {
 		return seed.Name, func(s *kubermaticv1.Seed) (*kubermaticv1.Seed, error) {
 			s.Labels = seed.Labels
 			if s.Labels == nil {
@@ -65,8 +66,8 @@ func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {
 	}
 }
 
-func configCreator(config *kubermaticv1.KubermaticConfiguration) reconciling.NamedKubermaticConfigurationCreatorGetter {
-	return func() (string, reconciling.KubermaticConfigurationCreator) {
+func configReconciler(config *kubermaticv1.KubermaticConfiguration) kkpreconciling.NamedKubermaticConfigurationReconcilerFactory {
+	return func() (string, kkpreconciling.KubermaticConfigurationReconciler) {
 		return config.Name, func(c *kubermaticv1.KubermaticConfiguration) (*kubermaticv1.KubermaticConfiguration, error) {
 			c.Labels = config.Labels
 			if c.Labels == nil {

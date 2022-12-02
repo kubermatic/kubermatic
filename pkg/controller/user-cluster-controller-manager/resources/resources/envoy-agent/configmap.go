@@ -21,7 +21,7 @@ import (
 	"text/template"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -86,9 +86,9 @@ type Listener struct {
 	Authority   string
 }
 
-// ConfigMapCreator returns a ConfigMap containing the config for the Envoy agent.
-func ConfigMapCreator(cfg Config) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+// ConfigMapReconciler returns a ConfigMap containing the config for the Envoy agent.
+func ConfigMapReconciler(cfg Config) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.EnvoyAgentConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

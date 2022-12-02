@@ -27,7 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -60,9 +60,9 @@ type configTemplateData struct {
 	ScrapingAnnotationPrefix string
 }
 
-// ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data.
-func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+// ConfigMapReconciler returns a ConfigMapReconciler containing the prometheus config for the supplied data.
+func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.PrometheusConfigConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			cluster := data.Cluster()
 			kubermaticConfig := data.KubermaticConfiguration()

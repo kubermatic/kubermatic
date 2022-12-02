@@ -23,7 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -68,9 +68,9 @@ func webhookPodLabels() map[string]string {
 	}
 }
 
-// DeploymentCreator returns the function to create and update the user cluster webhook deployment.
-func DeploymentCreator(data webhookData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the user cluster webhook deployment.
+func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.UserClusterWebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Name = resources.UserClusterWebhookDeploymentName
 			d.Spec.Replicas = pointer.Int32(1)

@@ -19,15 +19,15 @@ package metricsserver
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator returns the function to reconcile the user cluster metrics-server service.
-func ServiceCreator(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns the function to reconcile the user cluster metrics-server service.
+func ServiceReconciler(ipFamily kubermaticv1.IPFamily) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.MetricsServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.MetricsServerServiceName
 			labels := resources.BaseAppLabels(resources.MetricsServerDeploymentName, nil)

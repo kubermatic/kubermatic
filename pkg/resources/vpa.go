@@ -31,7 +31,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef metav1.OwnerReference, enabled bool) reconciling.NamedVerticalPodAutoscalerCreatorGetter {
+func getVPAReconcilerForPodTemplate(name string, pod corev1.PodSpec, controllerRef metav1.OwnerReference, enabled bool) reconciling.NamedVerticalPodAutoscalerReconcilerFactory {
 	var containerPolicies []vpav1.ContainerResourcePolicy
 	for _, container := range pod.Containers {
 		containerPolicies = append(containerPolicies, vpav1.ContainerResourcePolicy{
@@ -46,7 +46,7 @@ func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef 
 		updateMode = vpav1.UpdateModeOff
 	}
 
-	return func() (string, reconciling.VerticalPodAutoscalerCreator) {
+	return func() (string, reconciling.VerticalPodAutoscalerReconciler) {
 		return name, func(vpa *vpav1.VerticalPodAutoscaler) (*vpav1.VerticalPodAutoscaler, error) {
 			// We're doing this as we don't want to use the Cluster object as owner.
 			// Instead we're using the actual target as owner - this way the VPA gets deleted when the Deployment/StatefulSet gets deleted as well
@@ -73,8 +73,8 @@ func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef 
 // If creator functions for VPA's for Deployments should be returned, a deployment store must be passed in. Otherwise a StatefulSet store.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntimeclient.Client, names []string, namespace string, obj ctrlruntimeclient.Object, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
-	var creators []reconciling.NamedVerticalPodAutoscalerCreatorGetter
+func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntimeclient.Client, names []string, namespace string, obj ctrlruntimeclient.Object, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerReconcilerFactory, error) {
+	var creators []reconciling.NamedVerticalPodAutoscalerReconcilerFactory
 	for _, name := range names {
 		name := name
 		key := types.NamespacedName{Namespace: namespace, Name: name}
@@ -87,14 +87,14 @@ func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntim
 		gv := appsv1.SchemeGroupVersion
 		switch obj := obj.(type) {
 		case *appsv1.Deployment:
-			creators = append(creators, getVPACreatorForPodTemplate(
+			creators = append(creators, getVPAReconcilerForPodTemplate(
 				obj.Name,
 				obj.Spec.Template.Spec,
 				*metav1.NewControllerRef(obj, gv.WithKind("Deployment")),
 				enabled),
 			)
 		case *appsv1.StatefulSet:
-			creators = append(creators, getVPACreatorForPodTemplate(
+			creators = append(creators, getVPAReconcilerForPodTemplate(
 				obj.Name,
 				obj.Spec.Template.Spec,
 				*metav1.NewControllerRef(obj, gv.WithKind("StatefulSet")),
@@ -111,16 +111,16 @@ func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntim
 // GetVerticalPodAutoscalersForAll will return functions to create VPA resource for all supplied Deployments and StatefulSets.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func GetVerticalPodAutoscalersForAll(ctx context.Context, client ctrlruntimeclient.Client, deploymentNames, statefulSetNames []string, namespace string, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
-	deploymentVPACreators, err := getVerticalPodAutoscalersForResource(ctx, client, deploymentNames, namespace, &appsv1.Deployment{}, enabled)
+func GetVerticalPodAutoscalersForAll(ctx context.Context, client ctrlruntimeclient.Client, deploymentNames, statefulSetNames []string, namespace string, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerReconcilerFactory, error) {
+	deploymentVPAReconcilers, err := getVerticalPodAutoscalersForResource(ctx, client, deploymentNames, namespace, &appsv1.Deployment{}, enabled)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for Deployments: %w", err)
 	}
 
-	statefulSetVPACreators, err := getVerticalPodAutoscalersForResource(ctx, client, statefulSetNames, namespace, &appsv1.StatefulSet{}, enabled)
+	statefulSetVPAReconcilers, err := getVerticalPodAutoscalersForResource(ctx, client, statefulSetNames, namespace, &appsv1.StatefulSet{}, enabled)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VPA creator functions for StatefulSets: %w", err)
 	}
 
-	return append(deploymentVPACreators, statefulSetVPACreators...), nil
+	return append(deploymentVPAReconcilers, statefulSetVPAReconcilers...), nil
 }

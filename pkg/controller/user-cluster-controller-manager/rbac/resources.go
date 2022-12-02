@@ -25,7 +25,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
@@ -53,8 +53,8 @@ func generateVerbsForGroup(groupName string) ([]string, error) {
 	return []string{}, fmt.Errorf("unable to generate verbs, unknown group name %q given", groupName)
 }
 
-func newClusterRoleCreator(resourceName string) (reconciling.NamedClusterRoleCreatorGetter, error) {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func newClusterRoleReconciler(resourceName string) (reconciling.NamedClusterRoleReconcilerFactory, error) {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return resourceName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			return CreateClusterRole(resourceName, cr)
 		}
@@ -174,8 +174,8 @@ func CreateClusterRole(resourceName string, cr *rbacv1.ClusterRole) (*rbacv1.Clu
 	return cr, nil
 }
 
-func newClusterRoleBindingCreator(resourceName string) (reconciling.NamedClusterRoleBindingCreatorGetter, error) {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func newClusterRoleBindingReconciler(resourceName string) (reconciling.NamedClusterRoleBindingReconcilerFactory, error) {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resourceName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			return CreateClusterRoleBinding(resourceName, crb)
 		}

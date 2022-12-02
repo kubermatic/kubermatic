@@ -32,7 +32,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -115,13 +115,13 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 		return fmt.Errorf("failed to prune ClusterRoleBindings: %w", err)
 	}
 
-	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingCreatorGetter{}
+	clusterRoleBindingReconcilers := []reconciling.NamedClusterRoleBindingReconcilerFactory{}
 
 	for _, clusterRole := range clusterRoles {
-		clusterRoleBindingCreators = append(clusterRoleBindingCreators, clusterRoleBindingCreator(*binding, clusterRole))
+		clusterRoleBindingReconcilers = append(clusterRoleBindingReconcilers, clusterRoleBindingReconciler(*binding, clusterRole))
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingCreators, "", client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconcilers, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
@@ -139,12 +139,12 @@ func (r *Reconciler) reconcile(ctx context.Context, client ctrlruntimeclient.Cli
 	}
 
 	for ns, roles := range rolesMap {
-		roleBindingCreators := []reconciling.NamedRoleBindingCreatorGetter{}
+		roleBindingReconcilers := []reconciling.NamedRoleBindingReconcilerFactory{}
 		for _, role := range roles {
-			roleBindingCreators = append(roleBindingCreators, roleBindingCreator(*binding, role))
+			roleBindingReconcilers = append(roleBindingReconcilers, roleBindingReconciler(*binding, role))
 		}
 
-		if err := reconciling.ReconcileRoleBindings(ctx, roleBindingCreators, ns, client); err != nil {
+		if err := reconciling.ReconcileRoleBindings(ctx, roleBindingReconcilers, ns, client); err != nil {
 			return fmt.Errorf("failed to reconcile RoleBindings for namespace '%s': %w", ns, err)
 		}
 	}

@@ -18,15 +18,15 @@ package coredns
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// ServiceCreator creates the service for the CoreDNS.
-func ServiceCreator(dnsClusterIP string) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler creates the service for the CoreDNS.
+func ServiceReconciler(dnsClusterIP string) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		labels := map[string]string{
 			"kubernetes.io/cluster-service": "true",
 			"app.kubernetes.io/name":        "KubeDNS",

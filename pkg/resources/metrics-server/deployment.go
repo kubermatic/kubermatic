@@ -24,9 +24,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -71,11 +71,11 @@ type metricsServerData interface {
 	IsKonnectivityEnabled() bool
 }
 
-// TLSServingCertSecretCreator returns a function to manage the TLS serving cert for the metrics
+// TLSServingCertSecretReconciler returns a function to manage the TLS serving cert for the metrics
 // server.
-func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretCreatorGetter {
+func TLSServingCertSecretReconciler(caGetter servingcerthelper.CAGetter) reconciling.NamedSecretReconcilerFactory {
 	dnsName := "metrics-server.kube-system.svc"
-	return servingcerthelper.ServingCertSecretCreator(caGetter,
+	return servingcerthelper.ServingCertSecretReconciler(caGetter,
 		ServingCertSecretName,
 		// Must match what's configured in the apiservice in pkg/controller/usercluster/resources/metrics-server/external-name-service.go.
 		// Can unfortunately not have a trailing dot, as that's only allowed in Kube 1.16+
@@ -84,9 +84,9 @@ func TLSServingCertSecretCreator(caGetter servingcerthelper.CAGetter) reconcilin
 		nil)
 }
 
-// DeploymentCreator returns the function to create and update the metrics server deployment.
-func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the metrics server deployment.
+func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MetricsServerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MetricsServerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)

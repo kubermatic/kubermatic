@@ -42,7 +42,7 @@ import (
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
 	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
-	machinecontrolerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
+	machinecontrollerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	roleclonercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
@@ -156,6 +156,7 @@ func main() {
 
 	// make sure the logging flags actually affect the global (deprecated) logger instance
 	kubermaticlog.Logger = log
+	reconciling.Configure(log)
 
 	versions := kubermatic.NewDefaultVersions()
 	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
@@ -318,8 +319,8 @@ func main() {
 		// We need to add the machine CRDs once here, because otherwise the IPAM
 		// controller keeps the manager from starting as it can not establish a
 		// watch for machine CRs, keeping us from creating them
-		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
-			machinecontrolerresources.MachineCRDCreator(),
+		creators := []reconciling.NamedCustomResourceDefinitionReconcilerFactory{
+			machinecontrollerresources.MachineCRDReconciler(),
 		}
 		if err := reconciling.ReconcileCustomResourceDefinitions(rootCtx, creators, "", mgr.GetClient()); err != nil {
 			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not

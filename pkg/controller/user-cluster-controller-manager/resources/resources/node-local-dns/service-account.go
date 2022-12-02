@@ -18,14 +18,14 @@ package nodelocaldns
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ServiceAccountCreator creates the service account for Node Local DNS cache.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+// ServiceAccountReconciler creates the service account for Node Local DNS cache.
+func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return resources.NodeLocalDNSServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			if sa.Labels == nil {
 				sa.Labels = map[string]string{}

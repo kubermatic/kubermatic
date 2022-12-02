@@ -18,7 +18,7 @@ package gatekeeper
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -29,9 +29,9 @@ const (
 	roleBindingName = "gatekeeper-manager-rolebinding"
 )
 
-// ServiceAccountCreator returns a func to create/update the ServiceAccount used by gatekeeper.
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+// ServiceAccountReconciler returns a func to create/update the ServiceAccount used by gatekeeper.
+func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			sa.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			return sa, nil
@@ -39,9 +39,9 @@ func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	}
 }
 
-// RoleCreator creates the gatekeeper Role.
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
+// RoleReconciler creates the gatekeeper Role.
+func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			r.Rules = []rbacv1.PolicyRule{
@@ -72,9 +72,9 @@ func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-// RoleBindingCreator creates the gatekeeper RoleBinding.
-func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
+// RoleBindingReconciler creates the gatekeeper RoleBinding.
+func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     roleName,
@@ -92,9 +92,9 @@ func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
 	}
 }
 
-// ClusterRoleCreator creates the gatekeeper ClusterRole.
-func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
-	return func() (string, reconciling.ClusterRoleCreator) {
+// ClusterRoleReconciler creates the gatekeeper ClusterRole.
+func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return roleName, func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			r.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			r.Rules = []rbacv1.PolicyRule{
@@ -239,9 +239,9 @@ func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-// ClusterRoleBindingCreator creates the gatekeeper ClusterRoleBinding.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+// ClusterRoleBindingReconciler creates the gatekeeper ClusterRoleBinding.
+func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return roleBindingName, func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     roleName,

@@ -28,9 +28,9 @@ const (
 	Name = "metrics-server"
 )
 
-// APIServiceCreator returns the func to create/update the APIService used by the metrics-server.
-func APIServiceCreator(caBundle []byte) reconciling.NamedAPIServiceCreatorGetter {
-	return func() (string, reconciling.APIServiceCreator) {
+// APIServiceReconciler returns the func to create/update the APIService used by the metrics-server.
+func APIServiceReconciler(caBundle []byte) reconciling.NamedAPIServiceReconcilerFactory {
+	return func() (string, reconciling.APIServiceReconciler) {
 		return resources.MetricsServerAPIServiceName, func(se *apiregistrationv1.APIService) (*apiregistrationv1.APIService, error) {
 			labels := resources.BaseAppLabels(Name, nil)
 			se.Labels = labels

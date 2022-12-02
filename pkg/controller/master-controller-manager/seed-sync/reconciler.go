@@ -28,7 +28,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -128,11 +129,11 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	nsCreators := []reconciling.NamedNamespaceCreatorGetter{
-		namespaceCreator(seed.Namespace),
+	nsReconcilers := []reconciling.NamedNamespaceReconcilerFactory{
+		namespaceReconciler(seed.Namespace),
 	}
 
-	if err := reconciling.ReconcileNamespaces(ctx, nsCreators, "", seedClient); err != nil {
+	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", seedClient); err != nil {
 		return fmt.Errorf("failed to reconcile namespace: %w", err)
 	}
 
@@ -148,28 +149,28 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 			return fmt.Errorf("failed to get kubeconfig for seed: %w", err)
 		}
 
-		seedKubeconfigCreators := []reconciling.NamedSecretCreatorGetter{
-			secretCreator(seedKubeconfig),
+		seedKubeconfigReconcilers := []reconciling.NamedSecretReconcilerFactory{
+			secretReconciler(seedKubeconfig),
 		}
 
-		if err := reconciling.ReconcileSecrets(ctx, seedKubeconfigCreators, seedKubeconfig.Namespace, seedClient); err != nil {
+		if err := reconciling.ReconcileSecrets(ctx, seedKubeconfigReconcilers, seedKubeconfig.Namespace, seedClient); err != nil {
 			return fmt.Errorf("failed to reconcile seed kubeconfig: %w", err)
 		}
 
-		seedCreators := []reconciling.NamedSeedCreatorGetter{
-			seedCreator(seed),
+		seedReconcilers := []kkpreconciling.NamedSeedReconcilerFactory{
+			seedReconciler(seed),
 		}
 
-		if err := reconciling.ReconcileSeeds(ctx, seedCreators, seed.Namespace, seedClient); err != nil {
+		if err := kkpreconciling.ReconcileSeeds(ctx, seedReconcilers, seed.Namespace, seedClient); err != nil {
 			return fmt.Errorf("failed to reconcile seed: %w", err)
 		}
 	}
 
-	configCreators := []reconciling.NamedKubermaticConfigurationCreatorGetter{
-		configCreator(config),
+	configReconcilers := []kkpreconciling.NamedKubermaticConfigurationReconcilerFactory{
+		configReconciler(config),
 	}
 
-	if err := reconciling.ReconcileKubermaticConfigurations(ctx, configCreators, seed.Namespace, seedClient); err != nil {
+	if err := kkpreconciling.ReconcileKubermaticConfigurations(ctx, configReconcilers, seed.Namespace, seedClient); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic configuration: %w", err)
 	}
 

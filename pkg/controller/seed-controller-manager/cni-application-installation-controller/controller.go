@@ -285,14 +285,14 @@ func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluste
 		return fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	creators := []reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter{
-		ApplicationInstallationCreator(cluster, r.overwriteRegistry, initialValues),
+	reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
+		ApplicationInstallationReconciler(cluster, r.overwriteRegistry, initialValues),
 	}
-	return reconciling.ReconcileAppsKubermaticV1ApplicationInstallations(ctx, creators, cniPluginNamespace, userClusterClient)
+	return reconciling.ReconcileApplicationInstallations(ctx, reconcilers, cniPluginNamespace, userClusterClient)
 }
 
-func ApplicationInstallationCreator(cluster *kubermaticv1.Cluster, overwriteRegistry string, initialValues map[string]any) reconciling.NamedAppsKubermaticV1ApplicationInstallationCreatorGetter {
-	return func() (string, reconciling.AppsKubermaticV1ApplicationInstallationCreator) {
+func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteRegistry string, initialValues map[string]any) reconciling.NamedApplicationInstallationReconcilerFactory {
+	return func() (string, reconciling.ApplicationInstallationReconciler) {
 		return cluster.Spec.CNIPlugin.Type.String(), func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
 			app.Labels = map[string]string{
 				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,

@@ -22,7 +22,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -65,8 +65,8 @@ type EventLimit struct {
 	CacheSize int32  `yaml:"cacheSize,omitempty"`
 }
 
-func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+func AdmissionControlReconciler(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.AdmissionControlConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

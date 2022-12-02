@@ -30,6 +30,7 @@ import (
 
 	usersshkeys "k8c.io/kubermatic/v2/pkg/controller/usersshkeysagent"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,6 +48,7 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+	reconciling.Configure(log)
 
 	cli.Hello(log, "User SSH-Key Agent", logOpts.Debug, nil)
 

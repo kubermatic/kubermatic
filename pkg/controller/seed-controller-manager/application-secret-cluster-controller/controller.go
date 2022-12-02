@@ -27,8 +27,8 @@ import (
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -160,8 +160,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secr
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
-		secretCreator(secret),
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		secretReconciler(secret),
 	}
 	if err := r.syncAllClusterNs(ctx, log, func(client ctrlruntimeclient.Client, clusterNamespace string) error {
 		return reconciling.ReconcileSecrets(ctx, creators, clusterNamespace, r.client)
@@ -223,8 +223,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-func secretCreator(s *corev1.Secret) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
+func secretReconciler(s *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return s.Name, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Data = s.Data
 			existing.Labels = s.Labels

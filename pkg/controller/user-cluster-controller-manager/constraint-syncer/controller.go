@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -114,11 +114,11 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
-	constraintCreatorGetters := []reconciling.NamedUnstructuredCreatorGetter{
-		constraintCreatorGetter(constraint),
+	constraintReconcilerFactorys := []reconciling.NamedUnstructuredReconcilerFactory{
+		constraintReconcilerFactory(constraint),
 	}
 
-	if err := reconciling.ReconcileUnstructureds(ctx, constraintCreatorGetters, "", r.userClient); err != nil {
+	if err := reconciling.ReconcileUnstructureds(ctx, constraintReconcilerFactorys, "", r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile constraint: %w", err)
 	}
 
@@ -142,9 +142,9 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermat
 	return nil
 }
 
-// constraintCreatorGetter returns the unstructured gatekeeper Constraint object.
-func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.NamedUnstructuredCreatorGetter {
-	return func() (string, string, string, reconciling.UnstructuredCreator) {
+// constraintReconcilerFactory returns the unstructured gatekeeper Constraint object.
+func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconciling.NamedUnstructuredReconcilerFactory {
+	return func() (string, string, string, reconciling.UnstructuredReconciler) {
 		return constraint.Name, constraint.Spec.ConstraintType, constraintAPIVersion, func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 			if len(constraint.Spec.Parameters) > 0 {
 				var params map[string]interface{}

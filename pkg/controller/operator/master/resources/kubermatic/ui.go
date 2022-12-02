@@ -19,8 +19,8 @@ package kubermatic
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,8 +36,8 @@ func uiPodLabels() map[string]string {
 	}
 }
 
-func UIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return UIDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = cfg.Spec.UI.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -96,8 +96,8 @@ func UIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kub
 	}
 }
 
-func UIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+func UIPDBReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return "kubermatic-dashboard", func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			// To prevent the PDB from blocking node rotations, we accept
 			// 0 minAvailable if the replica count is only 1.
@@ -117,8 +117,8 @@ func UIPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPo
 	}
 }
 
-func UIServiceCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+func UIServiceReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return uiServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeNodePort
 			s.Spec.Selector = uiPodLabels()

@@ -22,23 +22,23 @@ import (
 
 	kubevirt "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // Secretsreators returns the CSI secrets for KubeVirt.
-func SecretsCreators(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretCreatorGetter {
-	creators := []reconciling.NamedSecretCreatorGetter{
-		InfraAccessSecretCreator(ctx, data),
+func SecretsReconcilers(ctx context.Context, data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		InfraAccessSecretReconciler(ctx, data),
 	}
 	return creators
 }
 
-// InfraAccessSecretCreator returns the CSI secrets for KubeVirt.
-func InfraAccessSecretCreator(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
+// InfraAccessSecretReconciler returns the CSI secrets for KubeVirt.
+func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return resources.KubeVirtCSISecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			se.Labels = resources.BaseAppLabels(resources.KubeVirtCSISecretName, nil)
 			if se.Data == nil {

@@ -17,7 +17,7 @@ limitations under the License.
 package operatingsystemmanager
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -29,13 +29,13 @@ const (
 	roleBindingName    = "kubermatic:operating-system-manager"
 )
 
-func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }
 
-func RoleCreator() (string, reconciling.RoleCreator) {
+func RoleReconciler() (string, reconciling.RoleReconciler) {
 	return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 		r.Rules = []rbacv1.PolicyRule{
 			{
@@ -90,7 +90,7 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 	}
 }
 
-func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
+func RoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
 	return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 		rb.RoleRef = rbacv1.RoleRef{
 			Name:     roleName,

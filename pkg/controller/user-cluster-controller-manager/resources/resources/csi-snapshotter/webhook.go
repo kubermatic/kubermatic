@@ -21,17 +21,17 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingSnapshotWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the CSI external snapshotter.
+// ValidatingSnapshotWebhookConfigurationReconciler returns the ValidatingWebhookConfiguration for the CSI external snapshotter.
 // Sourced from: https://github.com/kubernetes-csi/external-snapshotter/blob/release-4.2/deploy/kubernetes/webhook-example/admission-configuration-template
-func ValidatingSnapshotWebhookConfigurationCreator(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+func ValidatingSnapshotWebhookConfigurationReconciler(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			sideEffect := admissionregistrationv1.SideEffectClassNone
 			matchPolicy := admissionregistrationv1.Equivalent

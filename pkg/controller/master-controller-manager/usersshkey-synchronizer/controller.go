@@ -28,8 +28,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -190,7 +190,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 	if err := reconciling.ReconcileSecrets(
 		ctx,
-		[]reconciling.NamedSecretCreatorGetter{updateUserSSHKeysSecrets(keys)},
+		[]reconciling.NamedSecretReconcilerFactory{updateUserSSHKeysSecrets(keys)},
 		cluster.Status.NamespaceName,
 		seedClient,
 	); err != nil {
@@ -255,8 +255,8 @@ func enqueueAllClusters(ctx context.Context, clients kuberneteshelper.SeedClient
 }
 
 // updateUserSSHKeysSecrets creates a secret in the seed cluster from the user ssh keys.
-func updateUserSSHKeysSecrets(keys []kubermaticv1.UserSSHKey) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func updateUserSSHKeysSecrets(keys []kubermaticv1.UserSSHKey) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.UserSSHKeys, func(existing *corev1.Secret) (secret *corev1.Secret, e error) {
 			existing.Data = map[string][]byte{}
 

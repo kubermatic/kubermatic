@@ -21,8 +21,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,8 +31,8 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func DaemonSetCreator(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
-	return func() (string, reconciling.DaemonSetCreator) {
+func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
+	return func() (string, reconciling.DaemonSetReconciler) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			maxUnavailable := intstr.FromString("10%")
 

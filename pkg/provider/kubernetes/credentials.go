@@ -34,8 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -92,12 +92,12 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 }
 
 func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := credentialSecretCreatorGetter(cluster.GetSecretName(), cluster.Labels, secretData)
+	creator, err := credentialSecretReconcilerFactory(cluster.GetSecretName(), cluster.Labels, secretData)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, resources.KubermaticNamespace, seedClient); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretReconcilerFactory{creator}, resources.KubermaticNamespace, seedClient); err != nil {
 		return nil, err
 	}
 
@@ -109,13 +109,13 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	}, nil
 }
 
-func credentialSecretCreatorGetter(secretName string, clusterLabels map[string]string, secretData map[string][]byte) (reconciling.NamedSecretCreatorGetter, error) {
+func credentialSecretReconcilerFactory(secretName string, clusterLabels map[string]string, secretData map[string][]byte) (reconciling.NamedSecretReconcilerFactory, error) {
 	projectID := clusterLabels[kubermaticv1.ProjectIDLabelKey]
 	if len(projectID) == 0 {
 		return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
 	}
 
-	return func() (name string, create reconciling.SecretCreator) {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}
@@ -547,13 +547,13 @@ func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Cont
 }
 
 func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := credentialSecretCreatorGetter(secretName, externalcluster.Labels, secretData)
+	creator, err := credentialSecretReconcilerFactory(secretName, externalcluster.Labels, secretData)
 	if err != nil {
 		return nil, err
 	}
 
 	kubeOneNamespaceName := GetKubeOneNamespaceName(externalcluster.Name)
-	creators := []reconciling.NamedSecretCreatorGetter{creator}
+	creators := []reconciling.NamedSecretReconcilerFactory{creator}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, kubeOneNamespaceName, masterClient); err != nil {
 		return nil, err

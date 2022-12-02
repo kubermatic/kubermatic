@@ -19,7 +19,7 @@ package clusterdeletion
 import (
 	"strings"
 
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	utilpointer "k8s.io/utils/pointer"
@@ -27,11 +27,11 @@ import (
 
 // creationPreventingWebhook returns a ValidatingWebhookConfiguration that is intentionally defunct
 // and will prevent all creation requests from succeeding.
-func creationPreventingWebhook(apiGroup string, resources []string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func creationPreventingWebhook(apiGroup string, resources []string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	failurePolicy := admissionregistrationv1.Fail
 	sideEffects := admissionregistrationv1.SideEffectClassNone
 
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return "kubernetes-cluster-cleanup-" + strings.Join(resources, "-"),
 			func(vwc *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 				if vwc.Annotations == nil {

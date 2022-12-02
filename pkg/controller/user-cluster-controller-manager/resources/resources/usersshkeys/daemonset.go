@@ -20,9 +20,9 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,8 +40,8 @@ var (
 	hostPathType            = corev1.HostPathDirectoryOrCreate
 )
 
-func DaemonSetCreator(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetCreatorGetter {
-	return func() (string, reconciling.DaemonSetCreator) {
+func DaemonSetReconciler(versions kubermatic.Versions, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
+	return func() (string, reconciling.DaemonSetReconciler) {
 		return daemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Spec.UpdateStrategy.Type = appsv1.RollingUpdateDaemonSetStrategyType
 

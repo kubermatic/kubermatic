@@ -22,7 +22,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -34,8 +34,8 @@ type Config struct {
 	TLSCACertFile string
 }
 
-func SecretCreator(config Config) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func SecretReconciler(config Config) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MLALoggingAgentSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			if secret.Data == nil {
 				secret.Data = map[string][]byte{}
@@ -72,7 +72,7 @@ logs:
 
     scrape_configs:
       # See also https://github.com/grafana/loki/blob/master/production/ksonnet/promtail/scrape_config.libsonnet for reference
-      
+
       # Pods with a label 'app.kubernetes.io/name'
       - job_name: kubernetes-pods-app-kubernetes-io-name
         pipeline_stages:
@@ -129,7 +129,7 @@ logs:
             - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
             - __meta_kubernetes_pod_container_name
             target_label: __path__
-      
+
       # Pods with a label 'app'
       - job_name: kubernetes-pods-app
         pipeline_stages:
@@ -191,7 +191,7 @@ logs:
             - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
             - __meta_kubernetes_pod_container_name
             target_label: __path__
-      
+
       # Pods with direct controllers, such as StatefulSet
       - job_name: kubernetes-pods-direct-controllers
         pipeline_stages:
@@ -251,7 +251,7 @@ logs:
             - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
             - __meta_kubernetes_pod_container_name
             target_label: __path__
-      
+
       # Pods with indirect controllers, such as Deployment
       - job_name: kubernetes-pods-indirect-controller
         pipeline_stages:
@@ -378,10 +378,10 @@ logs:
 `
 )
 
-func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func ClientCertificateReconciler(ca *resources.ECDSAKeyPair) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.MLALoggingAgentCertificatesSecretName,
-			certificates.GetECDSAClientCertificateCreator(
+			certificates.GetECDSAClientCertificateReconciler(
 				resources.MLALoggingAgentCertificatesSecretName,
 				resources.MLALoggingAgentCertificateCommonName,
 				[]string{},

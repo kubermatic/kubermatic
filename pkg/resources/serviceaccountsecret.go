@@ -20,14 +20,14 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ServiceAccountSecretCreator returns a creator function to create a Google Service Account.
-func ServiceAccountSecretCreator(data CredentialsData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+// ServiceAccountSecretReconciler returns a creator function to create a Google Service Account.
+func ServiceAccountSecretReconciler(data CredentialsData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return GoogleServiceAccountSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			credentials, err := GetCredentials(data)
 			if err != nil {

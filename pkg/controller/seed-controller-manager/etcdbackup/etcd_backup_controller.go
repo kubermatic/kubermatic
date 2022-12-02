@@ -37,9 +37,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1170,8 +1170,8 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r.Client)
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
-		certificates.GetClientCertificateCreator(
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		certificates.GetClientCertificateReconciler(
 			secretName,
 			"backup",
 			nil,
@@ -1191,8 +1191,8 @@ func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
 func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	name := caBundleConfigMapName(cluster)
 
-	creators := []reconciling.NamedConfigMapCreatorGetter{
-		certificates.CABundleConfigMapCreator(name, r.caBundle),
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
+		certificates.CABundleConfigMapReconciler(name, r.caBundle),
 	}
 
 	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))

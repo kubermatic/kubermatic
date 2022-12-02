@@ -53,7 +53,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/sosedoff/gitkit v0.3.0
 	github.com/spf13/cobra v1.6.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stretchr/testify v1.8.1
 	github.com/vmware/go-vcloud-director/v2 v2.16.0
 	github.com/vmware/govmomi v0.29.0
@@ -77,6 +77,7 @@ require (
 	helm.sh/helm/v3 v3.10.2
 	k8c.io/kubeone v1.5.3
 	k8c.io/operating-system-manager v1.1.1
+	k8c.io/reconciler v0.3.1
 	k8s.io/api v0.25.4
 	k8s.io/apiextensions-apiserver v0.25.4
 	k8s.io/apimachinery v0.25.4

@@ -25,8 +25,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -49,16 +49,16 @@ const (
 	admissionControllerPort = 8944
 )
 
-func AdmissionControllerServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func AdmissionControllerServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return AdmissionControllerName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
 		}
 	}
 }
 
-func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func AdmissionControllerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return AdmissionControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -138,8 +138,8 @@ func AdmissionControllerDeploymentCreator(cfg *kubermaticv1.KubermaticConfigurat
 	}
 }
 
-func AdmissionControllerServiceCreator() reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+func AdmissionControllerServiceReconciler() reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return WebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Ports = []corev1.ServicePort{
 				{
@@ -156,7 +156,7 @@ func AdmissionControllerServiceCreator() reconciling.NamedServiceCreatorGetter {
 	}
 }
 
-func AdmissionControllerServingCertCreator() reconciling.NamedSecretCreatorGetter {
+func AdmissionControllerServingCertReconciler() reconciling.NamedSecretReconcilerFactory {
 	altNames := certutil.AltNames{
 		DNSNames: []string{
 			fmt.Sprintf("%s.%s", WebhookServiceName, metav1.NamespaceSystem),
@@ -164,7 +164,7 @@ func AdmissionControllerServingCertCreator() reconciling.NamedSecretCreatorGette
 		},
 	}
 
-	return func() (string, reconciling.SecretCreator) {
+	return func() (string, reconciling.SecretReconciler) {
 		return AdmissionControllerServiceCertSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

@@ -28,10 +28,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -344,12 +344,12 @@ func (p *ExternalClusterProvider) IsMetricServerAvailable(ctx context.Context, c
 }
 
 func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := kubeconfigSecretCreatorGetter(cluster, secretData)
+	creator, err := kubeconfigSecretReconcilerFactory(cluster, secretData)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, resources.KubermaticNamespace, p.clientPrivileged); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretReconcilerFactory{creator}, resources.KubermaticNamespace, p.clientPrivileged); err != nil {
 		return nil, err
 	}
 
@@ -361,13 +361,13 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 	}, nil
 }
 
-func kubeconfigSecretCreatorGetter(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (reconciling.NamedSecretCreatorGetter, error) {
+func kubeconfigSecretReconcilerFactory(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) (reconciling.NamedSecretReconcilerFactory, error) {
 	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if len(projectID) == 0 {
 		return nil, fmt.Errorf("external cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
 	}
 
-	return func() (name string, create reconciling.SecretCreator) {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return cluster.GetKubeconfigSecretName(), func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}

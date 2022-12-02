@@ -117,8 +117,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	clusterTemplateCreatorGetters := []reconciling.NamedKubermaticV1ClusterTemplateCreatorGetter{
-		clusterTemplateCreatorGetter(clusterTemplate),
+	clusterTemplateReconcilerFactorys := []reconciling.NamedClusterTemplateReconcilerFactory{
+		clusterTemplateReconcilerFactory(clusterTemplate),
 	}
 
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -132,7 +132,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return nil
 		}
 
-		return reconciling.ReconcileKubermaticV1ClusterTemplates(ctx, clusterTemplateCreatorGetters, "", seedClient)
+		return reconciling.ReconcileClusterTemplates(ctx, clusterTemplateReconcilerFactorys, "", seedClient)
 	})
 	if err != nil {
 		return fmt.Errorf("reconciled cluster template: %s: %w", clusterTemplate.Name, err)
@@ -180,8 +180,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-func clusterTemplateCreatorGetter(template *kubermaticv1.ClusterTemplate) reconciling.NamedKubermaticV1ClusterTemplateCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ClusterTemplateCreator) {
+func clusterTemplateReconcilerFactory(template *kubermaticv1.ClusterTemplate) reconciling.NamedClusterTemplateReconcilerFactory {
+	return func() (string, reconciling.ClusterTemplateReconciler) {
 		return template.Name, func(c *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error) {
 			c.Name = template.Name
 			c.Spec = template.Spec

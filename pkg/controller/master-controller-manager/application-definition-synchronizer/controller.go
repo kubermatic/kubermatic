@@ -111,8 +111,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appl
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	applicationDefCreatorGetters := []reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter{
-		applicationDefCreatorGetter(applicationDef),
+	applicationDefReconcilerFactorys := []reconciling.NamedApplicationDefinitionReconcilerFactory{
+		applicationDefReconcilerFactory(applicationDef),
 	}
 
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -128,7 +128,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appl
 			return nil
 		}
 
-		return reconciling.ReconcileAppsKubermaticV1ApplicationDefinitions(ctx, applicationDefCreatorGetters, "", seedClient)
+		return reconciling.ReconcileApplicationDefinitions(ctx, applicationDefReconcilerFactorys, "", seedClient)
 	})
 	if err != nil {
 		return fmt.Errorf("reconciled application definition %s: %w", applicationDef.Name, err)
@@ -160,8 +160,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-func applicationDefCreatorGetter(applicationDef *appskubermaticv1.ApplicationDefinition) reconciling.NamedAppsKubermaticV1ApplicationDefinitionCreatorGetter {
-	return func() (string, reconciling.AppsKubermaticV1ApplicationDefinitionCreator) {
+func applicationDefReconcilerFactory(applicationDef *appskubermaticv1.ApplicationDefinition) reconciling.NamedApplicationDefinitionReconcilerFactory {
+	return func() (string, reconciling.ApplicationDefinitionReconciler) {
 		return applicationDef.Name, func(a *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			a.Labels = applicationDef.Labels
 			a.Annotations = applicationDef.Annotations

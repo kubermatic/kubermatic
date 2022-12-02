@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -31,8 +31,8 @@ const (
 	RoleBindingName = "nodeport-proxy"
 )
 
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
+func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return RoleName, func(cr *rbacv1.Role) (*rbacv1.Role, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
@@ -48,8 +48,8 @@ func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func RoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
+func RoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return RoleBindingName, func(crb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -74,8 +74,8 @@ func ClusterRoleName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:nodeport-proxy", cfg.Namespace)
 }
 
-func ClusterRoleCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleCreatorGetter {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func ClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return ClusterRoleName(cfg), func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
@@ -94,8 +94,8 @@ func ClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:nodeport-proxy", cfg.Namespace)
 }
 
-func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func ClusterRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return ClusterRoleBindingName(cfg), func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -116,8 +116,8 @@ func ClusterRoleBindingCreator(cfg *kubermaticv1.KubermaticConfiguration) reconc
 	}
 }
 
-func ServiceAccountCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
 		}

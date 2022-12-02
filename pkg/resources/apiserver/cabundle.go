@@ -18,7 +18,7 @@ package apiserver
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -27,8 +27,8 @@ type caBundleProvider interface {
 	CABundle() resources.CABundle
 }
 
-func CABundleCreator(data caBundleProvider) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+func CABundleReconciler(data caBundleProvider) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.CABundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = map[string]string{
 				resources.CABundleConfigMapKey: data.CABundle().String(),

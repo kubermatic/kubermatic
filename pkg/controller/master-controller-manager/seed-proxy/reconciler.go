@@ -24,8 +24,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -187,8 +187,8 @@ func (r *Reconciler) reconcileSeedProxy(ctx context.Context, seed *kubermaticv1.
 }
 
 func (r *Reconciler) reconcileSeedServiceAccounts(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	creators := []reconciling.NamedServiceAccountCreatorGetter{
-		seedServiceAccountCreator(seed),
+	creators := []reconciling.NamedServiceAccountReconcilerFactory{
+		seedServiceAccountReconciler(seed),
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, seed.Namespace, client); err != nil {
@@ -199,8 +199,8 @@ func (r *Reconciler) reconcileSeedServiceAccounts(ctx context.Context, seed *kub
 }
 
 func (r *Reconciler) reconcileSeedSecrets(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	creators := []reconciling.NamedSecretCreatorGetter{
-		seedSecretCreator(seed),
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		seedSecretReconciler(seed),
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, seed.Namespace, client); err != nil {
@@ -211,8 +211,8 @@ func (r *Reconciler) reconcileSeedSecrets(ctx context.Context, seed *kubermaticv
 }
 
 func (r *Reconciler) reconcileSeedRoles(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	creators := []reconciling.NamedRoleCreatorGetter{
-		seedMonitoringRoleCreator(seed),
+	creators := []reconciling.NamedRoleReconcilerFactory{
+		seedMonitoringRoleReconciler(seed),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, SeedMonitoringNamespace, client); err != nil {
@@ -223,8 +223,8 @@ func (r *Reconciler) reconcileSeedRoles(ctx context.Context, seed *kubermaticv1.
 }
 
 func (r *Reconciler) reconcileSeedRoleBindings(ctx context.Context, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	creators := []reconciling.NamedRoleBindingCreatorGetter{
-		seedMonitoringRoleBindingCreator(seed),
+	creators := []reconciling.NamedRoleBindingReconcilerFactory{
+		seedMonitoringRoleBindingReconciler(seed),
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, SeedMonitoringNamespace, client); err != nil {
@@ -293,8 +293,8 @@ func (r *Reconciler) reconcileMaster(ctx context.Context, seed *kubermaticv1.See
 }
 
 func (r *Reconciler) reconcileMasterSecrets(ctx context.Context, seed *kubermaticv1.Seed, kubeconfig *rest.Config, credentials *corev1.Secret) (*corev1.Secret, error) {
-	creators := []reconciling.NamedSecretCreatorGetter{
-		masterSecretCreator(seed, kubeconfig, credentials),
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		masterSecretReconciler(seed, kubeconfig, credentials),
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, seed.Namespace, r.Client); err != nil {
@@ -320,8 +320,8 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 		return fmt.Errorf("failed to retrieve KubermaticConfiguration: %w", err)
 	}
 
-	creators := []reconciling.NamedDeploymentCreatorGetter{
-		masterDeploymentCreator(seed, secret, registry.GetImageRewriterFunc(config.Spec.UserCluster.OverwriteRegistry)),
+	creators := []reconciling.NamedDeploymentReconcilerFactory{
+		masterDeploymentReconciler(seed, secret, registry.GetImageRewriterFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r.Client); err != nil {
@@ -332,8 +332,8 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 }
 
 func (r *Reconciler) reconcileMasterServices(ctx context.Context, seed *kubermaticv1.Seed, secret *corev1.Secret) error {
-	creators := []reconciling.NamedServiceCreatorGetter{
-		masterServiceCreator(seed, secret),
+	creators := []reconciling.NamedServiceReconcilerFactory{
+		masterServiceReconciler(seed, secret),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creators, seed.Namespace, r.Client); err != nil {
@@ -354,8 +354,8 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 		return nil
 	}
 
-	creators := []reconciling.NamedConfigMapCreatorGetter{
-		r.masterGrafanaConfigmapCreator(seeds),
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
+		r.masterGrafanaConfigmapReconciler(seeds),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {

@@ -42,6 +42,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -86,6 +87,8 @@ type etcdCluster struct {
 func main() {
 	log := createLogger()
 	ctx := signals.SetupSignalHandler()
+
+	reconciling.Configure(log)
 
 	// normal workflow, we don't do migrations anymore
 	e := &etcdCluster{}

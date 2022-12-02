@@ -18,14 +18,14 @@ package prometheus
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleBindingCreator returns the func to create/update the RoleBinding for Prometheus.
-func RoleBindingCreator(clusterNamespace string) reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
+// RoleBindingReconciler returns the func to create/update the RoleBinding for Prometheus.
+func RoleBindingReconciler(clusterNamespace string) reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.PrometheusRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(name, nil)
 

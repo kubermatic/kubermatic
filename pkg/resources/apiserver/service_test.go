@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
+func TestServiceReconcilerRequiresExposeStrategy(t *testing.T) {
 	testCases := []struct {
 		name            string
 		exposeStrategy  kubermaticv1.ExposeStrategy
@@ -48,7 +48,7 @@ func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ServiceCreator(tc.exposeStrategy, tc.internalService)()
+			_, creator := ServiceReconciler(tc.exposeStrategy, tc.internalService)()
 			_, err := creator(&corev1.Service{})
 			if (err != nil) != tc.errExpected {
 				t.Errorf("Expected err: %t, but got err %v", tc.errExpected, err)
@@ -57,7 +57,7 @@ func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
 	}
 }
 
-func TestServiceCreatorSetsPort(t *testing.T) {
+func TestServiceReconcilerSetsPort(t *testing.T) {
 	testCases := []struct {
 		name               string
 		exposeStrategy     kubermaticv1.ExposeStrategy
@@ -132,7 +132,7 @@ func TestServiceCreatorSetsPort(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ServiceCreator(tc.exposeStrategy, tc.internalService)()
+			_, creator := ServiceReconciler(tc.exposeStrategy, tc.internalService)()
 			svc, err := creator(tc.inService)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)

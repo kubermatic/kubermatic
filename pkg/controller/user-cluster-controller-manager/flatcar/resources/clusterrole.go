@@ -17,7 +17,7 @@ limitations under the License.
 package resources
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
@@ -27,8 +27,8 @@ const (
 	AgentClusterRoleName    = "flatcar-linux-update-agent"
 )
 
-func OperatorClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func OperatorClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return OperatorClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
@@ -90,8 +90,8 @@ func OperatorClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-func AgentClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func AgentClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return AgentClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{

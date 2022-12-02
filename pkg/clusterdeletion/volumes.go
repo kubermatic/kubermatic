@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -103,7 +103,7 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, log *zap.SugaredLogger, c
 
 func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
 	// Prevent re-creation of PVs and PVCs by using an intentionally defunct admissionWebhook
-	creatorGetters := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+	creatorGetters := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		creationPreventingWebhook("", []string{"persistentvolumes", "persistentvolumeclaims"}),
 	}
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creatorGetters, "", userClusterClient); err != nil {

@@ -28,6 +28,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	applicationinstallationvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/validation"
@@ -59,6 +60,7 @@ func main() {
 
 	// set the logger used by controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+	reconciling.Configure(log)
 
 	// say hello
 	versions := kubermatic.NewDefaultVersions()

@@ -18,15 +18,15 @@ package metricsserver
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// RolebindingAuthReaderCreator returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API.
-func RolebindingAuthReaderCreator(isKonnectivityEnabled bool) reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
+// RolebindingAuthReaderReconciler returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API.
+func RolebindingAuthReaderReconciler(isKonnectivityEnabled bool) reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.MetricsServerAuthReaderRoleName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(Name, nil)
 

@@ -17,14 +17,14 @@ limitations under the License.
 package resources
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ImagePullSecretCreator returns a creator function to create a ImagePullSecret.
-func ImagePullSecretCreator(dockerPullConfigJSON []byte) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+// ImagePullSecretReconciler returns a creator function to create a ImagePullSecret.
+func ImagePullSecretReconciler(dockerPullConfigJSON []byte) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return ImagePullSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			se.Type = corev1.SecretTypeDockerConfigJson
 

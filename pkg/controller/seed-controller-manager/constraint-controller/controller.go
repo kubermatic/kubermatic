@@ -194,8 +194,8 @@ func addLabel(constraint *kubermaticv1.Constraint) *kubermaticv1.Constraint {
 	return constraint
 }
 
-func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.NamedKubermaticV1ConstraintCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ConstraintCreator) {
+func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconciling.NamedConstraintReconcilerFactory {
+	return func() (string, reconciling.ConstraintReconciler) {
 		return constraint.Name, func(c *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
 			c.Name = constraint.Name
 			c.Spec = constraint.Spec
@@ -268,12 +268,12 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 }
 
 func (r *reconciler) ensureConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) error {
-	constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
-		constraintCreatorGetter(constraint),
+	constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
+		constraintReconcilerFactory(constraint),
 	}
 
 	if err := r.syncAllClustersNS(ctx, log, constraint, clusterList, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error {
-		return reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, namespace, seedClient)
+		return reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, namespace, seedClient)
 	}); err != nil {
 		return err
 	}

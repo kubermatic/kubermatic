@@ -18,7 +18,7 @@ package apiserver
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,10 +26,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// EgressSelectorConfigCreator returns function to create cm that contains egress selection configuration for apiserver
+// EgressSelectorConfigReconciler returns function to create cm that contains egress selection configuration for apiserver
 // to work with konnectivity proxy.
-func EgressSelectorConfigCreator() reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+func EgressSelectorConfigReconciler() reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.KonnectivityKubeApiserverEgress, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			egressConfig := apiserver.EgressSelectorConfiguration{
 				TypeMeta: metav1.TypeMeta{

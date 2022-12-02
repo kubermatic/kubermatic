@@ -29,8 +29,9 @@ import (
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -133,20 +134,20 @@ func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, 
 }
 
 func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
-	creators := []reconciling.NamedKubermaticV1UserSSHKeyCreatorGetter{}
+	creators := []kkpreconciling.NamedUserSSHKeyReconcilerFactory{}
 
 	for i, key := range c.opts.PublicKeys {
 		c.log(log).Infow("Ensuring UserSSHKey...", "pubkey", string(key))
 
 		name := fmt.Sprintf("ssh-key-%s-%d", c.opts.KubermaticProject, i+1)
-		creators = append(creators, userSSHKeyCreatorGetter(name, c.opts.KubermaticProject, key))
+		creators = append(creators, userSSHKeyReconcilerFactory(name, c.opts.KubermaticProject, key))
 	}
 
-	return reconciling.ReconcileKubermaticV1UserSSHKeys(ctx, creators, "", c.opts.SeedClusterClient)
+	return kkpreconciling.ReconcileUserSSHKeys(ctx, creators, "", c.opts.SeedClusterClient)
 }
 
-func userSSHKeyCreatorGetter(keyName string, project string, publicKey []byte) reconciling.NamedKubermaticV1UserSSHKeyCreatorGetter {
-	return func() (string, reconciling.KubermaticV1UserSSHKeyCreator) {
+func userSSHKeyReconcilerFactory(keyName string, project string, publicKey []byte) kkpreconciling.NamedUserSSHKeyReconcilerFactory {
+	return func() (string, kkpreconciling.UserSSHKeyReconciler) {
 		return keyName, func(existing *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {
 			existing.Spec.Name = "Test SSH Key"
 			existing.Spec.Project = project

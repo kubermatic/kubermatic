@@ -17,7 +17,7 @@ limitations under the License.
 package resources
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -27,16 +27,16 @@ const (
 	AgentServiceAccountName    = "flatcar-linux-update-agent"
 )
 
-func OperatorServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func OperatorServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return OperatorServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
 		}
 	}
 }
 
-func AgentServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func AgentServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return AgentServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
 		}

@@ -17,7 +17,7 @@ limitations under the License.
 package systembasicuser
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
@@ -26,7 +26,7 @@ import (
 // created with a Kubernetes version < 1.14, to remove permissions from
 // unauthenticated users to post data to the API and cause a DOS.
 // For details, see https://github.com/kubernetes/kubernetes/issues/83253
-func ClusterRoleBinding() (string, reconciling.ClusterRoleBindingCreator) {
+func ClusterRoleBinding() (string, reconciling.ClusterRoleBindingReconciler) {
 	return "system:basic-user", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 		crb.Subjects = []rbacv1.Subject{{
 			APIGroup: rbacv1.GroupName,

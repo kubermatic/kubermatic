@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,8 +32,8 @@ import (
 
 const AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
 
-func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (name string, create reconciling.DeploymentCreator) {
+func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (name string, create reconciling.DeploymentReconciler) {
 		return AnexiaCCMDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(AnexiaCCMDeploymentName, nil)
 			deployment.Spec.Replicas = resources.Int32(1)

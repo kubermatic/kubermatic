@@ -17,7 +17,7 @@ limitations under the License.
 package machinecontroller
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -30,18 +30,18 @@ const (
 	webhookRoleBindingName    = "kubermatic:machine-controller-webhook"
 )
 
-func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }
 
-func WebhookServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+func WebhookServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return webhookServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }
-func WebhookRoleCreator() (string, reconciling.RoleCreator) {
+func WebhookRoleReconciler() (string, reconciling.RoleReconciler) {
 	return webhookRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 		r.Rules = []rbacv1.PolicyRule{
 			{
@@ -57,7 +57,7 @@ func WebhookRoleCreator() (string, reconciling.RoleCreator) {
 	}
 }
 
-func WebhookRoleBindingCreator() (string, reconciling.RoleBindingCreator) {
+func WebhookRoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
 	return webhookRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 		rb.RoleRef = rbacv1.RoleRef{
 			Name:     webhookRoleName,

@@ -23,8 +23,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,8 +39,8 @@ func seedControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func SeedControllerManagerDeploymentCreator(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func SeedControllerManagerDeploymentReconciler(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = cfg.Spec.SeedController.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -208,10 +208,10 @@ func getAddonDockerTag(cfg kubermaticv1.KubermaticAddonsConfiguration, version s
 	return version
 }
 
-func SeedControllerManagerPDBCreator(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
+func SeedControllerManagerPDBReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetReconcilerFactory {
 	name := "kubermatic-seed-controller-manager"
 
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return name, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			// To prevent the PDB from blocking node rotations, we accept
 			// 0 minAvailable if the replica count is only 1.

@@ -20,22 +20,22 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ConfigMapsCreators returns the CSI controller ConfigMaps for KubeVirt.
-func ConfigMapsCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
-	creators := []reconciling.NamedConfigMapCreatorGetter{
-		ControllerConfigMapCreator(data),
+// ConfigMapsReconcilers returns the CSI controller ConfigMaps for KubeVirt.
+func ConfigMapsReconcilers(data *resources.TemplateData) []reconciling.NamedConfigMapReconcilerFactory {
+	creators := []reconciling.NamedConfigMapReconcilerFactory{
+		ControllerConfigMapReconciler(data),
 	}
 	return creators
 }
 
-// ControllerConfigMapCreator returns the CSI controller ConfigMap for KubeVirt.
-func ControllerConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (name string, create reconciling.ConfigMapCreator) {
+// ControllerConfigMapReconciler returns the CSI controller ConfigMap for KubeVirt.
+func ControllerConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (name string, create reconciling.ConfigMapReconciler) {
 		return resources.KubeVirtCSIConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

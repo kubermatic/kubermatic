@@ -18,14 +18,14 @@ package prometheus
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleCreator returns the func to create/update the role for Prometheus.
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
+// RoleReconciler returns the func to create/update the role for Prometheus.
+func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.PrometheusRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Labels = resources.BaseAppLabels(name, nil)
 

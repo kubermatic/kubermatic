@@ -118,8 +118,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	projectCreatorGetters := []reconciling.NamedKubermaticV1ProjectCreatorGetter{
-		projectCreatorGetter(project),
+	projectReconcilerFactorys := []reconciling.NamedProjectReconcilerFactory{
+		projectReconcilerFactory(project),
 	}
 
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -144,7 +144,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		err := reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClient)
+		err := reconciling.ReconcileProjects(ctx, projectReconcilerFactorys, "", seedClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile project: %w", err)
 		}

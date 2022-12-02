@@ -23,7 +23,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -35,9 +35,9 @@ const (
 	machineValidatingWebhookConfigurationName = "kubermatic-machine-validation"
 )
 
-// ValidatingWebhookConfigurationCreator returns the ValidatingWebhookConfiguration for the machine CRD.
-func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+// ValidatingWebhookConfigurationReconciler returns the ValidatingWebhookConfiguration for the machine CRD.
+func ValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return machineValidatingWebhookConfigurationName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail

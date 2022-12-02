@@ -147,8 +147,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	ctCreatorGetters := []reconciling.NamedKubermaticV1ConstraintTemplateCreatorGetter{
-		constraintTemplateCreatorGetter(constraintTemplate),
+	ctReconcilerFactorys := []reconciling.NamedConstraintTemplateReconcilerFactory{
+		constraintTemplateReconcilerFactory(constraintTemplate),
 	}
 
 	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -162,12 +162,12 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return nil
 		}
 
-		return reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", seedClient)
+		return reconciling.ReconcileConstraintTemplates(ctx, ctReconcilerFactorys, "", seedClient)
 	})
 }
 
-func constraintTemplateCreatorGetter(kubeCT *kubermaticv1.ConstraintTemplate) reconciling.NamedKubermaticV1ConstraintTemplateCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ConstraintTemplateCreator) {
+func constraintTemplateReconcilerFactory(kubeCT *kubermaticv1.ConstraintTemplate) reconciling.NamedConstraintTemplateReconcilerFactory {
+	return func() (string, reconciling.ConstraintTemplateReconciler) {
 		return kubeCT.Name, func(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
 			ct.Name = kubeCT.Name
 			ct.Spec = kubeCT.Spec

@@ -28,8 +28,8 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -177,8 +177,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to retrieve credentials secret: %w", err)
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
-		secretCreator(secret),
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		secretReconciler(secret),
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
@@ -188,8 +188,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return nil, nil
 }
 
-func secretCreator(original *corev1.Secret) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
+func secretReconciler(original *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return resources.ClusterCloudCredentialsSecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Data = original.Data
 
