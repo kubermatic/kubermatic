@@ -17,12 +17,13 @@ limitations under the License.
 package csi
 
 import (
+	"k8c.io/reconciler/pkg/reconciling"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
-	"k8c.io/reconciler/pkg/reconciling"
 )
 
-// ServiceAccountsReconcilers returns the function to create and update the service accounts needed for CSI.
+// ServiceAccountReconcilers returns the function to create and update the service accounts needed for CSI.
 func ServiceAccountReconcilers(cluster *kubermaticv1.Cluster) []reconciling.NamedServiceAccountReconcilerFactory {
 	creatorGetters := []reconciling.NamedServiceAccountReconcilerFactory{}
 

@@ -17,14 +17,16 @@ limitations under the License.
 package vsphere
 
 import (
+	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	"k8c.io/reconciler/pkg/reconciling"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	cloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// Secretsreators returns the CSI secrets for KubeVirt.
+// SecretsReconcilers reconciles secrets needed for vSphere.
 func SecretsReconcilers(data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
 	creators := []reconciling.NamedSecretReconcilerFactory{
 		CloudConfigSecretNameReconciler(data),
@@ -32,7 +34,7 @@ func SecretsReconcilers(data *resources.TemplateData) []reconciling.NamedSecretR
 	return creators
 }
 
-// CloudConfigSecretNameReconciler returns the CSI Secret for VSphere.
+// CloudConfigSecretNameReconciler returns the CSI Secret for vSphere.
 func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return resources.CSICloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
@@ -50,7 +52,7 @@ func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 				return nil, err
 			}
 
-			cloudConfig, err := CloudConfigCSIToString(vsphereCloudConfig)
+			cloudConfig, err := vsphere.CloudConfigToString(vsphereCloudConfig)
 			if err != nil {
 				return nil, err
 			}
