@@ -111,7 +111,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/metrics-server/metrics-server:" + tag,
+					Image:   data.ImageRegistry(resources.RegistryK8S) + "/metrics-server/metrics-server:" + tag,
 					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",

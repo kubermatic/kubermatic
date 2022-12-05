@@ -120,7 +120,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  resources.DNSResolverDeploymentName,
-					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/" + GetCoreDNSImage(data.Cluster().Spec.Version.Semver()),
+					Image: data.ImageRegistry(resources.RegistryK8S) + "/" + GetCoreDNSImage(data.Cluster().Spec.Version.Semver()),
 					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{

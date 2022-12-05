@@ -91,7 +91,7 @@ func DeploymentCreator(registryWithOverwrite registry.WithOverwriteFunc) reconci
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.MetricsServerDeploymentName,
-					Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryK8SGCR), imageName, imageTag),
+					Image:   fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryK8S), imageName, imageTag),
 					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubelet-insecure-tls",

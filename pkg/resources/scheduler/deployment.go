@@ -125,7 +125,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.SchedulerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8S) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
 					Command: []string{"/usr/local/bin/kube-scheduler"},
 					Args:    flags,
 					Env: []corev1.EnvVar{

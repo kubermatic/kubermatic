@@ -18,5 +18,5 @@ package nodeportproxy
 
 // TODO make registries configurable
 const (
-	AgnhostImage = "k8s.gcr.io/e2e-test-images/agnhost:2.21"
+	AgnhostImage = "registry.k8s.io/e2e-test-images/agnhost:2.21"
 )

@@ -85,7 +85,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-state-metrics/kube-state-metrics:" + version,
+					Image:   data.ImageRegistry(resources.RegistryK8S) + "/kube-state-metrics/kube-state-metrics:" + version,
 					Command: []string{"/kube-state-metrics"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
