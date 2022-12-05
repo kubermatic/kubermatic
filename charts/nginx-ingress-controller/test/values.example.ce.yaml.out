@@ -6,7 +6,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: nginx
-      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/instance: RELEASE-NAME
       app.kubernetes.io/component: controller
   minAvailable: 1
 ---
@@ -27,7 +27,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -42,7 +42,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -58,7 +58,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
   name: nginx-ingress
@@ -126,7 +126,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
   name: nginx-ingress
@@ -146,7 +146,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -230,7 +230,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -252,7 +252,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -267,7 +267,7 @@ spec:
       targetPort: metrics
   selector:
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/component: controller
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-service-webhook.yaml
@@ -277,7 +277,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -292,7 +292,7 @@ spec:
       appProtocol: https
   selector:
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/component: controller
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-service.yaml
@@ -304,7 +304,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -328,7 +328,7 @@ spec:
       appProtocol: https
   selector:
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/component: controller
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-deployment.yaml
@@ -338,7 +338,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -348,7 +348,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: nginx
-      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/instance: RELEASE-NAME
       app.kubernetes.io/component: controller
   replicas: 3
   revisionHistoryLimit: 10
@@ -360,7 +360,7 @@ spec:
         prometheus.io/scrape: "true"
       labels:
         app.kubernetes.io/name: nginx
-        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/component: controller
     spec:
       dnsPolicy: ClusterFirst
@@ -478,7 +478,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
@@ -495,7 +495,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -535,7 +535,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -551,7 +551,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -575,7 +575,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -600,7 +600,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -625,7 +625,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -650,7 +650,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -661,7 +661,7 @@ spec:
       labels:
         helm.sh/chart: nginx-4.0.9
         app.kubernetes.io/name: nginx
-        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/version: "1.0.5"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: admission-webhook
@@ -700,7 +700,7 @@ metadata:
   labels:
     helm.sh/chart: nginx-4.0.9
     app.kubernetes.io/name: nginx
-    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/instance: RELEASE-NAME
     app.kubernetes.io/version: "1.0.5"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: admission-webhook
@@ -711,7 +711,7 @@ spec:
       labels:
         helm.sh/chart: nginx-4.0.9
         app.kubernetes.io/name: nginx
-        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/instance: RELEASE-NAME
         app.kubernetes.io/version: "1.0.5"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: admission-webhook
