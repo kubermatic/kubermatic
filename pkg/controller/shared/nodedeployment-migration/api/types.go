@@ -24,14 +24,14 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 )
 
-// NodeDeployment represents a set of worker nodes that is part of a cluster
+// NodeDeployment represents a set of worker nodes that is part of a cluster.
 type NodeDeployment struct {
 	apiv1.ObjectMeta `json:",inline"`
 
 	Spec NodeDeploymentSpec `json:"spec"`
 }
 
-// NodeDeploymentSpec node deployment specification
+// NodeDeploymentSpec node deployment specification.
 type NodeDeploymentSpec struct {
 	// required: true
 	Replicas int32 `json:"replicas"`
@@ -44,7 +44,7 @@ type NodeDeploymentSpec struct {
 	DynamicConfig *bool `json:"dynamicConfig,omitempty"`
 }
 
-// NodeSpec node specification
+// NodeSpec node specification.
 type NodeSpec struct {
 	// required: true
 	Cloud NodeCloudSpec `json:"cloud"`
@@ -90,21 +90,21 @@ type OperatingSystemSpec struct {
 	RockyLinux  *RockyLinuxSpec  `json:"rockylinux,omitempty"`
 }
 
-// UbuntuSpec ubuntu specific settings
+// UbuntuSpec ubuntu specific settings.
 type UbuntuSpec struct {
-	// do a dist-upgrade on boot and reboot it required afterwards
+	// do a dist-upgrade on boot and reboot it required afterwards.
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
 // CentOSSpec contains CentOS specific settings.
 type CentOSSpec struct {
-	// do a dist-upgrade on boot and reboot it required afterwards
+	// do a dist-upgrade on boot and reboot it required afterwards.
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
-// FlatcarSpec contains Flatcar Linux specific settings
+// FlatcarSpec contains Flatcar Linux specific settings.
 type FlatcarSpec struct {
-	// disable flatcar linux auto-update feature
+	// disable flatcar linux auto-update feature.
 	DisableAutoUpdate bool `json:"disableAutoUpdate"`
 
 	// ProvisioningUtility specifies the type of provisioning utility, allowed values are cloud-init and ignition.
@@ -112,34 +112,34 @@ type FlatcarSpec struct {
 	flatcar.ProvisioningUtility `json:"provisioningUtility,omitempty"`
 }
 
-// SLESSpec contains SLES specific settings
+// SLESSpec contains SLES specific settings.
 type SLESSpec struct {
-	// do a dist-upgrade on boot and reboot it required afterwards
+	// do a dist-upgrade on boot and reboot it required afterwards.
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
-// RHELSpec contains rhel specific settings
+// RHELSpec contains rhel specific settings.
 type RHELSpec struct {
-	// do a dist-upgrade on boot and reboot it required afterwards
+	// do a dist-upgrade on boot and reboot it required afterwards.
 	DistUpgradeOnBoot               bool   `json:"distUpgradeOnBoot"`
 	RHELSubscriptionManagerUser     string `json:"rhelSubscriptionManagerUser,omitempty"`
 	RHELSubscriptionManagerPassword string `json:"rhelSubscriptionManagerPassword,omitempty"`
 	RHSMOfflineToken                string `json:"rhsmOfflineToken,omitempty"`
 }
 
-// RockyLinuxSpec contains rocky-linux specific settings
+// RockyLinuxSpec contains rocky-linux specific settings.
 type RockyLinuxSpec struct {
-	// do a dist-upgrade on boot and reboot it required afterwards
+	// do a dist-upgrade on boot and reboot it required afterwards.
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
-// AmazonLinuxSpec amazon linux specific settings
+// AmazonLinuxSpec amazon linux specific settings.
 type AmazonLinuxSpec struct {
-	// do a dist-upgrade on boot and reboot it required afterwards
+	// do a dist-upgrade on boot and reboot it required afterwards.
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
-// NodeVersionInfo node version information
+// NodeVersionInfo node version information.
 type NodeVersionInfo struct {
 	Kubelet string `json:"kubelet"`
 }
@@ -151,24 +151,24 @@ type TaintSpec struct {
 	Effect string `json:"effect"`
 }
 
-// DigitaloceanNodeSpec digitalocean node settings
+// DigitaloceanNodeSpec digitalocean node settings.
 type DigitaloceanNodeSpec struct {
-	// droplet size slug
+	// droplet size slug.
 	// required: true
 	Size string `json:"size"`
-	// enable backups for the droplet
+	// enable backups for the droplet.
 	Backups bool `json:"backups"`
 	// DEPRECATED
 	// IPv6 is enabled automatically based on IP Family of the cluster so setting this field is not needed.
 	// enable ipv6 for the droplet
 	IPv6 bool `json:"ipv6"`
-	// enable monitoring for the droplet
+	// enable monitoring for the droplet.
 	Monitoring bool `json:"monitoring"`
-	// additional droplet tags
+	// additional droplet tags.
 	Tags []string `json:"tags"`
 }
 
-// HetznerNodeSpec Hetzner node settings
+// HetznerNodeSpec Hetzner node settings.
 type HetznerNodeSpec struct {
 	// server type
 	// required: true
@@ -178,40 +178,40 @@ type HetznerNodeSpec struct {
 	Network string `json:"network"`
 }
 
-// AzureNodeSpec describes settings for an Azure node
+// AzureNodeSpec describes settings for an Azure node.
 type AzureNodeSpec struct {
-	// VM size
+	// VM size.
 	// required: true
 	Size string `json:"size"`
-	// should the machine have a publicly accessible IP address
+	// should the machine have a publicly accessible IP address.
 	// required: false
 	AssignPublicIP bool `json:"assignPublicIP"`
-	// Additional metadata to set
+	// Additional metadata to set.
 	// required: false
 	Tags map[string]string `json:"tags,omitempty"`
-	// OS disk size in GB
+	// OS disk size in GB.
 	// required: false
 	OSDiskSize int32 `json:"osDiskSize"`
-	// Data disk size in GB
+	// Data disk size in GB.
 	// required: false
 	DataDiskSize int32 `json:"dataDiskSize"`
-	// Zones represents the availability zones for azure vms
+	// Zones represents the availability zones for azure vms.
 	// required: false
 	Zones []string `json:"zones"`
-	// ImageID represents the ID of the image that should be used to run the node
+	// ImageID represents the ID of the image that should be used to run the node.
 	// required: false
 	ImageID string `json:"imageID"`
 	// AssignAvailabilitySet is used to check if an availability set should be created and assigned to the cluster.
 	AssignAvailabilitySet bool `json:"assignAvailabilitySet"`
 }
 
-// VSphereNodeSpec VSphere node settings
+// VSphereNodeSpec VSphere node settings.
 type VSphereNodeSpec struct {
 	CPUs       int    `json:"cpus"`
 	Memory     int    `json:"memory"`
 	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
 	Template   string `json:"template"`
-	// Additional metadata to set
+	// Additional metadata to set.
 	// required: false
 	Tags []VSphereTag `json:"tags,omitempty"`
 }
@@ -224,24 +224,24 @@ type VSphereTag struct {
 	CategoryID string `json:"categoryID,omitempty"`
 }
 
-// OpenstackNodeSpec openstack node settings
+// OpenstackNodeSpec openstack node settings.
 type OpenstackNodeSpec struct {
-	// instance flavor
+	// instance flavor.
 	// required: true
 	Flavor string `json:"flavor"`
-	// image to use
+	// image to use.
 	// required: true
 	Image string `json:"image"`
-	// Additional metadata to set
+	// Additional metadata to set.
 	// required: false
 	Tags map[string]string `json:"tags,omitempty"`
-	// Defines whether floating ip should be used
+	// Defines whether floating ip should be used.
 	// required: false
 	UseFloatingIP bool `json:"useFloatingIP,omitempty"`
-	// if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor
+	// if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor.
 	// required: false
 	RootDiskSizeGB *int `json:"diskSize"`
-	// if not set, the default AZ from the Datacenter spec will be used
+	// if not set, the default AZ from the Datacenter spec will be used.
 	// required: false
 	AvailabilityZone string `json:"availabilityZone"`
 	// Period of time to check for instance ready status, i.e. 10s/1m
@@ -255,9 +255,9 @@ type OpenstackNodeSpec struct {
 	ServerGroup string `json:"serverGroup"`
 }
 
-// AWSNodeSpec aws specific node settings
+// AWSNodeSpec aws specific node settings.
 type AWSNodeSpec struct {
-	// instance type. for example: t2.micro
+	// instance type. for example: t2.micro.
 	// required: true
 	InstanceType string `json:"instanceType"`
 	// size of the volume in gb. Only one volume will be created
@@ -299,17 +299,17 @@ type AWSNodeSpec struct {
 	AssumeRoleExternalID string `json:"assumeRoleExternalID"`
 }
 
-// PacketNodeSpec specifies packet specific node settings
+// PacketNodeSpec specifies packet specific node settings.
 type PacketNodeSpec struct {
 	// InstanceType denotes the plan to which the device will be provisioned.
 	// required: true
 	InstanceType string `json:"instanceType"`
-	// additional instance tags
+	// additional instance tags.
 	// required: false
 	Tags []string `json:"tags"`
 }
 
-// GCPNodeSpec gcp specific node settings
+// GCPNodeSpec gcp specific node settings.
 type GCPNodeSpec struct {
 	Zone        string            `json:"zone"`
 	MachineType string            `json:"machineType"`
@@ -321,7 +321,7 @@ type GCPNodeSpec struct {
 	CustomImage string            `json:"customImage"`
 }
 
-// KubevirtNodeSpec kubevirt specific node settings
+// KubevirtNodeSpec kubevirt specific node settings.
 type KubevirtNodeSpec struct {
 	// FlavorName states name of the virtual-machine flavor.
 	//
@@ -357,17 +357,17 @@ type KubevirtNodeSpec struct {
 	// PrimaryDiskSize states the size of the provisioned pvc per node.
 	// required: true
 	PrimaryDiskSize string `json:"primaryDiskSize"`
-	// SecondaryDisks contains list of secondary-disks
+	// SecondaryDisks contains list of secondary-disks.
 	SecondaryDisks []SecondaryDisks `json:"secondaryDisks"`
-	// PodAffinityPreset describes pod affinity scheduling rules
+	// PodAffinityPreset describes pod affinity scheduling rules.
 	//
-	// Deprecated: in favor of topology spread constraints
+	// Deprecated: in favor of topology spread constraints.
 	PodAffinityPreset string `json:"podAffinityPreset"`
-	// PodAntiAffinityPreset describes pod anti-affinity scheduling rules
+	// PodAntiAffinityPreset describes pod anti-affinity scheduling rules.
 	//
 	// Deprecated: in favor of topology spread constraints
 	PodAntiAffinityPreset string `json:"podAntiAffinityPreset"`
-	// NodeAffinityPreset describes node affinity scheduling rules
+	// NodeAffinityPreset describes node affinity scheduling rules.
 	NodeAffinityPreset NodeAffinityPreset `json:"nodeAffinityPreset"`
 	// TopologySpreadConstraints describes topology spread constraints for VMs.
 	TopologySpreadConstraints []TopologySpreadConstraint `json:"topologySpreadConstraints"`
@@ -389,12 +389,12 @@ type TopologySpreadConstraint struct {
 	MaxSkew int `json:"maxSkew"`
 	// TopologyKey is the key of infra-node labels.
 	TopologyKey string `json:"topologyKey"`
-	// WhenUnsatisfiable indicates how to deal with a VM if it doesn't satisfy
+	// WhenUnsatisfiable indicates how to deal with a VM if it doesn't satisfy.
 	// the spread constraint.
 	WhenUnsatisfiable string `json:"whenUnsatisfiable"`
 }
 
-// AlibabaNodeSpec alibaba specific node settings
+// AlibabaNodeSpec alibaba specific node settings.
 type AlibabaNodeSpec struct {
 	InstanceType            string            `json:"instanceType"`
 	DiskSize                string            `json:"diskSize"`
@@ -405,7 +405,7 @@ type AlibabaNodeSpec struct {
 	ZoneID                  string            `json:"zoneID"`
 }
 
-// AnexiaDiskConfig defines a single disk for a node at anexia
+// AnexiaDiskConfig defines a single disk for a node at anexia.
 type AnexiaDiskConfig struct {
 	// Disks configures this disk of each node will have.
 	// required: true
@@ -417,9 +417,9 @@ type AnexiaDiskConfig struct {
 	PerformanceType *string `json:"performanceType,omitempty"`
 }
 
-// AnexiaNodeSpec anexia specific node settings
+// AnexiaNodeSpec anexia specific node settings.
 type AnexiaNodeSpec struct {
-	// VlanID Instance vlanID
+	// VlanID Instance vlanID.
 	// required: true
 	VlanID string `json:"vlanID"`
 	// TemplateID instance template
@@ -442,7 +442,7 @@ type AnexiaNodeSpec struct {
 	Disks []AnexiaDiskConfig `json:"disks"`
 }
 
-// NutanixNodeSpec nutanix specific node settings
+// NutanixNodeSpec nutanix specific node settings.
 type NutanixNodeSpec struct {
 	SubnetName     string            `json:"subnetName"`
 	ImageName      string            `json:"imageName"`
@@ -454,7 +454,7 @@ type NutanixNodeSpec struct {
 	DiskSize       *int64            `json:"diskSize"`
 }
 
-// VMwareCloudDirectorNodeSpec VMware Cloud Director node settings
+// VMwareCloudDirectorNodeSpec VMware Cloud Director node settings.
 type VMwareCloudDirectorNodeSpec struct {
 	CPUs             int                  `json:"cpus"`
 	CPUCores         int                  `json:"cpuCores"`
@@ -467,7 +467,7 @@ type VMwareCloudDirectorNodeSpec struct {
 	IPAllocationMode vcd.IPAllocationMode `json:"ipAllocationMode,omitempty"`
 	VApp             string               `json:"vapp,omitempty"`
 	Network          string               `json:"network,omitempty"`
-	// Additional metadata to set
+	// Additional metadata to set.
 	// required: false
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
