@@ -260,7 +260,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.3.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-attacher:v3.3.0
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -275,7 +275,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-resizer
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.3.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-resizer:v1.3.0
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -345,7 +345,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.4.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.4.0
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
@@ -388,7 +388,7 @@ spec:
               name: ca-bundle
               readOnly: true
         - name: csi-provisioner
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v3.0.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-provisioner:v3.0.0
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -445,7 +445,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: node-driver-registrar
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.3.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-node-driver-registrar:v2.3.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -534,7 +534,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.4.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.4.0
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
