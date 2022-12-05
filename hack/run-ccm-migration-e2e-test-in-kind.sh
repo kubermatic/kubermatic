@@ -64,6 +64,7 @@ if [[ "$PROVIDER_TO_TEST" == "openstack" ]]; then
 fi
 
 if [[ "$PROVIDER_TO_TEST" == "vsphere" ]]; then
+  TIMEOUT=45m
   EXTRA_ARGS="-vsphere-seed-datacenter=vsphere-ger
     -vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
