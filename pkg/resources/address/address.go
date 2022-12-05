@@ -109,18 +109,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		if err := m.client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
 			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
 		}
-		frontProxyLBServiceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP // default in case the implementation doesn't populate the status
-		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" {
-				frontProxyLBServiceIP = ingress.IP
-			}
-			if ingress.Hostname != "" {
-				frontProxyLBServiceHostname = ingress.Hostname
-			}
-		}
-		if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) > 1 {
-			m.log.Debugw("Multiple ingress values in LB status, the following values will be used", "ip", frontProxyLBServiceIP, "hostname", frontProxyLBServiceHostname)
-		}
+		frontProxyLBServiceIP, frontProxyLBServiceHostname = m.getFrontProxyLBServiceData(frontProxyLoadBalancerService)
 	}
 
 	// External Name
@@ -220,6 +209,39 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	}
 
 	return modifiers, nil
+}
+
+func (m *ModifiersBuilder) getFrontProxyLBServiceData(frontProxyLoadBalancerService *corev1.Service) (string, string) {
+	//  frontProxyLBServiceIP is set according to below priority
+	// 1. First public IP from the status list
+	// 2. First private IP from the status list
+	// 3. Default IP as per configured spec if status is not populated
+	serviceIP := ""
+	serviceHostname := ""
+	if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) > 0 {
+		var tmpIP string
+		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
+			if ingress.IP != "" && !net.ParseIP(ingress.IP).IsPrivate() && tmpIP == "" {
+				tmpIP = ingress.IP
+			}
+			if ingress.Hostname != "" {
+				serviceHostname = ingress.Hostname
+			}
+		}
+
+		if tmpIP != "" {
+			serviceIP = tmpIP
+		} else {
+			serviceIP = frontProxyLoadBalancerService.Status.LoadBalancer.Ingress[0].IP
+		}
+		m.log.Debugw("Multiple ingress values in LB status, the following values will be used", "ip", serviceIP, "hostname", serviceHostname)
+	}
+	// default in case the implementation doesn't populate the status
+	if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) == 0 {
+		serviceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
+	}
+
+	return serviceIP, serviceHostname
 }
 
 func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
