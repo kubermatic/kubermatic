@@ -76,7 +76,6 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-csi-username=${NUTANIX_E2E_PE_USERNAME}
     -nutanix-csi-password=${NUTANIX_E2E_PE_PASSWORD}
     -nutanix-csi-endpoint=${NUTANIX_E2E_PE_ENDPOINT}
-    -nutanix-proxy-url=http://${NUTANIX_E2E_PROXY_USERNAME}:${NUTANIX_E2E_PROXY_PASSWORD}@10.240.20.100:${NUTANIX_E2E_PROXY_PORT}/
     -nutanix-cluster-name=${NUTANIX_E2E_CLUSTER_NAME}
     -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
     -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}"
