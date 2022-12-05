@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -100,7 +101,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	c := controllerRunOptions{
 		featureGates: features.FeatureGate{},
 		// Default IP used by tunneling agents
-		tunnelingAgentIP: flagopts.IPValue{IP: net.ParseIP("192.168.30.10")},
+		tunnelingAgentIP: flagopts.IPValue{IP: net.ParseIP(resources.DefaultTunnelingAgentIP)},
 	}
 
 	var (

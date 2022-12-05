@@ -43,7 +43,7 @@ func main() {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
 
-	flag.StringVar(&mode, "mode", "", "Start mode for the process, it can be init or probe")
+	flag.StringVar(&mode, "mode", "", "Start mode for the process, it can be 'init' or 'probe'")
 	flag.StringVar(&ifName, "if", "", "Name of the network interface to be created or managed, eg: envoyagent")
 	flag.StringVar(&ifAddr, "addr", "", "Network Interface address")
 	flag.Parse()
@@ -51,8 +51,14 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
+	if flag.NFlag() < 3 || ifName == "" || !isValidIfAddr(ifAddr) {
+		flag.Usage()
+		log.Fatalf("Invalid arguments")
+	}
+
+	switch mode {
 	// 'init' mode is for init containers
-	if mode == "init" {
+	case "init":
 		link, err = createInterface(ifName)
 		if err != nil && !errors.Is(err, fs.ErrExist) {
 			log.Fatalf("Failed to create link: %v", err)
@@ -65,10 +71,8 @@ func main() {
 			}
 			return
 		}
-	}
-
-	// 'probe' mode is for side-car containers.
-	if mode == "probe" {
+	// 'probe' mode is for side-car containers
+	case "probe":
 		ticker := time.NewTicker(time.Second * 10).C
 		for {
 			<-ticker
@@ -87,7 +91,14 @@ func main() {
 				}
 			}
 		}
+	default:
+		flag.Usage()
 	}
+}
+
+// Checks for valid IP address.
+func isValidIfAddr(ip string) bool {
+	return net.ParseIP(ip) != nil
 }
 
 // Creates a dummy link, equalent to "ip link add envoyagent type dummy".
@@ -133,7 +144,10 @@ func setInterfaceAddress(link *netlink.Dummy, ifAddr string) error {
 
 func checkInterfaceExists(ifName string) (*netlink.Dummy, error) {
 	link, err := netlink.LinkByName(ifName)
-	linkDummy := &netlink.Dummy{LinkAttrs: *link.Attrs()}
+	linkDummy := &netlink.Dummy{}
+	if err == nil {
+		linkDummy = &netlink.Dummy{LinkAttrs: *link.Attrs()}
+	}
 	return linkDummy, err
 }
 

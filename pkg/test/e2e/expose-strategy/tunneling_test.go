@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -71,7 +72,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 			return cs
 		}).
 		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-			cs.ClusterNetwork.TunnelingAgentIP = "192.168.30.10"
+			cs.ClusterNetwork.TunnelingAgentIP = resources.DefaultTunnelingAgentIP
 			return cs
 		})
 

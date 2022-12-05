@@ -71,7 +71,7 @@ if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); th
   else
     KONNECTIVITY_SERVER_PORT="$(echo ${CLUSTER_RAW} | jq -r '.status.address.port')"
     KONNECTIVITY_SERVER_HOST="konnectivity-server.$(echo ${CLUSTER_RAW} | jq -r '.status.address.externalName')"
-    ARGS="$ARGS -tunneling-agent-ip=192.168.30.10"
+    ARGS="$ARGS -tunneling-agent-ip=100.64.30.10"
   fi
   ARGS="$ARGS -konnectivity-enabled=true"
   ARGS="$ARGS -konnectivity-server-host=${KONNECTIVITY_SERVER_HOST}"
@@ -82,7 +82,7 @@ else
     OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].nodePort')"
   else
     OPENVPN_SERVER_PORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r '.spec.ports[0].port')"
-    ARGS="$ARGS -tunneling-agent-ip=192.168.30.10"
+    ARGS="$ARGS -tunneling-agent-ip=100.64.30.10"
   fi
   ARGS="$ARGS -openvpn-server-port=${OPENVPN_SERVER_PORT}"
 fi
