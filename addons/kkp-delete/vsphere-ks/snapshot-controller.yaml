@@ -1,0 +1,109 @@
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Sourced from:
+# - https://github.com/kubernetes-csi/external-snapshotter/blob/release-5.0/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
+# - https://github.com/kubernetes-csi/external-snapshotter/blob/release-5.0/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+# Modifications:
+#   - Set image tag to 5.0.1 to match the release version
+#   - template function to replace base registry
+#   - add seccomp profile
+
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "vsphere" }}
+# RBAC file for the snapshot controller.
+#
+# The snapshot controller implements the control loop for CSI snapshot functionality.
+# It should be installed as part of the base Kubernetes distribution in an appropriate
+# namespace for components implementing base system functionality. For installing with
+# Vanilla Kubernetes, kube-system makes sense for the namespace.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: snapshot-controller
+  namespace: kube-system
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-controller-leaderelection
+  namespace: kube-system
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "watch", "list", "delete", "update", "create"]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-controller-leaderelection
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: snapshot-controller
+roleRef:
+  kind: Role
+  name: snapshot-controller-leaderelection
+  apiGroup: rbac.authorization.k8s.io
+---
+
+# This YAML file shows how to deploy the snapshot controller
+
+# The snapshot controller implements the control loop for CSI snapshot functionality.
+# It should be installed as part of the base Kubernetes distribution in an appropriate
+# namespace for components implementing base system functionality. For installing with
+# Vanilla Kubernetes, kube-system makes sense for the namespace.
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: snapshot-controller
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snapshot-controller
+  # the snapshot controller won't be marked as ready if the v1 CRDs are unavailable
+  # in #504 the snapshot-controller will exit after around 7.5 seconds if it
+  # can't find the v1 CRDs so this value should be greater than that
+  minReadySeconds: 15
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: snapshot-controller
+    spec:
+      serviceAccount: snapshot-controller
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: snapshot-controller
+          image: {{ Image "registry.k8s.io/sig-storage/snapshot-controller:v5.0.1" }}
+          args:
+            - "--v=5"
+            - "--leader-election=true"
+          imagePullPolicy: IfNotPresent
+
+{{ end }}
+{{ end }}
