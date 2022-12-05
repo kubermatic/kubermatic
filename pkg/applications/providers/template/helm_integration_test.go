@@ -167,7 +167,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil)
 
-				app.Status.ApplicationVersion.Template.TemplateCredentials = &appskubermaticv1.TemplateCredentials{HelmCredentials: &appskubermaticv1.HelmCredentials{RegistryConfigFile: &corev1.SecretKeySelector{
+				app.Status.ApplicationVersion.Template.DependencyCredentials = &appskubermaticv1.DependencyCredentials{HelmCredentials: &appskubermaticv1.HelmCredentials{RegistryConfigFile: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: "registry-secret"},
 					Key:                  "cred",
 					Optional:             nil,

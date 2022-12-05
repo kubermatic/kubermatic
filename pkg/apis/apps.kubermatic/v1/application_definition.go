@@ -160,14 +160,14 @@ type ApplicationTemplate struct {
 	// Exactly one type of source must be defined.
 	Source ApplicationSource `json:"source"`
 
-	// TemplateCredentials hodls the credentials that may need for templating application.
-	TemplateCredentials *TemplateCredentials `json:"templateCredentials,omitempty"`
+	// DependencyCredentials holds the credentials that may be needed for templating the application.
+	DependencyCredentials *DependencyCredentials `json:"templateCredentials,omitempty"`
 }
 
-type TemplateCredentials struct {
+type DependencyCredentials struct {
 	// HelmCredentials holds the ref to the secret with helm credentials needed to build helm dependencies.
-	// It's optional and only makes sense if application source is not of type Helm (e.g. git). If  application source is Helm then dependencies are already packaged in chart archive.
-	// It's Either username / Password or registryConfigFile can be defined.
+	// It is not required when using helm as a source, as dependencies are already prepackaged in this case.
+	// It's either username / password or a registryConfigFile can be defined.
 	HelmCredentials *HelmCredentials `json:"helmCredentials,omitempty"`
 }
 
