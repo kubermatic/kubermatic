@@ -72,26 +72,29 @@ func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Clien
 	return string(cred), nil
 }
 
-// HelmAuthFromCredentials builds helmclient.AuthSettings from source.Credentials. registryConfigFilePath is the path of the file that stores credentials for OCI registry.
-func HelmAuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, source *appskubermaticv1.HelmSource) (helmclient.AuthSettings, error) {
+// HelmAuthFromCredentials builds helmclient.AuthSettings from credentials.
+// registryConfigFilePath is the path of the file that stores credentials for OCI registry.
+// If credentials is nil then an empty helmclient.AuthSettings (i.e. no auth) is returned.
+// If credentials can not be extracted from the secret an error is returned.
+func HelmAuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, credentials *appskubermaticv1.HelmCredentials) (helmclient.AuthSettings, error) {
 	auth := helmclient.AuthSettings{}
-	if source != nil && source.Credentials != nil {
-		if source.Credentials.Username != nil {
-			username, err := GetCredentialFromSecret(ctx, client, secretNamespace, source.Credentials.Username.Name, source.Credentials.Username.Key)
+	if credentials != nil {
+		if credentials.Username != nil {
+			username, err := GetCredentialFromSecret(ctx, client, secretNamespace, credentials.Username.Name, credentials.Username.Key)
 			if err != nil {
 				return auth, err
 			}
 			auth.Username = username
 		}
-		if source.Credentials.Password != nil {
-			password, err := GetCredentialFromSecret(ctx, client, secretNamespace, source.Credentials.Password.Name, source.Credentials.Password.Key)
+		if credentials.Password != nil {
+			password, err := GetCredentialFromSecret(ctx, client, secretNamespace, credentials.Password.Name, credentials.Password.Key)
 			if err != nil {
 				return auth, err
 			}
 			auth.Password = password
 		}
-		if source.Credentials.RegistryConfigFile != nil {
-			registryConfigFile, err := GetCredentialFromSecret(ctx, client, secretNamespace, source.Credentials.RegistryConfigFile.Name, source.Credentials.RegistryConfigFile.Key)
+		if credentials.RegistryConfigFile != nil {
+			registryConfigFile, err := GetCredentialFromSecret(ctx, client, secretNamespace, credentials.RegistryConfigFile.Name, credentials.RegistryConfigFile.Key)
 			if err != nil {
 				return auth, err
 			}

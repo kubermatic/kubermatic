@@ -21,8 +21,15 @@ package template
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"path"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
@@ -36,13 +43,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 const (
 	timeout  = time.Second * 10
 	interval = time.Second * 1
-
-	chartLoc = "../../helmclient/testdata/examplechart"
 )
 
 var (
@@ -50,9 +56,16 @@ var (
 )
 
 func TestHelmProvider(t *testing.T) {
+	const exampleChartLoc = "../../helmclient/testdata/examplechart"
 	var ctx context.Context
 	var client ctrlruntimeclient.Client
 	ctx, client, kubeconfigPath = test.StartTestEnvWithCleanup(t, "../../../crd/k8c.io")
+
+	// package and upload examplechart2 to test registry
+	chartDir := t.TempDir()
+	chartGlobPath := path.Join(chartDir, "*.tgz")
+	test.PackageChart(t, "../../helmclient/testdata/examplechart2", chartDir)
+	registryUrl, regCredFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
 	tests := []struct {
 		name     string
@@ -64,7 +77,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil)
 
-				installOrUpgradeTest(t, ctx, client, testNs, app, test.DefaultData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVerionLabel, 1)
 			},
 		},
 		{
@@ -75,7 +88,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData))
 
 				appendDefaultValues(customCmData, test.DefaultData) // its check that object values are merged with default object values
-				installOrUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1)
 			},
 		},
 		{
@@ -86,7 +99,7 @@ func TestHelmProvider(t *testing.T) {
 				customVersionLabel := "1.2.3"
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.VersionLabelKey, customVersionLabel))
 
-				installOrUpgradeTest(t, ctx, client, testNs, app, test.DefaultData, customVersionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, customVersionLabel, 1)
 			},
 		},
 		{
@@ -97,13 +110,13 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData))
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1)
 
 				// Upgrade application
 				newCustomCmData := map[string]string{"c": "d", "e": "f"}
 				app.Spec.Values.Raw = toHelmRawValues(t, test.CmDataKey, newCustomCmData)
 				appendDefaultValues(newCustomCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, newCustomCmData, test.DefaultVerionLabel, 2)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, newCustomCmData, test.DefaultVerionLabel, 2)
 			},
 		},
 		{
@@ -114,7 +127,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData))
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1)
 
 				// test uninstall app
 				template := HelmTemplate{
@@ -145,6 +158,60 @@ func TestHelmProvider(t *testing.T) {
 				assertStatusIsUpdated(t, app, statusUpdater, 1)
 			},
 		},
+		// The following tests ensure dependencies with credentials are correctly handled.
+		// c.f. https://github.com/kubermatic/kubermatic/issues/10840 and https://github.com/kubermatic/kubermatic/issues/10845
+		{
+			name: "application installation should be successful when dependency requires credentials that are provided",
+			testFunc: func(t *testing.T) {
+				chartFullPath := createChartWithDependency(t, registryUrl)
+				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				app := createApplicationInstallation(testNs, nil)
+
+				app.Status.ApplicationVersion.Template.DependencyCredentials = &appskubermaticv1.DependencyCredentials{HelmCredentials: &appskubermaticv1.HelmCredentials{RegistryConfigFile: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: "registry-secret"},
+					Key:                  "cred",
+					Optional:             nil,
+				}}}
+
+				createCredentialSecret(t, ctx, client, regCredFile)
+
+				// Test chart is installed.
+				installOrUpgradeTest(t, ctx, client, testNs, app, chartFullPath, test.DefaultData, test.DefaultVerionLabel, 1)
+
+				// Ensure dependency has been installed too.
+				cm := &corev1.ConfigMap{}
+				var errorGet error
+				if !utils.WaitFor(interval, timeout, func() bool {
+					errorGet = client.Get(ctx, types.NamespacedName{Namespace: testNs.Name, Name: test.ConfigmapName2}, cm)
+					return errorGet == nil
+				}) {
+					t.Fatalf("configMap2 has not been installed by helm. last error: %s", errorGet)
+				}
+			},
+		},
+		{
+			name: "application installation should fail when dependency requires credentials that are not provided",
+			testFunc: func(t *testing.T) {
+				chartFullPath := createChartWithDependency(t, registryUrl)
+				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				app := createApplicationInstallation(testNs, nil)
+
+				template := HelmTemplate{
+					Ctx:                     context.Background(),
+					Kubeconfig:              kubeconfigPath,
+					CacheDir:                t.TempDir(),
+					Log:                     kubermaticlog.Logger,
+					ApplicationInstallation: app,
+					SecretNamespace:         "default",
+					SeedClient:              client,
+				}
+
+				_, err := template.InstallOrUpgrade(chartFullPath, app)
+				if err == nil {
+					t.Fatal("install of application should have failed but no error was raised")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -152,14 +219,14 @@ func TestHelmProvider(t *testing.T) {
 	}
 }
 
-func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, expectedData map[string]string, expectedVersionLabel string, expectedVersion int) {
+func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int) {
 	template := HelmTemplate{
 		Ctx:                     context.Background(),
 		Kubeconfig:              kubeconfigPath,
 		CacheDir:                t.TempDir(),
 		Log:                     kubermaticlog.Logger,
 		ApplicationInstallation: app,
-		SecretNamespace:         "abc",
+		SecretNamespace:         "default",
 		SeedClient:              client,
 	}
 
@@ -246,4 +313,49 @@ func toHelmRawValues(t *testing.T, key string, values any) []byte {
 		t.Fatalf("failed to create raw values: %s", err)
 	}
 	return rawValues
+}
+
+// createCredentialSecret creates the secret that holds credentials to the helm registry.
+func createCredentialSecret(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, regCredFile string) {
+	t.Helper()
+	credAsByte, err := os.ReadFile(regCredFile)
+	if err != nil {
+		t.Fatalf("failed tor ead registry credentials file: %s", err)
+	}
+
+	credSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "default",
+			Name:      "registry-secret",
+		},
+		Data: map[string][]byte{"cred": credAsByte},
+	}
+	if err := client.Create(ctx, credSecret); err != nil {
+		t.Fatalf("failed to create secret that contains registry credentials: %s", err)
+	}
+}
+
+// createChartWithDependency takes testdata/examplechart as base and adds examplechart2 as a dependency. The full path to the chart directory is returned.
+// The dependency is stored on the helm registry accessible by registryUrl.
+func createChartWithDependency(t *testing.T, registryUrl string) string {
+	// copy exampleChart  and add examplechart2 as dependency
+	chartFullPath := path.Join(t.TempDir(), "chartWithDepdencies")
+	if err := test.CopyDir("../../helmclient/testdata/examplechart", chartFullPath); err != nil {
+		t.Fatalf("failed to copy chart directory to temp dir: %s", err)
+	}
+
+	chartToInstall, err := loader.Load(chartFullPath)
+	if err != nil {
+		t.Fatalf("failed to load chart: %s", err)
+	}
+	chartToInstall.Metadata.Dependencies = []*chart.Dependency{{Name: "examplechart2", Version: "0.1.0", Repository: registryUrl}}
+	// Save the chart file.
+	out, err := yaml.Marshal(chartToInstall.Metadata)
+	if err != nil {
+		t.Fatalf("failed to Marshal chart :%s", err)
+	}
+	if err := os.WriteFile(filepath.Join(chartFullPath, chartutil.ChartfileName), out, 0644); err != nil {
+		t.Fatalf("failed to write chart.yaml with dependency")
+	}
+	return chartFullPath
 }

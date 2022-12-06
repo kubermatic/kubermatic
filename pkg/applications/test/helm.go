@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,6 +44,9 @@ import (
 const (
 	// ConfigmapName is the Name of the config map deployed by the examplechart and examplechart-v2.
 	ConfigmapName = "testcm"
+
+	// ConfigmapName2 is the Name of the config map deployed by the examplechart and examplechart2.
+	ConfigmapName2 = "testcm-2"
 
 	// CmDataKey is the key in the values.yaml of examplechart / examplechart-v2 that holds custom configmap data.
 	CmDataKey = "cmData"
@@ -224,4 +228,24 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string)
 	}
 
 	return ociRegistryUrl, registryConfigFile
+}
+
+// CopyDir coypy source dir to destination dir.
+func CopyDir(source string, destination string) error {
+	return filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+		// error may occurred if path is not accessible
+		if err != nil {
+			return err
+		}
+		relPath := strings.Replace(path, source, "", 1)
+		if info.IsDir() {
+			return os.Mkdir(filepath.Join(destination, relPath), 0755)
+		} else {
+			data, err := os.ReadFile(filepath.Join(source, relPath))
+			if err != nil {
+				return err
+			}
+			return os.WriteFile(filepath.Join(destination, relPath), data, 0755)
+		}
+	})
 }
