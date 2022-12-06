@@ -264,16 +264,18 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	// This handles manifests that should be removed manually, because kubectl --prune does not always delete obsolete resources.
-	legacyAddon := &kubermaticv1.Addon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "internal-delete",
-		},
-		Spec: kubermaticv1.AddonSpec{
-			Name: "internal-delete",
-		},
-	}
-	if err := r.cleanupManifests(ctx, log, legacyAddon, cluster); err != nil {
-		return nil, fmt.Errorf("failed to delete legacy manifests from cluster: %w", err)
+	if cluster.Spec.Cloud.VSphere != nil && addon.Name == "csi" {
+		legacyAddon := &kubermaticv1.Addon{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "internal-delete",
+			},
+			Spec: kubermaticv1.AddonSpec{
+				Name: "internal-delete",
+			},
+		}
+		if err := r.cleanupManifests(ctx, log, legacyAddon, cluster); err != nil {
+			return nil, fmt.Errorf("failed to delete legacy manifests from cluster: %w", err)
+		}
 	}
 
 	if addon.DeletionTimestamp != nil {
