@@ -30,6 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	utilnet "k8s.io/utils/net"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -221,7 +222,7 @@ func (m *ModifiersBuilder) getFrontProxyLBServiceData(frontProxyLoadBalancerServ
 	if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) > 0 {
 		var tmpIP string
 		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" && !net.ParseIP(ingress.IP).IsPrivate() && tmpIP == "" {
+			if ingress.IP != "" && !net.ParseIP(ingress.IP).IsPrivate() && !utilnet.IsIPv6String(ingress.IP) && tmpIP == "" {
 				tmpIP = ingress.IP
 			}
 			if ingress.Hostname != "" {
@@ -232,7 +233,13 @@ func (m *ModifiersBuilder) getFrontProxyLBServiceData(frontProxyLoadBalancerServ
 		if tmpIP != "" {
 			serviceIP = tmpIP
 		} else {
-			serviceIP = frontProxyLoadBalancerService.Status.LoadBalancer.Ingress[0].IP
+			// select first non-ipv6 private IP
+			for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
+				if !utilnet.IsIPv6String(ingress.IP) {
+					serviceIP = ingress.IP
+					break
+				}
+			}
 		}
 		m.log.Debugw("Multiple ingress values in LB status, the following values will be used", "ip", serviceIP, "hostname", serviceHostname)
 	}
