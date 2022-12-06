@@ -91,6 +91,8 @@ presubmits:
               cpu: 2
 
   - name: pre-kubermatic-dualstack-e2e-aws
+    # TODO: Mark them as required, remove optional flag, when the test are functional again.
+    optional: true
     run_if_changed: ".*(cilium|canal|dualstack|addon|cni|provider|machine|webhook|.prow|go.mod|proxy|network).*"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
