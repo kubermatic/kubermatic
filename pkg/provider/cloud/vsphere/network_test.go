@@ -34,10 +34,10 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			name: "get all networks",
 			expectedNetworkInfos: []NetworkInfo{
 				{
-					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
-					RelativePath: "VM Network",
-					Type:         "Network",
-					Name:         "VM Network",
+					AbsolutePath: fmt.Sprintf("/%s/network/Management", vSphereDatacenter),
+					RelativePath: "Management",
+					Type:         "DistributedVirtualPortgroup",
+					Name:         "Management",
 				},
 				{
 					AbsolutePath: fmt.Sprintf("/%s/network/DSwitchAlpha-DVUplinks-2001", vSphereDatacenter),
@@ -50,12 +50,6 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 					RelativePath: "Default Network",
 					Type:         "DistributedVirtualPortgroup",
 					Name:         "Default Network",
-				},
-				{
-					AbsolutePath: fmt.Sprintf("/%s/network/Management", vSphereDatacenter),
-					RelativePath: "Management",
-					Type:         "DistributedVirtualPortgroup",
-					Name:         "Management",
 				},
 			},
 		},
