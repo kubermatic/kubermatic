@@ -24,38 +24,37 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
-var webhookConfig = fmt.Sprintf(`
+const webhookConfig = `
 [WebHookConfig]
-port = "%d"
-cert-file = "/etc/webhook/cert.pem"
-key-file = "/etc/webhook/key.pem"
-`, resources.CSIMigrationWebhookPort)
+port = "8443"
+cert-file = "/run/secrets/tls/cert.pem"
+key-file = "/run/secrets/tls/key.pem"
+`
 
 func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return resources.CSIMigrationWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+		return resources.VSphereCSIWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}
 
-			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.CSIMigrationWebhookName, metav1.NamespaceSystem)
+			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace)
 			altNames := certutil.AltNames{
 				DNSNames: []string{
-					resources.CSIMigrationWebhookName,
-					fmt.Sprintf("%s.%s", resources.CSIMigrationWebhookName, metav1.NamespaceSystem),
+					resources.VSphereCSIValidatingWebhookSVCName,
+					fmt.Sprintf("%s.%s", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace),
 					commonName,
-					fmt.Sprintf("%s.%s.svc", resources.CSIMigrationWebhookName, metav1.NamespaceSystem),
-					fmt.Sprintf("%s.%s.svc.", resources.CSIMigrationWebhookName, metav1.NamespaceSystem),
+					fmt.Sprintf("%s.%s.svc", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace),
+					fmt.Sprintf("%s.%s.svc.", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace),
 				},
 			}
 			if b, exists := se.Data[resources.CSIWebhookServingCertCertKeyName]; exists {
 				certs, err := certutil.ParseCertsPEM(b)
 				if err != nil {
-					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.CSIMigrationWebhookSecretName, err)
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %w", resources.VSphereCSIWebhookSecretName, err)
 				}
 				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
 					return se, nil
@@ -64,11 +63,10 @@ func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecret
 
 			newKP, err := triple.NewServerKeyPair(ca,
 				commonName,
-				resources.CSIMigrationWebhookName,
-				metav1.NamespaceSystem,
+				resources.VSphereCSIValidatingWebhookSVCName,
+				resources.VSphereCSINamespace,
 				"",
 				nil,
-				// For some reason the name the APIServer validates against must be in the SANs, having it as CN is not enough
 				[]string{commonName})
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate serving cert: %w", err)
@@ -77,7 +75,7 @@ func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecret
 			se.Data[resources.CSIWebhookServingCertKeyKeyName] = triple.EncodePrivateKeyPEM(newKP.Key)
 			// Include the CA for simplicity
 			se.Data[resources.CACertSecretKey] = triple.EncodeCertPEM(ca.Cert)
-			se.Data[resources.CSIMigrationWebhookConfig] = []byte(webhookConfig)
+			se.Data[resources.VSphereCSIValidatingWebhookConfigKey] = []byte(webhookConfig)
 			return se, nil
 		}
 	}

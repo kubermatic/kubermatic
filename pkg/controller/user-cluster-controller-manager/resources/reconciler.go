@@ -690,7 +690,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	}
 
 	if data.ccmMigration && data.csiCloudConfig != nil {
-		creators = append(creators, csimigration.ValidatingwebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
+		creators = append(creators, csimigration.ValidatingwebhookConfigurationReconciler(data.caCert.Cert, resources.VSphereCSINamespace, resources.VSphereCSIValidatingWebhookConfigurationWebhookName))
 	}
 
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||

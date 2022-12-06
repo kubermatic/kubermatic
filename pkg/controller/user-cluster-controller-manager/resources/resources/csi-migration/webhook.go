@@ -35,7 +35,8 @@ func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 			sideEffect := admissionregistrationv1.SideEffectClassNone
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
-			scope := admissionregistrationv1.AllScopes
+			scopeAll := admissionregistrationv1.AllScopes
+			scopeNamespace := admissionregistrationv1.NamespacedScope
 
 			validatingWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
@@ -48,7 +49,7 @@ func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						Service: &admissionregistrationv1.ServiceReference{
 							Namespace: namespace,
-							Name:      resources.CSIMigrationWebhookName,
+							Name:      resources.VSphereCSIValidatingWebhookSVCName,
 							Path:      pointer.String("/validate"),
 							Port:      pointer.Int32(443),
 						},
@@ -69,7 +70,26 @@ func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 								Resources: []string{
 									"storageclasses",
 								},
-								Scope: &scope,
+								Scope: &scopeAll,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups: []string{
+									"",
+								},
+								APIVersions: []string{
+									"v1",
+									"v1beta1",
+								},
+								Resources: []string{
+									"persistentvolumeclaims",
+								},
+								Scope: &scopeNamespace,
 							},
 							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Create,

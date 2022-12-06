@@ -12,36 +12,70 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Sourced from:
+# - https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v2.7.0/manifests/vanilla/validatingwebhook.yaml
+# Modifications:
+#   - template function to replace base registry
+#   - remove ValidatingWebhookConfiguration (handled in code)
+#   - add seccomp profile
+#   - remove tolerations
+#   - remove node selector
+
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
 {{ if .Cluster.CSIMigration }}
-  # Requires k8s 1.19+
+# Requires k8s 1.19+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: csi-migration-webhook
-  namespace: kube-system
+  name: vsphere-webhook-svc
+  namespace: vmware-system-csi
   labels:
-    app: csi-migration-webhook
+    app: vsphere-csi-webhook
 spec:
   ports:
     - port: 443
       targetPort: 8443
   selector:
-    app: csi-migration-webhook
+    app: vsphere-csi-webhook
 ---
 kind: ServiceAccount
 apiVersion: v1
 metadata:
-  name: csi-migration-webhook
-  namespace: kube-system
+  name: vsphere-csi-webhook
+  namespace: vmware-system-csi
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: vsphere-csi-webhook-cluster-role
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: vsphere-csi-webhook-cluster-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: vsphere-csi-webhook
+    namespace: vmware-system-csi
+roleRef:
+  kind: ClusterRole
+  name: vsphere-csi-webhook-cluster-role
+  apiGroup: rbac.authorization.k8s.io
 ---
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-migration-webhook
-  namespace: kube-system
+  name: vsphere-csi-webhook-role
+  namespace: vmware-system-csi
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
@@ -50,44 +84,49 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: csi-migration-webhook
-  namespace: kube-system
+  name: vsphere-csi-webhook-role-binding
+  namespace: vmware-system-csi
 subjects:
   - kind: ServiceAccount
-    name: csi-migration-webhook
-    namespace: kube-system
+    name: vsphere-csi-webhook
+    namespace: vmware-system-csi
 roleRef:
   kind: Role
-  name: csi-migration-webhook
+  name: vsphere-csi-webhook-role
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: csi-migration-webhook
-  namespace: kube-system
+  name: vsphere-csi-webhook
+  namespace: vmware-system-csi
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: csi-migration-webhook
+      app: vsphere-csi-webhook
   template:
     metadata:
       labels:
-        app: csi-migration-webhook
-        role: csi-migration-webhook
+        app: vsphere-csi-webhook
+        role: vsphere-csi-webhook
     spec:
-      serviceAccountName: csi-migration-webhook
+      serviceAccountName: vsphere-csi-webhook
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      dnsPolicy: "Default"
       containers:
         - name: vsphere-webhook
-          image: '{{ Image "gcr.io/cloud-provider-vsphere/csi/release/syncer:v2.3.0" }}'
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/syncer:v2.7.0" }}
           args:
             - "--operation-mode=WEBHOOK_SERVER"
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
+          imagePullPolicy: "Always"
           env:
             - name: WEBHOOK_CONFIG_PATH
-              value: "/etc/webhook/webhook.config"
+              value: "/run/secrets/tls/webhook.config"
             - name: LOGGER_LEVEL
               value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
             - name: CSI_NAMESPACE
@@ -97,7 +136,7 @@ spec:
             - name: SSL_CERT_FILE
               value: "/etc/kubermatic/certs/ca-bundle.pem"
           volumeMounts:
-            - mountPath: /etc/webhook
+            - mountPath: /run/secrets/tls
               name: webhook-certs
               readOnly: true
             - mountPath: /etc/kubermatic/certs
@@ -108,7 +147,7 @@ spec:
           emptyDir: {}
         - name: webhook-certs
           secret:
-            secretName: csi-migration-webhook-certs
+            secretName: vsphere-webhook-certs
         - name: ca-bundle
           configMap:
             name: ca-bundle

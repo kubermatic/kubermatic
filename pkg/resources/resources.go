@@ -865,17 +865,17 @@ const (
 )
 
 const (
-	// CSIMigrationWebhookName is the name of the csi-migration webhook service.
-	CSIMigrationWebhookName = "csi-migration-webhook"
-	// CSIMigrationWebhookSecretName defines the name of the secret containing the certificates for the csi-migration admission webhook.
-	CSIMigrationWebhookSecretName = "csi-migration-webhook-certs"
+	// VSphereCSINamespace is the namespace desired by vmware csi driver
+	VSphereCSINamespace = "vmware-system-csi"
+	// VSphereCSIValidatingWebhookSVCName is the name of the validation webhook service.
+	VSphereCSIValidatingWebhookSVCName = "vsphere-webhook-svc"
+	// VSphereCSIWebhookSecretName defines the name of the secret containing the certificates for the validation admission webhook.
+	VSphereCSIWebhookSecretName = "vsphere-webhook-certs"
 
-	// CSIMigrationWebhookConfig is the name for the key that contains the webhook config.
-	CSIMigrationWebhookConfig = "webhook.config"
-	// CSIMigrationWebhookPort is the port used by the CSI-migration webhook.
-	CSIMigrationWebhookPort = 8443
-	// VsphereCSIMigrationWebhookConfigurationWebhookName is the webhook's name in the vSphere CSI_migration WebhookConfiguration.
-	VsphereCSIMigrationWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
+	// VSphereCSIValidatingWebhookConfigKey is the name for the key that contains the webhook config.
+	VSphereCSIValidatingWebhookConfigKey = "webhook.config"
+	// VSphereCSIValidatingWebhookConfigurationWebhookName is the webhook's name in the vSphere validatingwebhook WebhookConfiguration.
+	VSphereCSIValidatingWebhookConfigurationWebhookName = "validation.csi.vsphere.vmware.com"
 
 	// CSISnapshotValidationWebhookConfigurationName part of kubernetes-csi external-snapshotter validation webhook.
 	CSISnapshotValidationWebhookConfigurationName = "validation-webhook.snapshot.storage.k8s.io"
