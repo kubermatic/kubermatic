@@ -23,6 +23,8 @@ import (
 	"net"
 	"strings"
 
+	"k8c.io/reconciler/pkg/reconciling"
+
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -62,7 +64,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -864,11 +865,16 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 	if data.csiCloudConfig != nil {
 		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
+			if data.ccmMigration {
+				vsphereCSICreator := []reconciling.NamedSecretReconcilerFactory{
+					csimigration.TLSServingCertificateReconciler(data.caCert),
+				}
+				if err := reconciling.ReconcileSecrets(ctx, vsphereCSICreator, resources.VSphereCSINamespace, r.Client); err != nil {
+					return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.VSphereCSINamespace, err)
+				}
+			}
 			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName),
 				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
-			if data.ccmMigration {
-				creators = append(creators, csimigration.TLSServingCertificateReconciler(data.caCert))
-			}
 		}
 
 		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
