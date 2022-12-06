@@ -1,0 +1,72 @@
+{
+   "metadata": {
+      "name": "elastic-yalow",
+      "namespace": "kube-system",
+      "creationTimestamp": null,
+      "annotations": {
+         "k8c.io/operating-system-profile": "osp-ubuntu"
+      },
+      "finalizers": [
+         "foregroundDeletion"
+      ]
+   },
+   "spec": {
+      "replicas": 2,
+      "selector": {
+         "matchLabels": {
+            "machine": "md-b6zskbf5x9-4hk6kgwwb9"
+         }
+      },
+      "template": {
+         "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+               "machine": "md-b6zskbf5x9-4hk6kgwwb9"
+            }
+         },
+         "spec": {
+            "metadata": {
+               "creationTimestamp": null,
+               "labels": {
+                  "system/cluster": "b6zskbf5x9"
+               }
+            },
+            "providerSpec": {
+               "value": {
+                  "sshPublicKeys": [],
+                  "caPublicKey": "",
+                  "cloudProvider": "hetzner",
+                  "cloudProviderSpec": {
+                     "token": "",
+                     "serverType": "cx21",
+                     "datacenter": "nbg1-dc3",
+                     "image": "",
+                     "location": "",
+                     "placementGroupPrefix": "",
+                     "networks": [
+                        "dev"
+                     ],
+                     "firewalls": null
+                  },
+                  "operatingSystem": "ubuntu",
+                  "operatingSystemSpec": {
+                     "distUpgradeOnBoot": false
+                  },
+                  "network": {
+                     "cidr": "",
+                     "gateway": "",
+                     "dns": {
+                        "servers": null
+                     },
+                     "ipFamily": "IPv4"
+                  }
+               }
+            },
+            "versions": {
+               "kubelet": ""
+            }
+         }
+      }
+   },
+   "status": {}
+}
