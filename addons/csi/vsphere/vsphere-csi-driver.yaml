@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-#  https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/release-2.5/manifests/vanilla/vsphere-csi-driver.yaml
+#  https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/release-2.7/manifests/vanilla/vsphere-csi-driver.yaml
 # Modifications:
 #   - change namespace
 #   - remove windows support daemon sets
@@ -29,7 +29,7 @@
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
 
-apiVersion: storage.k8s.io/v1 # For k8s 1.17 use storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
   name: csi.vsphere.vmware.com
@@ -44,7 +44,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: vsphere-csi-controller
-  namespace: kube-system
+  namespace: vmware-system-csi
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -113,7 +113,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: vsphere-csi-controller
-    namespace: kube-system
+    namespace: vmware-system-csi
 roleRef:
   kind: ClusterRole
   name: vsphere-csi-controller-role
@@ -123,7 +123,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: vsphere-csi-node
-  namespace: kube-system
+  namespace: vmware-system-csi
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -132,7 +132,7 @@ metadata:
 rules:
   - apiGroups: ["cns.vmware.com"]
     resources: ["csinodetopologies"]
-    verbs: ["create", "watch"]
+    verbs: ["create", "watch", "get", "patch"]
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get"]
@@ -144,7 +144,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: vsphere-csi-node
-    namespace: kube-system
+    namespace: vmware-system-csi
 roleRef:
   kind: ClusterRole
   name: vsphere-csi-node-cluster-role
@@ -154,7 +154,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: vsphere-csi-node-role
-  namespace: kube-system
+  namespace: vmware-system-csi
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
@@ -164,11 +164,11 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: vsphere-csi-node-binding
-  namespace: kube-system
+  namespace: vmware-system-csi
 subjects:
   - kind: ServiceAccount
     name: vsphere-csi-node
-    namespace: kube-system
+    namespace: vmware-system-csi
 roleRef:
   kind: Role
   name: vsphere-csi-node-role
@@ -190,18 +190,21 @@ data:
   "block-volume-snapshot": "true"
   "csi-windows-support": "false"
   "use-csinode-id": "true"
+  "list-volumes": "false"
   "pv-to-backingdiskobjectid-mapping": "false"
   "cnsmgr-suspend-create-volume": "false"
+  "topology-preferential-datastores": "false"
+  "max-pvscsi-targets-per-vm": "false"
 kind: ConfigMap
 metadata:
   name: internal-feature-states.csi.vsphere.vmware.com
-  namespace: kube-system
+  namespace: vmware-system-csi
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: vsphere-csi-controller
-  namespace: kube-system
+  namespace: vmware-system-csi
   labels:
     app: vsphere-csi-controller
 spec:
@@ -221,7 +224,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: vsphere-csi-controller
-  namespace: kube-system
+  namespace: vmware-system-csi
 spec:
   replicas: 1
   strategy:
@@ -269,7 +272,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.4.0" }}
+          image: {{ Image "k8s.gcr.io/sig-storage/csi-attacher:v3.5.0" }}
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -284,7 +287,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-resizer
-          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.4.0" }}
+          image: {{ Image "k8s.gcr.io/sig-storage/csi-resizer:v1.5.0" }}
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -300,7 +303,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: vsphere-csi-controller
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.6.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.7.0" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
@@ -353,7 +356,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.6.0" }}
+          image: {{ Image "k8s.gcr.io/sig-storage/livenessprobe:v2.7.0" }}
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
@@ -361,7 +364,7 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: vsphere-syncer
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/syncer:v2.5.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/syncer:v2.7.0" }}
           args:
             - "--leader-election"
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
@@ -382,6 +385,8 @@ spec:
               value: "100"
             - name: INCLUSTER_CLIENT_BURST
               value: "100"
+            - name: GODEBUG
+              value: x509sha1=1
             - name: CSI_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -396,7 +401,7 @@ spec:
               name: ca-bundle
               readOnly: true
         - name: csi-provisioner
-          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.1.0" }}
+          image: {{ Image "k8s.gcr.io/sig-storage/csi-provisioner:v3.2.1" }}
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -415,7 +420,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-snapshotter
-          image: {{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v5.0.1" }}
+          image: {{ Image "k8s.gcr.io/sig-storage/csi-snapshotter:v6.0.1" }}
           args:
             - "--v=4"
             - "--kube-api-qps=100"
@@ -443,7 +448,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: vsphere-csi-node
-  namespace: kube-system
+  namespace: vmware-system-csi
 spec:
   selector:
     matchLabels:
@@ -468,7 +473,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: node-driver-registrar
-          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.0" }}
+          image: {{ Image "k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1" }}
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -486,12 +491,12 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /csi-node-driver-registrar
-                - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.vsphere.vmware.com/csi.sock
-                - --mode=kubelet-registration-probe
+              - /csi-node-driver-registrar
+              - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.vsphere.vmware.com/csi.sock
+              - --mode=kubelet-registration-probe
             initialDelaySeconds: 3
         - name: vsphere-csi-node
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.6.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v2.7.0" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
@@ -513,6 +518,8 @@ spec:
               value: "true"
             - name: LOGGER_LEVEL
               value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
+            - name: GODEBUG
+              value: x509sha1=1
             - name: CSI_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -556,7 +563,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.6.0" }}
+          image: {{ Image "k8s.gcr.io/sig-storage/livenessprobe:v2.7.0" }}
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
@@ -602,7 +609,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: vsphere-csi
-  namespace: kube-system
+  namespace: vmware-system-csi
 spec:
   podSelector:
     matchLabels:
