@@ -1095,7 +1095,7 @@ func convertClusterToAPIWithStatus(ctx context.Context, clusterProvider provider
 	if err != nil && apiCluster.Status.State == apiv2.RunningExternalClusterState {
 		apiCluster.Status = apiv2.ExternalClusterStatus{
 			State:         apiv2.ErrorExternalClusterState,
-			StatusMessage: fmt.Sprintf("can't access cluster via kubeconfig, check the privilidges, %v", err),
+			StatusMessage: fmt.Sprintf("can't access cluster via kubeconfig, check the privileges, %v", err),
 		}
 	}
 	return apiCluster
