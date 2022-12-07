@@ -442,10 +442,15 @@ type commandTplData struct {
 	DataDir               string
 	Migrate               bool
 	EnableCorruptionCheck bool
-	SpaceQuota            int64
+	SpaceQuota            int
 }
 
 func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
+	spaceQuotaBytes := 0
+	if cluster.Spec.ComponentsOverride.Etcd.SpaceQuotaMB != nil && *cluster.Spec.ComponentsOverride.Etcd.SpaceQuotaMB > 0 {
+		spaceQuotaBytes = *cluster.Spec.ComponentsOverride.Etcd.SpaceQuotaMB * 1024 * 1024
+	}
+
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
 			"-cluster", cluster.Name,
@@ -458,8 +463,8 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 			command = append(command, "-enable-corruption-check")
 		}
 
-		if cluster.Spec.ComponentsOverride.Etcd.SpaceQuota != nil && *cluster.Spec.ComponentsOverride.Etcd.SpaceQuota > 0 {
-			command = append(command, "-space-quota", strconv.Itoa(int(*cluster.Spec.ComponentsOverride.Etcd.SpaceQuota)))
+		if spaceQuotaBytes > 0 {
+			command = append(command, "-space-quota", strconv.Itoa(spaceQuotaBytes))
 		}
 
 		return command, nil
@@ -478,8 +483,8 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 		EnableCorruptionCheck: enableCorruptionCheck,
 	}
 
-	if cluster.Spec.ComponentsOverride.Etcd.SpaceQuota != nil && *cluster.Spec.ComponentsOverride.Etcd.SpaceQuota > 0 {
-		tplData.SpaceQuota = *cluster.Spec.ComponentsOverride.Etcd.SpaceQuota
+	if spaceQuotaBytes > 0 {
+		tplData.SpaceQuota = spaceQuotaBytes
 	}
 
 	buf := bytes.Buffer{}

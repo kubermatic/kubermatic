@@ -2717,9 +2717,9 @@ func (in *EtcdStatefulSetSettings) DeepCopyInto(out *EtcdStatefulSetSettings) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.SpaceQuota != nil {
-		in, out := &in.SpaceQuota, &out.SpaceQuota
-		*out = new(int64)
+	if in.SpaceQuotaMB != nil {
+		in, out := &in.SpaceQuotaMB, &out.SpaceQuotaMB
+		*out = new(int)
 		**out = **in
 	}
 }

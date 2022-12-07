@@ -319,9 +319,9 @@ spec:
       clusterSize: 3
       diskSize: 5Gi
       resources: null
-      # SpaceQuota is the storage size limit for etcd. Maximum allowed value for SpaceQuota is 8GB
+      # SpaceQuotaMB is the storage size limit for etcd in MBs. Maximum allowed value for SpaceQuota is 8192(8GB).
       # More Info: https://etcd.io/docs/v3.5/op-guide/maintenance/#space-quota
-      spaceQuota: null
+      spaceQuotaMB: null
       storageClass: ""
       tolerations: null
     # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.

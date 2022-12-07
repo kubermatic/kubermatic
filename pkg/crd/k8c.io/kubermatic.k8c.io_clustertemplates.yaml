@@ -1189,9 +1189,8 @@ spec:
                               description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                               type: object
                           type: object
-                        spaceQuota:
-                          description: 'SpaceQuota is the storage size limit for etcd. Maximum allowed value for SpaceQuota is 8GB More Info: https://etcd.io/docs/v3.5/op-guide/maintenance/#space-quota'
-                          format: int64
+                        spaceQuotaMB:
+                          description: 'SpaceQuotaMB is the storage size limit for etcd in MBs. Maximum allowed value for SpaceQuota is 8192(8GB). More Info: https://etcd.io/docs/v3.5/op-guide/maintenance/#space-quota'
                           type: integer
                         storageClass:
                           type: string
