@@ -728,7 +728,7 @@ type EtcdStatefulSetSettings struct {
 	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
 	// SpaceQuotaMB is the storage size limit for etcd in MBs. Maximum allowed value for SpaceQuota is 8192(8GB).
 	// More Info: https://etcd.io/docs/v3.5/op-guide/maintenance/#space-quota
-	SpaceQuotaMB *int `json:"spaceQuotaMB,omitempty"`
+	SpaceQuotaMB *int `json:"spaceQuotaMB,omitempty"` //nolint:tagliatelle
 }
 
 type LeaderElectionSettings struct {
