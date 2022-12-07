@@ -157,7 +157,7 @@ func enqueueExternalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 
 func ByNameAndNamespace() predicate.Funcs {
 	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
-		return o.GetName() == resources.KubeOneManifestSecretName && strings.HasPrefix(o.GetNamespace(), resources.KubeOneNamespacePrefix)
+		return strings.HasPrefix(o.GetName(), resources.KubeOneManifestSecretPrefix) && strings.HasPrefix(o.GetNamespace(), resources.KubeOneNamespacePrefix)
 	})
 }
 
@@ -657,7 +657,7 @@ func (r *reconciler) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Contex
 
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
-			Name:      resources.KubeOneKubeconfigSecretName,
+			Name:      resources.ExternalClusterKubeconfigPrefix,
 			Namespace: namespace,
 		},
 	}, nil
@@ -665,7 +665,7 @@ func (r *reconciler) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Contex
 
 func kubeconfigSecretReconcilerFactory(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return resources.KubeOneKubeconfigSecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
+		return resources.ExternalClusterKubeconfigPrefix, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}
 			}
