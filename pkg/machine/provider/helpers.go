@@ -58,3 +58,23 @@ func mergeTags(existing []providerconfig.ConfigVarString, newTags []string) []pr
 
 	return existing
 }
+
+func IsConfigVarStringEmpty(val providerconfig.ConfigVarString) bool {
+	// Check if SecretKeyRef is empty.
+	if val.SecretKeyRef.ObjectReference.Namespace != "" ||
+		val.SecretKeyRef.ObjectReference.Name != "" ||
+		val.SecretKeyRef.Key != "" {
+		return false
+	}
+	// Check if ConfigMapKeyRef is empty.
+	if val.ConfigMapKeyRef.ObjectReference.Namespace != "" ||
+		val.ConfigMapKeyRef.ObjectReference.Name != "" ||
+		val.ConfigMapKeyRef.Key != "" {
+		return false
+	}
+	// Check if Value is empty.
+	if val.Value != "" {
+		return false
+	}
+	return true
+}

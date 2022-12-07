@@ -181,7 +181,16 @@ func CompleteAWSProviderSpec(config *aws.RawConfig, cluster *kubermaticv1.Cluste
 			config.InstanceProfile.Value = cluster.Spec.Cloud.AWS.InstanceProfileName
 		}
 
-		if len(config.SecurityGroupIDs) == 0 {
+		securityGroupIDExists := false
+		// Check if a valid SecurityGroupID exists.
+		for _, sec := range config.SecurityGroupIDs {
+			if !IsConfigVarStringEmpty(sec) {
+				securityGroupIDExists = true
+				break
+			}
+		}
+
+		if !securityGroupIDExists {
 			config.SecurityGroupIDs = []providerconfig.ConfigVarString{{
 				Value: cluster.Spec.Cloud.AWS.SecurityGroupID,
 			}}
