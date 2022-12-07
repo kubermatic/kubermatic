@@ -53,7 +53,7 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 		WithObjects(ad).
 		Build()
 
-	ai := getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion)
+	ai := getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, nil)
 
 	testCases := []struct {
 		name          string
@@ -140,7 +140,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 		WithObjects(ad, updatedAD).
 		Build()
 
-	ai := getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion)
+	ai := getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, nil)
 
 	testCases := []struct {
 		name          string
@@ -221,6 +221,71 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 			},
 			expectedError: `[spec.reconciliationInterval: Invalid value: "-10ns": should be a positive value, or zero to disable]`,
 		},
+		{
+			name: "Update ApplicationInstallation Failure - managed-by label is immutable",
+			ai: getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, map[string]string{
+				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+			}),
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						appskubermaticv1.ApplicationManagedByLabel: "somebody-else",
+					},
+				},
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.Namespace.Labels = map[string]string{"key": "value"}
+					spec.ApplicationRef.Version = defaultAppSecondaryVersion
+					return *spec
+				}(),
+			},
+			expectedError: `[metadata.labels: Invalid value: map[string]string{"apps.kubermatic.k8c.io/managed-by":"somebody-else"}: label "apps.kubermatic.k8c.io/managed-by" is immutable]`, // TODO: change message
+		},
+		{
+			name: "Update ApplicationInstallation Failure - type label is immutable if managed by kkp",
+			ai: getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, map[string]string{
+				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+				appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,
+			}),
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+						appskubermaticv1.ApplicationTypeLabel:      "something-else",
+					},
+				},
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.Namespace.Labels = map[string]string{"key": "value"}
+					spec.ApplicationRef.Version = defaultAppSecondaryVersion
+					return *spec
+				}(),
+			},
+			expectedError: `[metadata.labels: Invalid value: map[string]string{"apps.kubermatic.k8c.io/managed-by":"kkp", "apps.kubermatic.k8c.io/type":"something-else"}: label "apps.kubermatic.k8c.io/type" is immutable]`,
+		},
+		{
+			name: "Update ApplicationInstallation Failure - invalid values",
+			ai: getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, map[string]string{
+				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+				appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,
+			}),
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+						appskubermaticv1.ApplicationTypeLabel:      appskubermaticv1.ApplicationTypeCNIValue,
+					},
+				},
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.Namespace.Labels = map[string]string{"key": "value"}
+					spec.ApplicationRef.Version = defaultAppSecondaryVersion
+					spec.Values = runtime.RawExtension{Raw: []byte("INVALID")}
+					return *spec
+				}(),
+			},
+			expectedError: `[spec.values: Invalid value: "INVALID": unable to unmarshal values: invalid character 'I' looking for beginning of value]`,
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -255,11 +320,12 @@ func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 	}
 }
 
-func getApplicationInstallation(name string, appName string, appVersion string) *appskubermaticv1.ApplicationInstallation {
+func getApplicationInstallation(name string, appName string, appVersion string, labels map[string]string) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "kube-system",
+			Labels:    labels,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: appskubermaticv1.AppNamespaceSpec{
