@@ -23,7 +23,7 @@
 {{ $version = "v1.21.0"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.22" }}
-{{ $version = "v1.22.0"}}
+{{ $version = "v1.22.2"}}
 {{ end }}
 
 ---
