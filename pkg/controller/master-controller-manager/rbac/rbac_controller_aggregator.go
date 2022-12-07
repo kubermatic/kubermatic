@@ -112,7 +112,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			},
 			namespace: "kubermatic",
 			predicate: func(o ctrlruntimeclient.Object) bool {
-				// do not reconcile secrets without "sa-token", "credential" and "kubeconfig-external-cluster" prefix
+				// do not reconcile secrets without "sa-token", "credential" and "kubeconfig-external-cluster", "kubeone-manifest", "kubeone-ssh" prefix
 				return shouldEnqueueSecret(o.GetName())
 			},
 		},
@@ -183,7 +183,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 }
 
 func shouldEnqueueSecret(name string) bool {
-	supportedPrefixes := []string{"sa-token", "credential", "kubeconfig-external-cluster"}
+	supportedPrefixes := []string{"sa-token", "credential", "kubeconfig-external-cluster", "kubeone-manifest", "kubeone-ssh"}
 	for _, prefix := range supportedPrefixes {
 		if strings.HasPrefix(name, prefix) {
 			return true
