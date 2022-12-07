@@ -106,7 +106,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			WithDiskType(awsVolumeType).
 			WithAvailabilityZone(*subnet.AvailabilityZone).
 			WithSubnetID(*subnet.SubnetId).
-			// WithSpotInstanceMaxPrice("0.5").
+			WithSpotInstanceMaxPrice("0.5").
 			Build()
 
 		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
