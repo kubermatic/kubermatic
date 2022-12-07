@@ -442,6 +442,7 @@ type commandTplData struct {
 	DataDir               string
 	Migrate               bool
 	EnableCorruptionCheck bool
+	SpaceQuota            int64
 }
 
 func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
@@ -456,6 +457,11 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 		if enableCorruptionCheck {
 			command = append(command, "-enable-corruption-check")
 		}
+
+		if cluster.Spec.ComponentsOverride.Etcd.SpaceQuota != nil && *cluster.Spec.ComponentsOverride.Etcd.SpaceQuota > 0 {
+			command = append(command, "-space-quota", strconv.Itoa(int(*cluster.Spec.ComponentsOverride.Etcd.SpaceQuota)))
+		}
+
 		return command, nil
 	}
 
@@ -470,6 +476,10 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 		Namespace:             cluster.Status.NamespaceName,
 		DataDir:               dataDir,
 		EnableCorruptionCheck: enableCorruptionCheck,
+	}
+
+	if cluster.Spec.ComponentsOverride.Etcd.SpaceQuota != nil && *cluster.Spec.ComponentsOverride.Etcd.SpaceQuota > 0 {
+		tplData.SpaceQuota = *cluster.Spec.ComponentsOverride.Etcd.SpaceQuota
 	}
 
 	buf := bytes.Buffer{}
@@ -511,6 +521,9 @@ exec /usr/local/bin/etcd \
 {{- if .EnableCorruptionCheck }}
     --experimental-initial-corrupt-check=true \
     --experimental-corrupt-check-time=240m \
+{{- end }}
+{{- if .SpaceQuota }}
+	--quota-backend-bytes={{ .SpaceQuota }} \
 {{- end }}
     --auto-compaction-retention=8
 `

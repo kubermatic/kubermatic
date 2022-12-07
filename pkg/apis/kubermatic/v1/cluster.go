@@ -726,6 +726,9 @@ type EtcdStatefulSetSettings struct {
 	DiskSize     *resource.Quantity           `json:"diskSize,omitempty"`
 	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
 	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
+	// SpaceQuota is the storage size limit for etcd. Maximum allowed value for SpaceQuota is 8GB
+	// More Info: https://etcd.io/docs/v3.5/op-guide/maintenance/#space-quota
+	SpaceQuota *int64 `json:"spaceQuota,omitempty"`
 }
 
 type LeaderElectionSettings struct {

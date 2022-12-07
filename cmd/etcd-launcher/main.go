@@ -82,6 +82,7 @@ type etcdCluster struct {
 	initialState          string
 	initialMembers        []string
 	usePeerTLSOnly        bool
+	spaceQuota            int64
 }
 
 func main() {
@@ -436,6 +437,7 @@ func (e *etcdCluster) parseConfigFlags() error {
 	flag.StringVar(&e.etcdctlAPIVersion, "api-version", defaultEtcdctlAPIVersion, "etcdctl API version")
 	flag.StringVar(&e.token, "token", "", "etcd database token")
 	flag.BoolVar(&e.enableCorruptionCheck, "enable-corruption-check", false, "enable etcd experimental corruption check")
+	flag.Int64Var(&e.spaceQuota, "space-quota", 0, "storage limit size for etcd.")
 	flag.Parse()
 
 	if e.cluster == "" {
@@ -501,6 +503,12 @@ func etcdCmd(config *etcdCluster) []string {
 		cmd = append(cmd, []string{
 			"--experimental-initial-corrupt-check=true",
 			"--experimental-corrupt-check-time=240m",
+		}...)
+	}
+
+	if config.spaceQuota > 0 {
+		cmd = append(cmd, []string{
+			fmt.Sprintf("--quota-backend-bytes=%v", config.spaceQuota),
 		}...)
 	}
 	return cmd
