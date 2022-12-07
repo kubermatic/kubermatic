@@ -81,7 +81,7 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 				"/bin/aws-cloud-controller-manager",
 				"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 				"--cloud-config=/etc/kubernetes/cloud/config",
-				"--cloud-provider=aws",
+				"--cloud-provider=aws", "--configure-cloud-routes=false",
 				fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.GetIPv4CIDR()),
 			}
 
