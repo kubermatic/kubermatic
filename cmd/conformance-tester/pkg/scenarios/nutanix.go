@@ -48,7 +48,6 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 					Password: secrets.Nutanix.CSIPassword,
 					Username: secrets.Nutanix.CSIUsername,
 				},
-				ProxyURL:    secrets.Nutanix.ProxyURL,
 				ClusterName: secrets.Nutanix.ClusterName,
 				ProjectName: secrets.Nutanix.ProjectName,
 			},
