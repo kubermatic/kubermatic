@@ -432,6 +432,13 @@ func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 	return service.Spec.Ports[0].NodePort, nil
 }
 
+func (d *TemplateData) GetKonnectivityKeepAliveTime() string {
+	if t := d.Cluster().Spec.ComponentsOverride.KonnectivityProxy.KeepaliveTime; t != "" {
+		return t
+	}
+	return "1m"
+}
+
 // GetMLAGatewayPort returns the NodePort of the external MLA Gateway service.
 func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed and equal to apiserver port

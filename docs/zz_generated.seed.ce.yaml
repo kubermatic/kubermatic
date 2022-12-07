@@ -107,16 +107,6 @@ spec:
           # HCloud CCM to work.
           network: ""
         kubevirt:
-          # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
-          # in the dedicated infra KubeVirt cluster. They are added to the defaults.
-          customNetworkPolicies:
-            - # Name is the name of the Custom Network Policy.
-              name: deny-ingress
-              # Spec is the Spec of the NetworkPolicy, using the standard type.
-              spec:
-                podSelector: {}
-                policyTypes:
-                  - Ingress
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
           dnsConfig:
@@ -137,6 +127,18 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
+        # MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+        machineFlavorFilter:
+          # Include VMs with GPU
+          enableGPU: false
+          # Maximum number of vCPU
+          maxCPU: 0
+          # Maximum RAM size in GB
+          maxRAM: 0
+          # Minimum number of vCPU
+          minCPU: 0
+          # Minimum RAM size in GB
+          minRAM: 0
         # Nutanix is experimental and unsupported
         nutanix:
           # Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
@@ -193,6 +195,15 @@ spec:
           # use-octavia is enabled by default in CCM since v1.17.0, and disabled by
           # default with the in-tree cloud provider.
           useOctavia: true
+        # DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+        operatingSystemProfiles:
+          amzn2: ""
+          centos: ""
+          flatcar: ""
+          rhel: ""
+          rockylinux: ""
+          sles: ""
+          ubuntu: ""
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
           # facilities see https://metal.equinix.com/developers/docs/locations/facilities/
@@ -312,7 +323,8 @@ spec:
       tolerations: null
     # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
     konnectivityProxy:
-      # KeepaliveTime represents a duration of time to check if the transport is still alive.
+      # After a duration of this time if the agent or server doesn't see any activity it
+      # pings the client or server to see if the transport is still alive.
       # The option is propagated to agents and server.
       # Defaults to 1m.
       keepaliveTime: ""

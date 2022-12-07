@@ -1055,7 +1055,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.isKonnectivityEnabled {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
-			konnectivity.DeploymentCreator(r.konnectivityServerHost, r.konnectivityServerPort, r.overwriteRegistryFunc),
+			konnectivity.DeploymentCreator(r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime, r.overwriteRegistryFunc),
 			metricsserver.DeploymentCreator(r.overwriteRegistryFunc), // deploy metrics-server in user cluster
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {

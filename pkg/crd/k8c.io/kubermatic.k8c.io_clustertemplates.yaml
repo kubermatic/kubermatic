@@ -1643,6 +1643,11 @@ spec:
                     description: KonnectivityProxy configures resources limits/requests
                       for konnectivity-server sidecar.
                     properties:
+                      keepaliveTime:
+                        description: KeepaliveTime represents a duration of time to
+                          check if the transport is still alive. The option is propagated
+                          to agents and server. Defaults to 1m.
+                        type: string
                       resources:
                         description: ResourceRequirements describes the compute resource
                           requirements.

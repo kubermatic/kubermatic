@@ -73,6 +73,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 			// TODO rastislavs: switch to "--proxy-strategies=destHost,default" with "--agent-identifiers=ipv4=$(HOST_IP)"
 			// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
 			"--proxy-strategies=default",
+			fmt.Sprintf("--keepalive-time=%s", data.GetKonnectivityKeepAliveTime()),
 		},
 		Ports: []corev1.ContainerPort{
 			{
