@@ -307,6 +307,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				if storageClass == "" {
 					storageClass = "kubermatic-fast"
 				}
+
 				diskSize := data.Cluster().Spec.ComponentsOverride.Etcd.DiskSize
 				if diskSize == nil {
 					d := data.EtcdDiskSize()
@@ -442,6 +443,7 @@ type commandTplData struct {
 	DataDir               string
 	Migrate               bool
 	EnableCorruptionCheck bool
+	SpaceQuota            *int64
 }
 
 func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
@@ -470,6 +472,7 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 		Namespace:             cluster.Status.NamespaceName,
 		DataDir:               dataDir,
 		EnableCorruptionCheck: enableCorruptionCheck,
+		SpaceQuota:            cluster.Spec.ComponentsOverride.Etcd.SpaceQuota,
 	}
 
 	buf := bytes.Buffer{}
@@ -511,6 +514,9 @@ exec /usr/local/bin/etcd \
 {{- if .EnableCorruptionCheck }}
     --experimental-initial-corrupt-check=true \
     --experimental-corrupt-check-time=240m \
+{{- end }}
+{{- if .SpaceQuota }}
+	--quota-backend-bytes={{ .SpaceQuota }} \
 {{- end }}
     --auto-compaction-retention=8
 `

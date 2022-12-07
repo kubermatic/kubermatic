@@ -70,6 +70,10 @@ const (
 
 	// EARKeyLength is required key length for encryption at rest.
 	EARKeyLength = 32
+
+	// Maximum allowed value for SpaceQuota is 8GB. Anything above that is not recommended.
+	// https://etcd.io/docs/v3.3/dev-guide/limit/#storage-size-limit
+	MaxETCDSpaceQuota = 8589934592
 )
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
@@ -153,6 +157,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, ValidateLeaderElectionSettings(&spec.ComponentsOverride.Scheduler.LeaderElectionSettings, parentFieldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
+
+	if spec.ComponentsOverride.Etcd.SpaceQuota != nil && *spec.ComponentsOverride.Etcd.SpaceQuota > MaxETCDSpaceQuota {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("componentsOverride", "etcd", "spaceQuota"), *spec.ComponentsOverride.Etcd.SpaceQuota, "Maximum allowed value for SpaceQuota is 8GB. For more details: https://etcd.io/docs/v3.3/dev-guide/limit/#storage-size-limit"))
+	}
 
 	externalCCM := false
 	if val, ok := spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
