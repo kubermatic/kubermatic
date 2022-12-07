@@ -113,6 +113,9 @@ type ExternalClusterSpec struct {
 
 	ClusterNetwork ExternalClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
 
+	// ContainerRuntime to use, i.e. `docker` or `containerd`.
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
+
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
