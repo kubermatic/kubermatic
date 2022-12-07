@@ -269,7 +269,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.4.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-attacher:v3.4.0
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -284,7 +284,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-resizer
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.4.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-resizer:v1.4.0
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -354,7 +354,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.6.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.6.0
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"
@@ -397,7 +397,7 @@ spec:
               name: ca-bundle
               readOnly: true
         - name: csi-provisioner
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v3.1.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-provisioner:v3.1.0
           args:
             - "--v=4"
             - "--timeout=300s"
@@ -416,7 +416,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: csi-snapshotter
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v5.0.1
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-snapshotter:v5.0.1
           args:
             - "--v=4"
             - "--kube-api-qps=100"
@@ -469,7 +469,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: node-driver-registrar
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/csi-node-driver-registrar:v2.5.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/csi-node-driver-registrar:v2.5.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -558,7 +558,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 3
         - name: liveness-probe
-          image: {{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.6.0
+          image: {{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.6.0
           args:
             - "--v=4"
             - "--csi-address=/csi/csi.sock"

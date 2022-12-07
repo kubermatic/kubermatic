@@ -87,7 +87,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "node-cache",
-					Image:           fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.21.1", registryWithOverwrite(resources.RegistryK8SGCR)),
+					Image:           fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.21.1", registryWithOverwrite(resources.RegistryK8S)),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",

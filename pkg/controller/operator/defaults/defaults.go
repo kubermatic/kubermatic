@@ -49,9 +49,9 @@ const (
 	DefaultControllerManagerReplicas              = 1
 	DefaultSchedulerReplicas                      = 1
 	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyNodePort
-	DefaultVPARecommenderDockerRepository         = "k8s.gcr.io/autoscaling/vpa-recommender"
-	DefaultVPAUpdaterDockerRepository             = "k8s.gcr.io/autoscaling/vpa-updater"
-	DefaultVPAAdmissionControllerDockerRepository = "k8s.gcr.io/autoscaling/vpa-admission-controller"
+	DefaultVPARecommenderDockerRepository         = "registry.k8s.io/autoscaling/vpa-recommender"
+	DefaultVPAUpdaterDockerRepository             = "registry.k8s.io/autoscaling/vpa-updater"
+	DefaultVPAAdmissionControllerDockerRepository = "registry.k8s.io/autoscaling/vpa-admission-controller"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
 	DefaultUserClusterScrapeAnnotationPrefix      = "monitoring.kubermatic.io"
 	DefaultMaximumParallelReconciles              = 10

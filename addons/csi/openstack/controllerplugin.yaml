@@ -56,7 +56,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-attacher:v3.4.0'
+          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-attacher:v3.4.0'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -69,7 +69,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-provisioner:v3.1.0'
+          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-provisioner:v3.1.0'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -83,7 +83,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-snapshotter:v5.0.1'
+          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-snapshotter:v5.0.1'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -96,7 +96,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: csi-resizer
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/csi-resizer:v1.4.0'
+          image: '{{ Registry "registry.k8s.io" }}/sig-storage/csi-resizer:v1.4.0'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -110,7 +110,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
-          image: '{{ Registry "k8s.gcr.io" }}/sig-storage/livenessprobe:v2.6.0'
+          image: '{{ Registry "registry.k8s.io" }}/sig-storage/livenessprobe:v2.6.0'
           args:
             - "--csi-address=$(ADDRESS)"
           env:
