@@ -691,7 +691,7 @@ type ComponentSettings struct {
 	// strategy is configured.
 	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
 	// KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
-	KonnectivityProxy KonnectvityProxySettings `json:"konnectivityProxy,omitempty"`
+	KonnectivityProxy KonnectivityProxySettings `json:"konnectivityProxy,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -701,8 +701,12 @@ type APIServerSettings struct {
 	NodePortRange               string `json:"nodePortRange,omitempty"`
 }
 
-type KonnectvityProxySettings struct {
+type KonnectivityProxySettings struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// KeepaliveTime represents a duration of time to check if the transport is still alive.
+	// The option is propagated to agents and server.
+	// Defaults to 1m.
+	KeepaliveTime string `json:"keepaliveTime,omitempty"`
 }
 
 type ControllerSettings struct {
