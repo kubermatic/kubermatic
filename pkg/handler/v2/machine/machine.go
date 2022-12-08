@@ -32,11 +32,15 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func CreateMachineDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createMachineDeploymentReq)
+		if err := req.ValidateCreateNodeDeploymentReq(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
 		return handlercommon.CreateMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, seedsGetter, req.Body, req.ProjectID, req.ClusterID)
 	}
 }
@@ -49,6 +53,14 @@ type createMachineDeploymentReq struct {
 	ClusterID string `json:"cluster_id"`
 	// in: body
 	Body apiv1.NodeDeployment
+}
+
+func (r *createMachineDeploymentReq) ValidateCreateNodeDeploymentReq() error {
+	errMsg := handlercommon.ValidateAutoscalingOptions(&r.Body.Spec)
+	if errMsg != "" {
+		return fmt.Errorf(errMsg)
+	}
+	return nil
 }
 
 func DecodeCreateMachineDeployment(c context.Context, r *http.Request) (interface{}, error) {

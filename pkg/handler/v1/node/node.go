@@ -30,6 +30,7 @@ import (
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // createNodeDeploymentReq defines HTTP request for createMachineDeployment
@@ -62,9 +63,20 @@ func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}
 	return req, nil
 }
 
+func (r *createNodeDeploymentReq) ValidateCreateNodeDeploymentReq() error {
+	errMsg := handlercommon.ValidateAutoscalingOptions(&r.Body.Spec)
+	if errMsg != "" {
+		return fmt.Errorf(errMsg)
+	}
+	return nil
+}
+
 func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodeDeploymentReq)
+		if err := req.ValidateCreateNodeDeploymentReq(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
 		return handlercommon.CreateMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, seedsGetter, req.Body, req.ProjectID, req.ClusterID)
 	}
 }
