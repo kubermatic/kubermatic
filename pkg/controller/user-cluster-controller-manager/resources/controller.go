@@ -44,6 +44,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
@@ -455,4 +456,34 @@ func (r *reconciler) opaReconcileData(ctx context.Context) (controller, audit *c
 		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 	return cluster.Spec.OPAIntegration.ControllerResources, cluster.Spec.OPAIntegration.AuditResources, nil
+}
+
+// csiDriverNamespaceMigration finalize the migration of the vSphere csi drive to its dedicated namespace.
+// This is needed, because the addon manager cannot delete orphaned resources in another namespace via kubectl --prune.
+func (r *reconciler) csiDriverNamespaceMigration(ctx context.Context) error {
+
+	var toDelete []ctrlruntimeclient.Object
+	toDelete = append(toDelete, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.VSphereCSIWebhookSecretName,
+			Namespace: metav1.NamespaceSystem,
+		},
+	})
+
+	toDelete = append(toDelete, &admissionregistrationv1.ValidatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.VSphereCSIValidatingWebhookConfigurationWebhookName,
+			Namespace: metav1.NamespaceSystem,
+		},
+	})
+
+	for _, obj := range toDelete {
+		err := r.Client.Delete(ctx, obj)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
+
 }
