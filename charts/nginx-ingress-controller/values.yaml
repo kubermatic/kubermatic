@@ -18,6 +18,8 @@ nginx:
   # values for the ingress-nginx chart start below
   # reference: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
   controller:
+    image:
+      registry: registry.k8s.io
     hostNetwork: false
     replicaCount: 3
     config: {}
@@ -82,6 +84,8 @@ nginx:
       # in case of azure, can specific a specific IP address for the nginx service
       # loadBalancerIP: ""
     
-    # Temporarily disable the admission webhooks
     admissionWebhooks:
       enabled: true
+      patch:
+        image:
+          registry: registry.k8s.io
