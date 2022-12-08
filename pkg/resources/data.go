@@ -77,6 +77,7 @@ type TemplateData struct {
 	kubermaticImage                  string
 	etcdLauncherImage                string
 	dnatControllerImage              string
+	networkIntfMgrImage              string
 	machineControllerImageTag        string
 	machineControllerImageRepository string
 	backupSchedule                   time.Duration
@@ -184,6 +185,11 @@ func (td *TemplateDataBuilder) WithEtcdLauncherImage(image string) *TemplateData
 
 func (td *TemplateDataBuilder) WithDnatControllerImage(image string) *TemplateDataBuilder {
 	td.data.dnatControllerImage = image
+	return td
+}
+
+func (td *TemplateDataBuilder) WithNetworkIntfMgrImage(image string) *TemplateDataBuilder {
+	td.data.networkIntfMgrImage = image
 	return td
 }
 
@@ -472,6 +478,10 @@ func (d *TemplateData) DNATControllerImage() string {
 	return registry.Must(d.RewriteImage(d.dnatControllerImage))
 }
 
+func (d *TemplateData) NetworkIntfMgrImage() string {
+	return registry.Must(d.RewriteImage(d.networkIntfMgrImage))
+}
+
 func (d *TemplateData) BackupSchedule() time.Duration {
 	return d.backupSchedule
 }
@@ -615,6 +625,11 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 			return CloudProviderExternalFlag
 		}
 		return ""
+	case cluster.Spec.Cloud.Digitalocean != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return CloudProviderExternalFlag
+		}
+		return "digitalocean"
 	default:
 		return ""
 	}

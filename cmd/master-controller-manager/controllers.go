@@ -224,6 +224,7 @@ func clusterTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedc
 	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return clustertemplatesynchronizer.ControllerName, clustertemplatesynchronizer.Add(
 			masterMgr,
+			ctrlCtx.seedsGetter,
 			seedManagerMap,
 			ctrlCtx.log,
 		)

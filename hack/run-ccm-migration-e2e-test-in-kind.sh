@@ -23,6 +23,10 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+if provider_disabled $PROVIDER; then
+  exit 0
+fi
+
 export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 
@@ -57,6 +61,7 @@ openstack)
   EXTRA_ARGS="-openstack-kkp-datacenter=syseleven-dbl1"
   ;;
 vsphere)
+  TIMEOUT=45m
   EXTRA_ARGS="-vsphere-kkp-datacenter=vsphere-ger"
   ;;
 azure)

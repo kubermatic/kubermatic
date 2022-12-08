@@ -121,8 +121,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	userProjectBindingCreatorGetters := []reconciling.NamedKubermaticV1UserProjectBindingCreatorGetter{
-		userProjectBindingCreatorGetter(userProjectBinding),
+	userProjectBindingReconcilerFactorys := []reconciling.NamedUserProjectBindingReconcilerFactory{
+		userProjectBindingReconcilerFactory(userProjectBinding),
 	}
 
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -136,7 +136,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		return reconciling.ReconcileKubermaticV1UserProjectBindings(ctx, userProjectBindingCreatorGetters, "", seedClient)
+		return reconciling.ReconcileUserProjectBindings(ctx, userProjectBindingReconcilerFactorys, "", seedClient)
 	})
 
 	if err != nil {

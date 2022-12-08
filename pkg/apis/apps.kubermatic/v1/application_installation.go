@@ -68,6 +68,15 @@ type ApplicationInstallationSpec struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	Values runtime.RawExtension `json:"values,omitempty"`
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
+
+	// ReconciliationInterval is the interval at which to force the reconciliation of the application. By default, Applications are only reconciled
+	// on changes on spec, annotations, or the parent application definition. Meaning that if the user manually deletes the workload
+	// deployed by the application, nothing will happen until the application CR change.
+	//
+	// Setting a value greater than zero force reconciliation even if no changes occurred on application CR.
+	// Setting a value equal to 0 disables the force reconciliation of the application (default behavior).
+	// Setting this too low can cause a heavy load and may disrupt your application workload depending on the template method.
+	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
 }
 
 // AppNamespaceSpec describe the desired state of the namespace where application will be created.

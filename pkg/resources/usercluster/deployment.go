@@ -27,7 +27,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,11 +78,11 @@ type userclusterControllerData interface {
 	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
-// DeploymentCreator returns the function to create and update the user cluster controller deployment
+// DeploymentReconciler returns the function to create and update the user cluster controller deployment
 //
 //nolint:gocyclo
-func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.UserClusterControllerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)

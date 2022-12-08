@@ -562,9 +562,13 @@ spec:
                           description: The cluster's kubeconfig file, encoded with base64.
                           type: string
                         preAllocatedDataVolumes:
-                          description: PreAllocatedDataVolumes holds list of preallocated DataVolumes which can be used as reference for DataVolume cloning.
+                          description: PreAllocatedDataVolumes represents a list of DataVolumes that are tied to cluster lifecycle and can be referenced by machines. Custom Images are a good example of this use case.
                           items:
                             properties:
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                type: object
                               name:
                                 type: string
                               size:

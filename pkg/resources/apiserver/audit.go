@@ -22,7 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -147,8 +147,8 @@ const fluentBitConfigTemplate = `
 
 `
 
-func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+func AuditConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			// set the audit policy preset so we generate a ConfigMap in any case.
 			// It won't be used if audit logging is not enabled
@@ -173,10 +173,10 @@ func AuditConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfig
 	}
 }
 
-// FluentBitSecretCreator returns a reconciling.NamedSecretCreatorGetter for a secret that contains
+// FluentBitSecretReconciler returns a reconciling.NamedSecretReconcilerFactory for a secret that contains
 // fluent-bit configuration for the audit-logs sidecar.
-func FluentBitSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func FluentBitSecretReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.FluentBitSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			if secret.Data == nil {
 				secret.Data = map[string][]byte{}

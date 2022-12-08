@@ -18,12 +18,15 @@ package clustertemplatesynchronizer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	nodedeploymentmigration "k8c.io/kubermatic/v2/pkg/controller/shared/nodedeployment-migration"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -49,6 +52,7 @@ const (
 
 type reconciler struct {
 	log          *zap.SugaredLogger
+	seedsGetter  provider.SeedsGetter
 	masterClient ctrlruntimeclient.Client
 	seedClients  kuberneteshelper.SeedClientMap
 	recorder     record.EventRecorder
@@ -56,12 +60,14 @@ type reconciler struct {
 
 func Add(
 	masterMgr manager.Manager,
+	seedsGetter provider.SeedsGetter,
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
 ) error {
 	log = log.Named(ControllerName)
 	r := &reconciler{
 		log:          log,
+		seedsGetter:  seedsGetter,
 		masterClient: masterMgr.GetClient(),
 		seedClients:  kuberneteshelper.SeedClientMap{},
 		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
@@ -117,8 +123,16 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	clusterTemplateCreatorGetters := []reconciling.NamedKubermaticV1ClusterTemplateCreatorGetter{
-		clusterTemplateCreatorGetter(clusterTemplate),
+	// In KKP 2.22, initial-machinedeployments were changed from NodeDeployments to actual
+	// MachineDeployments; in order to eventually be able to remove the NodeDedeployment codebase,
+	// existing annotations need to be migrated.
+	// This code can be removed in KKP 2.23+.
+	if err := r.migrateInitialMachineDeployment(ctx, log, clusterTemplate); err != nil {
+		return fmt.Errorf("failed to migrate initial-machinedeployment annotation: %w", err)
+	}
+
+	clusterTemplateReconcilerFactorys := []reconciling.NamedClusterTemplateReconcilerFactory{
+		clusterTemplateReconcilerFactory(clusterTemplate),
 	}
 
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -132,12 +146,63 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return nil
 		}
 
-		return reconciling.ReconcileKubermaticV1ClusterTemplates(ctx, clusterTemplateCreatorGetters, "", seedClient)
+		return reconciling.ReconcileClusterTemplates(ctx, clusterTemplateReconcilerFactorys, "", seedClient)
 	})
 	if err != nil {
 		return fmt.Errorf("reconciled cluster template: %s: %w", clusterTemplate.Name, err)
 	}
 	return nil
+}
+
+func (r *reconciler) migrateInitialMachineDeployment(ctx context.Context, log *zap.SugaredLogger, clusterTemplate *kubermaticv1.ClusterTemplate) error {
+	request := clusterTemplate.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation]
+	if request == "" {
+		return nil
+	}
+
+	datacenter, err := r.getTargetDatacenter(clusterTemplate)
+	if err != nil {
+		return err
+	}
+
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: clusterTemplate.ObjectMeta,
+		Spec:       clusterTemplate.Spec,
+	}
+
+	machineDeployment, migrated, err := nodedeploymentmigration.ParseNodeOrMachineDeployment(cluster, datacenter, request)
+	if err != nil {
+		return err
+	}
+
+	if !migrated {
+		return nil
+	}
+
+	encoded, err := json.Marshal(machineDeployment)
+	if err != nil {
+		return fmt.Errorf("cannot marshal initial machine deployment: %w", err)
+	}
+	clusterTemplate.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation] = string(encoded)
+
+	return r.masterClient.Update(ctx, clusterTemplate)
+}
+
+func (r *reconciler) getTargetDatacenter(clusterTemplate *kubermaticv1.ClusterTemplate) (*kubermaticv1.Datacenter, error) {
+	seeds, err := r.seedsGetter()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list seeds: %w", err)
+	}
+
+	for _, seed := range seeds {
+		for key, dc := range seed.Spec.Datacenters {
+			if key == clusterTemplate.Spec.Cloud.DatacenterName {
+				return &dc, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("there is no datacenter named %q", clusterTemplate.Spec.Cloud.DatacenterName)
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate) error {
@@ -180,8 +245,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-func clusterTemplateCreatorGetter(template *kubermaticv1.ClusterTemplate) reconciling.NamedKubermaticV1ClusterTemplateCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ClusterTemplateCreator) {
+func clusterTemplateReconcilerFactory(template *kubermaticv1.ClusterTemplate) reconciling.NamedClusterTemplateReconcilerFactory {
+	return func() (string, reconciling.ClusterTemplateReconciler) {
 		return template.Name, func(c *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error) {
 			c.Name = template.Name
 			c.Spec = template.Spec

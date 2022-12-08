@@ -21,6 +21,7 @@ import (
 	"sync"
 	"testing"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -467,6 +468,31 @@ func TestValidate(t *testing.T) {
 						ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
 							"daily": {
 								Schedule: "*/invalid * * * *",
+							},
+						},
+					},
+				},
+			},
+			features:    features.FeatureGate{},
+			errExpected: true,
+		},
+		{
+			name: "Adding a seed with kubevirt datacenter should fail with not supported operating-system",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					Datacenters: map[string]kubermaticv1.Datacenter{
+						"test-kv": {
+							Spec: kubermaticv1.DatacenterSpec{
+								Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
+									Images: kubermaticv1.ImageSources{HTTP: &kubermaticv1.HTTPSource{
+										OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
+											"invalid-os": map[string]string{"v1": "https://test.com"},
+										},
+									}},
+								},
 							},
 						},
 					},

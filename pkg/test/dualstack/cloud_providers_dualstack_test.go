@@ -394,7 +394,7 @@ func TestNewClusters(t *testing.T) {
 				WithKonnectivity(true).
 				WithCNIPlugin(cnis[test.cni]).
 				WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-					c.ClusterNetwork.IPFamily = "IPv4+IPv6"
+					c.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 					c.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16", "fd01::/48"}
 					c.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20", "fd02::/120"}
 					return c
@@ -436,7 +436,7 @@ func TestNewClusters(t *testing.T) {
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithOSSpec(osSpec).
 					WithNetworkConfig(&providerconfig.NetworkConfig{
-						IPFamily: "IPv4+IPv6",
+						IPFamily: util.DualStack,
 					})
 
 				// no need to keep track of machine cleanups, as KKP will delete all machines in the

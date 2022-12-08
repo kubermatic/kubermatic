@@ -34,6 +34,9 @@ const (
 	// ExternalCluster Kubeconfig secret prefix.
 	ExternalClusterKubeconfigPrefix = "kubeconfig-external-cluster"
 
+	// KubeOneNamespacePrefix is the kubeone namespace prefix.
+	KubeOneNamespacePrefix = "kubeone"
+
 	// don't change this as these prefixes are used for rbac generation.
 	// KubeOne ssh secret prefixes.
 	KubeOneSSHSecretPrefix = "ssh-kubeone-external-cluster"
@@ -94,9 +97,9 @@ type ExternalClusterKubeOneCloudSpec struct {
 	// "aws", "azure", "digitalocean", "gcp",
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
 	ProviderName         string                                  `json:"providerName"`
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-	SSHReference         *providerconfig.GlobalSecretKeySelector `json:"sshReference"`
-	ManifestReference    *providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	SSHReference         *providerconfig.GlobalSecretKeySelector `json:"sshReference,omitempty"`
+	ManifestReference    *providerconfig.GlobalSecretKeySelector `json:"manifestReference,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -122,6 +125,9 @@ type ExternalClusterSpec struct {
 	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
 
 	ClusterNetwork ExternalClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
+
+	// ContainerRuntime to use, i.e. `docker` or `containerd`.
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
 
 	// If this is set to true, the cluster will not be reconciled by KKP.
 	// This indicates that the user needs to do some action to resolve the pause.
@@ -325,4 +331,8 @@ func (i *ExternalCluster) GetKubeOneSSHSecretName() string {
 
 func (i *ExternalCluster) GetKubeOneManifestSecretName() string {
 	return fmt.Sprintf("%s-%s", KubeOneManifestSecretPrefix, i.Name)
+}
+
+func (i *ExternalCluster) GetKubeOneNamespaceName() string {
+	return fmt.Sprintf("%s-%s", KubeOneNamespacePrefix, i.Name)
 }

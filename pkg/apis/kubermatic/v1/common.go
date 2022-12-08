@@ -77,6 +77,7 @@ const (
 const (
 	InitialMachineDeploymentRequestAnnotation        = "kubermatic.io/initial-machinedeployment-request"
 	InitialApplicationInstallationsRequestAnnotation = "kubermatic.io/initial-application-installations-request"
+	InitialCNIValuesRequestAnnotation                = "kubermatic.io/initial-cni-values-request"
 )
 
 type MachineFlavorFilter struct {

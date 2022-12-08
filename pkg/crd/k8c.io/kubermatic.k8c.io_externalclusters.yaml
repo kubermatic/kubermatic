@@ -309,10 +309,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                       required:
-                        - credentialsReference
-                        - manifestReference
                         - providerName
-                        - sshReference
                       type: object
                     providerName:
                       description: ExternalClusterProvider is the identifier for the cloud provider that hosts the external cluster control plane.
@@ -346,6 +343,9 @@ spec:
                           type: array
                       type: object
                   type: object
+                containerRuntime:
+                  description: ContainerRuntime to use, i.e. `docker` or `containerd`.
+                  type: string
                 humanReadableName:
                   description: HumanReadableName is the cluster name provided by the user
                   type: string

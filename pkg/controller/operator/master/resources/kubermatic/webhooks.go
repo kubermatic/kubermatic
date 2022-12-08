@@ -22,7 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
@@ -31,8 +31,8 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func UserSSHKeyMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+func UserSSHKeyMutatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return common.UserSSHKeyAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -87,8 +87,8 @@ func UserSSHKeyMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kub
 	}
 }
 
-func UserSSHKeyValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+func UserSSHKeyValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return common.UserSSHKeyAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -141,8 +141,8 @@ func UserSSHKeyValidatingWebhookConfigurationCreator(ctx context.Context, cfg *k
 	}
 }
 
-func UserValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+func UserValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return common.UserAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -196,11 +196,11 @@ func UserValidatingWebhookConfigurationCreator(ctx context.Context, cfg *kuberma
 	}
 }
 
-func ResourceQuotaValidatingWebhookConfigurationCreator(ctx context.Context,
+func ResourceQuotaValidatingWebhookConfigurationReconciler(ctx context.Context,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	client ctrlruntimeclient.Client,
-) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return common.ResourceQuotaAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -253,8 +253,8 @@ func ResourceQuotaValidatingWebhookConfigurationCreator(ctx context.Context,
 	}
 }
 
-func ExternalClusterMutatingWebhookConfigurationCreator(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+func ExternalClusterMutatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return common.ExternalClusterAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
@@ -309,11 +309,11 @@ func ExternalClusterMutatingWebhookConfigurationCreator(ctx context.Context, cfg
 	}
 }
 
-func GroupProjectBindingValidatingWebhookConfigurationCreator(ctx context.Context,
+func GroupProjectBindingValidatingWebhookConfigurationReconciler(ctx context.Context,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	client ctrlruntimeclient.Client,
-) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
+) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return common.GroupProjectBindingAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail

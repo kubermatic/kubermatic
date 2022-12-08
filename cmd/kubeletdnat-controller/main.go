@@ -27,6 +27,7 @@ import (
 	kubeletdnatcontroller "k8c.io/kubermatic/v2/pkg/controller/kubeletdnat-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	corev1 "k8s.io/api/core/v1"
@@ -53,6 +54,8 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+
+	reconciling.Configure(log)
 
 	cli.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug, nil)
 

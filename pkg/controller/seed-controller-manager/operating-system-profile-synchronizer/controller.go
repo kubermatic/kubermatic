@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
-	osmreconciling "k8c.io/operating-system-manager/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -197,11 +196,11 @@ func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, log *zap.Su
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	creators := []reconciling.NamedOperatingSystemProfileCreatorGetter{
-		ospCreator(osp),
+	creators := []reconciling.NamedOperatingSystemProfileReconcilerFactory{
+		ospReconciler(osp),
 	}
 
-	if err := osmreconciling.ReconcileOperatingSystemProfiles(ctx, creators, namespace, r.seedClient); err != nil {
+	if err := reconciling.ReconcileOperatingSystemProfiles(ctx, creators, namespace, r.seedClient); err != nil {
 		return fmt.Errorf("failed to reconcile OSP: %w", err)
 	}
 
@@ -259,8 +258,8 @@ func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.Su
 	})
 }
 
-func ospCreator(osp *osmv1alpha1.OperatingSystemProfile) osmreconciling.NamedOperatingSystemProfileCreatorGetter {
-	return func() (string, osmreconciling.OperatingSystemProfileCreator) {
+func ospReconciler(osp *osmv1alpha1.OperatingSystemProfile) reconciling.NamedOperatingSystemProfileReconcilerFactory {
+	return func() (string, reconciling.OperatingSystemProfileReconciler) {
 		return osp.Name, func(existing *osmv1alpha1.OperatingSystemProfile) (*osmv1alpha1.OperatingSystemProfile, error) {
 			// We need to check if the existing OperatingSystemProfile can be updated.
 			// OSP is immutable by nature and to make modifications a version bump is mandatory,

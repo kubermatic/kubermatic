@@ -22,7 +22,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -37,8 +37,8 @@ const (
 	clusterAPIVersion = "v1alpha1"
 )
 
-func WebhookClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
-	return func() (string, reconciling.ClusterRoleCreator) {
+func WebhookClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleReconciler) {
 		return webhookClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
@@ -59,8 +59,8 @@ func WebhookClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	}
 }
 
-func WebhookClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func WebhookClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return webhookClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     webhookClusterRoleName,
@@ -79,9 +79,9 @@ func WebhookClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreat
 	}
 }
 
-// MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for OSM.
-func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+// MutatingwebhookConfigurationReconciler returns the MutatingwebhookConfiguration for OSM.
+func MutatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
 		return resources.OperatingSystemManagerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			failurePolicy := admissionregistrationv1.Fail
 			sideEffects := admissionregistrationv1.SideEffectClassNone

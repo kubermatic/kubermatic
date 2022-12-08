@@ -19,17 +19,17 @@ package openvpn
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-type internalClientCertificateCreatorData interface {
+type internalClientCertificateReconcilerData interface {
 	GetOpenVPNCA() (*resources.ECDSAKeyPair, error)
 }
 
-// InternalClientCertificateCreator returns a function to create/update the secret with a client certificate for the openvpn clients in the seed cluster.
-func InternalClientCertificateCreator(data internalClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.OpenVPNClientCertificatesSecretName, certificates.GetECDSAClientCertificateCreator(
+// InternalClientCertificateReconciler returns a function to create/update the secret with a client certificate for the openvpn clients in the seed cluster.
+func InternalClientCertificateReconciler(data internalClientCertificateReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return resources.OpenVPNClientCertificatesSecretName, certificates.GetECDSAClientCertificateReconciler(
 			resources.OpenVPNClientCertificatesSecretName,
 			"internal-client",
 			[]string{},

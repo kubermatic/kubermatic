@@ -18,13 +18,13 @@ package etcd
 
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ServiceAccountCreator returns a func to create/update the ServiceAccount used by etcd launcher.
-func ServiceAccountCreator() (string, reconciling.ServiceAccountCreator) {
+// ServiceAccountReconciler returns a func to create/update the ServiceAccount used by etcd launcher.
+func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return rbac.EtcdLauncherServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}

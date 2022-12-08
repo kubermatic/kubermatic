@@ -30,14 +30,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
               value: "1.25"
             - name: PROVIDER
-              value: "vmware-cloud-director"
+              value: "vmwareclouddirector"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY

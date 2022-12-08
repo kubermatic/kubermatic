@@ -217,6 +217,10 @@ spec:
         - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
+        - --cloud-provider
+        - digitalocean
+        - --cloud-config
+        - /etc/kubernetes/cloud/config
         - --oidc-ca-file
         - /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         - --oidc-issuer-url

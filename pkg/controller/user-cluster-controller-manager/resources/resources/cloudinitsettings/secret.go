@@ -18,7 +18,7 @@ package cloudinitsettings
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,10 +28,10 @@ const (
 	cloudInitGetterAnnotation = "cloud-init-getter"
 )
 
-// SecretCreator returns a function to create a secret in the usercluster, for generating an API server token against
+// SecretReconciler returns a function to create a secret in the usercluster, for generating an API server token against
 // the cloud-init-getter service account.
-func SecretCreator() reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func SecretReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return cloudInitGetterToken, func(sec *corev1.Secret) (*corev1.Secret, error) {
 			sec.Type = resources.ServiceAccountTokenType
 			sec.Namespace = resources.CloudInitSettingsNamespace

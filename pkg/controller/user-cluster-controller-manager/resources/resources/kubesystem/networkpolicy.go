@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -30,9 +30,9 @@ import (
 
 const NodeLocalDNSCacheAddress = "169.254.20.10"
 
-// DefaultNetworkPolicyCreator Default policy creator denys all expect egress to kube-dns for all pods without any network policy applied.
-func DefaultNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// DefaultNetworkPolicyReconciler Default policy creator denys all expect egress to kube-dns for all pods without any network policy applied.
+func DefaultNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		dnsPort := intstr.FromInt(53)
 		protoUdp := corev1.ProtocolUDP
 		protoTcp := corev1.ProtocolTCP

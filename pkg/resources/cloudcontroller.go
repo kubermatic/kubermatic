@@ -53,6 +53,7 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudS
 	case kubermaticv1.AWSCloudProvider,
 		kubermaticv1.AnexiaCloudProvider,
 		kubermaticv1.AzureCloudProvider,
+		kubermaticv1.DigitaloceanCloudProvider,
 		kubermaticv1.KubevirtCloudProvider,
 		kubermaticv1.VSphereCloudProvider:
 		supported, err := version.IsSupported(clusterVersion.Semver(), t, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)

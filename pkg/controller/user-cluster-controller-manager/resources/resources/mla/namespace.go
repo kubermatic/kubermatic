@@ -19,12 +19,12 @@ package mla
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func NamespaceCreator() (string, reconciling.NamespaceCreator) {
+func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 	return resources.UserClusterMLANamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		if ns.Labels != nil {
 			ns.Labels[common.ComponentLabel] = resources.MLAComponentName

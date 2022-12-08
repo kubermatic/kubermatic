@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,9 +47,9 @@ var (
 	}
 )
 
-// DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns function to create/update deployment for konnectivity agents in user cluster.
+func DeploymentReconciler(kServerHost string, kServerPort int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
 			version = "v0.0.33"
@@ -171,9 +171,9 @@ func DeploymentCreator(kServerHost string, kServerPort int, imageRewriter regist
 	}
 }
 
-// PodDisruptionBudgetCreator returns a func to create/update the Konnectivity agent's PodDisruptionBudget.
-func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGetter {
-	return func() (string, reconciling.PodDisruptionBudgetCreator) {
+// PodDisruptionBudgetReconciler returns a func to create/update the Konnectivity agent's PodDisruptionBudget.
+func PodDisruptionBudgetReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return resources.KonnectivityPodDisruptionBudgetName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
 			minAvailable := intstr.FromInt(1)
 			pdb.Spec = policyv1.PodDisruptionBudgetSpec{

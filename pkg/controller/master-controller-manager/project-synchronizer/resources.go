@@ -21,8 +21,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-func projectCreatorGetter(project *kubermaticv1.Project) reconciling.NamedKubermaticV1ProjectCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ProjectCreator) {
+func projectReconcilerFactory(project *kubermaticv1.Project) reconciling.NamedProjectReconcilerFactory {
+	return func() (string, reconciling.ProjectReconciler) {
 		return project.Name, func(p *kubermaticv1.Project) (*kubermaticv1.Project, error) {
 			p.Spec = project.Spec
 			return p, nil

@@ -115,8 +115,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	presetCreatorGetters := []reconciling.NamedKubermaticV1PresetCreatorGetter{
-		presetCreatorGetter(preset),
+	presetReconcilerFactorys := []reconciling.NamedPresetReconcilerFactory{
+		presetReconcilerFactory(preset),
 	}
 
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -130,7 +130,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			return nil
 		}
 
-		return reconciling.ReconcileKubermaticV1Presets(ctx, presetCreatorGetters, "", seedClient)
+		return reconciling.ReconcilePresets(ctx, presetReconcilerFactorys, "", seedClient)
 	})
 	if err != nil {
 		r.recorder.Event(preset, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -161,8 +161,8 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	return nil
 }
 
-func presetCreatorGetter(preset *kubermaticv1.Preset) reconciling.NamedKubermaticV1PresetCreatorGetter {
-	return func() (string, reconciling.KubermaticV1PresetCreator) {
+func presetReconcilerFactory(preset *kubermaticv1.Preset) reconciling.NamedPresetReconcilerFactory {
+	return func() (string, reconciling.PresetReconciler) {
 		return preset.Name, func(c *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
 			c.Name = preset.Name
 			c.Spec = preset.Spec

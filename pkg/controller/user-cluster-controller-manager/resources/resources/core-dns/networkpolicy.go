@@ -21,7 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -29,9 +29,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// KubeDNSNetworkPolicyCreator NetworkPolicy allows ingress traffic to coredns on port 53 TCP/UDP and egress to anywhere on port 53 TCP/UDP.
-func KubeDNSNetworkPolicyCreator(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyCreatorGetter {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+// KubeDNSNetworkPolicyReconciler NetworkPolicy allows ingress traffic to coredns on port 53 TCP/UDP and egress to anywhere on port 53 TCP/UDP.
+func KubeDNSNetworkPolicyReconciler(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		dnsPort := intstr.FromInt(53)
 		apiServicePort := intstr.FromInt(443)
 		apiPort := intstr.FromInt(k8sApiPort)

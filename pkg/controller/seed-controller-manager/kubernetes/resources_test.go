@@ -49,7 +49,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 		name                string
 		cluster             *kubermaticv1.Cluster
 		kcmDeploymentConfig KCMDeploymentConfig
-		wantCCMCreator      bool
+		wantCCMReconciler   bool
 	}{
 		{
 			name: "KCM ready and cloud-provider disabled",
@@ -85,7 +85,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Replicas:   1,
 				Namespace:  "test",
 			},
-			wantCCMCreator: true,
+			wantCCMReconciler: true,
 		},
 		{
 			name: "KCM ready and cloud controllers disabled",
@@ -121,7 +121,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Replicas:   1,
 				Namespace:  "test",
 			},
-			wantCCMCreator: true,
+			wantCCMReconciler: true,
 		},
 		{
 			name: "KCM ready and service controller not disabled",
@@ -157,7 +157,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Replicas:   1,
 				Namespace:  "test",
 			},
-			wantCCMCreator: false,
+			wantCCMReconciler: false,
 		},
 		{
 			// If the KCM deployment rollout is not completed we do not deploy the
@@ -196,7 +196,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Replicas:   2,
 				Namespace:  "test",
 			},
-			wantCCMCreator: false,
+			wantCCMReconciler: false,
 		},
 		{
 			name: "KCM ready and cloud-provider enabled",
@@ -232,7 +232,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Replicas:   1,
 				Namespace:  "test",
 			},
-			wantCCMCreator: false,
+			wantCCMReconciler: false,
 		},
 		{
 			name: "No CCM migration ongoing",
@@ -264,7 +264,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Replicas:   2,
 				Namespace:  "test",
 			},
-			wantCCMCreator: true,
+			wantCCMReconciler: true,
 		},
 		{
 			name: "No external cloud-provider",
@@ -293,7 +293,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Replicas:   1,
 				Namespace:  "test",
 			},
-			wantCCMCreator: false,
+			wantCCMReconciler: false,
 		},
 	}
 
@@ -324,7 +324,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			if err := fc.Create(ctx, tc.kcmDeploymentConfig.Create(td)); err != nil {
 				t.Fatalf("error occurred while creating KCM deployment: %v", err)
 			}
-			creators := GetDeploymentCreators(td, false)
+			creators := GetDeploymentReconcilers(td, false)
 			var ccmDeploymentFound bool
 			for _, c := range creators {
 				name, _ := c()
@@ -332,7 +332,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					ccmDeploymentFound = true
 				}
 			}
-			if a, e := tc.wantCCMCreator, ccmDeploymentFound; a != e {
+			if a, e := tc.wantCCMReconciler, ccmDeploymentFound; a != e {
 				t.Errorf("want CCM creator: %t got: %t", a, e)
 			}
 		})

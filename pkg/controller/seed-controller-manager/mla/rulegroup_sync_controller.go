@@ -121,10 +121,10 @@ func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconci
 	}
 
 	if err := r.ruleGroupSyncController.syncClusterNS(ctx, log, ruleGroup, func(seedClient ctrlruntimeclient.Client, ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) error {
-		ruleGroupCreatorGetter := []reconciling.NamedKubermaticV1RuleGroupCreatorGetter{
-			ruleGroupCreatorGetter(ruleGroup, cluster),
+		ruleGroupReconcilerFactory := []reconciling.NamedRuleGroupReconcilerFactory{
+			ruleGroupReconcilerFactory(ruleGroup, cluster),
 		}
-		return reconciling.ReconcileKubermaticV1RuleGroups(ctx, ruleGroupCreatorGetter, cluster.Status.NamespaceName, seedClient)
+		return reconciling.ReconcileRuleGroups(ctx, ruleGroupReconcilerFactory, cluster.Status.NamespaceName, seedClient)
 	}); err != nil {
 		r.recorder.Event(ruleGroup, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcle rulegroup %s: %w", ruleGroup.Name, err)
@@ -215,8 +215,8 @@ func (r *ruleGroupSyncController) syncClusterNS(
 	return nil
 }
 
-func ruleGroupCreatorGetter(ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) reconciling.NamedKubermaticV1RuleGroupCreatorGetter {
-	return func() (string, reconciling.KubermaticV1RuleGroupCreator) {
+func ruleGroupReconcilerFactory(ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) reconciling.NamedRuleGroupReconcilerFactory {
+	return func() (string, reconciling.RuleGroupReconciler) {
 		return ruleGroup.Name, func(r *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
 			r.Name = ruleGroup.Name
 			r.Spec = kubermaticv1.RuleGroupSpec{

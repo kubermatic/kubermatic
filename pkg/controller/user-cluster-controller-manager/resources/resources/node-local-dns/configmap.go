@@ -21,7 +21,7 @@ import (
 	"html/template"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -31,9 +31,9 @@ const (
 	reconcileModeValue  = "Reconcile"
 )
 
-// ConfigMapCreator returns a ConfigMap containing the config for Node Local DNS cache.
-func ConfigMapCreator(dnsClusterIP string) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+// ConfigMapReconciler returns a ConfigMap containing the config for Node Local DNS cache.
+func ConfigMapReconciler(dnsClusterIP string) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.NodeLocalDNSConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Labels == nil {
 				cm.Labels = map[string]string{}

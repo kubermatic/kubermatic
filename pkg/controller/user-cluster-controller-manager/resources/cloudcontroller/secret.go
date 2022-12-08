@@ -18,14 +18,14 @@ package cloudcontroller
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 // CloudConfig generates the cloud-config secret to be injected in the user cluster.
-func CloudConfig(cloudConfig []byte, secretName string) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func CloudConfig(cloudConfig []byte, secretName string) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			existing.Name = secretName
 			if existing.Data == nil {
@@ -38,8 +38,8 @@ func CloudConfig(cloudConfig []byte, secretName string) reconciling.NamedSecretC
 }
 
 // NutanixCSIConfig stores the nutanix csi configuration.
-func NutanixCSIConfig(cloudConfig []byte) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func NutanixCSIConfig(cloudConfig []byte) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.NutanixCSIConfigSecretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Data == nil {
 				existing.Data = map[string][]byte{}

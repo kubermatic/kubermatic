@@ -25,14 +25,14 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// CABundleConfigMapCreator returns a ConfigMapCreatorGetter that
+// CABundleConfigMapReconciler returns a ConfigMapReconcilerFactory that
 // creates a ca-bundle ConfigMap for use in seeds and userclusters.
 //
 // TODO: Do not use fmt.Stringer, but a better type for the CA bundle
@@ -40,8 +40,8 @@ import (
 //	parameter. "*CABundle" is not viable because most of the codebase
 //	deals with "resources.CABundle", which in turn exists to
 //	prevent an import loop between this and the "resources" package.
-func CABundleConfigMapCreator(name string, caBundle fmt.Stringer) reconciling.NamedConfigMapCreatorGetter { //nolint:interfacer
-	return func() (string, reconciling.ConfigMapCreator) {
+func CABundleConfigMapReconciler(name string, caBundle fmt.Stringer) reconciling.NamedConfigMapReconcilerFactory { //nolint:interfacer
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return name, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = map[string]string{
 				resources.CABundleConfigMapKey: caBundle.String(),

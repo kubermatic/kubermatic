@@ -404,6 +404,7 @@ const (
 	ClusterConditionMonitoringControllerReconcilingSuccess              ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess       ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
 	ClusterConditionApplicationInstallationControllerReconcilingSuccess ClusterConditionType = "ApplicationInstallationControllerReconciledSuccessfully"
+	ClusterConditionCNIControllerReconcilingSuccess                     ClusterConditionType = "CNIControllerReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess                     ClusterConditionType = "MLAControllerReconciledSuccessfully"
 	ClusterConditionEncryptionControllerReconcilingSuccess              ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"
@@ -1194,7 +1195,8 @@ type KubevirtCloudSpec struct {
 	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig    string `json:"kubeconfig,omitempty"`
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
-	// PreAllocatedDataVolumes holds list of preallocated DataVolumes which can be used as reference for DataVolume cloning.
+	// PreAllocatedDataVolumes represents a list of DataVolumes that are tied to cluster lifecycle and can be referenced by machines.
+	// Custom Images are a good example of this use case.
 	PreAllocatedDataVolumes []PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
 	// InfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
@@ -1202,10 +1204,11 @@ type KubevirtCloudSpec struct {
 }
 
 type PreAllocatedDataVolume struct {
-	Name         string `json:"name"`
-	URL          string `json:"url"`
-	Size         string `json:"size"`
-	StorageClass string `json:"storageClass"`
+	Name         string            `json:"name"`
+	Annotations  map[string]string `json:"annotations,omitempty"`
+	URL          string            `json:"url"`
+	Size         string            `json:"size"`
+	StorageClass string            `json:"storageClass"`
 }
 
 // AlibabaCloudSpec specifies the access data to Alibaba.

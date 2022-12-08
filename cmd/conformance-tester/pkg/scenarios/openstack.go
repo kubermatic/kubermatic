@@ -18,20 +18,19 @@ package scenarios
 
 import (
 	"context"
-	"fmt"
+	"time"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
 const (
 	openStackFlavor                    = "m1.small"
 	openStackFloatingIPPool            = "ext-net"
-	openStackInstanceReadyCheckPeriod  = "5s"
-	openStackInstanceReadyCheckTimeout = "2m"
+	openStackInstanceReadyCheckPeriod  = 5 * time.Second
+	openStackInstanceReadyCheckTimeout = 2 * time.Minute
 )
 
 type openStackScenario struct {
@@ -57,29 +56,13 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 }
 
 func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
+	cloudProviderSpec := provider.NewOpenstackConfig().
+		WithFlavor(openStackFlavor).
+		WithInstanceReadyCheckPeriod(openStackInstanceReadyCheckPeriod).
+		WithInstanceReadyCheckTimeout(openStackInstanceReadyCheckTimeout).
+		Build()
 
-	nodeSpec := apiv1.NodeSpec{
-		OperatingSystem: *osSpec,
-		Cloud: apiv1.NodeCloudSpec{
-			Openstack: &apiv1.OpenstackNodeSpec{
-				Flavor:                    openStackFlavor,
-				Image:                     s.datacenter.Spec.Openstack.Images[s.operatingSystem],
-				InstanceReadyCheckPeriod:  openStackInstanceReadyCheckPeriod,
-				InstanceReadyCheckTimeout: openStackInstanceReadyCheckTimeout,
-			},
-		},
-	}
-
-	config, err := machine.GetOpenstackProviderConfig(cluster, nodeSpec, s.datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := s.createMachineDeployment(num, config)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
 	if err != nil {
 		return nil, err
 	}

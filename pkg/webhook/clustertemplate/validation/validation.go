@@ -80,25 +80,18 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 	}
 
 	var errs field.ErrorList
-
-	scope, ok := template.Labels["scope"]
-
-	// we only validate ClusterTemplates that are not labeled as scope=seed
-	if !ok || scope != kubermaticv1.SeedTemplateScope {
-		datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, &template.Spec)
-		if err != nil {
-			return err
-		}
-
-		config, configErr := v.configGetter(ctx)
-		if configErr != nil {
-			return configErr
-		}
-
-		versionManager := version.NewFromConfiguration(config)
-
-		errs = validation.ValidateClusterTemplate(ctx, template, datacenter, cloudProvider, v.features, versionManager, nil)
+	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, &template.Spec)
+	if err != nil {
+		return err
 	}
+
+	config, configErr := v.configGetter(ctx)
+	if configErr != nil {
+		return configErr
+	}
+
+	versionManager := version.NewFromConfiguration(config)
+	errs = validation.ValidateClusterTemplate(ctx, template, datacenter, cloudProvider, v.features, versionManager, nil)
 
 	return errs.ToAggregate()
 }

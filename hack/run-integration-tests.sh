@@ -97,5 +97,10 @@ echodate "Running integration tests..."
 # * Prefixing them with `./` as that's needed by `go test` as well
 for file in $(grep --files-with-matches --recursive --extended-regexp '//go:build.+integration' cmd/ pkg/ | xargs dirname | sort -u); do
   echodate "Testing package ${file}..."
+
+  if [[ "$file" =~ .*vsphere.* ]] && provider_disabled vsphere; then
+    continue
+  fi
+
   go_test $(echo $file | sed 's/\//_/g') -tags "integration,${KUBERMATIC_EDITION:-ce}" -race ./${file} -v
 done

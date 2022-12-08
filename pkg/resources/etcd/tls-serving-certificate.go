@@ -24,20 +24,20 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
-type tlsCertificateCreatorData interface {
+type tlsCertificateReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// TLSCertificateCreator returns a function to create/update the secret with the etcd tls certificate.
-func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+// TLSCertificateReconciler returns a function to create/update the secret with the etcd tls certificate.
+func TLSCertificateReconciler(data tlsCertificateReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.EtcdTLSCertificateSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			ca, err := data.GetRootCA()
 			if err != nil {

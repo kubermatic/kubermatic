@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -238,7 +239,7 @@ func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {
 	ensuredAddonsMap := sets.NewString()
-	creators := []reconciling.NamedKubermaticV1AddonCreatorGetter{}
+	creators := []reconciling.NamedAddonReconcilerFactory{}
 
 	for i, addon := range addons.Items {
 		if skipAddonInstallation(addon, cluster) {
@@ -246,10 +247,10 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 		}
 
 		ensuredAddonsMap.Insert(addon.Name)
-		creators = append(creators, r.addonCreator(ctx, cluster, addons.Items[i]))
+		creators = append(creators, r.addonReconciler(ctx, cluster, addons.Items[i]))
 	}
 
-	if err := reconciling.ReconcileKubermaticV1Addons(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
+	if err := reconciling.ReconcileAddons(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure addons: %w", err)
 	}
 
@@ -269,8 +270,8 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 	return nil
 }
 
-func (r *Reconciler) addonCreator(ctx context.Context, cluster *kubermaticv1.Cluster, addon kubermaticv1.Addon) reconciling.NamedKubermaticV1AddonCreatorGetter {
-	return func() (name string, create reconciling.KubermaticV1AddonCreator) {
+func (r *Reconciler) addonReconciler(ctx context.Context, cluster *kubermaticv1.Cluster, addon kubermaticv1.Addon) reconciling.NamedAddonReconcilerFactory {
+	return func() (name string, create reconciling.AddonReconciler) {
 		return addon.Name, func(existing *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
 			existing.Labels = addon.Labels
 			existing.Annotations = addon.Annotations
@@ -307,6 +308,11 @@ func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Clust
 		}
 		if addon.Name == string(kubermaticv1.CNIPluginTypeCilium) && cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
 			return true // skip Cilium if Canal is used
+		}
+		if addon.Name == string(kubermaticv1.CNIPluginTypeCanal) || addon.Name == string(kubermaticv1.CNIPluginTypeCilium) {
+			if cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
+				return true // skip if CNI is managed by App infra
+			}
 		}
 	}
 	if addon.Name == kubeProxyAddonName && cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {

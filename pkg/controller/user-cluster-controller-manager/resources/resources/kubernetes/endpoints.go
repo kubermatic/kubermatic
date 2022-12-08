@@ -18,7 +18,7 @@ package kubernetes
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
@@ -34,9 +34,9 @@ const (
 	endpointSliceName = serviceName
 )
 
-// EndpointsCreator returns the func to create/update the endpoints of the kubernetes service.
-func EndpointsCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointsCreatorGetter {
-	return func() (string, reconciling.EndpointsCreator) {
+// EndpointsReconciler returns the func to create/update the endpoints of the kubernetes service.
+func EndpointsReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointsReconcilerFactory {
+	return func() (string, reconciling.EndpointsReconciler) {
 		return serviceName, func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
 			// our controller is reconciling the endpoint slice, do not mirror with EndpointSliceMirroring controller
 			ep.Labels = map[string]string{
@@ -63,9 +63,9 @@ func EndpointsCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.N
 	}
 }
 
-// EndpointSliceCreator returns the func to create/update the endpoint slice of the kubernetes service.
-func EndpointSliceCreator(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointSliceCreatorGetter {
-	return func() (string, reconciling.EndpointSliceCreator) {
+// EndpointSliceReconciler returns the func to create/update the endpoint slice of the kubernetes service.
+func EndpointSliceReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointSliceReconcilerFactory {
+	return func() (string, reconciling.EndpointSliceReconciler) {
 		return endpointSliceName, func(es *discoveryv1.EndpointSlice) (*discoveryv1.EndpointSlice, error) {
 			es.AddressType = discoveryv1.AddressTypeIPv4
 			es.Labels = map[string]string{

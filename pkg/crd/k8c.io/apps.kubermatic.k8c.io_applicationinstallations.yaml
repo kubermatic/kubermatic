@@ -73,6 +73,9 @@ spec:
                     - create
                     - name
                   type: object
+                reconciliationInterval:
+                  description: "ReconciliationInterval is the interval at which to force the reconciliation of the application. By default, Applications are only reconciled on changes on spec, annotations, or the parent application definition. Meaning that if the user manually deletes the workload deployed by the application, nothing will happen until the application CR change. \n Setting a value greater than zero force reconciliation even if no changes occurred on application CR. Setting a value equal to 0 disables the force reconciliation of the application (default behavior). Setting this too low can cause a heavy load and may disrupt your application workload depending on the template method."
+                  type: string
                 values:
                   description: Values describe overrides for manifest-rendering. It's a free yaml field.
                   type: object
@@ -269,6 +272,62 @@ spec:
                                 - chartName
                                 - chartVersion
                                 - url
+                              type: object
+                          type: object
+                        templateCredentials:
+                          description: DependencyCredentials holds the credentials that may be needed for templating the application.
+                          properties:
+                            helmCredentials:
+                              description: HelmCredentials holds the ref to the secret with helm credentials needed to build helm dependencies. It is not required when using helm as a source, as dependencies are already prepackaged in this case. It's either username / password or a registryConfigFile can be defined.
+                              properties:
+                                password:
+                                  description: Password holds the ref and key in the secret for the Password credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                registryConfigFile:
+                                  description: RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg file that follows the same format rules as ~/.docker/config.json The The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                username:
+                                  description: Username holds the ref and key in the secret for the username credential. The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                           type: object
                       required:

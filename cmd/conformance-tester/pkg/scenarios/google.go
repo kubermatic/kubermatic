@@ -19,16 +19,14 @@ package scenarios
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
 type googleScenario struct {
@@ -64,40 +62,17 @@ func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 }
 
 func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
+	cloudProviderSpec := provider.NewGCPConfig().
+		WithMachineType("n1-standard-2").
+		WithDiskType("pd-standard").
+		WithDiskSize(50).
+		WithPreemptible(false).
+		Build()
 
-	nodeSpec := apiv1.NodeSpec{
-		OperatingSystem: *osSpec,
-		Cloud: apiv1.NodeCloudSpec{
-			GCP: &apiv1.GCPNodeSpec{
-				Zone:        s.getZone(),
-				MachineType: "n1-standard-2",
-				DiskType:    "pd-standard",
-				DiskSize:    50,
-				Preemptible: false,
-				Labels: map[string]string{
-					"kubernetes-cluster": cluster.Name,
-				},
-			},
-		},
-	}
-
-	config, err := machine.GetGCPProviderConfig(cluster, nodeSpec, s.datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := s.createMachineDeployment(num, config)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
 	if err != nil {
 		return nil, err
 	}
 
 	return []clusterv1alpha1.MachineDeployment{md}, nil
-}
-
-func (s *googleScenario) getZone() string {
-	return fmt.Sprintf("%s-%s", s.datacenter.Spec.GCP.Region, s.datacenter.Spec.GCP.ZoneSuffixes[0])
 }

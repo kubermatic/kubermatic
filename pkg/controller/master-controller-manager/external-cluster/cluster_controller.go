@@ -33,10 +33,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gke"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -89,7 +88,7 @@ func Add(
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	paused, err := kubernetesprovider.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
+	paused, err := kuberneteshelper.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check external cluster pause status: %w", err)
 	}
@@ -325,8 +324,8 @@ func (r *Reconciler) ensureKubeconfigSecret(ctx context.Context, config *api.Con
 		resources.ExternalClusterKubeconfig: kubeconfig,
 	}
 
-	creators := []reconciling.NamedSecretCreatorGetter{
-		kubeconfigSecretCreatorGetter(cluster, secretData),
+	creators := []reconciling.NamedSecretReconcilerFactory{
+		kubeconfigSecretReconcilerFactory(cluster, secretData),
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, resources.KubermaticNamespace, r); err != nil {
@@ -343,8 +342,8 @@ func (r *Reconciler) ensureKubeconfigSecret(ctx context.Context, config *api.Con
 	return r.Update(ctx, cluster)
 }
 
-func kubeconfigSecretCreatorGetter(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
+func kubeconfigSecretReconcilerFactory(cluster *kubermaticv1.ExternalCluster, secretData map[string][]byte) reconciling.NamedSecretReconcilerFactory {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return cluster.GetKubeconfigSecretName(), func(existing *corev1.Secret) (*corev1.Secret, error) {
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}

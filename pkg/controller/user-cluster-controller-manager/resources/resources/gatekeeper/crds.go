@@ -55,9 +55,9 @@ var (
 	providerYAML string
 )
 
-// ConfigCRDCreator returns the gatekeeper config CRD definition.
-func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+// ConfigCRDReconciler returns the gatekeeper config CRD definition.
+func ConfigCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperConfigCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(configYAML), &fileCRD)
@@ -77,9 +77,9 @@ func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	}
 }
 
-// ConstraintTemplateCRDCreator returns the gatekeeper constraintTemplate CRD definition.
-func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+// ConstraintTemplateCRDReconciler returns the gatekeeper constraintTemplate CRD definition.
+func ConstraintTemplateCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperConstraintTemplateCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(constraintTemplateYAML), &fileCRD)
@@ -99,9 +99,9 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 	}
 }
 
-// ConstraintPodStatusCRDCreator returns the gatekeeper ConstraintPodStatus CRD definition.
-func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+// ConstraintPodStatusCRDReconciler returns the gatekeeper ConstraintPodStatus CRD definition.
+func ConstraintPodStatusCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperConstraintPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(constraintPodStatusYAML), &fileCRD)
@@ -121,9 +121,9 @@ func ConstraintPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCr
 	}
 }
 
-// ConstraintTemplatePodStatusCRDCreator returns the gatekeeper ConstraintTemplatePodStatus CRD definition.
-func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+// ConstraintTemplatePodStatusCRDReconciler returns the gatekeeper ConstraintTemplatePodStatus CRD definition.
+func ConstraintTemplatePodStatusCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperConstraintTemplatePodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(constraintTemplatePodStatusYAML), &fileCRD)
@@ -143,8 +143,8 @@ func ConstraintTemplatePodStatusCRDCreator() reconciling.NamedCustomResourceDefi
 	}
 }
 
-func MutatorPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func MutatorPodStatusCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperMutatorPodStatusCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(mutatorPodStatusYAML), &fileCRD)
@@ -164,8 +164,8 @@ func MutatorPodStatusCRDCreator() reconciling.NamedCustomResourceDefinitionCreat
 	}
 }
 
-func AssignCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func AssignCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperAssignCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(assignYAML), &fileCRD)
@@ -185,8 +185,8 @@ func AssignCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 	}
 }
 
-func AssignMetadataCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func AssignMetadataCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperAssignMetadataCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(assignMetadataYAML), &fileCRD)
@@ -206,8 +206,8 @@ func AssignMetadataCRDCreator() reconciling.NamedCustomResourceDefinitionCreator
 	}
 }
 
-func ModifySetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func ModifySetCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperModifySetCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(modifySetYAML), &fileCRD)
@@ -227,8 +227,8 @@ func ModifySetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGette
 	}
 }
 
-func ProviderCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func ProviderCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.GatekeeperProviderCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			var fileCRD *apiextensionsv1.CustomResourceDefinition
 			err := yaml.UnmarshalStrict([]byte(providerYAML), &fileCRD)

@@ -22,7 +22,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -43,9 +43,9 @@ type creatorData interface {
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 }
 
-// SecretCreator returns a function to create the Secret containing the cloud-config.
-func SecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+// SecretReconciler returns a function to create the Secret containing the cloud-config.
+func SecretReconciler(data creatorData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.CloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
 			if cm.Data == nil {
 				cm.Data = map[string][]byte{}
@@ -70,8 +70,8 @@ func SecretCreator(data creatorData) reconciling.NamedSecretCreatorGetter {
 	}
 }
 
-func KubeVirtInfraSecretCreator(data *resources.TemplateData) reconciling.NamedSecretCreatorGetter {
-	return func() (name string, create reconciling.SecretCreator) {
+func KubeVirtInfraSecretReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (name string, create reconciling.SecretReconciler) {
 		return resources.KubeVirtInfraSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

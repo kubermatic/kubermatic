@@ -19,8 +19,8 @@ package resources
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,8 +38,8 @@ var (
 	deploymentMaxUnavailable       = intstr.FromString("25%")
 )
 
-func OperatorDeploymentCreator(imageRewriter registry.ImageRewriter, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWindow kubermaticv1.UpdateWindow) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return OperatorDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = &deploymentReplicas
 

@@ -36,6 +36,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var (
+	kubevirtStorageClassName = "kubevirt-csi-rbd"
+)
+
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Openstack != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
@@ -43,7 +47,8 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 		cluster.Spec.Cloud.VSphere != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
 		cluster.Spec.Cloud.Hetzner != nil ||
-		cluster.Spec.Cloud.Nutanix != nil
+		cluster.Spec.Cloud.Nutanix != nil ||
+		cluster.Spec.Cloud.Kubevirt != nil
 }
 
 func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, attempt int) error {
@@ -134,6 +139,11 @@ func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Optio
 			},
 		},
 	}
+
+	if cluster.Spec.Cloud.Kubevirt != nil {
+		set.Spec.VolumeClaimTemplates[0].Spec.StorageClassName = &kubevirtStorageClassName
+	}
+
 	if err := userClusterClient.Create(ctx, set); err != nil {
 		return fmt.Errorf("failed to create statefulset: %w", err)
 	}

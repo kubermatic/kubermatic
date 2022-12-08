@@ -18,14 +18,14 @@ package cabundle
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ConfigMapCreator returns a ConfigMap containing the CA bundle for the usercluster.
-func ConfigMapCreator(caBundle resources.CABundle) reconciling.NamedConfigMapCreatorGetter { //nolint:interfacer
-	return func() (string, reconciling.ConfigMapCreator) {
+// ConfigMapReconciler returns a ConfigMap containing the CA bundle for the usercluster.
+func ConfigMapReconciler(caBundle resources.CABundle) reconciling.NamedConfigMapReconcilerFactory { //nolint:interfacer
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.CABundleConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}

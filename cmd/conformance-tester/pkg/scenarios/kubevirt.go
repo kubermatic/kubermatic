@@ -23,17 +23,16 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/machine"
+	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
 const (
 	kubevirtImageHttpServerSvc = "http://image-repo.kube-system.svc.cluster.local/images"
-	kubevirtCPUs               = "2"
+	kubevirtCPUs               = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
-	kubevirtDiskClassName      = "longhorn"
+	kubevirtDiskClassName      = "csi-rbd"
 )
 
 type kubevirtScenario struct {
@@ -59,30 +58,15 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 		return nil, err
 	}
 
-	osSpec, err := s.OperatingSystemSpec()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build OS spec: %w", err)
-	}
+	cloudProviderSpec := provider.NewKubevirtConfig().
+		WithCPUs(kubevirtCPUs).
+		WithMemory(kubevirtMemory).
+		WithPrimaryDiskOSImage(image).
+		WithPrimaryDiskSize(kubevirtDiskSize).
+		WithPrimaryDiskStorageClassName(kubevirtDiskClassName).
+		Build()
 
-	nodeSpec := apiv1.NodeSpec{
-		OperatingSystem: *osSpec,
-		Cloud: apiv1.NodeCloudSpec{
-			Kubevirt: &apiv1.KubevirtNodeSpec{
-				CPUs:                        kubevirtCPUs,
-				Memory:                      kubevirtMemory,
-				PrimaryDiskOSImage:          image,
-				PrimaryDiskSize:             kubevirtDiskSize,
-				PrimaryDiskStorageClassName: kubevirtDiskClassName,
-			},
-		},
-	}
-
-	config, err := machine.GetKubevirtProviderConfig(cluster, nodeSpec, s.datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := s.createMachineDeployment(num, config)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
 	if err != nil {
 		return nil, err
 	}

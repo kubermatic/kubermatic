@@ -18,14 +18,14 @@ package kubernetesdashboard
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleBindingCreator creates the role binding for the Kubernetes Dashboard.
-func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
+// RoleBindingReconciler creates the role binding for the Kubernetes Dashboard.
+func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.KubernetesDashboardRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(AppName, nil)
 			rb.RoleRef = rbacv1.RoleRef{

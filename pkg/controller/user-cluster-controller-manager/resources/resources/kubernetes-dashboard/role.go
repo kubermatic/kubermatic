@@ -18,14 +18,14 @@ package kubernetesdashboard
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// RoleCreator creates the role for the Kubernetes Dashboard.
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
+// RoleReconciler creates the role for the Kubernetes Dashboard.
+func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return resources.KubernetesDashboardRoleName, func(role *rbacv1.Role) (*rbacv1.Role, error) {
 			role.Labels = resources.BaseAppLabels(AppName, nil)
 			role.Rules = []rbacv1.PolicyRule{

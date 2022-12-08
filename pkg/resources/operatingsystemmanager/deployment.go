@@ -25,8 +25,8 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -71,11 +71,11 @@ type operatingSystemManagerData interface {
 	OperatingSystemManagerImageRepository() string
 }
 
-// DeploymentCreator returns the function to create and update the operating system manager deployment.
-func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the operating system manager deployment.
+func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
-			_, creator := DeploymentCreatorWithoutInitWrapper(data)()
+			_, creator := DeploymentReconcilerWithoutInitWrapper(data)()
 			deployment, err := creator(in)
 			if err != nil {
 				return nil, err
@@ -92,10 +92,10 @@ func DeploymentCreator(data operatingSystemManagerData) reconciling.NamedDeploym
 	}
 }
 
-// DeploymentCreatorWithoutInitWrapper returns the function to create and update the operating system manager deployment without the
+// DeploymentReconcilerWithoutInitWrapper returns the function to create and update the operating system manager deployment without the
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
-func DeploymentCreatorWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.OperatingSystemManagerDeploymentName
 			dep.Labels = resources.BaseAppLabels(Name, nil)

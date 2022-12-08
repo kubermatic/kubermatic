@@ -28,9 +28,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -58,11 +58,11 @@ const (
 	auditLogsSidecarName = "audit-logs"
 )
 
-// DeploymentCreator returns the function to create and update the API server deployment.
-func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
+// DeploymentReconciler returns the function to create and update the API server deployment.
+func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentReconcilerFactory {
 	enableEncryptionConfiguration := data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()
 
-	return func() (string, reconciling.DeploymentCreator) {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.ApiserverDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)

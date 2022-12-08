@@ -25,7 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,8 +50,8 @@ func EncryptionResourcesForDeletion(namespace string) []ctrlruntimeclient.Object
 	}
 }
 
-func EncryptionConfigurationSecretCreator(data encryptionData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+func EncryptionConfigurationSecretReconciler(data encryptionData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.EncryptionConfigurationSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			secret.Name = resources.EncryptionConfigurationSecretName
 

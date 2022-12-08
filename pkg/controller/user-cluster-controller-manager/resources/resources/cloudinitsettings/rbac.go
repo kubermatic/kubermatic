@@ -17,7 +17,7 @@ limitations under the License.
 package cloudinitsettings
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -29,16 +29,16 @@ const (
 	roleBindingName    = "cloud-init-getter"
 )
 
-func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
-	return func() (string, reconciling.ServiceAccountCreator) {
+func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
 		}
 	}
 }
 
-func RoleCreator() reconciling.NamedRoleCreatorGetter {
-	return func() (string, reconciling.RoleCreator) {
+func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
+	return func() (string, reconciling.RoleReconciler) {
 		return roleName,
 			func(r *rbacv1.Role) (*rbacv1.Role, error) {
 				r.Rules = []rbacv1.PolicyRule{
@@ -56,8 +56,8 @@ func RoleCreator() reconciling.NamedRoleCreatorGetter {
 	}
 }
 
-func RoleBindingCreator() reconciling.NamedRoleBindingCreatorGetter {
-	return func() (string, reconciling.RoleBindingCreator) {
+func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
 		return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     roleName,

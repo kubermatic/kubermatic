@@ -25,20 +25,20 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
-type tlsServingCertCreatorData interface {
+type tlsServingCertReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// TLSServingCertificateCreator returns a function to create/update the secret with the konnectivity proxy server tls certificate used to serve https.
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+// TLSServingCertificateReconciler returns a function to create/update the secret with the konnectivity proxy server tls certificate used to serve https.
+func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.KonnectivityProxyTLSSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

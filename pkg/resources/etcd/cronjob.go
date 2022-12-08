@@ -25,23 +25,23 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type cronJobCreatorData interface {
+type cronJobReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	GetClusterRef() metav1.OwnerReference
 }
 
-// CronJobCreator returns the func to create/update the etcd defragger cronjob.
-func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGetter {
-	return func() (string, reconciling.CronJobCreator) {
+// CronJobReconciler returns the func to create/update the etcd defragger cronjob.
+func CronJobReconciler(data cronJobReconcilerData) reconciling.NamedCronJobReconcilerFactory {
+	return func() (string, reconciling.CronJobReconciler) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			command, err := defraggerCommand(data)
 			if err != nil {
@@ -94,7 +94,7 @@ type defraggerCommandTplData struct {
 	KeyFile     string
 }
 
-func defraggerCommand(data cronJobCreatorData) ([]string, error) {
+func defraggerCommand(data cronJobReconcilerData) ([]string, error) {
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(defraggerCommandTpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)

@@ -100,11 +100,6 @@ digitalocean)
     -digitalocean-kkp-datacenter=do-ams3"
   ;;
 
-gce)
-  extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
-    -gcp-kkp-datacenter=gcp-westeurope"
-  ;;
-
 gcp)
   extraArgs="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"
@@ -146,7 +141,8 @@ vsphere)
   VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/vsphere)}"
   extraArgs="-vsphere-username=$VSPHERE_USERNAME
     -vsphere-password=$VSPHERE_PASSWORD
-    -vsphere-kkp-datacenter=vsphere-ger"
+    -vsphere-kkp-datacenter=vsphere-ger
+    -node-ready-timeout=30m"
   ;;
 
 *)

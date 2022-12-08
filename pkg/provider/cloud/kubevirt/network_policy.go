@@ -21,15 +21,16 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
-	return func() (string, reconciling.NetworkPolicyCreator) {
+func clusterIsolationNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return "cluster-isolation", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{},
@@ -51,11 +52,53 @@ func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreato
 	}
 }
 
-func reconcileNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
-	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
-		clusterIsolationNetworkPolicyCreator(),
+func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
+	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
+		clusterIsolationNetworkPolicyReconciler(),
 	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, cluster.Status.NamespaceName, client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
+		return fmt.Errorf("failed to ensure Network Policies: %w", err)
+	}
+	return nil
+}
+
+func clusterImagesNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
+		return "cluster-images", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"app.kubernetes.io/component": "storage",
+									},
+								},
+								NamespaceSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										corev1.LabelMetadataName: KubeVirtImagesNamespace,
+									},
+								},
+							},
+						},
+					},
+				},
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeIngress,
+				},
+			}
+			return np, nil
+		}
+	}
+}
+
+func reconcileClusterImagesNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
+	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
+		clusterImagesNetworkPolicyReconciler(),
+	}
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
 	}
 	return nil

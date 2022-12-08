@@ -19,7 +19,7 @@ package nodeportproxy
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -34,9 +34,9 @@ const (
 	ServiceName = "nodeport-proxy"
 )
 
-// ServiceCreator bootstraps the nodeport-proxy service object for a seed cluster resource.
-func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler bootstraps the nodeport-proxy service object for a seed cluster resource.
+func ServiceReconciler(seed *kubermaticv1.Seed) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return ServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just
 			// must make sure that it exists

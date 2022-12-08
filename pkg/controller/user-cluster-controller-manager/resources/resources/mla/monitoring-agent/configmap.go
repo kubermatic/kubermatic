@@ -23,7 +23,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -37,8 +37,8 @@ type Config struct {
 	HAClusterIdentifier string
 }
 
-func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
-	return func() (string, reconciling.ConfigMapCreator) {
+func ConfigMapReconciler(config Config) reconciling.NamedConfigMapReconcilerFactory {
+	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.MLAMonitoringAgentConfigMapName, func(configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if configMap.Data == nil {
 				configMap.Data = map[string]string{}
@@ -318,7 +318,7 @@ metrics:
     #######################################################################
     # custom scraping configurations
 
-    {{- . | indent 4 }}
+    {{ . | indent 4 }}
 {{- end }}
 
 `

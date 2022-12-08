@@ -73,6 +73,10 @@ export METAL_PROJECT_ID="${METAL_PROJECT_ID:-$(vault kv get -field=METAL_PROJECT
 export VSPHERE_E2E_USERNAME="${VSPHERE_E2E_USERNAME:-$(vault kv get -field=username dev/e2e-vsphere)}"
 export VSPHERE_E2E_PASSWORD="${VSPHERE_E2E_PASSWORD:-$(vault kv get -field=password dev/e2e-vsphere)}"
 
+if provider_disabled $PROVIDER; then
+  exit 0
+fi
+
 echodate "Successfully got secrets from Vault"
 echodate "Running dualstack tests..."
 

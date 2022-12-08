@@ -32,7 +32,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/bin/aws-cloud-controller-manager","args":["--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=aws","--cluster-cidr=172.25.0.0/16"]}'
+        - '{"command":"/bin/aws-cloud-controller-manager","args":["--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=aws","--configure-cloud-routes=false","--cluster-cidr=172.25.0.0/16"]}'
         command:
         - /http-prober-bin/http-prober
         env:

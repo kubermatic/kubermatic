@@ -39,6 +39,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
@@ -69,6 +70,8 @@ func main() {
 	if err := opts.ParseFlags(log); err != nil {
 		log.Fatalw("Invalid flags", zap.Error(err))
 	}
+
+	reconciling.Configure(log)
 
 	// collect runtime metrics if there is a pushgateway URL configured
 	// and these variables are set

@@ -34,8 +34,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -267,8 +267,6 @@ const (
 
 	// DefaultServiceAccountName is the name of Kubernetes default service accounts.
 	DefaultServiceAccountName = "default"
-	// KubeSystemNamespaceName is the name of Kubernetes kube-system namespace.
-	KubeSystemNamespaceName = "kube-system"
 
 	// OperatingSystemManagerCertUsername is the name of the user coming from kubeconfig cert.
 	OperatingSystemManagerCertUsername = "operating-system-manager"
@@ -614,13 +612,15 @@ const (
 )
 
 const (
+	ExternalClusterKubeconfigPrefix = "kubeconfig-external-cluster"
 	// KubeOneNamespacePrefix is the kubeone namespace prefix.
 	KubeOneNamespacePrefix = "kubeone"
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
 	CredentialPrefix = "credential"
-	// KubeOne secret names.
-	KubeOneSSHSecretPrefix      = "kubeone-ssh-external-cluster-"
-	KubeOneManifestSecretPrefix = "kubeone-manifest-external-cluster-"
+	// KubeOne secret prefixes.
+	// don't change this as these prefixes are used for rbac generation.
+	KubeOneSSHSecretPrefix      = "ssh-kubeone-external-cluster"
+	KubeOneManifestSecretPrefix = "manifest-kubeone-external-cluster"
 	// KubOne ConfigMap name.
 	KubeOneScriptConfigMapName = "kubeone"
 	// KubeOne secret keys.
@@ -741,10 +741,10 @@ const (
 	EnvoyAgentConfigFileName                   = "envoy.yaml"
 	EnvoyAgentDaemonSetName                    = "envoy-agent"
 	EnvoyAgentCreateInterfaceInitContainerName = "create-dummy-interface"
-	EnvoyAgentAssignAddressInitContainerName   = "assign-address"
-	EnvoyAgentDeviceSetupImage                 = "kubermatic/kubeletdnat-controller"
+	EnvoyAgentAssignAddressContainerName       = "assign-address"
+	EnvoyAgentDeviceSetupImage                 = "kubermatic/network-interface-manager"
 	// Default tunneling agent IP address.
-	DefaultTunnelingAgentIP = "192.168.30.10"
+	DefaultTunnelingAgentIP = "100.64.30.10"
 )
 
 const (

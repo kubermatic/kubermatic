@@ -20,16 +20,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 )
 
-type kubeletClientCertificateCreatorData interface {
+type kubeletClientCertificateReconcilerData interface {
 	GetRootCA() (*triple.KeyPair, error)
 }
 
-// KubeletClientCertificateCreator returns a function to create/update a secret with the client certificate for the apiserver -> kubelet connection.
-func KubeletClientCertificateCreator(data kubeletClientCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
-	return certificates.GetClientCertificateCreator(
+// KubeletClientCertificateReconciler returns a function to create/update a secret with the client certificate for the apiserver -> kubelet connection.
+func KubeletClientCertificateReconciler(data kubeletClientCertificateReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return certificates.GetClientCertificateReconciler(
 		resources.KubeletClientCertificatesSecretName,
 		"kube-apiserver-kubelet-client",
 		[]string{"system:masters"},

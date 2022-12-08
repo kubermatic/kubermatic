@@ -24,8 +24,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -53,7 +53,7 @@ var (
 const (
 	Name = "machine-controller"
 	// TODO: update to tagged machine-controller version.
-	Tag = "cc66623474011e702e7268759c9f584eb0a6a290"
+	Tag = "798bc637eaa0802187cd8688c086309722efa054"
 )
 
 type machinecontrollerData interface {
@@ -71,11 +71,11 @@ type machinecontrollerData interface {
 	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
-// DeploymentCreator returns the function to create and update the machine controller deployment.
-func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+// DeploymentReconciler returns the function to create and update the machine controller deployment.
+func DeploymentReconciler(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MachineControllerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
-			_, creator := DeploymentCreatorWithoutInitWrapper(data)()
+			_, creator := DeploymentReconcilerWithoutInitWrapper(data)()
 			deployment, err := creator(in)
 			if err != nil {
 				return nil, err
@@ -91,10 +91,10 @@ func DeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCr
 	}
 }
 
-// DeploymentCreatorWithoutInitWrapper returns the function to create and update the machine controller deployment without the
+// DeploymentReconcilerWithoutInitWrapper returns the function to create and update the machine controller deployment without the
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
-func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MachineControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.MachineControllerDeploymentName
 			dep.Labels = resources.BaseAppLabels(Name, nil)

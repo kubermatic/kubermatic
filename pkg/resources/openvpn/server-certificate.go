@@ -22,19 +22,19 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
 )
 
-type tlsServingCertCreatorData interface {
+type tlsServingCertReconcilerData interface {
 	GetOpenVPNCA() (*resources.ECDSAKeyPair, error)
 }
 
-// TLSServingCertificateCreator returns a function to create/update a secret with the openvpn server tls certificate.
-func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+// TLSServingCertificateReconciler returns a function to create/update a secret with the openvpn server tls certificate.
+func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.OpenVPNServerCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
@@ -72,9 +72,9 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 	}
 }
 
-// CACreator returns a function to create the ECDSA-based CA to be used for OpenVPN.
-func CACreator() reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
+// CAReconciler returns a function to create the ECDSA-based CA to be used for OpenVPN.
+func CAReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
 		return resources.OpenVPNCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

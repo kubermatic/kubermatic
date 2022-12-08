@@ -18,8 +18,12 @@ package validation
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/cni"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -32,6 +36,10 @@ import (
 func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntimeclient.Client, spec appskubermaticv1.ApplicationInstallationSpec) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
+
+	if spec.ReconciliationInterval.Duration < 0 {
+		allErrs = append(allErrs, field.Invalid(specPath.Child("reconciliationInterval"), spec.ReconciliationInterval.Duration.String(), "should be a positive value, or zero to disable"))
+	}
 
 	// Ensure that the referenced ApplicationDefinition exists
 	ad := &appskubermaticv1.ApplicationDefinition{}
@@ -61,7 +69,7 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 	return allErrs
 }
 
-// ValidateApplicationInstallationUpdate validates the new ApplicationInstallation for immutable fields.
+// ValidateApplicationInstallationUpdate validates the update event on an ApplicationInstallation.
 func ValidateApplicationInstallationUpdate(ctx context.Context, client ctrlruntimeclient.Client, newAI, oldAI appskubermaticv1.ApplicationInstallation) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
@@ -92,5 +100,60 @@ func ValidateApplicationInstallationUpdate(ctx context.Context, client ctrlrunti
 		specPath.Child("applicationRef", "name"),
 	)...)
 
+	// Validate managed-by label immutability
+	allErrs = append(allErrs, validateImmutableLabel(
+		newAI.Labels,
+		oldAI.Labels,
+		appskubermaticv1.ApplicationManagedByLabel,
+	)...)
+
+	// Validate update on ApplicationInstallation managed by KKP
+	if oldAI.Labels[appskubermaticv1.ApplicationManagedByLabel] == appskubermaticv1.ApplicationManagedByKKPValue {
+		allErrs = append(allErrs, ValidateKKPManagedApplicationInstallationUpdate(newAI, oldAI)...)
+	}
+
+	return allErrs
+}
+
+// ValidateKKPManagedApplicationInstallationUpdate validates the update event on a KKP-managed ApplicationInstallation.
+func ValidateKKPManagedApplicationInstallationUpdate(newAI, oldAI appskubermaticv1.ApplicationInstallation) field.ErrorList {
+	allErrs := field.ErrorList{}
+	valuesPath := field.NewPath("spec").Child("values")
+
+	// Validate type label immutability
+	allErrs = append(allErrs, validateImmutableLabel(
+		newAI.Labels,
+		oldAI.Labels,
+		appskubermaticv1.ApplicationTypeLabel,
+	)...)
+
+	// Validate CNI values
+	if newAI.Labels[appskubermaticv1.ApplicationTypeLabel] == appskubermaticv1.ApplicationTypeCNIValue {
+		newValues := make(map[string]any)
+		oldValues := make(map[string]any)
+		if len(newAI.Spec.Values.Raw) > 0 {
+			if err := json.Unmarshal(newAI.Spec.Values.Raw, &newValues); err != nil {
+				allErrs = append(allErrs, field.Invalid(valuesPath, string(newAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
+			}
+		}
+		if len(oldAI.Spec.Values.Raw) > 0 {
+			if err := json.Unmarshal(oldAI.Spec.Values.Raw, &oldValues); err != nil {
+				allErrs = append(allErrs, field.Invalid(valuesPath, string(oldAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
+			}
+		}
+		if newAI.Name == kubermaticv1.CNIPluginTypeCilium.String() {
+			// Validate Cilium values update
+			allErrs = append(allErrs, cni.ValidateCiliumValuesUpdate(newValues, oldValues, valuesPath)...)
+		}
+	}
+
+	return allErrs
+}
+
+func validateImmutableLabel(newLabels, oldLabels map[string]string, labelName string) field.ErrorList {
+	allErrs := field.ErrorList{}
+	if newLabels[labelName] != oldLabels[labelName] {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("metadata").Child("labels"), newLabels, fmt.Sprintf("label \"%s\" is immutable", labelName)))
+	}
 	return allErrs
 }

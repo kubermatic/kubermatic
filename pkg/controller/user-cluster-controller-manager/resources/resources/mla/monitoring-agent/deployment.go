@@ -21,8 +21,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -69,8 +69,8 @@ var (
 	}
 )
 
-func DeploymentCreator(overrides *corev1.ResourceRequirements, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentCreatorGetter {
-	return func() (string, reconciling.DeploymentCreator) {
+func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MLAMonitoringAgentDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Labels = resources.BaseAppLabels(appName, map[string]string{})
 

@@ -21,21 +21,21 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-type serviceCreatorData interface {
+type serviceReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetClusterRef() metav1.OwnerReference
 }
 
-// ServiceCreator returns the function to reconcile the etcd service.
-func ServiceCreator(data serviceCreatorData) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
+// ServiceReconciler returns the function to reconcile the etcd service.
+func ServiceReconciler(data serviceReconcilerData) reconciling.NamedServiceReconcilerFactory {
+	return func() (string, reconciling.ServiceReconciler) {
 		return resources.EtcdServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.EtcdServiceName
 			se.Spec.ClusterIP = "None"

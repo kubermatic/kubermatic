@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -97,10 +97,10 @@ func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return strings.Join(features.List(), ",")
 }
 
-// OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
+// OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectReconciler
 // and takes care of applying the ownership and other labels for all managed objects.
 func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) reconciling.ObjectModifier {
-	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
+	return func(create reconciling.ObjectReconciler) reconciling.ObjectReconciler {
 		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 			obj, err := create(existing)
 			if err != nil {
@@ -149,7 +149,7 @@ func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) recon
 // and Secrets and will then put new labels for these mounts onto the pod template, causing
 // restarts when the volumes changed.
 func VolumeRevisionLabelsModifierFactory(ctx context.Context, client ctrlruntimeclient.Client) reconciling.ObjectModifier {
-	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
+	return func(create reconciling.ObjectReconciler) reconciling.ObjectReconciler {
 		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 			obj, err := create(existing)
 			if err != nil {

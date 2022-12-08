@@ -38,6 +38,11 @@ echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 
 EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
 maxDuration=60 # in minutes
+
+if provider_disabled $provider; then
+  exit 0
+fi
+
 if [[ $provider == "anexia" ]]; then
   EXTRA_ARGS="-anexia-token=${ANEXIA_TOKEN}
     -anexia-template-id=${ANEXIA_TEMPLATE_ID}
@@ -52,7 +57,7 @@ elif [[ $provider == "packet" ]]; then
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
     -packet-project-id=${PACKET_PROJECT_ID}
     -packet-kkp-datacenter=packet-am"
-elif [[ $provider == "gcp" ]] || [[ $provider == "gce" ]]; then
+elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"
 elif [[ $provider == "azure" ]]; then
@@ -97,7 +102,7 @@ elif [[ $provider == "nutanix" ]]; then
     -nutanix-project-name=${NUTANIX_E2E_PROJECT_NAME}
     -nutanix-subnet-name=${NUTANIX_E2E_SUBNET_NAME}
     -nutanix-kkp-datacenter=nutanix-ger"
-elif [[ $provider == "vmware-cloud-director" ]]; then
+elif [[ $provider == "vmwareclouddirector" ]]; then
   EXTRA_ARGS="-vmware-cloud-director-username=${VCD_USER}
     -vmware-cloud-director-password=${VCD_PASSWORD}
     -vmware-cloud-director-organization=${VCD_ORG}

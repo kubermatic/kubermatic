@@ -18,15 +18,15 @@ package kubernetesdashboard
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-// ClusterRoleBindingCreator returns the ClusterRoleBinding required by the dashboard metrics scraper to
+// ClusterRoleBindingReconciler returns the ClusterRoleBinding required by the dashboard metrics scraper to
 // read all required resources from the metrics server.
-func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
+func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resources.MetricsScraperClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(scraperName, nil)
 

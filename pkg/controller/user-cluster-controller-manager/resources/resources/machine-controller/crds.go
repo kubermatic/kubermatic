@@ -30,8 +30,8 @@ const (
 )
 
 // MachineCRD returns the machine CRD definition.
-func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func MachineCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.MachineCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
 
@@ -100,8 +100,8 @@ func MachineCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter 
 }
 
 // MachineSetCRD returns the machineset CRD definition.
-func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func MachineSetCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.MachineSetCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
 
@@ -182,8 +182,8 @@ func MachineSetCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGett
 }
 
 // MachineDeploymentCRD returns the machinedeployments CRD definition.
-func MachineDeploymentCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func MachineDeploymentCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return resources.MachineDeploymentCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			metav1.SetMetaDataAnnotation(&crd.ObjectMeta, "api-approved.kubernetes.io", "unapproved, legacy API")
 
