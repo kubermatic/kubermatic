@@ -20,6 +20,7 @@ package dualstack
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"strings"
