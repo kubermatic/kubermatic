@@ -89,6 +89,12 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets se
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	replicas := int32(num)
 
+	imageName := fmt.Sprintf("machine-controller-e2e-%s", osName)
+	if osName == "ubuntu" {
+		// use Ubuntu 20.04 image as 22.04 is not supported by the MC version in KKP 2.20
+		imageName = fmt.Sprintf("machine-controller-e2e-%s-20-04", osName)
+	}
+
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
@@ -97,7 +103,7 @@ func (s *nutanixScenario) NodeDeployments(_ context.Context, num int, secrets se
 					Cloud: &apimodels.NodeCloudSpec{
 						Nutanix: &apimodels.NutanixNodeSpec{
 							SubnetName: secrets.Nutanix.SubnetName,
-							ImageName:  fmt.Sprintf("machine-controller-e2e-%s", osName),
+							ImageName:  imageName,
 							CPUs:       2,
 							MemoryMB:   4096,
 							DiskSize:   40,
