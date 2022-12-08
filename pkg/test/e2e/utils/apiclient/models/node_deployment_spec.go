@@ -22,6 +22,12 @@ type NodeDeploymentSpec struct {
 	// Only supported for nodes with Kubernetes 1.23 or less.
 	DynamicConfig bool `json:"dynamicConfig,omitempty"`
 
+	// max replicas
+	MaxReplicas uint32 `json:"maxReplicas,omitempty"`
+
+	// min replicas
+	MinReplicas uint32 `json:"minReplicas,omitempty"`
+
 	// paused
 	Paused bool `json:"paused,omitempty"`
 

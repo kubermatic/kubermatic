@@ -28,8 +28,10 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/resources/machine"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -692,6 +694,111 @@ func TestGetMachineDeployment(t *testing.T) {
 					Replicas:      replicas,
 					Paused:        &paused,
 					DynamicConfig: pointer.BoolPtr(false),
+				},
+				Status: clusterv1alpha1.MachineDeploymentStatus{},
+			},
+		},
+		{
+			Name:            "scenario 4: get machine deployment that has cluster-autoscaler min/max replicas set",
+			HTTPStatus:      http.StatusOK,
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				func() *clusterv1alpha1.MachineDeployment {
+					md := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
+					md.Annotations = map[string]string{
+						machine.AutoscalerMinSizeAnnotation: "5",
+						machine.AutoscalerMaxSizeAnnotation: "7",
+					}
+					return md
+				}(),
+			},
+			ExpectedResponse: apiv1.NodeDeployment{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   "venus",
+					Name: "venus",
+					Annotations: map[string]string{
+						machine.AutoscalerMinSizeAnnotation: "5",
+						machine.AutoscalerMaxSizeAnnotation: "7",
+					},
+				},
+				Spec: apiv1.NodeDeploymentSpec{
+					Template: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Replicas:      replicas,
+					Paused:        &paused,
+					DynamicConfig: pointer.Bool(false),
+					MinReplicas:   common.Uint32(5),
+					MaxReplicas:   common.Uint32(7),
+				},
+				Status: clusterv1alpha1.MachineDeploymentStatus{},
+			},
+		},
+		{
+			Name:            "scenario 5: get machine deployment that has cluster-autoscaler min replicas set",
+			HTTPStatus:      http.StatusOK,
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				func() *clusterv1alpha1.MachineDeployment {
+					md := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
+					md.Annotations = map[string]string{
+						machine.AutoscalerMinSizeAnnotation: "5",
+					}
+					return md
+				}(),
+			},
+			ExpectedResponse: apiv1.NodeDeployment{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   "venus",
+					Name: "venus",
+					Annotations: map[string]string{
+						machine.AutoscalerMinSizeAnnotation: "5",
+					},
+				},
+				Spec: apiv1.NodeDeploymentSpec{
+					Template: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Replicas:      replicas,
+					Paused:        &paused,
+					DynamicConfig: pointer.Bool(false),
+					MinReplicas:   common.Uint32(5),
 				},
 				Status: clusterv1alpha1.MachineDeploymentStatus{},
 			},
@@ -1413,6 +1520,9 @@ func TestPatchMachineDeployment(t *testing.T) {
 
 	var replicas int32 = 1
 	var replicasUpdated int32 = 3
+	var minReplicas = 1
+	var minReplicasUpdated = 2
+	var maxReplicas = 10
 	var kubeletVerUpdated = "v9.8.0"
 
 	testcases := []struct {
@@ -1429,15 +1539,17 @@ func TestPatchMachineDeployment(t *testing.T) {
 	}{
 		// Scenario 1: Update replicas count.
 		{
-			Name:                       "Scenario 1: Update replicas count",
-			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
-			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicasUpdated),
-			cluster:                    "keen-snyder",
-			HTTPStatus:                 http.StatusOK,
-			project:                    test.GenDefaultProject().Name,
-			ExistingAPIUser:            test.GenDefaultAPIUser(),
-			NodeDeploymentID:           "venus",
-			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			Name:             "Scenario 1: Update replicas count",
+			Body:             fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse: fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicasUpdated),
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				genTestCluster(true),
@@ -1539,6 +1651,176 @@ func TestPatchMachineDeployment(t *testing.T) {
 				test.GenTestSeed(),
 				genTestCluster(true),
 				test.GenAdminUser("John", "john@acme.com", false),
+			),
+		},
+		// Scenario 8: Update replicas count in range
+		{
+			Name: "Scenario 8: Update replicas count in range",
+			Body: fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse: fmt.Sprintf(
+				`{"id":"venus","name":"venus","annotations":{"cluster.k8s.io/cluster-api-autoscaler-node-group-min-size":"%[2]v"},"creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%[1]v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false,"minReplicas":%[2]v},"status":{}}`,
+				replicasUpdated,
+				minReplicas,
+			),
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				func() *clusterv1alpha1.MachineDeployment {
+					md := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
+					md.Annotations = map[string]string{
+						machine.AutoscalerMinSizeAnnotation: "1",
+					}
+					return md
+				}(),
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestCluster(true),
+			),
+		},
+		// Scenario 9: Try to update to replicas count over max
+		{
+			Name:             "Scenario 9: Try to update replicas count over max",
+			Body:             fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse: `{"error":{"code":400,"message":"replica count (3) cannot be higher then autoscaler maxreplicas (2)"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusBadRequest,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				func() *clusterv1alpha1.MachineDeployment {
+					md := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
+					md.Annotations = map[string]string{
+						machine.AutoscalerMaxSizeAnnotation: "2",
+					}
+					return md
+				}(),
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestCluster(true),
+			),
+		},
+		// Scenario 10: Try to update replicas count below min
+		{
+			Name:             "Scenario 10: Try to update replicas count below min",
+			Body:             fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse: `{"error":{"code":400,"message":"replica count (3) cannot be lower then autoscaler minreplicas (5)"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusBadRequest,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				func() *clusterv1alpha1.MachineDeployment {
+					md := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
+					md.Annotations = map[string]string{
+						machine.AutoscalerMinSizeAnnotation: "5",
+					}
+					return md
+				}(),
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestCluster(true),
+			),
+		},
+		// Scenario 11: Update autoscaling configuration - increase min
+		{
+			Name: "Scenario 11: Update autoscaling configuration - increase min",
+			Body: fmt.Sprintf(`{"spec":{"minReplicas": %d}}`, minReplicasUpdated),
+			ExpectedResponse: fmt.Sprintf(
+				`{"id":"venus","name":"venus","annotations":{"cluster.k8s.io/cluster-api-autoscaler-node-group-min-size":"%[1]v"},"creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":5,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false,"minReplicas":%[1]v},"status":{}}`,
+				minReplicasUpdated,
+			),
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				func() *clusterv1alpha1.MachineDeployment {
+					md := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
+					md.Annotations = map[string]string{
+						machine.AutoscalerMinSizeAnnotation: fmt.Sprintf("%d", minReplicas),
+					}
+					md.Spec.Replicas = pointer.Int32(5)
+					return md
+				}(),
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestCluster(true),
+			),
+		},
+		// Scenario 12: Unset autoscaling configuration
+		{
+			Name:             "Scenario 12: Unset autoscaling configuration",
+			Body:             `{"spec":{"minReplicas":null,"maxReplicas":null}}`,
+			ExpectedResponse: `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":5,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				func() *clusterv1alpha1.MachineDeployment {
+					md := genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
+					md.Annotations = map[string]string{
+						machine.AutoscalerMinSizeAnnotation: fmt.Sprintf("%d", minReplicas),
+						machine.AutoscalerMaxSizeAnnotation: fmt.Sprintf("%d", maxReplicas),
+					}
+					md.Spec.Replicas = pointer.Int32(5)
+					return md
+				}(),
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestCluster(true),
+			),
+		},
+		// Scenario 13: Create autoscaling configuration
+		{
+			Name: "Scenario 13: Create autoscaling configuration",
+			Body: fmt.Sprintf(`{"spec":{"minReplicas": %[1]d,"maxReplicas": %[2]d}}`, minReplicas, maxReplicas),
+			ExpectedResponse: fmt.Sprintf(
+				`{"id":"venus","name":"venus","annotations":{"cluster.k8s.io/cluster-api-autoscaler-node-group-max-size":"%[1]v","cluster.k8s.io/cluster-api-autoscaler-node-group-min-size":"%[2]v"},"creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false,"minReplicas":%[2]d,"maxReplicas":%[1]d},"status":{}}`,
+				maxReplicas,
+				minReplicas,
+			),
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestCluster(true),
+			),
+		},
+		// Scenario 14: Use illegal autoscaling values
+		{
+			Name:             "Scenario 14: Use illegal autoscaling values",
+			Body:             fmt.Sprintf(`{"spec":{"minReplicas": %[1]d,"maxReplicas": %[2]d}}`, 0, -2),
+			ExpectedResponse: fmt.Sprintf(`{"error":{"code":400,"message":"cannot decode patched nodedeployment: {\"spec\":{\"minReplicas\": %d,\"maxReplicas\": %d}}"}}`, 0, -2),
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusBadRequest,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			NodeDeploymentID: "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genTestCluster(true),
 			),
 		},
 	}
