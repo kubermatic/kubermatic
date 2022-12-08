@@ -1867,10 +1867,10 @@ func (r *TestClient) ListDOSizes(credential string) (*models.DigitaloceanSizeLis
 
 // ListAzureSizes returns list Azure sizes
 func (r *TestClient) ListAzureSizes(credential, location string) (models.AzureSizeList, error) {
-	params := &azure.ListAzureSizesParams{
-		Credential: &credential,
-		Location:   &location,
-	}
+	params := azure.NewListAzureSizesParamsWithTimeout(time.Second * 30)
+	params.Credential = &credential
+	params.Location = &location
+
 	SetupRetryParams(r.test, params, Backoff{
 		Duration: 1 * time.Second,
 		Steps:    4,
