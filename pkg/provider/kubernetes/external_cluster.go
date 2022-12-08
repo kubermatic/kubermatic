@@ -473,7 +473,7 @@ func (p *ExternalClusterProvider) GetMasterClient() ctrlruntimeclient.Client {
 }
 
 func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx context.Context, encodedManifest string, externalCluster *kubermaticv1.ExternalCluster) error {
-	secretName := resources.KubeOneManifestSecretName
+	secretName := resources.KubeOneManifestSecretPrefix
 	manifest, err := base64.StdEncoding.DecodeString(encodedManifest)
 	if err != nil {
 		return fmt.Errorf("failed to decode kubeone manifest: %w", err)
@@ -494,7 +494,7 @@ func (p *ExternalClusterProvider) CreateOrUpdateKubeOneManifestSecret(ctx contex
 }
 
 func (p *ExternalClusterProvider) CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error {
-	secretName := resources.KubeOneSSHSecretName
+	secretName := resources.KubeOneSSHSecretPrefix
 	privateKey, err := base64.StdEncoding.DecodeString(sshKey.PrivateKey)
 	if err != nil {
 		return fmt.Errorf("failed to decode kubeone ssh key: %w", err)

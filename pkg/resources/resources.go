@@ -612,12 +612,13 @@ const (
 )
 
 const (
+	ExternalClusterKubeconfigPrefix = "kubeconfig-external-cluster"
 	// KubeOneNamespacePrefix is the kubeone namespace prefix.
-	KubeOneNamespacePrefix = "kubeone-"
-	// KubeOne secret names.
-	KubeOneSSHSecretName        = "ssh"
-	KubeOneManifestSecretName   = "manifest"
-	KubeOneKubeconfigSecretName = "kubeconfig"
+	KubeOneNamespacePrefix = "kubeone"
+	// KubeOne secret prefixes.
+	// don't change this as these prefixes are used for rbac generation.
+	KubeOneSSHSecretPrefix      = "ssh-kubeone-external-cluster"
+	KubeOneManifestSecretPrefix = "manifest-kubeone-external-cluster"
 	// KubOne ConfigMap name.
 	KubeOneScriptConfigMapName = "kubeone"
 	// KubeOne secret keys.

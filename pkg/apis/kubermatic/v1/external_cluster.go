@@ -30,6 +30,16 @@ const (
 
 	// ExternalClusterKind represents "Kind" defined in Kubernetes.
 	ExternalClusterKind = "ExternalCluster"
+
+	// ExternalCluster Kubeconfig secret prefix.
+	ExternalClusterKubeconfigPrefix = "kubeconfig-external-cluster"
+
+	// don't change this as these prefixes are used for rbac generation.
+	// KubeOne ssh secret prefixes.
+	KubeOneSSHSecretPrefix = "ssh-kubeone-external-cluster"
+
+	// KubeOne manifest secret prefixes.
+	KubeOneManifestSecretPrefix = "manifest-kubeone-external-cluster"
 )
 
 // +kubebuilder:validation:Enum=aks;bringyourown;eks;gke;kubeone
@@ -277,7 +287,7 @@ type ExternalClusterAKSCloudSpec struct {
 }
 
 func (i *ExternalCluster) GetKubeconfigSecretName() string {
-	return fmt.Sprintf("kubeconfig-external-cluster-%s", i.Name)
+	return fmt.Sprintf("%s-%s", ExternalClusterKubeconfigPrefix, i.Name)
 }
 
 func (i *ExternalCluster) GetCredentialsSecretName() string {
@@ -305,4 +315,17 @@ func (i *ExternalCluster) GetCredentialsSecretName() string {
 		cluster.Spec.Cloud.Azure = &AzureCloudSpec{}
 	}
 	return cluster.GetSecretName()
+}
+
+func (i *ExternalCluster) GetKubeOneCredentialsSecretName() string {
+	providerName := i.Spec.CloudSpec.KubeOne.ProviderName
+	return fmt.Sprintf("%s-%s-%s", CredentialPrefix, providerName, i.Name)
+}
+
+func (i *ExternalCluster) GetKubeOneSSHSecretName() string {
+	return fmt.Sprintf("%s-%s", KubeOneSSHSecretPrefix, i.Name)
+}
+
+func (i *ExternalCluster) GetKubeOneManifestSecretName() string {
+	return fmt.Sprintf("%s-%s", KubeOneManifestSecretPrefix, i.Name)
 }
