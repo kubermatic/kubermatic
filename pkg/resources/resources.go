@@ -865,7 +865,7 @@ const (
 )
 
 const (
-	// VSphereCSINamespace is the namespace desired by vmware csi driver
+	// VSphereCSINamespace is the namespace desired by vmware csi driver.
 	VSphereCSINamespace = "vmware-system-csi"
 	// VSphereCSIValidatingWebhookSVCName is the name of the validation webhook service.
 	VSphereCSIValidatingWebhookSVCName = "vsphere-webhook-svc"

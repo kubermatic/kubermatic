@@ -875,8 +875,9 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName),
 				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
 
-			r.csiDriverNamespaceMigration(ctx)
-
+			if err := r.csiDriverNamespaceMigration(ctx); err != nil {
+				return fmt.Errorf("failed to delete csi driver: %w", err)
+			}
 		}
 
 		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {

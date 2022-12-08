@@ -461,7 +461,6 @@ func (r *reconciler) opaReconcileData(ctx context.Context) (controller, audit *c
 // csiDriverNamespaceMigration finalize the migration of the vSphere csi drive to its dedicated namespace.
 // This is needed, because the addon manager cannot delete orphaned resources in another namespace via kubectl --prune.
 func (r *reconciler) csiDriverNamespaceMigration(ctx context.Context) error {
-
 	var toDelete []ctrlruntimeclient.Object
 	toDelete = append(toDelete, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -469,7 +468,6 @@ func (r *reconciler) csiDriverNamespaceMigration(ctx context.Context) error {
 			Namespace: metav1.NamespaceSystem,
 		},
 	})
-
 	toDelete = append(toDelete, &admissionregistrationv1.ValidatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.VSphereCSIValidatingWebhookConfigurationWebhookName,
@@ -483,7 +481,5 @@ func (r *reconciler) csiDriverNamespaceMigration(ctx context.Context) error {
 			return err
 		}
 	}
-
 	return nil
-
 }
