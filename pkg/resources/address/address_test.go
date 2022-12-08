@@ -147,6 +147,89 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedURL:          fmt.Sprintf("https://%s:443", loadbBalancerHostName),
 		},
 		{
+			name: "Verify properties for service type LoadBalancer with private IP only",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{NodePort: int32(443)}},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{IP: "10.10.10.2"}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: "10.10.10.2",
+			expectedIP:           "10.10.10.2",
+			expectedPort:         int32(443),
+			expectedURL:          "https://10.10.10.2:443",
+		},
+		{
+			name: "Verify properties for service type LoadBalancer with private and public IP",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{NodePort: int32(443)}},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{IP: "10.10.10.2"}, {IP: "10.10.10.3"}, {IP: "3.67.176.129"}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: "3.67.176.129",
+			expectedIP:           "3.67.176.129",
+			expectedPort:         int32(443),
+			expectedURL:          "https://3.67.176.129:443",
+		},
+		{
+			name: "Verify properties for service type LoadBalancer with IPv6 in the list",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{NodePort: int32(443)}},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{IP: "2a01::1"}, {IP: "10.10.10.3"}, {IP: "3.67.176.129"}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: "3.67.176.129",
+			expectedIP:           "3.67.176.129",
+			expectedPort:         int32(443),
+			expectedURL:          "https://3.67.176.129:443",
+		},
+		{
+			name: "Verify properties for service type LoadBalancer in default case with no IP in status",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{NodePort: int32(443)}},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					LoadBalancerIP: "10.10.10.2",
+				},
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: "10.10.10.2",
+			expectedIP:           "10.10.10.2",
+			expectedPort:         int32(443),
+			expectedURL:          "https://10.10.10.2:443",
+		},
+		{
 			name: "Verify properties for service type NodePort",
 			apiserverService: corev1.Service{
 				Spec: corev1.ServiceSpec{
