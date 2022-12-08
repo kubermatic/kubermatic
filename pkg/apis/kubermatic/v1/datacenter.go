@@ -680,6 +680,48 @@ type DatacenterSpecKubevirt struct {
 	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
+
+	// Images represents standard VM Image sources.
+	Images ImageSources `json:"images,omitempty"`
+}
+
+var (
+	SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
+		providerconfig.OperatingSystemCentOS:     nil,
+		providerconfig.OperatingSystemUbuntu:     nil,
+		providerconfig.OperatingSystemRHEL:       nil,
+		providerconfig.OperatingSystemFlatcar:    nil,
+		providerconfig.OperatingSystemRockyLinux: nil,
+	}
+)
+
+// ImageSources represents standard VM Image sources.
+type ImageSources struct {
+	// HTTP source for standard images.
+	HTTP *HTTPSource `json:"http,omitempty"`
+	// EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
+	EnableCustomImages bool `json:"enableCustomImages"`
+}
+
+// OSVersions defines a map of OS version and the URL to download the image.
+type OSVersions map[string]string
+
+// HTTPSource represents list of standard VM images with http-source.
+type HTTPSource struct {
+	// OperatingSystems represents list of supported operating-systems with their URLs.
+	OperatingSystems map[providerconfig.OperatingSystem]OSVersions `json:"operatingSystems"`
+	// Optional: ImageCloning represents options for kubevirt disk-image cloning.
+	ImageCloning ImageCloning `json:"imageCloning,omitempty"`
+}
+
+// ImageCloning represents options for kubevirt disk-image cloning.
+type ImageCloning struct {
+	// Enable allows you to enable/disable cloning of standard images. When this option is enabled,
+	// downloading images from the http source destination will happen only once. Later,
+	// Machine Controller will clone the disks using DataVolumes with the cloning source.
+	Enable bool `json:"enable"`
+	// StorageClass represents storage-class for DataVolumes of standard images.
+	StorageClass string `json:"storageClass"`
 }
 
 // DatacenterSpecNutanix describes a Nutanix datacenter.
