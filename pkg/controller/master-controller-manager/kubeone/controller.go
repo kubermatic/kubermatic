@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -160,7 +161,7 @@ func enqueueExternalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 
 func ByNameAndNamespace() predicate.Funcs {
 	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
-		return o.GetName() == resources.KubeOneManifestSecretName && strings.HasPrefix(o.GetNamespace(), resources.KubeOneNamespacePrefix)
+		return strings.HasPrefix(o.GetName(), resources.KubeOneManifestSecretPrefix) && strings.HasPrefix(o.GetNamespace(), resources.KubermaticNamespace)
 	})
 }
 
@@ -205,8 +206,21 @@ func withEventFilter() predicate.Predicate {
 	}
 }
 
+func ExternalClusterPausedChecker(ctx context.Context, externalClusterName string, masterClient ctrlruntimeclient.Client) (bool, error) {
+	externalCluster := &kubermaticv1.ExternalCluster{}
+	if err := masterClient.Get(ctx, types.NamespacedName{Name: externalClusterName}, externalCluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("failed to get external cluster %q: %w", externalClusterName, err)
+	}
+
+	return externalCluster.Spec.Pause, nil
+}
+
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	paused, err := kubernetesprovider.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
+	paused, err := ExternalClusterPausedChecker(ctx, request.Name, r.Client)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check kubeone external cluster pause status: %w", err)
 	}
@@ -228,44 +242,89 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		}
 	}
 
-	if externalCluster.Spec.CloudSpec.KubeOne == nil {
+	kubeOneSpec := externalCluster.Spec.CloudSpec.KubeOne
+	if kubeOneSpec == nil {
 		return nil
+	}
+
+	err := r.createKubeOneNamespace(ctx, externalCluster.Name)
+	if err != nil {
+		return err
+	}
+
+	// sync secrets
+	projectID := externalCluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if len(projectID) == 0 {
+		return fmt.Errorf("externalCluster %s is missing '%s' label", externalCluster.Name, kubermaticv1.ProjectIDLabelKey)
+	}
+	secrets := &corev1.SecretList{}
+	if err := r.List(ctx,
+		secrets,
+		ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID},
+		&ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace},
+	); err != nil {
+		return fmt.Errorf("failed to list kubeone secrets in kubermatic namespace: %w", err)
+	}
+
+	kubeoneSecrets := []corev1.Secret{}
+	for _, secret := range secrets.Items {
+		if strings.Contains(secret.Name, externalCluster.Name) {
+			kubeoneSecrets = append(kubeoneSecrets, secret)
+		}
+	}
+	if err := r.syncSecrets(ctx, kubeoneSecrets, externalCluster); err != nil {
+		return err
 	}
 
 	kubeOneNamespace, err := r.getKubeOneNamespace(ctx, externalCluster.Name)
 	if err != nil {
 		return err
 	}
+
 	if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
 	}
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, kubermaticv1.ExternalClusterKubeOneCleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add secrets finalizer: %w", err)
+	}
 
 	if !externalCluster.DeletionTimestamp.IsZero() {
-		log.Info("Deleting KubeOne Namespace...")
-		if err := r.handleDeletion(ctx, log, kubeOneNamespace, externalCluster); err != nil {
+		log.Info("Deleting KubeOne Namespace and Secrets...")
+		if err := r.handleDeletion(ctx, log, kubeOneNamespace, externalCluster, kubeoneSecrets); err != nil {
 			return fmt.Errorf("failed deleting kubeone externalcluster: %w", err)
 		}
 		return nil
 	}
 
-	// This does not provide an ImpersonationClient, as impersonating is not meaningful inside
-	// of a controller and we know that no functions that require impersonation are being called
-	// from the externalClusterProvider instance.
-	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(nil, r.Client)
-	if err != nil {
-		return nil
-	}
-
-	if err := r.importAction(ctx, log, externalCluster, externalClusterProvider); err != nil {
+	if err := r.importAction(ctx, log, externalCluster); err != nil {
 		return err
 	}
 
-	if _, err = r.upgradeAction(ctx, log, externalCluster, externalClusterProvider); err != nil {
+	if _, err = r.upgradeAction(ctx, log, externalCluster); err != nil {
 		return err
 	}
 
-	if _, err = r.migrateAction(ctx, log, externalCluster, externalClusterProvider); err != nil {
+	if _, err = r.migrateAction(ctx, log, externalCluster); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *reconciler) syncSecrets(ctx context.Context, secrets []corev1.Secret, externalCluster *kubermaticv1.ExternalCluster) error {
+	for _, secret := range secrets {
+		if _, err := r.CreateOrUpdateSecretForCluster(ctx, externalCluster, secret.Data, secret.Name, GetKubeOneNamespaceName(externalCluster.Name)); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) deleteSecrets(ctx context.Context, secrets []corev1.Secret) error {
+	for _, secret := range secrets {
+		if err := r.Delete(ctx, &secret); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -274,10 +333,9 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 func (r *reconciler) importAction(
 	ctx context.Context,
 	log *zap.SugaredLogger,
-	externalCluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider *kubernetesprovider.ExternalClusterProvider) error {
+	externalCluster *kubermaticv1.ExternalCluster) error {
 	if externalCluster.Spec.KubeconfigReference == nil {
-		_, err := r.initiateImportCluster(ctx, log, externalCluster, externalClusterProvider)
+		_, err := r.initiateImportCluster(ctx, log, externalCluster)
 		if err != nil {
 			log.Errorw("failed to import kubeone cluster", zap.Error(err))
 			return err
@@ -288,18 +346,17 @@ func (r *reconciler) importAction(
 
 func (r *reconciler) initiateImportCluster(ctx context.Context,
 	log *zap.SugaredLogger,
-	cluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider *kubernetesprovider.ExternalClusterProvider) (*kubermaticv1.ExternalCluster, error) {
+	externalCluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error) {
 	log.Info("Importing kubeone luster...")
 
-	kubeoneNamespace := kubernetesprovider.GetKubeOneNamespaceName(cluster.Name)
+	kubeoneNamespace := kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name)
 
-	if err := r.updateClusterStatus(ctx, cluster, kubermaticv1.ExternalClusterPhaseProvisioning); err != nil {
+	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterPhaseProvisioning); err != nil {
 		return nil, err
 	}
 
 	log.Info("Generating kubeone job to fetch kubeconfig...")
-	job, err := r.generateKubeOneActionJob(ctx, log, cluster, ImportAction)
+	job, err := r.generateKubeOneActionJob(ctx, log, externalCluster, ImportAction)
 	if err != nil {
 		return nil, fmt.Errorf("could not generate kubeone job: %w", err)
 	}
@@ -322,7 +379,7 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 	if job.Status.Succeeded == 0 && job.Status.Failed >= 1 {
 		// update kubeone externalcluster status.
 		log.Info("kubeone import failed!")
-		if err := r.updateClusterStatus(ctx, cluster, kubermaticv1.ExternalClusterPhaseError); err != nil {
+		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterPhaseError); err != nil {
 			return nil, err
 		}
 		// delete kubeone job alongwith its pods as no longer required.
@@ -359,21 +416,29 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	if err := externalClusterProvider.ValidateKubeconfig(ctx, []byte(config)); err != nil {
-		return nil, err
+
+	log.Info("fetched config from the kubeone pod")
+
+	secretName := externalCluster.GetKubeconfigSecretName()
+	secretNamespace := resources.KubermaticNamespace
+
+	data := map[string][]byte{
+		resources.ExternalClusterKubeconfig: []byte(config),
 	}
-	err = externalClusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, []byte(config), kubeoneNamespace)
+	kubeconfigRef, err := r.CreateOrUpdateSecretForCluster(ctx, externalCluster, data, secretName, secretNamespace)
 	if err != nil {
 		return nil, err
 	}
-	oldexternalCluster := cluster.DeepCopy()
-	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
+
+	oldexternalCluster := externalCluster.DeepCopy()
+	externalCluster.Spec.KubeconfigReference = kubeconfigRef
+	if err := r.Patch(ctx, externalCluster, ctrlruntimeclient.MergeFrom(oldexternalCluster)); err != nil {
 		log.Errorw("failed to add kubeconfig reference in external cluster", zap.Error(err))
 		return nil, err
 	}
 
 	log.Info("KubeOne Cluster Imported!")
-	if err := r.updateClusterStatus(ctx, cluster, kubermaticv1.ExternalClusterPhaseRunning); err != nil {
+	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterPhaseRunning); err != nil {
 		return nil, err
 	}
 	// delete kubeone job alongwith its pods as no longer required.
@@ -383,16 +448,52 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 		return nil, err
 	}
 
-	return cluster, nil
+	return externalCluster, nil
+}
+
+func (r *reconciler) CreateOrUpdateSecretForCluster(ctx context.Context, externalcluster *kubermaticv1.ExternalCluster, secretData map[string][]byte, secretName, secretNamespace string) (*providerconfig.GlobalSecretKeySelector, error) {
+	reconciler, err := credentialSecretReconcilerFactory(secretName, externalcluster.Labels, secretData)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretReconcilerFactory{reconciler}, secretNamespace, r); err != nil {
+		return nil, fmt.Errorf("failed to ensure Secret: %w", err)
+	}
+
+	return &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      secretName,
+			Namespace: secretNamespace,
+		},
+	}, nil
+}
+
+func credentialSecretReconcilerFactory(secretName string, clusterLabels map[string]string, secretData map[string][]byte) (reconciling.NamedSecretReconcilerFactory, error) {
+	projectID := clusterLabels[kubermaticv1.ProjectIDLabelKey]
+	if len(projectID) == 0 {
+		return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
+	}
+
+	return func() (name string, reconciler reconciling.SecretReconciler) {
+		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
+			if existing.Labels == nil {
+				existing.Labels = map[string]string{}
+			}
+
+			existing.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
+			existing.Data = secretData
+
+			return existing, nil
+		}
+	}, nil
 }
 
 func (r *reconciler) upgradeAction(ctx context.Context,
 	log *zap.SugaredLogger,
-	cluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider *kubernetesprovider.ExternalClusterProvider,
-) (*batchv1.Job, error) {
-	manifestRef := cluster.Spec.CloudSpec.KubeOne.ManifestReference
-	kubeOneNamespaceName := kubernetesprovider.GetKubeOneNamespaceName(cluster.Name)
+	externalCluster *kubermaticv1.ExternalCluster) (*batchv1.Job, error) {
+	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
+	kubeOneNamespaceName := kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name)
 
 	manifestSecret := &corev1.Secret{}
 	if err := r.Get(ctx, types.NamespacedName{Namespace: kubeOneNamespaceName, Name: manifestRef.Name}, manifestSecret); err != nil {
@@ -400,7 +501,12 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 
-	version, err := externalClusterProvider.GetVersion(ctx, cluster)
+	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+	if err != nil {
+		return nil, err
+	}
+
+	version, err := kuberneteshelper.GetVersion(clusterClient)
 	if err != nil {
 		return nil, err
 	}
@@ -410,18 +516,18 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 		return nil, err
 	}
 
-	isdesiredPhase := sets.NewString(string(kubermaticv1.ExternalClusterPhaseError), string(kubermaticv1.ExternalClusterPhaseRunning)).Has(string(cluster.Status.Condition.Phase))
+	isdesiredPhase := sets.NewString(string(kubermaticv1.ExternalClusterPhaseError), string(kubermaticv1.ExternalClusterPhaseRunning)).Has(string(externalCluster.Status.Condition.Phase))
 	// proceed only when desiredVersion is different from currentVersion or clusterphase is desiredPhase.
 	if currentVersion == desiredVersion || !isdesiredPhase {
 		return nil, nil
 	}
 
 	log.Infow("Upgrading kubeone cluster...", "from", currentVersion, "to", desiredVersion)
-	if err := r.updateClusterStatus(ctx, cluster, kubermaticv1.ExternalClusterPhaseReconciling); err != nil {
+	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterPhaseReconciling); err != nil {
 		return nil, err
 	}
 
-	upgradeJob, err := r.initiateClusterUpgrade(ctx, log, currentVersion, desiredVersion, cluster)
+	upgradeJob, err := r.initiateClusterUpgrade(ctx, log, currentVersion, desiredVersion, externalCluster)
 	if err != nil {
 		log.Errorw("failed to upgrade kubeone cluster", zap.Error(err))
 		return nil, err
@@ -493,9 +599,7 @@ func (r *reconciler) initiateClusterUpgrade(ctx context.Context,
 
 func (r *reconciler) migrateAction(ctx context.Context,
 	log *zap.SugaredLogger,
-	externalCluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider *kubernetesprovider.ExternalClusterProvider,
-) (*batchv1.Job, error) {
+	externalCluster *kubermaticv1.ExternalCluster) (*batchv1.Job, error) {
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 	kubeOneNamespace := manifestRef.Namespace
 	manifestSecret := &corev1.Secret{}
@@ -505,7 +609,11 @@ func (r *reconciler) migrateAction(ctx context.Context,
 	}
 	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
 
-	currentContainerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, externalCluster, externalClusterProvider)
+	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+	if err != nil {
+		return nil, err
+	}
+	currentContainerRuntime, err := kuberneteshelper.CheckContainerRuntime(ctx, clusterClient)
 	if err != nil {
 		return nil, err
 	}
@@ -591,25 +699,32 @@ func (r *reconciler) initiateClusterMigration(ctx context.Context,
 
 func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster, action string) (*batchv1.Job, error) {
 	var kubeoneJobName, kubeoneCMName string
+	var sshSecret, manifestSecret *corev1.Secret
+	var err error
 	kubeOne := externalCluster.Spec.CloudSpec.KubeOne
 	envVar := []corev1.EnvVar{}
 	volumes := []corev1.Volume{}
 	providerName := kubeOne.ProviderName
 	kubeOneNamespaceName := kubernetesprovider.GetKubeOneNamespaceName(externalCluster.Name)
 
-	sshSecret, err := r.getKubeOneSecret(ctx, kubeOne.SSHReference)
-	if err != nil {
-		log.Errorw("could not find kubeone ssh secret", zap.Error(err))
-		return nil, err
+	if kubeOne.SSHReference != nil {
+		sshSecret, err = r.getKubeOneSecret(ctx, *kubeOne.SSHReference)
+		if err != nil {
+			log.Errorw("could not find kubeone ssh secret", zap.Error(err))
+			return nil, err
+		}
 	}
-	manifestSecret, err := r.getKubeOneSecret(ctx, kubeOne.ManifestReference)
-	if err != nil {
-		log.Errorw("could not find kubeone manifest secret", zap.Error(err))
-		return nil, err
+	if kubeOne.ManifestReference != nil {
+		manifestSecret, err = r.getKubeOneSecret(ctx, *kubeOne.ManifestReference)
+		if err != nil {
+			log.Errorw("could not find kubeone manifest secret", zap.Error(err))
+			return nil, err
+		}
 	}
+
 	// provider credentials not required for importing the cluster.
 	if action != ImportAction {
-		credentialSecret, err := r.getKubeOneSecret(ctx, kubeOne.CredentialsReference)
+		credentialSecret, err := r.getKubeOneSecret(ctx, *kubeOne.CredentialsReference)
 		if err != nil {
 			log.Errorw("could not find kubeone credential secret", zap.Error(err))
 			return nil, err
@@ -1090,7 +1205,10 @@ func generateConfigMap(namespace, action string) *corev1.ConfigMap {
 	}
 }
 
-func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, ns *corev1.Namespace, externalCluster *kubermaticv1.ExternalCluster) error {
+func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, ns *corev1.Namespace, externalCluster *kubermaticv1.ExternalCluster, kubeoneSecrets []corev1.Secret) error {
+	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterPhaseDeleting); err != nil {
+		return err
+	}
 	if kuberneteshelper.HasFinalizer(externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer) {
 		if err := r.Delete(ctx, ns); err != nil {
 			return err
@@ -1099,6 +1217,13 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			log.Errorw("failed to remove kubeone namespace finalizer", zap.Error(err))
 			return err
 		}
+	}
+	if kuberneteshelper.HasFinalizer(externalCluster, kubermaticv1.ExternalClusterKubeOneCleanupFinalizer) {
+		if err := r.deleteSecrets(ctx, kubeoneSecrets); err != nil {
+			return err
+		}
+
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r, externalCluster, kubermaticv1.ExternalClusterKubeOneCleanupFinalizer)
 	}
 
 	return nil
@@ -1156,6 +1281,23 @@ func (r *reconciler) getKubeOneSecret(ctx context.Context, ref providerconfig.Gl
 		return nil, err
 	}
 	return secret, nil
+}
+
+func GetKubeOneNamespaceName(externalClusterName string) string {
+	return fmt.Sprintf("%s-%s", resources.KubeOneNamespacePrefix, externalClusterName)
+}
+
+func (r *reconciler) createKubeOneNamespace(ctx context.Context, extexternalClusterName string) error {
+	kubeOneNamespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kubernetesprovider.GetKubeOneNamespaceName(extexternalClusterName),
+		},
+	}
+	if err := r.Create(ctx, kubeOneNamespace); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
+		return fmt.Errorf("failed to create kubeone cluster namespace: %w", err)
+	}
+
+	return nil
 }
 
 func (r *reconciler) getKubeOneNamespace(ctx context.Context, extexternalClusterName string) (*corev1.Namespace, error) {

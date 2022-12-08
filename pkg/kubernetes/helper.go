@@ -24,22 +24,30 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -375,26 +383,6 @@ func EnsureUniqueOwnerReference(o metav1.Object, ref metav1.OwnerReference) {
 	o.SetOwnerReferences(refs)
 }
 
-func CheckContainerRuntime(ctx context.Context,
-	externalCluster *kubermaticv1.ExternalCluster,
-	externalClusterProvider provider.ExternalClusterProvider,
-) (string, error) {
-	nodes, err := externalClusterProvider.ListNodes(ctx, externalCluster)
-	if err != nil {
-		return "", fmt.Errorf("failed to fetch container runtime: not able to list nodes %w", err)
-	}
-	for _, node := range nodes.Items {
-		if _, ok := node.Labels[NodeControlPlaneLabel]; ok {
-			containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
-			strSlice := strings.Split(containerRuntimeVersion, ":")
-			for _, containerRuntime := range strSlice {
-				return containerRuntime, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
-}
-
 func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
 	labels := o.GetLabels()
 
@@ -444,4 +432,79 @@ func GetNodeGroupReadyCount(nodes *corev1.NodeList, providerNodeLabel, providerN
 	}
 
 	return readyReplicasCount
+}
+
+func GetVersion(client *kubernetes.Clientset) (*ksemver.Semver, error) {
+	version, err := client.DiscoveryClient.ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	v, err := ksemver.NewSemver(version.GitVersion)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
+}
+
+func GetClusterClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster, masterClient ctrlruntimeclient.Client) (*kubernetes.Clientset, error) {
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(ctx, masterClient)
+	rawKubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, "kubeconfig")
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := clientcmd.Load([]byte(rawKubeconfig))
+	if err != nil {
+		return nil, err
+	}
+	clientConfig, err := getRestConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	client, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
+	iconfig := clientcmd.NewNonInteractiveClientConfig(
+		*cfg,
+		"",
+		&clientcmd.ConfigOverrides{},
+		nil,
+	)
+
+	return iconfig.ClientConfig()
+}
+
+func CheckContainerRuntime(ctx context.Context,
+	clusterClient *kubernetes.Clientset,
+) (string, error) {
+	nodeReq, err := labels.NewRequirement(NodeControlPlaneLabel, selection.Exists, []string{})
+	if err != nil {
+		return "", errors.Wrap(err, "error creating selector requirement")
+	}
+	selector := labels.NewSelector().Add(*nodeReq)
+	if err != nil {
+		return "", errors.Wrap(err, "error converting node label selector to map")
+	}
+
+	nodes, err := clusterClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: 1,
+		LabelSelector: selector.String(),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	for _, node := range nodes.Items {
+		containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
+		strSlice := strings.Split(containerRuntimeVersion, ":")
+		for _, containerRuntime := range strSlice {
+			return containerRuntime, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to fetch container runtime: no control plane nodes found with label %s", NodeControlPlaneLabel)
 }

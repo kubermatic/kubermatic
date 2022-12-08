@@ -615,10 +615,12 @@ const (
 
 const (
 	// KubeOneNamespacePrefix is the kubeone namespace prefix.
-	KubeOneNamespacePrefix = "kubeone-"
+	KubeOneNamespacePrefix = "kubeone"
+	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
+	CredentialPrefix = "credential"
 	// KubeOne secret names.
-	KubeOneSSHSecretName      = "ssh"
-	KubeOneManifestSecretName = "manifest"
+	KubeOneSSHSecretPrefix      = "kubeone-ssh-external-cluster-"
+	KubeOneManifestSecretPrefix = "kubeone-manifest-external-cluster-"
 	// KubOne ConfigMap name.
 	KubeOneScriptConfigMapName = "kubeone"
 	// KubeOne secret keys.

@@ -38,7 +38,6 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -530,89 +529,55 @@ func createOrUpdateVMwareCloudDirectorSecret(ctx context.Context, seedClient ctr
 }
 
 func GetKubeOneNamespaceName(externalClusterName string) string {
-	return fmt.Sprintf("%s%s", resources.KubeOneNamespacePrefix, externalClusterName)
+	return fmt.Sprintf("%s-%s", resources.KubeOneNamespacePrefix, externalClusterName)
 }
 
-func (p *ExternalClusterProvider) CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error {
-	kubeOneNamespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: GetKubeOneNamespaceName(externalCluster.Name),
-		},
-	}
-	if err := p.GetMasterClient().Create(ctx, kubeOneNamespace); err != nil {
-		return fmt.Errorf("failed to create kubeone cluster namespace: %w", err)
-	}
+// // CreateOrUpdateKubeOneCredentialSecret creates a new secret for a credential.
+// func (p *ExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error {
+// 	secretName := GetKubeOneCredentialsSecretName(externalCluster.Name, cloud)
 
-	return nil
-}
-
-func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
-	creator, err := credentialSecretCreatorGetter(secretName, externalcluster.Labels, secretData)
-	if err != nil {
-		return nil, err
-	}
-
-	kubeOneNamespaceName := GetKubeOneNamespaceName(externalcluster.Name)
-	creators := []reconciling.NamedSecretCreatorGetter{creator}
-
-	if err := reconciling.ReconcileSecrets(ctx, creators, kubeOneNamespaceName, masterClient); err != nil {
-		return nil, err
-	}
-
-	return &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secretName,
-			Namespace: kubeOneNamespaceName,
-		},
-	}, nil
-}
-
-// CreateOrUpdateKubeOneCredentialSecret creates a new secret for a credential.
-func (p *ExternalClusterProvider) CreateOrUpdateKubeOneCredentialSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error {
-	secretName := GetKubeOneCredentialsSecretName(cloud)
-
-	if cloud.AWS != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneAWS
-		return createOrUpdateKubeOneAWSSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.GCP != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneGCP
-		return createOrUpdateKubeOneGCPSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.Azure != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneAzure
-		return createOrUpdateKubeOneAzureSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.DigitalOcean != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneDigitalOcean
-		return createOrUpdateKubeOneDigitaloceanSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.VSphere != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneVSphere
-		return createOrUpdateKubeOneVSphereSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.Hetzner != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneHetzner
-		return createOrUpdateKubeOneHetznerSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.Equinix != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneEquinix
-		return createOrUpdateKubeOneEquinixSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.OpenStack != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneOpenStack
-		return createOrUpdateKubeOneOpenstackSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.Nutanix != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneNutanix
-		return createOrUpdateKubeOneNutanixSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	if cloud.VMwareCloudDirector != nil {
-		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneVMwareCloudDirector
-		return createOrUpdateKubeOneVMwareCloudDirectorSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
-	}
-	return nil
-}
+// 	if cloud.AWS != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneAWS
+// 		return createOrUpdateKubeOneAWSSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.GCP != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneGCP
+// 		return createOrUpdateKubeOneGCPSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.Azure != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneAzure
+// 		return createOrUpdateKubeOneAzureSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.DigitalOcean != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneDigitalOcean
+// 		return createOrUpdateKubeOneDigitaloceanSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.VSphere != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneVSphere
+// 		return createOrUpdateKubeOneVSphereSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.Hetzner != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneHetzner
+// 		return createOrUpdateKubeOneHetznerSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.Equinix != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneEquinix
+// 		return createOrUpdateKubeOneEquinixSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.OpenStack != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneOpenStack
+// 		return createOrUpdateKubeOneOpenstackSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.Nutanix != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneNutanix
+// 		return createOrUpdateKubeOneNutanixSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	if cloud.VMwareCloudDirector != nil {
+// 		externalCluster.Spec.CloudSpec.KubeOne.ProviderName = resources.KubeOneVMwareCloudDirector
+// 		return createOrUpdateKubeOneVMwareCloudDirectorSecret(ctx, cloud, p.GetMasterClient(), secretName, externalCluster)
+// 	}
+// 	return nil
+// }
 
 func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalcluster *kubermaticv1.ExternalCluster) error {
 	if cloud.AWS.AccessKeyID == "" || cloud.AWS.SecretAccessKey == "" {
@@ -633,7 +598,7 @@ func createOrUpdateKubeOneAWSSecret(ctx context.Context, cloud apiv2.KubeOneClou
 	}
 
 	// add secret key selectors to externalCluster object
-	externalcluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalcluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -661,7 +626,7 @@ func createOrUpdateKubeOneGCPSecret(ctx context.Context, cloud apiv2.KubeOneClou
 	}
 
 	// add secret key selectors to cluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -702,7 +667,7 @@ func createOrUpdateKubeOneAzureSecret(ctx context.Context, cloud apiv2.KubeOneCl
 	}
 
 	// add secret key selectors to externalCluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -727,7 +692,7 @@ func createOrUpdateKubeOneDigitaloceanSecret(ctx context.Context, cloud apiv2.Ku
 	}
 
 	// add secret key selectors to externalCluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -760,7 +725,7 @@ func createOrUpdateKubeOneOpenstackSecret(ctx context.Context, cloud apiv2.KubeO
 	}
 
 	// add secret key selectors to externalCluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -785,7 +750,7 @@ func createOrUpdateKubeOneVSphereSecret(ctx context.Context, cloud apiv2.KubeOne
 	}
 
 	// add secret key selectors to externalCluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -812,7 +777,7 @@ func createOrUpdateKubeOneEquinixSecret(ctx context.Context, cloud apiv2.KubeOne
 	}
 
 	// add secret key selectors to cluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -837,7 +802,7 @@ func createOrUpdateKubeOneHetznerSecret(ctx context.Context, cloud apiv2.KubeOne
 	}
 
 	// add secret key selectors to cluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
 }
@@ -885,9 +850,27 @@ func createOrUpdateKubeOneNutanixSecret(ctx context.Context, cloud apiv2.KubeOne
 	}
 
 	// add secret key selectors to cluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 
 	return nil
+}
+
+func ensureCredentialKubeOneSecret(ctx context.Context, masterClient ctrlruntimeclient.Client, cluster *kubermaticv1.ExternalCluster, secretName string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+	creator, err := credentialSecretCreatorGetter(secretName, cluster.Labels, secretData)
+	if err != nil {
+		return nil, err
+	}
+	kubeOneNamespaceName := GetKubeOneNamespaceName(cluster.Name)
+	if err := reconciling.ReconcileSecrets(ctx, []reconciling.NamedSecretCreatorGetter{creator}, kubeOneNamespaceName, masterClient); err != nil {
+		return nil, err
+	}
+
+	return &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      secretName,
+			Namespace: kubeOneNamespaceName,
+		},
+	}, nil
 }
 
 func createOrUpdateKubeOneVMwareCloudDirectorSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, masterClient ctrlruntimeclient.Client, secretName string, externalCluster *kubermaticv1.ExternalCluster) error {
@@ -914,40 +897,6 @@ func createOrUpdateKubeOneVMwareCloudDirectorSecret(ctx context.Context, cloud a
 	}
 
 	// add secret key selectors to externalCluster object
-	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = *credentialRef
+	externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference = credentialRef
 	return nil
-}
-
-func GetKubeOneCredentialsSecretName(cloud apiv2.KubeOneCloudSpec) string {
-	if cloud.AWS != nil {
-		return "credential-aws"
-	}
-	if cloud.Azure != nil {
-		return "credential-azure"
-	}
-	if cloud.DigitalOcean != nil {
-		return "credential-digitalocean"
-	}
-	if cloud.GCP != nil {
-		return "credential-gcp"
-	}
-	if cloud.Hetzner != nil {
-		return "credential-hetzner"
-	}
-	if cloud.OpenStack != nil {
-		return "credential-openstack"
-	}
-	if cloud.Equinix != nil {
-		return "credential-equinix"
-	}
-	if cloud.VMwareCloudDirector != nil {
-		return "credential-vmware-cloud-director"
-	}
-	if cloud.VSphere != nil {
-		return "credential-vsphere"
-	}
-	if cloud.Nutanix != nil {
-		return "credential-nutanix"
-	}
-	return ""
 }
