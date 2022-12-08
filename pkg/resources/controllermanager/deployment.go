@@ -145,7 +145,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8S) + "/kube-controller-manager:v" + data.Cluster().Spec.Version.String(),
 					Command: []string{"/usr/local/bin/kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,
