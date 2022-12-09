@@ -39,7 +39,7 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 
 ### Bugfixes
 
-- Fix regression that no longer created `Role` kubermatic:secret:sa-etcd-launcher for etcd-launcher-based restores ([#11241](https://github.com/kubermatic/kubermatic/pull/11241))
+- Fix regression that no longer created `Role` `kubermatic:secret:sa-etcd-launcher` for etcd-launcher-based restores ([#11241](https://github.com/kubermatic/kubermatic/pull/11241))
 
 ### Updates
 
