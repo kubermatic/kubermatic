@@ -514,9 +514,11 @@ spec:
       - v1.22.9
       - v1.22.15
       - v1.22.16
+      - v1.22.17
       - v1.23.6
       - v1.23.12
       - v1.23.14
+      - v1.23.15
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

@@ -219,10 +219,12 @@ var (
 			newSemver("v1.22.9"),
 			newSemver("v1.22.15"),
 			newSemver("v1.22.16"),
+			newSemver("v1.22.17"),
 			// Kubernetes 1.23
 			newSemver("v1.23.6"),
 			newSemver("v1.23.12"),
 			newSemver("v1.23.14"),
+			newSemver("v1.23.15"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.19 =======
