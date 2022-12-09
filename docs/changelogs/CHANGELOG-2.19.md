@@ -13,6 +13,25 @@
 - [v2.19.10](#v21910)
 - [v2.19.11](#v21911)
 - [v2.19.12](#v21912)
+- [v2.19.13](#v21913)
+
+## [v2.19.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.13)
+
+### Action Required
+
+- ACTION REQUIRED: Use `registry.k8s.io` instead of `k8s.gcr.io` for Kubernetes upstream images. It might be necessary to update firewall rules or mirror registries accordingly ([#11510](https://github.com/kubermatic/kubermatic/pull/11510))
+
+### Bugfixes
+
+- Fix missing etcd metrics in Grafana etcd dashboards and master/seed Prometheus by renaming to: `etcd_mvcc_db_total_size_in_bytes`, `etcd_mvcc_delete_total`, `etcd_mvcc_put_total`, `etcd_mvcc_range_total`, `etcd_mvcc_txn_total` ([#11440](https://github.com/kubermatic/kubermatic/pull/11440))
+- Prioritise public IP over private IP in front LoadBalancer service ([#11512](https://github.com/kubermatic/kubermatic/pull/11512))
+
+### Updates
+
+- Update to etcd 3.5.6 for Kubernetes 1.22 to prevent potential data inconsistency issues during online defragmentation ([#11406](https://github.com/kubermatic/kubermatic/pull/11406))
+- Update Dex to 2.35.3 ([#11421](https://github.com/kubermatic/kubermatic/pull/11421))
+- Update OpenStack Cinder CSI to v1.22.2 ([#11457](https://github.com/kubermatic/kubermatic/pull/11457))
+- Update machine-controller to v1.42.8 ([#11547](https://github.com/kubermatic/kubermatic/pull/11547))
 
 ## [v2.19.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.12)
 

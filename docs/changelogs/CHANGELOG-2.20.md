@@ -11,6 +11,28 @@
 - [v2.20.8](#v2208)
 - [v2.20.9](#v2209)
 - [v2.20.10](#v22010)
+- [v2.20.11](#v22011)
+
+## [v2.20.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.11)
+
+### Action Required
+
+- ACTION REQUIRED: Use `registry.k8s.io` instead of `k8s.gcr.io` for Kubernetes upstream images. It might be necessary to update firewall rules or mirror registries accordingly ([#11391](https://github.com/kubermatic/kubermatic/pull/11391))
+
+### Bugfixes
+
+- Disable promtail initContainer that was overriding system `fs.inotify.max_user_instances` configuration ([#11382](https://github.com/kubermatic/kubermatic/pull/11382))
+- Fix duplicate SourceRange entries for front-loadbalancer Service ([#11369](https://github.com/kubermatic/kubermatic/pull/11369))
+- Fix missing etcd metrics in Grafana etcd dashboards and master/seed Prometheus by renaming to: `etcd_mvcc_db_total_size_in_bytes`, `etcd_mvcc_delete_total`, `etcd_mvcc_put_total`, `etcd_mvcc_range_total`, `etcd_mvcc_txn_total` ([#11439](https://github.com/kubermatic/kubermatic/pull/11439))
+- Prioritise public IP over private IP in front LoadBalancer service ([#11512](https://github.com/kubermatic/kubermatic/pull/11512))
+
+### Updates
+
+- Update to etcd 3.5.6 for Kubernetes 1.22+ to prevent potential data inconsistency issues during online defragmentation ([#11405](https://github.com/kubermatic/kubermatic/pull/11405))
+- Update nginx-ingress to 1.5.1; this raises the minimum supported Kubernetes version for master/seed clusters to 1.21 ([#11417](https://github.com/kubermatic/kubermatic/pull/11417))
+- Update Dex to 2.35.3 ([#11420](https://github.com/kubermatic/kubermatic/pull/11420))
+- Update OpenStack Cinder CSI to v1.23.4 and v1.22.2 ([#11456](https://github.com/kubermatic/kubermatic/pull/11456))
+- Update machine-controller to v1.45.5 ([#11546](https://github.com/kubermatic/kubermatic/pull/11546))
 
 ## [v2.20.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.10)
 

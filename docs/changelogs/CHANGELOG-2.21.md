@@ -4,6 +4,44 @@
 - [v2.21.1](#v2211)
 - [v2.21.2](#v2212)
 - [v2.21.3](#v2213)
+- [v2.21.4](#v2214)
+
+## [v2.21.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.4)
+
+### Action Required
+
+- ACTION REQUIRED: Use `registry.k8s.io` instead of `k8s.gcr.io` for Kubernetes upstream images. It might be necessary to update firewall rules or mirror registries accordingly ([#11079](https://github.com/kubermatic/kubermatic/pull/11079))
+
+### API Changes
+
+- Add the option to set autoscaler min and max replicas for a machine deployment through the KKP API. They are only relevant if the autoscaler addon is installed ([#11544](https://github.com/kubermatic/kubermatic/pull/11544))
+
+### New Feature
+
+- Defaulting vSphere tag category from seed, when it is not specified in user cluster ([#11460](https://github.com/kubermatic/kubermatic/pull/11460))
+
+### Bugfixes
+
+- Disable promtail initContainer that was overriding system `fs.inotify.max_user_instances` configuration ([#11382](https://github.com/kubermatic/kubermatic/pull/11382))
+- Fix duplicate SourceRange entries for front-loadbalancer Service ([#11371](https://github.com/kubermatic/kubermatic/pull/11371))
+- Fix the issue where AllowedRegistry ConstraintTemplate was not being reconiciled by Gatekeeper because it's `spec.crd` OpenAPI spec was missing a type ([#11327](https://github.com/kubermatic/kubermatic/pull/11327))
+- Monitoring: fixes missing etcd metrics in Grafana etcd dashboards and master/seed Prometheus by renaming to: `etcd_mvcc_db_total_size_in_bytes`, `etcd_mvcc_delete_total`, `etcd_mvcc_put_total`, `etcd_mvcc_range_total`, `etcd_mvcc_txn_total` ([#11438](https://github.com/kubermatic/kubermatic/pull/11438))
+- Prioritise public IP over private IP in front LoadBalancer service ([#11512](https://github.com/kubermatic/kubermatic/pull/11512))
+
+### Updates
+
+- Update KubeVirt CSI driver operator version to v0.1.3 ([#11399](https://github.com/kubermatic/kubermatic/pull/11399))
+- Update to etcd 3.5.6 for Kubernetes 1.22+ to prevent potential data inconsistency issues during online defragmentation ([#11404](https://github.com/kubermatic/kubermatic/pull/11404))
+- Update nginx-ingress to 1.5.1 ([#11416](https://github.com/kubermatic/kubermatic/pull/11416))
+- Update Dex to 2.35.3 ([#11419](https://github.com/kubermatic/kubermatic/pull/11419))
+- Update OpenStack Cinder CSI to v1.24.5, v1.23.4, and v1.22.2 ([#11455](https://github.com/kubermatic/kubermatic/pull/11455))
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.0 ([#11503](https://github.com/kubermatic/kubermatic/pull/11503))
+- Update Go to version 1.18.9 ([#11532](https://github.com/kubermatic/kubermatic/pull/11532))
+- Update machine-controller to v1.54.3 ([#11545](https://github.com/kubermatic/kubermatic/pull/11545))
+
+### Dashboard
+
+- Provide options for autoscaling nodes ([#5402](https://github.com/kubermatic/dashboard/pull/5402))
 
 ## [v2.21.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.3)
 
