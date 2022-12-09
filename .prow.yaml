@@ -321,7 +321,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.22.16"
+          value: "v1.22.17"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
@@ -363,7 +363,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
@@ -406,7 +406,7 @@ presubmits:
         - name: ONLY_TEST_CREATION
           value: "true"
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
@@ -451,7 +451,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: PROVIDER
@@ -497,7 +497,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "gcp"
         - name: DISTRIBUTIONS
@@ -540,7 +540,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "gcp"
         - name: DISTRIBUTIONS
@@ -588,7 +588,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: DISTRIBUTIONS
           value: centos
         - name: PROVIDER
@@ -631,7 +631,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "packet"
         - name: DISTRIBUTIONS
@@ -674,7 +674,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "kubevirt"
         - name: DISTRIBUTIONS
@@ -717,7 +717,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "hetzner"
         - name: DISTRIBUTIONS
@@ -762,7 +762,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "openstack"
         - name: DISTRIBUTIONS
@@ -807,7 +807,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -852,7 +852,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -896,7 +896,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -942,7 +942,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "vsphere"
         - name: DISTRIBUTIONS
@@ -988,7 +988,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "nutanix"
         - name: DISTRIBUTIONS
@@ -1032,7 +1032,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.23.14"
+          value: "v1.23.15"
         - name: PROVIDER
           value: "nutanix"
         - name: DISTRIBUTIONS
@@ -1081,7 +1081,7 @@ presubmits:
         - "./hack/ci/run-api-e2e.sh"
         env:
         - name: VERSION_TO_TEST
-          value: v1.23.14
+          value: v1.23.15
         - name: KUBERMATIC_EDITION
           value: ee
         - name: SERVICE_ACCOUNT_KEY
@@ -1121,7 +1121,7 @@ presubmits:
         - "./hack/ci/run-etcd-launcher-tests.sh"
         env:
         - name: VERSION_TO_TEST
-          value: v1.23.14
+          value: v1.23.15
         - name: KUBERMATIC_EDITION
           value: ee
         - name: SERVICE_ACCOUNT_KEY
@@ -1189,7 +1189,7 @@ presubmits:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.14
+              value: v1.23.15
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
@@ -1318,7 +1318,7 @@ presubmits:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
             - name: VERSION_TO_TEST
-              value: v1.23.14
+              value: v1.23.15
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
