@@ -213,6 +213,7 @@ var (
 			semver.MustParse("v1.22.5"),
 			semver.MustParse("v1.22.15"),
 			semver.MustParse("v1.22.16"),
+			semver.MustParse("v1.22.17"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.19 =======
