@@ -32,6 +32,7 @@
 - Update Dex to 2.35.3 ([#11421](https://github.com/kubermatic/kubermatic/pull/11421))
 - Update OpenStack Cinder CSI to v1.22.2 ([#11457](https://github.com/kubermatic/kubermatic/pull/11457))
 - Update machine-controller to v1.42.8 ([#11547](https://github.com/kubermatic/kubermatic/pull/11547))
+- Add support for Kubernetes v1.22.17 ([#11556](https://github.com/kubermatic/kubermatic/pull/11556))
 
 ## [v2.19.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.12)
 
