@@ -615,6 +615,8 @@ const (
 	ExternalClusterKubeconfigPrefix = "kubeconfig-external-cluster"
 	// KubeOneNamespacePrefix is the kubeone namespace prefix.
 	KubeOneNamespacePrefix = "kubeone"
+	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
+	CredentialPrefix = "credential"
 	// KubeOne secret prefixes.
 	// don't change this as these prefixes are used for rbac generation.
 	KubeOneSSHSecretPrefix      = "ssh-kubeone-external-cluster"

@@ -34,6 +34,9 @@ const (
 	// ExternalCluster Kubeconfig secret prefix.
 	ExternalClusterKubeconfigPrefix = "kubeconfig-external-cluster"
 
+	// KubeOneNamespacePrefix is the kubeone namespace prefix.
+	KubeOneNamespacePrefix = "kubeone"
+
 	// don't change this as these prefixes are used for rbac generation.
 	// KubeOne ssh secret prefixes.
 	KubeOneSSHSecretPrefix = "ssh-kubeone-external-cluster"
@@ -93,10 +96,10 @@ type ExternalClusterKubeOneCloudSpec struct {
 	// ProviderName is the name of the cloud provider used, one of
 	// "aws", "azure", "digitalocean", "gcp",
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
-	ProviderName         string                                 `json:"providerName"`
-	CredentialsReference providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
-	SSHReference         providerconfig.GlobalSecretKeySelector `json:"sshReference"`
-	ManifestReference    providerconfig.GlobalSecretKeySelector `json:"manifestReference"`
+	ProviderName         string                                  `json:"providerName"`
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	SSHReference         *providerconfig.GlobalSecretKeySelector `json:"sshReference,omitempty"`
+	ManifestReference    *providerconfig.GlobalSecretKeySelector `json:"manifestReference,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -328,4 +331,8 @@ func (i *ExternalCluster) GetKubeOneSSHSecretName() string {
 
 func (i *ExternalCluster) GetKubeOneManifestSecretName() string {
 	return fmt.Sprintf("%s-%s", KubeOneManifestSecretPrefix, i.Name)
+}
+
+func (i *ExternalCluster) GetKubeOneNamespaceName() string {
+	return fmt.Sprintf("%s-%s", KubeOneNamespacePrefix, i.Name)
 }

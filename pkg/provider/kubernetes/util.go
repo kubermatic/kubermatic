@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	restclient "k8s.io/client-go/rest"
@@ -57,16 +56,6 @@ func ClusterFromNamespace(ctx context.Context, client ctrlruntimeclient.Client, 
 	}
 
 	return nil, nil
-}
-
-// createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation.
-func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient ImpersonationClient) (ctrlruntimeclient.Client, error) {
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: userInfo.Email,
-		Groups:   userInfo.Groups,
-	}
-
-	return createImpersonationClient(impersonationCfg)
 }
 
 // NewImpersonationClient creates a new default impersonation client
