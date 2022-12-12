@@ -16,6 +16,7 @@
 # - https://github.com/kubernetes-csi/external-snapshotter/blob/v6.0.1/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
 # Modifications:
 #   - Set image tag to 6.0.1 to match the release version
+#   - change image domain to registry.k8s.io
 #   - template function to replace base registry
 #   - add seccomp profile
 #   - add --kube-api-qps=100 argument
@@ -61,7 +62,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-controller
-          image: {{ Image "gcr.io/k8s-staging-sig-storage/snapshot-controller:v6.0.1" }}
+          image: {{ Image "registry.k8s.io/sig-storage/snapshot-controller:v6.0.1" }}
           args:
             - "--v=5"
             - "--leader-election=true"
