@@ -195,6 +195,10 @@ type ApplicationDefinitionSpec struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`
 
+	// DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
+	// These settings can be overridden in applicationInstallation.
+	DefaultDeployOptions *DeployOptions `json:"defaultDeployOptions,omitempty"`
+
 	// Available version for this application
 	Versions []ApplicationVersion `json:"versions"`
 }

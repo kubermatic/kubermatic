@@ -77,6 +77,29 @@ type ApplicationInstallationSpec struct {
 	// Setting a value equal to 0 disables the force reconciliation of the application (default behavior).
 	// Setting this too low can cause a heavy load and may disrupt your application workload depending on the template method.
 	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
+
+	// DeployOptions holds the settings specific to the templating method used to deploy the application.
+	DeployOptions *DeployOptions `json:"deployOptions,omitempty"`
+}
+
+// DeployOptions holds the settings specific to the templating method used to deploy the application.
+type DeployOptions struct {
+	Helm *HelmDeployOptions `json:"helm,omitempty"`
+}
+
+// HelmDeployOptions holds the deployment settings when templating method is Helm.
+type HelmDeployOptions struct {
+	// Wait corresponds to the --wait flag on Helm cli.
+	// if set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful. It will wait for as long as timeout
+	Wait bool `json:"wait,omitempty"`
+
+	// Timeout corresponds to the --timeout flag on Helm cli.
+	// time to wait for any individual Kubernetes operation.
+	Timeout metav1.Duration `json:"timeout,omitempty"`
+
+	// Atomic corresponds to the --atomic flag on Helm cli.
+	// if set, the installation process deletes the installation on failure; the upgrade process rolls back changes made in case of failed upgrade.
+	Atomic bool `json:"atomic,omitempty"`
 }
 
 // AppNamespaceSpec describe the desired state of the namespace where application will be created.
