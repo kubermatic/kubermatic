@@ -45,8 +45,7 @@ type HelmTemplate struct {
 	// CacheDir is the directory path where helm caches will be download.
 	CacheDir string
 
-	Log                     *zap.SugaredLogger
-	ApplicationInstallation *appskubermaticv1.ApplicationInstallation
+	Log *zap.SugaredLogger
 
 	// Namespace where credential secrets are stored.
 	SecretNamespace string
@@ -64,8 +63,8 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
 	var auth = helmclient.AuthSettings{}
-	if h.ApplicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials != nil {
-		auth, err = util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.ApplicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials.HelmCredentials)
+	if applicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials != nil {
+		auth, err = util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, applicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials.HelmCredentials)
 		if err != nil {
 			return util.NoStatusUpdate, err
 		}
@@ -73,14 +72,14 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 
 	restClientGetter := &genericclioptions.ConfigFlags{
 		KubeConfig: &h.Kubeconfig,
-		Namespace:  &h.ApplicationInstallation.Spec.Namespace.Name,
+		Namespace:  &applicationInstallation.Spec.Namespace.Name,
 	}
 
 	helmClient, err := helmclient.NewClient(
 		h.Ctx,
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
-		h.ApplicationInstallation.Spec.Namespace.Name,
+		applicationInstallation.Spec.Namespace.Name,
 		h.Log)
 
 	if err != nil {
@@ -129,14 +128,14 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 
 	restClientGetter := &genericclioptions.ConfigFlags{
 		KubeConfig: &h.Kubeconfig,
-		Namespace:  &h.ApplicationInstallation.Spec.Namespace.Name,
+		Namespace:  &applicationInstallation.Spec.Namespace.Name,
 	}
 
 	helmClient, err := helmclient.NewClient(
 		h.Ctx,
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
-		h.ApplicationInstallation.Spec.Namespace.Name,
+		applicationInstallation.Spec.Namespace.Name,
 		h.Log)
 
 	if err != nil {

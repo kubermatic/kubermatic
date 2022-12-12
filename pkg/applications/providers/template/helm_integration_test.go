@@ -131,13 +131,12 @@ func TestHelmProvider(t *testing.T) {
 
 				// test uninstall app
 				template := HelmTemplate{
-					Ctx:                     context.Background(),
-					Kubeconfig:              kubeconfigPath,
-					CacheDir:                t.TempDir(),
-					Log:                     kubermaticlog.Logger,
-					ApplicationInstallation: app,
-					SecretNamespace:         "abc",
-					SeedClient:              client,
+					Ctx:             context.Background(),
+					Kubeconfig:      kubeconfigPath,
+					CacheDir:        t.TempDir(),
+					Log:             kubermaticlog.Logger,
+					SecretNamespace: "abc",
+					SeedClient:      client,
 				}
 
 				statusUpdater, err := template.Uninstall(app)
@@ -197,13 +196,12 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, nil)
 
 				template := HelmTemplate{
-					Ctx:                     context.Background(),
-					Kubeconfig:              kubeconfigPath,
-					CacheDir:                t.TempDir(),
-					Log:                     kubermaticlog.Logger,
-					ApplicationInstallation: app,
-					SecretNamespace:         "default",
-					SeedClient:              client,
+					Ctx:             context.Background(),
+					Kubeconfig:      kubeconfigPath,
+					CacheDir:        t.TempDir(),
+					Log:             kubermaticlog.Logger,
+					SecretNamespace: "default",
+					SeedClient:      client,
 				}
 
 				_, err := template.InstallOrUpgrade(chartFullPath, app)
@@ -221,13 +219,12 @@ func TestHelmProvider(t *testing.T) {
 
 func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int) {
 	template := HelmTemplate{
-		Ctx:                     context.Background(),
-		Kubeconfig:              kubeconfigPath,
-		CacheDir:                t.TempDir(),
-		Log:                     kubermaticlog.Logger,
-		ApplicationInstallation: app,
-		SecretNamespace:         "default",
-		SeedClient:              client,
+		Ctx:             context.Background(),
+		Kubeconfig:      kubeconfigPath,
+		CacheDir:        t.TempDir(),
+		Log:             kubermaticlog.Logger,
+		SecretNamespace: "default",
+		SeedClient:      client,
 	}
 
 	statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
