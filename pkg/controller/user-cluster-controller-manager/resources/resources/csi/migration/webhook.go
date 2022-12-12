@@ -19,9 +19,10 @@ package csimigration
 import (
 	"crypto/x509"
 
+	"k8c.io/reconciler/pkg/reconciling"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +50,7 @@ func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						Service: &admissionregistrationv1.ServiceReference{
 							Namespace: namespace,
-							Name:      resources.VSphereCSIValidatingWebhookSVCName,
+							Name:      resources.VSphereCSIValidatingWebhookServiceName,
 							Path:      pointer.String("/validate"),
 							Port:      pointer.Int32(443),
 						},

@@ -19,9 +19,10 @@ package csimigration
 import (
 	"fmt"
 
+	"k8c.io/reconciler/pkg/reconciling"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -41,14 +42,14 @@ func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecret
 				se.Data = map[string][]byte{}
 			}
 
-			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace)
+			commonName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.VSphereCSIValidatingWebhookServiceName, resources.VSphereCSINamespace)
 			altNames := certutil.AltNames{
 				DNSNames: []string{
-					resources.VSphereCSIValidatingWebhookSVCName,
-					fmt.Sprintf("%s.%s", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace),
+					resources.VSphereCSIValidatingWebhookServiceName,
+					fmt.Sprintf("%s.%s", resources.VSphereCSIValidatingWebhookServiceName, resources.VSphereCSINamespace),
 					commonName,
-					fmt.Sprintf("%s.%s.svc", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace),
-					fmt.Sprintf("%s.%s.svc.", resources.VSphereCSIValidatingWebhookSVCName, resources.VSphereCSINamespace),
+					fmt.Sprintf("%s.%s.svc", resources.VSphereCSIValidatingWebhookServiceName, resources.VSphereCSINamespace),
+					fmt.Sprintf("%s.%s.svc.", resources.VSphereCSIValidatingWebhookServiceName, resources.VSphereCSINamespace),
 				},
 			}
 			if b, exists := se.Data[resources.CSIWebhookServingCertCertKeyName]; exists {
@@ -63,7 +64,7 @@ func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecret
 
 			newKP, err := triple.NewServerKeyPair(ca,
 				commonName,
-				resources.VSphereCSIValidatingWebhookSVCName,
+				resources.VSphereCSIValidatingWebhookServiceName,
 				resources.VSphereCSINamespace,
 				"",
 				nil,

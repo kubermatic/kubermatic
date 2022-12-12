@@ -31,11 +31,12 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
+	"k8c.io/reconciler/pkg/reconciling"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -867,8 +868,8 @@ const (
 const (
 	// VSphereCSINamespace is the namespace desired by vmware csi driver.
 	VSphereCSINamespace = "vmware-system-csi"
-	// VSphereCSIValidatingWebhookSVCName is the name of the validation webhook service.
-	VSphereCSIValidatingWebhookSVCName = "vsphere-webhook-svc"
+	// VSphereCSIValidatingWebhookServiceName is the name of the validation webhook service.
+	VSphereCSIValidatingWebhookServiceName = "vsphere-webhook-svc"
 	// VSphereCSIWebhookSecretName defines the name of the secret containing the certificates for the validation admission webhook.
 	VSphereCSIWebhookSecretName = "vsphere-webhook-certs"
 
