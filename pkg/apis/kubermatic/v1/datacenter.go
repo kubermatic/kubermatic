@@ -743,7 +743,7 @@ type ProxySettings struct {
 
 // Empty returns true if p or all of its children are nil or empty strings.
 func (p *ProxySettings) Empty() bool {
-	return p.HTTPProxy.Empty() && p.NoProxy.Empty()
+	return p == nil || (p.HTTPProxy.Empty() && p.NoProxy.Empty())
 }
 
 // Merge applies the settings from p into dst if the corresponding setting

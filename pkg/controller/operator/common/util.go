@@ -214,7 +214,7 @@ func CleanupClusterResource(ctx context.Context, client ctrlruntimeclient.Client
 
 // KubermaticProxyEnvironmentVars returns ProxySettings from Kubermatic configuration as env vars.
 func KubermaticProxyEnvironmentVars(p *kubermaticv1.KubermaticProxyConfiguration) (result []corev1.EnvVar) {
-	if p.HTTP == "" && p.HTTPS == "" {
+	if p == nil || (p.HTTP == "" && p.HTTPS == "") {
 		return
 	}
 
@@ -250,7 +250,7 @@ func KubermaticProxyEnvironmentVars(p *kubermaticv1.KubermaticProxyConfiguration
 
 // SeedProxyEnvironmentVars returns ProxySettings from Seed as env vars.
 func SeedProxyEnvironmentVars(p *kubermaticv1.ProxySettings) (result []corev1.EnvVar) {
-	if p.Empty() {
+	if p == nil || p.Empty() {
 		return
 	}
 
