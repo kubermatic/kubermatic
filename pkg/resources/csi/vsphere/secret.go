@@ -17,10 +17,10 @@ limitations under the License.
 package vsphere
 
 import (
-	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	"k8c.io/reconciler/pkg/reconciling"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	cloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -51,7 +51,7 @@ func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 				return nil, err
 			}
 
-			cloudConfig, err := vsphere.CloudConfigToString(vsphereCloudConfig)
+			cloudConfig, err := CloudConfigCSIToString(vsphereCloudConfig)
 			if err != nil {
 				return nil, err
 			}

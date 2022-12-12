@@ -22,7 +22,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 )
 
-// ServiceAccountReconcilers returns the function to create and update the service accounts needed for CSI.
+// ServiceAccountsReconcilers returns the function to create and update the service accounts needed for CSI.
 func ServiceAccountReconcilers(cluster *kubermaticv1.Cluster) []reconciling.NamedServiceAccountReconcilerFactory {
 	creatorGetters := []reconciling.NamedServiceAccountReconcilerFactory{}
 
