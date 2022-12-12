@@ -34,6 +34,7 @@
 - Update OpenStack Cinder CSI to v1.23.4 and v1.22.2 ([#11456](https://github.com/kubermatic/kubermatic/pull/11456))
 - Update machine-controller to v1.45.5 ([#11546](https://github.com/kubermatic/kubermatic/pull/11546))
 - Add support for Kubernetes v1.22.17 and v1.23.15 ([#11555](https://github.com/kubermatic/kubermatic/pull/11555))
+- Add etcd database size alerts `EtcdDatabaseQuotaLowSpace`, `EtcdExcessiveDatabaseGrowth`, `EtcdDatabaseHighFragmentationRatio`([#11559](https://github.com/kubermatic/kubermatic/pull/11559))
 
 ## [v2.20.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.10)
 

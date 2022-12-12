@@ -39,6 +39,7 @@
 - Update Go to version 1.18.9 ([#11532](https://github.com/kubermatic/kubermatic/pull/11532))
 - Update machine-controller to v1.54.3 ([#11545](https://github.com/kubermatic/kubermatic/pull/11545))
 - Add support for Kubernetes v1.22.17, v1.23.15 and v1.24.9 ([#11554](https://github.com/kubermatic/kubermatic/pull/11554))
+- Add etcd database size alerts `EtcdDatabaseQuotaLowSpace`, `EtcdExcessiveDatabaseGrowth`, `EtcdDatabaseHighFragmentationRatio`([#11560](https://github.com/kubermatic/kubermatic/pull/11560))
 
 ### Dashboard
 
