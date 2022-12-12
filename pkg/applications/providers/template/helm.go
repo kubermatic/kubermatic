@@ -55,7 +55,7 @@ type HelmTemplate struct {
 }
 
 // InstallOrUpgrade the chart located at chartLoc with parameters (releaseName, values) defined applicationInstallation into cluster.
-func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
+func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
 	if err != nil {
 		return util.NoStatusUpdate, err

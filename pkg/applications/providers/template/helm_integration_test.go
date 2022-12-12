@@ -204,7 +204,7 @@ func TestHelmProvider(t *testing.T) {
 					SeedClient:      client,
 				}
 
-				_, err := template.InstallOrUpgrade(chartFullPath, app)
+				_, err := template.InstallOrUpgrade(chartFullPath, &appskubermaticv1.ApplicationDefinition{}, app)
 				if err == nil {
 					t.Fatal("install of application should have failed but no error was raised")
 				}
@@ -227,7 +227,7 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 		SeedClient:      client,
 	}
 
-	statusUpdater, err := template.InstallOrUpgrade(chartLoc, app)
+	statusUpdater, err := template.InstallOrUpgrade(chartLoc, &appskubermaticv1.ApplicationDefinition{}, app)
 	if err != nil {
 		t.Fatalf("failed to install or upgrade chart: %s", err)
 	}

@@ -202,7 +202,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 	}
 
 	// install application into the user-cluster
-	if err := r.handleInstallation(ctx, log, appInstallation); err != nil {
+	if err := r.handleInstallation(ctx, log, applicationDef, appInstallation); err != nil {
 		return fmt.Errorf("handling installation of application installation: %w", err)
 	}
 
@@ -223,7 +223,7 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 }
 
 // handleInstallation installs or updates the application in the user cluster.
-func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
@@ -249,7 +249,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	}
 
 	oldAppInstallation = appInstallation.DeepCopy()
-	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appInstallation, appSourcePath)
+	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appDefinition, appInstallation, appSourcePath)
 
 	if installErr != nil {
 		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())

@@ -55,7 +55,7 @@ func NewSourceProvider(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 type TemplateProvider interface {
 
 	// InstallOrUpgrade the application from the source.
-	InstallOrUpgrade(source string, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
+	InstallOrUpgrade(source string, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
 
 	// Uninstall the application.
 	Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
