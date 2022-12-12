@@ -24,11 +24,12 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/reconciler/pkg/reconciling"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -248,6 +249,38 @@ func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.En
 	})
 
 	return result
+}
+
+// SeedProxyEnvironmentVars returns ProxySettings as env vars.
+func SeedProxyEnvironmentVars(p *kubermaticv1.ProxySettings) (result []corev1.EnvVar) {
+	if p.Empty() {
+		return
+	}
+
+	result = append(result, corev1.EnvVar{
+		Name:  "HTTP_PROXY",
+		Value: p.HTTPProxy.String(),
+	})
+
+	result = append(result, corev1.EnvVar{
+		Name:  "HTTPS_PROXY",
+		Value: p.HTTPProxy.String(),
+	})
+
+	noProxy := []string{
+		defaulting.DefaultNoProxy,
+	}
+
+	if p.NoProxy.String() != "" {
+		noProxy = append(noProxy, p.NoProxy.String())
+	}
+
+	result = append(result, corev1.EnvVar{
+		Name:  "NO_PROXY",
+		Value: strings.Join(noProxy, ","),
+	})
+
+	return
 }
 
 func DeleteObject(ctx context.Context, client ctrlruntimeclient.Client, name, namespace string, obj ctrlruntimeclient.Object) error {
