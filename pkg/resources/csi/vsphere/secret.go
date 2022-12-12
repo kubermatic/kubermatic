@@ -17,10 +17,9 @@ limitations under the License.
 package vsphere
 
 import (
-	"k8c.io/reconciler/pkg/reconciling"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
