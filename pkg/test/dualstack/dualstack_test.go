@@ -197,7 +197,7 @@ func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, 
 
 		switch *svc.Spec.IPFamilyPolicy {
 		case corev1.IPFamilyPolicySingleStack:
-			if ipFamily == util.DualStack {
+			if ipFamily == util.IPFamilyIPv4IPv6 {
 				svcLog.Infof("Skipping %q test because IP family policy is %q", ipFamily, *svc.Spec.IPFamilyPolicy)
 				continue
 			}
@@ -220,11 +220,11 @@ func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, 
 		log.Info("Skipping validation of egress connectivity")
 	} else {
 		switch ipFamily {
-		case util.IPv4, util.Unspecified:
+		case util.IPFamilyIPv4, util.IPFamilyUnspecified:
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
-		case util.IPv6:
+		case util.IPFamilyIPv6:
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
-		case util.DualStack:
+		case util.IPFamilyIPv4IPv6:
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
 		}
@@ -282,19 +282,19 @@ func all(ipFamily util.IPFamily, addrs []string) bool {
 	}
 
 	switch ipFamily {
-	case util.IPv4, util.Unspecified:
+	case util.IPFamilyIPv4, util.IPFamilyUnspecified:
 		for _, addr := range addrs {
 			if !netutils.IsIPv4CIDRString(addr) {
 				return false
 			}
 		}
-	case util.IPv6:
+	case util.IPFamilyIPv6:
 		for _, addr := range addrs {
 			if !netutils.IsIPv6CIDRString(addr) {
 				return false
 			}
 		}
-	case util.DualStack:
+	case util.IPFamilyIPv4IPv6:
 		ok, err := netutils.IsDualStackCIDRStrings(addrs)
 		return err == nil && ok
 	default:

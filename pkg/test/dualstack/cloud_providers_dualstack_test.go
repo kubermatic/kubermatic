@@ -109,7 +109,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:      CiliumCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.AlibabaCloudProvider,
@@ -117,7 +117,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:      CanalCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.AWSCloudProvider,
@@ -128,7 +128,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:                 CiliumCNI,
-			ipFamily:            util.DualStack,
+			ipFamily:            util.IPFamilyIPv4IPv6,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
@@ -141,7 +141,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:                 CanalCNI,
-			ipFamily:            util.DualStack,
+			ipFamily:            util.IPFamilyIPv4IPv6,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
@@ -154,7 +154,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:      CiliumCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.AzureCloudProvider,
@@ -166,7 +166,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:      CanalCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.GCPCloudProvider,
@@ -174,7 +174,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:                 CiliumCNI,
-			ipFamily:            util.DualStack,
+			ipFamily:            util.IPFamilyIPv4IPv6,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
@@ -184,7 +184,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:                 CanalCNI,
-			ipFamily:            util.DualStack,
+			ipFamily:            util.IPFamilyIPv4IPv6,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
 		},
@@ -196,7 +196,7 @@ var (
 				providerconfig.OperatingSystemRHEL,
 			},
 			cni:      CiliumCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.OpenstackCloudProvider,
@@ -206,7 +206,7 @@ var (
 				providerconfig.OperatingSystemRHEL,
 			},
 			cni:      CanalCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.HetznerCloudProvider,
@@ -215,7 +215,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:      CiliumCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.HetznerCloudProvider,
@@ -224,7 +224,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:      CanalCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
@@ -233,7 +233,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:      CiliumCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
@@ -243,7 +243,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:      CanalCNI,
-			ipFamily: util.DualStack,
+			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.PacketCloudProvider,
@@ -254,7 +254,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:       CanalCNI,
-			ipFamily:  util.DualStack,
+			ipFamily:  util.IPFamilyIPv4IPv6,
 			skipNodes: true,
 		},
 		{
@@ -265,7 +265,7 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:       CiliumCNI,
-			ipFamily:  util.DualStack,
+			ipFamily:  util.IPFamilyIPv4IPv6,
 			skipNodes: true,
 		},
 		{
@@ -274,7 +274,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:                    CanalCNI,
-			ipFamily:               util.DualStack,
+			ipFamily:               util.IPFamilyIPv4IPv6,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 		{
@@ -283,7 +283,7 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 			},
 			cni:                    CiliumCNI,
-			ipFamily:               util.DualStack,
+			ipFamily:               util.IPFamilyIPv4IPv6,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 	}
@@ -436,7 +436,7 @@ func TestNewClusters(t *testing.T) {
 					WithName(fmt.Sprintf("md-%s", osName)).
 					WithOSSpec(osSpec).
 					WithNetworkConfig(&providerconfig.NetworkConfig{
-						IPFamily: util.DualStack,
+						IPFamily: util.IPFamilyIPv4IPv6,
 					})
 
 				// no need to keep track of machine cleanups, as KKP will delete all machines in the

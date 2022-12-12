@@ -246,13 +246,13 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 
 	switch {
 	case c.IsIPv4Only():
-		config.Network.IPFamily = util.IPv4
+		config.Network.IPFamily = util.IPFamilyIPv4
 	case c.IsIPv6Only():
-		config.Network.IPFamily = util.IPv6
+		config.Network.IPFamily = util.IPFamilyIPv6
 	case c.IsDualStack():
-		config.Network.IPFamily = util.DualStack
+		config.Network.IPFamily = util.IPFamilyIPv4IPv6
 	default:
-		config.Network.IPFamily = util.Unspecified
+		config.Network.IPFamily = util.IPFamilyUnspecified
 	}
 
 	return &config, nil
