@@ -16,6 +16,7 @@
 # - https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v2.7.0/manifests/vanilla/csi-snapshot-validatingwebhook.yaml
 # Modifications:
 #   - template function to replace base registry
+#   - change image domain to registry.k8s.io
 #   - remove ValidatingWebhookConfiguration (handled in code)
 #   - change webhook-certs secret name
 #   - add seccomp profile
@@ -60,7 +61,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-validation
-          image: {{ Image "k8s.gcr.io/sig-storage/snapshot-validation-webhook:v6.0.1" }} # change the image if you wish to use your own custom validation server image
+          image: {{ Image "registry.k8s.io/sig-storage/snapshot-validation-webhook:v6.0.1" }} # change the image if you wish to use your own custom validation server image
           imagePullPolicy: IfNotPresent
           args: ['--tls-cert-file=/run/secrets/tls/cert.pem', '--tls-private-key-file=/run/secrets/tls/key.pem']
           ports:
