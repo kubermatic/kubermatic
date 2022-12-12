@@ -20,6 +20,7 @@ package dualstack
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"strings"
@@ -109,6 +110,22 @@ func TestExistingCluster(t *testing.T) {
 
 func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, userclusterClient ctrlruntimeclient.Client, ipFamily util.IPFamily, skipNodes, skipHostNetworkPods, skipEgressConnectivity bool) {
 	log.Infow("Testing cluster", "ipfamily", ipFamily)
+
+	// get events from user-cluster for debugging
+	// aws+canal e2e flakes
+	// TODO: check again in 1m; remove if the test looks good
+	defer func() {
+		events := new(corev1.EventList)
+		err := userclusterClient.List(ctx, events)
+		if err != nil {
+			t.Logf("Failed to get events from usercluster: %+v", err)
+		}
+		t.Logf("Events for debugging logged below.")
+		for _, event := range events.Items {
+			e, _ := json.Marshal(event)
+			t.Logf(string(e))
+		}
+	}()
 
 	// validate nodes
 	if skipNodes {
