@@ -19,10 +19,11 @@ package kubermatic
 import (
 	"fmt"
 
+	"k8c.io/reconciler/pkg/reconciling"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -79,7 +80,7 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 					Image:   cfg.Spec.MasterController.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"master-controller-manager"},
 					Args:    args,
-					Env:     common.ProxyEnvironmentVars(cfg),
+					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",
