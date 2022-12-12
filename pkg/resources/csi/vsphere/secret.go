@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0y
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
-	cloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
+	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 
 	corev1 "k8s.io/api/core/v1"
 )
