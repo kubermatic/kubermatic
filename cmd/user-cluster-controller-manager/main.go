@@ -37,6 +37,7 @@ import (
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
+	kubevirtvmievictioncontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/kubevirt-vmi-eviction-controller"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
 	nodeversioncontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-version-controller"
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
@@ -404,6 +405,10 @@ func main() {
 		log.Fatalw("Failed to add user Resource Usage controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Resource Usage controller")
+
+	if err := kubevirtvmievictioncontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.clusterName); err != nil {
+		log.Fatalw("Failed to add Kubevirt VMI eviction controller to mgr", zap.Error(err))
+	}
 
 	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("Failed running manager", zap.Error(err))
