@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 apiVersion: v1
-description: A Helm chart for Kubernetes
+description: This chart just deployed a configmap. The values allow to setup configmap's data and label.
 name: examplechart
 version: 0.1.0

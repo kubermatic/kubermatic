@@ -20,10 +20,13 @@ package helmclient
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	"helm.sh/helm/v3/pkg/release"
 
 	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -32,6 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -215,6 +219,92 @@ func TestHelmClient(t *testing.T) {
 				uninstallShloulFailedIfnotAlreadyInstalledTest(t, ctx, ns)
 			},
 		},
+		{
+			name: "install should fail when timeout is exceeded",
+			testFunc: func(t *testing.T) {
+				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
+				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+
+				deployOpts, err := NewDeployOpts(true, 5*time.Second, false)
+				if err != nil {
+					t.Fatalf("failed to build DeployOpts: %s", err)
+				}
+
+				releaseInfo, err := helmClient.Install(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
+
+				// check helm operation has failed.
+				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+
+				// check that even if install has failed (timeout), workload has been deployed.
+				test.CheckConfigMap(t, ctx, client, ns, test.DefaultDataV2, test.DefaultVerionLabelV2)
+				checkServiceDeployed(t, ctx, client, ns)
+			},
+		},
+
+		{
+			name: "install should fail and workloard should be reverted when timeout is exceeded and atomic=true",
+			testFunc: func(t *testing.T) {
+				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
+				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+
+				deployOpts, err := NewDeployOpts(true, 5*time.Second, true)
+				if err != nil {
+					t.Fatalf("failed to build DeployOpts: %s", err)
+				}
+
+				releaseInfo, err := helmClient.Install(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
+
+				// check helm operation has failed.
+				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+
+				// check atomic has removed resources
+				checkServiceDeleted(t, ctx, client, ns)
+			},
+		},
+		{
+			name: "upgrade should fail when timeout is exceeded",
+			testFunc: func(t *testing.T) {
+				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
+				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+				deployOpts, err := NewDeployOpts(true, 5*time.Second, false)
+				if err != nil {
+					t.Fatalf("failed to build DeployOpts: %s", err)
+				}
+
+				// test install chart and run upgrade.
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				releaseInfo, err := helmClient.Upgrade(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
+
+				// check helm operation has failed.
+				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+
+				// check that even if upgrade has failed (timeout), workload has been updated.
+				test.CheckConfigMap(t, ctx, client, ns, test.DefaultDataV2, test.DefaultVerionLabelV2)
+				checkServiceDeployed(t, ctx, client, ns)
+			},
+		},
+		{
+			name: "upgrade should fail and workload should be reverted when timeout is exceeded and atomic is true",
+			testFunc: func(t *testing.T) {
+				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
+				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+				deployOpts, err := NewDeployOpts(true, 5*time.Second, true)
+				if err != nil {
+					t.Fatalf("failed to build DeployOpts: %s", err)
+				}
+
+				// test install chart and run upgrade.
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+				releaseInfo, err := helmClient.Upgrade(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
+
+				// check helm operation has failed.
+				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+
+				// check atomic flag has revert release to previous version.
+				test.CheckConfigMap(t, ctx, client, ns, test.DefaultData, test.DefaultVerionLabel)
+				checkServiceDeleted(t, ctx, client, ns)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -225,7 +315,7 @@ func TestHelmClient(t *testing.T) {
 func installTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, chartPath string, values map[string]interface{}, expectedData map[string]string, expectedVersionLabel string) {
 	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
 
-	releaseInfo, err := helmClient.Install(chartFullPath, releaseName, values, AuthSettings{})
+	releaseInfo, err := helmClient.Install(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
 	if err != nil {
 		t.Fatalf("helm install failed :%s", err)
@@ -241,7 +331,7 @@ func installTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Cli
 func installShouldFailedIfAlreadyInstalledTest(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string, values map[string]interface{}) {
 	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
 
-	_, err := helmClient.Install(chartFullPath, releaseName, values, AuthSettings{})
+	_, err := helmClient.Install(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
 	if err == nil {
 		t.Fatalf("helm install when release is already installed should failed, but no error was raised")
@@ -251,7 +341,7 @@ func installShouldFailedIfAlreadyInstalledTest(t *testing.T, ctx context.Context
 func upgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, chartPath string, values map[string]interface{}, expectedData map[string]string, expectedVersionLabel string) {
 	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
 
-	releaseInfo, err := helmClient.Upgrade(chartFullPath, releaseName, values, AuthSettings{})
+	releaseInfo, err := helmClient.Upgrade(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
 	if err != nil {
 		t.Fatalf("helm upgrade failed :%s", err)
@@ -267,7 +357,7 @@ func upgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Cli
 func upgradeShouldFailedIfNotAlreadyInstalledTest(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string, values map[string]interface{}) {
 	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
 
-	_, err := helmClient.Upgrade(chartFullPath, releaseName, values, AuthSettings{})
+	_, err := helmClient.Upgrade(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
 	if err == nil {
 		t.Fatalf("helm upgrade when release is not already installed should failed, but no error was raised")
@@ -277,7 +367,7 @@ func upgradeShouldFailedIfNotAlreadyInstalledTest(t *testing.T, ctx context.Cont
 func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, chartPath string, values map[string]interface{}, expectedData map[string]string, expectedVersionLabel string, expectedRelVersion int) {
 	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
 
-	releaseInfo, err := helmClient.InstallOrUpgrade(chartFullPath, releaseName, values, AuthSettings{})
+	releaseInfo, err := helmClient.InstallOrUpgrade(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
 	if err != nil {
 		t.Fatalf("helm InstallOrUpgrade failed :%s", err)
@@ -373,4 +463,49 @@ func buildHelClient(t *testing.T, ctx context.Context, ns *corev1.Namespace, cha
 		t.Fatalf("failed to create helm client: %s", err)
 	}
 	return helmClient, chartFullPath
+}
+
+// defaultDeployOpts creates DeployOpts with wait=false and atomic=false.
+func defaultDeployOpts(t *testing.T) *DeployOpts {
+	deployOpts, err := NewDeployOpts(false, 0, false)
+	if err != nil {
+		t.Fatalf("failed to build default deployOpts: %s", err)
+	}
+	return deployOpts
+}
+
+// checkReleaseFailedWithTimemout checks that install / upgrade has failed with timeout error and releaseInfo has failure status.
+func checkReleaseFailedWithTimemout(t *testing.T, releaseInfo *release.Release, err error) {
+	if err == nil {
+		t.Fatalf("expect installation or upgrade failed when timeout is exceeded but not error was raised")
+	}
+	if !errors.Is(err, wait.ErrWaitTimeout) {
+		t.Fatalf("expect wait.ErrWaitTimeout error. got %s", err)
+	}
+	if releaseInfo.Info.Status != release.StatusFailed {
+		t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, releaseInfo.Info.Status)
+	}
+}
+
+// checkServiceDeleted checks that test.SvcName does not exist in namespace "ns" otherwise fails the test.
+func checkServiceDeleted(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace) {
+	svc := &corev1.Service{}
+	if !utils.WaitFor(interval, timeout, func() bool {
+		err := client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.SvcName}, svc)
+		return err != nil && apierrors.IsNotFound(err)
+	}) {
+		t.Fatal("service has not been removed by helm unsintall or atomic flag.")
+	}
+}
+
+// checkServiceDeployed checks that test.SvcName exist in namespace "ns" otherwise fails the test.
+func checkServiceDeployed(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace) {
+	var err error
+	if !utils.WaitFor(interval, timeout, func() bool {
+		svc := &corev1.Service{}
+		err = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.SvcName}, svc)
+		return err == nil
+	}) {
+		t.Fatalf("service has not been deployed: %s", err)
+	}
 }

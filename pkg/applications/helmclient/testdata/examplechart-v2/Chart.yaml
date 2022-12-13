@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 apiVersion: v1
-description: A Helm chart for Kubernetes
+description: |
+  This chart is the version 2 of testdata/examplechart. the difference with the version 1 are the following:
+     * the default values of the configmap (data and label) are different
+     * a service a type LoadBalanacer may be deployed (default false). This service allows us to test wait and atomic options.
 name: examplechart
 version: 0.2.0

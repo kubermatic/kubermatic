@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -466,6 +467,89 @@ func TestBuildDependencies(t *testing.T) {
 					}
 				}
 			}()
+		})
+	}
+}
+
+func TestNewDeploySettings(t *testing.T) {
+	tests := []struct {
+		name    string
+		wait    bool
+		timeout time.Duration
+		atomic  bool
+		want    *DeployOpts
+		wantErr bool
+	}{
+		{
+			name:    "test valid: no wait, timeout and atomic",
+			wait:    false,
+			timeout: 0,
+			atomic:  false,
+			want: &DeployOpts{
+				wait:    false,
+				timeout: 0,
+				atomic:  false,
+			},
+			wantErr: false,
+		},
+		{
+			name:    "test valid: wait=true timeout=10s and no atomic",
+			wait:    true,
+			timeout: 10 * time.Second,
+			atomic:  false,
+			want: &DeployOpts{
+				wait:    true,
+				timeout: 10 * time.Second,
+				atomic:  false,
+			},
+			wantErr: false,
+		},
+		{
+			name:    "test valid: wait=true timeout=10s atomic=true",
+			wait:    true,
+			timeout: 10 * time.Second,
+			atomic:  true,
+			want: &DeployOpts{
+				wait:    true,
+				timeout: 10 * time.Second,
+				atomic:  true,
+			},
+			wantErr: false,
+		},
+		{
+			name:    "test invalid: wait=true without timeout",
+			wait:    true,
+			timeout: 0,
+			atomic:  false,
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "test invalid: atomic=true without wait",
+			wait:    false,
+			timeout: 10 * time.Second,
+			atomic:  true,
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewDeployOpts(tt.wait, tt.timeout, tt.atomic)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("NewDeployOpts() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				if tt.want.wait != got.wait {
+					t.Errorf("want DeployOpts.wait=%v, got %v", tt.want.wait, got.wait)
+				}
+				if tt.want.timeout != got.timeout {
+					t.Errorf("want DeployOpts.timeout=%v, got %v", tt.want.timeout, got.timeout)
+				}
+				if tt.want.atomic != got.atomic {
+					t.Errorf("want DeployOpts.atomic=%v, got %v", tt.want.atomic, got.atomic)
+				}
+			}
 		})
 	}
 }
