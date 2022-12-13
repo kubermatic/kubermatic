@@ -67,6 +67,35 @@ spec:
                 defaultNodeCount:
                   description: DefaultNodeCount is the default number of replicas for the initial MachineDeployment.
                   type: integer
+                defaultQuota:
+                  description: DefaultProjectResourceQuota allows to configure a default project resource quota which will be set for all projects that do not have a custom quota already set. EE-version only.
+                  properties:
+                    quota:
+                      description: ResourceDetails holds the CPU, Memory and Storage quantities.
+                      properties:
+                        cpu:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          description: CPU holds the quantity of CPU. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        memory:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          description: Memory represents the quantity of RAM size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        storage:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          description: Storage represents the disk size. For the format, please check k8s.io/apimachinery/pkg/api/resource.Quantity.
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                      type: object
+                  type: object
                 displayAPIDocs:
                   description: DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.
                   type: boolean

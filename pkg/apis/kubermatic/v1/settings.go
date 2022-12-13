@@ -84,6 +84,11 @@ type SettingSpec struct {
 	// MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
 	MachineDeploymentVMResourceQuota *MachineFlavorFilter `json:"machineDeploymentVMResourceQuota,omitempty"`
 
+	// DefaultProjectResourceQuota allows to configure a default project resource quota which
+	// will be set for all projects that do not have a custom quota already set. EE-version only.
+	// +optional
+	DefaultProjectResourceQuota DefaultProjectResourceQuota `json:"defaultQuota,omitempty"`
+
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
 
@@ -132,6 +137,12 @@ type ProviderConfiguration struct {
 type OpenStack struct {
 	// EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
 	EnforceCustomDisk bool `json:"enforceCustomDisk,omitempty"`
+}
+
+// DefaultProjectResourceQuota contains the default resource quota which will be set for all
+// projects that do not have a custom quota already set.
+type DefaultProjectResourceQuota struct {
+	Quota ResourceDetails `json:"quota,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
