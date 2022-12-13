@@ -690,7 +690,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	}
 
 	if data.ccmMigration && data.csiCloudConfig != nil {
-		creators = append(creators, csimigration.ValidatingwebhookConfigurationReconciler(data.caCert.Cert, resources.VSphereCSINamespace, resources.VSphereCSIValidatingWebhookConfigurationWebhookName))
+		creators = append(creators, csimigration.VsphereValidatingWebhookConfigurationReconciler(data.caCert.Cert, resources.VSphereCSINamespace, resources.VSphereCSIValidatingWebhookConfigurationWebhookName))
 	}
 
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
@@ -866,7 +866,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
 			if data.ccmMigration {
 				vsphereCSICreator := []reconciling.NamedSecretReconcilerFactory{
-					csimigration.TLSServingCertificateReconciler(data.caCert),
+					csimigration.VsphereTLSServingCertificateReconciler(data.caCert),
 				}
 				if err := reconciling.ReconcileSecrets(ctx, vsphereCSICreator, resources.VSphereCSINamespace, r.Client); err != nil {
 					return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.VSphereCSINamespace, err)

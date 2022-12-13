@@ -34,7 +34,7 @@ cert-file = "/run/secrets/tls/cert.pem"
 key-file = "/run/secrets/tls/key.pem"
 `
 
-func TLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecretReconcilerFactory {
+func VsphereTLSServingCertificateReconciler(ca *triple.KeyPair) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return resources.VSphereCSIWebhookSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

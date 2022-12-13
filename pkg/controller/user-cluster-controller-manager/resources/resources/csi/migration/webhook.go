@@ -28,8 +28,8 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// ValidatingwebhookConfigurationReconciler returns the ValidatingwebhookConfiguration for the machine controller.
-func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+// VsphereValidatingWebhookConfigurationReconciler returns the ValidatingwebhookConfiguration for the machine controller.
+func VsphereValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			sideEffect := admissionregistrationv1.SideEffectClassNone
