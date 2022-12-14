@@ -205,7 +205,6 @@ func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, 
 	}
 
 	return fmt.Errorf(strings.Join(errors, "\n"))
-
 }
 
 func rbacResourceNames() []string {

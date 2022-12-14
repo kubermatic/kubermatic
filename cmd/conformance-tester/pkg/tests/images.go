@@ -37,7 +37,7 @@ func TestNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, opts *ctype
 		return nil
 	}
 
-	log.Infof("Testing ...")
+	log.Infof("Testing that no k8s.gcr.io images exist in control plane ...")
 
 	pods := &corev1.PodList{}
 
