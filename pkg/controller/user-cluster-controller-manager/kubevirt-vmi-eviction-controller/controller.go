@@ -62,14 +62,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		return fmt.Errorf("failed to get cluster %q: %w", clusterName, err)
 	}
 
-	data := resources.NewTemplateDataBuilder().WithCluster(cluster).Build()
-
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return fmt.Errorf("failed getting credentials: %w", err)
-	}
-	infraKubeconfig := credentials.Kubevirt.KubeConfig
-	infraClient, err := kubevirt.NewClient(infraKubeconfig, kubevirt.ClientOptions{})
+	infraClient, err := getInfraClientForCluster(ctx, seedClient, cluster)
 	if err != nil {
 		return fmt.Errorf("failed creating kubevirt infra client: %w", err)
 	}
@@ -134,8 +127,18 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, vmi 
 		if err := r.userClient.Delete(ctx, machine); err != nil {
 			return fmt.Errorf("failed deleting Machine %q: %w", vmi.Name, err)
 		}
-
 	}
 
 	return nil
+}
+
+func getInfraClientForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kubevirt.Client, error) {
+	data := resources.NewTemplateDataBuilder().WithCluster(cluster).Build()
+
+	credentials, err := resources.GetCredentials(data)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting credentials: %w", err)
+	}
+	infraKubeconfig := credentials.Kubevirt.KubeConfig
+	return kubevirt.NewClient(infraKubeconfig, kubevirt.ClientOptions{})
 }
