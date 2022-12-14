@@ -121,7 +121,12 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, vmi 
 		namepacedMachineName := types.NamespacedName{Name: vmi.Name, Namespace: machineNamespace}
 		machine := &v1alpha1.Machine{}
 		if err := r.userClient.Get(ctx, namepacedMachineName, machine); err != nil {
-			return fmt.Errorf("failed getting Machine %q: %w", vmi.Name, err)
+			if apierrors.IsNotFound(err) {
+				log.Debugf("Machine %q already gone. Nothing to do here.")
+				return nil
+			} else {
+				return fmt.Errorf("failed getting Machine %q: %w", vmi.Name, err)
+			}
 		}
 
 		if err := r.userClient.Delete(ctx, machine); err != nil {
