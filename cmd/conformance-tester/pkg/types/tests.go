@@ -19,14 +19,16 @@ package types
 import "k8s.io/apimachinery/pkg/util/sets"
 
 const (
-	ConformanceTests        = "conformance"
-	LoadbalancerTests       = "loadbalancer"
-	StorageTests            = "storage"
-	MetricsTests            = "metrics"
-	SecurityContextTests    = "securitycontext"
-	TelemetryTests          = "telemetry"
-	UserClusterRBACTests    = "usercluster-rbac"
-	UserClusterSeccompTests = "usercluster-seccomp"
+	ConformanceTests            = "conformance"
+	LoadbalancerTests           = "loadbalancer"
+	StorageTests                = "storage"
+	MetricsTests                = "metrics"
+	SecurityContextTests        = "securitycontext"
+	TelemetryTests              = "telemetry"
+	K8sGcrImageTests            = "gcr-images"
+	UserClusterRBACTests        = "usercluster-rbac"
+	UserClusterSeccompTests     = "usercluster-seccomp"
+	UserClusterK8sGcrImageTests = "usercluster-gcr-images"
 )
 
 var AllTests = sets.NewString(
@@ -36,6 +38,8 @@ var AllTests = sets.NewString(
 	MetricsTests,
 	SecurityContextTests,
 	TelemetryTests,
+	K8sGcrImageTests,
 	UserClusterRBACTests,
 	UserClusterSeccompTests,
+	UserClusterK8sGcrImageTests,
 )
