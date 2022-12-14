@@ -70,6 +70,11 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 		}
 	}
 
+	deployOpts, err := getDeployOps(appDefinition, applicationInstallation)
+	if err != nil {
+		return util.NoStatusUpdate, err
+	}
+
 	restClientGetter := &genericclioptions.ConfigFlags{
 		KubeConfig: &h.Kubeconfig,
 		Namespace:  &applicationInstallation.Spec.Namespace.Name,
@@ -93,8 +98,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 		}
 	}
 
-	// todo vgramer: build helmclient.DeployOpts{} from application. will be done in another pr
-	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, helmclient.DeployOpts{}, auth)
+	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, *deployOpts, auth)
 	statusUpdater := util.NoStatusUpdate
 
 	// In some case, even if an error occurred, the helmRelease is updated.
@@ -189,4 +193,21 @@ func getReleaseName(applicationInstallation *appskubermaticv1.ApplicationInstall
 		return appName + "-" + namespaceSha1[:9]
 	}
 	return namespacedName
+}
+
+// getDeployOps builds helmclient.DeployOpts from values provided by appInstall or fallback to the values of appDefinition or fallback to the default options.
+// Default options are wait=false that implies timeout=0 and atomic=false.
+func getDeployOps(appDefinition *appskubermaticv1.ApplicationDefinition, appInstall *appskubermaticv1.ApplicationInstallation) (*helmclient.DeployOpts, error) {
+	// Read options from applicationInstallation.
+	if appInstall.Spec.DeployOptions != nil && appInstall.Spec.DeployOptions.Helm != nil {
+		return helmclient.NewDeployOpts(appInstall.Spec.DeployOptions.Helm.Wait, appInstall.Spec.DeployOptions.Helm.Timeout.Duration, appInstall.Spec.DeployOptions.Helm.Atomic)
+	}
+
+	// Fallback to options defined in ApplicationDefinition.
+	if appDefinition.Spec.DefaultDeployOptions != nil && appDefinition.Spec.DefaultDeployOptions.Helm != nil {
+		return helmclient.NewDeployOpts(appDefinition.Spec.DefaultDeployOptions.Helm.Wait, appDefinition.Spec.DefaultDeployOptions.Helm.Timeout.Duration, appDefinition.Spec.DefaultDeployOptions.Helm.Atomic)
+	}
+
+	// Fallback to default options.
+	return helmclient.NewDeployOpts(false, 0, false)
 }

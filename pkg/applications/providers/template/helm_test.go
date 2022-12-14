@@ -17,9 +17,12 @@ limitations under the License.
 package template
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -69,4 +72,155 @@ func TestGetReleaseName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetDeployOps(t *testing.T) {
+	tests := []struct {
+		name          string
+		appDefinition *appskubermaticv1.ApplicationDefinition
+		appInstall    *appskubermaticv1.ApplicationInstallation
+		want          *helmclient.DeployOpts
+		wantErr       bool
+	}{
+		{
+			name: "case 1: deployOpts defined at applicationInstallation have priority (appDef.spec.DefaultDeployOptions.helm is defined)",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    false,
+					Timeout: metav1.Duration{Duration: 0},
+					Atomic:  false,
+				}}},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    true,
+					Timeout: metav1.Duration{Duration: 1000},
+					Atomic:  true,
+				}}},
+			},
+			want:    newDeployOpts(t, true, 1000, true),
+			wantErr: false,
+		},
+		{
+			name: "case 2: deployOpts defined at applicationInstallation have priority (appDef.spec.DefaultDeployOptions.helm is nil)",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: nil}},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    true,
+					Timeout: metav1.Duration{Duration: 1000},
+					Atomic:  true,
+				}}},
+			},
+			want:    newDeployOpts(t, true, 1000, true),
+			wantErr: false,
+		},
+		{
+			name: "case 3: deployOpts defined at applicationInstallation have priority (appDef.spec.DefaultDeployOptions is nil)",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: nil},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    true,
+					Timeout: metav1.Duration{Duration: 1000},
+					Atomic:  true,
+				}}},
+			},
+			want:    newDeployOpts(t, true, 1000, true),
+			wantErr: false,
+		},
+		{
+			name: "case 4: fallback to deployOpts defined in applicationDefinition when deployOpts is not defined in applicationInstallation (appInstall.spec.DefaultDeployOptions.helm is nil)",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    true,
+					Timeout: metav1.Duration{Duration: 500},
+					Atomic:  false,
+				}}},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: &appskubermaticv1.DeployOptions{Helm: nil}},
+			},
+			want:    newDeployOpts(t, true, 500, false),
+			wantErr: false,
+		},
+		{
+			name: "case 5: fallback to deployOpts defined in applicationDefinition when deployOpts is not defined in applicationInstallation(appInstall.spec.DefaultDeployOptions is nil)",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    true,
+					Timeout: metav1.Duration{Duration: 500},
+					Atomic:  false,
+				}}},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: nil},
+			},
+			want:    newDeployOpts(t, true, 500, false),
+			wantErr: false,
+		},
+		{
+			name: "case 6: fallback to default when deployOpts is not defined in applicationInstallation and applicationDefinition",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: nil},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: nil},
+			},
+			want:    newDeployOpts(t, false, 0, false),
+			wantErr: false,
+		},
+		{
+			name: "case 7: error should be return if DeployOps defined at applicationInstallation level are invalid",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: nil},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    true,
+					Timeout: metav1.Duration{Duration: 0}, // if wait = true then timeout must be > 0
+					Atomic:  true,
+				}}},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "case 8: error should be return if DeployOps defined at applicationDefinition level are invalid",
+			appDefinition: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+					Wait:    true,
+					Timeout: metav1.Duration{Duration: 0}, // if wait = true then timeout must be > 0
+					Atomic:  true,
+				}}},
+			},
+			appInstall: &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: nil},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getDeployOps(tt.appDefinition, tt.appInstall)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("getDeployOps() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("getDeployOps() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func newDeployOpts(t *testing.T, wait bool, timeout time.Duration, atomic bool) *helmclient.DeployOpts {
+	t.Helper()
+	deployOps, err := helmclient.NewDeployOpts(wait, timeout, atomic)
+	if err != nil {
+		t.Fatalf("failed to build deployOpts: %s", err)
+	}
+	return deployOps
 }
