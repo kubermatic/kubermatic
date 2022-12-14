@@ -87,7 +87,7 @@ type SettingSpec struct {
 	// DefaultProjectResourceQuota allows to configure a default project resource quota which
 	// will be set for all projects that do not have a custom quota already set. EE-version only.
 	// +optional
-	DefaultProjectResourceQuota DefaultProjectResourceQuota `json:"defaultQuota,omitempty"`
+	DefaultProjectResourceQuota *DefaultProjectResourceQuota `json:"defaultQuota,omitempty"`
 
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
