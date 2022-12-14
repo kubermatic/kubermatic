@@ -106,7 +106,11 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data)
+			providerName, err := data.GetCloudProviderName()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get cloud provider name: %w", err)
+			}
+			volumes := getVolumes(data, providerName)
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
@@ -190,10 +194,6 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-kas-secure-port", fmt.Sprint(address.Port))
 			}
 
-			providerName, err := data.GetCloudProviderName()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get cloud provider name: %w", err)
-			}
 			args = append(args, "-cloud-provider-name", providerName)
 
 			if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
@@ -251,6 +251,33 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
+			volumeMounts := []corev1.VolumeMount{
+				{
+					Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
+					MountPath: "/etc/kubernetes/kubeconfig",
+					ReadOnly:  true,
+				},
+				{
+					Name:      "ca-bundle",
+					MountPath: "/opt/ca-bundle/",
+					ReadOnly:  true,
+				},
+				{
+					Name:      resources.ApplicationCacheVolumeName,
+					MountPath: resources.ApplicationCacheMountPath,
+					ReadOnly:  false,
+				},
+			}
+			if kubermaticv1.ProviderType(providerName) == kubermaticv1.KubevirtCloudProvider {
+				mountPath := "/etc/kubernetes/kubevirt-infra-kubeconfig"
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      resources.KubeVirtInfraSecretName,
+					MountPath: mountPath,
+					ReadOnly:  true,
+				})
+				args = append(args, "-kubevirt-infra-kubeconfig", mountPath)
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
@@ -279,23 +306,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 						SuccessThreshold: 1,
 						TimeoutSeconds:   15,
 					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      resources.InternalUserClusterAdminKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
-							ReadOnly:  true,
-						},
-						{
-							Name:      "ca-bundle",
-							MountPath: "/opt/ca-bundle/",
-							ReadOnly:  true,
-						},
-						{
-							Name:      resources.ApplicationCacheVolumeName,
-							MountPath: resources.ApplicationCacheMountPath,
-							ReadOnly:  false,
-						},
-					},
+					VolumeMounts: volumeMounts,
 				},
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
@@ -315,8 +326,8 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 	}
 }
 
-func getVolumes(data userclusterControllerData) []corev1.Volume {
-	return []corev1.Volume{
+func getVolumes(data userclusterControllerData, providerName string) []corev1.Volume {
+	volumes := []corev1.Volume{
 		{
 			Name: resources.InternalUserClusterAdminKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -344,6 +355,17 @@ func getVolumes(data userclusterControllerData) []corev1.Volume {
 			},
 		},
 	}
+	if kubermaticv1.ProviderType(providerName) == kubermaticv1.KubevirtCloudProvider {
+		volumes = append(volumes, corev1.Volume{
+			Name: resources.KubeVirtInfraSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.KubeVirtInfraSecretName,
+				},
+			},
+		})
+	}
+	return volumes
 }
 
 func getNetworkArgs(data userclusterControllerData) []string {

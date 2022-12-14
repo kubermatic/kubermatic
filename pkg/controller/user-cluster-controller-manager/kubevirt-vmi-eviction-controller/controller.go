@@ -19,16 +19,16 @@ package kubevirtvmievictioncontroller
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"go.uber.org/zap"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -50,19 +50,14 @@ type reconciler struct {
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, clusterName string) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, userMgr manager.Manager, infraKubeconfigPath, clusterName string, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 
-	seedClient := seedMgr.GetClient()
-	cluster := &kubermaticv1.Cluster{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-
-		return fmt.Errorf("failed to get cluster %q: %w", clusterName, err)
+	infraKubeconfig, err := ioutil.ReadFile(infraKubeconfigPath)
+	if err != nil {
+		return fmt.Errorf("failed reading kubevirt infra kubeconfig: %w", err)
 	}
 
-	infraClient, err := getInfraClientForCluster(ctx, seedClient, cluster)
+	infraClient, err := kubevirt.NewClient(string(infraKubeconfig), kubevirt.ClientOptions{})
 	if err != nil {
 		return fmt.Errorf("failed creating kubevirt infra client: %w", err)
 	}
@@ -74,11 +69,21 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		clusterIsPaused: clusterIsPaused,
 	}
 
-	c, err := controller.New(controllerName, userMgr, controller.Options{Reconciler: r})
+	infraRESTConfig, err := clientcmd.RESTConfigFromKubeConfig(infraKubeconfig)
+	if err != nil {
+		return fmt.Errorf("failed creating REST config from kubeconfig: %w", err)
+	}
+	infraMgr, err := manager.New(infraRESTConfig, manager.Options{})
+	if err != nil {
+		return fmt.Errorf("failed creating manager from REST config: %w", err)
+	}
+	c, err := controller.New(controllerName, infraMgr, controller.Options{Reconciler: r})
 
-	namespacePredicate := predicate.ByNamespace(cluster.Status.NamespaceName)
-
-	if err = c.Watch(&source.Kind{Type: &kubevirtv1.VirtualMachineInstance{}}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
+	if err = c.Watch(
+		&source.Kind{Type: &kubevirtv1.VirtualMachineInstance{}},
+		&handler.EnqueueRequestForObject{},
+		predicate.ByNamespace(fmt.Sprintf("cluster-%s", clusterName)),
+	); err != nil {
 		return fmt.Errorf("failed creating watch for kubevirt VirtualMachineInstance: %w", err)
 	}
 
@@ -115,7 +120,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, vmi *kubevirtv1.VirtualMachineInstance) error {
-
 	// If `status.evacuationNodeName` is set, trigger graceful delete of the Machine linked to this VMI
 	if vmi.Status.EvacuationNodeName != "" {
 		namepacedMachineName := types.NamespacedName{Name: vmi.Name, Namespace: machineNamespace}
@@ -135,15 +139,4 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, vmi 
 	}
 
 	return nil
-}
-
-func getInfraClientForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kubevirt.Client, error) {
-	data := resources.NewTemplateDataBuilder().WithCluster(cluster).Build()
-
-	credentials, err := resources.GetCredentials(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed getting credentials: %w", err)
-	}
-	infraKubeconfig := credentials.Kubevirt.KubeConfig
-	return kubevirt.NewClient(infraKubeconfig, kubevirt.ClientOptions{})
 }

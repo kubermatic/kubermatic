@@ -103,6 +103,7 @@ type controllerRunOptions struct {
 	konnectivityServerHost            string
 	konnectivityServerPort            int
 	applicationCache                  string
+	kubevirtInfraKubeconfigPath       string
 }
 
 func main() {
@@ -149,6 +150,7 @@ func main() {
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
 	flag.StringVar(&runOp.applicationCache, "application-cache", "", "Path to Application cache directory.")
+	flag.StringVar(&runOp.kubevirtInfraKubeconfigPath, "kubevirt-infra-kubeconfig", "", "Path to kubevirt infra kubeconfig.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -406,7 +408,7 @@ func main() {
 	}
 	log.Info("Registered Resource Usage controller")
 
-	if err := kubevirtvmievictioncontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, runOp.clusterName); err != nil {
+	if err := kubevirtvmievictioncontroller.Add(rootCtx, log, mgr, runOp.kubevirtInfraKubeconfigPath, runOp.clusterName, isPausedChecker); err != nil {
 		log.Fatalw("Failed to add Kubevirt VMI eviction controller to mgr", zap.Error(err))
 	}
 
