@@ -274,6 +274,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if !data.kubernetesDashboardEnabled {
+		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -1330,6 +1336,16 @@ func (r *reconciler) ensureOSMResourcesAreRemoved(ctx context.Context) error {
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Context) error {
+	for _, resource := range kubernetesdashboard.ResourcesForDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure Kubernetes Dashboard resources are removed/not present: %w", err)
 		}
 	}
 	return nil
