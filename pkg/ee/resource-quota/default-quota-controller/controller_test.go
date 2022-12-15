@@ -89,7 +89,28 @@ func TestReconcile(t *testing.T) {
 				).Build(),
 		},
 		{
-			name:                   "scenario 3: delete default project quota",
+			name: "scenario 3: dont update custom project quota",
+			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
+				*genResourceQuota(
+					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					generator.GenDefaultProject().Name,
+					*genResourceDetails("1", "3G", "7G"),
+					false),
+			},
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(
+					genSettings(genResourceDetails("2", "5G", "10G")),
+					generator.GenDefaultProject(),
+					genResourceQuota(buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+						generator.GenDefaultProject().Name,
+						*genResourceDetails("1", "3G", "7G"),
+						false),
+				).Build(),
+		},
+		{
+			name:                   "scenario 4: delete default project quota",
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{},
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -101,6 +122,27 @@ func TestReconcile(t *testing.T) {
 						generator.GenDefaultProject().Name,
 						*genResourceDetails("1", "3G", "7G"),
 						true),
+				).Build(),
+		},
+		{
+			name: "scenario 5: dont delete custom project quota",
+			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
+				*genResourceQuota(
+					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					generator.GenDefaultProject().Name,
+					*genResourceDetails("1", "3G", "7G"),
+					false),
+			},
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(
+					genSettings(nil),
+					generator.GenDefaultProject(),
+					genResourceQuota(buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+						generator.GenDefaultProject().Name,
+						*genResourceDetails("1", "3G", "7G"),
+						false),
 				).Build(),
 		},
 	}

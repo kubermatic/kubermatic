@@ -81,7 +81,7 @@ func Add(mgr manager.Manager,
 	return nil
 }
 
-// Reconcile creates/updates/deletes default project resource quota based on the default resource quota setting in Kubermatic settings
+// Reconcile creates/updates/deletes default project resource quota based on the default resource quota setting in Kubermatic settings.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")
@@ -121,7 +121,7 @@ func (r *reconciler) reconcile(ctx context.Context, setting *kubermaticv1.Kuberm
 	}
 
 	for _, pQuota := range projectQuotas {
-		if err := r.ensureDefaultProjectQuota(ctx, setting, pQuota.project, pQuota.quota); err != nil {
+		if err := r.ensureDefaultProjectQuota(ctx, setting, &pQuota.project, pQuota.quota); err != nil {
 			return fmt.Errorf("error ensuring default project quotas: %w", err)
 		}
 	}
@@ -141,20 +141,20 @@ func (r *reconciler) handleDeletion(ctx context.Context, quotas map[string]*proj
 }
 
 type projectQuota struct {
-	project *kubermaticv1.Project
+	project kubermaticv1.Project
 	quota   *kubermaticv1.ResourceQuota
 }
 
 func pairProjectQuotas(projects *kubermaticv1.ProjectList, quotas *kubermaticv1.ResourceQuotaList) map[string]*projectQuota {
 	projectQuotaMap := map[string]*projectQuota{}
 	for _, project := range projects.Items {
-		projectQuotaMap[project.Name] = &projectQuota{project: &project}
+		projectQuotaMap[project.Name] = &projectQuota{project: project}
 	}
 
 	for _, quota := range quotas.Items {
 		if quota.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind {
 			// prune projects with custom quotas
-			if quota.Labels != nil && !(quota.Labels[DefaultProjectResourceQuotaKey] == DefaultProjectResourceQuotaValue) {
+			if quota.Labels == nil || !(quota.Labels[DefaultProjectResourceQuotaKey] == DefaultProjectResourceQuotaValue) {
 				delete(projectQuotaMap, quota.Spec.Subject.Name)
 				continue
 			}
@@ -205,7 +205,7 @@ func buildNameFromSubject(subject kubermaticv1.Subject) string {
 	return fmt.Sprintf("%s-%s", subject.Kind, subject.Name)
 }
 
-// just reconcile if the default project resource quota changed
+// just reconcile if the default project resource quota changed.
 func withSettingsEventFilter() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
