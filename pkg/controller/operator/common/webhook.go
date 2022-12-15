@@ -197,7 +197,7 @@ func WebhookDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, version
 			// ensure that the 2 controllers will not overwrite each other (master-operator
 			// removing the -seed-name flag, seed-operator adding it again). Instead
 			// of fiddling with CLI flags, we just use an env variable to store the seed.
-			envVars := ProxyEnvironmentVars(cfg)
+			envVars := KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy)
 
 			if !removeSeed {
 				seedName := ""
