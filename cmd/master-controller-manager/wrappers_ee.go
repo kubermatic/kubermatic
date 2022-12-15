@@ -28,6 +28,7 @@ import (
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	groupprojectbinding "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	groupprojectbindingsyncer "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/sync-controller"
+	resourcequotadefaultcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/default-quota-controller"
 	resourcequotalabelownercontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/label-owner-controller"
 	resourcequotamastercontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/master-controller"
 	resourcequotasynchronizer "k8c.io/kubermatic/v2/pkg/ee/resource-quota/resource-quota-synchronizer"
@@ -56,6 +57,10 @@ func setupControllers(ctrlCtx *controllerContext) error {
 
 	if err := resourcequotalabelownercontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1); err != nil {
 		return fmt.Errorf("failed to create ResourceQuota label and owner ref controller: %w", err)
+	}
+
+	if err := resourcequotadefaultcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1); err != nil {
+		return fmt.Errorf("failed to create default project resource quota controller: %w", err)
 	}
 
 	return nil
