@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"path"
 	"strings"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -269,13 +270,13 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				},
 			}
 			if kubermaticv1.ProviderType(providerName) == kubermaticv1.KubevirtCloudProvider {
-				mountPath := "/etc/kubernetes/kubevirt-infra-kubeconfig"
+				mountPath := "/etc/kubernetes/kubevirt"
 				volumeMounts = append(volumeMounts, corev1.VolumeMount{
 					Name:      resources.KubeVirtInfraSecretName,
 					MountPath: mountPath,
 					ReadOnly:  true,
 				})
-				args = append(args, "-kubevirt-infra-kubeconfig", mountPath)
+				args = append(args, "-kubevirt-infra-kubeconfig", path.Join(mountPath, resources.KubeVirtInfraSecretKey))
 			}
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
