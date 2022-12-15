@@ -75,7 +75,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// Give cloud providers a chance to default their spec.
 	if cloudProvider != nil {
-		if err := cloudProvider.DefaultCloudSpec(ctx, &spec.Cloud); err != nil {
+		if err := cloudProvider.DefaultCloudSpec(ctx, spec); err != nil {
 			return fmt.Errorf("failed to default cloud spec: %w", err)
 		}
 	}

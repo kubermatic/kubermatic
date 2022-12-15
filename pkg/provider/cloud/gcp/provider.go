@@ -114,7 +114,20 @@ func (g *gcp) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
-func (g *gcp) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
+func (g *gcp) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
+	if spec.Cloud.GCP == nil {
+		return errors.New("no GCP cloud spec found")
+	}
+	switch spec.ClusterNetwork.IPFamily {
+	case kubermaticv1.IPFamilyIPv4:
+		spec.Cloud.GCP.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
+		}
+	case kubermaticv1.IPFamilyDualStack:
+		spec.Cloud.GCP.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+		}
+	}
 	return nil
 }
 

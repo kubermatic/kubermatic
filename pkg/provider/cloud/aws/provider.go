@@ -24,6 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 const (
@@ -81,7 +82,20 @@ func (a *AmazonEC2) getClientSet(ctx context.Context, cloud kubermaticv1.CloudSp
 	return GetClientSet(ctx, accessKeyID, secretAccessKey, assumeRoleARN, assumeRoleExternalID, a.dc.Region)
 }
 
-func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
+func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
+	if spec.Cloud.AWS == nil {
+		return errors.New("no AWS cloud spec found")
+	}
+	switch spec.ClusterNetwork.IPFamily {
+	case kubermaticv1.IPFamilyIPv4:
+		spec.Cloud.AWS.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
+		}
+	case kubermaticv1.IPFamilyDualStack:
+		spec.Cloud.AWS.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+		}
+	}
 	return nil
 }
 

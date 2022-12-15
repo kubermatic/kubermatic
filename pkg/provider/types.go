@@ -72,7 +72,7 @@ type SeedClientGetter = func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client,
 type CloudProvider interface {
 	InitializeCloudProvider(context.Context, *kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
 	CleanUpCloudProvider(context.Context, *kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
-	DefaultCloudSpec(context.Context, *kubermaticv1.CloudSpec) error
+	DefaultCloudSpec(context.Context, *kubermaticv1.ClusterSpec) error
 	ValidateCloudSpec(context.Context, kubermaticv1.CloudSpec) error
 	ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error
 }
