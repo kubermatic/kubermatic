@@ -79,7 +79,7 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 					Image:   cfg.Spec.MasterController.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"master-controller-manager"},
 					Args:    args,
-					Env:     common.ProxyEnvironmentVars(cfg),
+					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",

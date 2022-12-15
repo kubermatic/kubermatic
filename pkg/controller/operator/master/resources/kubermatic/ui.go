@@ -61,7 +61,7 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 					Name:    "webserver",
 					Image:   cfg.Spec.UI.DockerRepository + ":" + tag,
 					Command: []string{"dashboard"},
-					Env:     common.ProxyEnvironmentVars(cfg),
+					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",

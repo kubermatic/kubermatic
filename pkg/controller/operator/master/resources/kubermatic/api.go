@@ -254,7 +254,7 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 					Image:   cfg.Spec.API.DockerRepository + ":" + tag,
 					Command: []string{"kubermatic-api"},
 					Args:    args,
-					Env:     common.ProxyEnvironmentVars(cfg),
+					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",

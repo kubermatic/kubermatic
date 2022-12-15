@@ -212,25 +212,23 @@ func CleanupClusterResource(ctx context.Context, client ctrlruntimeclient.Client
 	return nil
 }
 
-func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.EnvVar {
-	result := []corev1.EnvVar{}
-	settings := cfg.Spec.Proxy
-
-	if settings.HTTP == "" && settings.HTTPS == "" {
-		return result
+// KubermaticProxyEnvironmentVars returns ProxySettings from Kubermatic configuration as env vars.
+func KubermaticProxyEnvironmentVars(p *kubermaticv1.KubermaticProxyConfiguration) (result []corev1.EnvVar) {
+	if p == nil || (p.HTTP == "" && p.HTTPS == "") {
+		return
 	}
 
-	if settings.HTTP != "" {
+	if p.HTTP != "" {
 		result = append(result, corev1.EnvVar{
 			Name:  "HTTP_PROXY",
-			Value: settings.HTTP,
+			Value: p.HTTP,
 		})
 	}
 
-	if settings.HTTPS != "" {
+	if p.HTTPS != "" {
 		result = append(result, corev1.EnvVar{
 			Name:  "HTTPS_PROXY",
-			Value: settings.HTTPS,
+			Value: p.HTTPS,
 		})
 	}
 
@@ -238,8 +236,8 @@ func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.En
 		defaulting.DefaultNoProxy,
 	}
 
-	if settings.NoProxy != "" {
-		noProxy = append(noProxy, settings.NoProxy)
+	if p.NoProxy != "" {
+		noProxy = append(noProxy, p.NoProxy)
 	}
 
 	result = append(result, corev1.EnvVar{
@@ -247,7 +245,39 @@ func ProxyEnvironmentVars(cfg *kubermaticv1.KubermaticConfiguration) []corev1.En
 		Value: strings.Join(noProxy, ","),
 	})
 
-	return result
+	return
+}
+
+// SeedProxyEnvironmentVars returns ProxySettings from Seed as env vars.
+func SeedProxyEnvironmentVars(p *kubermaticv1.ProxySettings) (result []corev1.EnvVar) {
+	if p == nil || p.Empty() {
+		return
+	}
+
+	result = append(result, corev1.EnvVar{
+		Name:  "HTTP_PROXY",
+		Value: p.HTTPProxy.String(),
+	})
+
+	result = append(result, corev1.EnvVar{
+		Name:  "HTTPS_PROXY",
+		Value: p.HTTPProxy.String(),
+	})
+
+	noProxy := []string{
+		defaulting.DefaultNoProxy,
+	}
+
+	if p.NoProxy.String() != "" {
+		noProxy = append(noProxy, p.NoProxy.String())
+	}
+
+	result = append(result, corev1.EnvVar{
+		Name:  "NO_PROXY",
+		Value: strings.Join(noProxy, ","),
+	})
+
+	return
 }
 
 func DeleteObject(ctx context.Context, client ctrlruntimeclient.Client, name, namespace string, obj ctrlruntimeclient.Object) error {
