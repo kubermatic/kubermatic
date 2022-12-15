@@ -17,6 +17,7 @@ limitations under the License.
 package resources
 
 import (
+	"reflect"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -576,5 +577,59 @@ func TestSetResourceRequirementsDoesNotChangeDefaults(t *testing.T) {
 
 	if !diff.SemanticallyEqual(defaults, backup) {
 		t.Fatalf("The defaults have changed:\n%v", diff.ObjectDiff(defaults, backup))
+	}
+}
+
+func TestGetNodePortsAllowedIPRanges(t *testing.T) {
+	testCases := []struct {
+		name            string
+		allowedIPRanges kubermaticv1.NetworkRanges
+		allowedIPRange  string
+		expectedResult  kubermaticv1.NetworkRanges
+	}{
+		{
+			name: "Duplicate entry in allowedIPRanges",
+			allowedIPRanges: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"10.10.10.0/24", "::/0"},
+			},
+			allowedIPRange: "10.10.10.0/24",
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"10.10.10.0/24", "::/0"},
+			},
+		},
+		{
+			name: "Unique entries in allowedIPRanges",
+			allowedIPRanges: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"20.20.20.0/24", "::/0"},
+			},
+			allowedIPRange: "10.10.10.0/24",
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"20.20.20.0/24", "::/0", "10.10.10.0/24"},
+			},
+		},
+		{
+			name: "Empty entry in allowedIPRange",
+			allowedIPRanges: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"20.20.20.0/24", "::/0"},
+			},
+			allowedIPRange: "",
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"20.20.20.0/24", "::/0"},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var result kubermaticv1.NetworkRanges
+			t.Parallel()
+
+			cluster := &kubermaticv1.Cluster{}
+			result = GetNodePortsAllowedIPRanges(cluster, &tc.allowedIPRanges, tc.allowedIPRange)
+
+			if !reflect.DeepEqual(result, tc.expectedResult) {
+				t.Errorf("wrong result, expected: %s, result: %s", tc.expectedResult, result)
+			}
+		})
 	}
 }
