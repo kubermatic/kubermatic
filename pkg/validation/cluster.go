@@ -118,7 +118,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	}
 
 	// Validate APIServerAllowedIPRanges for LoadBalancer expose strategy
-	if spec.ExposeStrategy != kubermaticv1.ExposeStrategyLoadBalancer && spec.APIServerAllowedIPRanges != nil {
+	if spec.ExposeStrategy != kubermaticv1.ExposeStrategyLoadBalancer && spec.APIServerAllowedIPRanges != nil && len(spec.APIServerAllowedIPRanges.CIDRBlocks) > 0 {
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("APIServerAllowedIPRanges"), "Access control for API server is supported only for LoadBalancer expose strategy"))
 	}
 
