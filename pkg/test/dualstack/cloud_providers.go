@@ -76,7 +76,6 @@ func newAlibabaTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogg
 func newAWSTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
 	jig := jig.NewAWSCluster(seedClient, log, awsCredentials, 1, nil)
 	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-		c.Cloud.AWS.NodePortsAllowedIPRange = "0.0.0.0/0"
 		return c
 	})
 	jig.MachineJig.WithCloudProviderSpecPatch(func(providerSpec interface{}) interface{} {
@@ -118,7 +117,6 @@ func newHetznerTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogg
 func newOpenstackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
 	jig := jig.NewOpenstackCluster(seedClient, log, openstackCredentials, 1)
 	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-		c.Cloud.Openstack.NodePortsAllowedIPRange = "0.0.0.0/0"
 		c.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
 			CIDRBlocks: []string{"0.0.0.0/0", "::/0"},
 		}

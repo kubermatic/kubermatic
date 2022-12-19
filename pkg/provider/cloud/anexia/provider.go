@@ -45,7 +45,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
-func (a *Anexia) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
+func (a *Anexia) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.ClusterSpec) error {
 	return nil
 }
 

@@ -43,7 +43,7 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 var _ provider.CloudProvider = &hetzner{}
 
 // DefaultCloudSpec.
-func (h *hetzner) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
+func (h *hetzner) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.ClusterSpec) error {
 	return nil
 }
 

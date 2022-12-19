@@ -53,7 +53,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 
 var _ provider.ReconcilingCloudProvider = &Provider{}
 
-func (p *Provider) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
+func (p *Provider) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.ClusterSpec) error {
 	return nil
 }
 

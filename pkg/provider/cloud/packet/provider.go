@@ -51,7 +51,7 @@ func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provi
 var _ provider.CloudProvider = &packet{}
 
 // DefaultCloudSpec adds defaults to the CloudSpec.
-func (p *packet) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
+func (p *packet) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.ClusterSpec) error {
 	return nil
 }
 

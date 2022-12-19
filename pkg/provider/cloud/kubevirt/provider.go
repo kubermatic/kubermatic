@@ -62,17 +62,17 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 
 var _ provider.ReconcilingCloudProvider = &kubevirt{}
 
-func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.CloudSpec) error {
-	if spec.Kubevirt == nil {
+func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
+	if spec.Cloud.Kubevirt == nil {
 		return errors.New("KubeVirt cloud provider spec is empty")
 	}
 
-	client, err := k.GetClientForCluster(*spec)
+	client, err := k.GetClientForCluster(spec.Cloud)
 	if err != nil {
 		return err
 	}
 
-	return updateInfraStorageClassesInfo(ctx, client, spec)
+	return updateInfraStorageClassesInfo(ctx, client, &spec.Cloud)
 }
 
 func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {

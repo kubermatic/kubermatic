@@ -1745,11 +1745,12 @@ func GetClusterNodeCIDRMaskSizeIPv6(cluster *kubermaticv1.Cluster) int32 {
 // and provided allowed IP ranges coming from provider-specific API.
 func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges *kubermaticv1.NetworkRanges, allowedIPRange string) (res kubermaticv1.NetworkRanges) {
 	if allowedIPRanges != nil {
-		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRanges.CIDRBlocks...)
+		res.CIDRBlocks = allowedIPRanges.CIDRBlocks
 	}
-	if allowedIPRange != "" {
+	if allowedIPRange != "" && !containsString(allowedIPRanges.CIDRBlocks, allowedIPRange) {
 		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRange)
 	}
+
 	if len(res.CIDRBlocks) == 0 {
 		if cluster.IsIPv4Only() || cluster.IsDualStack() {
 			res.CIDRBlocks = append(res.CIDRBlocks, IPv4MatchAnyCIDR)
@@ -1810,4 +1811,13 @@ func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivi
 		return "InternalIP,ExternalIP"
 	}
 	return "ExternalIP,InternalIP"
+}
+
+func containsString(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }

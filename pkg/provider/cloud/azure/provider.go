@@ -28,6 +28,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 const (
@@ -281,13 +282,24 @@ func (a *Azure) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Clus
 	return cluster, nil
 }
 
-func (a *Azure) DefaultCloudSpec(ctx context.Context, cloud *kubermaticv1.CloudSpec) error {
-	if cloud.Azure == nil {
+func (a *Azure) DefaultCloudSpec(ctx context.Context, clusterSpec *kubermaticv1.ClusterSpec) error {
+	if clusterSpec.Cloud.Azure == nil {
 		return errors.New("no Azure cloud spec found")
 	}
 
-	if cloud.Azure.LoadBalancerSKU == "" {
-		cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureBasicLBSKU
+	if clusterSpec.Cloud.Azure.LoadBalancerSKU == "" {
+		clusterSpec.Cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureBasicLBSKU
+	}
+
+	switch clusterSpec.ClusterNetwork.IPFamily {
+	case kubermaticv1.IPFamilyIPv4:
+		clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
+		}
+	case kubermaticv1.IPFamilyDualStack:
+		clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+		}
 	}
 
 	return nil

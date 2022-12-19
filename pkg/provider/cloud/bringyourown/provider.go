@@ -32,7 +32,7 @@ func NewCloudProvider() provider.CloudProvider {
 
 var _ provider.ReconcilingCloudProvider = &bringyourown{}
 
-func (b *bringyourown) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.CloudSpec) error {
+func (b *bringyourown) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.ClusterSpec) error {
 	return nil
 }
 
