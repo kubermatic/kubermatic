@@ -491,7 +491,7 @@ const (
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
 
 	// KubeVirtInfraSecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster.
-	KubeVirtInfraSecretName = "cloud-controller-manager-infra-kubeconfig"
+	KubeVirtInfraSecretName = "kubevirt-infra-kubeconfig"
 	// KubeVirtInfraSecretKey infra kubeconfig.
 	KubeVirtInfraSecretKey = "infra-kubeconfig"
 	// KubeVirtCSISecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster for the CSI controller.

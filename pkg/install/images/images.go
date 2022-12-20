@@ -361,6 +361,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.OperatingSystemManagerWebhookKubeconfigSecretName,
 		resources.OperatingSystemManagerWebhookServingCertSecretName,
 		resources.KubeVirtCSISecretName,
+		resources.KubeVirtInfraSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{

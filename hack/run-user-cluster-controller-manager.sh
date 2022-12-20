@@ -63,6 +63,17 @@ elif echo $CLUSTER_RAW | grep -i vsphere -q; then
   ARGS="$ARGS -cloud-provider-name=vsphere"
 fi
 
+if echo $CLUSTER_RAW | grep -i kubevirt -q; then
+  KUBEVIRT_INFRA_KUBECONFIG=$(mktemp)
+  kubectl --namespace "$NAMESPACE" get secret kubevirt-infra-kubeconfig --output json |
+    jq '.data."infra-kubeconfig"' -r |
+    base64 -d \
+      > $KUBEVIRT_INFRA_KUBECONFIG
+  echo "Using kubevirt infra kubeconfig $KUBEVIRT_INFRA_KUBECONFIG"
+  ARGS="$ARGS -kv-vmi-eviction-controller"
+  ARGS="$ARGS -kv-infra-kubeconfig=${KUBEVIRT_INFRA_KUBECONFIG}"
+fi
+
 if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); then
   KONNECTIVITY_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service konnectivity-server -o json)"
   if $(echo ${KONNECTIVITY_SERVER_SERVICE_RAW} | jq --exit-status '.spec.ports[0].nodePort' > /dev/null); then
