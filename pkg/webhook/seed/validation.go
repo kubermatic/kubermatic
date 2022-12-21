@@ -235,12 +235,10 @@ func validateEtcdBackupConfiguration(ctx context.Context, seedClient ctrlruntime
 			return errors.New("invalid etcd backup configuration: must define at least one backup destination")
 		}
 
-		if subject.Spec.EtcdBackupRestore.DefaultDestination == "" {
-			return errors.New("invalid etcd backup configuration: no default destination specified")
-		}
-
-		if _, exists := subject.Spec.EtcdBackupRestore.Destinations[subject.Spec.EtcdBackupRestore.DefaultDestination]; !exists {
-			return fmt.Errorf("invalid etcd backup configuration: default destination %q does not exist", subject.Spec.EtcdBackupRestore.DefaultDestination)
+		if subject.Spec.EtcdBackupRestore.DefaultDestination != "" {
+			if _, exists := subject.Spec.EtcdBackupRestore.Destinations[subject.Spec.EtcdBackupRestore.DefaultDestination]; !exists {
+				return fmt.Errorf("invalid etcd backup configuration: default destination %q does not exist", subject.Spec.EtcdBackupRestore.DefaultDestination)
+			}
 		}
 
 		for name, dest := range subject.Spec.EtcdBackupRestore.Destinations {
