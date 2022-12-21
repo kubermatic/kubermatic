@@ -48,11 +48,6 @@ promtail:
       mountPath: /var/log/journal
       readOnly: true
 
-  tolerations:
-  - key: node-role.kubernetes.io/master
-    operator: Exists
-    effect: NoSchedule
-
   config:
     lokiAddress: http://loki:3100/loki/api/v1/push
     client:
