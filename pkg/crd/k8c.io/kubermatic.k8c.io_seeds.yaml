@@ -876,8 +876,6 @@ spec:
                         type: object
                       description: Destinations stores all the possible destinations where the backups for the Seed can be stored. If not empty, it enables automatic backup and restore for the seed.
                       type: object
-                  required:
-                    - defaultDestination
                   type: object
                 exposeStrategy:
                   description: 'Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.'
