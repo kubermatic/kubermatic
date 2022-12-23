@@ -44,6 +44,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/pointer"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -150,10 +151,8 @@ func Add(
 func enqueueExternalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var externalClusterName string
-		separatedList := strings.Split(a.GetNamespace(), "-")
-		if len(separatedList) == 2 {
-			externalClusterName = separatedList[1]
-		}
+		separatedList := strings.Split(a.GetName(), "-")
+		externalClusterName = separatedList[len(separatedList)-1]
 		return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: externalClusterName, Namespace: metav1.NamespaceAll}}}
 	})
 }
@@ -250,7 +249,7 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID},
 		&ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace},
 	); err != nil {
-		return fmt.Errorf("failed to list kubeone secrets in kubermatic namespace: %w", err)
+		return fmt.Errorf("failed to list secrets in kubermatic namespace: %w", err)
 	}
 
 	kubeoneSecrets := []corev1.Secret{}
@@ -269,11 +268,17 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		return err
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
+	KubeOneFinalizerList := []string{
+		kubermaticv1.ExternalClusterKubeOneNamespaceCleanupFinalizer,
+		kubermaticv1.ExternalClusterKubeOneCleanupFinalizer,
 	}
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, kubermaticv1.ExternalClusterKubeOneCleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to add secrets finalizer: %w", err)
+	finalizersToAdd := sets.NewString(KubeOneFinalizerList...).Difference(sets.NewString(externalCluster.GetFinalizers()...))
+	finalizersToAddList := finalizersToAdd.UnsortedList()
+
+	if len(finalizersToAddList) > 0 {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, finalizersToAddList...); err != nil {
+			return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
+		}
 	}
 
 	if !externalCluster.DeletionTimestamp.IsZero() {
@@ -329,6 +334,7 @@ func (r *reconciler) importAction(
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -403,6 +409,21 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 	config, err := getPodLogs(ctx, &succeededPod)
 	if err != nil {
 		return nil, err
+	}
+
+	// verify kubeconfig
+	kubeconfig, err := clientcmd.RESTConfigFromKubeConfig([]byte(config))
+	if err != nil {
+		return nil, err
+	}
+
+	clientset, err := kubernetes.NewForConfig(kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	_, err = clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: 1})
+	if err != nil {
+		return nil, fmt.Errorf("kubeone cluster kubeconfig not valid: %w", err)
 	}
 
 	log.Info("Fetched config from the kubeone pod")
@@ -1136,7 +1157,7 @@ func generateConfigMap(namespace, action string) *corev1.ConfigMap {
 	switch {
 	case action == ImportAction:
 		name = KubeOneImportConfigMap
-		scriptToRun += "kubeone kubeconfig --manifest kubeonemanifest/manifest"
+		scriptToRun += "kubeone kubeconfig --manifest kubeonemanifest/manifest 2> /dev/null"
 	case action == UpgradeControlPlaneAction:
 		name = KubeOneUpgradeConfigMap
 		scriptToRun += "kubeone apply --manifest kubeonemanifest/manifest -y --log-format json"
