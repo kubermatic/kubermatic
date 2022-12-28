@@ -74,7 +74,7 @@ require (
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.10.2
+	helm.sh/helm/v3 v3.10.3
 	k8c.io/kubeone v1.5.3
 	k8c.io/operating-system-manager v1.1.2-0.20221201183812-4f7c5a687353
 	k8c.io/reconciler v0.3.1
