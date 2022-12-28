@@ -4,25 +4,12 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
   name: release-name-grafana
-  namespace: default
----
-# Source: grafana/charts/grafana/templates/tests/test-serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  labels:
-    helm.sh/chart: grafana-6.38.5
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
-    app.kubernetes.io/managed-by: Helm
-  name: release-name-grafana-test
   namespace: default
 ---
 # Source: grafana/charts/grafana/templates/configmap.yaml
@@ -32,10 +19,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
 data:
   grafana.ini: |
@@ -79,43 +66,22 @@ metadata:
   name: release-name-grafana-dashboards-default
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
     dashboard-provider: default
----
-# Source: grafana/charts/grafana/templates/tests/test-configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: release-name-grafana-test
-  namespace: default
-  labels:
-    helm.sh/chart: grafana-6.38.5
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
-    app.kubernetes.io/managed-by: Helm
-data:
-  run.sh: |-
-    @test "Test Health" {
-      url="http://release-name-grafana/api/health"
-
-      code=$(wget --server-response --spider --timeout 90 --tries 10 ${url} 2>&1 | awk '/^  HTTP/{print $2}')
-      [ "$code" == "200" ]
-    }
 ---
 # Source: grafana/charts/grafana/templates/clusterrole.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
   name: release-name-grafana-clusterrole
 rules: []
@@ -126,10 +92,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: release-name-grafana-clusterrolebinding
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
 subjects:
   - kind: ServiceAccount
@@ -147,34 +113,16 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
 rules:
-- apiGroups:      ['extensions']
-  resources:      ['podsecuritypolicies']
-  verbs:          ['use']
-  resourceNames:  [release-name-grafana]
----
-# Source: grafana/charts/grafana/templates/tests/test-role.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: release-name-grafana-test
-  namespace: default
-  labels:
-    helm.sh/chart: grafana-6.38.5
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
-    app.kubernetes.io/managed-by: Helm
-rules:
-- apiGroups:      ['policy']
-  resources:      ['podsecuritypolicies']
-  verbs:          ['use']
-  resourceNames:  [release-name-grafana-test]
+  - apiGroups:      ['extensions']
+    resources:      ['podsecuritypolicies']
+    verbs:          ['use']
+    resourceNames:  [release-name-grafana]
 ---
 # Source: grafana/charts/grafana/templates/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -183,10 +131,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -195,27 +143,6 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: release-name-grafana
-  namespace: default
----
-# Source: grafana/charts/grafana/templates/tests/test-rolebinding.yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: release-name-grafana-test
-  namespace: default
-  labels:
-    helm.sh/chart: grafana-6.38.5
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
-    app.kubernetes.io/managed-by: Helm
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: release-name-grafana-test
-subjects:
-- kind: ServiceAccount
-  name: release-name-grafana-test
   namespace: default
 ---
 # Source: grafana/charts/grafana/templates/headless-service.yaml
@@ -225,10 +152,10 @@ metadata:
   name: release-name-grafana-headless
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   clusterIP: None
@@ -248,10 +175,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -271,10 +198,10 @@ metadata:
   name: release-name-grafana
   namespace: default
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -289,8 +216,8 @@ spec:
         app.kubernetes.io/name: grafana
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: a7d5e18ed19dd1e2c76bc5fa25eb3f16ba8b2106749b6aad9ebba26eff6aa3eb
-        checksum/dashboards-json-config: 9fa262f264958ab0d64a0b13c2c99cda37ce013485c5d0617abb50fdf04987e4
+        checksum/config: 7a05bd9bacbfeb8bdf64c517e1ead0b3530760275cca6cd8b7ccb1d072316e3e
+        checksum/dashboards-json-config: 880d783124a1fd03fa8e8802fd6ba235e6e1a088e3d5ed6fb00b92fedf555731
         checksum/sc-dashboard-provider-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
     spec:
       
@@ -307,7 +234,11 @@ spec:
           securityContext:
             runAsNonRoot: false
             runAsUser: 0
-          command: ["chown", "-R", "472:472", "/var/lib/grafana"]
+          command:
+            - chown
+            - -R
+            - 472:472
+            - /var/lib/grafana
           volumeMounts:
             - name: storage
               mountPath: "/var/lib/grafana"
@@ -326,7 +257,7 @@ spec:
       enableServiceLinks: true
       containers:
         - name: grafana
-          image: "docker.io/grafana/grafana:9.1.5"
+          image: "docker.io/grafana/grafana:9.3.1"
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: config
@@ -378,7 +309,7 @@ spec:
         - name: dashboards-default
           configMap:
             name: release-name-grafana-dashboards-default
-      # nothing
+        
   volumeClaimTemplates:
   - metadata:
       name: storage
@@ -389,16 +320,56 @@ spec:
         requests:
           storage: 10Gi
 ---
+# Source: grafana/charts/grafana/templates/tests/test-serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    helm.sh/chart: grafana-6.48.0
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "9.3.1"
+    app.kubernetes.io/managed-by: Helm
+  name: release-name-grafana-test
+  namespace: default
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+---
+# Source: grafana/charts/grafana/templates/tests/test-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-grafana-test
+  namespace: default
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+  labels:
+    helm.sh/chart: grafana-6.48.0
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "9.3.1"
+    app.kubernetes.io/managed-by: Helm
+data:
+  run.sh: |-
+    @test "Test Health" {
+      url="http://release-name-grafana/api/health"
+
+      code=$(wget --server-response --spider --timeout 90 --tries 10 ${url} 2>&1 | awk '/^  HTTP/{print $2}')
+      [ "$code" == "200" ]
+    }
+---
 # Source: grafana/charts/grafana/templates/tests/test.yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: release-name-grafana-test
   labels:
-    helm.sh/chart: grafana-6.38.5
+    helm.sh/chart: grafana-6.48.0
     app.kubernetes.io/name: grafana
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "9.1.5"
+    app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
   annotations:
     "helm.sh/hook": test-success
@@ -416,7 +387,7 @@ spec:
           name: tests
           readOnly: true
   volumes:
-  - name: tests
-    configMap:
-      name: release-name-grafana-test
+    - name: tests
+      configMap:
+        name: release-name-grafana-test
   restartPolicy: Never

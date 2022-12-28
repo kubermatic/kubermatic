@@ -16,7 +16,7 @@ apiVersion: v2
 description: High Performance, Kubernetes Native Object Storage
 name: minio
 version: v9.9.9-dev
-appVersion: master
+appVersion: RELEASE.2022-09-17T00-09-45Z
 keywords:
 - storage
 - object-storage
@@ -31,4 +31,4 @@ maintainers:
 dependencies:
   - name: minio
     repository: https://charts.min.io/
-    version: 3.6.6
+    version: 4.0.15

@@ -2,7 +2,7 @@
 # Source: consul/charts/consul/templates/server-disruptionbudget.yaml
 # PodDisruptionBudget to prevent degrading the server cluster through
 # voluntary cluster changes.
-apiVersion: policy/v1
+apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: release-name-consul-server
@@ -12,6 +12,7 @@ metadata:
     chart: consul-helm
     heritage: Helm
     release: release-name
+    component: server
 spec:
   maxUnavailable: 1
   selector:
@@ -31,6 +32,7 @@ metadata:
     chart: consul-helm
     heritage: Helm
     release: release-name
+    component: server
 ---
 # Source: consul/charts/consul/templates/server-config-configmap.yaml
 # StatefulSet to run the actual Consul server cluster.
@@ -44,18 +46,35 @@ metadata:
     chart: consul-helm
     heritage: Helm
     release: release-name
+    component: server
 data:
+  server.json: |
+    {
+      "bind_addr": "0.0.0.0",
+      "bootstrap_expect": 3,
+      "client_addr": "0.0.0.0",
+      "connect": {
+        "enabled": true
+      },
+      "datacenter": "dc1",
+      "data_dir": "/consul/data",
+      "domain": "consul",
+      "ports": {
+        "grpc": 8502,
+        "grpc_tls": -1,
+        "serf_lan": 8301
+      },
+      "recursors": [],
+      "retry_join": ["release-name-consul-server.default.svc:8301"],
+      "server": true
+    }
   extra-from-values.json: |-
     {}
     
   ui-config.json: |-
     {
       "ui_config": {
-        "enabled": true,
-        "metrics_provider": "prometheus",
-        "metrics_proxy": {
-          "base_url": "http://prometheus-server"
-        }
+        "enabled": true
       }
     }
   central-config.json: |-
@@ -74,6 +93,7 @@ metadata:
     chart: consul-helm
     heritage: Helm
     release: release-name
+    component: server
 rules: []
 ---
 # Source: consul/charts/consul/templates/server-rolebinding.yaml
@@ -87,6 +107,7 @@ metadata:
     chart: consul-helm
     heritage: Helm
     release: release-name
+    component: server
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -142,10 +163,6 @@ metadata:
     release: release-name
     component: server
   annotations:
-    # This must be set in addition to publishNotReadyAddresses due
-    # to an open issue where it may not work:
-    # https://github.com/kubernetes/kubernetes/issues/58662
-    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
 spec:
   clusterIP: None
   # We want the servers to become available even if they're not ready
@@ -155,6 +172,9 @@ spec:
     - name: http
       port: 8500
       targetPort: 8500
+    - name: grpc
+      port: 8502
+      targetPort: 8502
     - name: serflan-tcp
       protocol: "TCP"
       port: 8301
@@ -244,7 +264,7 @@ spec:
         hasDNS: "true"
       annotations:
         "consul.hashicorp.com/connect-inject": "false"
-        "consul.hashicorp.com/config-checksum": 260d3d20d852dceccaf30d9580cd799eb4cf70b6952ca089313a2779d25348f8
+        "consul.hashicorp.com/config-checksum": 0c3eb6ce33226c599419e7286c447e31765e9161fa21076f45af5b3036ae838f
     spec:
       affinity:
         podAntiAffinity:
@@ -268,9 +288,11 @@ spec:
         - name: config
           configMap:
             name: release-name-consul-server-config
+        - name: extra-config
+          emptyDir: {}
       containers:
         - name: consul
-          image: "docker.io/hashicorp/consul:1.10.3"
+          image: "docker.io/hashicorp/consul:1.14.2"
           env:
             - name: ADVERTISE_IP
               valueFrom:
@@ -284,10 +306,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
             - name: CONSUL_DISABLE_PERM_MGMT
               value: "true"
             
@@ -295,9 +313,7 @@ spec:
             - "/bin/sh"
             - "-ec"
             - |
-              CONSUL_FULLNAME="release-name-consul"
 
-              mkdir -p /consul/extra-config
               cp /consul/config/extra-from-values.json /consul/extra-config/extra-from-values.json
               [ -n "${HOST_IP}" ] && sed -Ei "s|HOST_IP|${HOST_IP?}|g" /consul/extra-config/extra-from-values.json
               [ -n "${POD_IP}" ] && sed -Ei "s|POD_IP|${POD_IP?}|g" /consul/extra-config/extra-from-values.json
@@ -305,29 +321,21 @@ spec:
 
               exec /usr/local/bin/docker-entrypoint.sh consul agent \
                 -advertise="${ADVERTISE_IP}" \
-                -bind=0.0.0.0 \
-                -bootstrap-expect=3 \
-                -client=0.0.0.0 \
                 -config-dir=/consul/config \
-                -datacenter=dc1 \
-                -data-dir=/consul/data \
-                -domain=consul \
-                -hcl="connect { enabled = true }" \
-                -ui \
-                -retry-join="${CONSUL_FULLNAME}-server-0.${CONSUL_FULLNAME}-server.${NAMESPACE}.svc:8301" \
-                -retry-join="${CONSUL_FULLNAME}-server-1.${CONSUL_FULLNAME}-server.${NAMESPACE}.svc:8301" \
-                -retry-join="${CONSUL_FULLNAME}-server-2.${CONSUL_FULLNAME}-server.${NAMESPACE}.svc:8301" \
-                -serf-lan-port=8301 \
-                -config-file=/consul/extra-config/extra-from-values.json \
-                -server
+                -config-file=/consul/extra-config/extra-from-values.json
           volumeMounts:
             - name: data-default
               mountPath: /consul/data
             - name: config
               mountPath: /consul/config
+            - name: extra-config
+              mountPath: /consul/extra-config
           ports:
             - name: http
               containerPort: 8500
+            - name: grpc
+              containerPort: 8502
+              protocol: "TCP"
             - name: serflan-tcp
               containerPort: 8301
               protocol: "TCP"
@@ -381,6 +389,7 @@ spec:
         resources:
           requests:
             storage: 10Gi
+        storageClassName: kubermatic-fast
 ---
 # Source: consul/charts/consul/templates/tests/test-runner.yaml
 apiVersion: v1
@@ -398,7 +407,7 @@ metadata:
 spec:
   containers:
     - name: consul-test
-      image: "docker.io/hashicorp/consul:1.10.3"
+      image: "docker.io/hashicorp/consul:1.14.2"
       env:
         - name: HOST_IP
           valueFrom:

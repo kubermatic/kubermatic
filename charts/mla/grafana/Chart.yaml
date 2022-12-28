@@ -13,7 +13,8 @@
 # limitations under the License.
 
 apiVersion: v2
-appVersion: 9.1.5
+version: v9.9.9-dev
+appVersion: 9.3.1
 description: The leading tool for querying and visualizing time series and metrics.
 home: https://grafana.net
 icon: https://raw.githubusercontent.com/grafana/grafana/master/public/img/logo_transparent_400x.png
@@ -22,8 +23,7 @@ name: grafana
 sources:
 - https://github.com/grafana/grafana
 type: application
-version: 6.38.5
 dependencies:
   - name: grafana
     repository: https://grafana.github.io/helm-charts
-    version: 6.38.5
+    version: 6.48.0

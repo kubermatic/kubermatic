@@ -17,6 +17,14 @@ consul:
 
   # Holds values that affect multiple components of the chart.
   global:
+    enterpriseLicense:
+      # The name of the Kubernetes secret that holds the enterprise license.
+      # The secret must be in the same namespace that Consul is installed into.
+      secretName: null
+      # The key within the Kubernetes secret that holds the enterprise license.
+      secretKey: null
+      # Manages license autoload. Required in Consul 1.10.0+, 1.9.7+ and 1.8.12+.
+      enableLicenseAutoload: true
     # The main enabled/disabled setting. If true, servers,
     # clients, Consul DNS and the Consul UI will be enabled. Each component can override
     # this default via its component-specific "enabled" config. If false, no components
@@ -90,7 +98,7 @@ consul:
     # image: "hashicorp/consul-enterprise:1.10.0-ent"
     # ```
     # @default: hashicorp/consul:<latest version>
-    image: "docker.io/hashicorp/consul:1.10.3"
+    image: "docker.io/hashicorp/consul:1.14.2"
 
     # Array of objects containing image pull secret names that will be applied to each service account.
     # This can be used to reference image pull secrets if using a custom consul or consul-k8s-control-plane Docker image.
@@ -342,14 +350,6 @@ consul:
     # has been elected. If you are not using an enterprise image or if you plan to
     # introduce the license key via another route, then set these fields to null.
     # Note: the job to apply license runs on both Helm installs and upgrades.
-    enterpriseLicense:
-      # The name of the Kubernetes secret that holds the enterprise license.
-      # The secret must be in the same namespace that Consul is installed into.
-      secretName: null
-      # The key within the Kubernetes secret that holds the enterprise license.
-      secretKey: null
-      # Manages license autoload. Required in Consul 1.10.0+, 1.9.7+ and 1.8.12+.
-      enableLicenseAutoload: true
     # A Kubernetes secret containing a certificate & key for the server agents to use
     # for TLS communication within the Consul cluster. Cert needs to be provided with
     # additional DNS name SANs so that it will work within the Kubernetes cluster:

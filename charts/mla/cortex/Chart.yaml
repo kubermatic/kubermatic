@@ -14,7 +14,7 @@
 
 apiVersion: v2
 version: v9.9.9-dev
-appVersion: v1.10.0
+appVersion: v1.13.1
 description: 'Horizontally scalable, highly available, multi-tenant, long term Prometheus.'
 home: https://cortexmetrics.io/
 kubeVersion: ^1.19.0-0
@@ -24,42 +24,42 @@ sources:
 dependencies:
 - name: cortex
   repository: https://cortexproject.github.io/cortex-helm-chart
-  version: 0.7.0
-- alias: memcached
-  condition: cortex.memcached.enabled
-  name: memcached
+  version: 1.7.0
+- name: memcached
+  alias: memcached
+  version: 6.3.1
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
-- alias: memcached-index-read
-  condition: cortex.memcached-index-read.enabled
-  name: memcached
+  condition: memcached.enabled
+- name: memcached
+  alias: memcached-index-read
+  version: 6.3.1
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
-- alias: memcached-index-write
-  condition: cortex.memcached-index-write.enabled
-  name: memcached
+  condition: memcached-index-read.enabled
+- name: memcached
+  alias: memcached-index-write
+  version: 6.3.1
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
-- alias: memcached-frontend
-  condition: cortex.memcached-frontend.enabled
-  name: memcached
+  condition: memcached-index-write.enabled
+- name: memcached
+  alias: memcached-frontend
+  version: 6.3.1
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
-- alias: memcached-blocks-index
-  name: memcached
-  repository: https://charts.bitnami.com/bitnami
-  tags:
-  - blocks-storage-memcached
-  version: 5.15.14
-- alias: memcached-blocks
-  name: memcached
+  condition: memcached-frontend.enabled
+- name: memcached
+  alias: memcached-blocks-index
+  version: 6.3.1
   repository: https://charts.bitnami.com/bitnami
   tags:
-  - blocks-storage-memcached
-  version: 5.15.14
-- alias: memcached-blocks-metadata
-  name: memcached
+    - blocks-storage-memcached
+- name: memcached
+  alias: memcached-blocks
+  version: 6.3.1
   repository: https://charts.bitnami.com/bitnami
   tags:
-  - blocks-storage-memcached
-  version: 5.15.14
+    - blocks-storage-memcached
+- name: memcached
+  alias: memcached-blocks-metadata
+  version: 6.3.1
+  repository: https://charts.bitnami.com/bitnami
+  tags:
+    - blocks-storage-memcached

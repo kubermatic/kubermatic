@@ -1,27 +1,27 @@
 dependencies:
 - name: cortex
   repository: https://cortexproject.github.io/cortex-helm-chart
-  version: 0.7.0
+  version: 1.7.0
 - name: memcached
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
+  version: 6.3.1
 - name: memcached
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
+  version: 6.3.1
 - name: memcached
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
+  version: 6.3.1
 - name: memcached
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
+  version: 6.3.1
 - name: memcached
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
+  version: 6.3.1
 - name: memcached
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
+  version: 6.3.1
 - name: memcached
   repository: https://charts.bitnami.com/bitnami
-  version: 5.15.14
-digest: sha256:0531333e3a8bb0f46ce31cbd580f8e731f649437fe1003c1ae88ed46f48b273e
-generated: "2022-06-03T10:29:40.596964+05:00"
+  version: 6.3.1
+digest: sha256:ff8edee24ed15583e386eb601903eea5f862f688bf41de84054a395678bbaaba
+generated: "2022-12-14T15:03:58.703975471+01:00"

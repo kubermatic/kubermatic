@@ -97,6 +97,7 @@ loki-distributed:
         reject_old_samples: true
         reject_old_samples_max_age: 168h
         max_cache_freshness_per_query: 10m
+        split_queries_by_interval: 15m
       schema_config:
         configs:
           - chunks:
@@ -130,7 +131,6 @@ loki-distributed:
       query_range:
         align_queries_with_step: true
         max_retries: 5
-        split_queries_by_interval: 15m
         cache_results: true
         results_cache:
           cache:
@@ -252,6 +252,8 @@ loki-distributed:
     extraVolumeMounts: []
     # -- Volumes to add to the ingester pods
     extraVolumes: []
+    # required for pdb
+    maxUnavailable: 1
     # -- Resource requests and limits for the ingester
     resources: {}
     # -- Grace period to allow the ingester to shutdown before it is killed. Especially for the ingestor,
@@ -304,6 +306,8 @@ loki-distributed:
       targetCPUUtilizationPercentage: 60
       # -- Target memory utilisation percentage for the distributor
       targetMemoryUtilizationPercentage:
+    # required for pdb
+    maxUnavailable: 1
     image:
       # -- The Docker registry for the distributor image. Overrides `loki.image.registry`
       registry: null

@@ -20,7 +20,9 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
@@ -30,6 +32,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -233,6 +237,17 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
+	v22 := semverlib.MustParse("2.22.0")
+
+	if release != nil && release.Version.LessThan(v22) && !chart.Version.LessThan(v22) {
+		sublogger.Warn("Installation process will temporarily remove and then upgrade memcached instances used by Cortex.")
+
+		err = upgradeCortexStatefulsets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		if err != nil {
+			return fmt.Errorf("failed to prepare nginx-ingress-controller for upgrade: %w", err)
+		}
+	}
+
 	runtimeConfigMap := &corev1.ConfigMap{
 		Data: map[string]string{mla.RuntimeConfigFileName: "overrides:\n"},
 	}
@@ -385,4 +400,83 @@ func deployMLAIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	logger.Info("✅ Success.")
 
 	return nil
+}
+
+func upgradeCortexStatefulsets(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	helmClient helm.Client,
+	opt stack.DeployOptions,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s: %s detected, performing upgrade to %s…", release.Name, release.Version.String(), chart.Version.String())
+	// 1: find the old deployment
+	logger.Info("Backing up old ingress deployment…")
+
+	statefulsetsList := &unstructured.UnstructuredList{}
+	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Kind:    "StatefulSetList",
+		Version: "v1",
+	})
+
+	memcachedBlocksSts, err := getMemcachedStatefulsets(ctx, kubeClient, release, "memcached-blocks")
+	if err != nil {
+		return err
+	}
+	memcachedBlocksIndexSts, err := getMemcachedStatefulsets(ctx, kubeClient, release, "memcached-blocks-index")
+	if err != nil {
+		return err
+	}
+	memcachedBlocksMetadataSts, err := getMemcachedStatefulsets(ctx, kubeClient, release, "memcached-blocks-metadata")
+	if err != nil {
+		return err
+	}
+
+	statefulsetsList.Items = append(statefulsetsList.Items, memcachedBlocksSts.Items...)
+	statefulsetsList.Items = append(statefulsetsList.Items, memcachedBlocksIndexSts.Items...)
+	statefulsetsList.Items = append(statefulsetsList.Items, memcachedBlocksMetadataSts.Items...)
+
+	// 2: store the deployment for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", CortexReleaseName, backupTS)
+	logger.Infof("Attempting to store the statefulsets in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, statefulsetsList.Items); err != nil {
+		return fmt.Errorf("failed to back up the statefulsets, it is not removed: %w", err)
+	}
+
+	// 3: delete the deployment
+	logger.Info("Deleting the statefulsets from the cluster")
+	for _, obj := range statefulsetsList.Items {
+		if err := kubeClient.Delete(ctx, &obj); err != nil {
+			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
+		}
+	}
+	return nil
+}
+
+func getMemcachedStatefulsets(
+	ctx context.Context,
+	kubeClient ctrlruntimeclient.Client,
+	release *helm.Release,
+	appName string,
+) (*unstructured.UnstructuredList, error) {
+	statefulsetsList := &unstructured.UnstructuredList{}
+	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Kind:    "StatefulSetList",
+		Version: "v1",
+	})
+
+	memcachedMatcher := ctrlruntimeclient.MatchingLabels{
+		"app.kubernetes.io/name":       appName,
+		"app.kubernetes.io/managed-by": "Helm",
+		"app.kubernetes.io/instance":   release.Name,
+	}
+	if err := kubeClient.List(ctx, statefulsetsList, ctrlruntimeclient.InNamespace(CortexNamespace), memcachedMatcher); err != nil {
+		return nil, fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
+	}
+	return statefulsetsList, nil
 }
