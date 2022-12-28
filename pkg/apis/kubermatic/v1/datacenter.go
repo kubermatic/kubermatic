@@ -529,14 +529,14 @@ type DatacenterSpecDigitalocean struct {
 // DatacenterSpecOpenstack describes an OpenStack datacenter.
 type DatacenterSpecOpenstack struct {
 	AuthURL          string `json:"authURL"`
-	AvailabilityZone string `json:"availabilityZone"`
+	AvailabilityZone string `json:"availabilityZone,omitempty"`
 	Region           string `json:"region"`
 	// Optional
 	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"` //nolint:tagliatelle
 	// Optional
 	EnforceFloatingIP bool `json:"enforceFloatingIP,omitempty"`
 	// Used for automatic network creation
-	DNSServers []string `json:"dnsServers"`
+	DNSServers []string `json:"dnsServers,omitempty"`
 	// Images to use for each supported operating system.
 	Images ImageList `json:"images"`
 	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
@@ -548,8 +548,11 @@ type DatacenterSpecOpenstack struct {
 	UseOctavia *bool `json:"useOctavia,omitempty"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// This setting defaults to false.
-	TrustDevicePath      *bool                         `json:"trustDevicePath,omitempty"`
-	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"nodeSizeRequirements"`
+	TrustDevicePath *bool `json:"trustDevicePath,omitempty"`
+	// Optional: Restrict the allowed VM configurations that can be chosen in
+	// the KKP dashboard. This setting does not affect the validation webhook for
+	// MachineDeployments.
+	NodeSizeRequirements *OpenstackNodeSizeRequirements `json:"nodeSizeRequirements,omitempty"`
 	// Optional: List of enabled flavors for the given datacenter
 	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
 	// Optional: defines if the IPv6 is enabled for the datacenter
@@ -558,9 +561,9 @@ type DatacenterSpecOpenstack struct {
 
 type OpenstackNodeSizeRequirements struct {
 	// VCPUs is the minimum required amount of (virtual) CPUs
-	MinimumVCPUs int `json:"minimumVCPUs"` //nolint:tagliatelle
+	MinimumVCPUs int `json:"minimumVCPUs,omitempty"` //nolint:tagliatelle
 	// MinimumMemory is the minimum required amount of memory, measured in MB
-	MinimumMemory int `json:"minimumMemory"`
+	MinimumMemory int `json:"minimumMemory,omitempty"`
 }
 
 // DatacenterSpecAzure describes an Azure cloud datacenter.

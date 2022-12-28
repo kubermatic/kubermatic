@@ -208,6 +208,9 @@ spec:
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
           # This setting defaults to true.
           manageSecurityGroups: true
+          # Optional: Restrict the allowed VM configurations that can be chosen in
+          # the KKP dashboard. This setting does not affect the validation webhook for
+          # MachineDeployments.
           nodeSizeRequirements:
             # MinimumMemory is the minimum required amount of memory, measured in MB
             minimumMemory: 0

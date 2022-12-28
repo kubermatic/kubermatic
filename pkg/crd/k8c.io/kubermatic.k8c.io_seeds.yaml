@@ -369,6 +369,7 @@ spec:
                                 description: 'Optional: Gets mapped to the "manage-security-groups" setting in the cloud config. This setting defaults to true.'
                                 type: boolean
                               nodeSizeRequirements:
+                                description: 'Optional: Restrict the allowed VM configurations that can be chosen in the KKP dashboard. This setting does not affect the validation webhook for MachineDeployments.'
                                 properties:
                                   minimumMemory:
                                     description: MinimumMemory is the minimum required amount of memory, measured in MB
@@ -376,9 +377,6 @@ spec:
                                   minimumVCPUs:
                                     description: VCPUs is the minimum required amount of (virtual) CPUs
                                     type: integer
-                                required:
-                                  - minimumMemory
-                                  - minimumVCPUs
                                 type: object
                               region:
                                 type: string
@@ -390,10 +388,7 @@ spec:
                                 type: boolean
                             required:
                               - authURL
-                              - availabilityZone
-                              - dnsServers
                               - images
-                              - nodeSizeRequirements
                               - region
                             type: object
                           operatingSystemProfiles:

@@ -177,6 +177,10 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							TrustDevicePath:      pointer.Bool(false),
 							EnabledFlavors:       []string{},
 							IPv6Enabled:          pointer.Bool(false),
+							NodeSizeRequirements: &kubermaticv1.OpenstackNodeSizeRequirements{
+								MinimumVCPUs:  0,
+								MinimumMemory: 0,
+							},
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
