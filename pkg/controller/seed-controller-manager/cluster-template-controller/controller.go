@@ -156,16 +156,16 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 
 		for i := 0; i < int(instance.Spec.Replicas); i++ {
 			if err := r.createCluster(ctx, log, template, instance); err != nil {
-				created := int64(i + 1)
+				created := int64(i)
 				totalReplicas := instance.Spec.Replicas
 
-				if err := r.patchInstance(ctx, instance, func(i *kubermaticv1.ClusterTemplateInstance) {
+				if patchErr := r.patchInstance(ctx, instance, func(i *kubermaticv1.ClusterTemplateInstance) {
 					i.Spec.Replicas = totalReplicas - created
-				}); err != nil {
-					return err
+				}); patchErr != nil {
+					return fmt.Errorf("error patching cluster template instance (%v), after cluster creation fail: %w", patchErr, err)
 				}
 
-				return fmt.Errorf("failed to create desired number of clusters. Created %d of %d", created, totalReplicas)
+				return fmt.Errorf("failed to create desired number of clusters. Created %d of %d: %w", created, totalReplicas, err)
 			}
 		}
 	}
