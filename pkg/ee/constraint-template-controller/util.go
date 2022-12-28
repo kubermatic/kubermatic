@@ -65,7 +65,7 @@ func filterProvider(ct *kubermaticv1.ConstraintTemplate, ctList []kubermaticv1.C
 	}
 	var filteredList []kubermaticv1.Cluster
 
-	providersSet := sets.NewString(ct.Spec.Selector.Providers...)
+	providersSet := sets.New[string](ct.Spec.Selector.Providers...)
 
 	for _, cluster := range ctList {
 		name, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)

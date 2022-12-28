@@ -49,7 +49,7 @@ func TestMeteringReconciling(t *testing.T) {
 		seedToReconcile string
 		configuration   *kubermaticv1.KubermaticConfiguration
 		seedsOnMaster   []string
-		syncedSeeds     sets.String // seeds where the seed-sync-controller copied the Seed CR over already
+		syncedSeeds     sets.Set[string] // seeds where the seed-sync-controller copied the Seed CR over already
 		assertion       func(test *testcase, reconciler *Reconciler) error
 	}
 
@@ -59,7 +59,7 @@ func TestMeteringReconciling(t *testing.T) {
 			seedToReconcile: "seed-with-metering-config",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"seed-with-metering-config"},
-			syncedSeeds:     sets.NewString("seed-with-metering-config"),
+			syncedSeeds:     sets.New("seed-with-metering-config"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
@@ -86,7 +86,7 @@ func TestMeteringReconciling(t *testing.T) {
 			seedToReconcile: "seed-with-metering-config",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"seed-with-metering-config"},
-			syncedSeeds:     sets.NewString("seed-with-metering-config"),
+			syncedSeeds:     sets.New("seed-with-metering-config"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
@@ -132,7 +132,7 @@ func TestMeteringReconciling(t *testing.T) {
 			seedToReconcile: "seed-with-metering-config",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"seed-with-metering-config"},
-			syncedSeeds:     sets.NewString("seed-with-metering-config"),
+			syncedSeeds:     sets.New("seed-with-metering-config"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 

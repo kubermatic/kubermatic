@@ -106,5 +106,5 @@ func SkipCRDOnCluster(crd ctrlruntimeclient.Object, kind ClusterKind) bool {
 		return false
 	}
 
-	return !sets.NewString(strings.Split(location, ",")...).Has(string(kind))
+	return !sets.New[string](strings.Split(location, ",")...).Has(string(kind))
 }

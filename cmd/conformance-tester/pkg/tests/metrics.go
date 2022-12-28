@@ -89,7 +89,7 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		return fmt.Errorf("failed to get prometheus metrics with data status: %s", data.Status)
 	}
 
-	expected := sets.NewString(
+	expected := sets.New(
 		"etcd_disk_backend_defrag_duration_seconds_sum",
 		"kube_daemonset_labels",
 		"kubelet_runtime_operations_duration_seconds_count",
@@ -107,11 +107,11 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		expected.Insert("scheduler_scheduling_attempt_duration_seconds_count")
 	}
 
-	fetched := sets.NewString(data.Data...)
+	fetched := sets.New(data.Data...)
 	missing := expected.Difference(fetched)
 
 	if missing.Len() > 0 {
-		return fmt.Errorf("failed to get all expected metrics: got: %v, %v are missing", fetched.List(), missing.List())
+		return fmt.Errorf("failed to get all expected metrics: got: %v, %v are missing", sets.List(fetched), sets.List(missing))
 	}
 
 	log.Info("Successfully validated user cluster metrics.")

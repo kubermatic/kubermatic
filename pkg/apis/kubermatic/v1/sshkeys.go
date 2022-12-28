@@ -67,15 +67,15 @@ type SSHKeySpec struct {
 }
 
 func (sk *UserSSHKey) IsUsedByCluster(clustername string) bool {
-	return sets.NewString(sk.Spec.Clusters...).Has(clustername)
+	return sets.New(sk.Spec.Clusters...).Has(clustername)
 }
 
 func (sk *UserSSHKey) RemoveFromCluster(clustername string) {
-	sk.Spec.Clusters = sets.NewString(sk.Spec.Clusters...).Delete(clustername).List()
+	sk.Spec.Clusters = sets.List(sets.New(sk.Spec.Clusters...).Delete(clustername))
 }
 
 func (sk *UserSSHKey) AddToCluster(clustername string) {
-	sk.Spec.Clusters = sets.NewString(sk.Spec.Clusters...).Insert(clustername).List()
+	sk.Spec.Clusters = sets.List(sets.New(sk.Spec.Clusters...).Insert(clustername))
 }
 
 // +kubebuilder:object:generate=true

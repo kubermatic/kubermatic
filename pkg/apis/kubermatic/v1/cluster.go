@@ -91,7 +91,7 @@ const (
 
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
 // as they are security relevant.
-var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey, IsCredentialPresetLabelKey)
+var ProtectedClusterLabels = sets.New(WorkerNameLabelKey, ProjectIDLabelKey, IsCredentialPresetLabelKey)
 
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true

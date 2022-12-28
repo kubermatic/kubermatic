@@ -73,7 +73,7 @@ func assertRoleIsGone(t *testing.T, client *iam.Client, roleName string) {
 	}
 }
 
-func assertRolePolicies(ctx context.Context, t *testing.T, client *iam.Client, roleName string, expected sets.String) {
+func assertRolePolicies(ctx context.Context, t *testing.T, client *iam.Client, roleName string, expected sets.Set[string]) {
 	listPoliciesOut, err := client.ListRolePolicies(ctx, &iam.ListRolePoliciesInput{
 		RoleName: pointer.String(roleName),
 	})
@@ -82,7 +82,7 @@ func assertRolePolicies(ctx context.Context, t *testing.T, client *iam.Client, r
 		return
 	}
 
-	current := sets.NewString()
+	current := sets.New[string]()
 
 	for _, policyName := range listPoliciesOut.PolicyNames {
 		current.Insert(policyName)
@@ -290,7 +290,7 @@ func TestDeleteRole(t *testing.T) {
 		}
 
 		// assert that our policy (in fact, for this test case, _all_ policies) was removed from the role
-		assertRolePolicies(ctx, t, cs.IAM, roleName, sets.NewString())
+		assertRolePolicies(ctx, t, cs.IAM, roleName, sets.New[string]())
 	})
 }
 
@@ -359,6 +359,6 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 		}
 
 		// assert that our policy (in fact, for this test case, _all_ policies) was removed from the role
-		assertRolePolicies(ctx, t, cs.IAM, roleName, sets.NewString())
+		assertRolePolicies(ctx, t, cs.IAM, roleName, sets.New[string]())
 	})
 }

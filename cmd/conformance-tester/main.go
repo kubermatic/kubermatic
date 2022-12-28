@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -81,11 +82,11 @@ func main() {
 	// say hello
 	cli.Hello(log, "Conformance Tests", true, nil)
 	log.Infow("Runner configuration",
-		"providers", opts.Providers.List(),
-		"operatingsystems", opts.Distributions.List(),
+		"providers", sets.List(opts.Providers),
+		"operatingsystems", sets.List(opts.Distributions),
 		"versions", opts.Versions,
-		"containerruntimes", opts.ContainerRuntimes.List(),
-		"tests", opts.Tests.List(),
+		"containerruntimes", sets.List(opts.ContainerRuntimes),
+		"tests", sets.List(opts.Tests),
 		"osm", opts.OperatingSystemManagerEnabled,
 		"dualstack", opts.DualStackEnabled,
 		"konnectivity", opts.KonnectivityEnabled,
@@ -113,9 +114,9 @@ func main() {
 
 	// determine what's to do
 	scenarios, err := scenarios.NewGenerator().
-		WithCloudProviders(opts.Providers.List()...).
-		WithOperatingSystems(opts.Distributions.List()...).
-		WithContainerRuntimes(opts.ContainerRuntimes.List()...).
+		WithCloudProviders(sets.List(opts.Providers)...).
+		WithOperatingSystems(sets.List(opts.Distributions)...).
+		WithContainerRuntimes(sets.List(opts.ContainerRuntimes)...).
 		WithOSM(opts.OperatingSystemManagerEnabled).
 		WithDualstack(opts.DualStackEnabled).
 		WithVersions(opts.Versions...).

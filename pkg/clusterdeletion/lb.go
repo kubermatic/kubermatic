@@ -166,9 +166,9 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	return deletedLoadBalancers.Len() > 0, nil
 }
 
-func parseStringSet(list string) sets.String {
+func parseStringSet(list string) sets.Set[string] {
 	items := strings.Split(list, ",")
-	s := sets.NewString()
+	s := sets.New[string]()
 
 	for _, item := range items {
 		if len(item) > 0 {
@@ -179,6 +179,6 @@ func parseStringSet(list string) sets.String {
 	return s
 }
 
-func encodeStringSet(s sets.String) string {
-	return strings.Join(s.List(), ",")
+func encodeStringSet(s sets.Set[string]) string {
+	return strings.Join(sets.List(s), ",")
 }

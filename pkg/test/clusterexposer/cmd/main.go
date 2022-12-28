@@ -52,7 +52,7 @@ TODO...
 )
 
 var (
-	requiredFlags = sets.NewString(kubeconfigInner, kubeconfigOuter, buildIDFlag)
+	requiredFlags = sets.New[string](kubeconfigInner, kubeconfigOuter, buildIDFlag)
 
 	kubeconfigInnerFile = ""
 	kubeconfigOuterFile = ""

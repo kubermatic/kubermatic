@@ -559,7 +559,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 			if ok, val := getArgValue(cmd.Args, "--controllers"); ok {
 				controllers := strings.Split(val, ",")
 				logger.Debugw("cloud controllers disabled in controller-manager deployment", "controllers", controllers)
-				return ready && sets.NewString(controllers...).HasAll("-cloud-node-lifecycle", "-route", "-service")
+				return ready && sets.New(controllers...).HasAll("-cloud-node-lifecycle", "-route", "-service")
 			}
 		}
 	}

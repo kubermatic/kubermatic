@@ -48,7 +48,7 @@ import (
 var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider.
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
-	azureLoadBalancerSKUTypes = sets.NewString("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
+	azureLoadBalancerSKUTypes = sets.New("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
 )
 
 const (
@@ -132,9 +132,9 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 	if spec.CNIPlugin != nil {
 		if !cni.GetSupportedCNIPlugins().Has(spec.CNIPlugin.Type.String()) {
-			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "type"), spec.CNIPlugin.Type.String(), cni.GetSupportedCNIPlugins().List()))
+			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "type"), spec.CNIPlugin.Type.String(), sets.List(cni.GetSupportedCNIPlugins())))
 		} else if versions, err := cni.GetAllowedCNIPluginVersions(spec.CNIPlugin.Type); err != nil || !versions.Has(spec.CNIPlugin.Version) {
-			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "version"), spec.CNIPlugin.Version, versions.List()))
+			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("cniPlugin", "version"), spec.CNIPlugin.Version, sets.List(versions)))
 		}
 
 		// Dual-stack is not supported on Canal < v3.22
@@ -909,7 +909,7 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 		}
 	}
 	if !azureLoadBalancerSKUTypes.Has(string(spec.LoadBalancerSKU)) {
-		return fmt.Errorf("azure LB SKU cannot be %q, allowed values are %v", spec.LoadBalancerSKU, azureLoadBalancerSKUTypes.List())
+		return fmt.Errorf("azure LB SKU cannot be %q, allowed values are %v", spec.LoadBalancerSKU, sets.List(azureLoadBalancerSKUTypes))
 	}
 	if spec.NodePortsAllowedIPRange != "" {
 		if _, _, err := net.ParseCIDR(spec.NodePortsAllowedIPRange); err != nil {
@@ -1056,7 +1056,7 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 }
 
 func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
-	if !sets.NewString("docker", "containerd").Has(spec.ContainerRuntime) {
+	if !sets.New("docker", "containerd").Has(spec.ContainerRuntime) {
 		return fmt.Errorf("container runtime not supported: %s", spec.ContainerRuntime)
 	}
 

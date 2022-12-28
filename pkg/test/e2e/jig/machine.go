@@ -263,7 +263,7 @@ func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlru
 		}
 
 		readyNodeCount := 0
-		unready := sets.NewString()
+		unready := sets.New[string]()
 		for _, node := range nodeList.Items {
 			if kubernetes.IsNodeReady(&node) {
 				readyNodeCount++
@@ -273,7 +273,7 @@ func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlru
 		}
 
 		if readyNodeCount != j.replicas {
-			return fmt.Errorf("%d of %d nodes are ready (unready: %v)", readyNodeCount, j.replicas, unready.List()), nil
+			return fmt.Errorf("%d of %d nodes are ready (unready: %v)", readyNodeCount, j.replicas, sets.List(unready)), nil
 		}
 
 		return nil, nil
@@ -291,7 +291,7 @@ func (j *MachineJig) WaitForReadyPods(ctx context.Context, clusterClient ctrlrun
 			return errors.New("no pods found"), nil
 		}
 
-		unready := sets.NewString()
+		unready := sets.New[string]()
 		for _, pod := range pods.Items {
 			if !podIsReadyOrCompleted(&pod) {
 				unready.Insert(pod.Name)
@@ -299,7 +299,7 @@ func (j *MachineJig) WaitForReadyPods(ctx context.Context, clusterClient ctrlrun
 		}
 
 		if unready.Len() > 0 {
-			return fmt.Errorf("not all pods are ready: %v", unready.List()), nil
+			return fmt.Errorf("not all pods are ready: %v", sets.List(unready)), nil
 		}
 
 		return nil, nil

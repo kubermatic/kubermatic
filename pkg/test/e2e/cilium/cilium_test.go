@@ -305,7 +305,7 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 			return errors.New("no Pods found"), nil
 		}
 
-		unready := sets.NewString()
+		unready := sets.New[string]()
 		for _, pod := range pods.Items {
 			ready := false
 			for _, c := range pod.Status.Conditions {
@@ -320,7 +320,7 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 		}
 
 		if unready.Len() > 0 {
-			return fmt.Errorf("not all Pods are ready: %v", unready.List()), nil
+			return fmt.Errorf("not all Pods are ready: %v", sets.List(unready)), nil
 		}
 
 		return nil, nil

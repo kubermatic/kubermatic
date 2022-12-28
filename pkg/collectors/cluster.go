@@ -96,9 +96,9 @@ func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	kubernetesLabels := sets.NewString()
+	kubernetesLabels := sets.New[string]()
 	for _, cluster := range clusters.Items {
-		kubernetesLabels = kubernetesLabels.Union(sets.StringKeySet(cluster.Labels))
+		kubernetesLabels = kubernetesLabels.Union(sets.KeySet(cluster.Labels))
 	}
 
 	prometheusLabels := convertToPrometheusLabels(kubernetesLabels)
@@ -112,7 +112,7 @@ func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, kubernetesLabels sets.String, labelsGaugeVec *prometheus.GaugeVec) {
+func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, kubernetesLabels sets.Set[string], labelsGaugeVec *prometheus.GaugeVec) {
 	ch <- prometheus.MustNewConstMetric(
 		cc.clusterCreated,
 		prometheus.GaugeValue,
@@ -144,8 +144,8 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 	// assemble the labels for this cluster, in the order given by kubernetesLabels, but
 	// taking special care of label key conflicts
 	clusterLabels := []string{c.Name}
-	usedLabels := sets.NewString()
-	for _, key := range kubernetesLabels.List() {
+	usedLabels := sets.New[string]()
+	for _, key := range sets.List(kubernetesLabels) {
 		prometheusLabel := convertToPrometheusLabel(key)
 		if !usedLabels.Has(prometheusLabel) {
 			clusterLabels = append(clusterLabels, c.Labels[key])

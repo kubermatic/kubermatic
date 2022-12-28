@@ -73,7 +73,7 @@ func checkRangeAllocation(ips []string, poolCIDR string, allocationRange int) er
 	return nil
 }
 
-func calculateRangeFreeIPsFromDatacenterPool(poolCIDR string, dcIPAMPoolUsageMap sets.String) ([]string, error) {
+func calculateRangeFreeIPsFromDatacenterPool(poolCIDR string, dcIPAMPoolUsageMap sets.Set[string]) ([]string, error) {
 	rangeFreeIPs := []string{}
 
 	ip, ipNet, err := net.ParseCIDR(poolCIDR)
@@ -90,7 +90,7 @@ func calculateRangeFreeIPsFromDatacenterPool(poolCIDR string, dcIPAMPoolUsageMap
 	return rangeFreeIPs, nil
 }
 
-func findFirstFreeRangesOfPool(poolName, poolCIDR string, allocationRange int, dcIPAMPoolUsageMap sets.String) ([]string, error) {
+func findFirstFreeRangesOfPool(poolName, poolCIDR string, allocationRange int, dcIPAMPoolUsageMap sets.Set[string]) ([]string, error) {
 	addressRanges := []string{}
 
 	rangeFreeIPs, err := calculateRangeFreeIPsFromDatacenterPool(poolCIDR, dcIPAMPoolUsageMap)

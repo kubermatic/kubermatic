@@ -67,7 +67,7 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 			return nil, fmt.Errorf("failed to list controlplane pods: %w", err)
 		}
 
-		unready := sets.NewString()
+		unready := sets.New[string]()
 		for _, pod := range controlPlanePods.Items {
 			if !util.PodIsReady(&pod) {
 				unready.Insert(pod.Name)
@@ -78,7 +78,7 @@ func waitForControlPlane(ctx context.Context, log *zap.SugaredLogger, opts *ctyp
 			return nil, nil
 		}
 
-		return fmt.Errorf("not all Pods are ready: %v", unready.List()), nil
+		return fmt.Errorf("not all Pods are ready: %v", sets.List(unready)), nil
 	})
 	// Timeout or other error
 	if err != nil {
@@ -119,7 +119,7 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 			return fmt.Errorf("failed to list Pods in user cluster: %w", err), nil
 		}
 
-		unready := sets.NewString()
+		unready := sets.New[string]()
 		for _, pod := range podList.Items {
 			// Ignore pods failing kubelet admission (KKP #6185)
 			if !util.PodIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod, log) {
@@ -131,7 +131,7 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 			return nil, nil
 		}
 
-		return fmt.Errorf("not all Pods are ready: %v", unready.List()), nil
+		return fmt.Errorf("not all Pods are ready: %v", sets.List(unready)), nil
 	})
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 			return fmt.Errorf("failed to list machines: %w", err), nil
 		}
 
-		missingMachines := sets.NewString()
+		missingMachines := sets.New[string]()
 		for _, machine := range machineList.Items {
 			if machine.Status.NodeRef == nil || machine.Status.NodeRef.Name == "" {
 				missingMachines.Insert(machine.Name)
@@ -167,7 +167,7 @@ func waitForMachinesToJoinCluster(ctx context.Context, log *zap.SugaredLogger, c
 			return nil, nil
 		}
 
-		return fmt.Errorf("not all machines have joined: %v", missingMachines.List()), nil
+		return fmt.Errorf("not all machines have joined: %v", sets.List(missingMachines)), nil
 	})
 
 	elapsed := time.Since(startTime)
@@ -192,7 +192,7 @@ func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client c
 			return fmt.Errorf("failed to list nodes: %w", err), nil
 		}
 
-		unready := sets.NewString()
+		unready := sets.New[string]()
 		for _, node := range nodeList.Items {
 			if !util.NodeIsReady(node) {
 				unready.Insert(node.Name)
@@ -203,7 +203,7 @@ func waitForNodesToBeReady(ctx context.Context, log *zap.SugaredLogger, client c
 			return nil, nil
 		}
 
-		return fmt.Errorf("not all nodes are ready: %v", unready.List()), nil
+		return fmt.Errorf("not all nodes are ready: %v", sets.List(unready)), nil
 	})
 
 	elapsed := time.Since(startTime)

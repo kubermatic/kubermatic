@@ -101,7 +101,7 @@ func (t *TestPodConfig) CleanUp(ctx context.Context) error {
 }
 
 // Exec executes the given command in the chosen container of the test pod.
-func (t *TestPodConfig) Exec(container string, command ...string) (string, string, error) {
+func (t *TestPodConfig) Exec(ctx context.Context, container string, command ...string) (string, string, error) {
 	if t.testPod == nil {
 		return "", "", errors.New("exec should be called only after successful DeployTestPod execution")
 	}
@@ -123,17 +123,17 @@ func (t *TestPodConfig) Exec(container string, command ...string) (string, strin
 	}, scheme.ParameterCodec)
 
 	var stdout, stderr bytes.Buffer
-	err := execute(http.MethodPost, req.URL(), t.Config, nil, &stdout, &stderr, tty)
+	err := execute(ctx, http.MethodPost, req.URL(), t.Config, nil, &stdout, &stderr, tty)
 
 	return stdout.String(), stderr.String(), err
 }
 
-func execute(method string, url *url.URL, config *rest.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
+func execute(ctx context.Context, method string, url *url.URL, config *rest.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
 	exec, err := remotecommand.NewSPDYExecutor(config, method, url)
 	if err != nil {
 		return err
 	}
-	return exec.Stream(remotecommand.StreamOptions{
+	return exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  stdin,
 		Stdout: stdout,
 		Stderr: stderr,

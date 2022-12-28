@@ -183,7 +183,7 @@ func allowedRegistryCTReconcilerFactory() reconciling.NamedConstraintTemplateRec
 	}
 }
 
-func allowedRegistryConstraintReconcilerFactory(regSet sets.String) reconciling.NamedConstraintReconcilerFactory {
+func allowedRegistryConstraintReconcilerFactory(regSet sets.Set[string]) reconciling.NamedConstraintReconcilerFactory {
 	return func() (string, reconciling.ConstraintReconciler) {
 		return AllowedRegistryCTName, func(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
 			ct.Name = AllowedRegistryCTName
@@ -196,7 +196,7 @@ func allowedRegistryConstraintReconcilerFactory(regSet sets.String) reconciling.
 			ct.Spec.ConstraintType = AllowedRegistryCTName
 			ct.Spec.Disabled = regSet.Len() == 0
 
-			jsonRegSet, err := json.Marshal(regSet.List())
+			jsonRegSet, err := json.Marshal(sets.List(regSet))
 			if err != nil {
 				return nil, fmt.Errorf("error marshalling registry set: %w", err)
 			}
@@ -210,13 +210,13 @@ func allowedRegistryConstraintReconcilerFactory(regSet sets.String) reconciling.
 	}
 }
 
-func (r *Reconciler) getRegistrySet(ctx context.Context) (sets.String, error) {
+func (r *Reconciler) getRegistrySet(ctx context.Context) (sets.Set[string], error) {
 	var arList kubermaticv1.AllowedRegistryList
 	if err := r.masterClient.List(ctx, &arList); err != nil {
 		return nil, err
 	}
 
-	regSet := sets.NewString()
+	regSet := sets.New[string]()
 
 	for _, ar := range arList.Items {
 		if ar.DeletionTimestamp == nil {

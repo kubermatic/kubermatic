@@ -371,7 +371,7 @@ func (k KCMDeploymentConfig) Create(td *resources.TemplateData) *appsv1.Deployme
 		},
 		Status: k.Status,
 	}
-	wrappedPodSpec, _ := apiserver.IsRunningWrapper(td, d.Spec.Template.Spec, sets.NewString(resources.ControllerManagerDeploymentName))
+	wrappedPodSpec, _ := apiserver.IsRunningWrapper(td, d.Spec.Template.Spec, sets.New(resources.ControllerManagerDeploymentName))
 	d.Spec.Template.Spec = *wrappedPodSpec
 	return &d
 }

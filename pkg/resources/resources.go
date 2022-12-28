@@ -1253,15 +1253,15 @@ func IsServerCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		return false
 	}
 
-	certIPs := sets.NewString(getIPStrings(cert.IPAddresses)...)
-	wantIPs := sets.NewString(getIPStrings(altNames.IPs)...)
+	certIPs := sets.New(getIPStrings(cert.IPAddresses)...)
+	wantIPs := sets.New(getIPStrings(altNames.IPs)...)
 
 	if !wantIPs.Equal(certIPs) {
 		return false
 	}
 
-	wantDNSNames := sets.NewString(altNames.DNSNames...)
-	certDNSNames := sets.NewString(cert.DNSNames...)
+	wantDNSNames := sets.New(altNames.DNSNames...)
+	certDNSNames := sets.New(cert.DNSNames...)
 
 	if !wantDNSNames.Equal(certDNSNames) {
 		return false
@@ -1292,8 +1292,8 @@ func IsClientCertificateValidForAllOf(cert *x509.Certificate, commonName string,
 		return false
 	}
 
-	wantOrganizations := sets.NewString(organizations...)
-	certOrganizations := sets.NewString(cert.Subject.Organization...)
+	wantOrganizations := sets.New(organizations...)
+	certOrganizations := sets.New(cert.Subject.Organization...)
 
 	if !wantOrganizations.Equal(certOrganizations) {
 		return false

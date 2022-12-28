@@ -289,21 +289,21 @@ var (
 	}
 )
 
-func isAll(s sets.String) bool {
+func isAll(s sets.Set[string]) bool {
 	return s.Len() == 0 || (s.Len() == 1 && s.Has("all"))
 }
 
-func osToStringSet(os []providerconfig.OperatingSystem) sets.String {
-	result := sets.NewString()
+func osToStringSet(os []providerconfig.OperatingSystem) sets.Set[string] {
+	result := sets.New[string]()
 	for _, o := range os {
 		result.Insert(string(o))
 	}
 	return result
 }
 
-func stringToOSSet(os sets.String) []providerconfig.OperatingSystem {
+func stringToOSSet(os sets.Set[string]) []providerconfig.OperatingSystem {
 	result := []providerconfig.OperatingSystem{}
-	for _, o := range os.List() {
+	for _, o := range sets.List(os) {
 		result = append(result, providerconfig.OperatingSystem(o))
 	}
 	return result
@@ -505,7 +505,7 @@ func waitForPods(t *testing.T, ctx context.Context, log *zap.SugaredLogger, clie
 }
 
 func allPodsHealthy(t *testing.T, pods *corev1.PodList) error {
-	unhealthy := sets.NewString()
+	unhealthy := sets.New[string]()
 
 	for _, pod := range pods.Items {
 		if pod.Status.Phase != corev1.PodRunning {
@@ -528,7 +528,7 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) error {
 	}
 
 	if unhealthy.Len() > 0 {
-		return fmt.Errorf("not all pods are ready: %v", unhealthy.List())
+		return fmt.Errorf("not all pods are ready: %v", sets.List(unhealthy))
 	}
 
 	return nil

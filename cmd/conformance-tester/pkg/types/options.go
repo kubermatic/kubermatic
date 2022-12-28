@@ -52,23 +52,23 @@ type Options struct {
 	// the Enabled... and Exclude... sets are combined
 	// together to result in the final ... set
 
-	Providers            sets.String
-	Releases             sets.String
+	Providers            sets.Set[string]
+	Releases             sets.Set[string]
 	Versions             []*kubermativsemver.Semver
-	EnableDistributions  sets.String
-	ExcludeDistributions sets.String
-	Distributions        sets.String
-	EnableTests          sets.String
-	ExcludeTests         sets.String
-	Tests                sets.String
-	ContainerRuntimes    sets.String
+	EnableDistributions  sets.Set[string]
+	ExcludeDistributions sets.Set[string]
+	Distributions        sets.Set[string]
+	EnableTests          sets.Set[string]
+	ExcludeTests         sets.Set[string]
+	Tests                sets.Set[string]
+	ContainerRuntimes    sets.Set[string]
 
 	// additional settings identical for all scenarios
 
 	OperatingSystemManagerEnabled bool
 	DualStackEnabled              bool
 	KonnectivityEnabled           bool
-	ScenarioOptions               sets.String
+	ScenarioOptions               sets.Set[string]
 
 	// additional settings
 
@@ -103,16 +103,16 @@ type Options struct {
 func NewDefaultOptions() *Options {
 	return &Options{
 		Client:                       "kube",
-		ScenarioOptions:              sets.NewString(),
-		Providers:                    sets.NewString(),
-		Releases:                     sets.NewString(getLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
-		ContainerRuntimes:            sets.NewString(resources.ContainerRuntimeContainerd),
-		EnableDistributions:          sets.NewString(),
-		ExcludeDistributions:         sets.NewString(),
-		Distributions:                sets.NewString(),
-		EnableTests:                  sets.NewString(),
-		ExcludeTests:                 sets.NewString(),
-		Tests:                        sets.NewString(),
+		ScenarioOptions:              sets.New[string](),
+		Providers:                    sets.New[string](),
+		Releases:                     sets.New(getLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
+		ContainerRuntimes:            sets.New(resources.ContainerRuntimeContainerd),
+		EnableDistributions:          sets.New[string](),
+		ExcludeDistributions:         sets.New[string](),
+		Distributions:                sets.New[string](),
+		EnableTests:                  sets.New[string](),
+		ExcludeTests:                 sets.New[string](),
+		Tests:                        sets.New[string](),
 		KubermaticNamespace:          "kubermatic",
 		KubermaticSeedName:           "kubermatic",
 		ControlPlaneReadyWaitTimeout: 10 * time.Minute,
@@ -168,12 +168,12 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		return errors.New("-cluster-parallel-count must be 1 when testing an existing cluster")
 	}
 
-	if !sets.NewString("api", "kube").Has(o.Client) {
+	if !sets.New("api", "kube").Has(o.Client) {
 		return fmt.Errorf("invalid -client option %q", o.Client)
 	}
 
 	// restrict to known container runtimes
-	o.ContainerRuntimes = sets.NewString(resources.ContainerRuntimeDocker, resources.ContainerRuntimeContainerd).Intersection(o.ContainerRuntimes)
+	o.ContainerRuntimes = sets.New(resources.ContainerRuntimeDocker, resources.ContainerRuntimeContainerd).Intersection(o.ContainerRuntimes)
 	if o.ContainerRuntimes.Len() == 0 {
 		return errors.New("no container runtime was enabled")
 	}
@@ -193,7 +193,7 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		log.Warn("All tests have been disabled, will only test cluster creation and whether nodes come up successfully.")
 	}
 
-	for _, release := range o.Releases.List() {
+	for _, release := range sets.List(o.Releases) {
 		version := test.LatestKubernetesVersionForRelease(release, nil)
 		if version == nil {
 			return fmt.Errorf("no version found for release %q", release)
@@ -238,8 +238,8 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (o *Options) effectiveDistributions() (sets.String, error) {
-	all := sets.NewString()
+func (o *Options) effectiveDistributions() (sets.Set[string], error) {
+	all := sets.New[string]()
 	for _, os := range providerconfig.AllOperatingSystems {
 		all.Insert(string(os))
 	}
@@ -247,7 +247,7 @@ func (o *Options) effectiveDistributions() (sets.String, error) {
 	return combineSets(o.EnableDistributions, o.ExcludeDistributions, all, "distributions")
 }
 
-func (o *Options) effectiveTests() (sets.String, error) {
+func (o *Options) effectiveTests() (sets.Set[string], error) {
 	// Do not force all scripts to keep a list of all tests, just default to running all tests
 	// when no relevant CLI flag was given.
 	if o.EnableTests.Len() == 0 && o.ExcludeTests.Len() == 0 {
@@ -256,28 +256,28 @@ func (o *Options) effectiveTests() (sets.String, error) {
 
 	// Make it more comfortable to disable all custom tests.
 	if o.EnableTests.Len() == 0 && o.ExcludeTests.Has("all") {
-		return sets.NewString(), nil
+		return sets.New[string](), nil
 	}
 
 	return combineSets(o.EnableTests, o.ExcludeTests, AllTests, "tests")
 }
 
-func combineSets(include, exclude, all sets.String, flagname string) (sets.String, error) {
+func combineSets(include, exclude, all sets.Set[string], flagname string) (sets.Set[string], error) {
 	if include.Len() == 0 && exclude.Len() == 0 {
-		return nil, fmt.Errorf("either -%s or -exclude-%s must be given (each is a comma-separated list of %v)", flagname, flagname, all.List())
+		return nil, fmt.Errorf("either -%s or -exclude-%s must be given (each is a comma-separated list of %v)", flagname, flagname, sets.List(all))
 	}
 
 	if include.Len() > 0 && exclude.Len() > 0 {
 		return nil, fmt.Errorf("-%s and -exclude-%s must not be given at the same time", flagname, flagname)
 	}
 
-	var chosen sets.String
+	var chosen sets.Set[string]
 
 	if include.Len() > 0 {
 		chosen = include
 
 		if unsupported := chosen.Difference(all); unsupported.Len() > 0 {
-			return nil, fmt.Errorf("unknown %s: %v", flagname, unsupported.List())
+			return nil, fmt.Errorf("unknown %s: %v", flagname, sets.List(unsupported))
 		}
 	} else {
 		chosen = all.Difference(exclude)

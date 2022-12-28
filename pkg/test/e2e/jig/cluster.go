@@ -383,7 +383,7 @@ func (j *ClusterJig) WaitForHealthyControlPlane(ctx context.Context, timeout tim
 }
 
 func getUnhealthyComponents(health kubermaticv1.ExtendedClusterHealth) []string {
-	unhealthy := sets.NewString()
+	unhealthy := sets.New[string]()
 	handle := func(key string, s kubermaticv1.HealthStatus) {
 		if s == kubermaticv1.HealthStatusUp {
 			return
@@ -411,7 +411,7 @@ func getUnhealthyComponents(health kubermaticv1.ExtendedClusterHealth) []string 
 	handle("cloudProviderInfrastructure", health.CloudProviderInfrastructure)
 	handle("userClusterControllerManager", health.UserClusterControllerManager)
 
-	return unhealthy.List()
+	return sets.List(unhealthy)
 }
 
 func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {

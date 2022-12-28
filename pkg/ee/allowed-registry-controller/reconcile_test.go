@@ -63,7 +63,7 @@ func TestReconcile(t *testing.T) {
 			name:               "scenario 1: sync allowedlist to seed cluster",
 			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", false)},
 			expectedCT:         genConstraintTemplate(),
-			expectedConstraint: genWRConstraint(sets.NewString("quay.io")),
+			expectedConstraint: genWRConstraint(sets.New("quay.io")),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
@@ -74,12 +74,12 @@ func TestReconcile(t *testing.T) {
 			name:               "scenario 2: cleanup allowedlist on seed cluster when master ct is being terminated",
 			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", true)},
 			expectedCT:         genConstraintTemplate(),
-			expectedConstraint: genWRConstraint(sets.NewString()),
+			expectedConstraint: genWRConstraint(sets.New[string]()),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(genAllowedRegistry("quay", "quay.io", true),
-					genConstraintTemplate(), genWRConstraint(sets.NewString("quay.io"))).
+					genConstraintTemplate(), genWRConstraint(sets.New("quay.io"))).
 				Build(),
 		},
 		{
@@ -89,7 +89,7 @@ func TestReconcile(t *testing.T) {
 				genAllowedRegistry("myreg", "https://myregistry.com", false),
 			},
 			expectedCT:         genConstraintTemplate(),
-			expectedConstraint: genWRConstraint(sets.NewString("quay.io", "https://myregistry.com")),
+			expectedConstraint: genWRConstraint(sets.New("quay.io", "https://myregistry.com")),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
@@ -106,7 +106,7 @@ func TestReconcile(t *testing.T) {
 			},
 			allowedRegistryUpdate: genAllowedRegistry("quay", "quay.io-edited", false),
 			expectedCT:            genConstraintTemplate(),
-			expectedConstraint:    genWRConstraint(sets.NewString("quay.io-edited", "https://myregistry.com")),
+			expectedConstraint:    genWRConstraint(sets.New("quay.io-edited", "https://myregistry.com")),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
@@ -244,12 +244,12 @@ func genAllowedRegistry(name, registry string, deleted bool) *kubermaticv1.Allow
 	return wr
 }
 
-func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
+func genWRConstraint(registrySet sets.Set[string]) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
 	ct.Name = AllowedRegistryCTName
 	ct.Namespace = testNamespace
 
-	jsonRegSet, _ := json.Marshal(registrySet.List())
+	jsonRegSet, _ := json.Marshal(sets.List(registrySet))
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: AllowedRegistryCTName,

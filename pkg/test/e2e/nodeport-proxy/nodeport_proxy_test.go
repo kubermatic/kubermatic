@@ -205,7 +205,7 @@ func TestNodeportProxy(t *testing.T) {
 				err = wait.PollLog(ctx, logger, 2*time.Second, 2*time.Minute, func() (transient error, terminal error) {
 					lbSvc := npp.GetLoadBalancer(ctx)
 					if remaining := portsToBeExposed.Difference(extractPorts(lbSvc)); remaining.Len() > 0 {
-						return fmt.Errorf("ports %v are not yet exposed", remaining.List()), nil
+						return fmt.Errorf("ports %v are not yet exposed", sets.List(remaining)), nil
 					}
 
 					return nil, nil
@@ -216,7 +216,7 @@ func TestNodeportProxy(t *testing.T) {
 			}
 
 			// wait until we have reached every endpoint at least once
-			unverifiedEndpoints := sets.NewString(endpoints...)
+			unverifiedEndpoints := sets.New(endpoints...)
 
 			logger.Info("Waiting until we have reached every endpoint at least once…")
 			err = wait.PollImmediateLog(ctx, logger, 2*time.Second, 2*time.Minute, func() (transient error, terminal error) {
@@ -227,14 +227,14 @@ func TestNodeportProxy(t *testing.T) {
 				dialConfig := testcase.dialConfigCreator(svc, lbSvc)
 
 				// try to reach the service
-				endpoint, err := networkingTest.Dial(dialConfig)
+				endpoint, err := networkingTest.Dial(ctx, dialConfig)
 				if err != nil {
 					return err, nil
 				}
 
 				unverifiedEndpoints.Delete(endpoint)
 				if unverifiedEndpoints.Len() > 0 {
-					return fmt.Errorf("not all endpoints reached yet: %v", unverifiedEndpoints.List()), nil
+					return fmt.Errorf("not all endpoints reached yet: %v", sets.List(unverifiedEndpoints)), nil
 				}
 
 				return nil, nil
@@ -273,7 +273,7 @@ func TestNodeportProxy(t *testing.T) {
 			if exposed := portsNotToBeExposed.Intersection(extractPorts(lbSvc)); exposed.Len() > 0 {
 				// if a port appears, it's not a transient error that might go away, having
 				// the port exposed once is already a terminal issue
-				return nil, fmt.Errorf("ports %v have been exposed when they should not have", exposed.List())
+				return nil, fmt.Errorf("ports %v have been exposed when they should not have", sets.List(exposed))
 			}
 
 			return errors.New("nothing exposed, all good"), nil

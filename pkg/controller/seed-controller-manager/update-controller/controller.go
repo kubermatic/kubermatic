@@ -468,7 +468,7 @@ func getReplicaSetsForDeployment(ctx context.Context, client ctrlruntimeclient.C
 		return nil, nil
 	}
 
-	ownerNames := sets.NewString(deploymentName.Name)
+	ownerNames := sets.New(deploymentName.Name)
 	result := []appsv1.ReplicaSet{}
 	for i, rs := range rsList.Items {
 		if hasOwnerRefToAny(&rs, "Deployment", ownerNames) {
@@ -479,7 +479,7 @@ func getReplicaSetsForDeployment(ctx context.Context, client ctrlruntimeclient.C
 	return result, nil
 }
 
-func hasOwnerRefToAny(obj ctrlruntimeclient.Object, ownerKind string, ownerNames sets.String) bool {
+func hasOwnerRefToAny(obj ctrlruntimeclient.Object, ownerKind string, ownerNames sets.Set[string]) bool {
 	for _, ref := range obj.GetOwnerReferences() {
 		if ref.Kind == ownerKind && ownerNames.Has(ref.Name) {
 			return true

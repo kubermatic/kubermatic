@@ -444,7 +444,7 @@ func TestInitializeCloudProvider(t *testing.T) {
 			}
 			// We cannot guarantee order if finalizers serialized using sets and deep.Equal fails if order is different,
 			// thus we test finalizers equality separately.
-			if w, g := sets.NewString(tt.wantCluster.Finalizers...), sets.NewString(c.Finalizers...); !w.Equal(g) {
+			if w, g := sets.New(tt.wantCluster.Finalizers...), sets.New(c.Finalizers...); !w.Equal(g) {
 				t.Errorf("Want finalizers: %v, got: %v", w, g)
 			} else {
 				tt.wantCluster.Finalizers = nil

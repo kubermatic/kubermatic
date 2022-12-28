@@ -385,7 +385,7 @@ func getProjectRolesForUser(ctx context.Context, client ctrlruntimeclient.Client
 	if err := client.List(ctx, gpbList); err != nil {
 		return projectMap, err
 	}
-	userGroups := sets.NewString(user.Spec.Groups...)
+	userGroups := sets.New(user.Spec.Groups...)
 	for _, gpb := range gpbList.Items {
 		if userGroups.Has(gpb.Spec.Group) {
 			role := groupToRole[gpb.Spec.Role]

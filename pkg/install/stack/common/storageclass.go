@@ -128,8 +128,8 @@ func StorageClassCreator(provider string) (StorageClassFactory, error) {
 	return factory, nil
 }
 
-func SupportedStorageClassProviders() sets.String {
-	return sets.StringKeySet(storageClassFactories)
+func SupportedStorageClassProviders() sets.Set[string] {
+	return sets.KeySet(storageClassFactories)
 }
 
 func isDefaultStorageClass(sc storagev1.StorageClass) bool {

@@ -46,14 +46,14 @@ func Groups() ([]string, error) {
 		return nil, err
 	}
 
-	groups := sets.NewString()
+	groups := sets.New[string]()
 
 	for _, entry := range entries {
 		name := strings.Split(entry.Name(), "_")
 		groups.Insert(name[0])
 	}
 
-	return groups.List(), nil
+	return sets.List(groups), nil
 }
 
 // CRDForType returns the CRD for a given object or returns an error if the

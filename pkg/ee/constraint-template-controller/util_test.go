@@ -48,7 +48,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 		name             string
 		ct               *kubermaticv1.ConstraintTemplate
 		clusters         []ctrlruntimeclient.Object
-		expectedClusters sets.String
+		expectedClusters sets.Set[string]
 	}{
 		{
 			name: "scenario 1: get clusters without filters",
@@ -60,7 +60,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 				genCluster("cluster1", nil, false),
 				genCluster("cluster2", nil, false),
 			},
-			expectedClusters: sets.NewString("cluster1", "cluster2"),
+			expectedClusters: sets.New("cluster1", "cluster2"),
 		},
 		{
 			name: "scenario 2: filter clusters with labels",
@@ -74,7 +74,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 				genCluster("cluster1", map[string]string{"test": "value"}, false),
 				genCluster("cluster2", nil, false),
 			},
-			expectedClusters: sets.NewString("cluster1"),
+			expectedClusters: sets.New("cluster1"),
 		},
 		{
 			name: "scenario 3: filter clusters with providers",
@@ -86,7 +86,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 				genCluster("cluster1", nil, false),
 				genCluster("cluster2", nil, true),
 			},
-			expectedClusters: sets.NewString("cluster1"),
+			expectedClusters: sets.New("cluster1"),
 		},
 		{
 			name: "scenario 4: filter clusters with providers and labels",
@@ -101,7 +101,7 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 				genCluster("cluster2", map[string]string{"test": "value"}, true),
 				genCluster("cluster3", map[string]string{"test": "value"}, false),
 			},
-			expectedClusters: sets.NewString("cluster3"),
+			expectedClusters: sets.New("cluster3"),
 		},
 	}
 
@@ -118,13 +118,13 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			resultSet := sets.NewString()
+			resultSet := sets.New[string]()
 			for _, cluster := range clusterList.Items {
 				resultSet.Insert(cluster.Name)
 			}
 
 			if !resultSet.Equal(tc.expectedClusters) {
-				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff[string](tc.expectedClusters, resultSet))
+				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff(tc.expectedClusters, resultSet))
 			}
 		})
 	}

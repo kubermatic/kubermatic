@@ -47,12 +47,12 @@ type isRunningInitContainerData interface {
 // then mounting that volume onto all named containers and replacing the command with a call to
 // the `http-prober` binary. The http prober binary gets the original command as serialized string
 // and does an syscall.Exec onto it once the apiserver became reachable.
-func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, containersToWrap sets.String, crdsToWaitFor ...string) (*corev1.PodSpec, error) {
+func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, containersToWrap sets.Set[string], crdsToWaitFor ...string) (*corev1.PodSpec, error) {
 	if containersToWrap.Len() == 0 {
 		return nil, errors.New("no containers to wrap passed")
 	}
 
-	for _, containerToWrap := range containersToWrap.List() {
+	for _, containerToWrap := range sets.List(containersToWrap) {
 		if !hasContainerNamed(spec, containerToWrap) {
 			return nil, fmt.Errorf("pod has no container named %q", containerToWrap)
 		}

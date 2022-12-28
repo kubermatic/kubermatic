@@ -54,8 +54,8 @@ func TestGetClustersForConstraint(t *testing.T) {
 		name                     string
 		constraint               *kubermaticv1.Constraint
 		clusters                 []ctrlruntimeclient.Object
-		expectedUnwantedClusters sets.String
-		expectedDesiredClusters  sets.String
+		expectedUnwantedClusters sets.Set[string]
+		expectedDesiredClusters  sets.Set[string]
 	}{
 		{
 			name: "scenario 1: get clusters without filters",
@@ -67,7 +67,7 @@ func TestGetClustersForConstraint(t *testing.T) {
 				genCluster("cluster1", nil, false),
 				genCluster("cluster2", nil, false),
 			},
-			expectedDesiredClusters: sets.NewString("cluster1", "cluster2"),
+			expectedDesiredClusters: sets.New("cluster1", "cluster2"),
 		},
 		{
 			name: "scenario 2: filter clusters with labels",
@@ -81,8 +81,8 @@ func TestGetClustersForConstraint(t *testing.T) {
 				genCluster("cluster1", nil, false),
 				genCluster("cluster2", map[string]string{"test": "value"}, false),
 			},
-			expectedUnwantedClusters: sets.NewString("cluster1"),
-			expectedDesiredClusters:  sets.NewString("cluster2"),
+			expectedUnwantedClusters: sets.New("cluster1"),
+			expectedDesiredClusters:  sets.New("cluster2"),
 		},
 		{
 			name: "scenario 3: filter clusters with providers",
@@ -94,8 +94,8 @@ func TestGetClustersForConstraint(t *testing.T) {
 				genCluster("cluster1", nil, true),
 				genCluster("cluster2", nil, false),
 			},
-			expectedUnwantedClusters: sets.NewString("cluster1"),
-			expectedDesiredClusters:  sets.NewString("cluster2"),
+			expectedUnwantedClusters: sets.New("cluster1"),
+			expectedDesiredClusters:  sets.New("cluster2"),
 		},
 		{
 			name: "scenario 4: filter clusters with providers and labels",
@@ -110,8 +110,8 @@ func TestGetClustersForConstraint(t *testing.T) {
 				genCluster("cluster2", map[string]string{"test": "value"}, true),
 				genCluster("cluster3", map[string]string{"test": "value"}, false),
 			},
-			expectedUnwantedClusters: sets.NewString("cluster1", "cluster2"),
-			expectedDesiredClusters:  sets.NewString("cluster3"),
+			expectedUnwantedClusters: sets.New("cluster1", "cluster2"),
+			expectedDesiredClusters:  sets.New("cluster3"),
 		},
 	}
 
@@ -134,22 +134,22 @@ func TestGetClustersForConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			resultSetDesired := sets.NewString()
+			resultSetDesired := sets.New[string]()
 			for _, cluster := range desiredList {
 				resultSetDesired.Insert(cluster.Name)
 			}
 
-			resultSetUnwanted := sets.NewString()
+			resultSetUnwanted := sets.New[string]()
 			for _, cluster := range unwantedList {
 				resultSetUnwanted.Insert(cluster.Name)
 			}
 
 			if !resultSetDesired.Equal(tc.expectedDesiredClusters) {
-				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff[string](tc.expectedDesiredClusters, resultSetDesired))
+				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff(tc.expectedDesiredClusters, resultSetDesired))
 			}
 
 			if !resultSetUnwanted.Equal(tc.expectedUnwantedClusters) {
-				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff[string](tc.expectedUnwantedClusters, resultSetUnwanted))
+				t.Fatalf("received clusters differ from expected:\n%v", diff.SetDiff(tc.expectedUnwantedClusters, resultSetUnwanted))
 			}
 		})
 	}

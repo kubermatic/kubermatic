@@ -256,13 +256,13 @@ func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to lookup ip for %s: %w", hostname, err)
 	}
-	ipList := sets.NewString()
+	ipList := sets.New[string]()
 	for _, ip := range resolvedIPs {
 		if ip.To4() != nil {
 			ipList.Insert(ip.String())
 		}
 	}
-	ips := ipList.List()
+	ips := sets.List(ipList)
 	if len(ips) == 0 {
 		return "", fmt.Errorf("no ip addresses found for %s: %w", hostname, err)
 	}

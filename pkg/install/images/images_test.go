@@ -57,7 +57,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		t.Errorf("failed to load CA bundle: %v", err)
 	}
 
-	imageSet := sets.NewString()
+	imageSet := sets.New[string]()
 	for _, clusterVersion := range clusterVersions {
 		for _, cloudSpec := range GetCloudSpecs() {
 			for _, cniPlugin := range GetCNIPlugins() {

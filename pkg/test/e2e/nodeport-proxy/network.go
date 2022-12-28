@@ -17,6 +17,7 @@ limitations under the License.
 package nodeportproxy
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
@@ -50,7 +51,7 @@ type DialConfig struct {
 // endpoint, which will return the target's hostname (i.e. the
 // hostname of the pod backing the target service).
 // If successful, the endpoint name is returned, otherwise an empty string.
-func (n *networkingTestConfig) Dial(dc DialConfig) (string, error) {
+func (n *networkingTestConfig) Dial(ctx context.Context, dc DialConfig) (string, error) {
 	ipPort := net.JoinHostPort(dc.TargetIP, strconv.Itoa(dc.TargetPort))
 
 	// The current versions of curl included in CentOS and RHEL distros
@@ -76,7 +77,7 @@ func (n *networkingTestConfig) Dial(dc DialConfig) (string, error) {
 	cmd := strings.Join(c, " ")
 	filterCmd := fmt.Sprintf("%s | grep -v '^\\s*$'", cmd)
 
-	stdout, stderr, err := n.Exec(hostTestContainerName, "/bin/sh", "-c", filterCmd)
+	stdout, stderr, err := n.Exec(ctx, hostTestContainerName, "/bin/sh", "-c", filterCmd)
 	if err != nil || len(stderr) > 0 {
 		return "", fmt.Errorf("failed to execute test command; stdout: %q, stderr: %q", stdout, stderr)
 	}

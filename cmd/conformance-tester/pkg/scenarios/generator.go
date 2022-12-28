@@ -35,20 +35,20 @@ import (
 )
 
 type Generator struct {
-	cloudProviders    sets.String
-	operatingSystems  sets.String
-	versions          sets.String
-	containerRuntimes sets.String
+	cloudProviders    sets.Set[string]
+	operatingSystems  sets.Set[string]
+	versions          sets.Set[string]
+	containerRuntimes sets.Set[string]
 	enableOSM         bool
 	enableDualstack   bool
 }
 
 func NewGenerator() *Generator {
 	return &Generator{
-		cloudProviders:    sets.NewString(),
-		operatingSystems:  sets.NewString(),
-		versions:          sets.NewString(),
-		containerRuntimes: sets.NewString(),
+		cloudProviders:    sets.New[string](),
+		operatingSystems:  sets.New[string](),
+		versions:          sets.New[string](),
+		containerRuntimes: sets.New[string](),
 	}
 }
 
@@ -93,20 +93,20 @@ func (g *Generator) WithDualstack(enable bool) *Generator {
 func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogger) ([]Scenario, error) {
 	scenarios := []Scenario{}
 
-	for _, version := range g.versions.List() {
+	for _, version := range sets.List(g.versions) {
 		s, err := semver.NewSemver(version)
 		if err != nil {
 			return nil, fmt.Errorf("invalid version %q: %w", version, err)
 		}
 
-		for _, providerName := range g.cloudProviders.List() {
+		for _, providerName := range sets.List(g.cloudProviders) {
 			datacenter, err := g.datacenter(ctx, opts.SeedClusterClient, opts.Secrets, kubermaticv1.ProviderType(providerName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to determine target datacenter for provider %q: %w", providerName, err)
 			}
 
-			for _, operatingSystem := range g.operatingSystems.List() {
-				for _, cri := range g.containerRuntimes.List() {
+			for _, operatingSystem := range sets.List(g.operatingSystems) {
+				for _, cri := range sets.List(g.containerRuntimes) {
 					scenario, err := providerScenario(opts, kubermaticv1.ProviderType(providerName), providerconfig.OperatingSystem(operatingSystem), *s, cri, datacenter)
 					if err != nil {
 						return nil, err

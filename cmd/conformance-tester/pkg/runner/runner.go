@@ -47,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -140,8 +141,8 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	fmt.Printf("  OSM Enabled.........: %v\n", r.opts.OperatingSystemManagerEnabled)
 	fmt.Printf("  Dualstack Enabled...: %v\n", r.opts.DualStackEnabled)
 	fmt.Printf("  Konnectivity Enabled: %v\n", r.opts.KonnectivityEnabled)
-	fmt.Printf("  Enabled Tests.......: %v\n", r.opts.Tests.List())
-	fmt.Printf("  Scenario Options....: %v\n", r.opts.ScenarioOptions.List())
+	fmt.Printf("  Enabled Tests.......: %v\n", sets.List(r.opts.Tests))
+	fmt.Printf("  Scenario Options....: %v\n", sets.List(r.opts.ScenarioOptions))
 	fmt.Println("")
 	fmt.Println("Test results:")
 

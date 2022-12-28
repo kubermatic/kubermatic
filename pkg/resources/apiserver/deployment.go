@@ -275,7 +275,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	cluster := data.Cluster()
 
-	admissionPlugins := sets.NewString(
+	admissionPlugins := sets.New(
 		"NamespaceLifecycle",
 		"NodeRestriction",
 		"LimitRanger",
@@ -309,7 +309,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--etcd-certfile", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateCertSecretKey),
 		"--etcd-keyfile", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateKeySecretKey),
 		"--storage-backend", "etcd3",
-		"--enable-admission-plugins", strings.Join(admissionPlugins.List(), ","),
+		"--enable-admission-plugins", strings.Join(sets.List(admissionPlugins), ","),
 		"--admission-control-config-file", "/etc/kubernetes/adm-control/admission-control.yaml",
 		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", address.ExternalName,

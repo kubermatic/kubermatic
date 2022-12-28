@@ -84,7 +84,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 	}
 
 	// Find three subnets that are in different AZs to preserve the multi az testcase
-	allAZs := sets.NewString()
+	allAZs := sets.New[string]()
 	var subnets []ec2types.Subnet
 	for _, subnet := range allSubnets {
 		if !allAZs.Has(pointer.StringDeref(subnet.AvailabilityZone, "")) {

@@ -70,7 +70,7 @@ func ByNamespace(namespace string) predicate.Funcs {
 
 // ByName returns a predicate func that only includes objects in the given names.
 func ByName(names ...string) predicate.Funcs {
-	namesSet := sets.NewString(names...)
+	namesSet := sets.New[string](names...)
 	return Factory(func(o ctrlruntimeclient.Object) bool {
 		return namesSet.Has(o.GetName())
 	})

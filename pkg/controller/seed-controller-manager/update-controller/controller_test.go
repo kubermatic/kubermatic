@@ -145,32 +145,32 @@ func TestHasOwnerRefToAny(t *testing.T) {
 
 	testcases := []struct {
 		kind     string
-		names    sets.String
+		names    sets.Set[string]
 		expected bool
 	}{
 		{
 			kind:     "Test",
-			names:    sets.NewString("test"),
+			names:    sets.New("test"),
 			expected: true,
 		},
 		{
 			kind:     "Test",
-			names:    sets.NewString("another-owner"),
+			names:    sets.New("another-owner"),
 			expected: true,
 		},
 		{
 			kind:     "Secret",
-			names:    sets.NewString("test"),
+			names:    sets.New("test"),
 			expected: true,
 		},
 		{
 			kind:     "Test",
-			names:    sets.NewString("non-existent"),
+			names:    sets.New("non-existent"),
 			expected: false,
 		},
 		{
 			kind:     "Deployment",
-			names:    sets.NewString("non-existent"),
+			names:    sets.New("non-existent"),
 			expected: false,
 		},
 	}

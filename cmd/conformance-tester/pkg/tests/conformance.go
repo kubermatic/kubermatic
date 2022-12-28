@@ -100,13 +100,13 @@ func TestKubernetesConformance(
 	return nil
 }
 
-func getDefaultClusterContents(ctx context.Context, client ctrlruntimeclient.Client) (sets.String, sets.String, error) {
+func getDefaultClusterContents(ctx context.Context, client ctrlruntimeclient.Client) (sets.Set[string], sets.Set[string], error) {
 	namespaceList := &corev1.NamespaceList{}
 	if err := client.List(ctx, namespaceList); err != nil {
 		return nil, nil, fmt.Errorf("failed to list namespaces: %w", err)
 	}
 
-	namespaces := sets.NewString()
+	namespaces := sets.New[string]()
 	for _, ns := range namespaceList.Items {
 		namespaces.Insert(ns.Name)
 	}
@@ -116,7 +116,7 @@ func getDefaultClusterContents(ctx context.Context, client ctrlruntimeclient.Cli
 		return nil, nil, fmt.Errorf("failed to list webhooks: %w", err)
 	}
 
-	webhooks := sets.NewString()
+	webhooks := sets.New[string]()
 	for _, webhook := range webhookList.Items {
 		webhooks.Insert(webhook.Name)
 	}
@@ -134,8 +134,8 @@ func runGinkgoRunWithRetries(
 	scenario scenarios.Scenario,
 	run *util.GinkgoRun,
 	client ctrlruntimeclient.Client,
-	namespacesToKeep sets.String,
-	webhooksToKeep sets.String,
+	namespacesToKeep sets.Set[string],
+	webhooksToKeep sets.Set[string],
 ) (ginkgoRes *util.GinkgoResult, err error) {
 	const maxAttempts = 3
 
@@ -188,8 +188,8 @@ func runGinkgo(
 	opts *types.Options,
 	run *util.GinkgoRun,
 	client ctrlruntimeclient.Client,
-	namespacesToKeep sets.String,
-	webhooksToKeep sets.String,
+	namespacesToKeep sets.Set[string],
+	webhooksToKeep sets.Set[string],
 ) (*util.GinkgoResult, error) {
 	log := parentLog.With("reports-dir", run.ReportsDir)
 
@@ -313,8 +313,8 @@ func cleanupBeforeGinkgo(
 	log *zap.SugaredLogger,
 	opts *types.Options,
 	client ctrlruntimeclient.Client,
-	namespacesToKeep sets.String,
-	webhooksToKeep sets.String,
+	namespacesToKeep sets.Set[string],
+	webhooksToKeep sets.Set[string],
 ) error {
 	log.Info("Removing non-default webhooks...")
 
@@ -324,7 +324,7 @@ func cleanupBeforeGinkgo(
 			return fmt.Errorf("failed to list webhooks: %w", err), nil
 		}
 
-		remaining := sets.NewString()
+		remaining := sets.New[string]()
 		for _, webhook := range webhookList.Items {
 			if webhooksToKeep.Has(webhook.Name) {
 				continue
@@ -347,7 +347,7 @@ func cleanupBeforeGinkgo(
 			return nil, nil
 		}
 
-		return fmt.Errorf("could not delete all webhooks: %v", remaining.List()), nil
+		return fmt.Errorf("could not delete all webhooks: %v", sets.List(remaining)), nil
 	}); err != nil {
 		return err
 	}

@@ -39,29 +39,29 @@ var (
 
 var (
 	// supportedCNIPlugins contains a list of all currently supported CNI Plugin types.
-	supportedCNIPlugins = sets.NewString(
+	supportedCNIPlugins = sets.New(
 		kubermaticv1.CNIPluginTypeCanal.String(),
 		kubermaticv1.CNIPluginTypeCilium.String(),
 		kubermaticv1.CNIPluginTypeNone.String(),
 	)
 	// supportedCNIPluginVersions contains a list of all currently supported CNI versions for each CNI type.
 	// Only supported versions are available for selection in KKP UI.
-	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
-		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.22", "v3.23", "v3.24"),
-		kubermaticv1.CNIPluginTypeCilium: sets.NewString(
+	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.22", "v3.23", "v3.24"),
+		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"v1.11",
 			"v1.12",
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.13.0",
 		),
-		kubermaticv1.CNIPluginTypeNone: sets.NewString(""),
+		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
 	// deprecatedCNIPluginVersions contains a list of deprecated CNI versions for each CNI type.
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
 	// by the validation webhook for backward compatibility.
-	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
-		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.8", "v3.19", "v3.20", "v3.21"),
+	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.8", "v3.19", "v3.20", "v3.21"),
 	}
 )
 
@@ -93,34 +93,34 @@ var allowedCNIVersionTransitions = map[kubermaticv1.CNIPluginType][]AllowedCNIVe
 }
 
 // GetSupportedCNIPlugins returns currently supported CNI Plugin types.
-func GetSupportedCNIPlugins() sets.String {
+func GetSupportedCNIPlugins() sets.Set[string] {
 	return supportedCNIPlugins
 }
 
 // GetSupportedCNIPluginVersions returns currently supported CNI versions for a CNI type.
-func GetSupportedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.String, error) {
+func GetSupportedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.Set[string], error) {
 	if !supportedCNIPlugins.Has(cniPluginType.String()) {
-		return sets.NewString(), fmt.Errorf("CNI Plugin type %q not supported. Supported types %s", cniPluginType, supportedCNIPlugins.List())
+		return sets.New[string](), fmt.Errorf("CNI Plugin type %q not supported. Supported types %s", cniPluginType, sets.List(supportedCNIPlugins))
 	}
 
 	versions, ok := supportedCNIPluginVersions[cniPluginType]
 	// this means we messed up, should not happen as we support the plugin above
 	if !ok {
-		return sets.NewString(), fmt.Errorf("no versions available for CNI plugin %q", cniPluginType)
+		return sets.New[string](), fmt.Errorf("no versions available for CNI plugin %q", cniPluginType)
 	}
 
 	return versions, nil
 }
 
 // GetAllowedCNIPluginVersions returns all allowed CNI versions for a CNI type (supported + deprecated).
-func GetAllowedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.String, error) {
+func GetAllowedCNIPluginVersions(cniPluginType kubermaticv1.CNIPluginType) (sets.Set[string], error) {
 	supported, err := GetSupportedCNIPluginVersions(cniPluginType)
 	if err != nil {
-		return sets.NewString(), err
+		return sets.New[string](), err
 	}
-	allowed := sets.NewString(supported.List()...)
+	allowed := sets.New(sets.List(supported)...)
 	if deprecated, ok := deprecatedCNIPluginVersions[cniPluginType]; ok {
-		allowed.Insert(deprecated.List()...)
+		allowed.Insert(sets.List(deprecated)...)
 	}
 	return allowed, nil
 }

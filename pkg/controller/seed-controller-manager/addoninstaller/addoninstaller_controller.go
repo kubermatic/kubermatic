@@ -238,7 +238,7 @@ func getDefaultAddonManifests() (*kubermaticv1.AddonList, error) {
 }
 
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {
-	ensuredAddonsMap := sets.NewString()
+	ensuredAddonsMap := sets.New[string]()
 	creators := []reconciling.NamedAddonReconcilerFactory{}
 
 	for i, addon := range addons.Items {

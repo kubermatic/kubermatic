@@ -125,7 +125,7 @@ func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimecl
 type UserInfo struct {
 	Email   string
 	Groups  []string
-	Roles   sets.String
+	Roles   sets.Set[string]
 	IsAdmin bool
 }
 

@@ -391,7 +391,7 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semverlib.Version) 
 	}
 
 	// The default
-	allowedTaintEffects := sets.NewString(
+	allowedTaintEffects := sets.New(
 		string(corev1.TaintEffectNoExecute),
 		string(corev1.TaintEffectNoSchedule),
 		string(corev1.TaintEffectPreferNoSchedule),
@@ -404,7 +404,7 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semverlib.Version) 
 			return nil, errors.New("taint value must be set")
 		}
 		if !allowedTaintEffects.Has(taint.Effect) {
-			return nil, fmt.Errorf("taint effect '%s' not allowed. Allowed: %s", taint.Effect, strings.Join(allowedTaintEffects.List(), ", "))
+			return nil, fmt.Errorf("taint effect '%s' not allowed. Allowed: %s", taint.Effect, strings.Join(sets.List(allowedTaintEffects), ", "))
 		}
 	}
 

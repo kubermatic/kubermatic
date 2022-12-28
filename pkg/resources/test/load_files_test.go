@@ -249,14 +249,14 @@ type testCase struct {
 
 // name returns the name for the current test case.
 func (tc testCase) enabledFeatures() string {
-	features := sets.NewString()
+	features := sets.New[string]()
 	for f, active := range tc.features {
 		if active {
 			features.Insert(f)
 		}
 	}
 
-	return strings.Join(features.List(), "-")
+	return strings.Join(sets.List(features), "-")
 }
 
 // name returns the name for the current test case.
@@ -364,7 +364,7 @@ func TestLoadFiles(t *testing.T) {
 		t.Fatalf("Failed to list existing fixtures: %v", err)
 	}
 
-	allFiles := sets.NewString()
+	allFiles := sets.New[string]()
 	for _, e := range entries {
 		allFiles.Insert(e.Name())
 	}
@@ -759,7 +759,7 @@ func TestLoadFiles(t *testing.T) {
 		}
 	}
 
-	if leftover := allFiles.List(); len(leftover) > 0 {
+	if leftover := sets.List(allFiles); len(leftover) > 0 {
 		t.Fatalf("Leftover fixtures found that do not belong to any of the configured testcases: %v", leftover)
 	}
 }

@@ -120,7 +120,7 @@ func getClientSet(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleA
 	}, nil
 }
 
-var notFoundErrors = sets.NewString("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound", "InvalidGroup.NotFound")
+var notFoundErrors = sets.New("NoSuchEntity", "InvalidVpcID.NotFound", "InvalidRouteTableID.NotFound", "InvalidGroup.NotFound")
 
 func isNotFound(err error) bool {
 	var aerr smithy.APIError
