@@ -31,7 +31,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -237,13 +236,13 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	oldAppInstallation := appInstallation.DeepCopy()
 	appSourcePath, downloadErr := r.appInstaller.DonwloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
 	if downloadErr != nil {
-		r.setCondition(appInstallation, appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownaloadSourceFailed", downloadErr.Error())
+		appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownaloadSourceFailed", downloadErr.Error())
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 			return fmt.Errorf("failed to update status: %w", err)
 		}
 		return downloadErr
 	}
-	r.setCondition(appInstallation, appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownaloadSourceSuccessful", "application's source successfully downloaded")
+	appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownaloadSourceSuccessful", "application's source successfully downloaded")
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 		return fmt.Errorf("failed to update status: %w", err)
 	}
@@ -252,9 +251,9 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appDefinition, appInstallation, appSourcePath)
 
 	if installErr != nil {
-		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
+		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
 	} else {
-		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
+		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
 	}
 	statusUpdater(&appInstallation.Status)
 
@@ -272,7 +271,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		statusUpdater, uninstallErr := r.appInstaller.Delete(ctx, log, r.seedClient, r.userClient, appInstallation)
 		oldAppInstallation := appInstallation.DeepCopy()
 		if uninstallErr != nil {
-			r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "UninstallFailed", uninstallErr.Error())
+			appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "UninstallFailed", uninstallErr.Error())
 		}
 		statusUpdater(&appInstallation.Status)
 
@@ -287,26 +286,6 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 	return nil
-}
-
-// setCondition on a appInstallation. It take care of update LastHeartbeatTime and LastTransitionTime if needed.
-func (r *reconciler) setCondition(appInstallation *appskubermaticv1.ApplicationInstallation, conditionType appskubermaticv1.ApplicationInstallationConditionType, status corev1.ConditionStatus, reason, message string) {
-	now := metav1.Now()
-
-	condition, exists := appInstallation.Status.Conditions[conditionType]
-	if exists && condition.Status != status {
-		condition.LastTransitionTime = now
-	}
-
-	condition.Status = status
-	condition.LastHeartbeatTime = now
-	condition.Reason = reason
-	condition.Message = message
-
-	if appInstallation.Status.Conditions == nil {
-		appInstallation.Status.Conditions = map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{}
-	}
-	appInstallation.Status.Conditions[conditionType] = condition
 }
 
 // traceWarning logs the message in warning mode and raise a k8s event on appInstallation with the eventReason and the message.

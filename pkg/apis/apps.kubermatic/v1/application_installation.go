@@ -229,3 +229,23 @@ var AllApplicationInstallationConditionTypes = []ApplicationInstallationConditio
 	ManifestsRetrieved,
 	Ready,
 }
+
+// SetCondition of the applicationInstallation. It take care of update LastHeartbeatTime and LastTransitionTime if needed.
+func (appInstallation *ApplicationInstallation) SetCondition(conditionType ApplicationInstallationConditionType, status corev1.ConditionStatus, reason, message string) {
+	now := metav1.Now()
+
+	condition, exists := appInstallation.Status.Conditions[conditionType]
+	if exists && condition.Status != status {
+		condition.LastTransitionTime = now
+	}
+
+	condition.Status = status
+	condition.LastHeartbeatTime = now
+	condition.Reason = reason
+	condition.Message = message
+
+	if appInstallation.Status.Conditions == nil {
+		appInstallation.Status.Conditions = map[ApplicationInstallationConditionType]ApplicationInstallationCondition{}
+	}
+	appInstallation.Status.Conditions[conditionType] = condition
+}
