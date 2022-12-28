@@ -57,6 +57,9 @@ const (
 
 	// Event raised when the reconciliation of an applicationInstallation failed.
 	applicationInstallationReconcileFailedEvent = "ApplicationInstallationReconcileFailed"
+
+	// maxRetries is the maximum number of retries on installation or upgrade failure.
+	maxRetries = 5
 )
 
 type reconciler struct {
@@ -223,6 +226,18 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 
 // handleInstallation installs or updates the application in the user cluster.
 func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	// Install or upgrade application only if max number of retries is not exceeded.
+	if appInstallation.Status.Failures > maxRetries {
+		oldAppInstallation := appInstallation.DeepCopy()
+		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailedRetriesExceeded", "Max number of retries was exceeded. Last error: "+oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
+
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status: %w", err)
+		}
+		log.Infow("Max number of retries was exceeded. Do not reconcile application", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
+		return nil
+	}
+
 	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
@@ -233,6 +248,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		}
 	}()
 
+	// Download application sources.
 	oldAppInstallation := appInstallation.DeepCopy()
 	appSourcePath, downloadErr := r.appInstaller.DonwloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
 	if downloadErr != nil {
@@ -247,15 +263,12 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 
+	// Install or upgrade application.
 	oldAppInstallation = appInstallation.DeepCopy()
 	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appDefinition, appInstallation, appSourcePath)
 
-	if installErr != nil {
-		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
-	} else {
-		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
-	}
 	statusUpdater(&appInstallation.Status)
+	appInstallation.SetReadyCondition(installErr)
 
 	// we set condition in every case and condition update the LastHeartbeatTime. So patch will not be empty.
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {

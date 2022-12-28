@@ -161,6 +161,9 @@ type ApplicationInstallationStatus struct {
 
 	// HelmRelease holds the information about the helm release installed by this application. This field is only filled if template method is 'helm'.
 	HelmRelease *HelmRelease `json:"helmRelease,omitempty"`
+
+	// Failures counts the number of failed installation or updagrade. it is reset on successful reconciliation.
+	Failures int `json:"failures,omitempty"`
 }
 
 type HelmRelease struct {
@@ -248,4 +251,15 @@ func (appInstallation *ApplicationInstallation) SetCondition(conditionType Appli
 		appInstallation.Status.Conditions = map[ApplicationInstallationConditionType]ApplicationInstallationCondition{}
 	}
 	appInstallation.Status.Conditions[conditionType] = condition
+}
+
+// SetReadyCondition sets the ReadyCondition and appInstallation.Status.Failures counter according to the installError.
+func (appInstallation *ApplicationInstallation) SetReadyCondition(installErr error) {
+	if installErr != nil {
+		appInstallation.SetCondition(Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
+		appInstallation.Status.Failures++
+	} else {
+		appInstallation.SetCondition(Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
+		appInstallation.Status.Failures = 0
+	}
 }
