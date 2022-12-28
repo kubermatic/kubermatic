@@ -32,9 +32,8 @@ func ValidateApplicationDefinitionSpec(ad appskubermaticv1.ApplicationDefinition
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, ValidateApplicationDefinitionWithOpenAPI(ad, parentFieldPath)...)
-
 	allErrs = append(allErrs, ValidateApplicationVersions(ad.Spec.Versions, parentFieldPath.Child("spec"))...)
-
+	allErrs = append(allErrs, ValidateDeployOpts(ad.Spec.DefaultDeployOptions, parentFieldPath.Child("spec.defaultDeployOptions"))...)
 	return allErrs
 }
 

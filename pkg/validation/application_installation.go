@@ -66,6 +66,24 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 		allErrs = append(allErrs, field.NotFound(specPath.Child("applicationRef", "version"), spec.ApplicationRef.Version))
 	}
 
+	allErrs = append(allErrs, ValidateDeployOpts(spec.DeployOptions, specPath.Child("deployOptions"))...)
+	return allErrs
+}
+
+func ValidateDeployOpts(deployOpts *appskubermaticv1.DeployOptions, f *field.Path) []*field.Error {
+	allErrs := field.ErrorList{}
+	if deployOpts != nil && deployOpts.Helm != nil {
+		if deployOpts.Helm.Atomic && !deployOpts.Helm.Wait {
+			allErrs = append(allErrs, field.Forbidden(f.Child("helm"), "if atomic=true then wait must also be true"))
+		}
+		// note: deployOpts.Helm.Timeout is time metav1.Duration which guarantee no negative value
+		if deployOpts.Helm.Wait && deployOpts.Helm.Timeout.Duration == 0 {
+			allErrs = append(allErrs, field.Forbidden(f.Child("helm"), "if wait = true then timeout must be greater than 0"))
+		}
+		if !deployOpts.Helm.Wait && deployOpts.Helm.Timeout.Duration > 0 {
+			allErrs = append(allErrs, field.Forbidden(f.Child("helm"), "if timeout is defined then wait must be true"))
+		}
+	}
 	return allErrs
 }
 
