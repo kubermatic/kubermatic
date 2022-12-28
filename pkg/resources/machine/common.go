@@ -620,7 +620,6 @@ func GetAnexiaProviderConfig(_ *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, d
 		TemplateID: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Anexia.TemplateID},
 		CPUs:       nodeSpec.Cloud.Anexia.CPUs,
 		Memory:     int(nodeSpec.Cloud.Anexia.Memory),
-		DiskSize:   int(*nodeSpec.Cloud.Anexia.DiskSize),
 		LocationID: providerconfig.ConfigVarString{Value: dc.Spec.Anexia.LocationID},
 	}
 
@@ -640,7 +639,7 @@ func GetAnexiaProviderConfig(_ *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, d
 		}
 	}
 
-	if config.DiskSize >= 0 && len(config.Disks) > 0 {
+	if config.DiskSize > 0 && len(config.Disks) > 0 {
 		return nil, anexiaProvider.ErrConfigDiskSizeAndDisks
 	}
 
