@@ -259,6 +259,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return downloadErr
 	}
 	appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownaloadSourceSuccessful", "application's source successfully downloaded")
+	appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionUnknown, "InstallationInProgress", "application is installing or upgrading")
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 		return fmt.Errorf("failed to update status: %w", err)
 	}
