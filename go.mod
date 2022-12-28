@@ -345,3 +345,9 @@ require (
 require github.com/vishvananda/netlink v1.1.1-0.20220125195016-0639e7e787ba
 
 require github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
+
+// make `go list` work
+// see https://github.com/cilium/cilium/blob/master/go.mod#L250
+replace (
+	github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
+)
