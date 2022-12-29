@@ -78,3 +78,50 @@ func ApplicationInstallationValidatingWebhookConfigurationReconciler(caCert *x50
 		}
 	}
 }
+
+func ApplicationInstallationMutatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.MutatingWebhookConfigurationReconciler) {
+		return ApplicationInstallationAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			reinvocationPolicy := admissionregistrationv1.NeverReinvocationPolicy
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.AllScopes
+
+			url := fmt.Sprintf("https://%s.%s.svc.cluster.local./mutate-application-installation", resources.UserClusterWebhookServiceName, namespace)
+
+			hook.Webhooks = []admissionregistrationv1.MutatingWebhook{
+				{
+					Name:                    appskubermaticv1.ApplicationInstallationResourceName + "." + appskubermaticv1.GroupName, // this should be a FQDN,
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32(30),
+					ReinvocationPolicy:      &reinvocationPolicy,
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: triple.EncodeCertPEM(caCert),
+						URL:      &url,
+					},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{appskubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{appskubermaticv1.ApplicationInstallationResourceName},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+					},
+					NamespaceSelector: &metav1.LabelSelector{},
+					ObjectSelector:    &metav1.LabelSelector{},
+				},
+			}
+			return hook, nil
+		}
+	}
+}

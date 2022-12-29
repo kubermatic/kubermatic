@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	applicationinstallationmutation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/mutation"
 	applicationinstallationvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/validation"
 	machinevalidation "k8c.io/kubermatic/v2/pkg/webhook/machine/validation"
 
@@ -121,6 +122,9 @@ func main() {
 
 	// /////////////////////////////////////////
 	// setup webhooks
+
+	// Setup the mutation admission handler for ApplicationInstallation CRDs in seed manager.
+	applicationinstallationmutation.NewAdmissionHandler().SetupWebhookWithManager(seedMgr)
 
 	// Setup the validation admission handler for ApplicationInstallation CRDs in seed manager.
 	applicationinstallationvalidation.NewAdmissionHandler(seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
