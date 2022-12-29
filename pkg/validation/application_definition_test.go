@@ -108,7 +108,7 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 					s := spec.DeepCopy()
 					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
 						Wait:    true,
-						Timeout: metav1.Duration{5},
+						Timeout: metav1.Duration{Duration: 5},
 						Atomic:  false,
 					}}
 					return *s
@@ -122,7 +122,7 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 					s := spec.DeepCopy()
 					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
 						Wait:    false,
-						Timeout: metav1.Duration{0},
+						Timeout: metav1.Duration{Duration: 0},
 						Atomic:  true,
 					}}
 					return *s
@@ -136,7 +136,7 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 					s := spec.DeepCopy()
 					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
 						Wait:    true,
-						Timeout: metav1.Duration{0},
+						Timeout: metav1.Duration{Duration: 0},
 						Atomic:  false,
 					}}
 					return *s
@@ -150,7 +150,7 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 					s := spec.DeepCopy()
 					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
 						Wait:    false,
-						Timeout: metav1.Duration{5},
+						Timeout: metav1.Duration{Duration: 5},
 						Atomic:  false,
 					}}
 					return *s

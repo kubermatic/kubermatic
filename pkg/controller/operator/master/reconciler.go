@@ -448,6 +448,7 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 	reconcilers := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.ExternalClusterMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
+		common.ApplicationDefinitionMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {

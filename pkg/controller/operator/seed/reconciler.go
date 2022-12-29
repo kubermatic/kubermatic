@@ -670,6 +670,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		kubermaticseed.ClusterMutatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.AddonMutatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.MLAAdminSettingMutatingWebhookConfigurationReconciler(ctx, cfg, client),
+		common.ApplicationDefinitionMutatingWebhookConfigurationReconciler(ctx, cfg, client),
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, mutatingWebhookReconcilers, "", client); err != nil {
