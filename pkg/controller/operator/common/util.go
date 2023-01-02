@@ -265,7 +265,7 @@ func SeedProxyEnvironmentVars(p *kubermaticv1.ProxySettings) (result []corev1.En
 	})
 
 	noProxy := []string{
-		defaulting.DefaultNoProxy,
+		defaults.DefaultNoProxy,
 	}
 
 	if p.NoProxy.String() != "" {
