@@ -2213,7 +2213,11 @@ func (in *DatacenterSpecOpenstack) DeepCopyInto(out *DatacenterSpecOpenstack) {
 		*out = new(bool)
 		**out = **in
 	}
-	out.NodeSizeRequirements = in.NodeSizeRequirements
+	if in.NodeSizeRequirements != nil {
+		in, out := &in.NodeSizeRequirements, &out.NodeSizeRequirements
+		*out = new(OpenstackNodeSizeRequirements)
+		**out = **in
+	}
 	if in.EnabledFlavors != nil {
 		in, out := &in.EnabledFlavors, &out.EnabledFlavors
 		*out = make([]string, len(*in))
