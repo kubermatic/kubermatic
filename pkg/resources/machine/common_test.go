@@ -21,6 +21,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia"
+	anexiatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -186,6 +190,142 @@ func TestExtractKubeVirtOsImageURLOrDataVolumeNsName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := extractKubeVirtOsImageURLOrDataVolumeNsName(tt.args.namespace, tt.args.osImage); got != tt.want {
 				t.Errorf("extractKubeVirtOsImageURLOrDataVolumeNsName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetAnexiaProviderSpec(t *testing.T) {
+	const (
+		vlanID     = "vlan-identifier"
+		templateID = "template-identifier"
+		locationID = "location-identifier"
+	)
+
+	tests := []struct {
+		name           string
+		anexiaNodeSpec apiv1.AnexiaNodeSpec
+		wantRawConf    *anexiatypes.RawConfig
+		wantErr        error
+	}{
+		{
+			name: "Anexia node spec with DiskSize attribute",
+			anexiaNodeSpec: apiv1.AnexiaNodeSpec{
+				VlanID:     vlanID,
+				TemplateID: templateID,
+				CPUs:       4,
+				Memory:     4096,
+				DiskSize:   pointer.Int64(80),
+			},
+			wantRawConf: &anexiatypes.RawConfig{
+				VlanID:     providerconfigtypes.ConfigVarString{Value: vlanID},
+				TemplateID: providerconfigtypes.ConfigVarString{Value: templateID},
+				LocationID: providerconfigtypes.ConfigVarString{Value: locationID},
+				CPUs:       4,
+				Memory:     4096,
+				DiskSize:   80,
+				Disks:      nil,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Anexia node spec with Disks attribute",
+			anexiaNodeSpec: apiv1.AnexiaNodeSpec{
+				VlanID:     vlanID,
+				TemplateID: templateID,
+				CPUs:       4,
+				Memory:     4096,
+				Disks: []apiv1.AnexiaDiskConfig{
+					{
+						Size:            80,
+						PerformanceType: pointer.String("ENT2"),
+					},
+				},
+			},
+			wantRawConf: &anexiatypes.RawConfig{
+				VlanID:     providerconfigtypes.ConfigVarString{Value: vlanID},
+				TemplateID: providerconfigtypes.ConfigVarString{Value: templateID},
+				LocationID: providerconfigtypes.ConfigVarString{Value: locationID},
+				CPUs:       4,
+				Memory:     4096,
+				DiskSize:   0,
+				Disks: []anexiatypes.RawDisk{
+					{
+						Size:            80,
+						PerformanceType: providerconfigtypes.ConfigVarString{Value: "ENT2"},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "Anexia node spec with both DiskSize and Disks attributes",
+			anexiaNodeSpec: apiv1.AnexiaNodeSpec{
+				VlanID:     vlanID,
+				TemplateID: templateID,
+				CPUs:       4,
+				Memory:     4096,
+				DiskSize:   pointer.Int64(80),
+				Disks: []apiv1.AnexiaDiskConfig{
+					{
+						Size:            80,
+						PerformanceType: pointer.String("ENT2"),
+					},
+				},
+			},
+			wantRawConf: nil,
+			wantErr:     anexia.ErrConfigDiskSizeAndDisks,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dc := kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Anexia: &kubermaticv1.DatacenterSpecAnexia{
+						LocationID: locationID,
+					},
+				},
+			}
+
+			nodeSpec := apiv1.NodeSpec{
+				Cloud: apiv1.NodeCloudSpec{
+					Anexia: &test.anexiaNodeSpec,
+				},
+			}
+
+			result, err := GetAnexiaProviderConfig(nil, nodeSpec, &dc)
+
+			if test.wantErr != nil {
+				assert.Nil(t, result, "expected an error, not a result")
+				assert.ErrorIs(t, err, test.wantErr, "expected an error, not a result")
+			} else {
+				assert.NotNil(t, result)
+
+				assert.Equal(t, result.VlanID.Value, vlanID, "VLAN should be set correctly")
+				assert.Equal(t, result.TemplateID.Value, templateID, "Template should be set correctly")
+				assert.Equal(t, result.LocationID.Value, locationID, "Location should be set correctly")
+
+				assert.EqualValues(t, result.CPUs, test.anexiaNodeSpec.CPUs, "CPUs should be set correctly")
+				assert.EqualValues(t, result.Memory, test.anexiaNodeSpec.Memory, "Memory should be set correctly")
+
+				if test.anexiaNodeSpec.DiskSize != nil {
+					assert.EqualValues(t, result.DiskSize, *test.anexiaNodeSpec.DiskSize, "DiskSize should be set correctly")
+					assert.Nil(t, result.Disks, "Disks attribute should be nil")
+				} else {
+					assert.EqualValues(t, result.DiskSize, 0, "DiskSize should be set to 0")
+					assert.Len(t, result.Disks, len(test.anexiaNodeSpec.Disks), "Disks attribute should have correct length")
+
+					for i, dc := range test.anexiaNodeSpec.Disks {
+						assert.EqualValues(t, result.Disks[i].Size, dc.Size, "Disk entry should have correct size")
+
+						if dc.PerformanceType != nil {
+							assert.EqualValues(t, result.Disks[i].PerformanceType.Value, *dc.PerformanceType, "Disk entry should have correct performance type")
+						} else {
+							assert.Empty(t, result.Disks[i].PerformanceType.Value, "Disk entry should have no performance type")
+						}
+					}
+				}
 			}
 		})
 	}
