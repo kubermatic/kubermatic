@@ -300,7 +300,7 @@ type EtcdBackupRestore struct {
 	// DefaultDestination marks the default destination that will be used for the default etcd backup config which is
 	// created for every user cluster. Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.
-	DefaultDestination string `json:"defaultDestination"`
+	DefaultDestination string `json:"defaultDestination,omitempty"`
 }
 
 // BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.
