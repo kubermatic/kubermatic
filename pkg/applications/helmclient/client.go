@@ -39,6 +39,7 @@ import (
 	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
+	"helm.sh/helm/v3/pkg/storage/driver"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -288,7 +289,14 @@ func (h HelmClient) Upgrade(chartLoc, releaseName string, values map[string]inte
 // Uninstall the release in targetNamespace.
 func (h HelmClient) Uninstall(releaseName string) (*release.UninstallReleaseResponse, error) {
 	uninstallClient := action.NewUninstall(h.actionConfig)
-	return uninstallClient.Run(releaseName)
+	uninstallReleaseResponse, err := uninstallClient.Run(releaseName)
+
+	// Don't raise an error is the released has already been uninstalled.
+	if errors.Is(err, driver.ErrReleaseNotFound) {
+		h.logger.Debug("helm release not found. nothing to do")
+		return uninstallReleaseResponse, nil
+	}
+	return uninstallReleaseResponse, err
 }
 
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies
