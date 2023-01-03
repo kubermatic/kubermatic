@@ -37,7 +37,7 @@ const (
 	auditEmptyDirName      = "tmp-volume"
 	auditEmptyDirMountPath = "/tmp/audit"
 	imageName              = "openpolicyagent/gatekeeper"
-	tag                    = "v3.7.2"
+	tag                    = "v3.8.1"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
