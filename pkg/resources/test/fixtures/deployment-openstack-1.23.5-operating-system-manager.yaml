@@ -21,6 +21,7 @@ spec:
       creationTimestamp: null
       labels:
         app: operating-system-manager
+        ca-bundle-configmap-revision: "123456"
         cluster: de-test-01
         operatingsystemmanager-kubeconfig-secret-revision: "123456"
     spec:
@@ -36,7 +37,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/osm-controller","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","cluster-de-test-01"]}'
+        - '{"command":"/usr/local/bin/osm-controller","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-namespace","cluster-de-test-01"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -81,7 +82,7 @@ spec:
               key: applicationCredentialSecret
               name: cloud-credentials
               optional: true
-        image: quay.io/kubermatic/operating-system-manager:4f7c5a6873538e922afd70bff41850795657f313
+        image: quay.io/kubermatic/operating-system-manager:0250abe56e0a7983a4258039ba1014e6bbf81a6e
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -114,6 +115,9 @@ spec:
         - mountPath: /etc/kubernetes/worker-kubeconfig
           name: operatingsystemmanager-kubeconfig
           readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca-bundle
+          name: ca-bundle
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       initContainers:
@@ -132,6 +136,9 @@ spec:
       - name: operatingsystemmanager-kubeconfig
         secret:
           secretName: operatingsystemmanager-kubeconfig
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - emptyDir: {}
         name: http-prober-bin
 status: {}

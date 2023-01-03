@@ -77,7 +77,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.10.3
 	k8c.io/kubeone v1.5.4
-	k8c.io/operating-system-manager v1.1.2-0.20221201183812-4f7c5a687353
+	k8c.io/operating-system-manager v1.1.2-0.20221213201002-0250abe56e0a
 	k8c.io/reconciler v0.3.1
 	k8s.io/api v0.25.4
 	k8s.io/apiextensions-apiserver v0.25.4

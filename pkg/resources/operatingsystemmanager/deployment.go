@@ -55,7 +55,7 @@ var (
 const (
 	Name = "operating-system-manager"
 	// TODO: pin to a released version again.
-	Tag = "4f7c5a6873538e922afd70bff41850795657f313"
+	Tag = "0250abe56e0a7983a4258039ba1014e6bbf81a6e"
 )
 
 type operatingSystemManagerData interface {
@@ -105,7 +105,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 				MatchLabels: resources.BaseAppLabels(Name, nil),
 			}
 
-			volumes := []corev1.Volume{getKubeconfigVolume()}
+			volumes := []corev1.Volume{getKubeconfigVolume(), getCABundleVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
@@ -205,6 +205,11 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 							MountPath: "/etc/kubernetes/worker-kubeconfig",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.CABundleConfigMapName,
+							MountPath: "/etc/kubernetes/pki/ca-bundle",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -236,6 +241,7 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 		"-cluster-dns", cs.clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
+		"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 		"-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
 	}
 
