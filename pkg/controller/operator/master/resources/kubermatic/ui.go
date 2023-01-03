@@ -60,7 +60,7 @@ func UIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, versions kub
 				{
 					Name:  "webserver",
 					Image: cfg.Spec.UI.DockerRepository + ":" + tag,
-					Env:   common.ProxyEnvironmentVars(cfg),
+					Env:   common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
