@@ -1093,8 +1093,6 @@ spec:
                       where the backups for the Seed can be stored. If not empty,
                       it enables automatic backup and restore for the seed.
                     type: object
-                required:
-                - defaultDestination
                 type: object
               exposeStrategy:
                 description: 'Optional: ExposeStrategy explicitly sets the expose
