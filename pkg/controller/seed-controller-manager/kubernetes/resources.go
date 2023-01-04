@@ -613,8 +613,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			apiserver.DenyAllPolicyReconciler(),
 			apiserver.DNSAllowReconciler(c, data),
 			apiserver.EctdAllowReconciler(c),
-			apiserver.MachineControllerWebhookReconciler(c),
-			apiserver.UserClusterWebhookReconciler(c),
+			apiserver.MachineControllerWebhookAllowReconciler(c),
+			apiserver.UserClusterWebhookAllowReconciler(c),
+			apiserver.OSMWebhookAllowReconciler(c),
 		}
 
 		// one shared limited context for all hostname resolutions

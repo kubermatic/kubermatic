@@ -160,7 +160,7 @@ func OpenVPNServerAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetw
 	}
 }
 
-func MachineControllerWebhookReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+func MachineControllerWebhookAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyMachineControllerWebhookAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -192,7 +192,7 @@ func MachineControllerWebhookReconciler(c *kubermaticv1.Cluster) reconciling.Nam
 	}
 }
 
-func UserClusterWebhookReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+func UserClusterWebhookAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyUserClusterWebhookAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -211,6 +211,38 @@ func UserClusterWebhookReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetw
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: resources.UserClusterWebhookDeploymentName,
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return np, nil
+		}
+	}
+}
+
+func OSMWebhookAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
+		return resources.NetworkPolicyOperatingSystemManagerWebhookAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: name,
+					},
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										resources.AppLabelKey: resources.OperatingSystemManagerWebhookDeploymentName,
 									},
 								},
 							},
