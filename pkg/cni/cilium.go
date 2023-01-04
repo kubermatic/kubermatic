@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -32,6 +33,8 @@ import (
 
 const (
 	ciliumHelmChartName = "cilium"
+
+	ciliumImageRegistry = "quay.io/cilium/"
 )
 
 // CiliumApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used
@@ -54,7 +57,7 @@ func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinit
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName: ciliumHelmChartName,
 								// TODO (rastislavs): bump to the release version once it is out
-								ChartVersion: "1.13.0-rc3",
+								ChartVersion: "1.13.0-rc4",
 								// TODO (rastislavs): Use Kubermatic OCI chart instead and allow overriding the registry
 								URL: "https://helm.cilium.io/",
 							},
@@ -71,10 +74,10 @@ func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinit
 					},
 					"hubble": map[string]any{
 						"relay": map[string]any{
-							"enabled": "true",
+							"enabled": true,
 						},
 						"ui": map[string]any{
-							"enabled": "true",
+							"enabled": true,
 						},
 						// cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
 						"tls": map[string]any{
@@ -101,16 +104,18 @@ func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteR
 	values := map[string]any{
 		"cni": map[string]any{
 			// we run Cilium as non-exclusive CNI to allow for Multus use-cases
-			"exclusive": "false",
+			"exclusive": false,
 		},
-		"operator": map[string]any{
-			"securityContext": map[string]any{
-				"seccompProfile": map[string]any{
-					"type": "RuntimeDefault",
-				},
+	}
+
+	valuesOperator := map[string]any{
+		"securityContext": map[string]any{
+			"seccompProfile": map[string]any{
+				"type": "RuntimeDefault",
 			},
 		},
 	}
+	values["operator"] = valuesOperator
 
 	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
 		values["kubeProxyReplacement"] = "strict"
@@ -125,13 +130,51 @@ func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteR
 		"clusterPoolIPv4MaskSize": fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4),
 	}
 	if cluster.IsDualStack() {
-		values["ipv6"] = map[string]any{"enabled": "true"}
+		values["ipv6"] = map[string]any{"enabled": true}
 		ipamOperator["clusterPoolIPv6PodCIDR"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR()
 		ipamOperator["clusterPoolIPv6MaskSize"] = fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6)
 	}
 	values["ipam"] = map[string]any{"operator": ipamOperator}
 
-	// TODO (rastislavs): override *.image.repository + set *.image.useDigest=false if registry override is configured
+	// Override images if registry override is configured
+	if overwriteRegistry != "" {
+		values["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesOperator["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"operator", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		values["hubble"] = map[string]any{
+			"relay": map[string]any{
+				"image": map[string]any{
+					"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-relay", overwriteRegistry)),
+					"useDigest":  false,
+				},
+			},
+			"ui": map[string]any{
+				"backend": map[string]any{
+					"image": map[string]any{
+						"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui-backend", overwriteRegistry)),
+						"useDigest":  false,
+					},
+				},
+				"frontend": map[string]any{
+					"image": map[string]any{
+						"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui", overwriteRegistry)),
+						"useDigest":  false,
+					},
+				},
+			},
+		}
+		values["certgen"] = map[string]any{
+			"image": map[string]any{
+				"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
+				"useDigest":  false,
+			},
+		}
+	}
 
 	return values
 }
