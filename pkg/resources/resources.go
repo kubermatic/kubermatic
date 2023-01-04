@@ -988,15 +988,16 @@ const (
 )
 
 const (
-	NetworkPolicyDefaultDenyAllEgress          = "default-deny-all-egress"
-	NetworkPolicyEtcdAllow                     = "etcd-allow"
-	NetworkPolicyDNSAllow                      = "dns-allow"
-	NetworkPolicyOpenVPNServerAllow            = "openvpn-server-allow"
-	NetworkPolicyMachineControllerWebhookAllow = "machine-controller-webhook-allow"
-	NetworkPolicyUserClusterWebhookAllow       = "usercluster-webhook-allow"
-	NetworkPolicyMetricsServerAllow            = "metrics-server-allow"
-	NetworkPolicyClusterExternalAddrAllow      = "cluster-external-addr-allow"
-	NetworkPolicyOIDCIssuerAllow               = "oidc-issuer-allow"
+	NetworkPolicyDefaultDenyAllEgress               = "default-deny-all-egress"
+	NetworkPolicyEtcdAllow                          = "etcd-allow"
+	NetworkPolicyDNSAllow                           = "dns-allow"
+	NetworkPolicyOpenVPNServerAllow                 = "openvpn-server-allow"
+	NetworkPolicyMachineControllerWebhookAllow      = "machine-controller-webhook-allow"
+	NetworkPolicyUserClusterWebhookAllow            = "usercluster-webhook-allow"
+	NetworkPolicyOperatingSystemManagerWebhookAllow = "operating-system-manager-webhook-allow"
+	NetworkPolicyMetricsServerAllow                 = "metrics-server-allow"
+	NetworkPolicyClusterExternalAddrAllow           = "cluster-external-addr-allow"
+	NetworkPolicyOIDCIssuerAllow                    = "oidc-issuer-allow"
 )
 
 const (
