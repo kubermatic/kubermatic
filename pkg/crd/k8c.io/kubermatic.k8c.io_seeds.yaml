@@ -1077,6 +1077,24 @@ spec:
                           type: object
                       type: object
                   type: object
+                oidcProviderConfiguration:
+                  description: OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
+                  properties:
+                    issuerClientID:
+                      description: A client id that all tokens must be issued for.
+                      type: string
+                    issuerClientIDSecret:
+                      description: 'TODO (pkprzekwas): Add description.'
+                      type: string
+                    issuerUrl:
+                      description: URL of the provider which allows the API server to discover public signing keys.
+                      pattern: ^(http|https)://.+
+                      type: string
+                  required:
+                    - issuerClientID
+                    - issuerClientIDSecret
+                    - issuerUrl
+                  type: object
                 proxySettings:
                   description: 'Optional: ProxySettings can be used to configure HTTP proxy settings on the worker nodes in user clusters. However, proxy settings on nodes take precedence.'
                   properties:

@@ -888,13 +888,13 @@ type OIDCProviderConfiguration struct {
 	// +kubebuilder:validation:Pattern="^(http|https)://.+"
 
 	// URL of the provider which allows the API server to discover public signing keys.
-	IssuerUrl string
+	IssuerUrl string `json:"issuerUrl"`
 
 	// A client id that all tokens must be issued for.
-	IssuerClientID string
+	IssuerClientID string `json:"issuerClientID"`
 
 	// TODO (pkprzekwas): Add description.
-	IssuerClientIDSecret string
+	IssuerClientIDSecret string `json:"issuerClientIDSecret"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
