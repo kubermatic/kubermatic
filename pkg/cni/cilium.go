@@ -70,7 +70,7 @@ func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinit
 			if app.Spec.DefaultValues == nil {
 				defaultValues := map[string]any{
 					"operator": map[string]any{
-						"replicas": "1",
+						"replicas": 1,
 					},
 					"hubble": map[string]any{
 						"relay": map[string]any{
@@ -120,7 +120,7 @@ func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteR
 	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
 		values["kubeProxyReplacement"] = "strict"
 		values["k8sServiceHost"] = cluster.Status.Address.ExternalName
-		values["k8sServicePort"] = fmt.Sprintf("%d", cluster.Status.Address.Port)
+		values["k8sServicePort"] = cluster.Status.Address.Port
 	} else {
 		values["kubeProxyReplacement"] = "disabled"
 	}
