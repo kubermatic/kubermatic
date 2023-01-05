@@ -52,6 +52,12 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 					Type:         "DistributedVirtualPortgroup",
 					Name:         "Default Network",
 				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
+					RelativePath: "VM Network",
+					Type:         "Network",
+					Name:         "VM Network",
+				},
 			},
 		},
 	}
