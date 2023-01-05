@@ -1313,7 +1313,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.17-node-16-kind-0.12-8
+        - image: quay.io/kubermatic/build:go-1.18-node-18-kind-0.14-4
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
