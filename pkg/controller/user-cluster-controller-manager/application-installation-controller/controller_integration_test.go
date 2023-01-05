@@ -319,7 +319,7 @@ func createApplicationDef(t *testing.T, ctx context.Context, client ctrlruntimec
 
 func createApplicationInstallation(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, appInstallName string, appDefName string, version string) appskubermaticv1.ApplicationInstallation {
 	// Create applicationInstallation.
-	if err := client.Create(ctx, genApplicationInstallation(appInstallName, appDefName, version)); err != nil {
+	if err := client.Create(ctx, genApplicationInstallation(appInstallName, appDefName, version, 0)); err != nil {
 		t.Fatalf("failed to create applicationInstallation: %s", err)
 	}
 

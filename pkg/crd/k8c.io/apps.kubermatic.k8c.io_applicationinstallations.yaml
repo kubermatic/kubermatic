@@ -47,6 +47,23 @@ spec:
                     - name
                     - version
                   type: object
+                deployOptions:
+                  description: DeployOptions holds the settings specific to the templating method used to deploy the application.
+                  properties:
+                    helm:
+                      description: HelmDeployOptions holds the deployment settings when templating method is Helm.
+                      properties:
+                        atomic:
+                          description: Atomic corresponds to the --atomic flag on Helm cli. if set, the installation process deletes the installation on failure; the upgrade process rolls back changes made in case of failed upgrade.
+                          type: boolean
+                        timeout:
+                          description: Timeout corresponds to the --timeout flag on Helm cli. time to wait for any individual Kubernetes operation.
+                          type: string
+                        wait:
+                          description: Wait corresponds to the --wait flag on Helm cli. if set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful. It will wait for as long as timeout
+                          type: boolean
+                      type: object
+                  type: object
                 namespace:
                   description: Namespace describe the desired state of the namespace where application will be created.
                   properties:
@@ -366,6 +383,9 @@ spec:
                     type: object
                   description: Conditions contains conditions an installation is in, its primary use case is status signaling between controllers or between controllers and the API
                   type: object
+                failures:
+                  description: Failures counts the number of failed installation or updagrade. it is reset on successful reconciliation.
+                  type: integer
                 helmRelease:
                   description: HelmRelease holds the information about the helm release installed by this application. This field is only filled if template method is 'helm'.
                   properties:

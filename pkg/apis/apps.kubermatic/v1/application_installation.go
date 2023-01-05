@@ -77,6 +77,29 @@ type ApplicationInstallationSpec struct {
 	// Setting a value equal to 0 disables the force reconciliation of the application (default behavior).
 	// Setting this too low can cause a heavy load and may disrupt your application workload depending on the template method.
 	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
+
+	// DeployOptions holds the settings specific to the templating method used to deploy the application.
+	DeployOptions *DeployOptions `json:"deployOptions,omitempty"`
+}
+
+// DeployOptions holds the settings specific to the templating method used to deploy the application.
+type DeployOptions struct {
+	Helm *HelmDeployOptions `json:"helm,omitempty"`
+}
+
+// HelmDeployOptions holds the deployment settings when templating method is Helm.
+type HelmDeployOptions struct {
+	// Wait corresponds to the --wait flag on Helm cli.
+	// if set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful. It will wait for as long as timeout
+	Wait bool `json:"wait,omitempty"`
+
+	// Timeout corresponds to the --timeout flag on Helm cli.
+	// time to wait for any individual Kubernetes operation.
+	Timeout metav1.Duration `json:"timeout,omitempty"`
+
+	// Atomic corresponds to the --atomic flag on Helm cli.
+	// if set, the installation process deletes the installation on failure; the upgrade process rolls back changes made in case of failed upgrade.
+	Atomic bool `json:"atomic,omitempty"`
 }
 
 // AppNamespaceSpec describe the desired state of the namespace where application will be created.
@@ -138,6 +161,9 @@ type ApplicationInstallationStatus struct {
 
 	// HelmRelease holds the information about the helm release installed by this application. This field is only filled if template method is 'helm'.
 	HelmRelease *HelmRelease `json:"helmRelease,omitempty"`
+
+	// Failures counts the number of failed installation or updagrade. it is reset on successful reconciliation.
+	Failures int `json:"failures,omitempty"`
 }
 
 type HelmRelease struct {
@@ -205,4 +231,35 @@ const (
 var AllApplicationInstallationConditionTypes = []ApplicationInstallationConditionType{
 	ManifestsRetrieved,
 	Ready,
+}
+
+// SetCondition of the applicationInstallation. It take care of update LastHeartbeatTime and LastTransitionTime if needed.
+func (appInstallation *ApplicationInstallation) SetCondition(conditionType ApplicationInstallationConditionType, status corev1.ConditionStatus, reason, message string) {
+	now := metav1.Now()
+
+	condition, exists := appInstallation.Status.Conditions[conditionType]
+	if exists && condition.Status != status {
+		condition.LastTransitionTime = now
+	}
+
+	condition.Status = status
+	condition.LastHeartbeatTime = now
+	condition.Reason = reason
+	condition.Message = message
+
+	if appInstallation.Status.Conditions == nil {
+		appInstallation.Status.Conditions = map[ApplicationInstallationConditionType]ApplicationInstallationCondition{}
+	}
+	appInstallation.Status.Conditions[conditionType] = condition
+}
+
+// SetReadyCondition sets the ReadyCondition and appInstallation.Status.Failures counter according to the installError.
+func (appInstallation *ApplicationInstallation) SetReadyCondition(installErr error) {
+	if installErr != nil {
+		appInstallation.SetCondition(Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
+		appInstallation.Status.Failures++
+	} else {
+		appInstallation.SetCondition(Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
+		appInstallation.Status.Failures = 0
+	}
 }
