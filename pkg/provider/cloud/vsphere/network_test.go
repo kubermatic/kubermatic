@@ -42,10 +42,10 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 					Name:         "Management",
 				},
 				{
-					AbsolutePath: fmt.Sprintf("/%s/network/DSwitchAlpha-DVUplinks-2001", vSphereDatacenter),
-					RelativePath: "DSwitchAlpha-DVUplinks-2001",
+					AbsolutePath: fmt.Sprintf("/%s/network/MainDSwitch-DVUplinks-36", vSphereDatacenter),
+					RelativePath: "MainDSwitch-DVUplinks-36",
 					Type:         "DistributedVirtualPortgroup",
-					Name:         "DSwitchAlpha-DVUplinks-2001",
+					Name:         "MainDSwitch-DVUplinks-36",
 				},
 				{
 					AbsolutePath: fmt.Sprintf("/%s/network/Default Network", vSphereDatacenter),
