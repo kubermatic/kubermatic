@@ -62,9 +62,9 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0),
-					genApplicationInstallation("appInstallation-2", "app-def-2", "1.0.0", 0),
-					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0", 0)).
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-2", "app-def-2", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0", 0, 1, 0)).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{
 				{NamespacedName: types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}},
@@ -77,9 +77,9 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-2", "1.0.0", 0),
-					genApplicationInstallation("appInstallation-2", "app-def-3", "1.0.0", 0),
-					genApplicationInstallation("appInstallation-3", "app-def-4", "1.0.0", 0)).
+					genApplicationInstallation("appInstallation-1", "app-def-2", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-2", "app-def-3", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-3", "app-def-4", "1.0.0", 0, 1, 0)).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{},
 		},
@@ -128,7 +128,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0)).
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0)).
 				Build(),
 			appInstaller:             fake.ApplicationInstallerLogger{},
 			installErr:               nil,
@@ -142,7 +142,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2)).
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 1)).
 				Build(),
 			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
 			installErr:               installError,
@@ -156,7 +156,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2)).
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 0)).
 				Build(),
 			appInstaller:             fake.ApplicationInstallerLogger{},
 			installErr:               nil,
@@ -165,18 +165,61 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
 		},
 		{
+			name:                  "installation fails after failure and spec changed app.Status.Failures should be set to 1 (reset + failure) and condition set to false",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 2, 1)).
+				Build(),
+			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
+			installErr:               installError,
+			wantErr:                  true,
+			expectedFailure:          1,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
+		},
+		{
 			name:                  "installation fails and reaches max retries: condition should be set to fails and no error should be returned (to not requeue object)",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1)).
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 1, 1)).
 				Build(),
 			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
 			installErr:               nil,
 			wantErr:                  false,
 			expectedFailure:          maxRetries + 1,
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailedRetriesExceeded", Message: "Max number of retries was exceeded. Last error: previous error"},
+		},
+
+		{
+			name:                  "installation has reached max retries and then spec has changed (with working install): app.Status.Failures should be reset and condition set to true",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
+				Build(),
+			appInstaller:             fake.ApplicationInstallerLogger{},
+			installErr:               nil,
+			wantErr:                  false,
+			expectedFailure:          0,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
+		},
+		{
+			name:                  "installation has reached max retries and then spec has changed (with not working install): app.Status.Failures should be set to 1 ( reset + failure) and condition set to false",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
+				Build(),
+			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
+			installErr:               installError,
+			wantErr:                  true,
+			expectedFailure:          1,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
 		},
 	}
 
@@ -263,15 +306,16 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 	}
 }
 
-func genApplicationInstallation(name string, applicationDefName string, appVersion string, failures int) *appskubermaticv1.ApplicationInstallation {
+func genApplicationInstallation(name string, applicationDefName string, appVersion string, failures int, generation int64, observedGeneration int64) *appskubermaticv1.ApplicationInstallation {
 	message := ""
 	if failures > maxRetries {
 		message = "previous error"
 	}
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: applicationNamespace,
+			Name:       name,
+			Namespace:  applicationNamespace,
+			Generation: generation,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: appskubermaticv1.AppNamespaceSpec{
@@ -288,7 +332,7 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 		Status: appskubermaticv1.ApplicationInstallationStatus{
 			Failures: failures,
 			Conditions: map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{
-				appskubermaticv1.Ready: {Message: message},
+				appskubermaticv1.Ready: {Message: message, ObservedGeneration: observedGeneration},
 			},
 		},
 	}
