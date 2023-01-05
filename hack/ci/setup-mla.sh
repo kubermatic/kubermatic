@@ -29,7 +29,7 @@ source hack/lib.sh
 URL="https://github.com/kubermatic/mla.git"
 
 # Frozen for KKP v2.20.x
-REF="v0.2.2"
+REF="v0.2.5"
 
 # Ensure Github's host key is available and disable IP checking.
 # ensure_github_host_pubkey
