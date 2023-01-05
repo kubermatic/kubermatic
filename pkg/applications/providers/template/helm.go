@@ -70,7 +70,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 		}
 	}
 
-	deployOpts, err := getDeployOps(appDefinition, applicationInstallation)
+	deployOpts, err := getDeployOpts(appDefinition, applicationInstallation)
 	if err != nil {
 		return util.NoStatusUpdate, err
 	}
@@ -195,9 +195,9 @@ func getReleaseName(applicationInstallation *appskubermaticv1.ApplicationInstall
 	return namespacedName
 }
 
-// getDeployOps builds helmclient.DeployOpts from values provided by appInstall or fallback to the values of appDefinition or fallback to the default options.
+// getDeployOpts builds helmclient.DeployOpts from values provided by appInstall or fallback to the values of appDefinition or fallback to the default options.
 // Default options are wait=false that implies timeout=0 and atomic=false.
-func getDeployOps(appDefinition *appskubermaticv1.ApplicationDefinition, appInstall *appskubermaticv1.ApplicationInstallation) (*helmclient.DeployOpts, error) {
+func getDeployOpts(appDefinition *appskubermaticv1.ApplicationDefinition, appInstall *appskubermaticv1.ApplicationInstallation) (*helmclient.DeployOpts, error) {
 	// Read options from applicationInstallation.
 	if appInstall.Spec.DeployOptions != nil && appInstall.Spec.DeployOptions.Helm != nil {
 		return helmclient.NewDeployOpts(appInstall.Spec.DeployOptions.Helm.Wait, appInstall.Spec.DeployOptions.Helm.Timeout.Duration, appInstall.Spec.DeployOptions.Helm.Atomic)

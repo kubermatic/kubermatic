@@ -205,12 +205,12 @@ func TestGetDeployOps(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getDeployOps(tt.appDefinition, tt.appInstall)
+			got, err := getDeployOpts(tt.appDefinition, tt.appInstall)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("getDeployOps() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("getDeployOpts() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Fatalf("getDeployOps() got = %v, want %v", got, tt.want)
+				t.Fatalf("getDeployOpts() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

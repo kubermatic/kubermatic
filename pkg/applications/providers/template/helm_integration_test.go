@@ -216,7 +216,7 @@ func TestHelmProvider(t *testing.T) {
 		},
 		// these tests ensure deploysOpt defined in CR are correctly passed to the helmClient
 		{
-			name: "application installation should fail when timeout is exceeded (timeout is defined at applincation Installation Level)",
+			name: "application installation should fail when timeout is exceeded (timeout is defined at application Installation Level)",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
@@ -253,7 +253,7 @@ func TestHelmProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "application installation should fail when timeout is exceeded (timeout is defined at applincationDefinition Level)",
+			name: "application installation should fail when timeout is exceeded (timeout is defined at applicationDefinition Level)",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
