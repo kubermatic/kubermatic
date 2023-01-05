@@ -86,7 +86,7 @@ spec:
   ui:
     config: |
       {
-        "share_kubeconfig": true
+        "de": true
       }
 ```
 
