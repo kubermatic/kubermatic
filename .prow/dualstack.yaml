@@ -24,10 +24,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -63,10 +63,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -101,10 +101,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -137,10 +137,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-4
-          imagePullPolicy: Always
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -173,10 +173,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -209,10 +209,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -245,10 +245,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -281,10 +281,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -317,10 +317,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -353,10 +353,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -389,10 +389,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -425,10 +425,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -461,10 +461,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -499,10 +499,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -537,10 +537,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -575,10 +575,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -613,10 +613,10 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:

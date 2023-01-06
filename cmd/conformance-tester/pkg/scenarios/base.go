@@ -50,7 +50,7 @@ type Scenario interface {
 	IsValid(opts *types.Options, log *zap.SugaredLogger) bool
 
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
-	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error)
+	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error)
 
 	SetDualstackEnabled(bool)
 }
@@ -113,7 +113,7 @@ func (s *baseScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bool
 	return true
 }
 
-func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, replicas int, cloudProviderSpec interface{}) (clusterv1alpha1.MachineDeployment, error) {
+func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, replicas int, cloudProviderSpec interface{}, sshPubKeys []string) (clusterv1alpha1.MachineDeployment, error) {
 	replicas32 := int32(replicas)
 
 	osSpec, err := operatingsystem.DefaultSpec(s.operatingSystem, s.cloudProvider)
@@ -132,6 +132,7 @@ func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, re
 		WithOperatingSystemSpec(osSpec).
 		WithCloudProviderSpec(cloudProviderSpec).
 		WithNetworkConfig(networkConfig).
+		AddSSHPublicKey(sshPubKeys...).
 		BuildProviderSpec()
 	if err != nil {
 		return clusterv1alpha1.MachineDeployment{}, err

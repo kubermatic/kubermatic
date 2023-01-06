@@ -46,12 +46,12 @@ func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 }
 
-func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewHetznerConfig().
 		WithServerType(hetznerServerType).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
 	if err != nil {
 		return nil, err
 	}

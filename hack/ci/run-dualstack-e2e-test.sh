@@ -32,13 +32,26 @@ export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
 
-# gather the logs of all things in the Kubermatic namespace
+# gather the logs of all things in the cluster control plane and in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
 source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Getting secrets from Vault"
 retry 5 vault_ci_login
+
+if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
+  echodate "Getting default SSH pubkey for machines from Vault"
+  E2E_SSH_PUBKEY="$(mktemp)"
+  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
+else
+  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
+  E2E_SSH_PUBKEY="$(mktemp)"
+  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+fi
+
+echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
 export AWS_E2E_TESTS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
 export AWS_E2E_TESTS_SECRET=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
@@ -92,6 +105,7 @@ go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -
   -gcp-kkp-datacenter gcp-westeurope \
   -hetzner-kkp-datacenter hetzner-nbg1 \
   -openstack-kkp-datacenter syseleven-fes1 \
-  -vsphere-kkp-datacenter vsphere-ger
+  -vsphere-kkp-datacenter vsphere-ger \
+  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Dualstack tests done."

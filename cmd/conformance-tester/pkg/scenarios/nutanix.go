@@ -57,7 +57,7 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 }
 
-func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewNutanixConfig().
 		WithSubnetName(secrets.Nutanix.SubnetName).
 		WithCPUs(nutanixCPUs).
@@ -65,7 +65,7 @@ func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets
 		WithDiskSize(nutanixDiskSize).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
 	if err != nil {
 		return nil, err
 	}
