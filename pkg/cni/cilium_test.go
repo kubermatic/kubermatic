@@ -36,9 +36,9 @@ var testCluster = &kubermaticv1.Cluster{
 		},
 		ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 			Pods: kubermaticv1.NetworkRanges{
-				CIDRBlocks: []string{"192.168.0.0"},
+				CIDRBlocks: []string{"192.168.0.0/24"},
 			},
-			NodeCIDRMaskSizeIPv4: pointer.Int32(24),
+			NodeCIDRMaskSizeIPv4: pointer.Int32(16),
 			ProxyMode:            resources.EBPFProxyMode,
 		},
 	},
@@ -48,6 +48,37 @@ var testCluster = &kubermaticv1.Cluster{
 			Port:         6443,
 		},
 	},
+}
+
+func TestGetCiliumAppInstallOverrideValues(t *testing.T) {
+	testCases := []struct {
+		name              string
+		cluster           *kubermaticv1.Cluster
+		overwriteRegistry string
+		expectedValues    string
+	}{
+		{
+			name:              "default values",
+			cluster:           testCluster,
+			overwriteRegistry: "",
+			expectedValues:    `{"cni":{"exclusive":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":"16","clusterPoolIPv4PodCIDR":"192.168.0.0/24"}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"strict","operator":{"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}}`,
+		},
+		{
+			name:              "default values with overwrite registry",
+			cluster:           testCluster,
+			overwriteRegistry: "myregistry.io",
+			expectedValues:    `{"certgen":{"image":{"repository":"myregistry.io/cilium/certgen","useDigest":false}},"cni":{"exclusive":false},"hubble":{"relay":{"image":{"repository":"myregistry.io/cilium/hubble-relay","useDigest":false}},"ui":{"backend":{"image":{"repository":"myregistry.io/cilium/hubble-ui-backend","useDigest":false}},"frontend":{"image":{"repository":"myregistry.io/cilium/hubble-ui","useDigest":false}}}},"image":{"repository":"myregistry.io/cilium/cilium","useDigest":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":"16","clusterPoolIPv4PodCIDR":"192.168.0.0/24"}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"strict","operator":{"image":{"repository":"myregistry.io/cilium/operator","useDigest":false},"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}}`,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			values := GetCiliumAppInstallOverrideValues(testCluster, testCase.overwriteRegistry)
+			rawValues, _ := json.Marshal(values)
+			if string(rawValues) != testCase.expectedValues {
+				t.Fatalf("values '%s' do not match expected values '%s'", rawValues, testCase.expectedValues)
+			}
+		})
+	}
 }
 
 func TestValidateCiliumValuesUpdate(t *testing.T) {
