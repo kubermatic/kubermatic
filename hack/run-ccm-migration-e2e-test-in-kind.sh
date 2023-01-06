@@ -37,6 +37,19 @@ beforeGocache=$(nowms)
 make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
+if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
+  echodate "Getting default SSH pubkey for machines from Vault"
+  retry 5 vault_ci_login
+  E2E_SSH_PUBKEY="$(mktemp)"
+  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
+else
+  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
+  E2E_SSH_PUBKEY="$(mktemp)"
+  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+fi
+
+echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
+
 echodate "Creating kind cluster"
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 source hack/ci/setup-kind-cluster.sh
@@ -86,4 +99,5 @@ go_test ccm_migration_${PROVIDER_TO_TEST} \
   -v \
   -timeout $TIMEOUT \
   -kubeconfig "${HOME}/.kube/config" \
-  -provider "$PROVIDER_TO_TEST"
+  -provider "$PROVIDER_TO_TEST" \
+  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"

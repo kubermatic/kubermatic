@@ -41,6 +41,7 @@ var (
 	buildID      string
 	project      string
 	version      string
+	sshPubKey    string
 
 	// once is for goroutine-safe defaulting of the build ID.
 	once = &sync.Once{}
@@ -51,6 +52,11 @@ func AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&kkpNamespace, "namespace", kkpNamespace, "namespace where KKP is installed into")
 	flag.StringVar(&project, "project", project, "KKP project to use (if not given, a new project might be created)")
 	flag.StringVar(&version, "cluster-version", version, "Kubernetes version of the new user cluster (defaults to $VERSION_TO_TEST or the default version compiled into KKP)")
+	flag.StringVar(&sshPubKey, "ssh-pub-key", sshPubKey, "Optional SSH public key to assign to the Machine objects (requires user-ssh-key-agent to be disabled)")
+}
+
+func SSHPublicKey() string {
+	return sshPubKey
 }
 
 func BuildID() string {

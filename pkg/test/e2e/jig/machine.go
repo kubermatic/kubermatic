@@ -54,23 +54,25 @@ type MachineJig struct {
 	cluster    *kubermaticv1.Cluster
 	clusterJig *ClusterJig
 
-	// user-controller parameters
+	// user-controlled parameters
 	name              string
 	replicas          int
 	osSpec            interface{}
 	cloudProviderSpec interface{}
+	sshPubKeys        sets.String
 	networkConfig     *providerconfig.NetworkConfig
 	clusterClient     ctrlruntimeclient.Client
 }
 
 func NewMachineJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) *MachineJig {
 	return &MachineJig{
-		client:   client,
-		log:      log,
-		cluster:  cluster,
-		name:     "e2e-workers",
-		osSpec:   ubuntu.Config{},
-		replicas: 1,
+		client:     client,
+		log:        log,
+		cluster:    cluster,
+		name:       "e2e-workers",
+		osSpec:     ubuntu.Config{},
+		replicas:   1,
+		sshPubKeys: sets.NewString(),
 	}
 }
 
@@ -85,6 +87,7 @@ func (j *MachineJig) Clone() *MachineJig {
 		osSpec:            j.osSpec,
 		cloudProviderSpec: j.cloudProviderSpec,
 		clusterClient:     j.clusterClient,
+		sshPubKeys:        j.sshPubKeys.Clone(),
 	}
 }
 
@@ -128,6 +131,15 @@ func (j *MachineJig) WithOSSpec(spec interface{}) *MachineJig {
 func (j *MachineJig) WithNetworkConfig(cfg *providerconfig.NetworkConfig) *MachineJig {
 	j.networkConfig = cfg
 	return j
+}
+
+func (j *MachineJig) AddSSHPublicKey(pubKeys ...string) *MachineJig {
+	j.sshPubKeys.Insert(pubKeys...).Delete("") // make sure to not add an empty key by accident
+	return j
+}
+
+func (j *MachineJig) AddSSHKey(key *kubermaticv1.UserSSHKey) *MachineJig {
+	return j.AddSSHPublicKey(key.Spec.PublicKey)
 }
 
 func (j *MachineJig) WithUbuntu() *MachineJig {
@@ -175,6 +187,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 		WithDatacenter(datacenter).
 		WithOperatingSystemSpec(j.osSpec).
 		WithCloudProviderSpec(j.cloudProviderSpec).
+		AddSSHPublicKey(j.sshPubKeys.UnsortedList()...).
 		BuildProviderSpec()
 	if err != nil {
 		return fmt.Errorf("failed to create provider spec: %w", err)

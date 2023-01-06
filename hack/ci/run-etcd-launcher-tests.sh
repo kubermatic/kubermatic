@@ -29,6 +29,19 @@ beforeGocache=$(nowms)
 make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
+if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
+  echodate "Getting default SSH pubkey for machines from Vault"
+  retry 5 vault_ci_login
+  E2E_SSH_PUBKEY="$(mktemp)"
+  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
+else
+  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
+  E2E_SSH_PUBKEY="$(mktemp)"
+  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+fi
+
+echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
+
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 
 source hack/ci/setup-kind-cluster.sh
@@ -41,6 +54,8 @@ source hack/ci/setup-kubermatic-backups-in-kind.sh
 
 echodate "Running etcd-launcher tests..."
 
-go_test etcd_launcher_e2e -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher -byo-kkp-datacenter byo-kubernetes
+go_test etcd_launcher_e2e -timeout 60m -tags e2e -v ./pkg/test/e2e/etcd-launcher \
+  -byo-kkp-datacenter byo-kubernetes \
+  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Tests completed successfully!"
