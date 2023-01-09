@@ -167,15 +167,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 
 	// This code supports switching between OpenVPN and Konnectivity setup (in both directions).
 	// It can be removed one release after deprecating OpenVPN.
-	if r.features.Konnectivity {
-		if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
-			if err := r.ensureOpenVPNSetupIsRemoved(ctx, data); err != nil {
-				return nil, err
-			}
-		} else {
-			if err := r.ensureKonnectivitySetupIsRemoved(ctx, data); err != nil {
-				return nil, err
-			}
+	if cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
+		if err := r.ensureOpenVPNSetupIsRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := r.ensureKonnectivitySetupIsRemoved(ctx, data); err != nil {
+			return nil, err
 		}
 	}
 
@@ -215,7 +213,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 	}
 
 	// Konnectivity is enabled if the feature gate is enabled and the cluster flag is enabled as well
-	konnectivityEnabled := r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
+	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).

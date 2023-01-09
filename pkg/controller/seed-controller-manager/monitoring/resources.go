@@ -49,7 +49,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 	}
 
 	// Konnectivity is enabled if the feature gate is enabled and the cluster flag is enabled as well
-	konnectivityEnabled := r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
+	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
