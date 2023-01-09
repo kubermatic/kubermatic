@@ -554,6 +554,7 @@ spec:
                                         description: OperatingSystems represents list of supported operating-systems with their URLs.
                                         type: object
                                     required:
+                                      - imageCloning
                                       - operatingSystems
                                     type: object
                                 required:

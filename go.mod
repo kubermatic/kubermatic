@@ -38,7 +38,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.38.0
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.55.1-0.20221202142412-0a94443b4151
+	github.com/kubermatic/machine-controller v1.55.1-0.20221216092007-e7e4ba8eb535
 	github.com/minio/minio-go/v7 v7.0.45
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5

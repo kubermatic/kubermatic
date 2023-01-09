@@ -741,7 +741,7 @@ type HTTPSource struct {
 	// OperatingSystems represents list of supported operating-systems with their URLs.
 	OperatingSystems map[providerconfig.OperatingSystem]OSVersions `json:"operatingSystems"`
 	// Optional: ImageCloning represents options for kubevirt disk-image cloning.
-	ImageCloning ImageCloning `json:"imageCloning,omitempty"`
+	ImageCloning ImageCloning `json:"imageCloning"`
 }
 
 // ImageCloning represents options for kubevirt disk-image cloning.

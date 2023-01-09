@@ -785,6 +785,15 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(KubeVirtKubeconfig)})
+
+		if dc.Spec.Kubevirt != nil {
+			allowPVCClone := dc.Spec.Kubevirt.Images.HTTP != nil && dc.Spec.Kubevirt.Images.HTTP.ImageCloning.Enabled
+			vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_ALLOW_PVC_CLONE", Value: strconv.FormatBool(allowPVCClone)})
+
+			allowCustomImages := cluster.Spec.Cloud.Kubevirt.ImageCloningEnabled
+			vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_ALLOW_CUSTOM_IMAGES", Value: strconv.FormatBool(allowCustomImages)})
+		}
+
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
 		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_ID", ValueFrom: refTo(AlibabaAccessKeyID)})

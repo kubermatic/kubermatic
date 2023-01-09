@@ -72,7 +72,21 @@ func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clus
 		return err
 	}
 
+	// defaults imageCloningEnabled flag to datacenter value
+	spec.Cloud.Kubevirt.ImageCloningEnabled = k.dc.Images.HTTP != nil && k.dc.Images.HTTP.ImageCloning.Enabled
+
 	return updateInfraStorageClassesInfo(ctx, client, &spec.Cloud)
+}
+
+// isImageCloningEnabled returns if the image cloning feature is enable or not:
+// The value is defaulted from the seed datacenter in DefaultCloudSpec() at cluster creation time.
+func (k *kubevirt) isImageCloningEnabled(cluster *kubermaticv1.Cluster) bool {
+	return cluster.Spec.Cloud.Kubevirt.ImageCloningEnabled
+}
+
+// isCustomImagesEnabled value always comes from dc.
+func (k *kubevirt) isCustomImagesEnabled() bool {
+	return k.dc.Images.EnableCustomImages
 }
 
 func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
@@ -146,13 +160,14 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcileCustomImages(ctx, cluster, client, logger, k.dc.Images.EnableCustomImages)
-	if err != nil {
-		return cluster, err
+	if k.isCustomImagesEnabled() {
+		err = reconcileCustomImages(ctx, cluster, client, logger)
+		if err != nil {
+			return cluster, err
+		}
 	}
 
-	enableImageCloning := k.dc.Images.HTTP != nil && k.dc.Images.HTTP.ImageCloning.Enabled
-	if enableImageCloning || k.dc.Images.EnableCustomImages {
+	if k.isImageCloningEnabled(cluster) || k.isCustomImagesEnabled() {
 		err = reconcileKubeVirtImagesNamespace(ctx, KubeVirtImagesNamespace, client)
 		if err != nil {
 			return cluster, err
@@ -170,11 +185,12 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if err != nil {
 		return cluster, err
 	}
-	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client)
-	if err != nil {
-		return cluster, err
-	}
-	if enableImageCloning {
+
+	// Note: no cleanup is done.
+	// if imageCloning is disabled in the cluster, then machine-controller is restarted with an env variable:
+	// KUBEVIRT_ALLOW_PVC_CLONE that prevents to use the standard image cloning feature.
+	// We keep the DataVolumes.
+	if k.isImageCloningEnabled(cluster) {
 		err = reconcileStandardImagesCache(ctx, k.dc, client, logger)
 	}
 	return cluster, err
