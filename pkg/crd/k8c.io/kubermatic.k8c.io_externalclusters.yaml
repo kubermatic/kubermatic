@@ -280,6 +280,9 @@ spec:
                         providerName:
                           description: ProviderName is the name of the cloud provider used, one of "aws", "azure", "digitalocean", "gcp", "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
                           type: string
+                        region:
+                          description: Region is the kubernetes control plane region.
+                          type: string
                         sshReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
                           properties:
@@ -383,10 +386,14 @@ spec:
                 pauseReason:
                   description: PauseReason is the reason why the cluster is not being managed. This field is for informational purpose only and can be set by a user or a controller to communicate the reason for pausing the cluster.
                   type: string
+                version:
+                  description: Version defines the wanted version of the control plane.
+                  type: string
               required:
                 - cloudSpec
                 - humanReadableName
                 - pause
+                - version
               type: object
             status:
               description: Status contains reconciliation information for the cluster.

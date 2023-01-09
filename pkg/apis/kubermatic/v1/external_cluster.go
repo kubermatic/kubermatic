@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -96,7 +97,11 @@ type ExternalClusterKubeOneCloudSpec struct {
 	// ProviderName is the name of the cloud provider used, one of
 	// "aws", "azure", "digitalocean", "gcp",
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
-	ProviderName         string                                  `json:"providerName"`
+	ProviderName string `json:"providerName"`
+
+	// Region is the kubernetes control plane region.
+	Region string `json:"region,omitempty"`
+
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 	SSHReference         *providerconfig.GlobalSecretKeySelector `json:"sshReference,omitempty"`
 	ManifestReference    *providerconfig.GlobalSecretKeySelector `json:"manifestReference,omitempty"`
@@ -120,6 +125,9 @@ type ExternalClusterSpec struct {
 
 	// KubeconfigReference is reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
+
+	// Version defines the wanted version of the control plane.
+	Version semver.Semver `json:"version"`
 
 	// CloudSpec contains provider specific fields
 	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
