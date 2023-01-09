@@ -167,7 +167,6 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
 			EtcdLauncher:                 ctrlCtx.runOptions.featureGates.Enabled(features.EtcdLauncher),
-			Konnectivity:                 ctrlCtx.runOptions.featureGates.Enabled(features.KonnectivityService),
 		},
 		ctrlCtx.versions,
 	)
@@ -239,8 +238,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		monitoring.Features{
-			VPA:          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
-			Konnectivity: ctrlCtx.runOptions.featureGates.Enabled(features.KonnectivityService),
+			VPA: ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 		},
 		ctrlCtx.versions,
 	)

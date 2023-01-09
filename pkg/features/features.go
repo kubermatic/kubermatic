@@ -54,11 +54,6 @@ const (
 	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller.
 	UserClusterMLA = "UserClusterMLA"
 
-	// KonnectivityService enables the deployment of Konnectivity proxy for the
-	// control plane to cluster communication, instead of relying on the legacy
-	// solution based on OpenVPN.
-	KonnectivityService = "KonnectivityService"
-
 	// HeadlessInstallation feature makes the KKP installer not install nginx and Dex. This is useful to create
 	// a KKP system without UI/API deployments, that will only be interacted with using kubectl or similar means.
 	// Setting this feature flag will make KKP ignore any UI/API/Ingress configuration.

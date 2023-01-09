@@ -69,7 +69,7 @@ set -x
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=$CA_BUNDLE \
   -addons-path=addons \
-  -feature-gates=OpenIDAuthPlugin=true,KonnectivityService=true \
+  -feature-gates=OpenIDAuthPlugin=true \
   -worker-name="$(worker_name)" \
   -external-url=$KUBERMATIC_EXTERNAL_URL \
   -docker-pull-config-json-file=$DOCKERCONFIGJSON \
