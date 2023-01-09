@@ -16,7 +16,10 @@
 # Run `make hubble` instead.
 
 {{ if eq .Cluster.CNIPlugin.Type "cilium" }}
-{{ if eq .Cluster.CNIPlugin.Version "v1.12" }}
+{{ if or (eq .Cluster.CNIPlugin.Version "v1.12") (hasPrefix "1.13" .Cluster.CNIPlugin.Version) }}
+# NOTE: 1.13 above allows proper uninstallation by the addon-controller by migration to Applications infra for Cilium CNI as of 1.13
+# We rely on KKP webhooks to make sure the migration is allowed only by upgrade from 1.12 to 1.13
+
 ---
 # Source: cilium/templates/hubble-relay/serviceaccount.yaml
 apiVersion: v1
