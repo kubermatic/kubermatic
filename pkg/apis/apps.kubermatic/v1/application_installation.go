@@ -212,6 +212,12 @@ type ApplicationInstallationCondition struct {
 	Reason string `json:"reason,omitempty"`
 	// Human readable message indicating details about last transition.
 	Message string `json:"message,omitempty"`
+
+	// observedGeneration represents the .metadata.generation that the condition was set based upon.
+	// For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+	// with respect to the current state of the instance.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=ManifestsRetrieved;Ready
@@ -246,6 +252,7 @@ func (appInstallation *ApplicationInstallation) SetCondition(conditionType Appli
 	condition.LastHeartbeatTime = now
 	condition.Reason = reason
 	condition.Message = message
+	condition.ObservedGeneration = appInstallation.Generation
 
 	if appInstallation.Status.Conditions == nil {
 		appInstallation.Status.Conditions = map[ApplicationInstallationConditionType]ApplicationInstallationCondition{}
