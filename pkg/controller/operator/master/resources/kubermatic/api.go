@@ -137,7 +137,7 @@ func APIDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, workerName 
 					Image:   cfg.Spec.API.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"kubermatic-api"},
 					Args:    args,
-					Env:     common.ProxyEnvironmentVars(cfg),
+					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",
