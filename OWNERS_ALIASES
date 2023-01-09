@@ -10,7 +10,6 @@ aliases:
     - simontheleg
   sig-app-management:
     - ahmedwaleedmalik
-    - dermorz
     - hdurand0710
     - rastislavs
     - sankalp-r
@@ -21,7 +20,6 @@ aliases:
     - zyanichaimaa
   sig-cluster-management:
     - ahmedwaleedmalik
-    - dermorz
     - embik
     - hdurand0710
     - imharshita
@@ -42,7 +40,6 @@ aliases:
     - khizerrehan
     - waseem826
   sig-virtualization:
-    - dermorz
     - hdurand0710
     - mfranczy
     - sankalp-r
