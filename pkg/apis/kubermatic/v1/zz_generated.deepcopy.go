@@ -3184,6 +3184,7 @@ func (in *ExternalClusterSpec) DeepCopyInto(out *ExternalClusterSpec) {
 		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
+	out.Version = in.Version.DeepCopy()
 	in.CloudSpec.DeepCopyInto(&out.CloudSpec)
 	in.ClusterNetwork.DeepCopyInto(&out.ClusterNetwork)
 }
