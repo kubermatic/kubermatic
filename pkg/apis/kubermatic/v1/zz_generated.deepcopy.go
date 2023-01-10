@@ -27,6 +27,7 @@ import (
 	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -2142,6 +2143,17 @@ func (in *DatacenterSpecKubevirt) DeepCopyInto(out *DatacenterSpecKubevirt) {
 		in, out := &in.DNSConfig, &out.DNSConfig
 		*out = new(corev1.PodDNSConfig)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.AdditionalNetPols != nil {
+		in, out := &in.AdditionalNetPols, &out.AdditionalNetPols
+		*out = make([]*networkingv1.NetworkPolicy, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(networkingv1.NetworkPolicy)
+				(*in).DeepCopyInto(*out)
+			}
+		}
 	}
 	in.Images.DeepCopyInto(&out.Images)
 }

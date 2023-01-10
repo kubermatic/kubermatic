@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -695,6 +696,10 @@ type DatacenterSpecKubevirt struct {
 	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
+
+	// AdditionalNetPols (optional) allows to add some extra custom NetworkPolicies, that are deployed
+	// in the dedicated infra KubeVirt cluster. They are added to the default `cluster-isolation` one.
+	AdditionalNetPols []*networkingv1.NetworkPolicy `json:"additionalNetPols,omitempty"`
 
 	// Images represents standard VM Image sources.
 	Images ImageSources `json:"images,omitempty"`
