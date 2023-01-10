@@ -117,8 +117,9 @@ spec:
           # CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
           # in the dedicated infra KubeVirt cluster. They are added to the defaults.
           customNetworkPolicies:
-            - metadata:
-                name: deny-ingress
+            - # Name is the name of the Custom Network Policy.
+              name: deny-ingress
+              # Spec is the Spec of the NetworkPolicy, using the standard type.
               spec:
                 podSelector: {}
                 policyTypes:

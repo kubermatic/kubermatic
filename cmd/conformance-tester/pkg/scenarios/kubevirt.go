@@ -32,7 +32,7 @@ const (
 	kubevirtCPUs               = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
-	kubevirtDiskClassName      = "csi-rbd"
+	kubevirtDiskClassName      = "px-csi-db"
 )
 
 type kubevirtScenario struct {

@@ -37,7 +37,7 @@ import (
 )
 
 var (
-	kubevirtStorageClassName = "kubevirt-csi-rbd"
+	kubevirtStorageClassName = "kubevirt-px-csi-db"
 )
 
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {

@@ -170,6 +170,10 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if err != nil {
 		return cluster, err
 	}
+	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client)
+	if err != nil {
+		return cluster, err
+	}
 	if enableImageCloning {
 		err = reconcileStandardImagesCache(ctx, k.dc, client, logger)
 	}
