@@ -99,7 +99,8 @@ type ExternalClusterKubeOneCloudSpec struct {
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
 	ProviderName string `json:"providerName"`
 
-	// Region is the kubernetes control plane region.
+	// Region is the cloud provider region in which the cluster resides.
+	// This field is used only to display information.
 	Region string `json:"region,omitempty"`
 
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`

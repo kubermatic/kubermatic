@@ -281,7 +281,7 @@ spec:
                           description: ProviderName is the name of the cloud provider used, one of "aws", "azure", "digitalocean", "gcp", "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
                           type: string
                         region:
-                          description: Region is the kubernetes control plane region.
+                          description: Region is the cloud provider region in which the cluster resides. This field is used only to display information.
                           type: string
                         sshReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
