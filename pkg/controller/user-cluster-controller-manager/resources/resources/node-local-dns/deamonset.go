@@ -93,7 +93,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 						"-localip",
 						kubesystem.NodeLocalDNSCacheAddress,
 						"-conf",
-						"/etc/coredns/Corefile",
+						"/etc/Corefile",
 					},
 
 					VolumeMounts: []corev1.VolumeMount{
@@ -170,7 +170,7 @@ func DaemonSetCreator(registryWithOverwrite registry.WithOverwriteFunc) reconcil
 							Items: []corev1.KeyToPath{
 								{
 									Key:  "Corefile",
-									Path: "Corefile",
+									Path: "Corefile.base",
 								},
 							},
 						},
