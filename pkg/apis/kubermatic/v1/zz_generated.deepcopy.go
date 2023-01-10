@@ -2144,8 +2144,8 @@ func (in *DatacenterSpecKubevirt) DeepCopyInto(out *DatacenterSpecKubevirt) {
 		*out = new(corev1.PodDNSConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.AdditionalNetPols != nil {
-		in, out := &in.AdditionalNetPols, &out.AdditionalNetPols
+	if in.CustomNetworkPolicies != nil {
+		in, out := &in.CustomNetworkPolicies, &out.CustomNetworkPolicies
 		*out = make([]*networkingv1.NetworkPolicy, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {
