@@ -20,6 +20,7 @@ package vsphere
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -40,16 +41,22 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 					Name:         "Management",
 				},
 				{
-					AbsolutePath: fmt.Sprintf("/%s/network/DSwitchAlpha-DVUplinks-2001", vSphereDatacenter),
-					RelativePath: "DSwitchAlpha-DVUplinks-2001",
+					AbsolutePath: fmt.Sprintf("/%s/network/MainDSwitch-DVUplinks-36", vSphereDatacenter),
+					RelativePath: "MainDSwitch-DVUplinks-36",
 					Type:         "DistributedVirtualPortgroup",
-					Name:         "DSwitchAlpha-DVUplinks-2001",
+					Name:         "MainDSwitch-DVUplinks-36",
 				},
 				{
 					AbsolutePath: fmt.Sprintf("/%s/network/Default Network", vSphereDatacenter),
 					RelativePath: "Default Network",
 					Type:         "DistributedVirtualPortgroup",
 					Name:         "Default Network",
+				},
+				{
+					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
+					RelativePath: "VM Network",
+					Type:         "Network",
+					Name:         "VM Network",
 				},
 			},
 		},
@@ -61,6 +68,14 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			sort.Slice(test.expectedNetworkInfos, func(i, j int) bool {
+				return test.expectedNetworkInfos[i].AbsolutePath < test.expectedNetworkInfos[j].AbsolutePath
+			})
+
+			sort.Slice(networkInfos, func(i, j int) bool {
+				return networkInfos[i].AbsolutePath < networkInfos[j].AbsolutePath
+			})
 
 			if diff := deep.Equal(test.expectedNetworkInfos, networkInfos); diff != nil {
 				t.Errorf("Got network infos differ from expected ones. Diff: %v", diff)

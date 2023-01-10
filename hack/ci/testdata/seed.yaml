@@ -69,7 +69,7 @@ spec:
         vsphere:
           cluster: Kubermatic
           datacenter: Hamburg
-          datastore: ceph-vm
+          datastore: vsan
           endpoint: https://10.10.0.100
           allow_insecure: true
           rootPath: /Hamburg/vm/Kubermatic-ci
