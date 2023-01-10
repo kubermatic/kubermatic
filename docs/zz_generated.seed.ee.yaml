@@ -114,6 +114,15 @@ spec:
           network: ""
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
+          # CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
+          # in the dedicated infra KubeVirt cluster. They are added to the defaults.
+          customNetworkPolicies:
+            - metadata:
+                name: deny-ingress
+              spec:
+                podSelector: {}
+                policyTypes:
+                  - Ingress
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
           dnsConfig:
