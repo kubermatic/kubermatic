@@ -380,24 +380,36 @@ type Datacenter struct {
 	Spec DatacenterSpec `json:"spec"`
 }
 
-// DatacenterSpec mutually points to provider datacenter spec.
+// DatacenterSpec configures a KKP datacenter. Provider configuration is mutually exclusive,
+// and as such only a single provider can be configured per datacenter.
 type DatacenterSpec struct {
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	// BringYourOwn contains settings for clusters using manually created
 	// nodes via kubeadm.
-	BringYourOwn        *DatacenterSpecBringYourOwn        `json:"bringyourown,omitempty"`
-	AWS                 *DatacenterSpecAWS                 `json:"aws,omitempty"`
-	Azure               *DatacenterSpecAzure               `json:"azure,omitempty"`
-	Openstack           *DatacenterSpecOpenstack           `json:"openstack,omitempty"`
-	Packet              *DatacenterSpecPacket              `json:"packet,omitempty"`
-	Hetzner             *DatacenterSpecHetzner             `json:"hetzner,omitempty"`
-	VSphere             *DatacenterSpecVSphere             `json:"vsphere,omitempty"`
+	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
+	// AWS configures an Amazon Web Services (AWS) datacenter.
+	AWS *DatacenterSpecAWS `json:"aws,omitempty"`
+	// Azure configures an Azure datacenter.
+	Azure *DatacenterSpecAzure `json:"azure,omitempty"`
+	// Openstack configures an Openstack datacenter.
+	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
+	// Packet configures an Equinix Metal datacenter.
+	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
+	// Hetzner configures a Hetzner datacenter.
+	Hetzner *DatacenterSpecHetzner `json:"hetzner,omitempty"`
+	// VSphere configures a VMware vSphere datacenter.
+	VSphere *DatacenterSpecVSphere `json:"vsphere,omitempty"`
+	// VMwareCloudDirector configures a VMware Cloud Director datacenter.
 	VMwareCloudDirector *DatacenterSpecVMwareCloudDirector `json:"vmwareclouddirector,omitempty"`
-	GCP                 *DatacenterSpecGCP                 `json:"gcp,omitempty"`
-	Kubevirt            *DatacenterSpecKubevirt            `json:"kubevirt,omitempty"`
-	Alibaba             *DatacenterSpecAlibaba             `json:"alibaba,omitempty"`
-	Anexia              *DatacenterSpecAnexia              `json:"anexia,omitempty"`
-	// Nutanix is experimental and unsupported
+	// GCP configures a Google Cloud Platform (GCP) datacenter.
+	GCP *DatacenterSpecGCP `json:"gcp,omitempty"`
+	// Kubevirt configures a KubeVirt datacenter.
+	Kubevirt *DatacenterSpecKubevirt `json:"kubevirt,omitempty"`
+	// Alibaba configures an Alibaba Cloud datacenter.
+	Alibaba *DatacenterSpecAlibaba `json:"alibaba,omitempty"`
+	// Anexia configures an Anexia datacenter.
+	Anexia *DatacenterSpecAnexia `json:"anexia,omitempty"`
+	// Nutanix configures a Nutanix HCI datacenter.
 	Nutanix *DatacenterSpecNutanix `json:"nutanix,omitempty"`
 
 	//nolint:staticcheck
@@ -410,15 +422,15 @@ type DatacenterSpec struct {
 	// exactly (i.e. "example.com" will not match "user@test.example.com").
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
-	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
+	// Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
 
-	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
-	// ignoring cluster-specific settings
+	// Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
+	// ignoring cluster-specific settings.
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
 
-	// ProviderReconciliationInterval is the time that must have passed since a
+	// Optional: ProviderReconciliationInterval is the time that must have passed since a
 	// Cluster's status.lastProviderReconciliation to make the cliuster controller
 	// perform an in-depth provider reconciliation, where for example missing security
 	// groups will be reconciled.
@@ -427,10 +439,10 @@ type DatacenterSpec struct {
 	// of KKP, it will take this long to fix it.
 	ProviderReconciliationInterval *metav1.Duration `json:"providerReconciliationInterval,omitempty"`
 
-	// DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+	// Optional: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
 	DefaultOperatingSystemProfiles OperatingSystemProfileList `json:"operatingSystemProfiles,omitempty"`
 
-	// MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+	// Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
 	MachineFlavorFilter *MachineFlavorFilter `json:"machineFlavorFilter,omitempty"`
 }
 

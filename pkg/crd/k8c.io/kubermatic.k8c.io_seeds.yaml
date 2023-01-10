@@ -106,7 +106,7 @@ spec:
                         description: Spec describes the cloud provider settings used to manage resources in this datacenter. Exactly one cloud provider must be defined.
                         properties:
                           alibaba:
-                            description: DatacenterSpecAlibaba describes a alibaba datacenter.
+                            description: Alibaba configures an Alibaba Cloud datacenter.
                             properties:
                               region:
                                 description: Region to use, for a full list of regions see https://www.alibabacloud.com/help/doc-detail/40654.htm
@@ -115,7 +115,7 @@ spec:
                               - region
                             type: object
                           anexia:
-                            description: DatacenterSpecAnexia describes a anexia datacenter.
+                            description: Anexia configures an Anexia datacenter.
                             properties:
                               locationID:
                                 description: LocationID the location of the region
@@ -124,7 +124,7 @@ spec:
                               - locationID
                             type: object
                           aws:
-                            description: DatacenterSpecAWS describes an AWS datacenter.
+                            description: AWS configures an Amazon Web Services (AWS) datacenter.
                             properties:
                               images:
                                 additionalProperties:
@@ -138,7 +138,7 @@ spec:
                               - region
                             type: object
                           azure:
-                            description: DatacenterSpecAzure describes an Azure cloud datacenter.
+                            description: Azure configures an Azure datacenter.
                             properties:
                               location:
                                 description: Region to use, for example "westeurope". A list of available regions can be found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
@@ -159,10 +159,10 @@ spec:
                               - region
                             type: object
                           enforceAuditLogging:
-                            description: EnforceAuditLogging enforces audit logging on every cluster within the DC, ignoring cluster-specific settings.
+                            description: 'Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC, ignoring cluster-specific settings.'
                             type: boolean
                           enforcePodSecurityPolicy:
-                            description: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC, ignoring cluster-specific settings
+                            description: 'Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC, ignoring cluster-specific settings.'
                             type: boolean
                           fake:
                             description: DatacenterSpecFake describes a fake datacenter.
@@ -171,7 +171,7 @@ spec:
                                 type: string
                             type: object
                           gcp:
-                            description: DatacenterSpecGCP describes a GCP datacenter.
+                            description: GCP configures a Google Cloud Platform (GCP) datacenter.
                             properties:
                               region:
                                 description: Region to use, for example "europe-west3", for a full list of regions see https://cloud.google.com/compute/docs/regions-zones/
@@ -189,7 +189,7 @@ spec:
                               - zoneSuffixes
                             type: object
                           hetzner:
-                            description: DatacenterSpecHetzner describes a Hetzner cloud datacenter.
+                            description: Hetzner configures a Hetzner datacenter.
                             properties:
                               datacenter:
                                 description: Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found at https://docs.hetzner.com/general/others/data-centers-and-connection/
@@ -205,7 +205,7 @@ spec:
                               - network
                             type: object
                           kubevirt:
-                            description: DatacenterSpecKubevirt describes a kubevirt datacenter.
+                            description: Kubevirt configures a KubeVirt datacenter.
                             properties:
                               dnsConfig:
                                 description: DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS configuration based on DNSPolicy.
@@ -280,7 +280,7 @@ spec:
                                 type: object
                             type: object
                           machineFlavorFilter:
-                            description: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+                            description: 'Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.'
                             properties:
                               enableGPU:
                                 description: Include VMs with GPU
@@ -313,7 +313,7 @@ spec:
                               - minRAM
                             type: object
                           nutanix:
-                            description: Nutanix is experimental and unsupported
+                            description: Nutanix configures a Nutanix HCI datacenter.
                             properties:
                               allowInsecure:
                                 description: 'Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)'
@@ -335,7 +335,7 @@ spec:
                               - images
                             type: object
                           openstack:
-                            description: DatacenterSpecOpenstack describes an OpenStack datacenter.
+                            description: Openstack configures an Openstack datacenter.
                             properties:
                               authURL:
                                 type: string
@@ -394,10 +394,10 @@ spec:
                           operatingSystemProfiles:
                             additionalProperties:
                               type: string
-                            description: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+                            description: 'Optional: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.'
                             type: object
                           packet:
-                            description: DatacenterSpecPacket describes a Packet datacenter.
+                            description: Packet configures an Equinix Metal datacenter.
                             properties:
                               facilities:
                                 description: The list of enabled facilities, for example "ams1", for a full list of available facilities see https://metal.equinix.com/developers/docs/locations/facilities/
@@ -409,7 +409,7 @@ spec:
                                 type: string
                             type: object
                           providerReconciliationInterval:
-                            description: ProviderReconciliationInterval is the time that must have passed since a Cluster's status.lastProviderReconciliation to make the cliuster controller perform an in-depth provider reconciliation, where for example missing security groups will be reconciled. Setting this too low can cause rate limits by the cloud provider, setting this too high means that *if* a resource at a cloud provider is removed/changed outside of KKP, it will take this long to fix it.
+                            description: 'Optional: ProviderReconciliationInterval is the time that must have passed since a Cluster''s status.lastProviderReconciliation to make the cliuster controller perform an in-depth provider reconciliation, where for example missing security groups will be reconciled. Setting this too low can cause rate limits by the cloud provider, setting this too high means that *if* a resource at a cloud provider is removed/changed outside of KKP, it will take this long to fix it.'
                             type: string
                           requiredEmails:
                             description: 'Optional: When defined, only users with an e-mail address on the given domains can make use of this datacenter. You can define multiple domains, e.g. "example.com", one of which must match the email domain exactly (i.e. "example.com" will not match "user@test.example.com").'
@@ -417,6 +417,7 @@ spec:
                               type: string
                             type: array
                           vmwareclouddirector:
+                            description: VMwareCloudDirector configures a VMware Cloud Director datacenter.
                             properties:
                               allowInsecure:
                                 description: If set to true, disables the TLS certificate check against the endpoint.
@@ -440,7 +441,7 @@ spec:
                               - url
                             type: object
                           vsphere:
-                            description: DatacenterSpecVSphere describes a vSphere datacenter.
+                            description: VSphere configures a VMware vSphere datacenter.
                             properties:
                               allowInsecure:
                                 description: If set to true, disables the TLS certificate check against the endpoint.

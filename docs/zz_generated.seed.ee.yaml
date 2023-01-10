@@ -44,13 +44,16 @@ spec:
       # Spec describes the cloud provider settings used to manage resources
       # in this datacenter. Exactly one cloud provider must be defined.
       spec:
+        # Alibaba configures an Alibaba Cloud datacenter.
         alibaba:
           # Region to use, for a full list of regions see
           # https://www.alibabacloud.com/help/doc-detail/40654.htm
           region: ""
+        # Anexia configures an Anexia datacenter.
         anexia:
           # LocationID the location of the region
           locationID: ""
+        # AWS configures an Amazon Web Services (AWS) datacenter.
         aws:
           # List of AMIs to use for a given operating system.
           # This gets defaulted by querying for the latest AMI for the given distribution
@@ -67,6 +70,7 @@ spec:
           # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
           # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
           region: ""
+        # Azure configures an Azure datacenter.
         azure:
           # Region to use, for example "westeurope". A list of available regions can be
           # found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
@@ -78,12 +82,13 @@ spec:
           # Datacenter location, e.g. "ams3". A list of existing datacenters can be found
           # at https://www.digitalocean.com/docs/platform/availability-matrix/
           region: ""
-        # EnforceAuditLogging enforces audit logging on every cluster within the DC,
+        # Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
         # ignoring cluster-specific settings.
         enforceAuditLogging: false
-        # EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
-        # ignoring cluster-specific settings
+        # Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
+        # ignoring cluster-specific settings.
         enforcePodSecurityPolicy: false
+        # GCP configures a Google Cloud Platform (GCP) datacenter.
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
           # https://cloud.google.com/compute/docs/regions-zones/
@@ -95,6 +100,7 @@ spec:
           # List of enabled zones, for example [a, c]. See the link above for the available
           # zones in your chosen region.
           zoneSuffixes: []
+        # Hetzner configures a Hetzner datacenter.
         hetzner:
           # Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
           # at https://docs.hetzner.com/general/others/data-centers-and-connection/
@@ -106,6 +112,7 @@ spec:
           # While machines can be in multiple networks, a single one must be chosen for the
           # HCloud CCM to work.
           network: ""
+        # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
@@ -153,7 +160,7 @@ spec:
                   <<version>>: <<url>>
                 ubuntu:
                   <<version>>: <<url>>
-        # MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+        # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU
           enableGPU: false
@@ -165,7 +172,7 @@ spec:
           minCPU: 0
           # Minimum RAM size in GB
           minRAM: 0
-        # Nutanix is experimental and unsupported
+        # Nutanix configures a Nutanix HCI datacenter.
         nutanix:
           # Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
           allowInsecure: false
@@ -183,6 +190,7 @@ spec:
             ubuntu: ""
           # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
           port: 9440
+        # Openstack configures an Openstack datacenter.
         openstack:
           authURL: ""
           availabilityZone: ""
@@ -224,7 +232,7 @@ spec:
           # use-octavia is enabled by default in CCM since v1.17.0, and disabled by
           # default with the in-tree cloud provider.
           useOctavia: true
-        # DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+        # Optional: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
         operatingSystemProfiles:
           amzn2: ""
           centos: ""
@@ -233,6 +241,7 @@ spec:
           rockylinux: ""
           sles: ""
           ubuntu: ""
+        # Packet configures an Equinix Metal datacenter.
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
           # facilities see https://metal.equinix.com/developers/docs/locations/facilities/
@@ -240,7 +249,7 @@ spec:
           # Metros are facilities that are grouped together geographically and share capacity
           # and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
           metro: ""
-        # ProviderReconciliationInterval is the time that must have passed since a
+        # Optional: ProviderReconciliationInterval is the time that must have passed since a
         # Cluster's status.lastProviderReconciliation to make the cliuster controller
         # perform an in-depth provider reconciliation, where for example missing security
         # groups will be reconciled.
@@ -253,6 +262,7 @@ spec:
         # domains, e.g. "example.com", one of which must match the email domain
         # exactly (i.e. "example.com" will not match "user@test.example.com").
         requiredEmails: []
+        # VMwareCloudDirector configures a VMware Cloud Director datacenter.
         vmwareclouddirector:
           # If set to true, disables the TLS certificate check against the endpoint.
           allowInsecure: false
@@ -272,6 +282,7 @@ spec:
             ubuntu: ""
           # Endpoint URL to use, including protocol, for example "https://vclouddirector.example.com".
           url: ""
+        # VSphere configures a VMware vSphere datacenter.
         vsphere:
           # If set to true, disables the TLS certificate check against the endpoint.
           allowInsecure: false
