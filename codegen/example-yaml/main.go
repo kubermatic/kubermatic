@@ -118,7 +118,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 	kubevirtHTTPSource := kubermaticv1.HTTPSource{
 		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
 		ImageCloning: kubermaticv1.ImageCloning{
-			Enable:       false,
+			Enabled:      false,
 			StorageClass: "",
 		},
 	}
