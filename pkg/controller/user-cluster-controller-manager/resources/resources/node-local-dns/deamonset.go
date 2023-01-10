@@ -105,6 +105,10 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 							Name:      "config-volume",
 							MountPath: "/etc/coredns",
 						},
+						{
+							Name:      "kube-dns-config",
+							MountPath: "/etc/kube-dns",
+						},
 					},
 
 					Ports: []corev1.ContainerPort{
@@ -173,6 +177,17 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 									Path: "Corefile.base",
 								},
 							},
+						},
+					},
+				},
+				{
+					Name: "kube-dns-config",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kube-dns",
+							},
+							Optional: pointer.Bool(true),
 						},
 					},
 				},
