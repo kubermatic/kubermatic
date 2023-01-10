@@ -254,14 +254,17 @@ spec:
                                       imageCloning:
                                         description: 'Optional: ImageCloning represents options for kubevirt disk-image cloning.'
                                         properties:
-                                          enable:
-                                            description: Enable allows you to enable/disable cloning of standard images. When this option is enabled, downloading images from the http source destination will happen only once. Later, Machine Controller will clone the disks using DataVolumes with the cloning source.
+                                          dataVolumeSize:
+                                            description: DataVolumeSize is the size of the DataVolume used for caching the image. Default value is 11Gi.
+                                            type: string
+                                          enabled:
+                                            description: Enabled allows you to enable/disable cloning of standard images. When this option is enabled, downloading images from the http source destination will happen only once. Later, Machine Controller will clone the disks using DataVolumes with the cloning source.
                                             type: boolean
                                           storageClass:
                                             description: StorageClass represents storage-class for DataVolumes of standard images.
                                             type: string
                                         required:
-                                          - enable
+                                          - enabled
                                           - storageClass
                                         type: object
                                       operatingSystems:

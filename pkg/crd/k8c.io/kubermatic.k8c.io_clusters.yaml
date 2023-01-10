@@ -558,6 +558,9 @@ spec:
                           x-kubernetes-map-type: atomic
                         csiKubeconfig:
                           type: string
+                        imageCloningEnabled:
+                          description: ImageCloningEnabled flag enable/disable cloning for a cluster.
+                          type: boolean
                         infraStorageClasses:
                           description: InfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
                           items:

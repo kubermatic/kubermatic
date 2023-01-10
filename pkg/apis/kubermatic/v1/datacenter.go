@@ -731,12 +731,14 @@ type HTTPSource struct {
 
 // ImageCloning represents options for kubevirt disk-image cloning.
 type ImageCloning struct {
-	// Enable allows you to enable/disable cloning of standard images. When this option is enabled,
+	// Enabled allows you to enable/disable cloning of standard images. When this option is enabled,
 	// downloading images from the http source destination will happen only once. Later,
 	// Machine Controller will clone the disks using DataVolumes with the cloning source.
-	Enable bool `json:"enable"`
+	Enabled bool `json:"enabled"`
 	// StorageClass represents storage-class for DataVolumes of standard images.
 	StorageClass string `json:"storageClass"`
+	// DataVolumeSize is the size of the DataVolume used for caching the image. Default value is 11Gi.
+	DataVolumeSize string `json:"dataVolumeSize,omitempty"`
 }
 
 // DatacenterSpecNutanix describes a Nutanix datacenter.
