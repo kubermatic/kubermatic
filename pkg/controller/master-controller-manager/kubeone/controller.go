@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -239,26 +240,7 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 	}
 
 	// sync secrets
-	projectID := externalCluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if len(projectID) == 0 {
-		return fmt.Errorf("externalCluster %s is missing '%s' label", externalCluster.Name, kubermaticv1.ProjectIDLabelKey)
-	}
-	secrets := &corev1.SecretList{}
-	if err := r.List(ctx,
-		secrets,
-		ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID},
-		&ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace},
-	); err != nil {
-		return fmt.Errorf("failed to list secrets in kubermatic namespace: %w", err)
-	}
-
-	kubeoneSecrets := []corev1.Secret{}
-	for _, secret := range secrets.Items {
-		if strings.Contains(secret.Name, externalCluster.Name) {
-			kubeoneSecrets = append(kubeoneSecrets, secret)
-		}
-	}
-	if err := r.syncSecrets(ctx, kubeoneSecrets, externalCluster); err != nil {
+	if err := r.syncSecrets(ctx, externalCluster); err != nil {
 		return err
 	}
 
@@ -304,8 +286,28 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 	return nil
 }
 
-func (r *reconciler) syncSecrets(ctx context.Context, secrets []corev1.Secret, externalCluster *kubermaticv1.ExternalCluster) error {
-	for _, secret := range secrets {
+////////////
+
+// /// add label to kconfig secret
+func (r *reconciler) syncSecrets(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error {
+	projectID := externalCluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if len(projectID) == 0 {
+		return fmt.Errorf("externalCluster %s is missing '%s' label", externalCluster.Name, kubermaticv1.ProjectIDLabelKey)
+	}
+
+	kubeoneSecrets := &corev1.SecretList{}
+	if err := r.List(ctx,
+		kubeoneSecrets,
+		ctrlruntimeclient.MatchingLabels{
+			kubermaticv1.ProjectIDLabelKey:         projectID,
+			kubermaticv1.ExternalClusterIDLabelKey: externalCluster.Name,
+		},
+		&ctrlruntimeclient.ListOptions{Namespace: resources.KubermaticNamespace},
+	); err != nil {
+		return fmt.Errorf("failed to list kubeone secrets in kubermatic namespace: %w", err)
+	}
+
+	for _, secret := range kubeoneSecrets.Items {
 		if _, err := kubernetesprovider.CreateOrUpdateSecretForCluster(ctx, r, externalCluster, secret.Data, secret.Name, externalCluster.GetKubeOneNamespaceName()); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 			return err
 		}
@@ -434,6 +436,7 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 	data := map[string][]byte{
 		resources.ExternalClusterKubeconfig: []byte(config),
 	}
+	//add label to kubeconfig secret
 	kubeconfigRef, err := kubernetesprovider.CreateOrUpdateSecretForCluster(ctx, r, externalCluster, data, secretName, secretNamespace)
 	if err != nil {
 		return nil, err
@@ -466,12 +469,6 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 	kubeOneNamespaceName := externalCluster.GetKubeOneNamespaceName()
 
-	manifestSecret := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: kubeOneNamespaceName, Name: manifestRef.Name}, manifestSecret); err != nil {
-		return nil, nil
-	}
-	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
-
 	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
 	if err != nil {
 		return nil, err
@@ -481,24 +478,54 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	currentVersion := version.String()
-	desiredVersion, err := getDesiredVersion(currentManifest)
-	if err != nil {
-		return nil, err
+	currentVersion := version
+	desiredVersion := externalCluster.Spec.Version
+
+	if desiredVersion.Equal(currentVersion) || desiredVersion.LessThan(currentVersion) {
+		return nil, nil
 	}
 
-	isdesiredPhase := sets.NewString(string(kubermaticv1.ExternalClusterPhaseError), string(kubermaticv1.ExternalClusterPhaseRunning)).Has(string(externalCluster.Status.Condition.Phase))
-	// proceed only when desiredVersion is different from currentVersion or clusterphase is desiredPhase.
-	if currentVersion == desiredVersion || !isdesiredPhase {
+	desiredPhaseBool := sets.NewString(string(kubermaticv1.ExternalClusterPhaseError), string(kubermaticv1.ExternalClusterPhaseRunning)).Has(string(externalCluster.Status.Condition.Phase))
+	// proceed only when desiredVersion is grater from currentVersion or clusterphase is desiredPhase.
+	if desiredVersion.Equal(currentVersion) || desiredVersion.LessThan(currentVersion) || !desiredPhaseBool {
 		return nil, nil
 	}
 
 	log.Infow("Upgrading kubeone cluster...", "from", currentVersion, "to", desiredVersion)
+
+	// Update KubeOne Manifest
+	manifestSecret := &corev1.Secret{}
+	if err := r.Get(ctx, types.NamespacedName{Namespace: kubeOneNamespaceName, Name: manifestRef.Name}, manifestSecret); err != nil {
+		return nil, err
+	}
+	currentManifest := manifestSecret.Data[resources.KubeOneManifest]
+
+	kubeOneClusterObj := &kubeonev1beta2.KubeOneCluster{}
+	if err := yaml.UnmarshalStrict(currentManifest, kubeOneClusterObj); err != nil {
+		return nil, fmt.Errorf("failed to decode kubeone manifest secret data: %w", err)
+	}
+	kubeOneClusterObj.Versions = kubeonev1beta2.VersionConfig{
+		Kubernetes: desiredVersion.String(),
+	}
+
+	patchManifest, err := yaml.Marshal(kubeOneClusterObj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode kubeone cluster manifest config as YAML: %w", err)
+	}
+
+	oldManifestSecret := manifestSecret.DeepCopy()
+	manifestSecret.Data = map[string][]byte{
+		resources.KubeOneManifest: patchManifest,
+	}
+	if err := r.Patch(ctx, manifestSecret, ctrlruntimeclient.MergeFrom(oldManifestSecret)); err != nil {
+		return nil, fmt.Errorf("failed to update kubeone manifest secret for upgrade version %s/%s: %w", manifestSecret.Name, manifestSecret.Namespace, err)
+	}
+	////////////////
+	////// sync manifest secret after label is added to external cluster
 	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterPhaseReconciling); err != nil {
 		return nil, err
 	}
-
-	upgradeJob, err := r.initiateClusterUpgrade(ctx, log, currentVersion, desiredVersion, externalCluster)
+	upgradeJob, err := r.initiateClusterUpgrade(ctx, log, *currentVersion, desiredVersion, externalCluster)
 	if err != nil {
 		log.Errorw("failed to upgrade kubeone cluster", zap.Error(err))
 		return nil, err
@@ -509,7 +536,7 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 
 func (r *reconciler) initiateClusterUpgrade(ctx context.Context,
 	log *zap.SugaredLogger,
-	currentVersion, desiredVersion string,
+	currentVersion, desiredVersion semver.Semver,
 	cluster *kubermaticv1.ExternalCluster) (*batchv1.Job, error) {
 	log.Info("Upgrading kubeone cluster...")
 
@@ -1269,14 +1296,14 @@ func (r *reconciler) createKubeOneNamespace(ctx context.Context, namespace strin
 	return nil
 }
 
-func getDesiredVersion(currentManifest []byte) (string, error) {
-	cluster := &kubeonev1beta2.KubeOneCluster{}
-	if err := yaml.UnmarshalStrict(currentManifest, cluster); err != nil {
-		return "", fmt.Errorf("failed to decode manifest secret data: %w", err)
-	}
+// func getDesiredVersion(currentManifest []byte) (string, error) {
+// 	cluster := &kubeonev1beta2.KubeOneCluster{}
+// 	if err := yaml.UnmarshalStrict(currentManifest, cluster); err != nil {
+// 		return "", fmt.Errorf("failed to decode manifest secret data: %w", err)
+// 	}
 
-	return cluster.Versions.Kubernetes, nil
-}
+// 	return cluster.Versions.Kubernetes, nil
+// }
 
 func getDesiredContainerRuntime(currentManifest []byte) (string, error) {
 	cluster := &kubeonev1beta2.KubeOneCluster{}

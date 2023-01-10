@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -120,6 +121,9 @@ type ExternalClusterSpec struct {
 
 	// KubeconfigReference is reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
+
+	// Version defines the wanted version of the control plane.
+	Version semver.Semver `json:"version"`
 
 	// CloudSpec contains provider specific fields
 	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
