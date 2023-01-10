@@ -75,13 +75,15 @@ var (
 func init() {
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources")
 	flag.StringVar(&options.provider, "provider", "", "Cloud provider to test")
-	flag.StringVar(&options.kubernetesRelease, "cluster-version", "", "Kubernetes version or release for the usercluster")
+	flag.StringVar(&options.kubernetesRelease, "kubernetes-release", "", "Kubernetes version or release for the usercluster")
 
 	options.awsCredentials.AddFlags(flag.CommandLine)
 	options.azureCredentials.AddFlags(flag.CommandLine)
 	options.osCredentials.AddFlags(flag.CommandLine)
 	options.vsphereCredentials.AddFlags(flag.CommandLine)
 	options.logOptions.AddFlags(flag.CommandLine)
+
+	jig.AddFlags(flag.CommandLine)
 }
 
 func TestCCMMigration(t *testing.T) {
