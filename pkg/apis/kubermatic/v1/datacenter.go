@@ -915,7 +915,7 @@ type MeteringReportConfiguration struct {
 // - access to User Cluster's Kubernetes Dashboards.
 type OIDCProviderConfiguration struct {
 	// URL of the provider which allows the API server to discover public signing keys.
-	IssuerUrl string `json:"issuerUrl"`
+	IssuerURL string `json:"issuerURL"`
 
 	// IssuerClientID is the application's ID.
 	IssuerClientID string `json:"issuerClientID"`

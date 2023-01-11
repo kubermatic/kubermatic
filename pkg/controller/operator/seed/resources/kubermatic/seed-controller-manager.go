@@ -150,7 +150,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 
 			if configureSeedLevelOIDCProvider {
 				args = append(args,
-					fmt.Sprintf("-oidc-issuer-url=%s", seed.Spec.OIDCProviderConfiguration.IssuerUrl),
+					fmt.Sprintf("-oidc-issuer-url=%s", seed.Spec.OIDCProviderConfiguration.IssuerURL),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientID),
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientSecret),
 				)

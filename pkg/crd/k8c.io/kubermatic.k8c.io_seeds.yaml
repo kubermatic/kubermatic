@@ -1368,13 +1368,13 @@ spec:
                     issuerClientSecret:
                       description: IssuerClientSecret is the application's secret.
                       type: string
-                    issuerUrl:
+                    issuerURL:
                       description: URL of the provider which allows the API server to discover public signing keys.
                       type: string
                   required:
                     - issuerClientID
                     - issuerClientSecret
-                    - issuerUrl
+                    - issuerURL
                   type: object
                 proxySettings:
                   description: 'Optional: ProxySettings can be used to configure HTTP proxy settings on the worker nodes in user clusters. However, proxy settings on nodes take precedence.'

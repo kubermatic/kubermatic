@@ -548,6 +548,8 @@ spec:
         requests:
           cpu: 50m
           memory: 32Mi
+  # OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
+  oidcProviderConfiguration: null
   # Optional: ProxySettings can be used to configure HTTP proxy settings on the
   # worker nodes in user clusters. However, proxy settings on nodes take precedence.
   proxySettings:
