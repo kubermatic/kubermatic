@@ -21,7 +21,6 @@ import (
 	"sync"
 	"testing"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -487,11 +486,16 @@ func TestValidate(t *testing.T) {
 						"test-kv": {
 							Spec: kubermaticv1.DatacenterSpec{
 								Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
-									Images: kubermaticv1.ImageSources{HTTP: &kubermaticv1.HTTPSource{
-										OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
-											"invalid-os": map[string]string{"v1": "https://test.com"},
+									Images: kubermaticv1.KubeVirtImagesConfig{
+										KubeVirtImageSources: kubermaticv1.KubeVirtImageSources{
+											HTTP: &kubermaticv1.KubeVirtHTTPSource{
+												OperatingSystems: kubermaticv1.ImageListWithVersions{
+													"invalid-os": map[string]string{"v1": "https://test.com"},
+												},
+											},
 										},
-									}},
+										EnableCustomImages: false,
+									},
 								},
 							},
 						},

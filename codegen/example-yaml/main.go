@@ -116,9 +116,9 @@ func main() {
 func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
-	kubevirtHTTPSource := kubermaticv1.HTTPSource{
-		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
-		ImageCloning: kubermaticv1.ImageCloning{
+	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
+		OperatingSystems: kubermaticv1.ImageListWithVersions{},
+		ImageCloning: kubermaticv1.KubeVirtImageCloning{
 			Enabled:      false,
 			StorageClass: "",
 		},
@@ -199,7 +199,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
 							DNSPolicy: "",
 							DNSConfig: &corev1.PodDNSConfig{},
-							Images:    kubermaticv1.ImageSources{HTTP: &kubevirtHTTPSource},
+							Images: kubermaticv1.KubeVirtImagesConfig{
+								KubeVirtImageSources: kubermaticv1.KubeVirtImageSources{
+									HTTP: &kubevirtHTTPSource,
+								},
+							},
 							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
 								{
 									Name: "deny-ingress",

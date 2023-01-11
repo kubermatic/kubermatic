@@ -208,7 +208,7 @@ spec:
                             description: Kubevirt configures a KubeVirt datacenter.
                             properties:
                               customNetworkPolicies:
-                                description: CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed in the dedicated infra KubeVirt cluster. They are added to the defaults.
+                                description: 'Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed in the dedicated infra KubeVirt cluster. They are added to the defaults.'
                                 items:
                                   description: CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
                                   properties:
@@ -521,13 +521,13 @@ spec:
                                   - None
                                 type: string
                               images:
-                                description: Images represents standard VM Image sources.
+                                description: Images represents KubeVirt images config.
                                 properties:
                                   enableCustomImages:
                                     description: EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
                                     type: boolean
                                   http:
-                                    description: HTTP source for standard images.
+                                    description: HTTP source supports any internet or local HTTP image address.
                                     properties:
                                       imageCloning:
                                         description: 'Optional: ImageCloning represents options for kubevirt disk-image cloning.'
@@ -536,7 +536,7 @@ spec:
                                             description: DataVolumeSize is the size of the DataVolume used for caching the image. Default value is 11Gi.
                                             type: string
                                           enabled:
-                                            description: Enabled allows you to enable/disable cloning of standard images. When this option is enabled, downloading images from the http source destination will happen only once. Later, Machine Controller will clone the disks using DataVolumes with the cloning source.
+                                            description: Enabled allows you to enable/disable cloning of standard images. When this option is enabled, downloading images from the http source destination will happen only once. Later, Machine Controller relies on the CDI clone to create a new disk image for VMI.
                                             type: boolean
                                           storageClass:
                                             description: StorageClass represents storage-class for DataVolumes of standard images.
@@ -549,7 +549,6 @@ spec:
                                         additionalProperties:
                                           additionalProperties:
                                             type: string
-                                          description: OSVersions defines a map of OS version and the URL to download the image.
                                           type: object
                                         description: OperatingSystems represents list of supported operating-systems with their URLs.
                                         type: object

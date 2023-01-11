@@ -114,7 +114,7 @@ spec:
           network: ""
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
-          # CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
+          # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
           # in the dedicated infra KubeVirt cluster. They are added to the defaults.
           customNetworkPolicies:
             - # Name is the name of the Custom Network Policy.
@@ -144,11 +144,11 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
-          # Images represents standard VM Image sources.
+          # Images represents KubeVirt images config.
           images:
             # EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
             enableCustomImages: false
-            # HTTP source for standard images.
+            # HTTP source supports any internet or local HTTP image address.
             http:
               # Optional: ImageCloning represents options for kubevirt disk-image cloning.
               imageCloning:
@@ -156,7 +156,7 @@ spec:
                 dataVolumeSize: ""
                 # Enabled allows you to enable/disable cloning of standard images. When this option is enabled,
                 # downloading images from the http source destination will happen only once. Later,
-                # Machine Controller will clone the disks using DataVolumes with the cloning source.
+                # Machine Controller relies on the CDI clone to create a new disk image for VMI.
                 enabled: false
                 # StorageClass represents storage-class for DataVolumes of standard images.
                 storageClass: ""

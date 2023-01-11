@@ -515,6 +515,10 @@ func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
 // ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
 
+// ImageListWithVersions defines a map of operating system, its versions and the image to use.
+// For instance: {"ubuntu": {"20.04": <link>}, {"22.04": <link>}}.
+type ImageListWithVersions map[providerconfig.OperatingSystem]map[string]string
+
 // OperatingSystemProfileList defines a map of operating system and the OperatingSystemProfile to use.
 type OperatingSystemProfileList map[providerconfig.OperatingSystem]string
 
@@ -697,12 +701,12 @@ type DatacenterSpecKubevirt struct {
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
 
-	// CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
+	// Images represents KubeVirt images config.
+	Images KubeVirtImagesConfig `json:"images,omitempty"`
+
+	// Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
 	// in the dedicated infra KubeVirt cluster. They are added to the defaults.
 	CustomNetworkPolicies []*CustomNetworkPolicy `json:"customNetworkPolicies,omitempty"`
-
-	// Images represents standard VM Image sources.
-	Images ImageSources `json:"images,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
@@ -713,40 +717,41 @@ type CustomNetworkPolicy struct {
 	Spec networkingv1.NetworkPolicySpec `json:"spec"`
 }
 
-var (
-	SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemCentOS:     nil,
-		providerconfig.OperatingSystemUbuntu:     nil,
-		providerconfig.OperatingSystemRHEL:       nil,
-		providerconfig.OperatingSystemFlatcar:    nil,
-		providerconfig.OperatingSystemRockyLinux: nil,
-	}
-)
+var SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
+	providerconfig.OperatingSystemCentOS:     nil,
+	providerconfig.OperatingSystemUbuntu:     nil,
+	providerconfig.OperatingSystemRHEL:       nil,
+	providerconfig.OperatingSystemFlatcar:    nil,
+	providerconfig.OperatingSystemRockyLinux: nil,
+}
 
-// ImageSources represents standard VM Image sources.
-type ImageSources struct {
-	// HTTP source for standard images.
-	HTTP *HTTPSource `json:"http,omitempty"`
+// KubeVirtImagesConfig provides configuration of standard and custom images that are used by KubeVirt VMIs.
+type KubeVirtImagesConfig struct {
+	// KubeVirt image sources with list of supported operating systems and their addresses.
+	KubeVirtImageSources `json:",inline"`
 	// EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
 	EnableCustomImages bool `json:"enableCustomImages"`
 }
 
-// OSVersions defines a map of OS version and the URL to download the image.
-type OSVersions map[string]string
-
-// HTTPSource represents list of standard VM images with http-source.
-type HTTPSource struct {
-	// OperatingSystems represents list of supported operating-systems with their URLs.
-	OperatingSystems map[providerconfig.OperatingSystem]OSVersions `json:"operatingSystems"`
-	// Optional: ImageCloning represents options for kubevirt disk-image cloning.
-	ImageCloning ImageCloning `json:"imageCloning,omitempty"`
+// KubeVirtImageSources represents standard image sources that are used to create a new disk image for VM.
+type KubeVirtImageSources struct {
+	// HTTP source supports any internet or local HTTP image address.
+	HTTP *KubeVirtHTTPSource `json:"http,omitempty"`
 }
 
-// ImageCloning represents options for kubevirt disk-image cloning.
-type ImageCloning struct {
+// KubeVirtHTTPSource represents list of standard VM images with http-source.
+type KubeVirtHTTPSource struct {
+	// OperatingSystems represents list of supported operating-systems with their URLs.
+	OperatingSystems ImageListWithVersions `json:"operatingSystems"`
+	// Optional: ImageCloning represents options for kubevirt disk-image cloning.
+	ImageCloning KubeVirtImageCloning `json:"imageCloning,omitempty"`
+}
+
+// KubeVirtImageCloning represents options for kubevirt disk-image cloning.
+type KubeVirtImageCloning struct {
 	// Enabled allows you to enable/disable cloning of standard images. When this option is enabled,
 	// downloading images from the http source destination will happen only once. Later,
-	// Machine Controller will clone the disks using DataVolumes with the cloning source.
+	// Machine Controller relies on the CDI clone to create a new disk image for VMI.
 	Enabled bool `json:"enabled"`
 	// StorageClass represents storage-class for DataVolumes of standard images.
 	StorageClass string `json:"storageClass"`
