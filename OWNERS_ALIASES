@@ -12,7 +12,6 @@ aliases:
     - ahmedwaleedmalik
     - hdurand0710
     - rastislavs
-    - sankalp-r
     - simontheleg
     - vgramer
     - wurbanski
@@ -26,7 +25,6 @@ aliases:
     - kron4eg
     - moadqassem
     - moelsayed
-    - pratikdeoghare
     - xmudrii
     - xrstf
   sig-crd:
@@ -35,7 +33,6 @@ aliases:
   sig-networking:
     - moadqassem
     - moelsayed
-    - pratikdeoghare
     - rastislavs
     - weirdmachine
   sig-ui:
@@ -45,4 +42,3 @@ aliases:
   sig-virtualization:
     - hdurand0710
     - mfranczy
-    - sankalp-r
