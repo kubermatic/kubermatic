@@ -213,10 +213,10 @@ func TestHelmClient(t *testing.T) {
 			},
 		},
 		{
-			name: "uninstall should be failed when chart is not already installed",
+			name: "uninstall should be successful when chart has already been installed (idempotent)",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				uninstallShloulFailedIfnotAlreadyInstalledTest(t, ctx, ns)
+				uninstallTest(t, ctx, client, ns)
 			},
 		},
 		{
@@ -406,27 +406,6 @@ func uninstallTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.C
 		return err != nil && apierrors.IsNotFound(err)
 	}) {
 		t.Fatal("configMap has not been removed by helm unsintall")
-	}
-}
-
-func uninstallShloulFailedIfnotAlreadyInstalledTest(t *testing.T, ctx context.Context, ns *corev1.Namespace) {
-	tempDir := t.TempDir()
-	settings := NewSettings(tempDir)
-
-	restClientGetter := &genericclioptions.ConfigFlags{
-		KubeConfig: pointer.String(kubeconfigPath),
-		Namespace:  &ns.Name,
-	}
-
-	helmClient, err := NewClient(ctx, restClientGetter, settings, ns.Name, kubermaticlog.Logger)
-	if err != nil {
-		t.Fatalf("failed to create helm client: %s", err)
-	}
-
-	_, err = helmClient.Uninstall(releaseName)
-
-	if err == nil {
-		t.Fatal("helm uninstall should failed if release it not already installed, but not error was raised")
 	}
 }
 

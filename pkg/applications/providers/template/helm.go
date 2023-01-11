@@ -45,8 +45,7 @@ type HelmTemplate struct {
 	// CacheDir is the directory path where helm caches will be download.
 	CacheDir string
 
-	Log                     *zap.SugaredLogger
-	ApplicationInstallation *appskubermaticv1.ApplicationInstallation
+	Log *zap.SugaredLogger
 
 	// Namespace where credential secrets are stored.
 	SecretNamespace string
@@ -56,7 +55,7 @@ type HelmTemplate struct {
 }
 
 // InstallOrUpgrade the chart located at chartLoc with parameters (releaseName, values) defined applicationInstallation into cluster.
-func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
+func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
 	if err != nil {
 		return util.NoStatusUpdate, err
@@ -64,23 +63,28 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
 	var auth = helmclient.AuthSettings{}
-	if h.ApplicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials != nil {
-		auth, err = util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.ApplicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials.HelmCredentials)
+	if applicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials != nil {
+		auth, err = util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, applicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials.HelmCredentials)
 		if err != nil {
 			return util.NoStatusUpdate, err
 		}
 	}
 
+	deployOpts, err := getDeployOpts(appDefinition, applicationInstallation)
+	if err != nil {
+		return util.NoStatusUpdate, err
+	}
+
 	restClientGetter := &genericclioptions.ConfigFlags{
 		KubeConfig: &h.Kubeconfig,
-		Namespace:  &h.ApplicationInstallation.Spec.Namespace.Name,
+		Namespace:  &applicationInstallation.Spec.Namespace.Name,
 	}
 
 	helmClient, err := helmclient.NewClient(
 		h.Ctx,
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
-		h.ApplicationInstallation.Spec.Namespace.Name,
+		applicationInstallation.Spec.Namespace.Name,
 		h.Log)
 
 	if err != nil {
@@ -94,8 +98,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, applicationInstallation 
 		}
 	}
 
-	// todo vgramer: build helmclient.DeployOpts{} from application. will be done in another pr
-	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, helmclient.DeployOpts{}, auth)
+	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, *deployOpts, auth)
 	statusUpdater := util.NoStatusUpdate
 
 	// In some case, even if an error occurred, the helmRelease is updated.
@@ -129,14 +132,14 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 
 	restClientGetter := &genericclioptions.ConfigFlags{
 		KubeConfig: &h.Kubeconfig,
-		Namespace:  &h.ApplicationInstallation.Spec.Namespace.Name,
+		Namespace:  &applicationInstallation.Spec.Namespace.Name,
 	}
 
 	helmClient, err := helmclient.NewClient(
 		h.Ctx,
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
-		h.ApplicationInstallation.Spec.Namespace.Name,
+		applicationInstallation.Spec.Namespace.Name,
 		h.Log)
 
 	if err != nil {
@@ -190,4 +193,21 @@ func getReleaseName(applicationInstallation *appskubermaticv1.ApplicationInstall
 		return appName + "-" + namespaceSha1[:9]
 	}
 	return namespacedName
+}
+
+// getDeployOpts builds helmclient.DeployOpts from values provided by appInstall or fallback to the values of appDefinition or fallback to the default options.
+// Default options are wait=false that implies timeout=0 and atomic=false.
+func getDeployOpts(appDefinition *appskubermaticv1.ApplicationDefinition, appInstall *appskubermaticv1.ApplicationInstallation) (*helmclient.DeployOpts, error) {
+	// Read options from applicationInstallation.
+	if appInstall.Spec.DeployOptions != nil && appInstall.Spec.DeployOptions.Helm != nil {
+		return helmclient.NewDeployOpts(appInstall.Spec.DeployOptions.Helm.Wait, appInstall.Spec.DeployOptions.Helm.Timeout.Duration, appInstall.Spec.DeployOptions.Helm.Atomic)
+	}
+
+	// Fallback to options defined in ApplicationDefinition.
+	if appDefinition.Spec.DefaultDeployOptions != nil && appDefinition.Spec.DefaultDeployOptions.Helm != nil {
+		return helmclient.NewDeployOpts(appDefinition.Spec.DefaultDeployOptions.Helm.Wait, appDefinition.Spec.DefaultDeployOptions.Helm.Timeout.Duration, appDefinition.Spec.DefaultDeployOptions.Helm.Atomic)
+	}
+
+	// Fallback to default options.
+	return helmclient.NewDeployOpts(false, 0, false)
 }

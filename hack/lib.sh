@@ -531,11 +531,26 @@ provider_disabled() {
   # e.g. "VSPHERE_E2E_DISABLED"
   local disableEnv="${1^^}_E2E_DISABLED"
   local labelName="test/require-$1"
+  local branchName="${2:-}"
 
-  # tests can be globally disabled by having a special environment
+  # Tests can be globally disabled by having a special environment
   # variable injected via the Prow preset; if they are not disabled,
   # we are done here.
+
   if [ -z "${!disableEnv:-}" ]; then
+    return 1
+  fi
+
+  # To prevent breaking existing releases, this check does apply to
+  # release branches. On those every failed test needs to be manually
+  # overridden.
+
+  if [ -z "$branchName" ]; then
+    branchName="${PULL_BASE_REF:-main}"
+  fi
+
+  if [[ "$branchName" =~ release/.* ]]; then
+    echodate "\$$disableEnv is set, but in a release branch ($branchName) this has no effect."
     return 1
   fi
 
@@ -551,6 +566,6 @@ provider_disabled() {
     return 1
   fi
 
-  echodate "\$$disableEnv is set, tests will be disabled. Apply the label $labelName to this PR to forcefully enable the tests."
+  echodate "\$$disableEnv is set, tests will be disabled. Apply the label $labelName to this PR to forcefully enable them."
   return 0
 }

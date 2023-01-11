@@ -29,11 +29,25 @@ beforeGocache=$(nowms)
 make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
+if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
+  echodate "Getting default SSH pubkey for machines from Vault"
+  retry 5 vault_ci_login
+  E2E_SSH_PUBKEY="$(mktemp)"
+  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
+else
+  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
+  E2E_SSH_PUBKEY="$(mktemp)"
+  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+fi
+
+echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
+
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 source hack/ci/setup-kind-cluster.sh
 
-# gather the logs of all things in the Kubermatic namespace
+# gather the logs of all things in the cluster control plane and in the Kubermatic namespace
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
 source hack/ci/setup-kubermatic-in-kind.sh
@@ -41,6 +55,7 @@ source hack/ci/setup-kubermatic-in-kind.sh
 echodate "Running OPA tests..."
 
 go_test opa_e2e -timeout 30m -tags e2e,ee -v ./pkg/test/e2e/opa \
-  -hetzner-kkp-datacenter hetzner-nbg1
+  -hetzner-kkp-datacenter hetzner-nbg1 \
+  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Tests completed successfully!"

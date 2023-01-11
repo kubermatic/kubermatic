@@ -25,6 +25,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type MachineBuilder struct {
@@ -37,6 +39,7 @@ type MachineBuilder struct {
 
 	seed           *kubermaticv1.Seed
 	datacenterName string
+	sshPubKeys     sets.String
 
 	datacenter *kubermaticv1.Datacenter
 
@@ -48,7 +51,9 @@ type MachineBuilder struct {
 }
 
 func NewBuilder() *MachineBuilder {
-	return &MachineBuilder{}
+	return &MachineBuilder{
+		sshPubKeys: sets.NewString(),
+	}
 }
 
 // WithSeed should only be used in conjunction with WithDatacenterName().
@@ -81,6 +86,15 @@ func (b *MachineBuilder) WithCloudProvider(cloudProvider kubermaticv1.ProviderTy
 func (b *MachineBuilder) WithNetworkConfig(networkConfig *providerconfig.NetworkConfig) *MachineBuilder {
 	b.networkConfig = networkConfig
 	return b
+}
+
+func (b *MachineBuilder) AddSSHPublicKey(pubKeys ...string) *MachineBuilder {
+	b.sshPubKeys.Insert(pubKeys...).Delete("") // make sure to not add an empty key by accident
+	return b
+}
+
+func (b *MachineBuilder) AddSSHKey(key *kubermaticv1.UserSSHKey) *MachineBuilder {
+	return b.AddSSHPublicKey(key.Spec.PublicKey)
 }
 
 // WithOperatingSystemSpec works great when combined with the convenient [OS]Builder
@@ -147,7 +161,7 @@ func (b *MachineBuilder) BuildProviderConfig() (*providerconfig.Config, error) {
 		return nil, fmt.Errorf("failed to apply cluster information to the network config: %w", err)
 	}
 
-	return CreateProviderConfig(cloudProvider, cloudProviderSpec, operatingSystemSpec, networkConfig, nil)
+	return CreateProviderConfig(cloudProvider, cloudProviderSpec, operatingSystemSpec, networkConfig, b.sshPubKeys.List())
 }
 
 func (b *MachineBuilder) BuildProviderSpec() (*clusterv1alpha1.ProviderSpec, error) {

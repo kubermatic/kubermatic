@@ -46,12 +46,12 @@ func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.Clus
 	}
 }
 
-func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewDigitaloceanConfig().
 		WithSize(dropletSize).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
 	if err != nil {
 		return nil, err
 	}

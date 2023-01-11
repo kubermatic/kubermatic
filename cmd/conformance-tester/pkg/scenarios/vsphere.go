@@ -59,14 +59,14 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	return spec
 }
 
-func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewVSphereConfig().
 		WithCPUs(2).
 		WithMemoryMB(4096).
 		WithDiskSizeGB(10).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
 	if err != nil {
 		return nil, err
 	}

@@ -151,7 +151,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	enableImageCloning := k.dc.Images.HTTP != nil && k.dc.Images.HTTP.ImageCloning.Enable
+	enableImageCloning := k.dc.Images.HTTP != nil && k.dc.Images.HTTP.ImageCloning.Enabled
 	if enableImageCloning || k.dc.Images.EnableCustomImages {
 		err = reconcileKubeVirtImagesNamespace(ctx, KubeVirtImagesNamespace, client)
 		if err != nil {

@@ -119,6 +119,7 @@ func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewAlibabaConfig().WithInstanceType("ecs.ic5.large").WithDiskSize(40).Build())
 
 	return &TestJig{
@@ -151,6 +152,7 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(awsConfig.Build())
 
 	return &TestJig{
@@ -180,6 +182,7 @@ func NewAzureCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cr
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewAzureConfig().
 			WithVMSize("Standard_B1ms").
 			// From Azure VM there is no IPv6-only route to the internet
@@ -212,6 +215,7 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx21").Build())
 
 	return &TestJig{
@@ -243,6 +247,7 @@ func NewOpenstackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewOpenstackConfig().WithFlavor("m1.small").Build())
 
 	return &TestJig{
@@ -270,6 +275,7 @@ func NewVSphereCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewVSphereConfig().WithCPUs(2).WithMemoryMB(4096).WithDiskSizeGB(10).Build())
 
 	return &TestJig{
@@ -296,6 +302,7 @@ func NewDigitaloceanCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewDigitaloceanConfig().WithSize("c-2").WithBackups(false).WithMonitoring(false).Build())
 
 	return &TestJig{
@@ -322,6 +329,7 @@ func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewGCPConfig().WithMachineType("e2-small").WithDiskSize(25).WithDiskType("pd-standard").WithPreemptible(false).Build())
 
 	return &TestJig{
@@ -349,6 +357,7 @@ func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 	machineJig := NewMachineJig(client, log, nil).
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
+		AddSSHPublicKey(SSHPublicKey()).
 		WithCloudProviderSpec(provider.NewEquinixMetalConfig().WithInstanceType("c3.small.x86").Build())
 
 	return &TestJig{

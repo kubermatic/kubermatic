@@ -93,7 +93,7 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 						"-localip",
 						kubesystem.NodeLocalDNSCacheAddress,
 						"-conf",
-						"/etc/coredns/Corefile",
+						"/etc/Corefile",
 					},
 
 					VolumeMounts: []corev1.VolumeMount{
@@ -104,6 +104,10 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 						{
 							Name:      "config-volume",
 							MountPath: "/etc/coredns",
+						},
+						{
+							Name:      "kube-dns-config",
+							MountPath: "/etc/kube-dns",
 						},
 					},
 
@@ -170,9 +174,20 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 							Items: []corev1.KeyToPath{
 								{
 									Key:  "Corefile",
-									Path: "Corefile",
+									Path: "Corefile.base",
 								},
 							},
+						},
+					},
+				},
+				{
+					Name: "kube-dns-config",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kube-dns",
+							},
+							Optional: pointer.Bool(true),
 						},
 					},
 				},

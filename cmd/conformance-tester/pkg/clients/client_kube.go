@@ -35,6 +35,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -220,18 +221,10 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return nil, err
 	}
 
-	// fetch all existing SSH keys
-	keyList := &kubermaticv1.UserSSHKeyList{}
-	if err := c.opts.SeedClusterClient.List(ctx, keyList); err != nil {
-		return nil, fmt.Errorf("failed to list SSH keys: %w", err)
-	}
-
 	// get all the keys in the current project
-	projectKeys := []kubermaticv1.UserSSHKey{}
-	for _, key := range keyList.Items {
-		if key.Spec.Project == c.opts.KubermaticProject {
-			projectKeys = append(projectKeys, key)
-		}
+	projectKeys, err := c.getAssignedSSHKeys(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// assign them to the new cluster
@@ -253,6 +246,24 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	c.log(log).Infof("Successfully created cluster %s", cluster.Name)
 
 	return cluster, nil
+}
+
+func (c *kubeClient) getAssignedSSHKeys(ctx context.Context) ([]kubermaticv1.UserSSHKey, error) {
+	// fetch all existing SSH keys
+	keyList := &kubermaticv1.UserSSHKeyList{}
+	if err := c.opts.SeedClusterClient.List(ctx, keyList); err != nil {
+		return nil, fmt.Errorf("failed to list SSH keys: %w", err)
+	}
+
+	// get all the keys in the current project
+	projectKeys := []kubermaticv1.UserSSHKey{}
+	for _, key := range keyList.Items {
+		if key.Spec.Project == c.opts.KubermaticProject {
+			projectKeys = append(projectKeys, key)
+		}
+	}
+
+	return projectKeys, nil
 }
 
 func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
@@ -277,10 +288,21 @@ func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.Suga
 		return nil
 	}
 
+	// get all the keys in the current project
+	projectKeys, err := c.getAssignedSSHKeys(ctx)
+	if err != nil {
+		return err
+	}
+
+	publicKeys := sets.NewString()
+	for _, key := range projectKeys {
+		publicKeys.Insert(key.Spec.PublicKey)
+	}
+
 	c.log(log).Info("Preparing MachineDeployments...")
 	var mds []clusterv1alpha1.MachineDeployment
 	if err := wait.PollImmediate(ctx, 3*time.Second, time.Minute, func() (transient error, terminal error) {
-		mds, transient = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster)
+		mds, transient = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster, publicKeys.List())
 		return transient, nil
 	}); err != nil {
 		return fmt.Errorf("failed to create MachineDeployments from scenario: %w", err)

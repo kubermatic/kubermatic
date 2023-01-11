@@ -18,12 +18,20 @@ package applicationinstallationcontroller
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/onsi/gomega"
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applications"
+	"k8c.io/kubermatic/v2/pkg/applications/fake"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -54,9 +62,9 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0"),
-					genApplicationInstallation("appInstallation-2", "app-def-2", "1.0.0"),
-					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0")).
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-2", "app-def-2", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0", 0, 1, 0)).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{
 				{NamespacedName: types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}},
@@ -69,9 +77,9 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-2", "1.0.0"),
-					genApplicationInstallation("appInstallation-2", "app-def-3", "1.0.0"),
-					genApplicationInstallation("appInstallation-3", "app-def-4", "1.0.0")).
+					genApplicationInstallation("appInstallation-1", "app-def-2", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-2", "app-def-3", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-3", "app-def-4", "1.0.0", 0, 1, 0)).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{},
 		},
@@ -97,6 +105,168 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 	}
 }
 
+func TestMaxRetriesOnInstallation(t *testing.T) {
+	installError := fmt.Errorf("an install error")
+
+	errorOnInstall := func(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
+		return util.NoStatusUpdate, installError
+	}
+
+	testCases := []struct {
+		name                     string
+		applicationDefinition    *appskubermaticv1.ApplicationDefinition
+		userClient               ctrlruntimeclient.Client
+		appInstaller             applications.ApplicationInstaller
+		installErr               error
+		wantErr                  bool
+		expectedFailure          int
+		expectedInstallCondition appskubermaticv1.ApplicationInstallationCondition
+	}{
+		{
+			name:                  "installation succeeds",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0)).
+				Build(),
+			appInstaller:             fake.ApplicationInstallerLogger{},
+			installErr:               nil,
+			wantErr:                  false,
+			expectedFailure:          0,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
+		},
+		{
+			name:                  "installation fails: app.Status.Failures should be increased and condition set to false",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 1)).
+				Build(),
+			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
+			installErr:               installError,
+			wantErr:                  true,
+			expectedFailure:          3,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
+		},
+		{
+			name:                  "installation succeeds after a failure: app.Status.Failures should be reset and condition set to true",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 0)).
+				Build(),
+			appInstaller:             fake.ApplicationInstallerLogger{},
+			installErr:               nil,
+			wantErr:                  false,
+			expectedFailure:          0,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
+		},
+		{
+			name:                  "installation fails after failure and spec changed app.Status.Failures should be set to 1 (reset + failure) and condition set to false",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 2, 1)).
+				Build(),
+			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
+			installErr:               installError,
+			wantErr:                  true,
+			expectedFailure:          1,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
+		},
+		{
+			name:                  "installation fails and reaches max retries: condition should be set to fails and no error should be returned (to not requeue object)",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 1, 1)).
+				Build(),
+			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
+			installErr:               nil,
+			wantErr:                  false,
+			expectedFailure:          maxRetries + 1,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailedRetriesExceeded", Message: "Max number of retries was exceeded. Last error: previous error"},
+		},
+
+		{
+			name:                  "installation has reached max retries and then spec has changed (with working install): app.Status.Failures should be reset and condition set to true",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
+				Build(),
+			appInstaller:             fake.ApplicationInstallerLogger{},
+			installErr:               nil,
+			wantErr:                  false,
+			expectedFailure:          0,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
+		},
+		{
+			name:                  "installation has reached max retries and then spec has changed (with not working install): app.Status.Failures should be set to 1 ( reset + failure) and condition set to false",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
+				Build(),
+			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
+			installErr:               installError,
+			wantErr:                  true,
+			expectedFailure:          1,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+			r := reconciler{log: kubermaticlog.Logger, seedClient: tc.userClient, userClient: tc.userClient, userRecorder: nil, clusterIsPaused: nil, appInstaller: tc.appInstaller}
+
+			appInstall := &appskubermaticv1.ApplicationInstallation{}
+			if err := tc.userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}, appInstall); err != nil {
+				t.Fatalf("failed to get application installation")
+			}
+			err := r.handleInstallation(ctx, kubermaticlog.Logger, genApplicationDefinition("app-def-1"), appInstall)
+
+			// check the error
+			if !tc.wantErr && err != nil {
+				t.Fatalf("expect no error but error '%v' was raised'", err)
+			}
+			if tc.wantErr && !errors.Is(err, tc.installErr) {
+				t.Fatalf("expected error '%v', got '%v'", tc.installErr, err)
+			}
+
+			appInstall = &appskubermaticv1.ApplicationInstallation{}
+			if err := tc.userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}, appInstall); err != nil {
+				t.Fatalf("failed to get application installation")
+			}
+			// Check number of failure.
+			if appInstall.Status.Failures != tc.expectedFailure {
+				t.Fatalf("expected appInstall.Status.Failures='%v' but got '%v'", tc.expectedFailure, appInstall.Status.Failures)
+			}
+
+			// Check condition has been correctly updated.
+			condition := appInstall.Status.Conditions[appskubermaticv1.Ready]
+			if tc.expectedInstallCondition.Status != condition.Status {
+				t.Errorf("expected application ready condition status='%v' but got '%v'", tc.expectedInstallCondition.Status, condition.Status)
+			}
+
+			if tc.expectedInstallCondition.Reason != condition.Reason {
+				t.Errorf("expected application ready condition reason='%v' but got '%v'", tc.expectedInstallCondition.Reason, condition.Reason)
+			}
+			if tc.expectedInstallCondition.Message != condition.Message {
+				t.Errorf("expected application ready message='%v' but got '%v'", tc.expectedInstallCondition.Message, condition.Message)
+			}
+		})
+	}
+}
 func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
 	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -136,11 +306,16 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 	}
 }
 
-func genApplicationInstallation(name string, applicationDefName string, appVersion string) *appskubermaticv1.ApplicationInstallation {
+func genApplicationInstallation(name string, applicationDefName string, appVersion string, failures int, generation int64, observedGeneration int64) *appskubermaticv1.ApplicationInstallation {
+	message := ""
+	if failures > maxRetries {
+		message = "previous error"
+	}
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: applicationNamespace,
+			Name:       name,
+			Namespace:  applicationNamespace,
+			Generation: generation,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: appskubermaticv1.AppNamespaceSpec{
@@ -153,6 +328,12 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 				Version: appVersion,
 			},
 		},
-		Status: appskubermaticv1.ApplicationInstallationStatus{},
+
+		Status: appskubermaticv1.ApplicationInstallationStatus{
+			Failures: failures,
+			Conditions: map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{
+				appskubermaticv1.Ready: {Message: message, ObservedGeneration: observedGeneration},
+			},
+		},
 	}
 }

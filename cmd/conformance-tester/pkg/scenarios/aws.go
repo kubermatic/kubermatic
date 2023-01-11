@@ -57,7 +57,7 @@ func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	}
 }
 
-func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	vpcs, err := awsprovider.GetVPCS(ctx, secrets.AWS.AccessKeyID, secrets.AWS.SecretAccessKey, "", "", s.datacenter.Spec.AWS.Region)
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			WithSpotInstanceMaxPrice("0.5").
 			Build()
 
-		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
+		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
 		if err != nil {
 			return nil, err
 		}

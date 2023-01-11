@@ -26,6 +26,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
@@ -60,6 +61,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
@@ -95,6 +97,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
@@ -130,6 +133,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
@@ -162,6 +166,7 @@ presubmits:
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
@@ -189,6 +194,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
@@ -221,6 +227,7 @@ presubmits:
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
@@ -251,6 +258,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
       preset-goproxy: "true"
+      preset-e2e-ssh: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5

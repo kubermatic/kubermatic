@@ -55,14 +55,14 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 	}
 }
 
-func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewOpenstackConfig().
 		WithFlavor(openStackFlavor).
 		WithInstanceReadyCheckPeriod(openStackInstanceReadyCheckPeriod).
 		WithInstanceReadyCheckTimeout(openStackInstanceReadyCheckTimeout).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
 	if err != nil {
 		return nil, err
 	}

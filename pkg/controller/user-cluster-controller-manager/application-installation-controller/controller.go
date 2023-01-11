@@ -31,7 +31,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -58,6 +57,9 @@ const (
 
 	// Event raised when the reconciliation of an applicationInstallation failed.
 	applicationInstallationReconcileFailedEvent = "ApplicationInstallationReconcileFailed"
+
+	// maxRetries is the maximum number of retries on installation or upgrade failure.
+	maxRetries = 5
 )
 
 type reconciler struct {
@@ -202,7 +204,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 	}
 
 	// install application into the user-cluster
-	if err := r.handleInstallation(ctx, log, appInstallation); err != nil {
+	if err := r.handleInstallation(ctx, log, applicationDef, appInstallation); err != nil {
 		return fmt.Errorf("handling installation of application installation: %w", err)
 	}
 
@@ -223,7 +225,23 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 }
 
 // handleInstallation installs or updates the application in the user cluster.
-func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	if err := r.resetFailuresIfSpecHasChanged(ctx, appInstallation); err != nil {
+		return err
+	}
+
+	// Install or upgrade application only if max number of retries is not exceeded.
+	if appInstallation.Status.Failures > maxRetries {
+		oldAppInstallation := appInstallation.DeepCopy()
+		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailedRetriesExceeded", "Max number of retries was exceeded. Last error: "+oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
+
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status: %w", err)
+		}
+		log.Infow("Max number of retries was exceeded. Do not reconcile application", "failures", appInstallation.Status.Failures, "maxRetries", maxRetries)
+		return nil
+	}
+
 	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)
@@ -234,29 +252,28 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		}
 	}()
 
+	// Download application sources.
 	oldAppInstallation := appInstallation.DeepCopy()
 	appSourcePath, downloadErr := r.appInstaller.DonwloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
 	if downloadErr != nil {
-		r.setCondition(appInstallation, appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownaloadSourceFailed", downloadErr.Error())
+		appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownaloadSourceFailed", downloadErr.Error())
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 			return fmt.Errorf("failed to update status: %w", err)
 		}
 		return downloadErr
 	}
-	r.setCondition(appInstallation, appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownaloadSourceSuccessful", "application's source successfully downloaded")
+	appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownaloadSourceSuccessful", "application's source successfully downloaded")
+	appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionUnknown, "InstallationInProgress", "application is installing or upgrading")
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 		return fmt.Errorf("failed to update status: %w", err)
 	}
 
+	// Install or upgrade application.
 	oldAppInstallation = appInstallation.DeepCopy()
-	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appInstallation, appSourcePath)
+	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appDefinition, appInstallation, appSourcePath)
 
-	if installErr != nil {
-		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
-	} else {
-		r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
-	}
 	statusUpdater(&appInstallation.Status)
+	appInstallation.SetReadyCondition(installErr)
 
 	// we set condition in every case and condition update the LastHeartbeatTime. So patch will not be empty.
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
@@ -266,13 +283,25 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	return installErr
 }
 
+// resetFailuresIfSpecHasChanged set Status.Failures to 0 if the spec has changed. Returns an error if status can not be updated.
+func (r reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	oldAppInstallation := appInstallation.DeepCopy()
+	if appInstallation.Status.Conditions[appskubermaticv1.Ready].ObservedGeneration != appInstallation.Generation {
+		appInstallation.Status.Failures = 0
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status: %w", err)
+		}
+	}
+	return nil
+}
+
 // handleDeletion uninstalls the application in the user cluster.
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	if kuberneteshelper.HasFinalizer(appInstallation, appskubermaticv1.ApplicationInstallationCleanupFinalizer) {
 		statusUpdater, uninstallErr := r.appInstaller.Delete(ctx, log, r.seedClient, r.userClient, appInstallation)
 		oldAppInstallation := appInstallation.DeepCopy()
 		if uninstallErr != nil {
-			r.setCondition(appInstallation, appskubermaticv1.Ready, corev1.ConditionFalse, "UninstallFailed", uninstallErr.Error())
+			appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "UninstallFailed", uninstallErr.Error())
 		}
 		statusUpdater(&appInstallation.Status)
 
@@ -287,26 +316,6 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		}
 	}
 	return nil
-}
-
-// setCondition on a appInstallation. It take care of update LastHeartbeatTime and LastTransitionTime if needed.
-func (r *reconciler) setCondition(appInstallation *appskubermaticv1.ApplicationInstallation, conditionType appskubermaticv1.ApplicationInstallationConditionType, status corev1.ConditionStatus, reason, message string) {
-	now := metav1.Now()
-
-	condition, exists := appInstallation.Status.Conditions[conditionType]
-	if exists && condition.Status != status {
-		condition.LastTransitionTime = now
-	}
-
-	condition.Status = status
-	condition.LastHeartbeatTime = now
-	condition.Reason = reason
-	condition.Message = message
-
-	if appInstallation.Status.Conditions == nil {
-		appInstallation.Status.Conditions = map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{}
-	}
-	appInstallation.Status.Conditions[conditionType] = condition
 }
 
 // traceWarning logs the message in warning mode and raise a k8s event on appInstallation with the eventReason and the message.
