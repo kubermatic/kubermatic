@@ -472,7 +472,7 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 	logger.Debug("Reconciling ApplicationDefinitions")
 
 	reconcilers := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{
-		cni.CiliumApplicationDefinitionReconciler(),
+		cni.CiliumApplicationDefinitionReconciler(config),
 	}
 	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)

@@ -39,7 +39,7 @@ const (
 
 // CiliumApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used
 // for installing Cilium CNI into KKP usr clusters.
-func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinitionReconcilerFactory {
+func CiliumApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguration) reconciling.NamedApplicationDefinitionReconcilerFactory {
 	return func() (string, reconciling.ApplicationDefinitionReconciler) {
 		return kubermaticv1.CNIPluginTypeCilium.String(), func(app *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			app.Labels = map[string]string{
@@ -58,8 +58,8 @@ func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinit
 								ChartName: ciliumHelmChartName,
 								// TODO (rastislavs): bump to the release version once it is out
 								ChartVersion: "1.13.0-rc4",
-								// TODO (rastislavs): Use Kubermatic OCI chart instead and allow overriding the registry
-								URL: "https://helm.cilium.io/",
+								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository + "/cilium",
+								Credentials:  config.Spec.UserCluster.SystemApplications.HelmCredentials,
 							},
 						},
 					},

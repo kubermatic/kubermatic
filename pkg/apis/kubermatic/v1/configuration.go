@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -219,6 +220,8 @@ type KubermaticUserClusterConfiguration struct {
 	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
+	// SystemApplications contains configuration for system Applications (such as CNI).
+	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
 	NodePortRange string `json:"nodePortRange,omitempty"`
@@ -299,6 +302,14 @@ type KubermaticAddonsConfiguration struct {
 	// If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
 	// suffix it becomes "v2.15.0-SUFFIX".
 	DockerTagSuffix string `json:"dockerTagSuffix,omitempty"`
+}
+
+// SystemApplicationsConfiguration contains configuration for system Applications (e.g. CNI).
+type SystemApplicationsConfiguration struct {
+	// HelmRepository specifies OCI repository containing Helm charts of system Applications.
+	HelmRepository string `json:"helmRepository,omitempty"`
+	// HelmCredentials specifies optional credentials for accessing the Helm repository of system Applications.
+	HelmCredentials *appskubermaticv1.HelmCredentials `json:"helmCredentials,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
