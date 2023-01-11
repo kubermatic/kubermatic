@@ -52,12 +52,33 @@ func clusterIsolationNetworkPolicyReconciler() reconciling.NamedNetworkPolicyRec
 	}
 }
 
+func customNetworkPolicyReconciler(existing *kubermaticv1.CustomNetworkPolicy) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
+		return existing.Name, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Name = existing.Name
+			np.Spec = existing.Spec
+			return np, nil
+		}
+	}
+}
+
 func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
 	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		clusterIsolationNetworkPolicyReconciler(),
 	}
 	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
+	}
+	return nil
+}
+
+func reconcileCustomNetworkPolicies(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
+	namedNetworkPolicyReconcilerFactorys := make([]reconciling.NamedNetworkPolicyReconcilerFactory, 0)
+	for _, netpol := range dc.CustomNetworkPolicies {
+		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, customNetworkPolicyReconciler(netpol))
+	}
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
+		return fmt.Errorf("failed to ensure Custom Network Policies: %w", err)
 	}
 	return nil
 }
