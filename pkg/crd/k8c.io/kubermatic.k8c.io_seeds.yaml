@@ -1363,18 +1363,17 @@ spec:
                   description: OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
                   properties:
                     issuerClientID:
-                      description: A client id that all tokens must be issued for.
+                      description: IssuerClientID is the application's ID.
                       type: string
-                    issuerClientIDSecret:
-                      description: 'TODO (pkprzekwas): Add description.'
+                    issuerClientSecret:
+                      description: IssuerClientSecret is the application's secret.
                       type: string
                     issuerUrl:
                       description: URL of the provider which allows the API server to discover public signing keys.
-                      pattern: ^(http|https)://.+
                       type: string
                   required:
                     - issuerClientID
-                    - issuerClientIDSecret
+                    - issuerClientSecret
                     - issuerUrl
                   type: object
                 proxySettings:

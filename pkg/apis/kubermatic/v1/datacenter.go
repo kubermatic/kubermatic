@@ -909,19 +909,19 @@ type MeteringReportConfiguration struct {
 	Types []string `json:"type,omitempty"`
 }
 
-// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level. If set, it overwrites OIDC configuration from KKP Master.
-// Those settings are used to configure User Cluster API-Servers (https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens).
+// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level. If set, it overwrites the OIDC configuration from the KubermaticConfiguration.
+// OIDC is later used to configure:
+// - access to User Cluster API-Servers (via user kubeconfigs) - https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens,
+// - access to User Cluster's Kubernetes Dashboards.
 type OIDCProviderConfiguration struct {
-	// +kubebuilder:validation:Pattern="^(http|https)://.+"
-
 	// URL of the provider which allows the API server to discover public signing keys.
 	IssuerUrl string `json:"issuerUrl"`
 
-	// A client id that all tokens must be issued for.
+	// IssuerClientID is the application's ID.
 	IssuerClientID string `json:"issuerClientID"`
 
-	// TODO (pkprzekwas): Add description.
-	IssuerClientIDSecret string `json:"issuerClientIDSecret"`
+	// IssuerClientSecret is the application's secret.
+	IssuerClientSecret string `json:"issuerClientSecret"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
