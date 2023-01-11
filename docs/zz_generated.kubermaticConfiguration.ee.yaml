@@ -462,6 +462,12 @@ spec:
     # used for user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
     overwriteRegistry: ""
+    # SystemApplications contains configuration for system Applications (such as CNI).
+    systemApplications:
+      # HelmCredentials specifies optional credentials for accessing the Helm repository of system Applications.
+      helmCredentials: null
+      # HelmRepository specifies OCI repository containing Helm charts of system Applications.
+      helmRepository: quay.io/rastislavtest/helm-charts
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
