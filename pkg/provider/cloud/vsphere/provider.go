@@ -181,10 +181,6 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 	}
 
 	if tagCategory := spec.VSphere.TagCategory; tagCategory != nil {
-		if tagCategory.TagCategoryID == "" && tagCategory.TagCategoryName == "" {
-			return errors.New("either tag category id or tag category name should be specified, when tagCategory field is set")
-		}
-
 		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return fmt.Errorf("failed to create REST client session: %w", err)

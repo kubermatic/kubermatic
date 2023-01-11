@@ -238,19 +238,7 @@ func GetVSphereProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		ResourcePool:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.ResourcePool},
 	}
 
-	config.Tags = []vsphere.Tag{}
-	for _, tag := range nodeSpec.Cloud.VSphere.Tags {
-		vsphereTag := vsphere.Tag{
-			Description: tag.Description,
-			Name:        tag.Name,
-			CategoryID:  tag.CategoryID,
-		}
-		// Set default category if empty
-		if tag.CategoryID == "" {
-			vsphereTag.CategoryID = c.Spec.Cloud.VSphere.TagCategoryID
-		}
-		config.Tags = append(config.Tags, vsphereTag)
-	}
+	// TODO: Refactor the tag assigning for machine after refactoring machine controller to reflect the same logic.
 
 	return config, nil
 }

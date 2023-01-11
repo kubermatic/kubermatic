@@ -37,11 +37,10 @@ type Folder struct {
 
 func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, rootPath string,
 	cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-
 	// If the user did not specify a folder, we create a own folder for this cluster to improve
 	// the VM management in vCenter
 	clusterFolder := path.Join(rootPath, cluster.Name)
-	err := createVMFolder(ctx, s, restSession, cluster.Name, clusterFolder)
+	err := createVMFolder(ctx, s, restSession, clusterFolder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
 	}
@@ -61,7 +60,7 @@ func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, 
 
 // createVMFolder creates the specified vm folder if it does not exist yet. It returns true if a new folder has been created
 // and false if no new folder is created or on reported errors, other than not found error.
-func createVMFolder(ctx context.Context, session *Session, restSession *RESTSession, clusterName, fullPath string) error {
+func createVMFolder(ctx context.Context, session *Session, restSession *RESTSession, fullPath string) error {
 	rootPath, newFolder := path.Split(fullPath)
 
 	rootFolder, err := session.Finder.Folder(ctx, rootPath)
@@ -126,8 +125,8 @@ func deleteVMFolder(ctx context.Context, session *Session, restSession *RESTSess
 	return nil
 }
 
-// getVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
-func getVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
+// GetVMFolders returns a slice of VSphereFolders of the datacenter from the passed cloudspec.
+func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) ([]Folder, error) {
 	session, err := newSession(ctx, dc, username, password, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create vCenter session: %w", err)
