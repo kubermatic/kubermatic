@@ -24,7 +24,7 @@ source hack/lib.sh
 
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
-export VAULT_VALUES_FIELD=europe-west3-c-values.yaml
+export VAULT_VALUES_FIELD=hamburg-values.yaml
 
 # per-stack customizations
 case ${DEPLOY_STACK} in
@@ -33,7 +33,7 @@ kubermatic)
   ;;
 
 usercluster-mla)
-  export VAULT_VALUES_FIELD=europe-west3-c-mla-values.yaml
+  export VAULT_VALUES_FIELD=hamburg-mla-values.yaml
   NO_DOCKER_IMAGES=true ./hack/ci/push-images.sh
   ;;
 
