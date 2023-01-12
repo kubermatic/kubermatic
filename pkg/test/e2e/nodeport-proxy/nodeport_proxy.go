@@ -29,7 +29,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	npptest "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy/test"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	features "k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -102,9 +101,6 @@ func (d *NodeportProxy) getConfig() *kubermaticv1.KubermaticConfiguration {
 			Namespace: d.Namespace,
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			FeatureGates: map[string]bool{
-				features.TunnelingExposeStrategy: true,
-			},
 			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
 				EtcdVolumeSize: "500Mi",
 			},

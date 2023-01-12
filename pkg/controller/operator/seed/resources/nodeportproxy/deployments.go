@@ -22,7 +22,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -94,11 +93,8 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 				"-envoy-node-name=kube",
 				"-envoy-admin-port=9001",
 				fmt.Sprintf("-envoy-stats-port=%d", EnvoyPort),
-			}
-			if cfg.Spec.FeatureGates[features.TunnelingExposeStrategy] {
-				args = append(args,
-					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
-					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))
+				fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
+				fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -255,11 +251,8 @@ func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed
 			args := []string{
 				"-lb-namespace=$(NAMESPACE)",
 				fmt.Sprintf("-lb-name=%s", ServiceName),
-			}
-			if cfg.Spec.FeatureGates[features.TunnelingExposeStrategy] {
-				args = append(args,
-					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
-					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))
+				fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
+				fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{

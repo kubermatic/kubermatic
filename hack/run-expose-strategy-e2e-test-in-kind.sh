@@ -136,7 +136,6 @@ spec:
     domain: 127.0.0.1.nip.io
     disable: true
   featureGates:
-    TunnelingExposeStrategy: true
     HeadlessInstallation: true
 EOF
 

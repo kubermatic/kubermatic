@@ -46,11 +46,6 @@ const (
 	// unless it's explicitly disabled at the cluster level.
 	EtcdLauncher = "EtcdLauncher"
 
-	// TunnelingExposeStrategy expose strategy enables the expose strategy based on usage of
-	// HTTP/2 CONNECT for tunneling traffic from the worker nodes to the
-	// control plane.
-	TunnelingExposeStrategy = "TunnelingExposeStrategy"
-
 	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller.
 	UserClusterMLA = "UserClusterMLA"
 

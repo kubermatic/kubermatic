@@ -115,11 +115,6 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		return fmt.Errorf("failed to get Seed client: %w", err)
 	}
 
-	// check whether the expose strategy is allowed or not.
-	if subject.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling && !v.features.Enabled(features.TunnelingExposeStrategy) {
-		return errors.New("cannot create Seed using Tunneling as a default expose strategy, the TunnelingExposeStrategy feature gate is not enabled")
-	}
-
 	// this can be nil on new seed clusters
 	existingSeed := existingSeeds[subject.Name]
 
