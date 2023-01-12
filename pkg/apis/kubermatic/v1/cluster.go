@@ -66,6 +66,8 @@ const (
 	DefaultEtcdClusterSize = 3
 	MinEtcdClusterSize     = 3
 	MaxEtcdClusterSize     = 9
+
+	DefaultKonnectivityKeepaliveTime = "1m"
 )
 
 // +kubebuilder:validation:Enum=standard;basic
@@ -690,7 +692,7 @@ type ComponentSettings struct {
 	// the `LoadBalancer` expose strategy is used. This is not effective if a different expose
 	// strategy is configured.
 	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
-	// KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+	// KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
 	KonnectivityProxy KonnectivityProxySettings `json:"konnectivityProxy,omitempty"`
 }
 
@@ -702,6 +704,7 @@ type APIServerSettings struct {
 }
 
 type KonnectivityProxySettings struct {
+	// Resources configure limits/requests for Konnectivity components.
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	// KeepaliveTime represents a duration of time to check if the transport is still alive.
 	// The option is propagated to agents and server.
