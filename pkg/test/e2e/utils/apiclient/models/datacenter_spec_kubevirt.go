@@ -7,6 +7,7 @@ package models
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -17,6 +18,10 @@ import (
 //
 // swagger:model DatacenterSpecKubevirt
 type DatacenterSpecKubevirt struct {
+
+	// Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
+	// in the dedicated infra KubeVirt cluster. They are added to the defaults.
+	CustomNetworkPolicies []*CustomNetworkPolicy `json:"customNetworkPolicies"`
 
 	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
 	// 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
@@ -31,6 +36,10 @@ type DatacenterSpecKubevirt struct {
 func (m *DatacenterSpecKubevirt) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCustomNetworkPolicies(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateDNSConfig(formats); err != nil {
 		res = append(res, err)
 	}
@@ -38,6 +47,32 @@ func (m *DatacenterSpecKubevirt) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *DatacenterSpecKubevirt) validateCustomNetworkPolicies(formats strfmt.Registry) error {
+	if swag.IsZero(m.CustomNetworkPolicies) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.CustomNetworkPolicies); i++ {
+		if swag.IsZero(m.CustomNetworkPolicies[i]) { // not required
+			continue
+		}
+
+		if m.CustomNetworkPolicies[i] != nil {
+			if err := m.CustomNetworkPolicies[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("customNetworkPolicies" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("customNetworkPolicies" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -64,6 +99,10 @@ func (m *DatacenterSpecKubevirt) validateDNSConfig(formats strfmt.Registry) erro
 func (m *DatacenterSpecKubevirt) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCustomNetworkPolicies(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateDNSConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -71,6 +110,26 @@ func (m *DatacenterSpecKubevirt) ContextValidate(ctx context.Context, formats st
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *DatacenterSpecKubevirt) contextValidateCustomNetworkPolicies(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.CustomNetworkPolicies); i++ {
+
+		if m.CustomNetworkPolicies[i] != nil {
+			if err := m.CustomNetworkPolicies[i].ContextValidate(ctx, formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("customNetworkPolicies" + "." + strconv.Itoa(i))
+				} else if ce, ok := err.(*errors.CompositeError); ok {
+					return ce.ValidateName("customNetworkPolicies" + "." + strconv.Itoa(i))
+				}
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
