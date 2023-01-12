@@ -135,7 +135,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, apierrors.NewConflict(kubermaticv1.Resource("cluster"), cluster.Name, fmt.Errorf("cluster.Status.NamespaceName for cluster %s", cluster.Name))
 	}
 
-	cluster, err = reconcileNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
+	cluster, err = reconcileClusterNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
 	if err != nil {
 		return cluster, err
 	}

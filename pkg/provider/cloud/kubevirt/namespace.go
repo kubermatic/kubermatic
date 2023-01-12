@@ -38,28 +38,7 @@ func namespaceReconciler(name string) reconciling.NamedNamespaceReconcilerFactor
 	}
 }
 
-// reconcileNamespace reconciles a dedicated namespace in the underlying KubeVirt cluster.
-func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, client ctrlruntimeclient.Client) (*kubermaticv1.Cluster, error) {
-	cluster, err := update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerNamespace)
-	})
-	if err != nil {
-		return cluster, err
-	}
-
-	creators := []reconciling.NamedNamespaceReconcilerFactory{
-		namespaceReconciler(name),
-	}
-
-	if err := reconciling.ReconcileNamespaces(ctx, creators, "", client); err != nil {
-		return cluster, fmt.Errorf("failed to reconcile Namespace: %w", err)
-	}
-
-	return cluster, nil
-}
-
-// reconcileKubeVirtImagesNamespace reconciles KubeVirtImagesNamespace in the underlying KubeVirt cluster.
-func reconcileKubeVirtImagesNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
+func createNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
 	creators := []reconciling.NamedNamespaceReconcilerFactory{
 		namespaceReconciler(name),
 	}
@@ -78,4 +57,25 @@ func deleteNamespace(ctx context.Context, name string, client ctrlruntimeclient.
 	}
 
 	return client.Delete(ctx, ns)
+}
+
+// reconcileClusterNamespace reconciles a dedicated namespace in the underlying KubeVirt cluster.
+func reconcileClusterNamespace(ctx context.Context, name string, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, client ctrlruntimeclient.Client) (*kubermaticv1.Cluster, error) {
+	cluster, err := update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(updatedCluster, FinalizerNamespace)
+	})
+	if err != nil {
+		return cluster, err
+	}
+
+	if err = createNamespace(ctx, name, client); err != nil {
+		return cluster, err
+	}
+
+	return cluster, nil
+}
+
+// reconcileKubeVirtImagesNamespace reconciles KubeVirtImagesNamespace in the underlying KubeVirt cluster.
+func reconcileKubeVirtImagesNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
+	return createNamespace(ctx, name, client)
 }
