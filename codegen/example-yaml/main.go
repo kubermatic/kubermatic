@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/defaults"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/test-infra/pkg/genyaml"
@@ -172,6 +173,17 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
 							DNSPolicy: "",
 							DNSConfig: &corev1.PodDNSConfig{},
+							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
+								{
+									Name: "deny-ingress",
+									Spec: networkingv1.NetworkPolicySpec{
+										PodSelector: metav1.LabelSelector{},
+										PolicyTypes: []networkingv1.PolicyType{
+											networkingv1.PolicyTypeIngress,
+										},
+									},
+								},
+							},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
 						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},

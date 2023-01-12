@@ -147,6 +147,16 @@ spec:
       country: DE
       spec:
         kubevirt:
+          customNetworkPolicies:
+              - name: allow-incoming
+                spec:
+                  ingress:
+                  - from:
+                    - ipBlock:
+                        cidr: 0.0.0.0/0
+                  podSelector: {}
+                  policyTypes:
+                  - Ingress
           dnsConfig:
             nameservers:
               - 8.8.8.8

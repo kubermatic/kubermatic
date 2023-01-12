@@ -28,6 +28,16 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+func customNetworkPolicyReconciler(existing *kubermaticv1.CustomNetworkPolicy) reconciling.NamedNetworkPolicyCreatorGetter {
+	return func() (string, reconciling.NetworkPolicyCreator) {
+		return existing.Name, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Name = existing.Name
+			np.Spec = existing.Spec
+			return np, nil
+		}
+	}
+}
+
 func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "cluster-isolation", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
@@ -49,6 +59,17 @@ func clusterIsolationNetworkPolicyCreator() reconciling.NamedNetworkPolicyCreato
 			return np, nil
 		}
 	}
+}
+
+func reconcileCustomNetworkPolicies(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
+	namedNetworkPolicyReconcilerFactorys := make([]reconciling.NamedNetworkPolicyCreatorGetter, 0)
+	for _, netpol := range dc.CustomNetworkPolicies {
+		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, customNetworkPolicyReconciler(netpol))
+	}
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
+		return fmt.Errorf("failed to ensure Custom Network Policies: %w", err)
+	}
+	return nil
 }
 
 func reconcileNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
