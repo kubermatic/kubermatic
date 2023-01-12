@@ -40,6 +40,8 @@ git clone --depth 1 --branch release/v0.1 "$URL" "$tempdir"
 (
   cd "$tempdir"
 
+  chmod +x hack/fetch-chart-dependencies.sh
+
   # due to the anti affinities, getting more than 1 replica can take forever in kind,
   # so we reduce the replica count for all those components
   yq write --inplace config/cortex/values.yaml cortex.ingester.replicas 1
