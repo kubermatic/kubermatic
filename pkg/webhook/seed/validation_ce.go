@@ -90,8 +90,14 @@ func (v *fixedNameValidator) validate(ctx context.Context, obj runtime.Object, i
 
 func validateKubeVirtDataCenterSpec(subject *kubermaticv1.Seed) error {
 	for _, dc := range subject.Spec.Datacenters {
-		if dc.Spec.Kubevirt != nil && (dc.Spec.Kubevirt.Images.EnableCustomImages) || (dc.Spec.Kubevirt.Images.HTTP != nil && dc.Spec.Kubevirt.Images.HTTP.ImageCloning.Enabled) {
-			return errors.New("this option is disabled for the Community Edition")
+		if dc.Spec.Kubevirt != nil {
+			if dc.Spec.Kubevirt.Images.EnableCustomImages {
+				return errors.New("custom images option is disabled for the Community Edition")
+			}
+
+			if dc.Spec.Kubevirt.Images.HTTP != nil && dc.Spec.Kubevirt.Images.HTTP.ImageCloning.Enabled {
+				return errors.New("image cloning options is disabled for the Community Edition")
+			}
 		}
 	}
 	return nil
