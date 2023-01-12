@@ -102,9 +102,9 @@ func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets
 					Cloud: &apimodels.NodeCloudSpec{
 						Kubevirt: &apimodels.KubevirtNodeSpec{
 							Memory:           utilpointer.StringPtr("4Gi"),
-							Namespace:        utilpointer.StringPtr("kube-system"),
+							Namespace:        utilpointer.StringPtr("default"),
 							SourceURL:        utilpointer.StringPtr(sourceURL),
-							StorageClassName: utilpointer.StringPtr("longhorn"),
+							StorageClassName: utilpointer.StringPtr("px-csi-db"),
 							PVCSize:          utilpointer.StringPtr("25Gi"),
 							CPUs:             utilpointer.StringPtr("2"),
 						},

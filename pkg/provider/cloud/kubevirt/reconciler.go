@@ -19,16 +19,21 @@ package kubevirt
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	csiServiceAccountNamespace = metav1.NamespaceDefault
+	csiResourceName            = "kubevirt-csi"
 )
 
 type reconciler struct {
@@ -76,6 +81,19 @@ func (r *reconciler) ReconcileCSIAccess(ctx context.Context) ([]byte, error) {
 	return r.GenerateKubeConfigForSA(ctx, csiResourceName, namespace)
 }
 
+func csiSecretTokenCreator(name string) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.SetAnnotations(map[string]string{
+				corev1.ServiceAccountNameKey: csiResourceName,
+			})
+
+			s.Type = corev1.SecretTypeServiceAccountToken
+			return s, nil
+		}
+	}
+}
+
 func (r *reconciler) GenerateKubeConfigForSA(ctx context.Context, name string, namespace string) ([]byte, error) {
 	sa := corev1.ServiceAccount{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, &sa)
@@ -83,12 +101,22 @@ func (r *reconciler) GenerateKubeConfigForSA(ctx context.Context, name string, n
 		return nil, err
 	}
 
+	var sName string
 	if len(sa.Secrets) == 0 {
-		return nil, fmt.Errorf("not found auth token for service account: %s", sa.Name)
+		// k8s 1.24 by default disabled automatic token creation for service accounts
+		sName = csiResourceName
+		seCreators := []reconciling.NamedSecretCreatorGetter{
+			csiSecretTokenCreator(csiResourceName),
+		}
+		if err := reconciling.ReconcileSecrets(ctx, seCreators, csiServiceAccountNamespace, r.Client); err != nil {
+			return nil, err
+		}
+	} else {
+		sName = sa.Secrets[0].Name
 	}
 
 	s := corev1.Secret{}
-	err = r.Client.Get(ctx, types.NamespacedName{Name: sa.Secrets[0].Name, Namespace: namespace}, &s)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: sName, Namespace: namespace}, &s)
 	if err != nil {
 		return nil, err
 	}
