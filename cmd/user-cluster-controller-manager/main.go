@@ -103,7 +103,7 @@ type controllerRunOptions struct {
 	konnectivityServerHost            string
 	konnectivityServerPort            int
 	applicationCache                  string
-	kubeVirtVmiEvictionController     bool
+	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
 }
 
@@ -151,7 +151,7 @@ func main() {
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
 	flag.StringVar(&runOp.applicationCache, "application-cache", "", "Path to Application cache directory.")
-	flag.BoolVar(&runOp.kubeVirtVmiEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
+	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
 	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
 	flag.Parse()
 
@@ -411,7 +411,7 @@ func main() {
 	log.Info("Registered Resource Usage controller")
 
 	// KubeVirt infra
-	if runOp.kubeVirtVmiEvictionController {
+	if runOp.kubeVirtVMIEvictionController {
 		var kubevirtInfraConfig *rest.Config
 		kubevirtInfraConfig, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 			&clientcmd.ClientConfigLoadingRules{ExplicitPath: runOp.kubeVirtInfraKubeconfig},

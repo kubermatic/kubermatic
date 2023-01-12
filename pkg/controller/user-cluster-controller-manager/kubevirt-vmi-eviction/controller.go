@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kvvmievictioncontroller
+package kubevirtvmieviction
 
 import (
 	"context"
@@ -128,7 +128,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed getting VirtualMachineInstance: %w", err)
 	}
 
-	err = r.reconcile(ctx, log, vmi)
+	err = r.deleteMachine(ctx, log, vmi)
 	if err != nil {
 		log.Errorw("ReconcilingError", zap.Error(err))
 	}
@@ -136,7 +136,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, nil
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, vmi *kubevirtv1.VirtualMachineInstance) error {
+func (r *reconciler) deleteMachine(ctx context.Context, log *zap.SugaredLogger, vmi *kubevirtv1.VirtualMachineInstance) error {
 	machine := &clusterv1alpha1.Machine{}
 
 	// No need to check on Status.EvictionNodeName as it's already filtered out by the Predicate

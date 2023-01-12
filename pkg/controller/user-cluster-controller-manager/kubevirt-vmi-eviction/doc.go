@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 /*
-Package kvvmievictioncontroller contains a controller that is responsible for handling bare-metal nodes draining:
+Package kubevirtvmieviction contains a controller that is responsible for handling bare-metal nodes draining:
 - watches in the KubeVirt infra cluster the VMI status.evacuationNodeName.
 - deletes the corresponding machine on the user cluster to benefit from the machine controller eviction mechanism.
 */
-package kvvmievictioncontroller
+package kubevirtvmieviction
