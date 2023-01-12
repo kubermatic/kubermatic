@@ -159,7 +159,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, "1m", registry.GetOverwriteFunc(templateData.OverwriteRegistry)))
+		deploymentCreators = append(deploymentCreators, konnectivity.DeploymentCreator("dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetOverwriteFunc(templateData.OverwriteRegistry)))
 	}
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
