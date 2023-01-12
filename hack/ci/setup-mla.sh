@@ -36,7 +36,7 @@ echodate "Cloning MLA repo"
 tempdir="$(mktemp -d)"
 trap "rm -rf '$tempdir'" EXIT
 # We intentionally force an existing release here
-git clone --depth 1 --branch v0.1.4 "$URL" "$tempdir"
+git clone --depth 1 --branch release/v0.1 "$URL" "$tempdir"
 (
   cd "$tempdir"
 
