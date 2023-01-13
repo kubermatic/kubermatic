@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -659,6 +660,17 @@ type DatacenterSpecKubevirt struct {
 	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
+	// Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
+	// in the dedicated infra KubeVirt cluster. They are added to the defaults.
+	CustomNetworkPolicies []*CustomNetworkPolicy `json:"customNetworkPolicies,omitempty"`
+}
+
+// CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
+type CustomNetworkPolicy struct {
+	// Name is the name of the Custom Network Policy.
+	Name string `json:"name"`
+	// Spec is the Spec of the NetworkPolicy, using the standard type.
+	Spec networkingv1.NetworkPolicySpec `json:"spec"`
 }
 
 // DatacenterSpecNutanix describes a Nutanix datacenter.

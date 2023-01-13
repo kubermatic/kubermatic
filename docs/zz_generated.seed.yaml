@@ -107,6 +107,16 @@ spec:
           # HCloud CCM to work.
           network: ""
         kubevirt:
+          # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
+          # in the dedicated infra KubeVirt cluster. They are added to the defaults.
+          customNetworkPolicies:
+            - # Name is the name of the Custom Network Policy.
+              name: deny-ingress
+              # Spec is the Spec of the NetworkPolicy, using the standard type.
+              spec:
+                podSelector: {}
+                policyTypes:
+                  - Ingress
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
           dnsConfig:

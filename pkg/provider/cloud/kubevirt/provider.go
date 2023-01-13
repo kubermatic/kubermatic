@@ -43,12 +43,17 @@ const (
 
 type kubevirt struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
+	dc                *kubermaticv1.DatacenterSpecKubevirt
 }
 
-func NewCloudProvider(secretKeyGetter provider.SecretKeySelectorValueFunc) provider.CloudProvider {
+func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
+	if dc.Spec.Kubevirt == nil {
+		return nil, errors.New("datacenter is not an KubeVirt datacenter")
+	}
 	return &kubevirt{
 		secretKeySelector: secretKeyGetter,
-	}
+		dc:                dc.Spec.Kubevirt,
+	}, nil
 }
 
 var _ provider.ReconcilingCloudProvider = &kubevirt{}
@@ -119,6 +124,11 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	}
 
 	err = reconcileNetworkPolicy(ctx, cluster, client)
+	if err != nil {
+		return cluster, err
+	}
+
+	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client)
 
 	return cluster, err
 }
