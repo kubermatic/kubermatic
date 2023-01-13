@@ -29,6 +29,8 @@ var (
 	vSphereEndpoint   = os.Getenv("VSPHERE_E2E_ADDRESS")
 	vSphereUsername   = os.Getenv("VSPHERE_E2E_USERNAME")
 	vSpherePassword   = os.Getenv("VSPHERE_E2E_PASSWORD")
+
+	vSphereVMRootFolder = "vm/Kubermatic-ci"
 )
 
 func getTestDC() *kubermaticv1.DatacenterSpecVSphere {
