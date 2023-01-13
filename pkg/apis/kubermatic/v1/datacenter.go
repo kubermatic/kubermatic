@@ -298,6 +298,8 @@ type SeedSpec struct {
 	// EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
 	// if this is set, the new backup/restore controllers are enabled for this Seed.
 	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
+	// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
+	OIDCProviderConfiguration *OIDCProviderConfiguration `json:"oidcProviderConfiguration,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -905,6 +907,21 @@ type MeteringReportConfiguration struct {
 
 	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
 	Types []string `json:"type,omitempty"`
+}
+
+// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level. If set, it overwrites the OIDC configuration from the KubermaticConfiguration.
+// OIDC is later used to configure:
+// - access to User Cluster API-Servers (via user kubeconfigs) - https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens,
+// - access to User Cluster's Kubernetes Dashboards.
+type OIDCProviderConfiguration struct {
+	// URL of the provider which allows the API server to discover public signing keys.
+	IssuerURL string `json:"issuerURL"`
+
+	// IssuerClientID is the application's ID.
+	IssuerClientID string `json:"issuerClientID"`
+
+	// IssuerClientSecret is the application's secret.
+	IssuerClientSecret string `json:"issuerClientSecret"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

@@ -146,7 +146,18 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				})
 			}
 
-			if cfg.Spec.FeatureGates[features.OpenIDAuthPlugin] {
+			configureSeedLevelOIDCProvider := seed.Spec.OIDCProviderConfiguration != nil
+
+			if configureSeedLevelOIDCProvider {
+				args = append(args,
+					fmt.Sprintf("-oidc-issuer-url=%s", seed.Spec.OIDCProviderConfiguration.IssuerURL),
+					fmt.Sprintf("-oidc-issuer-client-id=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientID),
+					fmt.Sprintf("-oidc-issuer-client-secret=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientSecret),
+				)
+			}
+
+			// Use settings from KubermaticConfiguration only if was not configured for on seed level before.
+			if _, fgSet := cfg.Spec.FeatureGates[features.OpenIDAuthPlugin]; !configureSeedLevelOIDCProvider && fgSet {
 				args = append(args,
 					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
