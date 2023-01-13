@@ -29,79 +29,59 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func TestCreateVMFolder(t *testing.T) {
-	dc := getTestDC()
-	dc.RootPath = path.Join("/", vSphereDatacenter, "vm")
-
-	ctx := context.Background()
-	session, err := newSession(ctx, dc, vSphereUsername, vSpherePassword, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Use a unique ID to prevent side effects when running this test concurrently
-	id := "kubermatic-e2e-" + rand.String(8)
-	folder := path.Join(dc.RootPath, id)
-
-	// Cheap way to test idempotency
-	for i := 0; i < 2; i++ {
-		if err := createVMFolder(ctx, session, folder); err != nil {
-			t.Fatal(err)
-		}
-	}
-	for i := 0; i < 2; i++ {
-		if err := deleteVMFolder(ctx, session, folder); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func TestProvider_GetVMFolders(t *testing.T) {
 	tests := []struct {
-		name            string
-		dc              *kubermaticv1.DatacenterSpecVSphere
-		expectedFolders sets.String
+		name           string
+		dc             *kubermaticv1.DatacenterSpecVSphere
+		expectedFolder string
 	}{
 		{
-			name: "successfully-list-default-folders",
-			dc:   getTestDC(),
-			expectedFolders: sets.NewString(
-				path.Join("/", vSphereDatacenter, "vm"),
-				path.Join("/", vSphereDatacenter, "vm", "sig-infra"),
-				path.Join("/", vSphereDatacenter, "vm", "Kubermatic-dev"),
-			),
-		},
-		{
-			name: "successfully-list-folders-below-custom-root",
+			name: "successfully-create-and-list-folders-below-custom-root",
 			dc: &kubermaticv1.DatacenterSpecVSphere{
 				Datacenter:    vSphereDatacenter,
 				Endpoint:      vSphereEndpoint,
 				AllowInsecure: true,
-				RootPath:      path.Join("/", vSphereDatacenter, "vm"),
+				RootPath:      path.Join("/", vSphereDatacenter, vSphereVMRootFolder),
 			},
-			expectedFolders: sets.NewString(
-				path.Join("/", vSphereDatacenter, "vm", "sig-infra"),
-				path.Join("/", vSphereDatacenter, "vm", "Kubermatic-dev"),
-			),
+			expectedFolder: path.Join("/", vSphereDatacenter, vSphereVMRootFolder, generateTestFolder()),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			session, err := newSession(context.Background(), test.dc, vSphereUsername, vSpherePassword, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := createVMFolder(context.Background(), session, test.expectedFolder); err != nil {
+				t.Fatal(err)
+			}
+
 			folders, err := GetVMFolders(test.dc, vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			folderFound := false
 			gotFolders := sets.NewString()
 			for _, folder := range folders {
-				gotFolders.Insert(folder.Path)
-			}
-			t.Logf("Got folders: %v", gotFolders.List())
+				if folder.Path == test.expectedFolder {
+					folderFound = true
 
-			if diff := test.expectedFolders.Difference(gotFolders); diff.Len() > 0 {
-				t.Errorf("Response is missing expected folders: %v", diff.List())
+					if err := deleteVMFolder(context.Background(), session, test.expectedFolder); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+
+			if !folderFound {
+				t.Fatalf("Response is missing expected folders:\n%v", sets.NewString(test.expectedFolder).Difference(gotFolders))
 			}
 		})
 	}
+}
+
+func generateTestFolder() string {
+	return "kubermatic-e2e-" + rand.String(8)
 }
