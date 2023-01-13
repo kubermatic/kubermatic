@@ -522,6 +522,15 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 
 	configCopy.Spec.Auth = auth
 
+	// default etcdLauncher feature flag if it is not set
+	if _, etcdLauncherFeatureGateSet := configCopy.Spec.FeatureGates[kubermaticv1.ClusterFeatureEtcdLauncher]; !etcdLauncherFeatureGateSet {
+		if configCopy.Spec.FeatureGates == nil {
+			configCopy.Spec.FeatureGates = make(map[string]bool)
+		}
+
+		configCopy.Spec.FeatureGates[kubermaticv1.ClusterFeatureEtcdLauncher] = true
+	}
+
 	if err := defaultDockerRepo(&configCopy.Spec.API.DockerRepository, DefaultDashboardImage, "api.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
