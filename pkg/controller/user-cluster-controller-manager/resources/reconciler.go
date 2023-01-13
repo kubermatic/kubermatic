@@ -101,9 +101,9 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	data.clusterAddress, data.ipFamily, data.k8sServiceApiIP, data.reconcileK8sSvcEndpoints, data.coreDNSReplicas, err = r.networkingData(ctx)
+	err = r.fetchNetworkingData(ctx, &data)
 	if err != nil {
-		return fmt.Errorf("failed to get cluster address: %w", err)
+		return fmt.Errorf("failed to fetch cluster networking data: %w", err)
 	}
 
 	if !r.isKonnectivityEnabled {
@@ -754,13 +754,13 @@ func (r *reconciler) reconcileEndpoints(ctx context.Context, data reconcileData)
 		return nil
 	}
 	epReconcilers := []reconciling.NamedEndpointsReconcilerFactory{
-		kubernetesresources.EndpointsReconciler(data.clusterAddress),
+		kubernetesresources.EndpointsReconciler(data.k8sServiceEndpointAddress, data.k8sServiceEndpointPort),
 	}
 	if err := reconciling.ReconcileEndpoints(ctx, epReconcilers, metav1.NamespaceDefault, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Endpoints: %w", err)
 	}
 	epSliceReconcilers := []reconciling.NamedEndpointSliceReconcilerFactory{
-		kubernetesresources.EndpointSliceReconciler(data.clusterAddress),
+		kubernetesresources.EndpointSliceReconciler(data.k8sServiceEndpointAddress, data.k8sServiceEndpointPort),
 	}
 	if err := reconciling.ReconcileEndpointSlices(ctx, epSliceReconcilers, metav1.NamespaceDefault, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile EndpointSlices: %w", err)
@@ -1083,12 +1083,12 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
 	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		kubesystem.DefaultNetworkPolicyReconciler(),
-		coredns.KubeDNSNetworkPolicyReconciler(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()),
+		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()),
 	}
 
 	if r.userSSHKeyAgent {
 		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys,
-			usersshkeys.NetworkPolicyReconciler(data.clusterAddress.IP, int(data.clusterAddress.Port), data.k8sServiceApiIP.String()))
+			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()))
 	}
 
 	if r.isKonnectivityEnabled {
@@ -1141,9 +1141,10 @@ type reconcileData struct {
 	gatekeeperCtrlRequirements    *corev1.ResourceRequirements
 	gatekeeperAuditRequirements   *corev1.ResourceRequirements
 	monitoringReplicas            *int32
-	clusterAddress                *kubermaticv1.ClusterAddress
 	ipFamily                      kubermaticv1.IPFamily
 	k8sServiceApiIP               *net.IP
+	k8sServiceEndpointAddress     string
+	k8sServiceEndpointPort        int32
 	reconcileK8sSvcEndpoints      bool
 	kubernetesDashboardEnabled    bool
 	operatingSystemManagerEnabled bool

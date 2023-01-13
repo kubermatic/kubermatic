@@ -269,6 +269,25 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedURL:          fmt.Sprintf("https://%s.alias-europe-west3-c.%s:32000", fakeClusterName, fakeExternalURL),
 		},
 		{
+			name: "Verify properties for Tunneling expose strategy",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Type: corev1.ServiceTypeNodePort,
+					Ports: []corev1.ServicePort{
+						{
+							Port:       int32(6443),
+							TargetPort: intstr.FromInt(6443),
+							NodePort:   32000,
+						}},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyTunneling,
+			expectedExternalName: fmt.Sprintf("%s.%s.%s", fakeClusterName, fakeDCName, fakeExternalURL),
+			expectedIP:           externalIP,
+			expectedPort:         int32(6443),
+			expectedURL:          fmt.Sprintf("https://%s.%s.%s:6443", fakeClusterName, fakeDCName, fakeExternalURL),
+		},
+		{
 			name: "Verify error when service has less than one ports",
 			apiserverService: corev1.Service{
 				Spec: corev1.ServiceSpec{
@@ -318,6 +337,7 @@ func TestSyncClusterAddress(t *testing.T) {
 				Seed(seed).
 				ExternalURL(fakeExternalURL).
 				lookupFunc(testLookupFunction).
+				TunnelingAgentIP(resources.DefaultTunnelingAgentIP).
 				Build(context.Background())
 			if err != nil {
 				if tc.errExpected {
