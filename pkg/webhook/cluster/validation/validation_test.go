@@ -141,9 +141,8 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
-			name:     "Create cluster with Tunneling expose strategy succeeds when the FeatureGate is enabled",
-			features: features.FeatureGate{features.TunnelingExposeStrategy: true},
-			op:       admissionv1.Create,
+			name: "Create cluster with Tunneling expose strategy succeeds when the FeatureGate is enabled",
+			op:   admissionv1.Create,
 			cluster: rawClusterGen{
 				Name:      "foo",
 				Namespace: "kubermatic",
@@ -167,35 +166,8 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
-			name:     "Create cluster with Tunneling expose strategy fails when the FeatureGate is not enabled",
-			features: features.FeatureGate{features.TunnelingExposeStrategy: false},
-			op:       admissionv1.Create,
-			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
-				ExposeStrategy: "Tunneling",
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32768",
-					},
-				},
-			}.Build(),
-			wantAllowed: false,
-		},
-		{
-			name:     "Create cluster with invalid provider name",
-			features: features.FeatureGate{features.TunnelingExposeStrategy: false},
-			op:       admissionv1.Create,
+			name: "Create cluster with invalid provider name",
+			op:   admissionv1.Create,
 			cluster: rawClusterGen{
 				Name:      "foo",
 				Namespace: "kubermatic",
