@@ -20,7 +20,7 @@
 
 ### Bugfixes
 
-- Use seed proxy configuration for seed-controler-manager ([#11669](https://github.com/kubermatic/kubermatic/pull/11669))
+- Use seed proxy configuration for seed-controller-manager ([#11669](https://github.com/kubermatic/kubermatic/pull/11669))
 - Add support for kube-dns configmap for NodeLocal DNSCache to allow customization of dns. Fixes an issue with a wrong mounted Corefile in NodeLocal DNSCache ([#11664](https://github.com/kubermatic/kubermatic/pull/11664))
 
 ### Misc
