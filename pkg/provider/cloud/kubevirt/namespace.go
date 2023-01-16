@@ -75,7 +75,7 @@ func reconcileClusterNamespace(ctx context.Context, name string, cluster *kuberm
 	return cluster, nil
 }
 
-// reconcileKubeVirtImagesNamespace reconciles KubeVirtImagesNamespace in the underlying KubeVirt cluster.
-func reconcileKubeVirtImagesNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
+// reconcileImagesNamespace reconciles images namespace in the infra KubeVirt cluster.
+func reconcileImagesNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
 	return createNamespace(ctx, name, client)
 }

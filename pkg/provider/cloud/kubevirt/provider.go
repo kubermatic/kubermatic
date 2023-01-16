@@ -28,6 +28,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/image"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -107,8 +108,7 @@ func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clou
 		return err
 	}
 
-	// TODO: (mfranczy) this has to be changed
-	// it is wrong to mutate the value of kubeconfig in the validation method
+	// TODO: refactor, it is wrong to mutate the value of kubeconfig in the validation method
 	spec.Kubevirt.Kubeconfig = string(config)
 
 	return nil
@@ -160,39 +160,43 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	if k.isCustomImagesEnabled() {
-		err = reconcileCustomImages(ctx, cluster, client, logger)
-		if err != nil {
-			return cluster, err
-		}
-	}
-
-	if k.isImageCloningEnabled(cluster) || k.isCustomImagesEnabled() {
-		err = reconcileKubeVirtImagesNamespace(ctx, KubeVirtImagesNamespace, client)
-		if err != nil {
-			return cluster, err
-		}
-		cluster, err = reconcileKubeVirtImagesRoleRoleBinding(ctx, KubeVirtImagesNamespace, cluster.Status.NamespaceName, cluster, update, client)
-		if err != nil {
-			return cluster, err
-		}
-		err = reconcileClusterImagesNetworkPolicy(ctx, cluster, client)
-		if err != nil {
-			return cluster, err
-		}
-	}
 	err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	// Note: no cleanup is done.
-	// if imageCloning is disabled in the cluster, then machine-controller is restarted with an env variable:
-	// KUBEVIRT_ALLOW_PVC_CLONE that prevents to use the standard image cloning feature.
-	// We keep the DataVolumes.
-	if k.isImageCloningEnabled(cluster) {
-		err = reconcileStandardImagesCache(ctx, k.dc, client, logger)
+	if k.isImageCloningEnabled(cluster) || k.isCustomImagesEnabled() {
+		err = reconcileImagesNamespace(ctx, KubeVirtImagesNamespace, client)
+		if err != nil {
+			return cluster, err
+		}
+
+		err = reconcileClusterImagesNetworkPolicy(ctx, cluster, client)
+		if err != nil {
+			return cluster, err
+		}
+
+		cluster, err = image.ReconcileImagesRoleBinding(ctx, KubeVirtImagesNamespace, cluster.Status.NamespaceName, cluster,
+			update, client, []string{FinalizerNamespace})
+		if err != nil {
+			return cluster, err
+		}
+
+		if k.isImageCloningEnabled(cluster) {
+			// Note: no cleanup of data volume in the KubeVirt image namespace is done.
+			// If imageCloning is disabled in the cluster then machine-controller is restarted with env var that disables data volume clone.
+			// TODO: move reconciliation of standard images cache to external KubeVirt operator.
+			err = image.ReconcileStandardImages(ctx, k.dc, client, logger)
+		}
+
+		if k.isCustomImagesEnabled() {
+			err = image.ReconcileCustomImages(ctx, cluster, client, logger)
+			if err != nil {
+				return cluster, err
+			}
+		}
 	}
+
 	return cluster, err
 }
 
@@ -206,7 +210,7 @@ func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 		return cluster, err
 	}
 
-	if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
+	if err = deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
 		return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
@@ -216,9 +220,11 @@ func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 		return cluster, err
 	}
 
-	if err := deleteKubeVirtImagesRoleBinding(ctx, fmt.Sprintf("%s-%s", kubevirtImagesRoleBinding, cluster.Status.NamespaceName), client); err != nil && !apierrors.IsNotFound(err) {
-		return cluster, fmt.Errorf("failed to delete rolebinding %s: %w", fmt.Sprintf("%s-%s", kubevirtImagesRoleBinding, cluster.Status.NamespaceName), err)
+	rbacName := fmt.Sprintf("%s-%s", image.RBACName, cluster.Status.NamespaceName)
+	if err = image.DeleteImagesRoleBinding(ctx, rbacName, client); err != nil && !apierrors.IsNotFound(err) {
+		return cluster, fmt.Errorf("failed to delete rolebinding %s: %w", rbacName, err)
 	}
+
 	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerClonerRoleBinding)
 	})
