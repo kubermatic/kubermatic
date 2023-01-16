@@ -18,6 +18,7 @@
 - Fix an issue where creating Clusters through ClusterTemplates failed without leaving a trace (the ClusterTemplateInstance got deleted as if all was good) ([#11601](https://github.com/kubermatic/kubermatic/pull/11601))
 - Fix user-ssh-keys-agent Docker image for arm64 containing the amd64 binary ([#11606](https://github.com/kubermatic/kubermatic/pull/11606))
 - Fix yet another API error in extended disk configuration for provider Anexia ([#11602](https://github.com/kubermatic/kubermatic/pull/11602))
+- KubeVirt: Bugfix for infra CSI token creation due to auto-creation disabled in k8s 1.24 ([#10908](https://github.com/kubermatic/kubermatic/pull/10908))
 - KubeVirt: add custom Network Policies. Fix LB issue (default `cluster-isolation` NetworkPolicy blocking outside cluster incoming traffic) ([#11676](https://github.com/kubermatic/kubermatic/pull/11676))
 - Properly clean up k8s dashboard resources in the user cluster if the k8s dashboard is disabled ([#11578](https://github.com/kubermatic/kubermatic/pull/11578))
 - Use seed proxy configuration for seed-controller-manager ([#11596](https://github.com/kubermatic/kubermatic/pull/11596))
@@ -30,7 +31,6 @@
 ### Misc
 
 - Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
-- Bugfix for KubeVirt infra CSI token creation due to auto-creation disabled in k8s 1.24 ([#10908](https://github.com/kubermatic/kubermatic/pull/10908))
 
 ## [v2.21.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.4)
 
