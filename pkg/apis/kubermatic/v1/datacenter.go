@@ -923,22 +923,22 @@ type OIDCProviderConfiguration struct {
 	// IssuerClientSecret is the application's secret.
 	IssuerClientSecret string `json:"issuerClientSecret"`
 
-	// Optional: CookieHashKey is required, used to authenticate the cookie value using HMAC.
+	// SecureCookie encodes and decodes authenticated and optionally encrypted cookie values.
 	// It is recommended to use a key with 32 or 64 bytes.
-	// If not set, configuration is inherited from the default OIDC provider.
-	CookieHashKey *string `json:"cookieHashKey,omitempty"`
+	// If not set, its value is inherited from the global OIDC provider configuration.
+	SecureCookie *string `json:"secureCookie,omitempty"`
 
-	// Optional: CookieSecureMode if true then cookie received only with HTTPS otherwise with HTTP.
-	// If not set, configuration is inherited from the default OIDC provider.
+	// Optional: CookieSecureMode guarantees that when the client sends the cookie, it does so through an encrypted request, using the HTTPS protocol.
+	// If not set, its value is inherited from the global OIDC provider configuration.
 	CookieSecureMode *bool `json:"cookieSecureMode,omitempty"`
 
 	// Optional:  OfflineAccessAsScope if true then "offline_access" scope will be used
 	// otherwise 'access_type=offline" query param will be passed.
-	// If not set, configuration is inherited from the default OIDC provider.
+	// If not set, its value is inherited from the global OIDC provider configuration.
 	OfflineAccessAsScope *bool `json:"offlineAccessAsScope,omitempty"`
 
 	// Optional: SkipTLSVerify skip TLS verification for the token issuer.
-	// If not set, configuration is inherited from the default OIDC provider.
+	// If not set, its value is inherited from the global OIDC provider configuration.
 	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
 }
 
