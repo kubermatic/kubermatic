@@ -211,6 +211,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 									},
 								},
 							},
+							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
+								Name:           "px-csi-db",
+								IsDefaultClass: pointer.Bool(true),
+							},
+							},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
 						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},

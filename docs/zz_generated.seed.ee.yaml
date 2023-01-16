@@ -172,6 +172,17 @@ spec:
                   <<version>>: <<url>>
                 ubuntu:
                   <<version>>: <<url>>
+          # InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
+          # that will be used to initialise StorageClasses in the tenant cluster.
+          # In the tenant cluster, the created StorageClass name will have as name:
+          # kubevirt-<infra-storageClass-name>
+          infraStorageClasses:
+            - # Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
+              # storageclass.kubernetes.io/is-default-class : true
+              # If missing or false, annotation will be:
+              # storageclass.kubernetes.io/is-default-class : false
+              isDefautClass: true
+              name: px-csi-db
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU

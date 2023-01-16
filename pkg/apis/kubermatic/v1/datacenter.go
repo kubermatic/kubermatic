@@ -705,6 +705,21 @@ type DatacenterSpecKubevirt struct {
 
 	// Images represents standard VM Image sources.
 	Images ImageSources `json:"images,omitempty"`
+
+	// InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
+	// that will be used to initialise StorageClasses in the tenant cluster.
+	// In the tenant cluster, the created StorageClass name will have as name:
+	// kubevirt-<infra-storageClass-name>
+	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
+}
+
+type KubeVirtInfraStorageClass struct {
+	Name string `json:"name"`
+	// Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
+	// storageclass.kubernetes.io/is-default-class : true
+	// If missing or false, annotation will be:
+	// storageclass.kubernetes.io/is-default-class : false
+	IsDefaultClass *bool `json:"isDefautClass"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
