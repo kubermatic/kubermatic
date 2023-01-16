@@ -206,7 +206,7 @@ func CleanupClusterResource(client ctrlruntimeclient.Client, obj ctrlruntimeclie
 	return nil
 }
 
-func ProxyEnvironmentVars(cfg *operatorv1alpha1.KubermaticConfiguration) []corev1.EnvVar {
+func KubermaticProxyEnvironmentVars(cfg *operatorv1alpha1.KubermaticConfiguration) []corev1.EnvVar {
 	result := []corev1.EnvVar{}
 	settings := cfg.Spec.Proxy
 
@@ -242,4 +242,36 @@ func ProxyEnvironmentVars(cfg *operatorv1alpha1.KubermaticConfiguration) []corev
 	})
 
 	return result
+}
+
+// SeedProxyEnvironmentVars returns ProxySettings from Seed as env vars.
+func SeedProxyEnvironmentVars(p *kubermaticv1.ProxySettings) (result []corev1.EnvVar) {
+	if p == nil || p.Empty() {
+		return
+	}
+
+	result = append(result, corev1.EnvVar{
+		Name:  "HTTP_PROXY",
+		Value: p.HTTPProxy.String(),
+	})
+
+	result = append(result, corev1.EnvVar{
+		Name:  "HTTPS_PROXY",
+		Value: p.HTTPProxy.String(),
+	})
+
+	noProxy := []string{
+		defaults.DefaultNoProxy,
+	}
+
+	if p.NoProxy.String() != "" {
+		noProxy = append(noProxy, p.NoProxy.String())
+	}
+
+	result = append(result, corev1.EnvVar{
+		Name:  "NO_PROXY",
+		Value: strings.Join(noProxy, ","),
+	})
+
+	return
 }

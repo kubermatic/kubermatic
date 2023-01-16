@@ -208,7 +208,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"seed-controller-manager"},
 					Args:    args,
-					Env:     common.ProxyEnvironmentVars(cfg),
+					Env:     common.SeedProxyEnvironmentVars(seed.Spec.ProxySettings),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",
