@@ -923,19 +923,23 @@ type OIDCProviderConfiguration struct {
 	// IssuerClientSecret is the application's secret.
 	IssuerClientSecret string `json:"issuerClientSecret"`
 
-	// CookieHashKey is required, used to authenticate the cookie value using HMAC.
+	// Optional: CookieHashKey is required, used to authenticate the cookie value using HMAC.
 	// It is recommended to use a key with 32 or 64 bytes.
-	CookieHashKey string `json:"cookieHashKey"`
+	// If not set, configuration is inherited from the dafault OIDC provider.
+	CookieHashKey *string `json:"cookieHashKey,omitempty"`
 
-	// CookieSecureMode if true then cookie received only with HTTPS otherwise with HTTP.
-	CookieSecureMode bool `json:"cookieSecureMode"`
+	// Optional: CookieSecureMode if true then cookie received only with HTTPS otherwise with HTTP.
+	// If not set, configuration is inherited from the dafault OIDC provider.
+	CookieSecureMode *bool `json:"cookieSecureMode,omitempty"`
 
-	// OfflineAccessAsScope if true then "offline_access" scope will be used
+	// Optional:  OfflineAccessAsScope if true then "offline_access" scope will be used
 	// otherwise 'access_type=offline" query param will be passed.
-	OfflineAccessAsScope bool `json:"offlineAccessAsScope"`
+	// If not set, configuration is inherited from the dafault OIDC provider.
+	OfflineAccessAsScope *bool `json:"offlineAccessAsScope,omitempty"`
 
-	// SkipTLSVerify skip TLS verification for the token issuer.
-	SkipTLSVerify bool `json:"skipTLSVerify"`
+	// Optional: SkipTLSVerify skip TLS verification for the token issuer.
+	// If not set, configuration is inherited from the dafault OIDC provider.
+	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
