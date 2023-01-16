@@ -61,10 +61,10 @@ func UpdateClusterStatus(ctx context.Context, client ctrlruntimeclient.Client, c
 
 // ClusterReconcileWrapper is a wrapper that should be used around
 // any cluster reconciliaton. It:
-// * Checks if the cluster is paused
-// * Checks if the worker-name matches
-// * Sets the ReconcileSuccess condition for the controller by fetching
-//   the current Cluster object and patching its status.
+//   - Checks if the cluster is paused
+//   - Checks if the worker-name matches
+//   - Sets the ReconcileSuccess condition for the controller by fetching
+//     the current Cluster object and patching its status.
 func ClusterReconcileWrapper(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
