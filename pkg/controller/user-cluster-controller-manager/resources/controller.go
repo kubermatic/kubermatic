@@ -398,28 +398,37 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
 }
 
-func (r *reconciler) networkingData(ctx context.Context) (address *kubermaticv1.ClusterAddress, ipFamily kubermaticv1.IPFamily, k8sServiceApi *net.IP, reconcileK8sSvcEndpoints bool, coreDNSReplicas *int32, err error) {
+func (r *reconciler) fetchNetworkingData(ctx context.Context, data *reconcileData) (err error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err = r.seedClient.Get(ctx, types.NamespacedName{
 		Name: r.clusterName,
 	}, cluster); err != nil {
-		return nil, "", nil, false, nil, fmt.Errorf("failed to get cluster: %w", err)
+		return fmt.Errorf("failed to get cluster: %w", err)
 	}
 
-	ip, err := resources.InClusterApiserverIP(cluster)
+	data.k8sServiceApiIP, err = resources.InClusterApiserverIP(cluster)
 	if err != nil {
-		return nil, "", nil, false, nil, fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
+		return fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
 	}
 
 	// Reconcile kubernetes service endpoints, unless it is not supported or disabled in the apiserver override settings.
-	reconcileK8sSvcEndpoints = true
+	data.reconcileK8sSvcEndpoints = true
 
 	if cluster.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil && *cluster.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled {
 		// Do not reconcile if explicitly disabled.
-		reconcileK8sSvcEndpoints = false
+		data.reconcileK8sSvcEndpoints = false
 	}
 
-	return &cluster.Status.Address, cluster.Spec.ClusterNetwork.IPFamily, ip, reconcileK8sSvcEndpoints, cluster.Spec.ClusterNetwork.CoreDNSReplicas, nil
+	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		data.k8sServiceEndpointAddress = r.tunnelingAgentIP.String()
+		data.k8sServiceEndpointPort = int32(r.kasSecurePort)
+	} else {
+		data.k8sServiceEndpointAddress = cluster.Status.Address.IP
+		data.k8sServiceEndpointPort = cluster.Status.Address.Port
+	}
+	data.ipFamily = cluster.Spec.ClusterNetwork.IPFamily
+	data.coreDNSReplicas = cluster.Spec.ClusterNetwork.CoreDNSReplicas
+	return nil
 }
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false.
