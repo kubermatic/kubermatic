@@ -55,10 +55,9 @@ func CiliumApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfig
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
-								ChartName: ciliumHelmChartName,
-								// TODO (rastislavs): bump to the release version once it is out
-								ChartVersion: "1.13.0-rc4",
-								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository + "/cilium",
+								ChartName:    ciliumHelmChartName,
+								ChartVersion: "1.13.0-rc4", // TODO (rastislavs): bump to the release version once it is out
+								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository,
 								Credentials:  config.Spec.UserCluster.SystemApplications.HelmCredentials,
 							},
 						},

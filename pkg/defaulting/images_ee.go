@@ -40,5 +40,5 @@ const (
 	DefaultNetworkInterfaceManagerImage = "quay.io/kubermatic/network-interface-manager"
 
 	// DefaultSystemApplicationsHelmRepository defines the default OCI repository containing the Helm charts of system Applications, such as CNI.
-	DefaultSystemApplicationsHelmRepository = "quay.io/rastislavtest/helm-charts" // TODO: change to Kubermatic
+	DefaultSystemApplicationsHelmRepository = "quay.io/kubermatic/helm-charts"
 )
