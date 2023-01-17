@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This helper script can be used to mirror upstream Cilium Helm charts to Kubermatic OCI registry.
+# This should be done for each new Cilium CNI version introduced into KKP.
+
 set -euo pipefail
 
 CHART_SOURCE="${CHART_SOURCE:-https://helm.cilium.io}"

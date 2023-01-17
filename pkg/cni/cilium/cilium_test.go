@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cni
+package cilium
 
 import (
 	"encoding/json"
@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -32,7 +33,7 @@ var testCluster = &kubermaticv1.Cluster{
 	Spec: kubermaticv1.ClusterSpec{
 		CNIPlugin: &kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
-			Version: GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
+			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 		},
 		ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 			Pods: kubermaticv1.NetworkRanges{
@@ -72,7 +73,7 @@ func TestGetCiliumAppInstallOverrideValues(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			values := GetCiliumAppInstallOverrideValues(testCluster, testCase.overwriteRegistry)
+			values := GetAppInstallOverrideValues(testCluster, testCase.overwriteRegistry)
 			rawValues, _ := json.Marshal(values)
 			if string(rawValues) != testCase.expectedValues {
 				t.Fatalf("values '%s' do not match expected values '%s'", rawValues, testCase.expectedValues)
@@ -142,7 +143,7 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			// get values reconciled by KKP
-			oldValues := GetCiliumAppInstallOverrideValues(testCluster, "")
+			oldValues := GetAppInstallOverrideValues(testCluster, "")
 
 			// copy oldValues to newValues to modify
 			newValues := make(map[string]any)
@@ -156,7 +157,7 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 			testCase.testValuesModifier(newValues)
 
 			// validate the update and check for expected errors
-			errList := ValidateCiliumValuesUpdate(newValues, oldValues, field.NewPath("spec").Child("values"))
+			errList := ValidateValuesUpdate(newValues, oldValues, field.NewPath("spec").Child("values"))
 			if fmt.Sprint(errList) != testCase.expectedError {
 				if testCase.expectedError == "[]" {
 					testCase.expectedError = "nil"
