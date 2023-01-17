@@ -524,13 +524,13 @@ spec:
                                 description: Images represents standard VM Image sources.
                                 properties:
                                   http:
-                                    description: HTTP source for standard images.
+                                    description: HTTP represents a http source.
                                     properties:
                                       operatingSystems:
                                         additionalProperties:
                                           additionalProperties:
                                             type: string
-                                          description: OSVersions defines a map of OS version and the URL to download the image.
+                                          description: OSVersions defines a map of OS version and the source to download the image.
                                           type: object
                                         description: OperatingSystems represents list of supported operating-systems with their URLs.
                                         type: object

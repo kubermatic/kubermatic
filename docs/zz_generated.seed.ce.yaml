@@ -146,7 +146,7 @@ spec:
           dnsPolicy: ""
           # Images represents standard VM Image sources.
           images:
-            # HTTP source for standard images.
+            # HTTP represents a http source.
             http:
               # OperatingSystems represents list of supported operating-systems with their URLs.
               operatingSystems:

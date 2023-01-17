@@ -116,7 +116,7 @@ func main() {
 func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
-	kubevirtHTTPSource := kubermaticv1.HTTPSource{
+	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
 		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
 	}
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
@@ -195,7 +195,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
 							DNSPolicy: "",
 							DNSConfig: &corev1.PodDNSConfig{},
-							Images:    kubermaticv1.ImageSources{HTTP: &kubevirtHTTPSource},
+							Images:    kubermaticv1.KubeVirtImageSources{HTTP: &kubevirtHTTPSource},
 							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
 								{
 									Name: "deny-ingress",
