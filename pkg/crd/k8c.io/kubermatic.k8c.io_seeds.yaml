@@ -523,28 +523,9 @@ spec:
                               images:
                                 description: Images represents standard VM Image sources.
                                 properties:
-                                  enableCustomImages:
-                                    description: EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
-                                    type: boolean
                                   http:
                                     description: HTTP source for standard images.
                                     properties:
-                                      imageCloning:
-                                        description: 'Optional: ImageCloning represents options for kubevirt disk-image cloning.'
-                                        properties:
-                                          dataVolumeSize:
-                                            description: DataVolumeSize is the size of the DataVolume used for caching the image. Default value is 11Gi.
-                                            type: string
-                                          enabled:
-                                            description: Enabled allows you to enable/disable cloning of standard images. When this option is enabled, downloading images from the http source destination will happen only once. Later, Machine Controller will clone the disks using DataVolumes with the cloning source.
-                                            type: boolean
-                                          storageClass:
-                                            description: StorageClass represents storage-class for DataVolumes of standard images.
-                                            type: string
-                                        required:
-                                          - enabled
-                                          - storageClass
-                                        type: object
                                       operatingSystems:
                                         additionalProperties:
                                           additionalProperties:
@@ -556,8 +537,6 @@ spec:
                                     required:
                                       - operatingSystems
                                     type: object
-                                required:
-                                  - enableCustomImages
                                 type: object
                               infraStorageClasses:
                                 description: 'InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names that will be used to initialise StorageClasses in the tenant cluster. In the tenant cluster, the created StorageClass name will have as name: kubevirt-<infra-storageClass-name>'

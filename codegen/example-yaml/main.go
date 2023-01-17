@@ -118,10 +118,6 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
 	kubevirtHTTPSource := kubermaticv1.HTTPSource{
 		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
-		ImageCloning: kubermaticv1.ImageCloning{
-			Enabled:      false,
-			StorageClass: "",
-		},
 	}
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
 		imageList[operatingSystem] = ""
