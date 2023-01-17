@@ -937,6 +937,24 @@ type OIDCProviderConfiguration struct {
 
 	// IssuerClientSecret is the application's secret.
 	IssuerClientSecret string `json:"issuerClientSecret"`
+
+	// Optional: CookieHashKey is required, used to authenticate the cookie value using HMAC.
+	// It is recommended to use a key with 32 or 64 bytes.
+	// If not set, configuration is inherited from the default OIDC provider.
+	CookieHashKey *string `json:"cookieHashKey,omitempty"`
+
+	// Optional: CookieSecureMode if true then cookie received only with HTTPS otherwise with HTTP.
+	// If not set, configuration is inherited from the default OIDC provider.
+	CookieSecureMode *bool `json:"cookieSecureMode,omitempty"`
+
+	// Optional:  OfflineAccessAsScope if true then "offline_access" scope will be used
+	// otherwise 'access_type=offline" query param will be passed.
+	// If not set, configuration is inherited from the default OIDC provider.
+	OfflineAccessAsScope *bool `json:"offlineAccessAsScope,omitempty"`
+
+	// Optional: SkipTLSVerify skip TLS verification for the token issuer.
+	// If not set, configuration is inherited from the default OIDC provider.
+	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
 }
 
 // IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
