@@ -186,8 +186,8 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-				args = append(args, "-tunneling-agent-ip", address.IP)
-				args = append(args, "-kas-secure-port", fmt.Sprint(address.Port))
+				args = append(args, "-tunneling-agent-ip", data.Cluster().Spec.ClusterNetwork.TunnelingAgentIP)
+				args = append(args, "-kas-secure-port", fmt.Sprint(resources.APIServerSecurePort))
 			}
 
 			providerName, err := data.GetCloudProviderName()
