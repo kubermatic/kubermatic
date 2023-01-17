@@ -92,7 +92,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of found images")
+	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
 
 	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Path to a local directory containing KKP addons. Takes precedence over --addons-image")
 	cmd.PersistentFlags().StringVar(&opt.AddonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
@@ -167,7 +167,14 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 		if options.AddonsPath == "" {
 			addonsImage := options.AddonsImage
 			if addonsImage == "" {
-				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + versions.Kubermatic
+				suffix := kubermaticConfig.Spec.UserCluster.Addons.DockerTagSuffix
+
+				tag := versions.Kubermatic
+				if suffix != "" {
+					tag = fmt.Sprintf("%s-%s", versions.Kubermatic, suffix)
+				}
+
+				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + tag
 			}
 
 			if addonsImage != "" {
