@@ -281,6 +281,13 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			imageSet.Insert(images...)
 		}
 
+		logger.Info("🚀 Rendering system Applications Helm charts…")
+		appImages, err := images.GetImagesFromSystemApplicationDefinitions(logger, kubermaticConfig, helmClient, options.HelmTimeout, options.RegistryPrefix)
+		if err != nil {
+			return fmt.Errorf("failed to get images for system Applications: %w", err)
+		}
+		imageSet.Insert(appImages...)
+
 		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
 
 		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry, userAgent)
