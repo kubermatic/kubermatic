@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -34,7 +35,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartsPath string, valuesFile string) ([]string, error) {
+func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartsPath string, valuesFile string, registryPrefix string) ([]string, error) {
 	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
 	}
@@ -87,6 +88,17 @@ func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config 
 
 			images = append(images, manifestImages...)
 		}
+	}
+
+	if registryPrefix != "" {
+		var filteredImages []string
+		for _, image := range images {
+			if strings.HasPrefix(image, registryPrefix) {
+				filteredImages = append(filteredImages, image)
+			}
+		}
+
+		images = filteredImages
 	}
 
 	return images, nil

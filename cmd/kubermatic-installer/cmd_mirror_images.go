@@ -39,12 +39,12 @@ import (
 type MirrorImagesOptions struct {
 	Options
 
-	Registry string
-
+	Registry                  string
 	Config                    string
 	VersionFilter             string
-	DryRun                    bool
+	RegistryPrefix            string
 	IgnoreRepositoryOverrides bool
+	DryRun                    bool
 
 	AddonsPath  string
 	AddonsImage string
@@ -93,6 +93,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
+	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
 	cmd.PersistentFlags().BoolVar(&opt.IgnoreRepositoryOverrides, "ignore-repository-overrides", true, "Ignore any configured registry overrides in the referenced KubermaticConfiguration to re-use a configuration that already specifies overrides (note that custom tags will still be observed and that this does not affect Helm charts configured via values.yaml; defaults to true)")
 
@@ -238,6 +239,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 						options.AddonsPath,
 						versions,
 						caBundle,
+						options.RegistryPrefix,
 					)
 					if err != nil {
 						return fmt.Errorf("failed to get images: %w", err)
@@ -254,6 +256,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 						options.AddonsPath,
 						versions,
 						caBundle,
+						options.RegistryPrefix,
 					)
 					if err != nil {
 						return fmt.Errorf("failed to get images: %w", err)
@@ -267,7 +270,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
 			chartsLogger.Info("🚀 Rendering Helm charts…")
 
-			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile)
+			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile, options.RegistryPrefix)
 			if err != nil {
 				return fmt.Errorf("failed to get images: %w", err)
 			}
