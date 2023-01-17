@@ -473,7 +473,7 @@ func TestValidate(t *testing.T) {
 						"test-kv": {
 							Spec: kubermaticv1.DatacenterSpec{
 								Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
-									Images: kubermaticv1.ImageSources{HTTP: &kubermaticv1.HTTPSource{
+									Images: kubermaticv1.KubeVirtImageSources{HTTP: &kubermaticv1.KubeVirtHTTPSource{
 										OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
 											"invalid-os": map[string]string{"v1": "https://test.com"},
 										},

@@ -517,6 +517,12 @@ func (d *Datacenter) IsIPv6Enabled(cloudProvider ProviderType) bool {
 // ImageList defines a map of operating system and the image to use.
 type ImageList map[providerconfig.OperatingSystem]string
 
+// ImageListWithVersions defines a map of operating system with their versions to use.
+type ImageListWithVersions map[providerconfig.OperatingSystem]OSVersions
+
+// OSVersions defines a map of OS version and the source to download the image.
+type OSVersions map[string]string
+
 // OperatingSystemProfileList defines a map of operating system and the OperatingSystemProfile to use.
 type OperatingSystemProfileList map[providerconfig.OperatingSystem]string
 
@@ -704,7 +710,7 @@ type DatacenterSpecKubevirt struct {
 	CustomNetworkPolicies []*CustomNetworkPolicy `json:"customNetworkPolicies,omitempty"`
 
 	// Images represents standard VM Image sources.
-	Images ImageSources `json:"images,omitempty"`
+	Images KubeVirtImageSources `json:"images,omitempty"`
 
 	// InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
 	// that will be used to initialise StorageClasses in the tenant cluster.
@@ -740,35 +746,16 @@ var (
 	}
 )
 
-// ImageSources represents standard VM Image sources.
-type ImageSources struct {
-	// HTTP source for standard images.
-	HTTP *HTTPSource `json:"http,omitempty"`
-	// EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
-	EnableCustomImages bool `json:"enableCustomImages"`
+// KubeVirtImageSources represents KubeVirt image sources.
+type KubeVirtImageSources struct {
+	// HTTP represents a http source.
+	HTTP *KubeVirtHTTPSource `json:"http,omitempty"`
 }
 
-// OSVersions defines a map of OS version and the URL to download the image.
-type OSVersions map[string]string
-
-// HTTPSource represents list of standard VM images with http-source.
-type HTTPSource struct {
+// KubeVirtHTTPSource represents list of images and their versions that can be downloaded over HTTP.
+type KubeVirtHTTPSource struct {
 	// OperatingSystems represents list of supported operating-systems with their URLs.
 	OperatingSystems map[providerconfig.OperatingSystem]OSVersions `json:"operatingSystems"`
-	// Optional: ImageCloning represents options for kubevirt disk-image cloning.
-	ImageCloning ImageCloning `json:"imageCloning,omitempty"`
-}
-
-// ImageCloning represents options for kubevirt disk-image cloning.
-type ImageCloning struct {
-	// Enabled allows you to enable/disable cloning of standard images. When this option is enabled,
-	// downloading images from the http source destination will happen only once. Later,
-	// Machine Controller will clone the disks using DataVolumes with the cloning source.
-	Enabled bool `json:"enabled"`
-	// StorageClass represents storage-class for DataVolumes of standard images.
-	StorageClass string `json:"storageClass"`
-	// DataVolumeSize is the size of the DataVolume used for caching the image. Default value is 11Gi.
-	DataVolumeSize string `json:"dataVolumeSize,omitempty"`
 }
 
 // DatacenterSpecNutanix describes a Nutanix datacenter.

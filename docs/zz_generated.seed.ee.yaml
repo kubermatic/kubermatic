@@ -146,20 +146,8 @@ spec:
           dnsPolicy: ""
           # Images represents standard VM Image sources.
           images:
-            # EnableCustomImages allows to enable/disable the usage of custom-disks (defaults to false).
-            enableCustomImages: false
-            # HTTP source for standard images.
+            # HTTP represents a http source.
             http:
-              # Optional: ImageCloning represents options for kubevirt disk-image cloning.
-              imageCloning:
-                # DataVolumeSize is the size of the DataVolume used for caching the image. Default value is 11Gi.
-                dataVolumeSize: ""
-                # Enabled allows you to enable/disable cloning of standard images. When this option is enabled,
-                # downloading images from the http source destination will happen only once. Later,
-                # Machine Controller will clone the disks using DataVolumes with the cloning source.
-                enabled: false
-                # StorageClass represents storage-class for DataVolumes of standard images.
-                storageClass: ""
               # OperatingSystems represents list of supported operating-systems with their URLs.
               operatingSystems:
                 centos:

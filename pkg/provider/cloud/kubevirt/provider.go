@@ -109,7 +109,6 @@ func (k *kubevirt) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	logger := k.log.With("cluster", cluster.Name)
 	client, err := k.GetClientForCluster(cluster.Spec.Cloud)
 	if err != nil {
 		return cluster, err
@@ -146,37 +145,16 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcileCustomImages(ctx, cluster, client, logger, k.dc.Images.EnableCustomImages)
-	if err != nil {
-		return cluster, err
-	}
-
-	enableImageCloning := k.dc.Images.HTTP != nil && k.dc.Images.HTTP.ImageCloning.Enabled
-	if enableImageCloning || k.dc.Images.EnableCustomImages {
-		err = reconcileKubeVirtImagesNamespace(ctx, KubeVirtImagesNamespace, client)
-		if err != nil {
-			return cluster, err
-		}
-		cluster, err = reconcileKubeVirtImagesRoleRoleBinding(ctx, KubeVirtImagesNamespace, cluster.Status.NamespaceName, cluster, update, client)
-		if err != nil {
-			return cluster, err
-		}
-		err = reconcileClusterImagesNetworkPolicy(ctx, cluster, client)
-		if err != nil {
-			return cluster, err
-		}
-	}
 	err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, client)
 	if err != nil {
 		return cluster, err
 	}
+
 	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client)
 	if err != nil {
 		return cluster, err
 	}
-	if enableImageCloning {
-		err = reconcileStandardImagesCache(ctx, k.dc, client, logger)
-	}
+
 	return cluster, err
 }
 
@@ -200,9 +178,6 @@ func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 		return cluster, err
 	}
 
-	if err := deleteKubeVirtImagesRoleBinding(ctx, fmt.Sprintf("%s-%s", kubevirtImagesRoleBinding, cluster.Status.NamespaceName), client); err != nil && !apierrors.IsNotFound(err) {
-		return cluster, fmt.Errorf("failed to delete rolebinding %s: %w", fmt.Sprintf("%s-%s", kubevirtImagesRoleBinding, cluster.Status.NamespaceName), err)
-	}
 	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
 		kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerClonerRoleBinding)
 	})
