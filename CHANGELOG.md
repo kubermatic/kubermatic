@@ -5,6 +5,32 @@
 - [v2.21.2](#v2212)
 - [v2.21.3](#v2213)
 - [v2.21.4](#v2214)
+- [v2.21.5](#v2215)
+
+## [2.21.5](https://github.com/kubermatic/kubermatic/releases/tag/2.21.5)
+
+### API Changes
+
+- Seed spec no longer requires `defaultDestination` for `etcdBackupRestore`; Omitting it allows to disable default etcd backups ([#11617](https://github.com/kubermatic/kubermatic/pull/11617))
+
+### Bugfixes
+
+- Fix an issue where creating Clusters through ClusterTemplates failed without leaving a trace (the ClusterTemplateInstance got deleted as if all was good) ([#11601](https://github.com/kubermatic/kubermatic/pull/11601))
+- Fix user-ssh-keys-agent Docker image for arm64 containing the amd64 binary ([#11606](https://github.com/kubermatic/kubermatic/pull/11606))
+- Fix yet another API error in extended disk configuration for provider Anexia ([#11602](https://github.com/kubermatic/kubermatic/pull/11602))
+- KubeVirt: Bugfix for infra CSI token creation due to auto-creation disabled in k8s 1.24 ([#10908](https://github.com/kubermatic/kubermatic/pull/10908))
+- KubeVirt: add custom Network Policies. Fix LB issue (default `cluster-isolation` NetworkPolicy blocking outside cluster incoming traffic) ([#11676](https://github.com/kubermatic/kubermatic/pull/11676))
+- Properly clean up k8s dashboard resources in the user cluster if the k8s dashboard is disabled ([#11578](https://github.com/kubermatic/kubermatic/pull/11578))
+- Use seed proxy configuration for seed-controller-manager ([#11596](https://github.com/kubermatic/kubermatic/pull/11596))
+- Add support for kube-dns configmap for NodeLocal DNSCache to allow customization of dns. Fixes an issue with a wrong mounted Corefile in NodeLocal DNSCache ([#11664](https://github.com/kubermatic/kubermatic/pull/11664))
+
+### Updates
+
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.1 ([#11692](https://github.com/kubermatic/kubermatic/pull/11692))
+
+### Misc
+
+- Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 
 ## [v2.21.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.4)
 
@@ -613,6 +639,21 @@ Note that in the current state, declarative working skips KKP authentication and
 - [v2.20.9](#v2209)
 - [v2.20.10](#v22010)
 - [v2.20.11](#v22011)
+- [v2.20.12](#v22012)
+
+## [2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/2.20.12)
+
+### Bugfixes
+
+- Fix an issue where creating Clusters through ClusterTemplates failed without leaving a trace (the ClusterTemplateInstance got deleted as if all was good) ([#11601](https://github.com/kubermatic/kubermatic/pull/11601))
+- Fix yet another API error in extended disk configuration for provider Anexia ([#11603](https://github.com/kubermatic/kubermatic/pull/11603))
+- Use seed proxy configuration for seed-controller-manager ([#11631](https://github.com/kubermatic/kubermatic/pull/11631))
+- KubeVirt switch infra cluster to DC for e2e tests ([#11675](https://github.com/kubermatic/kubermatic/pull/11675))
+- Add support for kube-dns configmap for NodeLocal DNSCache to allow customization of dns. Fixes an issue with a wrong mounted Corefile in NodeLocal DNSCache ([#11664](https://github.com/kubermatic/kubermatic/pull/11664))
+
+### Misc
+
+- Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 
 ## [v2.20.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.11)
 
@@ -883,6 +924,18 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - [v2.19.11](#v21911)
 - [v2.19.12](#v21912)
 - [v2.19.13](#v21913)
+- [v2.19.14](#v21914)
+
+## [2.19.14](https://github.com/kubermatic/kubermatic/releases/tag/2.19.14)
+
+### Bugfixes
+
+- Use seed proxy configuration for seed-controller-manager ([#11669](https://github.com/kubermatic/kubermatic/pull/11669))
+- Add support for kube-dns configmap for NodeLocal DNSCache to allow customization of dns. Fixes an issue with a wrong mounted Corefile in NodeLocal DNSCache ([#11664](https://github.com/kubermatic/kubermatic/pull/11664))
+
+### Misc
+
+- Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 
 ## [v2.19.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.13)
 
