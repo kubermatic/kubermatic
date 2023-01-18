@@ -59,6 +59,8 @@ func GetCoreDNSImage(kubernetesVersion *semverlib.Version) string {
 		return "coredns/coredns:v1.8.6"
 	case "1.25":
 		fallthrough
+	case "1.26":
+		fallthrough
 	default:
 		return "coredns/coredns:v1.9.3"
 	}

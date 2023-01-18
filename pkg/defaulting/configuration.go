@@ -216,7 +216,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.24.9"),
+		Default: semver.NewSemverOrDie("v1.25.5"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -240,6 +240,8 @@ var (
 			newSemver("v1.25.2"),
 			newSemver("v1.25.4"),
 			newSemver("v1.25.5"),
+			// Kubernetes 1.26
+			newSemver("v1.26.0"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -303,6 +305,17 @@ var (
 				From:      ">= 1.25.0, < 1.25.4",
 				To:        "1.25.4",
 				Automatic: pointer.Bool(true),
+			},
+			{
+				// Allow to next minor release
+				From: "1.25.*",
+				To:   "1.26.*",
+			},
+			// ======= 1.26 =======
+			{
+				// Allow to change to any patch version
+				From: "1.26.*",
+				To:   "1.26.*",
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{

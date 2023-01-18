@@ -20,7 +20,7 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 if ! [ -x "$(command -v promtool)" ]; then
-  version=2.37.0
+  version=2.41.0
 
   echodate "Downloading promtool v$version..."
 

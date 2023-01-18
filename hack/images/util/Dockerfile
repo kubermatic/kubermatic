@@ -15,11 +15,11 @@
 FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-ENV MC_VERSION=RELEASE.2022-05-09T04-08-26Z \
-    KUBECTL_VERSION=v1.23.13 \
-    HELM_VERSION=v3.8.1 \
-    VAULT_VERSION=1.10.2 \
-    YQ_VERSION=4.25.1
+ENV MC_VERSION=RELEASE.2022-12-24T15-21-38Z \
+    KUBECTL_VERSION=v1.24.9 \
+    HELM_VERSION=v3.10.3 \
+    VAULT_VERSION=1.12.2 \
+    YQ_VERSION=4.30.6
 
 RUN apk add --no-cache -U \
     bash \

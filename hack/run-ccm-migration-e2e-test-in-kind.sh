@@ -82,9 +82,7 @@ azure)
   EXTRA_ARGS="-azure-kkp-datacenter=azure-westeurope"
   ;;
 aws)
-  # default version is 1.23, but AWS CCM requires 1.24, so we must explicitly
-  # ask for a 1.24.x cluster
-  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-central-1a -cluster-version=1.24"
+  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-central-1a"
   ;;
 esac
 
@@ -100,4 +98,5 @@ go_test ccm_migration_${PROVIDER_TO_TEST} \
   -timeout $TIMEOUT \
   -kubeconfig "${HOME}/.kube/config" \
   -provider "$PROVIDER_TO_TEST" \
-  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
+  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
+  -kubernetes-release "${VERSION_TO_TEST:-}"

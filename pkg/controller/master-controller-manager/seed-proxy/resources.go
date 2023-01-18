@@ -249,7 +249,7 @@ func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "proxy",
-					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kubermatic/util:2.2.0")),
+					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kubermatic/util:2.3.0")),
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", strings.TrimSpace(proxyScript)},
 					Env: []corev1.EnvVar{

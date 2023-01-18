@@ -68,7 +68,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 	cloudProviderSpec := provider.NewAnexiaConfig().
 		WithCPUs(nodeCpu).
 		WithMemory(nodeMemory).
-		WithDiskSize(nodeDiskSize).
+		AddDisk(nodeDiskSize, "ENT6").
 		WithTemplateID(secrets.Anexia.TemplateID).
 		WithVlanID(secrets.Anexia.VlanID).
 		Build()
