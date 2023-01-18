@@ -1198,6 +1198,7 @@ type KubevirtCloudSpec struct {
 	// PreAllocatedDataVolumes represents a list of DataVolumes that are tied to cluster lifecycle and can be referenced by machines.
 	// Custom Images are a good example of this use case.
 	PreAllocatedDataVolumes []PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
+	// Deprecated: in favor of InfraStorageClasses.
 	// InfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
 	InfraStorageClasses []string `json:"infraStorageClasses,omitempty"`

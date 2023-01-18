@@ -719,7 +719,7 @@ type KubeVirtInfraStorageClass struct {
 	// storageclass.kubernetes.io/is-default-class : true
 	// If missing or false, annotation will be:
 	// storageclass.kubernetes.io/is-default-class : false
-	IsDefaultClass *bool `json:"isDefautClass"`
+	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.

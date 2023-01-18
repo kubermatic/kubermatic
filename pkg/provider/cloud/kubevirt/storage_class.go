@@ -27,11 +27,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// InfraStorageClassAnnotation represents a storage class that should be initialized on user clusters.
-	infraStorageClassAnnotation = "kubevirt-initialization.k8c.io/initialize-sc"
-)
-
 type storageClassAnnotationFilter func(map[string]string) bool
 
 // ListStorageClasses returns list of storage classes filtered by annotations.
@@ -50,19 +45,25 @@ func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, an
 	return res, nil
 }
 
-func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient.Client, spec *kubermaticv1.CloudSpec) error {
-	storageClassList, err := ListStorageClasses(ctx, client, func(m map[string]string) bool {
-		return m[infraStorageClassAnnotation] == "true"
-	})
+func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient.Client, spec *kubermaticv1.KubevirtCloudSpec, dc *kubermaticv1.DatacenterSpecKubevirt) error {
+	infraStorageClassList, err := ListStorageClasses(ctx, client, nil)
 	if err != nil {
 		return err
 	}
-	existingStorageClassSet := sets.NewString(spec.Kubevirt.InfraStorageClasses...)
+	existingInfraStorageClassSet := make(sets.String, len(infraStorageClassList))
+	for _, isc := range infraStorageClassList {
+		existingInfraStorageClassSet.Insert(isc.Name)
+	}
 
-	for _, sc := range storageClassList {
-		if !existingStorageClassSet.Has(sc.Name) {
-			spec.Kubevirt.InfraStorageClasses = append(spec.Kubevirt.InfraStorageClasses, sc.Name)
+	// Cluster will contain a list with only the StorageClasses
+	// that are in the DC configuration and also exist in the infra KubeVirt cluster.
+	storageClasses := make([]kubermaticv1.KubeVirtInfraStorageClass, 0)
+	for _, sc := range dc.InfraStorageClasses {
+		// if StorageClass exists in infra, keep it
+		if existingInfraStorageClassSet.Has(sc.Name) {
+			storageClasses = append(storageClasses, sc)
 		}
 	}
+	spec.StorageClasses = storageClasses
 	return nil
 }
