@@ -67,7 +67,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		}
 	}
 
-	if err := ProcessImages(context.Background(), log, "docker", true, imageSet.List(), "test-registry:5000"); err != nil {
+	if _, err := ProcessImages(context.Background(), log, true, imageSet.List(), "test-registry:5000"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }

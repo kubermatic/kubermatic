@@ -52,15 +52,12 @@ type MirrorImagesOptions struct {
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
-
-	DockerBinary string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := MirrorImagesOptions{
-		HelmTimeout:  5 * time.Minute,
-		HelmBinary:   "helm",
-		DockerBinary: "docker",
+		HelmTimeout: 5 * time.Minute,
+		HelmBinary:  "helm",
 	}
 
 	cmd := &cobra.Command{
@@ -103,8 +100,6 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
-
-	cmd.PersistentFlags().StringVar(&opt.DockerBinary, "docker-binary", opt.DockerBinary, "docker CLI compatible binary to use for pulling and pushing images")
 
 	return cmd
 }
@@ -277,9 +272,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			imageSet.Insert(images...)
 		}
 
-		if err := images.ProcessImages(ctx, logger, options.DockerBinary, options.DryRun, imageSet.List(), options.Registry); err != nil {
-			return fmt.Errorf("failed to process images: %w", err)
+		copiedImages, err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry)
+		if err != nil {
+			return fmt.Errorf("failed to mirror all images (succesfully copied: %d): %w", copiedImages, err)
 		}
+
+		logger.WithField("image-count", copiedImages).Info("✅ Finished mirroring images.")
 
 		return nil
 	})
