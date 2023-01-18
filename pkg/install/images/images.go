@@ -103,6 +103,10 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceD
 	}
 
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
+	// if the image reference is a digest, we need to format the target image slightly different
+	if _, ok := imageRef.(name.Digest); ok {
+		targetImage = fmt.Sprintf("%s/%s@%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
+	}
 
 	fields := logrus.Fields{
 		"source-image": sourceImage,
@@ -214,23 +218,23 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	return nil
 }
 
-func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string) (int, error) {
+func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string) (int, int, error) {
 	imageList, err := GetSourceDestImageList(ctx, log, images, registry)
 	if err != nil {
-		return 0, fmt.Errorf("failed to generate list of images: %w", err)
+		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
 	}
 
 	if !dryRun {
 		for index, image := range imageList {
 			if err := CopyImage(ctx, log, image); err != nil {
-				return index, fmt.Errorf("failed copying image %s: %w", image.Source, err)
+				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
 			}
 		}
 
-		return len(imageList), nil
+		return len(imageList), len(imageList), nil
 	}
 
-	return 0, nil
+	return 0, len(imageList), nil
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
