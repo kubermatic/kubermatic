@@ -121,7 +121,7 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceD
 	}, nil
 }
 
-func CopyImage(ctx context.Context, log logrus.FieldLogger, image SourceDestImages) error {
+func CopyImage(ctx context.Context, log logrus.FieldLogger, image SourceDestImages, userAgent string) error {
 	log = log.WithFields(logrus.Fields{
 		"source-image": image.Source,
 		"target-image": image.Destination,
@@ -129,7 +129,7 @@ func CopyImage(ctx context.Context, log logrus.FieldLogger, image SourceDestImag
 
 	log.Info("Copying image…")
 
-	return crane.Copy(image.Source, image.Destination, crane.WithContext(ctx))
+	return crane.Copy(image.Source, image.Destination, crane.WithContext(ctx), crane.WithUserAgent(userAgent))
 }
 
 func ExtractAddons(ctx context.Context, log logrus.FieldLogger, addonImageName string) (string, error) {
@@ -218,7 +218,7 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	return nil
 }
 
-func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string) (int, int, error) {
+func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
 	imageList, err := GetSourceDestImageList(ctx, log, images, registry)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
@@ -226,7 +226,7 @@ func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, ima
 
 	if !dryRun {
 		for index, image := range imageList {
-			if err := CopyImage(ctx, log, image); err != nil {
+			if err := CopyImage(ctx, log, image, userAgent); err != nil {
 				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
 			}
 		}

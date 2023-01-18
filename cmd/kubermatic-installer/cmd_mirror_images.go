@@ -272,12 +272,19 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			imageSet.Insert(images...)
 		}
 
-		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry)
+		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
+
+		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry, userAgent)
 		if err != nil {
 			return fmt.Errorf("failed to mirror all images (succesfully copied %d/%d): %w", copiedCount, fullCount, err)
 		}
 
-		logger.WithFields(logrus.Fields{"copied-images": copiedCount, "all-images": fullCount}).Info("✅ Finished mirroring images.")
+		verb := "mirroring"
+		if options.DryRun {
+			verb = "listing"
+		}
+
+		logger.WithFields(logrus.Fields{"copied-image-count": copiedCount, "all-image-count": fullCount}).Info(fmt.Sprintf("✅ Finished %s images.", verb))
 
 		return nil
 	})
