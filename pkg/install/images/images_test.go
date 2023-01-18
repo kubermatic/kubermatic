@@ -67,7 +67,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		}
 	}
 
-	if _, err := ProcessImages(context.Background(), log, true, imageSet.List(), "test-registry:5000"); err != nil {
+	if _, _, err := ProcessImages(context.Background(), log, true, imageSet.List(), "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }
