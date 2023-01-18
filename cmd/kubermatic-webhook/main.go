@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
+	applicationdefinitionmutation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/mutation"
 	applicationdefinitionvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/validation"
 	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
@@ -221,6 +222,12 @@ func main() {
 
 	// Setup the validation admission handler for OperatingSystemProfile CRDs
 	ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup ApplicationDefinition webhooh
+
+	// Setup the mutation admission handler for ApplicationDefinition CRDs
+	applicationdefinitionmutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 
 	// Setup the validation admission handler for ApplicationDefinition CRDs
 	applicationdefinitionvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)

@@ -78,6 +78,86 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 			},
 			0,
 		},
+		"valid DeployOpts helm is nil": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"valid DeployOpts helm={wait: true, timeout: 5, atomic: true}": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    true,
+						Timeout: metav1.Duration{Duration: 5},
+						Atomic:  true,
+					}}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"valid DeployOpts helm ={wait: true, timeout: 5, atomic: false}": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    true,
+						Timeout: metav1.Duration{Duration: 5},
+						Atomic:  false,
+					}}
+					return *s
+				}(),
+			},
+			0,
+		},
+		"invalid DeployOpts helm (atomic=true but wait=false)": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    false,
+						Timeout: metav1.Duration{Duration: 0},
+						Atomic:  true,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid DeployOpts helm (wait=true but timeout=0)": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    true,
+						Timeout: metav1.Duration{Duration: 0},
+						Atomic:  false,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"invalid DeployOpts helm (wait false but timeout defined)": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultDeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    false,
+						Timeout: metav1.Duration{Duration: 5},
+						Atomic:  false,
+					}}
+					return *s
+				}(),
+			},
+			1,
+		},
 		"invalid method": {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {

@@ -672,6 +672,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		machinecontroller.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		applications.ApplicationInstallationMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 	}
 	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationReconciler(r.opaWebhookTimeout))

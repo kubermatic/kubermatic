@@ -66,6 +66,86 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 			expectedError: "[]",
 		},
 		{
+			name: "Create ApplicationInstallation Success - DeployOpts helm is nil",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+					return *spec
+				}(),
+			}, expectedError: "[]",
+		},
+		{
+			name: "Create ApplicationInstallation Success - DeployOpts helm={wait: true, timeout: 5, atomic: true}",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    true,
+						Timeout: metav1.Duration{Duration: 5},
+						Atomic:  true,
+					}}
+					return *spec
+				}(),
+			}, expectedError: "[]",
+		},
+		{
+			name: "Create ApplicationInstallation Success - DeployOpts helm ={wait: true, timeout: 5, atomic: false}",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    true,
+						Timeout: metav1.Duration{Duration: 5},
+						Atomic:  false,
+					}}
+					return *spec
+				}(),
+			}, expectedError: "[]",
+		},
+		{
+			name: "Create ApplicationInstallation Failure - DeployOpts helm (atomic=true but wait=false)",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    false,
+						Timeout: metav1.Duration{Duration: 0},
+						Atomic:  true,
+					}}
+					return *spec
+				}(),
+			}, expectedError: "[spec.deployOptions.helm: Forbidden: if atomic=true then wait must also be true]",
+		},
+		{
+			name: "Create ApplicationInstallation Failure - DeployOpts helm (wait=true but timeout=0)",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    true,
+						Timeout: metav1.Duration{Duration: 0},
+						Atomic:  true,
+					}}
+					return *spec
+				}(),
+			}, expectedError: "[spec.deployOptions.helm: Forbidden: if wait = true then timeout must be greater than 0]",
+		},
+		{
+			name: "Create ApplicationInstallation Failure - DeployOpts helm (wait false but timeout defined)",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{
+						Wait:    false,
+						Timeout: metav1.Duration{Duration: 5},
+						Atomic:  false,
+					}}
+					return *spec
+				}(),
+			}, expectedError: "[spec.deployOptions.helm: Forbidden: if timeout is defined then wait must be true]",
+		},
+		{
 			name: "Create ApplicationInstallation Failure - ApplicationDefinitation doesn't exist",
 			ai: &appskubermaticv1.ApplicationInstallation{
 				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
