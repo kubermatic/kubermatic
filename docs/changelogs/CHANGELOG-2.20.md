@@ -14,7 +14,7 @@
 - [v2.20.11](#v22011)
 - [v2.20.12](#v22012)
 
-## [2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/2.20.12)
+## [v2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.12)
 
 ### Bugfixes
 
