@@ -33,6 +33,18 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 				Namespace: namespace,
 			},
 		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.OperatingSystemManagerWebhookDeploymentName,
+				Namespace: namespace,
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.OperatingSystemManagerWebhookServiceName,
+				Namespace: namespace,
+			},
+		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serviceAccountName,

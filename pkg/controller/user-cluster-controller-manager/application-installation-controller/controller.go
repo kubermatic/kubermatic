@@ -111,7 +111,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	return nil
 }
 
-// Reconcile ApplicationInstallation (ie install / update or uninstall applicationinto the user-cluster).
+// Reconcile ApplicationInstallation (i.e. install / update or uninstall application into the user-cluster).
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("applicationinstallation", request)
 	log.Debug("Processing")
