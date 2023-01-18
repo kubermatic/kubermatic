@@ -18,18 +18,13 @@ package images
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	imagecopy "github.com/containers/image/v5/copy"
-	imagedir "github.com/containers/image/v5/directory"
-	imagedocker "github.com/containers/image/v5/docker"
-	"github.com/containers/image/v5/docker/reference"
-	"github.com/containers/image/v5/signature"
+	"github.com/google/go-containerregistry/pkg/crane"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -95,27 +90,16 @@ func GetSourceDestImageList(ctx context.Context, log logrus.FieldLogger, images 
 func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceDestImages, error) {
 	// TODO(embik): remove/replace this. The containers/image/v5 library does not support both
 	// tag and digest in an image reference, so we're stripping the digest from any image.
-	if index := strings.Index(sourceImage, "@"); index >= 0 {
+	/*if index := strings.Index(sourceImage, "@"); index >= 0 {
 		sourceImage = sourceImage[:index]
-	}
+	}*/
 
-	// we need to inject double slashes here because that's the format for "docker references"
-	// that containers/image/v5 expects. And who are we to question that?
-	imageRef, err := imagedocker.ParseReference(fmt.Sprintf("//%s", sourceImage))
+	imageRef, err := name.ParseReference(fmt.Sprintf("%s", sourceImage))
 	if err != nil {
 		return SourceDestImages{}, fmt.Errorf("failed to parse image: %w", err)
 	}
 
-	taggedImageRef, ok := imageRef.DockerReference().(reference.NamedTagged)
-	if !ok {
-		return SourceDestImages{}, errors.New("image has no tag")
-	}
-
-	targetImage := fmt.Sprintf("%s/%s:%s", registry, reference.Path(imageRef.DockerReference()), taggedImageRef.Tag())
-	// we parse the generated image name, just to make sure it's valid
-	if _, err = imagedocker.ParseReference(fmt.Sprintf("//%s", targetImage)); err != nil {
-		return SourceDestImages{}, fmt.Errorf("failed to parse target image: %w", err)
-	}
+	targetImage := fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
 
 	fields := logrus.Fields{
 		"source-image": sourceImage,
@@ -130,37 +114,51 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceD
 	}, nil
 }
 
+func CopyImage(ctx context.Context, log logrus.FieldLogger, image SourceDestImages) error {
+	log = log.WithFields(logrus.Fields{
+		"source-image": image.Source,
+		"target-image": image.Destination,
+	})
+
+	log.Info("Copying image…")
+
+	return crane.Copy(image.Source, image.Destination, crane.WithContext(ctx))
+}
+
 func ExtractAddons(ctx context.Context, log logrus.FieldLogger, addonImageName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "kkp-mirror-images-*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 
-	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return "", fmt.Errorf("failed to create policy context: %w", err)
-	}
+	/*
 
-	log.WithFields(logrus.Fields{
-		"image":          addonImageName,
-		"temp-directory": tempDir,
-	}).Info("Extracting addon manifests from image…")
+		policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
+		policyContext, err := signature.NewPolicyContext(policy)
+		if err != nil {
+			return "", fmt.Errorf("failed to create policy context: %w", err)
+		}
 
-	imageRef, err := imagedocker.ParseReference(fmt.Sprintf("//%s", addonImageName))
-	if err != nil {
-		return tempDir, fmt.Errorf("failed to parse addon image: %w", err)
-	}
+		log.WithFields(logrus.Fields{
+			"image":          addonImageName,
+			"temp-directory": tempDir,
+		}).Info("Extracting addon manifests from image…")
 
-	destRef, err := imagedir.NewReference(tempDir)
-	if err != nil {
-		return tempDir, fmt.Errorf("failed to create directory ref: %w", err)
-	}
+		imageRef, err := imagedocker.ParseReference(fmt.Sprintf("//%s", addonImageName))
+		if err != nil {
+			return tempDir, fmt.Errorf("failed to parse addon image: %w", err)
+		}
 
-	_, err = imagecopy.Image(ctx, policyContext, destRef, imageRef, nil)
-	if err != nil {
-		return tempDir, fmt.Errorf("failed to extract addon image: %w", err)
-	}
+		destRef, err := imagedir.NewReference(tempDir)
+		if err != nil {
+			return tempDir, fmt.Errorf("failed to create directory ref: %w", err)
+		}
+
+		_, err = imagecopy.Image(ctx, policyContext, destRef, imageRef, nil)
+		if err != nil {
+			return tempDir, fmt.Errorf("failed to extract addon image: %w", err)
+		}
+	*/
 
 	return tempDir, nil
 }
@@ -188,10 +186,18 @@ func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, d
 }
 
 func ProcessImages(ctx context.Context, log logrus.FieldLogger, dockerBinary string, dryRun bool, images []string, registry string) error {
-	_, err := GetSourceDestImageList(ctx, log, images, registry)
+	imageList, err := GetSourceDestImageList(ctx, log, images, registry)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to generate list of images: %w", err)
 	}
+
+	for _, image := range imageList {
+		if err := CopyImage(ctx, log, image); err != nil {
+			return fmt.Errorf("failed copying image %s: %w", image.Source, err)
+		}
+	}
+
+	log.Info("Finished mirroring all images")
 
 	return nil
 }
