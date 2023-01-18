@@ -110,9 +110,9 @@ func NewTemplateData(
 		ipvs = *cluster.Spec.ClusterNetwork.IPVS
 	}
 
-	var kubeVirtStorageClasses []string
+	var kubeVirtStorageClasses []kubermaticv1.KubeVirtInfraStorageClass
 	if cluster.Spec.Cloud.Kubevirt != nil {
-		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.InfraStorageClasses
+		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.StorageClasses
 	}
 
 	var ipamAllocationsData map[string]IPAMAllocation
@@ -230,7 +230,7 @@ type ClusterData struct {
 	CSIMigration bool
 	// KubeVirtInfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
-	KubeVirtInfraStorageClasses []string
+	KubeVirtInfraStorageClasses []kubermaticv1.KubeVirtInfraStorageClass
 }
 
 type ClusterNetwork struct {

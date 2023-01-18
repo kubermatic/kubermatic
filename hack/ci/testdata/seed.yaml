@@ -158,6 +158,9 @@ spec:
                 podSelector: {}
                 policyTypes:
                 - Ingress
+          infraStorageClasses:
+            - isDefaultClass: true
+              name: px-csi-db
     syseleven-dbl1:
       country: DE
       location: Syseleven - dbl1

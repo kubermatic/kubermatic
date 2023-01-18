@@ -72,7 +72,7 @@ func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clus
 		return err
 	}
 
-	return updateInfraStorageClassesInfo(ctx, client, &spec.Cloud)
+	return updateInfraStorageClassesInfo(ctx, client, spec.Cloud.Kubevirt, k.dc)
 }
 
 func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {

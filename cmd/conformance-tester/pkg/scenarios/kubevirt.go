@@ -25,6 +25,8 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
+
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -32,7 +34,7 @@ const (
 	kubevirtCPUs               = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
-	kubevirtDiskClassName      = "px-csi-db"
+	kubevirtStorageClassName   = "px-csi-db"
 )
 
 type kubevirtScenario struct {
@@ -46,6 +48,11 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
 				Kubeconfig: secrets.Kubevirt.Kubeconfig,
+				StorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
+					Name:           kubevirtStorageClassName,
+					IsDefaultClass: pointer.Bool(true),
+				},
+				},
 			},
 		},
 		Version: s.version,
@@ -63,7 +70,7 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 		WithMemory(kubevirtMemory).
 		WithPrimaryDiskOSImage(image).
 		WithPrimaryDiskSize(kubevirtDiskSize).
-		WithPrimaryDiskStorageClassName(kubevirtDiskClassName).
+		WithPrimaryDiskStorageClassName(kubevirtStorageClassName).
 		Build()
 
 	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
