@@ -97,7 +97,12 @@ type ExternalClusterKubeOneCloudSpec struct {
 	// ProviderName is the name of the cloud provider used, one of
 	// "aws", "azure", "digitalocean", "gcp",
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
-	ProviderName         string                                  `json:"providerName"`
+	ProviderName string `json:"providerName"`
+
+	// Region is the cloud provider region in which the cluster resides.
+	// This field is used only to display information.
+	Region string `json:"region,omitempty"`
+
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 	SSHReference         *providerconfig.GlobalSecretKeySelector `json:"sshReference,omitempty"`
 	ManifestReference    *providerconfig.GlobalSecretKeySelector `json:"manifestReference,omitempty"`

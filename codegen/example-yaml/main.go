@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/test-infra/pkg/genyaml"
@@ -115,12 +116,8 @@ func main() {
 func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
-	kubevirtHTTPSource := kubermaticv1.HTTPSource{
+	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
 		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
-		ImageCloning: kubermaticv1.ImageCloning{
-			Enable:       false,
-			StorageClass: "",
-		},
 	}
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
 		imageList[operatingSystem] = ""
@@ -198,7 +195,23 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
 							DNSPolicy: "",
 							DNSConfig: &corev1.PodDNSConfig{},
-							Images:    kubermaticv1.ImageSources{HTTP: &kubevirtHTTPSource},
+							Images:    kubermaticv1.KubeVirtImageSources{HTTP: &kubevirtHTTPSource},
+							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
+								{
+									Name: "deny-ingress",
+									Spec: networkingv1.NetworkPolicySpec{
+										PodSelector: metav1.LabelSelector{},
+										PolicyTypes: []networkingv1.PolicyType{
+											networkingv1.PolicyTypeIngress,
+										},
+									},
+								},
+							},
+							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
+								Name:           "px-csi-db",
+								IsDefaultClass: pointer.Bool(true),
+							},
+							},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
 						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},

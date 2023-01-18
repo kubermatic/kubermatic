@@ -14,6 +14,18 @@
 - [v2.19.11](#v21911)
 - [v2.19.12](#v21912)
 - [v2.19.13](#v21913)
+- [v2.19.14](#v21914)
+
+## [2.19.14](https://github.com/kubermatic/kubermatic/releases/tag/2.19.14)
+
+### Bugfixes
+
+- Use seed proxy configuration for seed-controller-manager ([#11669](https://github.com/kubermatic/kubermatic/pull/11669))
+- Add support for kube-dns configmap for NodeLocal DNSCache to allow customization of dns. Fixes an issue with a wrong mounted Corefile in NodeLocal DNSCache ([#11664](https://github.com/kubermatic/kubermatic/pull/11664))
+
+### Misc
+
+- Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 
 ## [v2.19.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.13)
 

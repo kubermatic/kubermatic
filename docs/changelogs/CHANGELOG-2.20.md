@@ -12,6 +12,21 @@
 - [v2.20.9](#v2209)
 - [v2.20.10](#v22010)
 - [v2.20.11](#v22011)
+- [v2.20.12](#v22012)
+
+## [2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/2.20.12)
+
+### Bugfixes
+
+- Fix an issue where creating Clusters through ClusterTemplates failed without leaving a trace (the ClusterTemplateInstance got deleted as if all was good) ([#11601](https://github.com/kubermatic/kubermatic/pull/11601))
+- Fix yet another API error in extended disk configuration for provider Anexia ([#11603](https://github.com/kubermatic/kubermatic/pull/11603))
+- Use seed proxy configuration for seed-controller-manager ([#11631](https://github.com/kubermatic/kubermatic/pull/11631))
+- KubeVirt switch infra cluster to DC for e2e tests ([#11675](https://github.com/kubermatic/kubermatic/pull/11675))
+- Add support for kube-dns configmap for NodeLocal DNSCache to allow customization of dns. Fixes an issue with a wrong mounted Corefile in NodeLocal DNSCache ([#11664](https://github.com/kubermatic/kubermatic/pull/11664))
+
+### Misc
+
+- Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 
 ## [v2.20.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.11)
 

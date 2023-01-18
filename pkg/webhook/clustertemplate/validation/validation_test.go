@@ -137,9 +137,8 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
-			name:     "Create cluster with Tunneling expose strategy succeeds when the FeatureGate is enabled",
-			features: features.FeatureGate{features.TunnelingExposeStrategy: true},
-			op:       admissionv1.Create,
+			name: "Create cluster with Tunneling expose strategy succeeds",
+			op:   admissionv1.Create,
 			template: rawTemplateGen{
 				Name:      "foo",
 				Namespace: "kubermatic",
@@ -164,9 +163,8 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
-			name:     "Create cluster with Tunneling expose strategy fails when the FeatureGate is not enabled",
-			features: features.FeatureGate{features.TunnelingExposeStrategy: false},
-			op:       admissionv1.Create,
+			name: "Create cluster with invalid provider name",
+			op:   admissionv1.Create,
 			template: rawTemplateGen{
 				Name:      "foo",
 				Namespace: "kubermatic",
@@ -174,34 +172,8 @@ func TestHandle(t *testing.T) {
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 					"scope":                        "project",
 				},
-				ExposeStrategy: "Tunneling",
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32768",
-					},
-				},
-			}.Build(),
-			wantAllowed: false,
-		},
-		{
-			name:     "Create cluster with invalid provider name",
-			features: features.FeatureGate{features.TunnelingExposeStrategy: false},
-			op:       admissionv1.Create,
-			template: rawTemplateGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-					"scope":                        "project",
-				},
-				ExposeStrategy: "Tunneling",
+				ExposeStrategy:    "Tunneling",
+				CloudProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -728,6 +700,7 @@ type rawTemplateGen struct {
 	ExposeStrategy        string
 	EnableUserSSHKey      *bool
 	ExternalCloudProvider bool
+	CloudProviderName     string
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 	ComponentSettings     kubermaticv1.ComponentSettings
 	CNIPlugin             *kubermaticv1.CNIPluginSettings
@@ -775,6 +748,10 @@ func (r rawTemplateGen) Build() kubermaticv1.ClusterTemplate {
 			ComponentsOverride:    r.ComponentSettings,
 			CNIPlugin:             r.CNIPlugin,
 		},
+	}
+
+	if r.CloudProviderName != "" {
+		c.Spec.Cloud.ProviderName = r.CloudProviderName
 	}
 
 	return c

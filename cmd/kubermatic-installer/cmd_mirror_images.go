@@ -28,7 +28,6 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -42,9 +41,10 @@ type MirrorImagesOptions struct {
 
 	Registry string
 
-	Config        string
-	VersionFilter string
-	DryRun        bool
+	Config                    string
+	VersionFilter             string
+	DryRun                    bool
+	IgnoreRepositoryOverrides bool
 
 	AddonsPath  string
 	AddonsImage string
@@ -93,7 +93,8 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of found images")
+	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
+	cmd.PersistentFlags().BoolVar(&opt.IgnoreRepositoryOverrides, "ignore-repository-overrides", true, "Ignore any configured registry overrides in the referenced KubermaticConfiguration to re-use a configuration that already specifies overrides (note that custom tags will still be observed and that this does not affect Helm charts configured via values.yaml; defaults to true)")
 
 	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Path to a local directory containing KKP addons. Takes precedence over --addons-image")
 	cmd.PersistentFlags().StringVar(&opt.AddonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
@@ -151,6 +152,24 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			return errors.New("please specify your KubermaticConfiguration via --config")
 		}
 
+		// if we pass the option to ignore repository overrides in the KubermaticConfiguration,
+		// we make sure we omit any repository configured in the loaded config so they get
+		// properly defaulted.
+		if options.IgnoreRepositoryOverrides {
+			config.Spec.API.DockerRepository = ""
+			config.Spec.UI.DockerRepository = ""
+			config.Spec.MasterController.DockerRepository = ""
+			config.Spec.SeedController.DockerRepository = ""
+			config.Spec.Webhook.DockerRepository = ""
+			config.Spec.UserCluster.KubermaticDockerRepository = ""
+			config.Spec.UserCluster.DNATControllerDockerRepository = ""
+			config.Spec.UserCluster.EtcdLauncherDockerRepository = ""
+			config.Spec.UserCluster.Addons.DockerRepository = ""
+			config.Spec.VerticalPodAutoscaler.Recommender.DockerRepository = ""
+			config.Spec.VerticalPodAutoscaler.Updater.DockerRepository = ""
+			config.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository = ""
+		}
+
 		kubermaticConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 		if err != nil {
 			return fmt.Errorf("failed to default KubermaticConfiguration: %w", err)
@@ -168,7 +187,14 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 		if options.AddonsPath == "" {
 			addonsImage := options.AddonsImage
 			if addonsImage == "" {
-				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + versions.Kubermatic
+				suffix := kubermaticConfig.Spec.UserCluster.Addons.DockerTagSuffix
+
+				tag := versions.Kubermatic
+				if suffix != "" {
+					tag = fmt.Sprintf("%s-%s", versions.Kubermatic, suffix)
+				}
+
+				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + tag
 			}
 
 			if addonsImage != "" {
@@ -198,6 +224,10 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					)
 
 					versionLogger.Debug("Collecting images…")
+
+					// Collect images without & with Konnectivity, as Konnecctivity / OpenVPN can be switched in clusters
+					// at any time. Remove the non-Konnectivity option once OpenVPN option is finally removed.
+
 					imagesWithoutKonnectivity, err := images.GetImagesForVersion(
 						versionLogger,
 						clusterVersion,
@@ -214,24 +244,21 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					}
 					imageSet.Insert(imagesWithoutKonnectivity...)
 
-					if kubermaticConfig.Spec.FeatureGates[features.KonnectivityService] {
-						imagesWithKonnectivity, err := images.GetImagesForVersion(
-							versionLogger,
-							clusterVersion,
-							cloudSpec,
-							cniPlugin,
-							true,
-							kubermaticConfig,
-							options.AddonsPath,
-							versions,
-							caBundle,
-						)
-
-						if err != nil {
-							return fmt.Errorf("failed to get images: %w", err)
-						}
-						imageSet.Insert(imagesWithKonnectivity...)
+					imagesWithKonnectivity, err := images.GetImagesForVersion(
+						versionLogger,
+						clusterVersion,
+						cloudSpec,
+						cniPlugin,
+						true,
+						kubermaticConfig,
+						options.AddonsPath,
+						versions,
+						caBundle,
+					)
+					if err != nil {
+						return fmt.Errorf("failed to get images: %w", err)
 					}
+					imageSet.Insert(imagesWithKonnectivity...)
 				}
 			}
 		}

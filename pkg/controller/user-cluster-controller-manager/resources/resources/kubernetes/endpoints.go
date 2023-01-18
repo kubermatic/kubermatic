@@ -17,7 +17,6 @@ limitations under the License.
 package kubernetes
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +34,7 @@ const (
 )
 
 // EndpointsReconciler returns the func to create/update the endpoints of the kubernetes service.
-func EndpointsReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointsReconcilerFactory {
+func EndpointsReconciler(k8sServiceEndpointAddress string, k8sServiceEndpointPort int32) reconciling.NamedEndpointsReconcilerFactory {
 	return func() (string, reconciling.EndpointsReconciler) {
 		return serviceName, func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
 			// our controller is reconciling the endpoint slice, do not mirror with EndpointSliceMirroring controller
@@ -46,13 +45,13 @@ func EndpointsReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconcilin
 				{
 					Addresses: []corev1.EndpointAddress{
 						{
-							IP: clusterAddress.IP,
+							IP: k8sServiceEndpointAddress,
 						},
 					},
 					Ports: []corev1.EndpointPort{
 						{
 							Name:     "https",
-							Port:     clusterAddress.Port,
+							Port:     k8sServiceEndpointPort,
 							Protocol: corev1.ProtocolTCP,
 						},
 					},
@@ -64,7 +63,7 @@ func EndpointsReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconcilin
 }
 
 // EndpointSliceReconciler returns the func to create/update the endpoint slice of the kubernetes service.
-func EndpointSliceReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconciling.NamedEndpointSliceReconcilerFactory {
+func EndpointSliceReconciler(k8sServiceEndpointAddress string, k8sServiceEndpointPort int32) reconciling.NamedEndpointSliceReconcilerFactory {
 	return func() (string, reconciling.EndpointSliceReconciler) {
 		return endpointSliceName, func(es *discoveryv1.EndpointSlice) (*discoveryv1.EndpointSlice, error) {
 			es.AddressType = discoveryv1.AddressTypeIPv4
@@ -74,7 +73,7 @@ func EndpointSliceReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconc
 			es.Endpoints = []discoveryv1.Endpoint{
 				{
 					Addresses: []string{
-						clusterAddress.IP,
+						k8sServiceEndpointAddress,
 					},
 					Conditions: discoveryv1.EndpointConditions{
 						Ready: pointer.Bool(true),
@@ -85,7 +84,7 @@ func EndpointSliceReconciler(clusterAddress *kubermaticv1.ClusterAddress) reconc
 			es.Ports = []discoveryv1.EndpointPort{
 				{
 					Name:     pointer.String("https"),
-					Port:     pointer.Int32(clusterAddress.Port),
+					Port:     pointer.Int32(k8sServiceEndpointPort),
 					Protocol: &protoTCP,
 				},
 			}

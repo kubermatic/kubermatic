@@ -433,7 +433,7 @@ func TestValidate(t *testing.T) {
 			errExpected: true,
 		},
 		{
-			name: "Adding a seed with TunnelingExposeStrategy should succeed when feature gate is enabled",
+			name: "Adding a seed with Tunneling ExposeStrategy should succeed",
 			seedToValidate: &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "new-seed",
@@ -442,20 +442,6 @@ func TestValidate(t *testing.T) {
 					ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
 				},
 			},
-			features: features.FeatureGate{features.TunnelingExposeStrategy: true},
-		},
-		{
-			name: "Adding a seed with TunnelingExposeStrategy should fail when feature gate is not enabled",
-			seedToValidate: &kubermaticv1.Seed{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "new-seed",
-				},
-				Spec: kubermaticv1.SeedSpec{
-					ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
-				},
-			},
-			features:    features.FeatureGate{},
-			errExpected: true,
 		},
 		{
 			name: "Adding a seed with invalid cron expression",
@@ -487,7 +473,7 @@ func TestValidate(t *testing.T) {
 						"test-kv": {
 							Spec: kubermaticv1.DatacenterSpec{
 								Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
-									Images: kubermaticv1.ImageSources{HTTP: &kubermaticv1.HTTPSource{
+									Images: kubermaticv1.KubeVirtImageSources{HTTP: &kubermaticv1.KubeVirtHTTPSource{
 										OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
 											"invalid-os": map[string]string{"v1": "https://test.com"},
 										},

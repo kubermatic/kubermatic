@@ -52,7 +52,7 @@ func DeploymentReconciler(kServerHost string, kServerPort int, imageRewriter reg
 	return func() (string, reconciling.DeploymentReconciler) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
-			version = "v0.0.33"
+			version = "v0.0.35"
 		)
 
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {

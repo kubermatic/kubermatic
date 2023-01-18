@@ -48,7 +48,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
 	}
 
-	showKonnectivity := r.features.Konnectivity && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
+	showKonnectivity := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
 	if !showKonnectivity {
 		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: &extendedHealth.OpenVPN, minReady: 1}
@@ -89,7 +89,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to get machine controller health: %w", err)
 		}
 	}
-	extendedHealth.MachineController = mcHealthStatus
+	extendedHealth.MachineController = kubermaticv1helper.GetHealthStatus(mcHealthStatus, cluster, r.versions)
 
 	applicationControllerHealthStatus := kubermaticv1.HealthStatusDown
 	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
@@ -98,7 +98,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to evaluate application controller health: %w", err)
 		}
 	}
-	extendedHealth.ApplicationController = applicationControllerHealthStatus
+	extendedHealth.ApplicationController = kubermaticv1helper.GetHealthStatus(applicationControllerHealthStatus, cluster, r.versions)
 
 	if cluster.Spec.IsOperatingSystemManagerEnabled() {
 		status, err := r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
@@ -203,6 +203,7 @@ func (r *Reconciler) operatingSystemManagerHealthCheck(ctx context.Context, clus
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
 	}
+	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
 }
 
@@ -213,6 +214,7 @@ func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubernetesDashboardDeploymentName, err)
 	}
+	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
 }
 

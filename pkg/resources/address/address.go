@@ -159,14 +159,14 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 			}
 		}
 	case kubermaticv1.ExposeStrategyNodePort:
+		fallthrough
+	case kubermaticv1.ExposeStrategyTunneling:
 		var err error
 		// Always lookup IP address, in case it changes (IP's on AWS LB's change)
 		ip, err = m.getExternalIPv4(externalName)
 		if err != nil {
 			return nil, err
 		}
-	case kubermaticv1.ExposeStrategyTunneling:
-		ip = m.tunnelingAgentIP
 	}
 	if m.cluster.Status.Address.IP != ip {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {

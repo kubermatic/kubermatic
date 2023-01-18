@@ -226,6 +226,10 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 
 // handleInstallation installs or updates the application in the user cluster.
 func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLogger, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	if err := r.resetFailuresIfSpecHasChanged(ctx, appInstallation); err != nil {
+		return err
+	}
+
 	// Install or upgrade application only if max number of retries is not exceeded.
 	if appInstallation.Status.Failures > maxRetries {
 		oldAppInstallation := appInstallation.DeepCopy()
@@ -277,6 +281,18 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	}
 
 	return installErr
+}
+
+// resetFailuresIfSpecHasChanged set Status.Failures to 0 if the spec has changed. Returns an error if status can not be updated.
+func (r reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	oldAppInstallation := appInstallation.DeepCopy()
+	if appInstallation.Status.Conditions[appskubermaticv1.Ready].ObservedGeneration != appInstallation.Generation {
+		appInstallation.Status.Failures = 0
+		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+			return fmt.Errorf("failed to update status: %w", err)
+		}
+	}
+	return nil
 }
 
 // handleDeletion uninstalls the application in the user cluster.

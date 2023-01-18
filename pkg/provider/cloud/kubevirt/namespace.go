@@ -58,18 +58,6 @@ func reconcileNamespace(ctx context.Context, name string, cluster *kubermaticv1.
 	return cluster, nil
 }
 
-// reconcileKubeVirtImagesNamespace reconciles KubeVirtImagesNamespace in the underlying KubeVirt cluster.
-func reconcileKubeVirtImagesNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
-	creators := []reconciling.NamedNamespaceReconcilerFactory{
-		namespaceReconciler(name),
-	}
-
-	if err := reconciling.ReconcileNamespaces(ctx, creators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile Namespace: %w", err)
-	}
-	return nil
-}
-
 // deleteNamespace deletes the dedicated namespace.
 func deleteNamespace(ctx context.Context, name string, client ctrlruntimeclient.Client) error {
 	ns := &corev1.Namespace{}

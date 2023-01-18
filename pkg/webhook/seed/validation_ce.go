@@ -80,19 +80,7 @@ func (v *fixedNameValidator) validate(ctx context.Context, obj runtime.Object, i
 		if subject.Name != v.name {
 			return fmt.Errorf("cannot create Seed %s: it must be named %s", subject.Name, v.name)
 		}
-		if err := validateKubeVirtDataCenterSpec(subject); err != nil {
-			return err
-		}
 	}
 
 	return v.upstream.validate(ctx, obj, isDelete)
-}
-
-func validateKubeVirtDataCenterSpec(subject *kubermaticv1.Seed) error {
-	for _, dc := range subject.Spec.Datacenters {
-		if dc.Spec.Kubevirt != nil && (dc.Spec.Kubevirt.Images.EnableCustomImages) || (dc.Spec.Kubevirt.Images.HTTP != nil && dc.Spec.Kubevirt.Images.HTTP.ImageCloning.Enable) {
-			return errors.New("this option is disabled for the Community Edition")
-		}
-	}
-	return nil
 }

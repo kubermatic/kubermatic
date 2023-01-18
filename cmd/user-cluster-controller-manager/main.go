@@ -37,6 +37,7 @@ import (
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
+	kvvmieviction "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/kubevirt-vmi-eviction"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
 	nodeversioncontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-version-controller"
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
@@ -102,6 +103,8 @@ type controllerRunOptions struct {
 	konnectivityServerHost            string
 	konnectivityServerPort            int
 	applicationCache                  string
+	kubeVirtVMIEvictionController     bool
+	kubeVirtInfraKubeconfig           string
 }
 
 func main() {
@@ -148,6 +151,8 @@ func main() {
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
 	flag.StringVar(&runOp.applicationCache, "application-cache", "", "Path to Application cache directory.")
+	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
+	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -404,6 +409,34 @@ func main() {
 		log.Fatalw("Failed to add user Resource Usage controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Resource Usage controller")
+
+	// KubeVirt infra
+	if runOp.kubeVirtVMIEvictionController {
+		var kubevirtInfraConfig *rest.Config
+		kubevirtInfraConfig, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			&clientcmd.ClientConfigLoadingRules{ExplicitPath: runOp.kubeVirtInfraKubeconfig},
+			&clientcmd.ConfigOverrides{}).ClientConfig()
+		if err != nil {
+			log.Fatalw("Failed to get KubeVirt infra kubeconfig", zap.Error(err))
+		}
+		kubevirtInfraMgr, err := manager.New(kubevirtInfraConfig, manager.Options{
+			LeaderElection:     false,
+			MetricsBindAddress: "0",
+			// VM and VMIs are created in a namespace having the same name as the cluster namespace name.
+			Namespace: runOp.namespace,
+		})
+		if err != nil {
+			log.Fatalw("Failed to construct kubevirt infra mgr", zap.Error(err))
+		}
+		if err := mgr.Add(kubevirtInfraMgr); err != nil {
+			log.Fatalw("Failed to add kubevirt infra mgr to main mgr", zap.Error(err))
+		}
+
+		if err := kvvmieviction.Add(rootCtx, log, mgr, kubevirtInfraMgr, isPausedChecker, runOp.clusterName); err != nil {
+			log.Fatalw("Failed to register kubevirt-vmi-eviction controller", zap.Error(err))
+		}
+		log.Info("Registered kubevirt-vmi-eviction controller")
+	}
 
 	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("Failed running manager", zap.Error(err))
