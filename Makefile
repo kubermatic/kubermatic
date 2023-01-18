@@ -47,7 +47,7 @@ build: $(CMD)
 $(CMD): %: $(BUILD_DEST)/%
 
 $(BUILD_DEST)/%: cmd/% download-gocache
-	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
+	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION),containers_image_openpgp" $(GOTOOLFLAGS) -o $@ ./cmd/$*
 
 .PHONY: install
 install:

@@ -199,7 +199,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			}
 
 			if addonsImage != "" {
-				tempDir, err := images.ExtractAddonsFromDockerImage(ctx, logger, options.DockerBinary, addonsImage)
+				tempDir, err := images.ExtractAddons(ctx, logger, addonsImage)
 				if err != nil {
 					return fmt.Errorf("failed to create local addons path: %w", err)
 				}
