@@ -480,7 +480,7 @@ func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
 	return iconfig.ClientConfig()
 }
 
-func CheckContainerRuntime(ctx context.Context,
+func GetContainerRuntime(ctx context.Context,
 	clusterClient *kubernetes.Clientset,
 ) (string, error) {
 	nodeReq, err := labels.NewRequirement(NodeControlPlaneLabel, selection.Exists, []string{})
@@ -492,17 +492,18 @@ func CheckContainerRuntime(ctx context.Context,
 		return "", errors.Wrap(err, "error converting node label selector to map")
 	}
 
-	nodes, err := clusterClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: 1,
+	controlPlaneNode, err := clusterClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		Limit:         1,
 		LabelSelector: selector.String(),
 	})
 	if err != nil {
 		return "", err
 	}
 
-	for _, node := range nodes.Items {
-		containerRuntimeVersion := node.Status.NodeInfo.ContainerRuntimeVersion
-		strSlice := strings.Split(containerRuntimeVersion, ":")
-		for _, containerRuntime := range strSlice {
+	for len(controlPlaneNode.Items) > 0 {
+		containerRuntimeVersion := controlPlaneNode.Items[0].Status.NodeInfo.ContainerRuntimeVersion
+		containerRuntime, _, found := strings.Cut(containerRuntimeVersion, ":")
+		if found {
 			return containerRuntime, nil
 		}
 	}

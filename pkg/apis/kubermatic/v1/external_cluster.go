@@ -189,6 +189,10 @@ const (
 	// node software. Details can be found in the `StatusMessage` field.
 	ExternalClusterPhaseReconciling ExternalClusterPhase = "Reconciling"
 
+	KubeOnePhaseReconcilingUpgrade ExternalClusterPhase = "ReconcilingUpgrade"
+
+	KubeOnePhaseReconcilingMigrate ExternalClusterPhase = "ReconcilingMigrate"
+
 	// ExternalClusterPhaseDeleting status indicates the cluster is being deleted.
 	ExternalClusterPhaseDeleting ExternalClusterPhase = "Deleting"
 

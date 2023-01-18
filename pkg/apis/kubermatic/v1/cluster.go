@@ -60,6 +60,7 @@ const (
 const (
 	WorkerNameLabelKey         = "worker-name"
 	ProjectIDLabelKey          = "project-id"
+	ExternalClusterIDLabelKey  = "external-cluster-id"
 	UpdatedByVPALabelKey       = "updated-by-vpa"
 	IsCredentialPresetLabelKey = "is-credential-preset"
 
