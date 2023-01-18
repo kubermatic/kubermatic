@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -109,7 +110,7 @@ func ProcessImages(ctx context.Context, log logrus.FieldLogger, dockerBinary str
 	return nil
 }
 
-func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
 	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, konnectivityEnabled, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -119,6 +120,7 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %w", err)
 	}
+
 	images = append(images, creatorImages...)
 
 	addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
@@ -126,6 +128,17 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 		return nil, fmt.Errorf("failed to get images from addons: %w", err)
 	}
 	images = append(images, addonImages...)
+
+	if registryPrefix != "" {
+		var filteredImages []string
+		for _, image := range images {
+			if strings.HasPrefix(image, registryPrefix) {
+				filteredImages = append(filteredImages, image)
+			}
+		}
+
+		images = filteredImages
+	}
 
 	return images, nil
 }
