@@ -7,7 +7,7 @@
 - [v2.21.4](#v2214)
 - [v2.21.5](#v2215)
 
-## [2.21.5](https://github.com/kubermatic/kubermatic/releases/tag/2.21.5)
+## [v2.21.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.5)
 
 ### API Changes
 

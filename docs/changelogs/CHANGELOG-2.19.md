@@ -16,7 +16,7 @@
 - [v2.19.13](#v21913)
 - [v2.19.14](#v21914)
 
-## [2.19.14](https://github.com/kubermatic/kubermatic/releases/tag/2.19.14)
+## [v2.19.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.14)
 
 ### Bugfixes
 
