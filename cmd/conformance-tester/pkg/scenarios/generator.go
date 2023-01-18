@@ -235,18 +235,6 @@ func isValidNewScenario(opts *types.Options, log *zap.SugaredLogger, scenario Sc
 		return false
 	}
 
-	if scenario.OperatingSystem() == providerconfig.OperatingSystemSLES {
-		if scenario.CloudProvider() != kubermaticv1.AWSCloudProvider {
-			scenario.Log(log).Infow("Skipping because OS is not supported on this cloud provider.")
-			return false
-		}
-
-		if scenario.ContainerRuntime() != resources.ContainerRuntimeDocker {
-			scenario.Log(log).Infow("Skipping because OS only supports Docker.")
-			return false
-		}
-	}
-
 	return scenario.IsValid(opts, log)
 }
 

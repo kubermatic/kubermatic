@@ -42,7 +42,6 @@ import (
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
-	"k8c.io/operating-system-manager/pkg/providerconfig/sles"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -154,8 +153,6 @@ func OperatingSystemFromSpec(osSpec interface{}) (providerconfig.OperatingSystem
 		return providerconfig.OperatingSystemRHEL, nil
 	case rockylinux.Config:
 		return providerconfig.OperatingSystemRockyLinux, nil
-	case sles.Config:
-		return providerconfig.OperatingSystemSLES, nil
 	case ubuntu.Config:
 		return providerconfig.OperatingSystemUbuntu, nil
 	case amzn2.Config:

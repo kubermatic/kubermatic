@@ -39,7 +39,6 @@ import (
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
-	"k8c.io/operating-system-manager/pkg/providerconfig/sles"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
 	corev1 "k8s.io/api/core/v1"
@@ -77,7 +76,6 @@ var (
 		providerconfig.OperatingSystemFlatcar:    flatcar.Config{},
 		providerconfig.OperatingSystemRHEL:       rhel.Config{},
 		providerconfig.OperatingSystemRockyLinux: rockylinux.Config{},
-		providerconfig.OperatingSystemSLES:       sles.Config{},
 		providerconfig.OperatingSystemUbuntu:     ubuntu.Config{},
 	}
 

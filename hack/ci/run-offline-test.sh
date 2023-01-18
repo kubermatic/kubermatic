@@ -272,7 +272,7 @@ ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} << EOF
     -reports-root=/tmp/${BUILD_ID}/reports \
     -versions="v1.13.5" \
     -providers=gcp \
-    -exclude-distributions="centos,ubuntu,sles,rhel" \
+    -exclude-distributions="centos,ubuntu,rhel" \
     -kubermatic-delete-cluster=false \
     -only-test-creation=true \
     -gcp-service-account="${GOOGLE_SERVICE_ACCOUNT}" \
