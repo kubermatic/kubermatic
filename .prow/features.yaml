@@ -29,7 +29,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
@@ -64,8 +64,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
@@ -100,8 +99,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
-          imagePullPolicy: Always
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
           env:
@@ -136,7 +134,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
@@ -169,7 +167,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - ./hack/run-nodeport-proxy-e2e-test-in-kind.sh
           securityContext:
@@ -197,7 +195,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
@@ -230,7 +228,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - ./hack/run-expose-strategy-e2e-test-in-kind.sh
           env:
@@ -261,7 +259,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           command:
             - "./hack/ci/run-ipam-e2e-tests.sh"
           env:
@@ -297,7 +295,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
