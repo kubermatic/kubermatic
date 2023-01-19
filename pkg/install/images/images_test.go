@@ -106,7 +106,7 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 	}
 	images = append(images, appImages...)
 
-	if err := ProcessImages(context.Background(), log, "docker", true, images, "test-registry:5000"); err != nil {
+	if _, _, err := ProcessImages(context.Background(), log, true, images, "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }
