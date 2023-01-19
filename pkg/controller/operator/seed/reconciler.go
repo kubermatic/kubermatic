@@ -233,14 +233,6 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSCAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up OSC ValidatingWebhookConfiguration: %w", err)
-	}
-
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.OSPAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up OSP ValidatingWebhookConfiguration: %w", err)
-	}
-
 	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.IPAMPoolAdmissionWebhookName); err != nil {
 		return fmt.Errorf("failed to clean up IPAMPool ValidatingWebhookConfiguration: %w", err)
 	}
@@ -658,8 +650,6 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		kubermaticseed.ClusterValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationReconciler(ctx, cfg, client),
-		kubermaticseed.OperatingSystemProfileValidatingWebhookConfigurationReconciler(ctx, cfg, client),
-		kubermaticseed.OperatingSystemConfigValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookReconcilers, "", client); err != nil {

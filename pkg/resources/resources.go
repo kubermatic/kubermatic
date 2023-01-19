@@ -471,6 +471,8 @@ const (
 	OperatingSystemManagerOperatingSystemProfileCRDName = "operatingsystemprofiles.operatingsystemmanager.k8c.io"
 	// OperatingSystemManagerOperatingSystemConfigCRDName defines the CRD name for OSM operatingSystemConfig objects.
 	OperatingSystemManagerOperatingSystemConfigCRDName = "operatingsystemconfigs.operatingsystemmanager.k8c.io"
+	// OperatingSystemManagerValidatingWebhookConfigurationName is the name of OSM's validating webhook configuration.
+	OperatingSystemManagerValidatingWebhookConfigurationName = "operating-system-manager.kubermatic.io"
 
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.

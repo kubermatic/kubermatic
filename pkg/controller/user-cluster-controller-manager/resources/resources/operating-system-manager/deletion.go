@@ -103,7 +103,11 @@ func ResourcesForDeletion() []ctrlruntimeclient.Object {
 				Name: resources.OperatingSystemManagerMutatingWebhookConfigurationName,
 			},
 		},
-
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.OperatingSystemManagerValidatingWebhookConfigurationName,
+			},
+		},
 		// CRDs
 		&apiextensionsv1.CustomResourceDefinition{
 			ObjectMeta: metav1.ObjectMeta{
