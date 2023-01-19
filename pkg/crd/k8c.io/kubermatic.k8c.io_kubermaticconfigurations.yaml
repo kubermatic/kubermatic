@@ -398,6 +398,29 @@ spec:
                     overwriteRegistry:
                       description: OverwriteRegistry specifies a custom Docker registry which will be used for all images used for user clusters (user cluster control plane + addons). This also applies to the KubermaticDockerRepository and DNATControllerDockerRepository fields.
                       type: string
+                    systemApplications:
+                      description: SystemApplications contains configuration for system Applications (such as CNI).
+                      properties:
+                        helmRegistryConfigFile:
+                          description: HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file. The value is dockercfg file that follows the same format rules as ~/.docker/config.json The Secret must exist in the namespace where KKP is installed (default is "kubermatic"). The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must be a valid secret key.
+                              type: string
+                            name:
+                              description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must be defined
+                              type: boolean
+                          required:
+                            - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        helmRepository:
+                          description: HelmRepository specifies OCI repository containing Helm charts of system Applications.
+                          type: string
+                      type: object
                   type: object
                 versions:
                   description: Versions configures the available and default Kubernetes versions and updates.

@@ -38,4 +38,7 @@ const (
 
 	// DefaultNetworkInterfaceManagerImage defines the default Docker repository containing the network interface manager image.
 	DefaultNetworkInterfaceManagerImage = "quay.io/kubermatic/network-interface-manager"
+
+	// DefaultSystemApplicationsHelmRepository defines the default OCI repository containing the Helm charts of system Applications, such as CNI.
+	DefaultSystemApplicationsHelmRepository = "quay.io/kubermatic/helm-charts"
 )

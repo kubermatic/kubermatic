@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cni
+package cilium
 
 import (
 	"encoding/json"
@@ -37,9 +37,9 @@ const (
 	ciliumImageRegistry = "quay.io/cilium/"
 )
 
-// CiliumApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used
+// ApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used
 // for installing Cilium CNI into KKP usr clusters.
-func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinitionReconcilerFactory {
+func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguration) reconciling.NamedApplicationDefinitionReconcilerFactory {
 	return func() (string, reconciling.ApplicationDefinitionReconciler) {
 		return kubermaticv1.CNIPluginTypeCilium.String(), func(app *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			app.Labels = map[string]string{
@@ -49,17 +49,27 @@ func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinit
 
 			app.Spec.Description = "Cilium CNI - eBPF-based Networking, Security, and Observability"
 			app.Spec.Method = appskubermaticv1.HelmTemplateMethod
+
+			var credentials *appskubermaticv1.HelmCredentials
+			if config.Spec.UserCluster.SystemApplications.HelmRegistryConfigFile != nil {
+				credentials = &appskubermaticv1.HelmCredentials{
+					RegistryConfigFile: config.Spec.UserCluster.SystemApplications.HelmRegistryConfigFile,
+				}
+			}
+
 			app.Spec.Versions = []appskubermaticv1.ApplicationVersion{
+				// NOTE: When introducing a new version, make sure it is:
+				//  - introduced in pkg/cni/version.go with the version string exactly matching the Spec.Versions.Version here
+				//  - Helm chart is mirrored in Kubermatic OCI registry, use the script cilium-mirror-chart.sh
 				{
 					Version: "1.13.0",
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
-								ChartName: ciliumHelmChartName,
-								// TODO (rastislavs): bump to the release version once it is out
-								ChartVersion: "1.13.0-rc4",
-								// TODO (rastislavs): Use Kubermatic OCI chart instead and allow overriding the registry
-								URL: "https://helm.cilium.io/",
+								ChartName:    ciliumHelmChartName,
+								ChartVersion: "1.13.0-rc4", // TODO (rastislavs): bump to the release version once it is out
+								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository,
+								Credentials:  credentials,
 							},
 						},
 					},
@@ -98,9 +108,9 @@ func CiliumApplicationDefinitionReconciler() reconciling.NamedApplicationDefinit
 	}
 }
 
-// GetCiliumAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
+// GetAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
 // of the Cilium CNI managed by KKP.
-func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
+func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
 	values := map[string]any{
 		"cni": map[string]any{
 			// we run Cilium as non-exclusive CNI to allow for Multus use-cases
@@ -179,8 +189,8 @@ func GetCiliumAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteR
 	return values
 }
 
-// ValidateCiliumValuesUpdate validates the update operation on provided Cilium Helm values.
-func ValidateCiliumValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.Path) field.ErrorList {
+// ValidateValuesUpdate validates the update operation on provided Cilium Helm values.
+func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	// Validate immutability of specific top-level value subtrees, managed solely by KKP

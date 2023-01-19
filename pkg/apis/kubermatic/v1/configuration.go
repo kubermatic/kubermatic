@@ -219,6 +219,8 @@ type KubermaticUserClusterConfiguration struct {
 	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 	// Addons controls the optional additions installed into each user cluster.
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
+	// SystemApplications contains configuration for system Applications (such as CNI).
+	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
 	NodePortRange string `json:"nodePortRange,omitempty"`
@@ -299,6 +301,17 @@ type KubermaticAddonsConfiguration struct {
 	// If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
 	// suffix it becomes "v2.15.0-SUFFIX".
 	DockerTagSuffix string `json:"dockerTagSuffix,omitempty"`
+}
+
+// SystemApplicationsConfiguration contains configuration for system Applications (e.g. CNI).
+type SystemApplicationsConfiguration struct {
+	// HelmRepository specifies OCI repository containing Helm charts of system Applications.
+	HelmRepository string `json:"helmRepository,omitempty"`
+	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
+	// The value is dockercfg file that follows the same format rules as ~/.docker/config.json
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {

@@ -52,6 +52,7 @@ var (
 			"v1.11",
 			"v1.12",
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
+			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.13.0",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.NewString(""),

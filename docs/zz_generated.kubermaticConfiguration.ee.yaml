@@ -462,6 +462,15 @@ spec:
     # used for user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
     overwriteRegistry: ""
+    # SystemApplications contains configuration for system Applications (such as CNI).
+    systemApplications:
+      # HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
+      # The value is dockercfg file that follows the same format rules as ~/.docker/config.json
+      # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+      # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+      helmRegistryConfigFile: null
+      # HelmRepository specifies OCI repository containing Helm charts of system Applications.
+      helmRepository: quay.io/kubermatic/helm-charts
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
