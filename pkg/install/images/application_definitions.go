@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -79,7 +80,7 @@ func getImagesFromApplicationDefinition(logger logrus.FieldLogger, helmClient he
 	// if DefaultValues is provided, use it as values file
 	valuesFile := ""
 	if appDef.Spec.DefaultValues != nil {
-		valuesFile = tmpDir + "values.yaml"
+		valuesFile = path.Join(tmpDir, "values.yaml")
 		err = os.WriteFile(valuesFile, appDef.Spec.DefaultValues.Raw, 0644)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create values file: %w", err)
@@ -109,6 +110,7 @@ func getImagesFromApplicationDefinition(logger logrus.FieldLogger, helmClient he
 func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, directory string, timeout time.Duration) (chartPath string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+
 	sp, err := providers.NewSourceProvider(ctx, log.NewDefault().Sugar(), nil, "", directory, appSource, "")
 	if err != nil {
 		return "", fmt.Errorf("failed to create app source provider: %w", err)
@@ -117,5 +119,5 @@ func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, direc
 	if err != nil {
 		return "", fmt.Errorf("failed to download app source: %w", err)
 	}
-	return
+	return chartPath, nil
 }
