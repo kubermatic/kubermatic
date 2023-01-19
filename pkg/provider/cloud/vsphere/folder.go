@@ -73,22 +73,10 @@ func createVMFolder(ctx context.Context, session *Session, restSession *RESTSess
 			return fmt.Errorf("failed to get folder %s: %w", fullPath, err)
 		}
 
-		folder, err := rootFolder.CreateFolder(ctx, newFolder)
+		_, err := rootFolder.CreateFolder(ctx, newFolder)
 		if err != nil {
 			return fmt.Errorf("failed to create folder %s: %w", fullPath, err)
 		}
-
-		tagManager := vapitags.NewManager(restSession.Client)
-		tag, err := tagManager.GetTag(ctx, "mq-test-tag")
-		if err != nil {
-			return fmt.Errorf("failed to fetch ownership tag: %w", err)
-		}
-
-		if err := tagManager.AttachTag(ctx, tag.ID, folder); err != nil {
-			return fmt.Errorf("failed to attach ownership tag on created folder %s: %w", newFolder, err)
-		}
-
-		return err
 	}
 
 	return nil
