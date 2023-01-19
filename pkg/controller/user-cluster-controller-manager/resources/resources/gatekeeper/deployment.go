@@ -32,10 +32,12 @@ import (
 )
 
 const (
-	controllerName = resources.GatekeeperControllerDeploymentName
-	auditName      = resources.GatekeeperAuditDeploymentName
-	imageName      = "openpolicyagent/gatekeeper"
-	tag            = "v3.7.2"
+	controllerName         = resources.GatekeeperControllerDeploymentName
+	auditName              = resources.GatekeeperAuditDeploymentName
+	auditEmptyDirName      = "tmp-volume"
+	auditEmptyDirMountPath = "/tmp/audit"
+	imageName              = "openpolicyagent/gatekeeper"
+	tag                    = "v3.7.2"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
@@ -166,6 +168,14 @@ func AuditDeploymentReconciler(registryWithOverwrite registry.ImageRewriter, res
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(true)
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: auditEmptyDirName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			}
 
 			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
 			var err error
@@ -282,6 +292,8 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 		Args: []string{
 			"--logtostderr",
 			"--operation=audit",
+			"--operation=status",
+			"--operation=mutation-status",
 			fmt.Sprintf("--constraint-violations-limit=%d", resources.ConstraintViolationsLimit),
 			fmt.Sprintf("--audit-match-kind-only=%t", resources.AuditMatchKindOnly),
 		},
@@ -344,6 +356,12 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 			RunAsGroup:             pointer.Int64(999),
 			RunAsNonRoot:           pointer.Bool(true),
 			RunAsUser:              pointer.Int64(1000),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      auditEmptyDirName,
+				MountPath: auditEmptyDirMountPath,
+			},
 		},
 	}}
 }
