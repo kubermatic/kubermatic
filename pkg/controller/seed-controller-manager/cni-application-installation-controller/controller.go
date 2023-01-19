@@ -305,6 +305,18 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
 				Name: cniPluginNamespace,
 			}
+			app.Spec.DeployOptions = &appskubermaticv1.DeployOptions{
+				Helm: &appskubermaticv1.HelmDeployOptions{
+					Atomic: true,
+					Wait:   true,
+					Timeout: metav1.Duration{
+						Duration: 10 * time.Minute, // use longer timeout, as it may take some time for the CNI to be fully up
+					},
+				},
+			}
+			app.Spec.ReconciliationInterval = metav1.Duration{
+				Duration: 60 * time.Minute, // reconcile the app periodically
+			}
 
 			// Unmarshall existing values
 			values := make(map[string]any)
