@@ -52,6 +52,9 @@ type MirrorImagesOptions struct {
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
+
+	// TODO(embik): deprecated, remove with 2.23
+	DockerBinary string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -101,11 +104,17 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
 
+	cmd.PersistentFlags().StringVar(&opt.DockerBinary, "docker-binary", opt.DockerBinary, "deprecated: docker CLI compatible binary to use for pulling and pushing images (this flag has no effect anymore and will be removed in the future)")
+
 	return cmd
 }
 
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
+		if options.DockerBinary != "" {
+			logger.Warn("--docker-binary is deprecated and no longer has any effect; it will be removed with KKP 2.23")
+		}
+
 		if options.Registry == "" {
 			return errors.New("no target registry was passed")
 		}

@@ -72,13 +72,13 @@ import (
 
 const mockNamespaceName = "mock-namespace"
 
-type SourceDestImages struct {
+type ImageSourceDest struct {
 	Source      string
 	Destination string
 }
 
-func GetSourceDestImageList(ctx context.Context, log logrus.FieldLogger, images []string, registry string) ([]SourceDestImages, error) {
-	var retaggedImages []SourceDestImages
+func GetImageSourceDestList(ctx context.Context, log logrus.FieldLogger, images []string, registry string) ([]ImageSourceDest, error) {
+	var retaggedImages []ImageSourceDest
 	for _, image := range images {
 		retaggedImage, err := RewriteImage(log, image, registry)
 		if err != nil {
@@ -91,10 +91,10 @@ func GetSourceDestImageList(ctx context.Context, log logrus.FieldLogger, images 
 	return retaggedImages, nil
 }
 
-func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceDestImages, error) {
+func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (ImageSourceDest, error) {
 	imageRef, err := name.ParseReference(sourceImage)
 	if err != nil {
-		return SourceDestImages{}, fmt.Errorf("failed to parse image: %w", err)
+		return ImageSourceDest{}, fmt.Errorf("failed to parse image: %w", err)
 	}
 
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
@@ -106,7 +106,7 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceD
 			digestLessImage := sourceImage[:index]
 			imageRef, err = name.ParseReference(digestLessImage)
 			if err != nil {
-				return SourceDestImages{}, fmt.Errorf("failed to parse image without digest part: %w", err)
+				return ImageSourceDest{}, fmt.Errorf("failed to parse image without digest part: %w", err)
 			}
 		}
 
@@ -120,13 +120,13 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceD
 
 	log.WithFields(fields).Info("Image found")
 
-	return SourceDestImages{
+	return ImageSourceDest{
 		Source:      sourceImage,
 		Destination: targetImage,
 	}, nil
 }
 
-func CopyImage(ctx context.Context, log logrus.FieldLogger, image SourceDestImages, userAgent string) error {
+func CopyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
 	log = log.WithFields(logrus.Fields{
 		"source-image": image.Source,
 		"target-image": image.Destination,
@@ -229,7 +229,7 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 }
 
 func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
-	imageList, err := GetSourceDestImageList(ctx, log, images, registry)
+	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
 	}
