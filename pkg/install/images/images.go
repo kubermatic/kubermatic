@@ -17,13 +17,19 @@ limitations under the License.
 package images
 
 import (
+	"archive/tar"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/google/go-containerregistry/pkg/crane"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -41,7 +47,6 @@ import (
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/install/images/docker"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
@@ -67,47 +72,179 @@ import (
 
 const mockNamespaceName = "mock-namespace"
 
-func ExtractAddonsFromDockerImage(ctx context.Context, log logrus.FieldLogger, dockerBinary string, imageName string) (string, error) {
-	tempDir, err := os.MkdirTemp("", "imageloader*")
+type ImageSourceDest struct {
+	Source      string
+	Destination string
+}
+
+func GetImageSourceDestList(ctx context.Context, log logrus.FieldLogger, images []string, registry string) ([]ImageSourceDest, error) {
+	var retaggedImages []ImageSourceDest
+	for _, image := range images {
+		retaggedImage, err := RewriteImage(log, image, registry)
+		if err != nil {
+			return nil, fmt.Errorf("failed to rewrite %q: %w", image, err)
+		}
+
+		retaggedImages = append(retaggedImages, retaggedImage)
+	}
+
+	return retaggedImages, nil
+}
+
+func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (ImageSourceDest, error) {
+	imageRef, err := name.ParseReference(sourceImage)
+	if err != nil {
+		return ImageSourceDest{}, fmt.Errorf("failed to parse image: %w", err)
+	}
+
+	targetImage := fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
+
+	// if the image reference includes a digest, we strip the digest from the image name.
+	// since crane.Copy preserves digests, it's enough to keep it in the source image.
+	if _, ok := imageRef.(name.Digest); ok {
+		if index := strings.Index(sourceImage, "@"); index > 0 {
+			digestLessImage := sourceImage[:index]
+			imageRef, err = name.ParseReference(digestLessImage)
+			if err != nil {
+				return ImageSourceDest{}, fmt.Errorf("failed to parse image without digest part: %w", err)
+			}
+		}
+
+		targetImage = fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
+	}
+
+	fields := logrus.Fields{
+		"source-image": sourceImage,
+		"target-image": targetImage,
+	}
+
+	log.WithFields(fields).Info("Image found")
+
+	return ImageSourceDest{
+		Source:      sourceImage,
+		Destination: targetImage,
+	}, nil
+}
+
+func CopyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
+	log = log.WithFields(logrus.Fields{
+		"source-image": image.Source,
+		"target-image": image.Destination,
+	})
+
+	options := []crane.Option{
+		crane.WithContext(ctx),
+		crane.WithUserAgent(userAgent),
+	}
+
+	log.Info("Copying image…")
+
+	return crane.Copy(image.Source, image.Destination, options...)
+}
+
+func ExtractAddons(ctx context.Context, log logrus.FieldLogger, addonImageName string) (string, error) {
+	tempDir, err := os.MkdirTemp("", "kkp-mirror-images-*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %w", err)
 	}
 
+	image, err := crane.Pull(addonImageName, crane.WithContext(ctx))
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch remote image: %w", err)
+	}
+
+	exportFilePath := filepath.Join(tempDir, "image.tar")
+	exportFile, err := os.Create(exportFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create %s: %w", exportFilePath, err)
+	}
+	defer exportFile.Close()
+
 	log.WithFields(logrus.Fields{
-		"image":          imageName,
+		"image":          addonImageName,
 		"temp-directory": tempDir,
-	}).Info("Extracting addon manifests from image…")
+		"export-file":    exportFilePath,
+	}).Debug("Exporting addon image to archive file…")
 
-	if err := docker.DownloadImages(ctx, log, dockerBinary, false, []string{imageName}); err != nil {
-		return tempDir, fmt.Errorf("failed to download addons image: %w", err)
+	if err := crane.Export(image, exportFile); err != nil {
+		return "", fmt.Errorf("failed to export addon image to file: %w", err)
 	}
 
-	if err := docker.Copy(ctx, log, dockerBinary, imageName, tempDir, "/addons"); err != nil {
-		return tempDir, fmt.Errorf("failed to extract addons: %w", err)
+	reader, err := os.Open(exportFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open %s: %w", exportFilePath, err)
+	}
+	defer reader.Close()
+
+	tarReader := tar.NewReader(reader)
+	if err := extractAddonsFromArchive(tempDir, tarReader); err != nil {
+		return "", fmt.Errorf("failed to extract addons from archive: %w", err)
 	}
 
-	return tempDir, nil
+	return filepath.Join(tempDir, "addons"), nil
 }
 
-func ProcessImages(ctx context.Context, log logrus.FieldLogger, dockerBinary string, dryRun bool, images []string, registry string) error {
-	if !dryRun {
-		if err := docker.DownloadImages(ctx, log, dockerBinary, dryRun, images); err != nil {
-			return fmt.Errorf("failed to download all images: %w", err)
+func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
+	for {
+		header, err := reader.Next()
+		if errors.Is(err, io.EOF) {
+			break
 		}
-	}
+		if err != nil {
+			return err
+		}
+		if header == nil {
+			continue
+		}
 
-	retaggedImages, err := docker.RetagImages(ctx, log, dockerBinary, dryRun, images, registry)
-	if err != nil {
-		return fmt.Errorf("failed to re-tag images: %w", err)
-	}
+		path := filepath.Join(dir, header.Name)
 
-	if !dryRun {
-		if err := docker.PushImages(ctx, log, dockerBinary, dryRun, retaggedImages); err != nil {
-			return fmt.Errorf("failed to push images: %w", err)
+		switch header.Typeflag {
+		case tar.TypeDir:
+			// we only want to extract the addons folder and thus we skip
+			// everything else in the image archive.
+			if strings.HasPrefix(header.Name, "addons") {
+				if err = os.MkdirAll(path, 0755); err != nil {
+					return err
+				}
+			}
+		case tar.TypeReg:
+			// we only care about files in the addons folder.
+			if strings.HasPrefix(header.Name, "addons/") {
+				f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+				if err != nil {
+					return err
+				}
+
+				if _, err := io.Copy(f, reader); err != nil {
+					return err
+				}
+
+				f.Close()
+			}
 		}
 	}
 
 	return nil
+}
+
+func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
+	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
+	}
+
+	if !dryRun {
+		for index, image := range imageList {
+			if err := CopyImage(ctx, log, image, userAgent); err != nil {
+				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+			}
+		}
+
+		return len(imageList), len(imageList), nil
+	}
+
+	return 0, len(imageList), nil
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {

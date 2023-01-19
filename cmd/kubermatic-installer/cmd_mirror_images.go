@@ -53,14 +53,14 @@ type MirrorImagesOptions struct {
 	HelmTimeout    time.Duration
 	HelmBinary     string
 
+	// TODO(embik): deprecated, remove with 2.23
 	DockerBinary string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := MirrorImagesOptions{
-		HelmTimeout:  5 * time.Minute,
-		HelmBinary:   "helm",
-		DockerBinary: "docker",
+		HelmTimeout: 5 * time.Minute,
+		HelmBinary:  "helm",
 	}
 
 	cmd := &cobra.Command{
@@ -104,13 +104,17 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
 
-	cmd.PersistentFlags().StringVar(&opt.DockerBinary, "docker-binary", opt.DockerBinary, "docker CLI compatible binary to use for pulling and pushing images")
+	cmd.PersistentFlags().StringVar(&opt.DockerBinary, "docker-binary", opt.DockerBinary, "deprecated: docker CLI compatible binary to use for pulling and pushing images (this flag has no effect anymore and will be removed in the future)")
 
 	return cmd
 }
 
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
+		if options.DockerBinary != "" {
+			logger.Warn("--docker-binary is deprecated and no longer has any effect; it will be removed with KKP 2.23")
+		}
+
 		if options.Registry == "" {
 			return errors.New("no target registry was passed")
 		}
@@ -199,7 +203,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			}
 
 			if addonsImage != "" {
-				tempDir, err := images.ExtractAddonsFromDockerImage(ctx, logger, options.DockerBinary, addonsImage)
+				tempDir, err := images.ExtractAddons(ctx, logger, addonsImage)
 				if err != nil {
 					return fmt.Errorf("failed to create local addons path: %w", err)
 				}
@@ -277,9 +281,19 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			imageSet.Insert(images...)
 		}
 
-		if err := images.ProcessImages(ctx, logger, options.DockerBinary, options.DryRun, imageSet.List(), options.Registry); err != nil {
-			return fmt.Errorf("failed to process images: %w", err)
+		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
+
+		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry, userAgent)
+		if err != nil {
+			return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", copiedCount, fullCount, err)
 		}
+
+		verb := "mirroring"
+		if options.DryRun {
+			verb = "listing"
+		}
+
+		logger.WithFields(logrus.Fields{"copied-image-count": copiedCount, "all-image-count": fullCount}).Info(fmt.Sprintf("✅ Finished %s images.", verb))
 
 		return nil
 	})
