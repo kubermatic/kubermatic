@@ -372,8 +372,13 @@ spec:
       resources: null
       storageClass: ""
       tolerations: null
-    # KonnectivityProxy configures resources limits/requests for konnectivity-server sidecar.
+    # KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
     konnectivityProxy:
+      # KeepaliveTime represents a duration of time to check if the transport is still alive.
+      # The option is propagated to agents and server.
+      # Defaults to 1m.
+      keepaliveTime: ""
+      # Resources configure limits/requests for Konnectivity components.
       resources: null
     # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
     # the `LoadBalancer` expose strategy is used. This is not effective if a different expose

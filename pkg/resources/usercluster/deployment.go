@@ -57,7 +57,7 @@ const name = "usercluster-controller"
 
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
-// This makes importing the the deployment elsewhere (openshift controller)
+// This makes importing the deployment elsewhere (openshift controller)
 // easier as only have to implement the parts that are actually in use.
 type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
@@ -67,6 +67,7 @@ type userclusterControllerData interface {
 	NodeLocalDNSCacheEnabled() bool
 	GetOpenVPNServerPort() (int32, error)
 	GetKonnectivityServerPort() (int32, error)
+	GetKonnectivityKeepAliveTime() string
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
@@ -173,6 +174,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				}
 				args = append(args, "-konnectivity-server-host", kHost)
 				args = append(args, "-konnectivity-server-port", fmt.Sprint(kPort))
+				args = append(args, "-konnectivity-keepalive-time", data.GetKonnectivityKeepAliveTime())
 			} else {
 				openvpnServerPort, err := data.GetOpenVPNServerPort()
 				if err != nil {

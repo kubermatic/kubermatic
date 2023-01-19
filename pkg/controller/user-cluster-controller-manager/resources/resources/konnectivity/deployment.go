@@ -47,8 +47,8 @@ var (
 	}
 )
 
-// DeploymentReconciler returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentReconciler(kServerHost string, kServerPort int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+// DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
+func DeploymentReconciler(kServerHost string, kServerPort int, kKeepaliveTime string, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		const (
 			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
@@ -93,6 +93,7 @@ func DeploymentReconciler(kServerHost string, kServerPort int, imageRewriter reg
 						fmt.Sprintf("--service-account-token-path=/var/run/secrets/tokens/%s", resources.KonnectivityAgentToken),
 						// TODO rastislavs: use "--agent-identifiers=ipv4=$(HOST_IP)" with "--proxy-strategies=destHost,default"
 						// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
+						fmt.Sprintf("--keepalive-time=%s", kKeepaliveTime),
 					},
 					Resources: corev1.ResourceRequirements{},
 					VolumeMounts: []corev1.VolumeMount{

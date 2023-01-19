@@ -100,38 +100,40 @@ func Add(
 	konnectivity bool,
 	konnectivityServerHost string,
 	konnectivityServerPort int,
+	konnectivityKeepaliveTime string,
 	ccmMigration bool,
 	ccmMigrationCompleted bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
-		version:                version,
-		rLock:                  &sync.Mutex{},
-		namespace:              namespace,
-		clusterURL:             clusterURL,
-		clusterIsPaused:        clusterIsPaused,
-		imageRewriter:          registry.GetImageRewriterFunc(overwriteRegistry),
-		openvpnServerPort:      openvpnServerPort,
-		kasSecurePort:          kasSecurePort,
-		tunnelingAgentIP:       tunnelingAgentIP,
-		log:                    log,
-		dnsClusterIP:           dnsClusterIP,
-		nodeLocalDNSCache:      nodeLocalDNSCache,
-		opaIntegration:         opaIntegration,
-		opaEnableMutation:      opaEnableMutation,
-		opaWebhookTimeout:      opaWebhookTimeout,
-		userSSHKeyAgent:        userSSHKeyAgent,
-		networkPolices:         networkPolices,
-		versions:               versions,
-		caBundle:               caBundle,
-		userClusterMLA:         userClusterMLA,
-		cloudProvider:          kubermaticv1.ProviderType(cloudProviderName),
-		clusterName:            clusterName,
-		nutanixCSIEnabled:      nutanixCSIEnabled,
-		isKonnectivityEnabled:  konnectivity,
-		konnectivityServerHost: konnectivityServerHost,
-		konnectivityServerPort: konnectivityServerPort,
-		ccmMigration:           ccmMigration,
-		ccmMigrationCompleted:  ccmMigrationCompleted,
+		version:                   version,
+		rLock:                     &sync.Mutex{},
+		namespace:                 namespace,
+		clusterURL:                clusterURL,
+		clusterIsPaused:           clusterIsPaused,
+		imageRewriter:             registry.GetImageRewriterFunc(overwriteRegistry),
+		openvpnServerPort:         openvpnServerPort,
+		kasSecurePort:             kasSecurePort,
+		tunnelingAgentIP:          tunnelingAgentIP,
+		log:                       log,
+		dnsClusterIP:              dnsClusterIP,
+		nodeLocalDNSCache:         nodeLocalDNSCache,
+		opaIntegration:            opaIntegration,
+		opaEnableMutation:         opaEnableMutation,
+		opaWebhookTimeout:         opaWebhookTimeout,
+		userSSHKeyAgent:           userSSHKeyAgent,
+		networkPolices:            networkPolices,
+		versions:                  versions,
+		caBundle:                  caBundle,
+		userClusterMLA:            userClusterMLA,
+		cloudProvider:             kubermaticv1.ProviderType(cloudProviderName),
+		clusterName:               clusterName,
+		nutanixCSIEnabled:         nutanixCSIEnabled,
+		isKonnectivityEnabled:     konnectivity,
+		konnectivityServerHost:    konnectivityServerHost,
+		konnectivityServerPort:    konnectivityServerPort,
+		konnectivityKeepaliveTime: konnectivityKeepaliveTime,
+		ccmMigration:              ccmMigration,
+		ccmMigrationCompleted:     ccmMigrationCompleted,
 	}
 
 	var err error
@@ -273,35 +275,36 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster.
 type reconciler struct {
 	ctrlruntimeclient.Client
-	seedClient             ctrlruntimeclient.Client
-	version                string
-	clusterSemVer          *semverlib.Version
-	cache                  cache.Cache
-	namespace              string
-	clusterURL             *url.URL
-	clusterIsPaused        userclustercontrollermanager.IsPausedChecker
-	imageRewriter          registry.ImageRewriter
-	openvpnServerPort      uint32
-	kasSecurePort          uint32
-	tunnelingAgentIP       net.IP
-	dnsClusterIP           string
-	nodeLocalDNSCache      bool
-	opaIntegration         bool
-	opaEnableMutation      bool
-	opaWebhookTimeout      int
-	userSSHKeyAgent        bool
-	networkPolices         bool
-	versions               kubermatic.Versions
-	caBundle               resources.CABundle
-	userClusterMLA         UserClusterMLA
-	cloudProvider          kubermaticv1.ProviderType
-	clusterName            string
-	nutanixCSIEnabled      bool
-	isKonnectivityEnabled  bool
-	konnectivityServerHost string
-	konnectivityServerPort int
-	ccmMigration           bool
-	ccmMigrationCompleted  bool
+	seedClient                ctrlruntimeclient.Client
+	version                   string
+	clusterSemVer             *semverlib.Version
+	cache                     cache.Cache
+	namespace                 string
+	clusterURL                *url.URL
+	clusterIsPaused           userclustercontrollermanager.IsPausedChecker
+	imageRewriter             registry.ImageRewriter
+	openvpnServerPort         uint32
+	kasSecurePort             uint32
+	tunnelingAgentIP          net.IP
+	dnsClusterIP              string
+	nodeLocalDNSCache         bool
+	opaIntegration            bool
+	opaEnableMutation         bool
+	opaWebhookTimeout         int
+	userSSHKeyAgent           bool
+	networkPolices            bool
+	versions                  kubermatic.Versions
+	caBundle                  resources.CABundle
+	userClusterMLA            UserClusterMLA
+	cloudProvider             kubermaticv1.ProviderType
+	clusterName               string
+	nutanixCSIEnabled         bool
+	isKonnectivityEnabled     bool
+	konnectivityServerHost    string
+	konnectivityServerPort    int
+	konnectivityKeepaliveTime string
+	ccmMigration              bool
+	ccmMigrationCompleted     bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
