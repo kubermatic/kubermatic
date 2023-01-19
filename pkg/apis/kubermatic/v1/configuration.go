@@ -311,7 +311,7 @@ type SystemApplicationsConfiguration struct {
 	// The value is dockercfg file that follows the same format rules as ~/.docker/config.json
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
-	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
+	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
