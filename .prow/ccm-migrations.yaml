@@ -29,12 +29,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: PROVIDER
               value: openstack
+            - name: VERSION_TO_TEST
+              value: '1.25'
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -68,12 +70,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: PROVIDER
               value: vsphere
+            - name: VERSION_TO_TEST
+              value: '1.25'
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -107,12 +111,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: PROVIDER
               value: azure
+            - name: VERSION_TO_TEST
+              value: '1.25'
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -146,12 +152,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-5
+        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: PROVIDER
               value: aws
+            - name: VERSION_TO_TEST
+              value: '1.25'
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

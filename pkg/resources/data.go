@@ -685,7 +685,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 				featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")
 			}
 		}
-	} else if !ccm && gte23.Check(curVersion.Semver()) {
+	} else if !ccm && gte23.Check(curVersion.Semver()) && lt25.Check(curVersion.Semver()) {
 		// We disable CSIMigration only if Kubernetes version is >= 1.23 and
 		// there's no external CCM.
 		// If there's external CCM, in-tree volumes plugin is not enabled
@@ -696,13 +696,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		case cluster.Spec.Cloud.AWS != nil:
 			featureFlags = append(featureFlags, "CSIMigrationAWS=false")
 		case cluster.Spec.Cloud.GCP != nil:
-			// Starting with Kubernetes 1.25, we deploy the external CSI Driver,
-			// but importantly not the External CCM. For this reason beginning
-			// with 1.25 we do not disabble the CSI migration feature gate anymore
-			// (in fact, in 1.25 it's hardcoded to true anyway).
-			if lt25.Check(curVersion.Semver()) {
-				featureFlags = append(featureFlags, "CSIMigrationGCE=false")
-			}
+			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
 		case cluster.Spec.Cloud.VSphere != nil:
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=false")
 		case cluster.Spec.Cloud.Azure != nil:

@@ -20,7 +20,9 @@ dqreplacement='"{{ Image \1 }}"'
 sqreplacement=$'\'{{ Image "\1" }}\''
 replacement='{{ Image "\1" }}'
 
-for registry in docker.io quay.io public.ecr.aws k8s.gcr.io; do
+sed -i 's/k8s.gcr.io/registry.k8s.io/g' $@
+
+for registry in docker.io quay.io public.ecr.aws registry.k8s.io; do
   sed -i "s/\(\"$registry.*\"\)/$dqreplacement/g" $@
   sed -i "s/\('$registry.*'\)/$sqreplacement/g" $@
 

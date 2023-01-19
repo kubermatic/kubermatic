@@ -127,14 +127,16 @@ func getOSFlags(data *resources.TemplateData) []string {
 func getOSVersion(version semver.Semver) (string, error) {
 	switch version.MajorMinor() {
 	case v122:
-		return "1.22.0", nil
+		return "1.22.2", nil
 	case v123:
 		return "1.23.4", nil
 	case v124:
-		return "1.24.3", nil
+		return "1.24.5", nil
 	case v125:
 		fallthrough
+	case v126:
+		return "1.25.3", nil
 	default:
-		return "1.25.0", nil
+		return "", fmt.Errorf("%v is not yet supported", version)
 	}
 }
