@@ -49,6 +49,14 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 
 			app.Spec.Description = "Cilium CNI - eBPF-based Networking, Security, and Observability"
 			app.Spec.Method = appskubermaticv1.HelmTemplateMethod
+
+			var credentials *appskubermaticv1.HelmCredentials
+			if config.Spec.UserCluster.SystemApplications.HelmRegistryConfigFile != nil {
+				credentials = &appskubermaticv1.HelmCredentials{
+					RegistryConfigFile: config.Spec.UserCluster.SystemApplications.HelmRegistryConfigFile,
+				}
+			}
+
 			app.Spec.Versions = []appskubermaticv1.ApplicationVersion{
 				// NOTE: When introducing a new version, make sure it is:
 				//  - introduced in pkg/cni/version.go with the version string exactly matching the Spec.Versions.Version here
@@ -61,7 +69,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.0-rc4", // TODO (rastislavs): bump to the release version once it is out
 								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository,
-								Credentials:  config.Spec.UserCluster.SystemApplications.HelmCredentials,
+								Credentials:  credentials,
 							},
 						},
 					},

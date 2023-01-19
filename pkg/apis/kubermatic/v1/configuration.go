@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -308,8 +307,11 @@ type KubermaticAddonsConfiguration struct {
 type SystemApplicationsConfiguration struct {
 	// HelmRepository specifies OCI repository containing Helm charts of system Applications.
 	HelmRepository string `json:"helmRepository,omitempty"`
-	// HelmCredentials specifies optional credentials for accessing the Helm repository of system Applications.
-	HelmCredentials *appskubermaticv1.HelmCredentials `json:"helmCredentials,omitempty"`
+	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
+	// The value is dockercfg file that follows the same format rules as ~/.docker/config.json
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
