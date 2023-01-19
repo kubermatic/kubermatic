@@ -20,14 +20,11 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 const (
 	serviceAccountName        = "kubermatic-machine-controller"
 	webhookServiceAccountName = "kubermatic-machine-controller-webhook"
-	webhookRoleName           = "kubermatic:machine-controller-webhook"
-	webhookRoleBindingName    = "kubermatic:machine-controller-webhook"
 )
 
 func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
@@ -39,37 +36,5 @@ func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 func WebhookServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return webhookServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
-	}
-}
-func WebhookRoleReconciler() (string, reconciling.RoleReconciler) {
-	return webhookRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-		r.Rules = []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"operatingsystemmanager.k8c.io"},
-				Resources: []string{"operatingsystemprofiles"},
-				Verbs: []string{
-					"get",
-					"list",
-				},
-			},
-		}
-		return r, nil
-	}
-}
-
-func WebhookRoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
-	return webhookRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-		rb.RoleRef = rbacv1.RoleRef{
-			Name:     webhookRoleName,
-			Kind:     "Role",
-			APIGroup: rbacv1.GroupName,
-		}
-		rb.Subjects = []rbacv1.Subject{
-			{
-				Kind: rbacv1.ServiceAccountKind,
-				Name: webhookServiceAccountName,
-			},
-		}
-		return rb, nil
 	}
 }

@@ -137,11 +137,16 @@ func CloudInitSettingsRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-func MachineDeploymentsClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleReconciler) {
 		return resources.OperatingSystemManagerClusterRoleName,
 			func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 				r.Rules = []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"operatingsystemmanager.k8c.io"},
+						Resources: []string{"operatingsystemprofiles", "operatingsystemconfigs"},
+						Verbs:     []string{"*"},
+					},
 					{
 						APIGroups: []string{"cluster.k8s.io"},
 						Resources: []string{"machinedeployments"},
@@ -151,6 +156,24 @@ func MachineDeploymentsClusterRoleReconciler() reconciling.NamedClusterRoleRecon
 							"watch",
 							"patch",
 							"update",
+						},
+					},
+					{
+						APIGroups: []string{"apps"},
+						Resources: []string{"deployments"},
+						Verbs: []string{
+							"get",
+							"list",
+							"watch",
+						},
+					},
+					{
+						APIGroups: []string{""},
+						Resources: []string{"secrets", "configmaps"},
+						Verbs: []string{
+							"get",
+							"list",
+							"watch",
 						},
 					},
 				}

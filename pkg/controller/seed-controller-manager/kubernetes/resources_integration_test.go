@@ -86,7 +86,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	crdInstallOpts := envtest.CRDInstallOptions{
 		Paths: []string{
 			"../../../../charts/kubermatic-operator/crd/k8s.io",
-			"../../../../charts/kubermatic-operator/crd/operatingsystemmanager.k8c.io",
 			"../../../crd/k8c.io",
 		},
 		ErrorIfPathMissing: true,

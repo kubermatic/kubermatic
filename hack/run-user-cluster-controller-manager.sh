@@ -20,7 +20,7 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
-PPROF_PORT=${PPROF_PORT:-6600}
+PPROF_PORT=${PPROF_PORT:-6601}
 
 echodate "Compiling user-cluster-controller-manager..."
 make user-cluster-controller-manager

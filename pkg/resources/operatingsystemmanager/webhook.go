@@ -270,19 +270,6 @@ func getServingCertVolume() corev1.Volume {
 	}
 }
 
-func getCABundleVolume() corev1.Volume {
-	return corev1.Volume{
-		Name: resources.CABundleConfigMapName,
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: resources.CABundleConfigMapName,
-				},
-			},
-		},
-	}
-}
-
 func getWebhookKubeconfigVolume() corev1.Volume {
 	return corev1.Volume{
 		Name: resources.OperatingSystemManagerWebhookKubeconfigSecretName,

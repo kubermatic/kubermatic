@@ -55,7 +55,7 @@ var (
 const (
 	Name = "operating-system-manager"
 	// TODO: pin to a released version again.
-	Tag = "4f7c5a6873538e922afd70bff41850795657f313"
+	Tag = "08f0a6044b0fa6f8ae40b5b08b292f795c7a2ce9"
 )
 
 type operatingSystemManagerData interface {
@@ -105,7 +105,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 				MatchLabels: resources.BaseAppLabels(Name, nil),
 			}
 
-			volumes := []corev1.Volume{getKubeconfigVolume()}
+			volumes := []corev1.Volume{getKubeconfigVolume(), getCABundleVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
@@ -202,7 +202,12 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.OperatingSystemManagerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/worker-kubeconfig",
+							MountPath: "/etc/kubernetes/kubeconfig",
+							ReadOnly:  true,
+						},
+						{
+							Name:      resources.CABundleConfigMapName,
+							MountPath: "/etc/kubernetes/pki/ca-bundle",
 							ReadOnly:  true,
 						},
 					},
@@ -232,11 +237,12 @@ type clusterSpec struct {
 
 func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool, csiMigrationFeatureGates []string, imagePullSecret *corev1.SecretReference) []string {
 	flags := []string{
-		"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
+		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-cluster-dns", cs.clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
-		"-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
+		"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+		"-namespace", "kube-system",
 	}
 
 	if externalCloudProvider {

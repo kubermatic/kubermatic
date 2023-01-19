@@ -20,89 +20,14 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 const (
 	serviceAccountName = "kubermatic-operating-system-manager"
-	roleName           = "kubermatic:operating-system-manager"
-	roleBindingName    = "kubermatic:operating-system-manager"
 )
 
 func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
-	}
-}
-
-func RoleReconciler() (string, reconciling.RoleReconciler) {
-	return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-		r.Rules = []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"operatingsystemmanager.k8c.io"},
-				Resources: []string{"operatingsystemprofiles", "operatingsystemconfigs"},
-				Verbs:     []string{"*"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"deployments"},
-				Verbs: []string{
-					"get",
-					"list",
-					"watch",
-				},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"events"},
-				Verbs: []string{
-					"create",
-					"patch",
-				},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"configmaps"},
-				Verbs: []string{
-					"create",
-					"update",
-					"list",
-					"get",
-				},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"secrets"},
-				Verbs: []string{
-					"create",
-					"update",
-					"list",
-					"get",
-				},
-			},
-			{
-				APIGroups: []string{"coordination.k8s.io"},
-				Resources: []string{"leases"},
-				Verbs:     []string{"*"},
-			},
-		}
-		return r, nil
-	}
-}
-
-func RoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
-	return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-		rb.RoleRef = rbacv1.RoleRef{
-			Name:     roleName,
-			Kind:     "Role",
-			APIGroup: rbacv1.GroupName,
-		}
-		rb.Subjects = []rbacv1.Subject{
-			{
-				Kind: rbacv1.ServiceAccountKind,
-				Name: serviceAccountName,
-			},
-		}
-		return rb, nil
 	}
 }

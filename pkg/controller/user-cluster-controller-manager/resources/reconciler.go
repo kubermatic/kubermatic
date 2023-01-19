@@ -186,7 +186,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileCRDs(ctx); err != nil {
+	if err := r.reconcileCRDs(ctx, data); err != nil {
 		return err
 	}
 
@@ -572,7 +572,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 	}
 
 	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleReconciler())
+		creators = append(creators, operatingsystemmanager.ClusterRoleReconciler())
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleReconciler())
 	}
 
@@ -622,7 +622,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 	}
 
 	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.MachineDeploymentsClusterRoleBindingReconciler())
+		creators = append(creators, operatingsystemmanager.ClusterRoleBindingReconciler())
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingReconciler())
 	}
 
@@ -632,7 +632,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 	return nil
 }
 
-func (r *reconciler) reconcileCRDs(ctx context.Context) error {
+func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) error {
 	c, err := crd.CRDForObject(&appskubermaticv1.ApplicationInstallation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
@@ -648,6 +648,12 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 		machinecontroller.MachineSetCRDReconciler(),
 		machinecontroller.MachineDeploymentCRDReconciler(),
 		applications.CRDReconciler(c),
+	}
+
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators,
+			operatingsystemmanager.OperatingSystemConfigCRDReconciler(),
+			operatingsystemmanager.OperatingSystemProfileCRDReconciler())
 	}
 
 	if r.opaIntegration {

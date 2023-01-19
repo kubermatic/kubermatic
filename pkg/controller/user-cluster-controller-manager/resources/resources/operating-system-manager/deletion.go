@@ -20,12 +20,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func ResourcesForDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
+		// RBAC
 		&rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.OperatingSystemManagerRoleName,
@@ -58,6 +60,17 @@ func ResourcesForDeletion() []ctrlruntimeclient.Object {
 		&rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: resources.OperatingSystemManagerClusterRoleBindingName,
+			},
+		},
+		// CRDs
+		&apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.OperatingSystemManagerOperatingSystemProfileCRDName,
+			},
+		},
+		&apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.OperatingSystemManagerOperatingSystemConfigCRDName,
 			},
 		},
 	}
