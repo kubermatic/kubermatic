@@ -29,7 +29,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -106,7 +105,13 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceD
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
 	// if the image reference is a digest, we need to format the target image slightly different
 	if _, ok := imageRef.(name.Digest); ok {
-		targetImage = fmt.Sprintf("%s/%s@%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
+		digestLessImage := sourceImage[:strings.Index(sourceImage, "@")]
+		imageRef, err = name.ParseReference(digestLessImage)
+		if err != nil {
+			return SourceDestImages{}, fmt.Errorf("failed to parse image without digest part: %w", err)
+		}
+
+		targetImage = fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
 	}
 
 	fields := logrus.Fields{
@@ -131,36 +136,6 @@ func CopyImage(ctx context.Context, log logrus.FieldLogger, image SourceDestImag
 	options := []crane.Option{
 		crane.WithContext(ctx),
 		crane.WithUserAgent(userAgent),
-	}
-
-	imageRef, err := name.ParseReference(image.Source)
-	if err != nil {
-		return fmt.Errorf("failed to parse image: %w", err)
-	}
-
-	imageDesc, err := remote.Get(imageRef, remote.WithContext(ctx), remote.WithUserAgent(userAgent))
-	if err != nil {
-		return fmt.Errorf("failed to fetch remote image information: %w", err)
-	}
-
-	// some references are a simple image, some are an index of multiple images.
-	// we handle the case of an image index here so we mirror all platforms in a reference.
-	if imageDesc.MediaType.IsIndex() {
-		index, err := imageDesc.ImageIndex()
-		if err != nil {
-			return fmt.Errorf("failed to read image index: %w", err)
-		}
-
-		indexManifest, err := index.IndexManifest()
-		if err != nil {
-			return fmt.Errorf("failed to read image index manifest: %w", err)
-		}
-
-		for _, manifest := range indexManifest.Manifests {
-			if manifest.Platform != nil {
-				options = append(options, crane.WithPlatform(manifest.Platform))
-			}
-		}
 	}
 
 	log.Info("Copying image…")
