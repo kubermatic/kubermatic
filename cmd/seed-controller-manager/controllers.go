@@ -32,7 +32,7 @@ import (
 	clusterphasecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-phase-controller"
 	clusterstuckcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-stuck-controller"
 	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cni-application-installation-controller"
+	cniapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cni-application-installation-controller"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
 	encryptionatrestcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/encryption-at-rest-controller"
@@ -462,6 +462,7 @@ func createClusterStuckController(ctrlCtx *controllerContext) error {
 func createOperatingSystemProfileController(ctrlCtx *controllerContext) error {
 	return operatingsystemprofilesynchronizer.Add(
 		ctrlCtx.mgr,
+		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.namespace,
