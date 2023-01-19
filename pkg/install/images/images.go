@@ -92,19 +92,15 @@ func GetSourceDestImageList(ctx context.Context, log logrus.FieldLogger, images 
 }
 
 func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceDestImages, error) {
-	// TODO(embik): remove/replace this. The containers/image/v5 library does not support both
-	// tag and digest in an image reference, so we're stripping the digest from any image.
-	/*if index := strings.Index(sourceImage, "@"); index >= 0 {
-		sourceImage = sourceImage[:index]
-	}*/
-
 	imageRef, err := name.ParseReference(sourceImage)
 	if err != nil {
 		return SourceDestImages{}, fmt.Errorf("failed to parse image: %w", err)
 	}
 
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
-	// if the image reference is a digest, we need to format the target image slightly different
+
+	// if the image reference includes a digest, we strip the digest from the image name.
+	// since crane.Copy preserves digests, it's enough to keep it in the source image.
 	if _, ok := imageRef.(name.Digest); ok {
 		if index := strings.Index(sourceImage, "@"); index > 0 {
 			digestLessImage := sourceImage[:index]
@@ -213,6 +209,7 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 				}
 			}
 		case tar.TypeReg:
+			// we only care about files in the addons folder.
 			if strings.HasPrefix(header.Name, "addons/") {
 				f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 				if err != nil {
