@@ -276,7 +276,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry, userAgent)
 		if err != nil {
-			return fmt.Errorf("failed to mirror all images (succesfully copied %d/%d): %w", copiedCount, fullCount, err)
+			return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", copiedCount, fullCount, err)
 		}
 
 		verb := "mirroring"
