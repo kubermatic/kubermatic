@@ -19,6 +19,7 @@ package images
 import (
 	"archive/tar"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -105,10 +106,12 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (SourceD
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
 	// if the image reference is a digest, we need to format the target image slightly different
 	if _, ok := imageRef.(name.Digest); ok {
-		digestLessImage := sourceImage[:strings.Index(sourceImage, "@")]
-		imageRef, err = name.ParseReference(digestLessImage)
-		if err != nil {
-			return SourceDestImages{}, fmt.Errorf("failed to parse image without digest part: %w", err)
+		if index := strings.Index(sourceImage, "@"); index > 0 {
+			digestLessImage := sourceImage[:index]
+			imageRef, err = name.ParseReference(digestLessImage)
+			if err != nil {
+				return SourceDestImages{}, fmt.Errorf("failed to parse image without digest part: %w", err)
+			}
 		}
 
 		targetImage = fmt.Sprintf("%s/%s:%s", registry, imageRef.Context().RepositoryStr(), imageRef.Identifier())
@@ -188,7 +191,7 @@ func ExtractAddons(ctx context.Context, log logrus.FieldLogger, addonImageName s
 func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	for {
 		header, err := reader.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
@@ -199,7 +202,6 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 		}
 
 		path := filepath.Join(dir, header.Name)
-		//info := header.FileInfo()
 
 		switch header.Typeflag {
 		case tar.TypeDir:
