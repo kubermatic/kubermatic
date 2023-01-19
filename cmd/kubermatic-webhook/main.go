@@ -44,14 +44,11 @@ import (
 	ipampoolvalidation "k8c.io/kubermatic/v2/pkg/webhook/ipampool/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
-	oscvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemconfig/validation"
-	ospvalidation "k8c.io/kubermatic/v2/pkg/webhook/operatingsystemmanager/operatingsystemprofile/validation"
 	resourcequotavalidation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
 	usersshkeymutation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/mutation"
 	usersshkeyvalidation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/validation"
-	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -215,16 +212,7 @@ func main() {
 	}
 
 	// /////////////////////////////////////////
-	// setup OSM webhooks
-
-	// Setup the validation admission handler for OperatingSystemConfig CRDs
-	oscvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
-
-	// Setup the validation admission handler for OperatingSystemProfile CRDs
-	ospvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
-
-	// /////////////////////////////////////////
-	// setup ApplicationDefinition webhooh
+	// setup ApplicationDefinition webhook
 
 	// Setup the mutation admission handler for ApplicationDefinition CRDs
 	applicationdefinitionmutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
@@ -263,9 +251,6 @@ func addAPIs(dst *runtime.Scheme, log *zap.SugaredLogger) {
 	}
 	if err := clusterv1alpha1.AddToScheme(dst); err != nil {
 		log.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
-	}
-	if err := osmv1alpha1.AddToScheme(dst); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := appskubermaticv1.AddToScheme(dst); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", appskubermaticv1.SchemeGroupVersion), zap.Error(err))
