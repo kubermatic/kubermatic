@@ -65,11 +65,11 @@ func ValidatingSnapshotWebhookConfigurationReconciler(caCert *x509.Certificate, 
 								},
 								APIVersions: []string{
 									"v1",
-									"v1beta1",
 								},
 								Resources: []string{
 									"volumesnapshots",
 									"volumesnapshotcontents",
+									"volumesnapshotclasses",
 								},
 								Scope: &scope,
 							},
