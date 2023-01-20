@@ -137,21 +137,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("operatingsystemprofile", request.NamespacedName.String())
 	log.Debug("Reconciling")
 
-	unstructuredCustomOSP := customOSP
-	if err := r.seedClient.Get(ctx, request.NamespacedName, unstructuredCustomOSP); err != nil {
+	osp := customOSP
+	if err := r.seedClient.Get(ctx, request.NamespacedName, osp); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
 	}
 
-	osp, err := customOSPToOSP(unstructuredCustomOSP)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	// OperatingSystemProfile is marked for deletion.
-	if osp.DeletionTimestamp != nil {
+	if osp.GetDeletionTimestamp() != nil {
 		log.Debug("Deletion timestamp found for operatingSystemProfile")
 		if kuberneteshelper.HasFinalizer(osp, cleanupFinalizer) {
 			if err := r.handleDeletion(ctx, log, osp); err != nil {
@@ -168,7 +163,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	err = r.reconcile(ctx, log, osp)
+	err := r.reconcile(ctx, log, osp)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(osp, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -176,24 +171,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, osp *osmv1alpha1.OperatingSystemProfile) error {
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, osp, cleanupFinalizer); err != nil {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, u *unstructured.Unstructured) error {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, u, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
-	return r.syncAllUserClusters(ctx, log, osp)
+	return r.syncAllUserClusters(ctx, log, u)
 }
 
-func (r *Reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, osp *osmv1alpha1.OperatingSystemProfile) error {
-	err := r.syncAllUserClusters(ctx, log, osp)
+func (r *Reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, u *unstructured.Unstructured) error {
+	err := r.syncAllUserClusters(ctx, log, u)
 	if err != nil {
 		return err
 	}
 
 	// Remove the finalizer
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, osp, cleanupFinalizer)
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, u, cleanupFinalizer)
 }
 
-func (r *Reconciler) syncAllUserClusters(ctx context.Context, log *zap.SugaredLogger, osp *osmv1alpha1.OperatingSystemProfile) error {
+func (r *Reconciler) syncAllUserClusters(ctx context.Context, log *zap.SugaredLogger, u *unstructured.Unstructured) error {
+	osp, err := customOSPToOSP(u)
+	if err != nil {
+		return err
+	}
+
 	clusters := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusters); err != nil {
 		log.Error(err)

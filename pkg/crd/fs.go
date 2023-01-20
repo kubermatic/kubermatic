@@ -37,7 +37,10 @@ import (
 //go:embed k8c.io/*
 var embeddedFS embed.FS
 
-const rootDir = "k8c.io"
+const (
+	rootDir                   = "k8c.io"
+	operatingSystemManagerDir = "operatingsystemmanager.k8c.io"
+)
 
 // Groups returns a list of all known API groups for which CRDs are available.
 func Groups() ([]string, error) {
@@ -45,6 +48,13 @@ func Groups() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	osmEntries, err := embeddedFS.ReadDir(operatingSystemManagerDir)
+	if err != nil {
+		return nil, err
+	}
+
+	entries = append(entries, osmEntries...)
 
 	groups := sets.NewString()
 
