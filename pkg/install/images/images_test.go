@@ -18,13 +18,16 @@ package images
 
 import (
 	"context"
+	"os/exec"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -68,6 +71,42 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	}
 
 	if _, _, err := ProcessImages(context.Background(), log, true, imageSet.List(), "test-registry:5000", "kubermatic-installer/test"); err != nil {
+		t.Errorf("Error calling processImages: %v", err)
+	}
+}
+
+func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
+	log := logrus.New()
+
+	helmBinary, err := exec.LookPath("helm")
+	if err != nil {
+		t.Skip("Skipping test due to missing helm binary")
+	}
+
+	helmClient, err := helm.NewCLI(helmBinary, "", "", 5*time.Minute, log)
+	if err != nil {
+		t.Errorf("failed to create Helm client: %v", err)
+	}
+
+	config, err := defaulting.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
+	if err != nil {
+		t.Errorf("failed to determine versions: %v", err)
+	}
+
+	var images []string
+	chartImages, err := GetImagesForHelmCharts(context.Background(), log, config, helmClient, "../../../charts/monitoring", "", "")
+	if err != nil {
+		t.Errorf("error calling GetImagesForHelmCharts: %v", err)
+	}
+	images = append(images, chartImages...)
+
+	appImages, err := GetImagesFromSystemApplicationDefinitions(log, config, helmClient, 5*time.Minute, "")
+	if err != nil {
+		t.Errorf("Error calling GetImagesFromSystemApplicationDefinitions: %v", err)
+	}
+	images = append(images, appImages...)
+
+	if _, _, err := ProcessImages(context.Background(), log, true, images, "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }

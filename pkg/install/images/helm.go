@@ -46,48 +46,67 @@ func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config 
 	}
 
 	images := []string{}
+	for _, chartPath := range chartPaths {
+		chartImages, err := GetImagesForHelmChart(log, config, helmClient, chartPath, valuesFile, registryPrefix)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get images for Helm chart: %w", err)
+		}
+		images = append(images, chartImages...)
+	}
+
+	return images, nil
+}
+
+func GetImagesForHelmChart(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartPath string, valuesFile string, registryPrefix string) ([]string, error) {
+	images := []string{}
 	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
 
-	for _, chartPath := range chartPaths {
-		chartName := filepath.Base(chartPath)
-		chartLog := log.WithFields(logrus.Fields{
-			"path":  chartPath,
-			"chart": chartName,
-		})
+	chartName := filepath.Base(chartPath)
+	chartLog := log.WithFields(logrus.Fields{
+		"path":  chartPath,
+		"chart": chartName,
+	})
 
-		// do not render the Kubermatic chart again, if a Kubermatic configuration
-		// is given; in this case, the operator is used and we determine the images
-		// used via the static creators in Go code.
-		if config != nil && chartName == "kubermatic" {
-			chartLog.Debug("Skipping chart because KubermaticConfiguration was given")
-			continue
-		}
+	// do not render the Kubermatic chart again, if a Kubermatic configuration
+	// is given; in this case, the operator is used and we determine the images
+	// used via the static creators in Go code.
+	if config != nil && chartName == "kubermatic" {
+		chartLog.Debug("Skipping chart because KubermaticConfiguration was given")
+		return nil, nil
+	}
 
+	// fetch dependencies only for charts in folders.
+	// Chart packages (i.e. the tgz) should already contain them.
+	chartFI, err := os.Stat(chartPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat chart path: %w", err)
+	}
+	if chartFI.IsDir() {
 		chartLog.Debug("Fetching chart dependencies…")
 		if err := helmClient.BuildChartDependencies(chartPath, nil); err != nil {
 			return nil, fmt.Errorf("failed to download chart dependencies: %w", err)
 		}
+	}
 
-		chartLog.Debug("Rendering chart…")
+	chartLog.Debug("Rendering chart…")
 
-		rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil)
+	rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render Helm chart %q: %w", chartName, err)
+	}
+
+	manifests, err := yamlutil.ParseMultipleDocuments(bytes.NewReader(rendered))
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode YAML: %w", err)
+	}
+
+	for _, manifest := range manifests {
+		manifestImages, err := getImagesFromManifest(log, serializer, manifest.Raw)
 		if err != nil {
-			return nil, fmt.Errorf("failed to render Helm chart %q: %w", chartName, err)
+			return nil, fmt.Errorf("failed to parse manifests: %w", err)
 		}
 
-		manifests, err := yamlutil.ParseMultipleDocuments(bytes.NewReader(rendered))
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode YAML: %w", err)
-		}
-
-		for _, manifest := range manifests {
-			manifestImages, err := getImagesFromManifest(log, serializer, manifest.Raw)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse manifests: %w", err)
-			}
-
-			images = append(images, manifestImages...)
-		}
+		images = append(images, manifestImages...)
 	}
 
 	if registryPrefix != "" {
