@@ -48,6 +48,7 @@ const (
 	parametersField      = "parameters"
 	matchField           = "match"
 	rawJsonField         = "rawJSON"
+	enforcementAction    = "enforcementAction"
 )
 
 type reconciler struct {
@@ -186,6 +187,13 @@ func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconcilin
 			err = unstructured.SetNestedField(u.Object, matchMap, spec, matchField)
 			if err != nil {
 				return nil, fmt.Errorf("error setting constraint nested spec: %w", err)
+			}
+
+			// set EnforcementAction
+			if len(constraint.Spec.EnforcementAction) > 0 {
+				if err := unstructured.SetNestedField(u.Object, constraint.Spec.EnforcementAction, spec, enforcementAction); err != nil {
+					return nil, fmt.Errorf("error setting constraint nested EnforcementAction: %w", err)
+				}
 			}
 
 			return u, nil

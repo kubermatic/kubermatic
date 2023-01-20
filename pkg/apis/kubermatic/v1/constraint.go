@@ -70,6 +70,10 @@ type ConstraintSpec struct {
 	Parameters Parameters `json:"parameters,omitempty"`
 	// Selector specifies the cluster selection filters
 	Selector ConstraintSelector `json:"selector,omitempty"`
+
+	// EnforcementAction defines the action to take in response to a constraint being violated.
+	// By default, EnforcementAction is set to deny as the default behavior is to deny admission requests with any violation.
+	EnforcementAction string `json:"enforcementAction,omitempty"`
 }
 
 type Parameters map[string]json.RawMessage
