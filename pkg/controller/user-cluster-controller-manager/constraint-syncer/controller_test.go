@@ -201,6 +201,33 @@ func TestReconcile(t *testing.T) {
 				}).
 				Build(),
 		},
+		{
+			name: "scenario 7: sync constraint to user cluster with enforcement Action defined",
+			namespacedName: types.NamespacedName{
+				Namespace: "namespace",
+				Name:      constraintName,
+			},
+			expectedConstraint: func() apiv2.Constraint {
+				constraint := generator.GenDefaultAPIConstraint(constraintName, kind)
+				constraint.Spec.EnforcementAction = "deny"
+				return constraint
+			}(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(
+					func() *kubermaticv1.Constraint {
+						constraint := generator.GenConstraint(constraintName, "namespace", kind)
+						constraint.Spec.EnforcementAction = "deny"
+						return constraint
+					}(),
+				).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				Build(),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -279,6 +306,18 @@ func TestReconcile(t *testing.T) {
 
 			if reqLabel.GetName() != tc.expectedConstraint.Name {
 				t.Fatalf("Expected name %q, got %q", tc.expectedConstraint.Name, reqLabel.GetName())
+			}
+
+			// Check EnforcementAction is set with expected value
+			resultEnforcementAction, found, err := unstructured.NestedFieldNoCopy(reqLabel.Object, spec, enforcementAction)
+			if err != nil {
+				t.Fatalf("failed to get nested enforcementAction field: %v", err)
+			}
+			if !found {
+				resultEnforcementAction = ""
+			}
+			if tc.expectedConstraint.Spec.EnforcementAction != resultEnforcementAction {
+				t.Fatalf("Expected .spec.enforcementAction '%s', got '%s'", tc.expectedConstraint.Spec.EnforcementAction, resultEnforcementAction)
 			}
 		})
 	}

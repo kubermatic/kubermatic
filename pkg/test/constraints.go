@@ -82,8 +82,9 @@ type UniqueLabelList struct {
 }
 
 type ConstraintSpec struct {
-	Match      kubermaticv1.Match     `json:"match,omitempty"`
-	Parameters map[string]interface{} `json:"parameters,omitempty"`
+	Match             kubermaticv1.Match     `json:"match,omitempty"`
+	Parameters        map[string]interface{} `json:"parameters,omitempty"`
+	EnforcementAction string                 `json:"enforcementAction,omitempty"`
 }
 
 type ConstraintStatus struct {
