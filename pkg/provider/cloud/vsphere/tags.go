@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+Copyright 2023 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kuber
 		clusterTags = cluster.Spec.Cloud.VSphere.Tags
 		defaultTag  = &kubermaticv1.VSphereTag{
 			Name:       controllerOwnershipTag(cluster.Name),
-			CategoryID: cluster.Spec.Cloud.VSphere.TagCategory.TagCategoryID,
+			CategoryID: cluster.Spec.Cloud.VSphere.TagCategory.ID,
 		}
 	)
 
@@ -44,7 +44,7 @@ func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kuber
 	}
 
 	tagManager := vapitags.NewManager(restSession.Client)
-	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.TagCategoryID)
+	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tag %w", err)
 	}

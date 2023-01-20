@@ -942,11 +942,11 @@ spec:
                         tagCategory:
                           description: TagCategory is the vSphere tag category that is owned by KKP. It is really important to note that, if the user set this field manually, KKP will claim this category as it's own, thus if the cluster has been deleted, the category and it is all underlying tags will be deleted as well.
                           properties:
-                            tagCategoryID:
-                              description: TagCategoryID represents the category id for the machine deployment tags.
+                            id:
+                              description: ID represents the category id for the machine deployment tags.
                               type: string
-                            tagCategoryName:
-                              description: TagCategoryName represents the name of vSphere tag category that will be used to create and attach tags on VMS.
+                            name:
+                              description: Name represents the name of vSphere tag category that will be used to create and attach tags on VMS.
                               type: string
                           type: object
                         tags:

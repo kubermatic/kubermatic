@@ -1038,13 +1038,13 @@ type VSphereCloudSpec struct {
 	Tags map[string]*VSphereTag `json:"tags,omitempty"`
 }
 
-// TagCategory is the tag category that is pwned by KKP, where it is used to define KKP created tags, such as resources
+// TagCategory is the tag category that is owned by KKP, where it is used to define KKP created tags, such as resources
 // ownership tag, where this tag is applied on any vSphere resource that is created by KKP.
 type TagCategory struct {
-	// TagCategoryName represents the name of vSphere tag category that will be used to create and attach tags on VMS.
-	TagCategoryName string `json:"tagCategoryName,omitempty"`
-	// TagCategoryID represents the category id for the machine deployment tags.
-	TagCategoryID string `json:"tagCategoryID,omitempty"`
+	// Name represents the name of vSphere tag category that will be used to create and attach tags on VMS.
+	Name string `json:"name,omitempty"`
+	// ID represents the category id for the machine deployment tags.
+	ID string `json:"id,omitempty"`
 }
 
 // VSphereTag represents the tags that are attached or created on the cluster level, that are then propagated down to the

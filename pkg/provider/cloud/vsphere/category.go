@@ -42,8 +42,8 @@ func reconcileTagCategory(ctx context.Context, restSession *RESTSession, cluster
 			}
 
 			updatedCluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
-				TagCategoryName: defaultCategory,
-				TagCategoryID:   categoryID,
+				Name: defaultCategory,
+				ID:   categoryID,
 			}
 		})
 		if err != nil {
@@ -63,8 +63,8 @@ func reconcileTagCategory(ctx context.Context, restSession *RESTSession, cluster
 			kuberneteshelper.AddFinalizer(cluster, tagCategoryCleanupFinilizer)
 		}
 		cluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
-			TagCategoryName: defaultCategory,
-			TagCategoryID:   categoryID,
+			Name: defaultCategory,
+			ID:   categoryID,
 		}
 	})
 	if err != nil {

@@ -127,7 +127,7 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 func (v *VSphere) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.ClusterSpec) error {
 	if spec.Cloud.VSphere.TagCategory == nil {
 		spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
-			TagCategoryID: v.dc.DefaultTagCategoryID,
+			ID: v.dc.DefaultTagCategoryID,
 		}
 	}
 
@@ -187,16 +187,16 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 		}
 		defer restSession.Logout(ctx)
 
-		if tagCategory.TagCategoryID != "" {
+		if tagCategory.ID != "" {
 			tagManager := tags.NewManager(restSession.Client)
-			if _, err := tagManager.GetCategory(ctx, tagCategory.TagCategoryID); err != nil {
+			if _, err := tagManager.GetCategory(ctx, tagCategory.ID); err != nil {
 				return fmt.Errorf("failed to get tag categories %w", err)
 			}
 		}
 
-		if tagCategory.TagCategoryName != "" {
+		if tagCategory.Name != "" {
 			tagManager := tags.NewManager(restSession.Client)
-			if _, err := tagManager.GetCategory(ctx, tagCategory.TagCategoryName); err != nil {
+			if _, err := tagManager.GetCategory(ctx, tagCategory.Name); err != nil {
 				return fmt.Errorf("failed to get tag categories %w", err)
 			}
 		}
