@@ -37,7 +37,7 @@ apt install time -y
 
 if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
   echodate "Logging into Quay"
-  docker ps > /dev/null 2>&1 || start-docker.sh
+  start_docker_daemon_ci
   retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
   retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
   echodate "Successfully logged into Quay"
