@@ -277,11 +277,6 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 		return err
 	}
 
-	// install OSM CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "operatingsystemmanager.k8c.io"), nil, crd.MasterCluster); err != nil {
-		return err
-	}
-
 	return nil
 }
 

@@ -118,7 +118,7 @@ func CloudInitSettingsRoleBindingReconciler() reconciling.NamedRoleBindingReconc
 	}
 }
 
-func MachineDeploymentsClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
+func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resources.OperatingSystemManagerClusterRoleBindingName,
 			func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

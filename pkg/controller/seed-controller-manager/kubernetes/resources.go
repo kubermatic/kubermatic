@@ -538,11 +538,6 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedRoleReconcilerFactorys := []reconciling.NamedRoleReconcilerFactory{
 		usercluster.RoleReconciler,
-		machinecontroller.WebhookRoleReconciler,
-	}
-
-	if c.Spec.IsOperatingSystemManagerEnabled() {
-		namedRoleReconcilerFactorys = append(namedRoleReconcilerFactorys, operatingsystemmanager.RoleReconciler)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -559,13 +554,8 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedRoleBindingReconcilerFactorys := []reconciling.NamedRoleBindingReconcilerFactory{
 		usercluster.RoleBindingReconciler,
-		machinecontroller.WebhookRoleBindingReconciler,
 	}
 	namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, csi.RoleBindingsReconcilers(c)...)
-
-	if c.Spec.IsOperatingSystemManagerEnabled() {
-		namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, operatingsystemmanager.RoleBindingReconciler)
-	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, nodeportproxy.RoleBindingReconciler)

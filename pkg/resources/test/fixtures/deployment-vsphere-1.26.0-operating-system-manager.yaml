@@ -36,7 +36,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/osm-controller","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","cluster-de-test-01"]}'
+        - '{"command":"/usr/local/bin/osm-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","kube-system"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -52,7 +52,7 @@ spec:
             secretKeyRef:
               key: password
               name: cloud-credentials
-        image: quay.io/kubermatic/operating-system-manager:4f7c5a6873538e922afd70bff41850795657f313
+        image: quay.io/kubermatic/operating-system-manager:9ccc36e23e0c912fc770e319e030e35c3f7ce8c3
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -82,7 +82,7 @@ spec:
             cpu: 50m
             memory: 128Mi
         volumeMounts:
-        - mountPath: /etc/kubernetes/worker-kubeconfig
+        - mountPath: /etc/kubernetes/kubeconfig
           name: operatingsystemmanager-kubeconfig
           readOnly: true
         - mountPath: /http-prober-bin

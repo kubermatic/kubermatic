@@ -55,7 +55,7 @@ var (
 const (
 	Name = "operating-system-manager"
 	// TODO: pin to a released version again.
-	Tag = "4f7c5a6873538e922afd70bff41850795657f313"
+	Tag = "9ccc36e23e0c912fc770e319e030e35c3f7ce8c3"
 )
 
 type operatingSystemManagerData interface {
@@ -164,6 +164,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 			if t := data.OperatingSystemManagerImageTag(); t != "" {
 				tag = t
 			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
@@ -202,7 +203,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.OperatingSystemManagerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/worker-kubeconfig",
+							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
 					},
@@ -232,11 +233,11 @@ type clusterSpec struct {
 
 func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool, csiMigrationFeatureGates []string, imagePullSecret *corev1.SecretReference) []string {
 	flags := []string{
-		"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
+		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-cluster-dns", cs.clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
-		"-namespace", fmt.Sprintf("%s-%s", "cluster", cs.Name),
+		"-namespace", "kube-system",
 	}
 
 	if externalCloudProvider {

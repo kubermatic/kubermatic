@@ -464,8 +464,13 @@ const (
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
-	// MachineControllerMutatingWebhookConfigurationName is the name of OSM's mutating webhook configuration.
+
+	// OperatingSystemManagerMutatingWebhookConfigurationName is the name of OSM's mutating webhook configuration.
 	OperatingSystemManagerMutatingWebhookConfigurationName = "operating-system-manager.kubermatic.io"
+	// OperatingSystemManagerOperatingSystemProfileCRDName defines the CRD name for OSM operatingSysatemProfile objects.
+	OperatingSystemManagerOperatingSystemProfileCRDName = "operatingsystemprofiles.operatingsystemmanager.k8c.io"
+	// OperatingSystemManagerOperatingSystemConfigCRDName defines the CRD name for OSM operatingSystemConfig objects.
+	OperatingSystemManagerOperatingSystemConfigCRDName = "operatingsystemconfigs.operatingsystemmanager.k8c.io"
 
 	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
 	// configuration.
