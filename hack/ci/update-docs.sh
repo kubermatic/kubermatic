@@ -63,7 +63,7 @@ hack/render-crds.sh
 
 # update components page
 components_file=content/kubermatic/main/architecture/compatibility/KKP-components-versioning/_index.en.md
-echo > ${components_file} <<EOT
+cat > ${components_file} <<EOT
 +++
 title = "KKP Components"
 date = 2021-04-13T20:07:15+02:00
@@ -79,7 +79,7 @@ The following list is only eligible for the version that is currently available.
 | ----------------------------- | ---------------------------- |
 EOT
 
-for filepath in $(find charts -name Chart.yaml | sort); do echo "| $(echo ${filepath} | sed -e 's/^charts\///g' -e 's/\/Chart\.yaml$//g') | $(yq '.appVersion' ${filepath} | sed -e 's/^v//g') |" >> ${components_file}; done
+for filepath in $(find charts -name Chart.yaml | sort); do echo "| $(echo ${filepath} | sed -e 's/^\.\.\/charts\///g' -e 's/\/Chart\.yaml$//g') | $(yq '.appVersion' ${filepath} | sed -e 's/^v//g') |" >> ${components_file}; done
 
 # update repo
 git add .
