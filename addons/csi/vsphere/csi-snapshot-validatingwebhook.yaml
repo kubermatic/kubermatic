@@ -13,18 +13,48 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://raw.githubusercontent.com/kubernetes-sigs/vsphere-csi-driver/release-2.5/manifests/vanilla/csi-snapshot-validatingwebhook.yaml
+# - https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v2.7.0/manifests/vanilla/csi-snapshot-validatingwebhook.yaml
 # Modifications:
 #   - template function to replace base registry
+#   - change image domain to registry.k8s.io
 #   - remove ValidatingWebhookConfiguration (handled in code)
 #   - change webhook-certs secret name
 #   - add seccomp profile
+#   - add serviceAccountName: snapshot-webhook
+#   - add service account and role
 
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: snapshot-webhook
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-webhook-runner
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotclasses"]
+    verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-webhook-role
+subjects:
+  - kind: ServiceAccount
+    name: snapshot-webhook
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: snapshot-webhook-runner
+  apiGroup: rbac.authorization.k8s.io
 
-# Requires k8s 1.20+
 ---
 apiVersion: v1
 kind: Service
@@ -56,12 +86,13 @@ spec:
       labels:
         app: snapshot-validation
     spec:
+      serviceAccountName: snapshot-webhook
       securityContext:
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: snapshot-validation
-          image: {{ Image "registry.k8s.io/sig-storage/snapshot-validation-webhook:v5.0.1" }} # change the image if you wish to use your own custom validation server image
+          image: {{ Image "registry.k8s.io/sig-storage/snapshot-validation-webhook:v6.0.1" }} # change the image if you wish to use your own custom validation server image
           imagePullPolicy: IfNotPresent
           args: ['--tls-cert-file=/run/secrets/tls/cert.pem', '--tls-private-key-file=/run/secrets/tls/key.pem']
           ports:
@@ -74,6 +105,5 @@ spec:
         - name: webhook-certs
           secret:
             secretName: csi-snapshot-webhook-certs
-
 {{ end }}
 {{ end }}
