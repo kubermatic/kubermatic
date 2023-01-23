@@ -63,7 +63,7 @@ hack/render-crds.sh
 
 # update components page
 components_file=content/kubermatic/main/architecture/compatibility/KKP-components-versioning/_index.en.md
-cat > ${components_file} <<EOT
+cat > ${components_file} << EOT
 +++
 title = "KKP Components"
 date = 2021-04-13T20:07:15+02:00
