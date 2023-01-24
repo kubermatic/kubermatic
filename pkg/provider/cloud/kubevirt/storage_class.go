@@ -50,7 +50,7 @@ func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient
 	if err != nil {
 		return err
 	}
-	existingInfraStorageClassSet := make(sets.String, len(infraStorageClassList))
+	existingInfraStorageClassSet := make(sets.Set[string], len(infraStorageClassList))
 	for _, isc := range infraStorageClassList {
 		existingInfraStorageClassSet.Insert(isc.Name)
 	}

@@ -59,7 +59,7 @@ type MachineJig struct {
 	replicas          int
 	osSpec            interface{}
 	cloudProviderSpec interface{}
-	sshPubKeys        sets.String
+	sshPubKeys        sets.Set[string]
 	networkConfig     *providerconfig.NetworkConfig
 	clusterClient     ctrlruntimeclient.Client
 }
@@ -72,7 +72,7 @@ func NewMachineJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger, clus
 		name:       "e2e-workers",
 		osSpec:     ubuntu.Config{},
 		replicas:   1,
-		sshPubKeys: sets.NewString(),
+		sshPubKeys: sets.New[string](),
 	}
 }
 
