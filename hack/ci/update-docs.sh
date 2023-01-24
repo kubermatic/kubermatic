@@ -73,7 +73,8 @@ weight = 2
 
 ## Kubermatic Kubernetes Platform Components
 
-The following list is only eligible for the version that is currently available. Kubermatic has a strong emphasis on the security and reliability of the provided software and releases updates regularly that also update components.
+The following list is only applicable for the KKP version that is currently available. Kubermatic has a strong emphasis on security and reliability
+of provided software and therefore releases updates regularly that also include component updates.
 
 | KKP Components                | Version                      |
 | ----------------------------- | ---------------------------- |
