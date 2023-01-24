@@ -56,7 +56,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stretchr/testify v1.8.1
-	github.com/vishvananda/netlink v1.1.1-0.20220125195016-0639e7e787ba
+	github.com/vishvananda/netlink v1.2.1-beta.2
 	github.com/vmware/go-vcloud-director/v2 v2.18.0
 	github.com/vmware/govmomi v0.30.0
 	go.anx.io/go-anxcloud v0.5.0
