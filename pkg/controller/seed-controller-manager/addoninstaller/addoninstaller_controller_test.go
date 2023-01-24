@@ -19,6 +19,7 @@ package addoninstaller
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -121,6 +122,10 @@ func TestCreateAddon(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(test.cluster).
+				WithIndex(&kubermaticv1.Addon{}, addonDefaultKey, func(rawObj ctrlruntimeclient.Object) []string {
+					a := rawObj.(*kubermaticv1.Addon)
+					return []string{strconv.FormatBool(a.Spec.IsDefault)}
+				}).
 				Build()
 
 			config := createKubermaticConfiguration(addons)
@@ -347,7 +352,13 @@ func TestUpdateAddon(t *testing.T) {
 				objs = append(objs, a)
 			}
 
-			client := ctrlruntimefakeclient.NewClientBuilder().WithObjects(objs...).Build()
+			client := ctrlruntimefakeclient.NewClientBuilder().
+				WithObjects(objs...).
+				WithIndex(&kubermaticv1.Addon{}, addonDefaultKey, func(rawObj ctrlruntimeclient.Object) []string {
+					a := rawObj.(*kubermaticv1.Addon)
+					return []string{strconv.FormatBool(a.Spec.IsDefault)}
+				}).
+				Build()
 
 			config := createKubermaticConfiguration(addons)
 			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(config)

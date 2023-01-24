@@ -343,6 +343,13 @@ func TestSync(t *testing.T) {
 			client := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(test.resources...).
+				WithIndex(&corev1.Service{}, nodeportproxy.DefaultExposeAnnotationKey, func(raw ctrlruntimeclient.Object) []string {
+					svc := raw.(*corev1.Service)
+					if isExposed(svc, nodeportproxy.DefaultExposeAnnotationKey) {
+						return []string{"true"}
+					}
+					return nil
+				}).
 				Build()
 			c, _, _ := NewReconciler(
 				ctx,
