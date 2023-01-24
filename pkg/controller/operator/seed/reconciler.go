@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
+	osmmigration "k8c.io/kubermatic/v2/pkg/util/migration"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -48,6 +49,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -286,6 +288,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	if err := r.reconcileCRDs(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
+
+	if err := r.migrationForOSM(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
 
@@ -668,4 +674,24 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	}
 
 	return nil
+}
+
+func (r *Reconciler) migrationForOSM(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("migration for OSM")
+
+	// We aggregate errors to ensure that we don't early exist and try to migrate as much as possible.
+	var errs []error
+	ospCRDExists, err := osmmigration.IsOperatingSystemProfileInstalled(ctx, client)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Unable to check for OperatingSystemProfile CRD: %w", err))
+	}
+
+	if ospCRDExists {
+		err := osmmigration.ConvertOSPsToCustomOSPs(ctx, client, r.namespace)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("Failed to convert OSPs to Custom OSPs: %w", err))
+		}
+	}
+
+	return kerrors.NewAggregate(errs)
 }

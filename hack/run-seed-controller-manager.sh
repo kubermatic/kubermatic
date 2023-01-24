@@ -60,7 +60,6 @@ if [ -z "${CA_BUNDLE:-}" ]; then
   CA_BUNDLE=charts/kubermatic-operator/static/ca-bundle.pem
 fi
 
-
 echodate "Starting seed-controller-manager..."
 set -x
 ./_build/seed-controller-manager $CTRL_EXTRA_ARGS \
