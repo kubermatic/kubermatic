@@ -61,6 +61,35 @@ make runbook
 # update CRDs reference
 hack/render-crds.sh
 
+# update components page
+components_file=content/kubermatic/main/architecture/compatibility/KKP-components-versioning/_index.en.md
+cat > ${components_file} << EOT
++++
+title = "KKP Components"
+date = 2021-04-13T20:07:15+02:00
+weight = 2
+
++++
+
+## Kubermatic Kubernetes Platform Components
+
+The following list is only applicable for the KKP version that is currently available. Kubermatic has a strong emphasis on security and reliability
+of provided software and therefore releases updates regularly that also include component updates.
+
+| KKP Components                | Version                      |
+| ----------------------------- | ---------------------------- |
+EOT
+
+# iterate over all charts to extract version information
+for filepath in $(find charts -name Chart.yaml | sort); do
+  # extract chart name by removing a "../charts/" prefix from the directory path
+  chart_name=$(dirname ${filepath} | sed -e 's/^\.\.\/charts\///g')
+  # read appVersion from Chart.yaml and normalize version format by removing a "v" prefix
+  app_version=$(yq '.appVersion' ${filepath} | sed -e 's/^v//g/')
+  # append information to components markdown file
+  echo "| ${chart_name} | ${app_version} |" >> ${components_file}
+done
+
 # update repo
 git add .
 
