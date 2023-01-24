@@ -1026,8 +1026,38 @@ type VSphereCloudSpec struct {
 	// This user will be used for everything except cloud provider functionality
 	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`
 
-	// This is category for the machine deployment tags
-	TagCategoryID string `json:"tagCategoryID,omitempty"`
+	// TagCategory is the vSphere tag category that is owned by KKP. It is really important to note that, if the user set
+	// this field manually, KKP will claim this category as it's own, thus if the cluster has been deleted, the category
+	// and it is all underlying tags will be deleted as well.
+	// +optional
+	TagCategory *TagCategory `json:"tagCategory,omitempty"`
+
+	// Tags represent the tags that are attached or created on the cluster level and propagated to MachineDeployment
+	// level afterwards.
+	// +optional
+	Tags map[string]*VSphereTag `json:"tags,omitempty"`
+}
+
+// TagCategory is the tag category that is owned by KKP, where it is used to define KKP created tags, such as resources
+// ownership tag, where this tag is applied on any vSphere resource that is created by KKP.
+type TagCategory struct {
+	// Name represents the name of vSphere tag category that will be used to create and attach tags on VMS.
+	Name string `json:"name,omitempty"`
+	// ID represents the category id for the machine deployment tags.
+	ID string `json:"id,omitempty"`
+}
+
+// VSphereTag represents the tags that are attached or created on the cluster level, that are then propagated down to the
+// MachineDeployments. In order to attach tags on MachineDeployment, users must create the tag on a cluster level first
+// then attach that tag on the MachineDeployment.
+type VSphereTag struct {
+	// ID represents the generated vsphere tag id.
+	ID string `json:"id,omitempty"`
+	// Name represents the name of the created tag.
+	Name string `json:"name"`
+	// CategoryID is the id of the vsphere category that the tag belongs to. If the category id is left empty, the default
+	// category id for the cluster will be used.
+	CategoryID string `json:"categoryID"`
 }
 
 // VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.

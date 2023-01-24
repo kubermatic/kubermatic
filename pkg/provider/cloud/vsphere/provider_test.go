@@ -130,7 +130,7 @@ func TestGetCredentialsForCluster(t *testing.T) {
 					t.Errorf("panic in test %q: %v", tc.name, r)
 				}
 			}()
-			user, password, err := GetCredentialsForCluster(tc.cloudspec, tc.secretKeySelector, tc.dc)
+			user, password, err := getCredentialsForCluster(tc.cloudspec, tc.secretKeySelector, tc.dc)
 			if (tc.expectedError == "" && err != nil) || (tc.expectedError != "" && err == nil) {
 				t.Fatalf("Expected error %q, got error %v", tc.expectedError, err)
 			}
@@ -291,11 +291,11 @@ func TestProviderValidateCloudSpec(t *testing.T) {
 			sim.setUp()
 			defer sim.tearDown()
 			sim.fillClientInfo(tt.dc)
-			v := &Provider{
+			v := &VSphere{
 				dc: tt.dc,
 			}
 			if err := v.ValidateCloudSpec(context.Background(), tt.spec); (err != nil) != tt.wantErr {
-				t.Errorf("Provider.ValidateCloudSpec() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("VSphere.ValidateCloudSpec() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
