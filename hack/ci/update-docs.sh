@@ -81,7 +81,7 @@ of provided software and therefore releases updates regularly that also include 
 EOT
 
 # iterate over all charts to extract version information
-for filepath in $(find charts -name Chart.yaml | sort); do
+for filepath in $(find ../charts -name Chart.yaml | sort); do
   # extract chart name by removing a "../charts/" prefix from the directory path
   chart_name=$(dirname ${filepath} | sed -e 's/^\.\.\/charts\///g')
   # read appVersion from Chart.yaml and normalize version format by removing a "v" prefix
