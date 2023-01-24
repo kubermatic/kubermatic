@@ -85,7 +85,7 @@ for filepath in $(find ../charts -name Chart.yaml | sort); do
   # extract chart name by removing a "../charts/" prefix from the directory path
   chart_name=$(dirname ${filepath} | sed -e 's/^\.\.\/charts\///g')
   # read appVersion from Chart.yaml and normalize version format by removing a "v" prefix
-  app_version=$(yq '.appVersion' ${filepath} | sed -e 's/^v//g/')
+  app_version=$(yq '.appVersion' ${filepath} | sed -e 's/^v//g')
   # append information to components markdown file
   echo "| ${chart_name} | ${app_version} |" >> ${components_file}
 done
