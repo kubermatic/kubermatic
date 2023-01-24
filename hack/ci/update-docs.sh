@@ -82,8 +82,8 @@ EOT
 
 # iterate over all charts to extract version information
 for filepath in $(find charts -name Chart.yaml | sort); do
-  # extract chart_name by removing a "../charts/" prefix and a "Chart.yaml" suffix from the full file path
-  chart_name=$(echo ${filepath} | sed -e 's/^\.\.\/charts\///g' -e 's/\/Chart\.yaml$//g')
+  # extract chart name by removing a "../charts/" prefix from the directory path
+  chart_name=$(dirname ${filepath} | sed -e 's/^\.\.\/charts\///g')
   # read appVersion from Chart.yaml and normalize version format by removing a "v" prefix
   app_version=$(yq '.appVersion' ${filepath} | sed -e 's/^v//g/')
   # append information to components markdown file
