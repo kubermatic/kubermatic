@@ -60,12 +60,6 @@ const (
 	customOperatingSystemProfileAPIVersion = "operatingsystemmanager.k8c.io/v1alpha1"
 	customOperatingSystemProfileKind       = "CustomOperatingSystemProfile"
 	operatingSystemProfileKind             = "OperatingSystemProfile"
-	customOperatingSystemProfileListKind   = "CustomOperatingSystemProfileList"
-)
-
-var (
-	customOSP     = unstructuredOperatingSystemProfile()
-	customOSPList = unstructuredOperatingSystemProfileList()
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -113,6 +107,10 @@ func Add(
 	}
 
 	// Watch changes for Custom Operating System Profiles.
+	customOSP := &unstructured.Unstructured{}
+	customOSP.SetAPIVersion(customOperatingSystemProfileAPIVersion)
+	customOSP.SetKind(customOperatingSystemProfileKind)
+
 	if err := c.Watch(
 		&source.Kind{Type: customOSP},
 		&handler.EnqueueRequestForObject{},
@@ -137,7 +135,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log := r.log.With("operatingsystemprofile", request.NamespacedName.String())
 	log.Debug("Reconciling")
 
-	osp := customOSP
+	osp := &unstructured.Unstructured{}
+	osp.SetAPIVersion(customOperatingSystemProfileAPIVersion)
+	osp.SetKind(customOperatingSystemProfileKind)
+
 	if err := r.seedClient.Get(ctx, request.NamespacedName, osp); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -276,7 +277,10 @@ func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.Su
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
-		ospList := customOSPList
+		ospList := &unstructured.UnstructuredList{}
+		ospList.SetAPIVersion(customOperatingSystemProfileAPIVersion)
+		ospList.SetKind(fmt.Sprintf("%sList", customOperatingSystemProfileKind))
+
 		if err := client.List(context.Background(), ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list customOperatingSystemProfiles: %w", err))
 		}
@@ -314,18 +318,4 @@ func customOSPToOSP(u *unstructured.Unstructured) (*osmv1alpha1.OperatingSystemP
 		return osp, fmt.Errorf("failed to decode CustomOperatingSystemProfile: %w", err)
 	}
 	return osp, nil
-}
-
-func unstructuredOperatingSystemProfile() *unstructured.Unstructured {
-	u := &unstructured.Unstructured{}
-	u.SetAPIVersion(customOperatingSystemProfileAPIVersion)
-	u.SetKind(customOperatingSystemProfileKind)
-	return u
-}
-
-func unstructuredOperatingSystemProfileList() *unstructured.UnstructuredList {
-	u := &unstructured.UnstructuredList{}
-	u.SetAPIVersion(customOperatingSystemProfileAPIVersion)
-	u.SetKind(customOperatingSystemProfileKind)
-	return u
 }

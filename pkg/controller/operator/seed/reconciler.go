@@ -40,11 +40,13 @@ import (
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	osmmigration "k8c.io/kubermatic/v2/pkg/util/migration"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -291,7 +293,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
-	if err := r.migrationForOSM(ctx, cfg, seed, client, log); err != nil {
+	if err := r.migrationForOSM(ctx, client, cfg.Namespace, log); err != nil {
 		return err
 	}
 
@@ -677,7 +679,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 }
 
 // This should be removed with KKP 2.23.
-func (r *Reconciler) migrationForOSM(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) migrationForOSM(ctx context.Context, client ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) error {
 	log.Debug("migration for OSM")
 
 	// We aggregate errors to ensure that we don't early exist and try to migrate as much as possible.
@@ -688,9 +690,59 @@ func (r *Reconciler) migrationForOSM(ctx context.Context, cfg *kubermaticv1.Kube
 	}
 
 	if ospCRDExists {
-		err := osmmigration.ConvertOSPsToCustomOSPs(ctx, client, r.namespace)
+		err := osmmigration.ConvertOSPsToCustomOSPs(ctx, client, namespace)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("Failed to convert OSPs to Custom OSPs: %w", err))
+		}
+	}
+
+	// From KKP 2.22, OSP and OSC CRD is no longer shipped in the seed cluster. Although if someone is installing KKP on top of a KubeOne cluster
+	// then they'll have those CRDs installed. Since KubeOne uses OSM for worker machines.
+	//
+	// To check if the seed is bootstrapped using KubeOne and OSM, we can check if the `operating-system-manager` pod exists in the kube-system namespace.
+	isKubeOneInstallation, err := osmmigration.IsKubeOneInstallation(ctx, client)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Unable to determine if seed is running on top of a KubeOne cluster: %w", err))
+		// We can't go any further with the migration since we can't determine whether it's a KubeOne installation or not.
+		return kerrors.NewAggregate(errs)
+	}
+
+	// Since it's a KubeOne installation we cannot clean up the OSP and OSC CRDs.
+	if isKubeOneInstallation {
+		return kerrors.NewAggregate(errs)
+	}
+
+	// Check if there are any OSP resources in the cluster. If nothing is found then the OSP CRD can be safely deleted.
+	if ospCRDExists {
+		ospList := &osmv1alpha1.OperatingSystemProfileList{}
+		err = client.List(ctx, ospList)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to list operatingSystemProfiles: %w", err))
+		}
+		if err == nil && len(ospList.Items) == 0 {
+			// Delete the OSP CRD since all the OSPs have been migrated at this point.
+			err := client.Delete(ctx, &apiextensionsv1.CustomResourceDefinition{ObjectMeta: metav1.ObjectMeta{
+				Name: "operatingsystemprofiles.operatingsystemmanager.k8c.io",
+			}})
+			if err != nil {
+				errs = append(errs, fmt.Errorf("Failed to delete OperatingSystemProfile CRD: %w", err))
+			}
+		}
+	}
+
+	// Check if there are any OSC CRD is installed.
+	oscCRDExists, err := osmmigration.IsOperatingSystemConfigInstalled(ctx, client)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Unable to check for OperatingSystemConfig CRD: %w", err))
+	}
+
+	if oscCRDExists {
+		// Delete the OSC CRD right away since all the required CRs will be re-created in the user clusters by OSM.
+		err := client.Delete(ctx, &apiextensionsv1.CustomResourceDefinition{ObjectMeta: metav1.ObjectMeta{
+			Name: "operatingsystemconfigs.operatingsystemmanager.k8c.io",
+		}})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("Failed to delete OperatingSystemConfig CRD: %w", err))
 		}
 	}
 

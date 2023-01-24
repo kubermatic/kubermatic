@@ -25,6 +25,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
+	appsv1 "k8s.io/api/apps/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,7 +90,7 @@ func ConvertOSPsToCustomOSPs(ctx context.Context, client ctrlruntimeclient.Clien
 	var errs []error
 	for _, osp := range ospList.Items {
 		// step 1: convert OSP to CustomOperatingSytemProfile.
-		customOSP, err := ospToCustomOSP(osp)
+		customOSP, err := ospToCustomOSP(&osp)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to convert OSP to Custom OSP: %w", err))
 			continue
@@ -178,8 +179,20 @@ func MoveOSPToUserClusters(ctx context.Context, seedClient ctrlruntimeclient.Cli
 	return kerrors.NewAggregate(errs)
 }
 
+func IsKubeOneInstallation(ctx context.Context, seedClient ctrlruntimeclient.Client) (bool, error) {
+	osmDeploy := &appsv1.Deployment{}
+	osmDeploymentName := "operating-system-manager"
+	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceSystem, Name: osmDeploymentName}, osmDeploy); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return false, fmt.Errorf("failed to get %s deployment: %w", osmDeploymentName, err)
+		}
+		return false, nil
+	}
+	return true, nil
+}
+
 // ospToCustomOSP converts an OSP to an Unstructured custom OSP.
-func ospToCustomOSP(osp osmv1alpha1.OperatingSystemProfile) (*unstructured.Unstructured, error) {
+func ospToCustomOSP(osp *osmv1alpha1.OperatingSystemProfile) (*unstructured.Unstructured, error) {
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(osp)
 	if err != nil {
 		return nil, err

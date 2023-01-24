@@ -55,6 +55,7 @@ locationMap='{
   "clustertemplates.kubermatic.k8c.io": "master,seed",
   "constraints.kubermatic.k8c.io": "master,seed",
   "constrainttemplates.kubermatic.k8c.io": "master,seed",
+  "customoperatingsystemprofiles.operatingsystemmanager.k8c.io": "seed",
   "etcdbackupconfigs.kubermatic.k8c.io": "seed",
   "etcdrestores.kubermatic.k8c.io": "seed",
   "externalclusters.kubermatic.k8c.io": "master",

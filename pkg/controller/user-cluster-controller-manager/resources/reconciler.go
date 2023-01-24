@@ -153,6 +153,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileCRDs(ctx, data); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServiceAccounts(ctx, data); err != nil {
 		return err
 	}
@@ -186,10 +190,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileRoleBindings(ctx, data); err != nil {
-		return err
-	}
-
-	if err := r.reconcileCRDs(ctx, data); err != nil {
 		return err
 	}
 
