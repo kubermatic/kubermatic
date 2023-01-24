@@ -80,7 +80,15 @@ of provided software and therefore releases updates regularly that also include 
 | ----------------------------- | ---------------------------- |
 EOT
 
-for filepath in $(find charts -name Chart.yaml | sort); do echo "| $(echo ${filepath} | sed -e 's/^\.\.\/charts\///g' -e 's/\/Chart\.yaml$//g') | $(yq '.appVersion' ${filepath} | sed -e 's/^v//g') |" >> ${components_file}; done
+# iterate over all charts to extract version information
+for filepath in $(find charts -name Chart.yaml | sort); do
+  # extract chart_name by removing a "../charts/" prefix and a "Chart.yaml" suffix from the full file path
+  chart_name=$(echo ${filepath} | sed -e 's/^\.\.\/charts\///g' -e 's/\/Chart\.yaml$//g')
+  # read appVersion from Chart.yaml and normalize version format by removing a "v" prefix
+  app_version=$(yq '.appVersion' ${filepath} | sed -e 's/^v//g/')
+  # append information to components markdown file
+  echo "| ${chart_name} | ${app_version} |" >> ${components_file}
+done
 
 # update repo
 git add .
