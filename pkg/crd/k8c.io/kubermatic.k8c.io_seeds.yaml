@@ -253,10 +253,10 @@ spec:
                                                       description: IPBlock defines policy on a particular IPBlock. If this field is set then neither of the other fields can be.
                                                       properties:
                                                         cidr:
-                                                          description: CIDR is a string representing the IP Block Valid examples are "192.168.1.1/24" or "2001:db9::/64"
+                                                          description: CIDR is a string representing the IP Block Valid examples are "192.168.1.0/24" or "2001:db8::/64"
                                                           type: string
                                                         except:
-                                                          description: Except is a slice of CIDRs that should not be included within an IP Block Valid examples are "192.168.1.1/24" or "2001:db9::/64" Except values will be rejected if they are outside the CIDR range
+                                                          description: Except is a slice of CIDRs that should not be included within an IP Block Valid examples are "192.168.1.0/24" or "2001:db8::/64" Except values will be rejected if they are outside the CIDR range
                                                           items:
                                                             type: string
                                                           type: array
@@ -343,10 +343,10 @@ spec:
                                                       description: IPBlock defines policy on a particular IPBlock. If this field is set then neither of the other fields can be.
                                                       properties:
                                                         cidr:
-                                                          description: CIDR is a string representing the IP Block Valid examples are "192.168.1.1/24" or "2001:db9::/64"
+                                                          description: CIDR is a string representing the IP Block Valid examples are "192.168.1.0/24" or "2001:db8::/64"
                                                           type: string
                                                         except:
-                                                          description: Except is a slice of CIDRs that should not be included within an IP Block Valid examples are "192.168.1.1/24" or "2001:db9::/64" Except values will be rejected if they are outside the CIDR range
+                                                          description: Except is a slice of CIDRs that should not be included within an IP Block Valid examples are "192.168.1.0/24" or "2001:db8::/64" Except values will be rejected if they are outside the CIDR range
                                                           items:
                                                             type: string
                                                           type: array
@@ -800,7 +800,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -879,7 +881,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -949,7 +953,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -1015,7 +1021,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -1057,7 +1065,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -1096,7 +1106,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -1153,7 +1165,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -1378,7 +1392,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -1420,7 +1436,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
@@ -1462,7 +1480,9 @@ spec:
                                   - name
                                 type: object
                               type: array
-                              x-kubernetes-list-type: set
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
                             limits:
                               additionalProperties:
                                 anyOf:
