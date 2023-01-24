@@ -676,6 +676,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 	return nil
 }
 
+// This should be removed with KKP 2.23.
 func (r *Reconciler) migrationForOSM(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("migration for OSM")
 

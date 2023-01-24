@@ -1480,6 +1480,7 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 	})
 }
 
+// This should be removed with KKP 2.23.
 func (r *reconciler) migrationForOSM(ctx context.Context) error {
 	// We aggregate errors to ensure that we don't early exist and try to migrate as much as possible.
 	var errs []error
