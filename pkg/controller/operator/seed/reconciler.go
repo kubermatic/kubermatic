@@ -40,7 +40,6 @@ import (
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	osmmigration "k8c.io/kubermatic/v2/pkg/util/migration"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -49,6 +48,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -714,7 +714,10 @@ func (r *Reconciler) migrationForOSM(ctx context.Context, client ctrlruntimeclie
 
 	// Check if there are any OSP resources in the cluster. If nothing is found then the OSP CRD can be safely deleted.
 	if ospCRDExists {
-		ospList := &osmv1alpha1.OperatingSystemProfileList{}
+		ospList := &unstructured.UnstructuredList{}
+		ospList.SetAPIVersion(osmmigration.OperatingSystemManagerAPIVersion)
+		ospList.SetKind(fmt.Sprintf("%sList", osmmigration.OperatingSystemProfileKind))
+
 		err = client.List(ctx, ospList)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to list operatingSystemProfiles: %w", err))

@@ -39,10 +39,10 @@ import (
 const (
 	cleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-operating-system-profiles"
 
-	customOperatingSystemProfileAPIVersion = "operatingsystemmanager.k8c.io/v1alpha1"
-	customOperatingSystemProfileKind       = "CustomOperatingSystemProfile"
-	operatingSystemProfileKind             = "OperatingSystemProfile"
-	customOperatingSystemProfileListKind   = "CustomOperatingSystemProfileList"
+	OperatingSystemManagerAPIVersion = "operatingsystemmanager.k8c.io/v1alpha1"
+	customOperatingSystemProfileKind = "CustomOperatingSystemProfile"
+	OperatingSystemProfileKind       = "OperatingSystemProfile"
+	OperatingSystemConfigKind        = "OperatingSystemConfig"
 )
 
 var defaultOSPs = map[string]bool{
@@ -76,7 +76,10 @@ func IsOperatingSystemConfigInstalled(ctx context.Context, client ctrlruntimecli
 }
 
 func ConvertOSPsToCustomOSPs(ctx context.Context, client ctrlruntimeclient.Client, seedNamespace string) error {
-	ospList := &osmv1alpha1.OperatingSystemProfileList{}
+	ospList := &unstructured.UnstructuredList{}
+	ospList.SetAPIVersion(OperatingSystemManagerAPIVersion)
+	ospList.SetKind(fmt.Sprintf("%sList", OperatingSystemProfileKind))
+
 	err := client.List(ctx, ospList, &ctrlruntimeclient.ListOptions{Namespace: seedNamespace})
 	if err != nil {
 		return fmt.Errorf("failed to list operatingSystemProfiles: %w", err)
@@ -126,7 +129,10 @@ func ConvertOSPsToCustomOSPs(ctx context.Context, client ctrlruntimeclient.Clien
 }
 
 func MoveOSPToUserClusters(ctx context.Context, seedClient ctrlruntimeclient.Client, client ctrlruntimeclient.Client, namespace string) error {
-	ospList := &osmv1alpha1.OperatingSystemProfileList{}
+	ospList := &unstructured.UnstructuredList{}
+	ospList.SetAPIVersion(OperatingSystemManagerAPIVersion)
+	ospList.SetKind(fmt.Sprintf("%sList", OperatingSystemProfileKind))
+
 	err := seedClient.List(ctx, ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace})
 	if err != nil {
 		return fmt.Errorf("failed to list operatingSystemProfiles: %w", err)
@@ -140,12 +146,12 @@ func MoveOSPToUserClusters(ctx context.Context, seedClient ctrlruntimeclient.Cli
 	var errs []error
 	for _, osp := range ospList.Items {
 		// step 1: check if it's a default OSP
-		_, ok := defaultOSPs[osp.Name]
+		_, ok := defaultOSPs[osp.GetName()]
 		if !ok {
 			exists := true
 			// Step 2: check if the OSP already exists in the user cluster. Since OSPs are immutable we won't update the existing resource and just move forward.
 			userClusterOSP := osmv1alpha1.OperatingSystemProfile{}
-			if err := client.Get(ctx, types.NamespacedName{Name: osp.Name, Namespace: metav1.NamespaceSystem}, &userClusterOSP); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Name: osp.GetName(), Namespace: metav1.NamespaceSystem}, &userClusterOSP); err != nil {
 				if !apierrors.IsNotFound(err) {
 					errs = append(errs, fmt.Errorf("failed to get OperatingSystemProfile: %w", err))
 					continue
@@ -155,7 +161,12 @@ func MoveOSPToUserClusters(ctx context.Context, seedClient ctrlruntimeclient.Cli
 
 			if !exists {
 				// step 3: move custom OSP to user cluster if it doesn't already exist.
-				userClusterOSP := osp.DeepCopy()
+				userClusterOSP, err := unstructuredOSPToOSP(&osp)
+				if err != nil {
+					errs = append(errs, fmt.Errorf("failed to get convert Unstructured OperatingSystemProfile: %w", err))
+					continue
+				}
+
 				userClusterOSP.Namespace = metav1.NamespaceSystem
 				userClusterOSP.SetResourceVersion("")
 				userClusterOSP.SetUID("")
@@ -192,13 +203,20 @@ func IsKubeOneInstallation(ctx context.Context, seedClient ctrlruntimeclient.Cli
 }
 
 // ospToCustomOSP converts an OSP to an Unstructured custom OSP.
-func ospToCustomOSP(osp *osmv1alpha1.OperatingSystemProfile) (*unstructured.Unstructured, error) {
-	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(osp)
-	if err != nil {
-		return nil, err
-	}
-	u := &unstructured.Unstructured{Object: obj}
-	u.SetAPIVersion(customOperatingSystemProfileAPIVersion)
+func ospToCustomOSP(osp *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+	u := osp.DeepCopy()
+	u.SetAPIVersion(OperatingSystemManagerAPIVersion)
 	u.SetKind(customOperatingSystemProfileKind)
 	return u, nil
+}
+
+func unstructuredOSPToOSP(u *unstructured.Unstructured) (*osmv1alpha1.OperatingSystemProfile, error) {
+	osp := &osmv1alpha1.OperatingSystemProfile{}
+	// Required for converting CustomOperatingSystemProfile to OperatingSystemProfile.
+	obj := u.DeepCopy()
+	obj.SetKind(OperatingSystemProfileKind)
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, osp); err != nil {
+		return osp, fmt.Errorf("failed to decode OperatingSystemProfile: %w", err)
+	}
+	return osp, nil
 }
