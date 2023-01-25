@@ -84,6 +84,7 @@ type OperatingSystemSpec struct {
 	Ubuntu      *UbuntuSpec      `json:"ubuntu,omitempty"`
 	AmazonLinux *AmazonLinuxSpec `json:"amzn2,omitempty"`
 	CentOS      *CentOSSpec      `json:"centos,omitempty"`
+	SLES        *SLESSpec        `json:"sles,omitempty"`
 	RHEL        *RHELSpec        `json:"rhel,omitempty"`
 	Flatcar     *FlatcarSpec     `json:"flatcar,omitempty"`
 	RockyLinux  *RockyLinuxSpec  `json:"rockylinux,omitempty"`
@@ -109,6 +110,12 @@ type FlatcarSpec struct {
 	// ProvisioningUtility specifies the type of provisioning utility, allowed values are cloud-init and ignition.
 	// Defaults to ignition.
 	flatcar.ProvisioningUtility `json:"provisioningUtility,omitempty"`
+}
+
+// SLESSpec contains SLES specific settings.
+type SLESSpec struct {
+	// do a dist-upgrade on boot and reboot it required afterwards.
+	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
 // RHELSpec contains rhel specific settings.

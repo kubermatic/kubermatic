@@ -55,7 +55,7 @@ var (
 const (
 	Name = "operating-system-manager"
 	// TODO: pin to a released version again.
-	Tag = "9ccc36e23e0c912fc770e319e030e35c3f7ce8c3"
+	Tag = "8688a1fde001705f4c0b394ed2f4ff4a292b20a9"
 )
 
 type operatingSystemManagerData interface {
