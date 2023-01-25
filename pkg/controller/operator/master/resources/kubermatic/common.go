@@ -97,7 +97,7 @@ func IngressReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Na
 			if i.Annotations == nil {
 				i.Annotations = make(map[string]string)
 			}
-			i.Annotations["kubernetes.io/ingress.class"] = cfg.Spec.Ingress.ClassNam
+			i.Annotations["kubernetes.io/ingress.class"] = cfg.Spec.Ingress.ClassName
 
 			// NGINX ingress annotations to avoid timeout of websocket connections after 1 minute.
 			// Needed for Web Terminal feature, for example.
