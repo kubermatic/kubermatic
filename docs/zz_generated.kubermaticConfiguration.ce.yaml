@@ -25,6 +25,14 @@ spec:
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -114,6 +122,14 @@ spec:
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -272,6 +288,14 @@ spec:
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -297,6 +321,14 @@ spec:
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -592,6 +624,14 @@ spec:
       dockerRepository: registry.k8s.io/autoscaling/vpa-admission-controller
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -609,6 +649,14 @@ spec:
       dockerRepository: registry.k8s.io/autoscaling/vpa-recommender
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -626,6 +674,14 @@ spec:
       dockerRepository: registry.k8s.io/autoscaling/vpa-updater
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -651,6 +707,14 @@ spec:
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:

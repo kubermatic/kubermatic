@@ -216,7 +216,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 		logger.Info("🚀 Collecting images…")
 
 		// Using a set here for deduplication
-		imageSet := sets.NewString()
+		imageSet := sets.New[string]()
 		for _, clusterVersion := range clusterVersions {
 			for _, cloudSpec := range images.GetCloudSpecs() {
 				for _, cniPlugin := range images.GetCNIPlugins() {
@@ -290,7 +290,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
 
-		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, imageSet.List(), options.Registry, userAgent)
+		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
 		if err != nil {
 			return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", copiedCount, fullCount, err)
 		}

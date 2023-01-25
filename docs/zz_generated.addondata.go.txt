@@ -49,7 +49,7 @@ type ClusterData struct {
 	// Network contains DNS and CIDR settings for the cluster.
 	Network ClusterNetwork
 	// Features is a set of enabled features for this cluster.
-	Features sets.String
+	Features sets.Set[string]
 	// CNIPlugin contains the CNIPlugin settings
 	CNIPlugin CNIPlugin
 	// CSI specific options, dependent on provider

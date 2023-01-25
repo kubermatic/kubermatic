@@ -31,7 +31,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 	testCases := []struct {
 		name             string
 		cluster          *kubermaticv1.Cluster
-		wantFeatureGates sets.String
+		wantFeatureGates sets.Set[string]
 	}{
 		{
 			name: "No CSI migration",
@@ -55,7 +55,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.String{},
+			wantFeatureGates: sets.Set[string]{},
 		},
 		{
 			name: "CSI migration",
@@ -81,7 +81,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true"),
+			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true"),
 		},
 		{
 			name: "CSI migration completed with k8s >= 1.23",
@@ -113,7 +113,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "InTreePluginOpenStackUnregister=true"),
+			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "InTreePluginOpenStackUnregister=true"),
 		},
 		{
 			name: "CSI migration disabled with k8s >= 1.23 and no CCM",
@@ -134,7 +134,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.NewString("CSIMigrationAWS=false"),
+			wantFeatureGates: sets.New("CSIMigrationAWS=false"),
 		},
 	}
 
@@ -143,7 +143,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 			td := NewTemplateDataBuilder().
 				WithCluster(tc.cluster).
 				Build()
-			if a, e := sets.NewString(td.GetCSIMigrationFeatureGates()...), tc.wantFeatureGates; !a.Equal(e) {
+			if a, e := sets.New(td.GetCSIMigrationFeatureGates()...), tc.wantFeatureGates; !a.Equal(e) {
 				t.Errorf("Want feature gates %v, but got %v", e, a)
 			}
 		})

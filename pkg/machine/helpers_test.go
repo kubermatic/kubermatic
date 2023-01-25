@@ -25,7 +25,7 @@ import (
 )
 
 func TestCompleteCloudProviderSpecWithNoInputsAtAll(t *testing.T) {
-	excluded := sets.NewString(
+	excluded := sets.New(
 		// external providers
 		string(kubermaticv1.AKSCloudProvider),
 		string(kubermaticv1.EKSCloudProvider),

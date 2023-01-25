@@ -468,7 +468,7 @@ func ListGKEDiskTypes(ctx context.Context, sa string, zone string) (apiv2.GKEDis
 	// Currently accepted values: 'pd-standard', 'pd-ssd' or 'pd-balanced'
 	// Reference: https://pkg.go.dev/google.golang.org/api/container/v1#NodeConfig
 
-	excludedDiskTypes := sets.NewString("local-ssd", "pd-extreme")
+	excludedDiskTypes := sets.New("local-ssd", "pd-extreme")
 	computeService, project, err := gcp.ConnectToComputeService(ctx, sa)
 	if err != nil {
 		return diskTypes, err

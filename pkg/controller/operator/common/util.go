@@ -89,12 +89,12 @@ func isSeed(ref metav1.OwnerReference) bool {
 func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
 	// use a set to ensure that the result is sorted, otherwise reconciling code that
 	// uses this will end up in endless loops
-	features := sets.NewString()
+	features := sets.New[string]()
 	for feature, enabled := range cfg.Spec.FeatureGates {
 		features.Insert(fmt.Sprintf("%s=%v", feature, enabled))
 	}
 
-	return strings.Join(features.List(), ",")
+	return strings.Join(sets.List(features), ",")
 }
 
 // OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectReconciler

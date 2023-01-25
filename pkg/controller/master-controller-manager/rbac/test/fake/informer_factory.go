@@ -70,7 +70,11 @@ type dummySharedIndexInformer struct {
 
 var _ cache.SharedIndexInformer = &dummySharedIndexInformer{}
 
-func (i *dummySharedIndexInformer) AddEventHandler(handler cache.ResourceEventHandler) {
+func (i *dummySharedIndexInformer) AddEventHandler(handler cache.ResourceEventHandler) (cache.ResourceEventHandlerRegistration, error) {
+	panic("implement me")
+}
+
+func (i *dummySharedIndexInformer) RemoveEventHandler(handler cache.ResourceEventHandlerRegistration) error {
 	panic("implement me")
 }
 
@@ -78,7 +82,7 @@ func (i *dummySharedIndexInformer) SetWatchErrorHandler(handler cache.WatchError
 	panic("implement me")
 }
 
-func (i *dummySharedIndexInformer) AddEventHandlerWithResyncPeriod(handler cache.ResourceEventHandler, resyncPeriod time.Duration) {
+func (i *dummySharedIndexInformer) AddEventHandlerWithResyncPeriod(handler cache.ResourceEventHandler, resyncPeriod time.Duration) (cache.ResourceEventHandlerRegistration, error) {
 	panic("implement me")
 }
 
@@ -95,6 +99,10 @@ func (i *dummySharedIndexInformer) Run(stopCh <-chan struct{}) {
 }
 
 func (i *dummySharedIndexInformer) HasSynced() bool {
+	panic("implement me")
+}
+
+func (i *dummySharedIndexInformer) IsStopped() bool {
 	panic("implement me")
 }
 

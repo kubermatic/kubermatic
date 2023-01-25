@@ -296,7 +296,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(name))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(name))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}

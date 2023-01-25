@@ -28,8 +28,8 @@ const (
 // function used to extract port info.
 type extractPortFunc func(corev1.ServicePort) int32
 
-func extractPortSet(svc *corev1.Service, extract extractPortFunc) sets.Int32 {
-	res := sets.NewInt32()
+func extractPortSet(svc *corev1.Service, extract extractPortFunc) sets.Set[int32] {
+	res := sets.Set[int32]{}
 	for _, p := range svc.Spec.Ports {
 		if val := extract(p); val != 0 {
 			res.Insert(val)
@@ -40,13 +40,13 @@ func extractPortSet(svc *corev1.Service, extract extractPortFunc) sets.Int32 {
 
 // extractNodePorts returns the set of node ports extracted from the given
 // Service.
-func extractNodePorts(svc *corev1.Service) sets.Int32 {
+func extractNodePorts(svc *corev1.Service) sets.Set[int32] {
 	return extractPortSet(svc, func(p corev1.ServicePort) int32 { return p.NodePort })
 }
 
 // extractPorts returns the set of ports extracted from the given
 // Service.
-func extractPorts(svc *corev1.Service) sets.Int32 {
+func extractPorts(svc *corev1.Service) sets.Set[int32] {
 	return extractPortSet(svc, func(p corev1.ServicePort) int32 { return p.Port })
 }
 

@@ -86,8 +86,8 @@ func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) nodeportp
 }
 
 // portNamesSet returns the set of port names extracted from the given Service.
-func portNamesSet(svc *corev1.Service, filterFuncs ...func(corev1.ServicePort) bool) sets.String {
-	portNames := sets.NewString()
+func portNamesSet(svc *corev1.Service, filterFuncs ...func(corev1.ServicePort) bool) sets.Set[string] {
+	portNames := sets.New[string]()
 OUTER:
 	for _, p := range svc.Spec.Ports {
 		for _, filter := range filterFuncs {
@@ -102,9 +102,9 @@ OUTER:
 
 // portHostSets returns respectively the set of port names and hosts from the
 // portHostMapping.
-func (p portHostMapping) portHostSets() (sets.String, sets.String) {
-	hosts := sets.NewString()
-	portNames := sets.NewString()
+func (p portHostMapping) portHostSets() (sets.Set[string], sets.Set[string]) {
+	hosts := sets.New[string]()
+	portNames := sets.New[string]()
 	for portName, host := range p {
 		hosts.Insert(host)
 		portNames.Insert(portName)
@@ -141,7 +141,7 @@ func (p portHostMapping) validate(svc *corev1.Service) error {
 	}
 	tcpPortNames := portNamesSet(svc, func(p corev1.ServicePort) bool { return p.Protocol == corev1.ProtocolTCP })
 	if diff := portNames.Difference(tcpPortNames); len(diff) > 0 {
-		return fmt.Errorf("port name(s) not found in TCP service ports: %v", diff.List())
+		return fmt.Errorf("port name(s) not found in TCP service ports: %v", sets.List(diff))
 	}
 	return nil
 }

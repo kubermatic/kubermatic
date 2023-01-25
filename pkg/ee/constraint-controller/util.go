@@ -47,7 +47,7 @@ func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.C
 	if err != nil {
 		return nil, nil, fmt.Errorf("error converting Constraint label selector (%v) to a kubernetes selector: %w", constraint.Spec.Selector.LabelSelector, err)
 	}
-	providersSet := sets.NewString(constraint.Spec.Selector.Providers...)
+	providersSet := sets.New[string](constraint.Spec.Selector.Providers...)
 
 	var unwanted []kubermaticv1.Cluster
 	var desired []kubermaticv1.Cluster

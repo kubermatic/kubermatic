@@ -122,21 +122,21 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 	delete(existingSeeds, subject.Name)
 
 	// collect datacenter names
-	subjectDatacenters := sets.NewString()
-	existingDatacenters := sets.NewString()
+	subjectDatacenters := sets.New[string]()
+	existingDatacenters := sets.New[string]()
 
 	if !isDelete {
 		// this has no effect on the DC uniqueness check, but makes the
 		// cluster-remaining-in-DC check easier
-		subjectDatacenters = sets.StringKeySet(subject.Spec.Datacenters)
+		subjectDatacenters = sets.KeySet(subject.Spec.Datacenters)
 	}
 
 	// check if the subject introduces a datacenter that already exists
 	for _, existing := range existingSeeds {
-		datacenters := sets.StringKeySet(existing.Spec.Datacenters)
+		datacenters := sets.KeySet(existing.Spec.Datacenters)
 
 		if duplicates := subjectDatacenters.Intersection(datacenters); duplicates.Len() > 0 {
-			return fmt.Errorf("Seed redefines existing datacenters %v from Seed %q; datacenter names must be globally unique", duplicates.List(), existing.Name)
+			return fmt.Errorf("Seed redefines existing datacenters %v from Seed %q; datacenter names must be globally unique", sets.List(duplicates), existing.Name)
 		}
 
 		existingDatacenters = existingDatacenters.Union(datacenters)
@@ -189,7 +189,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 	return nil
 }
 
-func validateNoClustersRemaining(ctx context.Context, seedClient ctrlruntimeclient.Client, subject *kubermaticv1.Seed, subjectDatacenters, existingDatacenters sets.String) error {
+func validateNoClustersRemaining(ctx context.Context, seedClient ctrlruntimeclient.Client, subject *kubermaticv1.Seed, subjectDatacenters, existingDatacenters sets.Set[string]) error {
 	// new seed clusters might not yet have the CRDs installed into them,
 	// which for the purpose of this validation is not a problem and simply
 	// means there can be no Clusters on that seed

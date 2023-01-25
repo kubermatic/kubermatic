@@ -89,7 +89,7 @@ func (b *gcpConfig) WithAssignPublicIPAddress(assign bool) *gcpConfig {
 }
 
 func (b *gcpConfig) WithTag(tag string) *gcpConfig {
-	b.Tags = sets.NewString(b.Tags...).Insert(tag).List()
+	b.Tags = sets.List(sets.New(b.Tags...).Insert(tag))
 	return b
 }
 
@@ -123,7 +123,7 @@ func CompleteGCPProviderSpec(config *gce.RawConfig, cluster *kubermaticv1.Cluste
 			config.Subnetwork.Value = cluster.Spec.Cloud.GCP.Subnetwork
 		}
 
-		tags := sets.NewString(config.Tags...)
+		tags := sets.New(config.Tags...)
 		tags.Insert(
 			fmt.Sprintf("kubernetes-cluster-%s", cluster.Name),
 			fmt.Sprintf("system-cluster-%s", cluster.Name),
@@ -133,7 +133,7 @@ func CompleteGCPProviderSpec(config *gce.RawConfig, cluster *kubermaticv1.Cluste
 			tags.Insert(fmt.Sprintf("system-project-%s", projectID))
 		}
 
-		config.Tags = tags.List()
+		config.Tags = sets.List(tags)
 	}
 
 	if datacenter != nil {

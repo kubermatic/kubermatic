@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var AllProviders = sets.NewString(
+var AllProviders = sets.New(
 	string(kubermaticv1.AWSCloudProvider),
 	string(kubermaticv1.AlibabaCloudProvider),
 	string(kubermaticv1.AnexiaCloudProvider),

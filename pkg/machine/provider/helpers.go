@@ -46,13 +46,13 @@ func addTagToSlice(tags []providerconfig.ConfigVarString, tag string) []provider
 }
 
 func mergeTags(existing []providerconfig.ConfigVarString, newTags []string) []providerconfig.ConfigVarString {
-	tags := sets.NewString(newTags...)
+	tags := sets.New(newTags...)
 	for _, tag := range existing {
 		tags.Insert(tag.Value)
 	}
 
 	existing = []providerconfig.ConfigVarString{}
-	for _, tag := range tags.List() {
+	for _, tag := range sets.List(tags) {
 		existing = append(existing, providerconfig.ConfigVarString{Value: tag})
 	}
 

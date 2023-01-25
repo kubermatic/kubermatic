@@ -24,16 +24,16 @@ import (
 )
 
 // SetFlag wraps a given set so it can be used as a CLI flag.
-func SetFlag(set sets.String) flag.Value {
+func SetFlag(set sets.Set[string]) flag.Value {
 	return &setFlag{set: set}
 }
 
 type setFlag struct {
-	set sets.String
+	set sets.Set[string]
 }
 
 func (f *setFlag) String() string {
-	return strings.Join(f.set.List(), ",")
+	return strings.Join(sets.List(f.set), ",")
 }
 
 func (f *setFlag) Set(value string) error {

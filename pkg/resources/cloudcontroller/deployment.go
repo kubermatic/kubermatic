@@ -77,7 +77,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 					return nil, err
 				}
 
-				containerNames := sets.NewString(ccmContainerName)
+				containerNames := sets.New(ccmContainerName)
 
 				if !data.IsKonnectivityEnabled() {
 					// inject the openVPN sidecar container

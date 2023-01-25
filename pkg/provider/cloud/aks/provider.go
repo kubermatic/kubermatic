@@ -266,7 +266,7 @@ func ConvertMDStatus(provisioningState string, powerState armcontainerservice.Co
 		return apiv2.DeletingExternalClusterMDState
 	// "Upgrading" indicates Kubernetes version upgrade.
 	// "Updating" indicates MachineDeployment Replica Scale.
-	case sets.NewString(string(resources.UpgradingAKSMDState), string(resources.UpdatingAKSMDState), string(resources.ScalingAKSMDState)).Has(provisioningState):
+	case sets.New(string(resources.UpgradingAKSMDState), string(resources.UpdatingAKSMDState), string(resources.ScalingAKSMDState)).Has(provisioningState):
 		return apiv2.ReconcilingExternalClusterMDState
 	default:
 		return apiv2.UnknownExternalClusterMDState

@@ -71,7 +71,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			}
 
 			folderFound := false
-			gotFolders := sets.NewString()
+			gotFolders := sets.New[string]()
 			for _, folder := range folders {
 				if folder.Path == test.expectedFolder {
 					folderFound = true
@@ -83,7 +83,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			}
 
 			if !folderFound {
-				t.Fatalf("Response is missing expected folders:\n%v", diff.SetDiff[string](sets.NewString(test.expectedFolder), gotFolders))
+				t.Fatalf("Response is missing expected folders:\n%v", diff.SetDiff(sets.New(test.expectedFolder), gotFolders))
 			}
 		})
 	}

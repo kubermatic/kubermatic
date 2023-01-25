@@ -39,7 +39,7 @@ type MachineBuilder struct {
 
 	seed           *kubermaticv1.Seed
 	datacenterName string
-	sshPubKeys     sets.String
+	sshPubKeys     sets.Set[string]
 
 	datacenter *kubermaticv1.Datacenter
 
@@ -52,7 +52,7 @@ type MachineBuilder struct {
 
 func NewBuilder() *MachineBuilder {
 	return &MachineBuilder{
-		sshPubKeys: sets.NewString(),
+		sshPubKeys: sets.New[string](),
 	}
 }
 
@@ -161,7 +161,7 @@ func (b *MachineBuilder) BuildProviderConfig() (*providerconfig.Config, error) {
 		return nil, fmt.Errorf("failed to apply cluster information to the network config: %w", err)
 	}
 
-	return CreateProviderConfig(cloudProvider, cloudProviderSpec, operatingSystemSpec, networkConfig, b.sshPubKeys.List())
+	return CreateProviderConfig(cloudProvider, cloudProviderSpec, operatingSystemSpec, networkConfig, sets.List(b.sshPubKeys))
 }
 
 func (b *MachineBuilder) BuildProviderSpec() (*clusterv1alpha1.ProviderSpec, error) {

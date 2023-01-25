@@ -175,7 +175,7 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.ServiceAccountName = webhookServiceAccountName
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(Name), "Machine,cluster.k8s.io/v1alpha1")
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(Name), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}

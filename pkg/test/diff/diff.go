@@ -24,6 +24,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/yaml"
 )
 
@@ -35,12 +36,30 @@ func SemanticallyEqual(expected, actual interface{}) bool {
 	return apiequality.Semantic.DeepEqual(expected, actual)
 }
 
-type SetLike[T any] interface {
-	List() []T
+// these types are copied directly from apimachinery/pkg/util/sets
+
+type ordered interface {
+	integer | float | ~string
 }
 
-func SetDiff[T any](expected, actual SetLike[T]) string {
-	return ObjectDiff(expected.List(), actual.List())
+type integer interface {
+	signed | unsigned
+}
+
+type float interface {
+	~float32 | ~float64
+}
+
+type signed interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type unsigned interface {
+	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+func SetDiff[T ordered](expected, actual sets.Set[T]) string {
+	return ObjectDiff(sets.List(expected), sets.List(actual))
 }
 
 func ObjectDiff(expected, actual interface{}) string {

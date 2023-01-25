@@ -31,7 +31,7 @@ const (
 	UserClusterK8sGcrImageTests = "usercluster-gcr-images"
 )
 
-var AllTests = sets.NewString(
+var AllTests = sets.New(
 	ConformanceTests,
 	LoadbalancerTests,
 	StorageTests,

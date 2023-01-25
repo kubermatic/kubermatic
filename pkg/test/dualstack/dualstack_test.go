@@ -47,9 +47,9 @@ import (
 
 var (
 	logOptions              = utils.DefaultLogOptions
-	enabledOperatingSystems = sets.NewString()
-	enabledCNIs             = sets.NewString()
-	enabledProviders        = sets.NewString()
+	enabledOperatingSystems = sets.New[string]()
+	enabledCNIs             = sets.New[string]()
+	enabledProviders        = sets.New[string]()
 
 	userconfig             string
 	ipFamily               string

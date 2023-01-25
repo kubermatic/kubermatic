@@ -119,12 +119,12 @@ func AdmissionControlReconciler(data *resources.TemplateData) reconciling.NamedC
 }
 
 func usePodNodeSelectorAdmissionPlugin(data *resources.TemplateData) bool {
-	admissionPlugins := sets.NewString(data.Cluster().Spec.AdmissionPlugins...)
+	admissionPlugins := sets.New(data.Cluster().Spec.AdmissionPlugins...)
 	return data.Cluster().Spec.UsePodNodeSelectorAdmissionPlugin || admissionPlugins.Has(resources.PodNodeSelectorAdmissionPlugin)
 }
 
 func useEventRateLimitAdmissionPlugin(data *resources.TemplateData) bool {
-	admissionPlugins := sets.NewString(data.Cluster().Spec.AdmissionPlugins...)
+	admissionPlugins := sets.New(data.Cluster().Spec.AdmissionPlugins...)
 	return data.Cluster().Spec.UseEventRateLimitAdmissionPlugin || admissionPlugins.Has(resources.EventRateLimitAdmissionPlugin)
 }
 

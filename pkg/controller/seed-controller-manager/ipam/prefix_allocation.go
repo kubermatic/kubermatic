@@ -55,7 +55,7 @@ func checkPrefixAllocation(subnetCIDR, poolCIDR string, allocationPrefix int) er
 	return nil
 }
 
-func findFirstFreeSubnetOfPool(poolName, poolCIDR string, subnetPrefix int, dcIPAMPoolUsageMap sets.String) (string, error) {
+func findFirstFreeSubnetOfPool(poolName, poolCIDR string, subnetPrefix int, dcIPAMPoolUsageMap sets.Set[string]) (string, error) {
 	poolIP, poolSubnet, err := net.ParseCIDR(poolCIDR)
 	if err != nil {
 		return "", err

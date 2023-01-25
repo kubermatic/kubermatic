@@ -66,6 +66,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -687,11 +688,11 @@ func GetCNIPlugins() []*kubermaticv1.CNIPluginSettings {
 	cniPluginSettings := []*kubermaticv1.CNIPluginSettings{}
 	supportedCNIPlugins := cni.GetSupportedCNIPlugins()
 
-	for _, cniPlugin := range supportedCNIPlugins.List() {
+	for _, cniPlugin := range sets.List(supportedCNIPlugins) {
 		// error cannot ever occur since we just listed the supported CNIPluginTypes
 		versions, _ := cni.GetAllowedCNIPluginVersions(kubermaticv1.CNIPluginType(cniPlugin))
 
-		for _, version := range versions.List() {
+		for _, version := range sets.List(versions) {
 			cniPluginSettings = append(cniPluginSettings, &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginType(cniPlugin),
 				Version: version,

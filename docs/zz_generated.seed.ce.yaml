@@ -388,6 +388,14 @@ spec:
       dockerRepository: ""
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits: null
@@ -503,6 +511,14 @@ spec:
         sourceRanges: []
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -521,6 +537,14 @@ spec:
       dockerRepository: quay.io/kubermatic/nodeport-proxy
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -540,6 +564,14 @@ spec:
       dockerRepository: quay.io/kubermatic/nodeport-proxy
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:

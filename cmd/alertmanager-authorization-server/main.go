@@ -189,7 +189,7 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 		return false, fmt.Errorf("listing groupProjectBinding: %w", err)
 	}
 
-	groupSet := sets.NewString()
+	groupSet := sets.New[string]()
 	for _, gpb := range allGroupBindings.Items {
 		a.log.Debugf("found group project binding %q for project %q with group %q", gpb.Name, projectID, gpb.Spec.Group)
 		groupSet.Insert(gpb.Spec.Group)

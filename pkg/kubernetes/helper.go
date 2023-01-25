@@ -64,29 +64,29 @@ var tokenValidator = regexp.MustCompile(`[bcdfghjklmnpqrstvwxz2456789]{6}\.[bcdf
 
 // HasFinalizer tells if a object has all the given finalizers.
 func HasFinalizer(o metav1.Object, names ...string) bool {
-	return sets.NewString(o.GetFinalizers()...).HasAll(names...)
+	return sets.New(o.GetFinalizers()...).HasAll(names...)
 }
 
 func HasAnyFinalizer(o metav1.Object, names ...string) bool {
-	return sets.NewString(o.GetFinalizers()...).HasAny(names...)
+	return sets.New(o.GetFinalizers()...).HasAny(names...)
 }
 
 // HasOnlyFinalizer tells if an object has only the given finalizer(s).
 func HasOnlyFinalizer(o metav1.Object, names ...string) bool {
-	return sets.NewString(o.GetFinalizers()...).Equal(sets.NewString(names...))
+	return sets.New(o.GetFinalizers()...).Equal(sets.New(names...))
 }
 
 // HasFinalizerSuperset tells if the given finalizer(s) are a superset
 // of the actual finalizers.
 func HasFinalizerSuperset(o metav1.Object, names ...string) bool {
-	return sets.NewString(names...).IsSuperset(sets.NewString(o.GetFinalizers()...))
+	return sets.New(names...).IsSuperset(sets.New(o.GetFinalizers()...))
 }
 
 // RemoveFinalizer removes the given finalizers from the object.
 func RemoveFinalizer(obj metav1.Object, toRemove ...string) {
-	set := sets.NewString(obj.GetFinalizers()...)
+	set := sets.New(obj.GetFinalizers()...)
 	set.Delete(toRemove...)
-	obj.SetFinalizers(set.List())
+	obj.SetFinalizers(sets.List(set))
 }
 
 func TryRemoveFinalizer(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, finalizers ...string) error {
@@ -106,9 +106,9 @@ func TryRemoveFinalizer(ctx context.Context, client ctrlruntimeclient.Client, ob
 		original := obj.DeepCopyObject().(ctrlruntimeclient.Object)
 
 		// modify it
-		previous := sets.NewString(obj.GetFinalizers()...)
+		previous := sets.New(obj.GetFinalizers()...)
 		RemoveFinalizer(obj, finalizers...)
-		current := sets.NewString(obj.GetFinalizers()...)
+		current := sets.New(obj.GetFinalizers()...)
 
 		// save some work
 		if previous.Equal(current) {
@@ -129,9 +129,9 @@ func TryRemoveFinalizer(ctx context.Context, client ctrlruntimeclient.Client, ob
 
 // AddFinalizer will add the given finalizer to the object. It uses a StringSet to avoid duplicates.
 func AddFinalizer(obj metav1.Object, finalizers ...string) {
-	set := sets.NewString(obj.GetFinalizers()...)
+	set := sets.New(obj.GetFinalizers()...)
 	set.Insert(finalizers...)
-	obj.SetFinalizers(set.List())
+	obj.SetFinalizers(sets.List(set))
 }
 
 func TryAddFinalizer(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, finalizers ...string) error {
@@ -151,9 +151,9 @@ func TryAddFinalizer(ctx context.Context, client ctrlruntimeclient.Client, obj c
 		original := obj.DeepCopyObject().(ctrlruntimeclient.Object)
 
 		// modify it
-		previous := sets.NewString(obj.GetFinalizers()...)
+		previous := sets.New(obj.GetFinalizers()...)
 		AddFinalizer(obj, finalizers...)
-		current := sets.NewString(obj.GetFinalizers()...)
+		current := sets.New(obj.GetFinalizers()...)
 
 		// save some work
 		if previous.Equal(current) {

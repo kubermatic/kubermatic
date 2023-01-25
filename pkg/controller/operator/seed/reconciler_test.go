@@ -150,7 +150,7 @@ func TestBasicReconciling(t *testing.T) {
 		seedToReconcile string
 		configuration   *kubermaticv1.KubermaticConfiguration
 		seedsOnMaster   []string
-		syncedSeeds     sets.String // seeds where the seed-sync-controller copied the Seed CR over already
+		syncedSeeds     sets.Set[string] // seeds where the seed-sync-controller copied the Seed CR over already
 		assertion       func(test *testcase, reconciler *Reconciler) error
 	}
 
@@ -160,7 +160,7 @@ func TestBasicReconciling(t *testing.T) {
 			seedToReconcile: "europe",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"europe"},
-			syncedSeeds:     sets.NewString("europe"),
+			syncedSeeds:     sets.New("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
@@ -189,7 +189,7 @@ func TestBasicReconciling(t *testing.T) {
 			seedToReconcile: "goner",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"goner"},
-			syncedSeeds:     sets.NewString("goner"),
+			syncedSeeds:     sets.New("goner"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
@@ -218,7 +218,7 @@ func TestBasicReconciling(t *testing.T) {
 			seedToReconcile: "europe",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"europe"},
-			syncedSeeds:     sets.NewString("europe"),
+			syncedSeeds:     sets.New("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
@@ -276,7 +276,7 @@ func TestBasicReconciling(t *testing.T) {
 			seedToReconcile: "other",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"other"},
-			syncedSeeds:     sets.NewString("other"),
+			syncedSeeds:     sets.New("other"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				// The controller should never attempt to reconcile the Seed, so removing the
 				// seed client should not hurt it.
@@ -295,7 +295,7 @@ func TestBasicReconciling(t *testing.T) {
 			seedToReconcile: "seed-with-nodeport-proxy-annotations",
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"seed-with-nodeport-proxy-annotations"},
-			syncedSeeds:     sets.NewString("seed-with-nodeport-proxy-annotations"),
+			syncedSeeds:     sets.New("seed-with-nodeport-proxy-annotations"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
@@ -340,7 +340,7 @@ func TestBasicReconciling(t *testing.T) {
 				},
 			},
 			seedsOnMaster: []string{"europe"},
-			syncedSeeds:   sets.NewString("europe"),
+			syncedSeeds:   sets.New("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
@@ -400,7 +400,7 @@ func TestBasicReconciling(t *testing.T) {
 	}
 }
 
-func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermaticv1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
+func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermaticv1.KubermaticConfiguration, seeds []string, syncedSeeds sets.Set[string]) *Reconciler {
 	masterObjects := []ctrlruntimeclient.Object{}
 	if cfg != nil {
 		// CABundle is defaulted in reallife scenarios
