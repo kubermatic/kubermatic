@@ -24,7 +24,6 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -116,7 +115,7 @@ func validateAutomaticUpdateRulesOnlyPointToValidVersions(config kubermaticv1.Ku
 		return allErrs
 	}
 
-	for i, update := range defaulting.DefaultKubernetesVersioning.Updates {
+	for i, update := range config.Updates {
 		is := strconv.Itoa(i)
 
 		// only test automatic rules
