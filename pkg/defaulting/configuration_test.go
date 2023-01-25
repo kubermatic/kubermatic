@@ -14,49 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package defaulting
+package defaulting_test
 
 import (
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/validation"
 )
 
-func TestAutomaticUpdateRulesMatchVersions(t *testing.T) {
-	for i, update := range DefaultKubernetesVersioning.Updates {
-		// only test automatic rules
-		if update.Automatic == nil || !*update.Automatic {
-			continue
-		}
-
-		toVersion, err := semver.NewSemver(update.To)
-		if err != nil {
-			t.Errorf("Version %q in update rule %d is not a valid version: %v", update.To, i, err)
-			continue
-		}
-
-		found := false
-		for _, v := range DefaultKubernetesVersioning.Versions {
-			if v.Equal(toVersion) {
-				found = true
-			}
-		}
-
-		if !found {
-			t.Errorf("Version %s in update rule %d is not configured as a supported version.", update.To, i)
-		}
-	}
-}
-
-func TestDefaultVersionIsSupported(t *testing.T) {
-	found := false
-	for _, v := range DefaultKubernetesVersioning.Versions {
-		if v.Equal(DefaultKubernetesVersioning.Default) {
-			found = true
-		}
-	}
-
-	if !found {
-		t.Errorf("Default version %s is not configured as a supported version.", DefaultKubernetesVersioning.Default)
+func TestDefaultConfigurationIsValid(t *testing.T) {
+	errs := validation.ValidateKubermaticVersioningConfiguration(defaulting.DefaultKubernetesVersioning, nil)
+	for _, err := range errs {
+		t.Error(err)
 	}
 }
