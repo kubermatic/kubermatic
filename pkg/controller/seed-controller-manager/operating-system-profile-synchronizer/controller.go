@@ -312,9 +312,10 @@ func ospReconciler(osp *osmv1alpha1.OperatingSystemProfile) reconciling.NamedOpe
 
 func customOSPToOSP(u *unstructured.Unstructured) (*osmv1alpha1.OperatingSystemProfile, error) {
 	osp := &osmv1alpha1.OperatingSystemProfile{}
-	// Required for converting CustomOperatingSystemProfile to OperatingSystemProfile
-	u.SetKind(operatingSystemProfileKind)
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, osp); err != nil {
+	// Required for converting CustomOperatingSystemProfile to OperatingSystemProfile.
+	obj := u.DeepCopy()
+	obj.SetKind(operatingSystemProfileKind)
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, osp); err != nil {
 		return osp, fmt.Errorf("failed to decode CustomOperatingSystemProfile: %w", err)
 	}
 	return osp, nil
