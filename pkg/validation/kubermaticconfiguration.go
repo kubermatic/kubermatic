@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
 
