@@ -227,7 +227,7 @@ retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
 
 echodate "Waiting for VPA to be ready..."
-retry 8 check_all_deployments_ready kube-system
+retry 9 check_all_deployments_ready kube-system
 echodate "VPA is ready."
 
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT

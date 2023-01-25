@@ -62,6 +62,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	osmmigration "k8c.io/kubermatic/v2/pkg/util/migration"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -69,6 +71,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -150,6 +153,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	if err := r.reconcileCRDs(ctx, data); err != nil {
+		return err
+	}
+
 	if err := r.reconcileServiceAccounts(ctx, data); err != nil {
 		return err
 	}
@@ -186,7 +193,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileCRDs(ctx, data); err != nil {
+	if err := r.migrationForOSM(ctx); err != nil {
 		return err
 	}
 
@@ -709,6 +716,10 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
 		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
 		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+	}
+
+	if data.operatingSystemManagerEnabled {
+		creators = append(creators, operatingsystemmanager.ValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -1467,4 +1478,36 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 			}
 		}
 	})
+}
+
+// This should be removed with KKP 2.23.
+func (r *reconciler) migrationForOSM(ctx context.Context) error {
+	// We aggregate errors to ensure that we don't early exist and try to migrate as much as possible.
+	var errs []error
+	ospCRDExists, err := osmmigration.IsOperatingSystemProfileInstalled(ctx, r.seedClient)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Unable to check for OperatingSystemProfile CRD: %w", err))
+	}
+
+	// Move custom OSPs from user cluster namespace to the user cluster.
+	if ospCRDExists {
+		err := osmmigration.MoveOSPToUserClusters(ctx, r.seedClient, r.Client, r.namespace)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("Failed to move OSPs to user cluster: %w", err))
+		}
+	}
+
+	oscCRDExists, err := osmmigration.IsOperatingSystemConfigInstalled(ctx, r.seedClient)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Unable to check for OperatingSystemConfig CRD: %w", err))
+	}
+
+	// Delete all OSC from user cluster namespace. They will be recreated by OSM automatically in the user-cluster.
+	if oscCRDExists {
+		listOpts := ctrlruntimeclient.InNamespace(r.namespace)
+		if err = r.seedClient.DeleteAllOf(ctx, &osmv1alpha1.OperatingSystemProfile{}, listOpts); err != nil {
+			errs = append(errs, fmt.Errorf("failed to delete OperatingSystemConfigs: %w", err))
+		}
+	}
+	return kerrors.NewAggregate(errs)
 }

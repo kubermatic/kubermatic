@@ -22,11 +22,14 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -116,6 +119,81 @@ func MutatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespace 
 			}
 
 			return mutatingWebhookConfiguration, nil
+		}
+	}
+}
+
+// ValidatingwebhookConfigurationReconciler returns the ValidatingwebhookConfiguration for OSM.
+func ValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
+		return resources.OperatingSystemManagerValidatingWebhookConfigurationName, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.AllScopes
+			caBundle := triple.EncodeCertPEM(caCert)
+			ospURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./operatingsystemprofile", resources.OperatingSystemManagerWebhookServiceName, namespace)
+			oscURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./operatingsystemconfig", resources.OperatingSystemManagerWebhookServiceName, namespace)
+
+			validatingWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    "operatingsystemprofiles.operatingsystemmanager.k8c.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32(30),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: caBundle,
+						URL:      &ospURL,
+					},
+					ObjectSelector:    &metav1.LabelSelector{},
+					NamespaceSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{osmv1alpha1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"operatingsystemprofiles"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+					},
+				},
+				{
+					Name:                    "operatingsystemconfigs.operatingsystemmanager.k8c.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32(30),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: caBundle,
+						URL:      &oscURL,
+					},
+					ObjectSelector:    &metav1.LabelSelector{},
+					NamespaceSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{osmv1alpha1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"operatingsystemconfigs"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+					},
+				},
+			}
+			return validatingWebhookConfiguration, nil
 		}
 	}
 }

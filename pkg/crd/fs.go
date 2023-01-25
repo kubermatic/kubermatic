@@ -34,10 +34,12 @@ import (
 
 // embeddedFS is an embedded fs that contains kubermatic CRD manifest
 //
-//go:embed k8c.io/*
+//go:embed *
 var embeddedFS embed.FS
 
-const rootDir = "k8c.io"
+const (
+	rootDir = "k8c.io"
+)
 
 // Groups returns a list of all known API groups for which CRDs are available.
 func Groups() ([]string, error) {

@@ -22,7 +22,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -36,8 +35,6 @@ const (
 	ClusterAdmissionWebhookName         = "kubermatic-clusters"
 	AddonAdmissionWebhookName           = "kubermatic-addons"
 	MLAAdminSettingAdmissionWebhookName = "kubermatic-mlaadminsettings"
-	OSCAdmissionWebhookName             = "kubermatic-operating-system-configs"
-	OSPAdmissionWebhookName             = "kubermatic-operating-system-profiles"
 	IPAMPoolAdmissionWebhookName        = "kubermatic-ipampools"
 )
 
@@ -251,112 +248,6 @@ func MLAAdminSettingMutatingWebhookConfigurationReconciler(ctx context.Context, 
 							},
 							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Create,
-								admissionregistrationv1.Update,
-							},
-						},
-					},
-				},
-			}
-
-			return hook, nil
-		}
-	}
-}
-
-func OperatingSystemConfigValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
-		return OSCAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
-			matchPolicy := admissionregistrationv1.Exact
-			failurePolicy := admissionregistrationv1.Fail
-			sideEffects := admissionregistrationv1.SideEffectClassNone
-			scope := admissionregistrationv1.AllScopes
-
-			ca, err := common.WebhookCABundle(ctx, cfg, client)
-			if err != nil {
-				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
-			}
-
-			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
-				{
-					Name:                    "operatingsystemconfigs.operatingsystemmanager.k8c.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
-					MatchPolicy:             &matchPolicy,
-					FailurePolicy:           &failurePolicy,
-					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{
-						CABundle: ca,
-						Service: &admissionregistrationv1.ServiceReference{
-							Name:      common.WebhookServiceName,
-							Namespace: cfg.Namespace,
-							Path:      pointer.String("/validate-operating-system-config"),
-							Port:      pointer.Int32(443),
-						},
-					},
-					ObjectSelector:    &metav1.LabelSelector{},
-					NamespaceSelector: &metav1.LabelSelector{},
-					Rules: []admissionregistrationv1.RuleWithOperations{
-						{
-							Rule: admissionregistrationv1.Rule{
-								APIGroups:   []string{osmv1alpha1.GroupName},
-								APIVersions: []string{"*"},
-								Resources:   []string{"operatingsystemconfigs"},
-								Scope:       &scope,
-							},
-							Operations: []admissionregistrationv1.OperationType{
-								admissionregistrationv1.Update,
-							},
-						},
-					},
-				},
-			}
-
-			return hook, nil
-		}
-	}
-}
-
-func OperatingSystemProfileValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
-	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
-		return OSPAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
-			matchPolicy := admissionregistrationv1.Exact
-			failurePolicy := admissionregistrationv1.Fail
-			sideEffects := admissionregistrationv1.SideEffectClassNone
-			scope := admissionregistrationv1.AllScopes
-
-			ca, err := common.WebhookCABundle(ctx, cfg, client)
-			if err != nil {
-				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
-			}
-
-			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
-				{
-					Name:                    "operatingsystemprofiles.operatingsystemmanager.k8c.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
-					MatchPolicy:             &matchPolicy,
-					FailurePolicy:           &failurePolicy,
-					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{
-						CABundle: ca,
-						Service: &admissionregistrationv1.ServiceReference{
-							Name:      common.WebhookServiceName,
-							Namespace: cfg.Namespace,
-							Path:      pointer.String("/validate-operating-system-profile"),
-							Port:      pointer.Int32(443),
-						},
-					},
-					ObjectSelector:    &metav1.LabelSelector{},
-					NamespaceSelector: &metav1.LabelSelector{},
-					Rules: []admissionregistrationv1.RuleWithOperations{
-						{
-							Rule: admissionregistrationv1.Rule{
-								APIGroups:   []string{osmv1alpha1.GroupName},
-								APIVersions: []string{"*"},
-								Resources:   []string{"operatingsystemprofiles"},
-								Scope:       &scope,
-							},
-							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Update,
 							},
 						},
