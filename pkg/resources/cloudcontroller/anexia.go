@@ -58,21 +58,37 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 				return nil, fmt.Errorf("failed to get credentials: %w", err)
 			}
 
-			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
+			deployment.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled()),
+				corev1.Volume{
+					Name: resources.CloudConfigConfigMapName,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.CloudConfigConfigMapName,
+							},
+						},
+					},
+				})
 
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:0.1.0",
+					Image: data.ImageRegistry(resources.RegistryAnexia) + "/anexia/anx-cloud-controller-manager:1.5.1",
 					Command: []string{
 						"/app/ccm",
 						"--cloud-provider=anexia",
+						"--cloud-config=/etc/kubernetes/cloud/config",
+						fmt.Sprintf("--cluster-name=%s", data.Cluster().Spec.HumanReadableName),
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 					},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "ANEXIA_TOKEN",
 							Value: credentials.Anexia.Token,
+						},
+						{
+							Name:  "ANEXIA_AUTO_DISCOVER_LOAD_BALANCER",
+							Value: "true",
 						},
 					},
 					Ports: []corev1.ContainerPort{
@@ -110,7 +126,11 @@ func anexiaDeploymentCreator(data *resources.TemplateData) reconciling.NamedDepl
 						SuccessThreshold:    1,
 						FailureThreshold:    3,
 					},
-					VolumeMounts: getVolumeMounts(),
+					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
+						Name:      resources.CloudConfigConfigMapName,
+						MountPath: "/etc/kubernetes/cloud",
+						ReadOnly:  true,
+					}),
 				},
 			}
 
