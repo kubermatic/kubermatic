@@ -57,9 +57,9 @@ const (
 	cleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-operating-system-profiles"
 	ospNamespace     = metav1.NamespaceSystem
 
-	customOperatingSystemProfileAPIVersion = "operatingsystemmanager.k8c.io/v1alpha1"
-	customOperatingSystemProfileKind       = "CustomOperatingSystemProfile"
-	operatingSystemProfileKind             = "OperatingSystemProfile"
+	operatingSystemManagerAPIVersion = "operatingsystemmanager.k8c.io/v1alpha1"
+	customOperatingSystemProfileKind = "CustomOperatingSystemProfile"
+	operatingSystemProfileKind       = "OperatingSystemProfile"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -108,7 +108,7 @@ func Add(
 
 	// Watch changes for Custom Operating System Profiles.
 	customOSP := &unstructured.Unstructured{}
-	customOSP.SetAPIVersion(customOperatingSystemProfileAPIVersion)
+	customOSP.SetAPIVersion(operatingSystemManagerAPIVersion)
 	customOSP.SetKind(customOperatingSystemProfileKind)
 
 	if err := c.Watch(
@@ -136,7 +136,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Reconciling")
 
 	osp := &unstructured.Unstructured{}
-	osp.SetAPIVersion(customOperatingSystemProfileAPIVersion)
+	osp.SetAPIVersion(operatingSystemManagerAPIVersion)
 	osp.SetKind(customOperatingSystemProfileKind)
 
 	if err := r.seedClient.Get(ctx, request.NamespacedName, osp); err != nil {
@@ -278,7 +278,7 @@ func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.Su
 		var requests []reconcile.Request
 
 		ospList := &unstructured.UnstructuredList{}
-		ospList.SetAPIVersion(customOperatingSystemProfileAPIVersion)
+		ospList.SetAPIVersion(operatingSystemManagerAPIVersion)
 		ospList.SetKind(fmt.Sprintf("%sList", customOperatingSystemProfileKind))
 
 		if err := client.List(context.Background(), ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
@@ -312,9 +312,10 @@ func ospReconciler(osp *osmv1alpha1.OperatingSystemProfile) reconciling.NamedOpe
 
 func customOSPToOSP(u *unstructured.Unstructured) (*osmv1alpha1.OperatingSystemProfile, error) {
 	osp := &osmv1alpha1.OperatingSystemProfile{}
-	// Required for converting CustomOperatingSystemProfile to OperatingSystemProfile
-	u.SetKind(operatingSystemProfileKind)
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, osp); err != nil {
+	// Required for converting CustomOperatingSystemProfile to OperatingSystemProfile.
+	obj := u.DeepCopy()
+	obj.SetKind(operatingSystemProfileKind)
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, osp); err != nil {
 		return osp, fmt.Errorf("failed to decode CustomOperatingSystemProfile: %w", err)
 	}
 	return osp, nil

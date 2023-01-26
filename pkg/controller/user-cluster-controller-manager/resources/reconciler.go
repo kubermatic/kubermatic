@@ -63,13 +63,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	osmmigration "k8c.io/kubermatic/v2/pkg/util/migration"
-	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -1505,7 +1505,11 @@ func (r *reconciler) migrationForOSM(ctx context.Context) error {
 	// Delete all OSC from user cluster namespace. They will be recreated by OSM automatically in the user-cluster.
 	if oscCRDExists {
 		listOpts := ctrlruntimeclient.InNamespace(r.namespace)
-		if err = r.seedClient.DeleteAllOf(ctx, &osmv1alpha1.OperatingSystemProfile{}, listOpts); err != nil {
+		osc := &unstructured.Unstructured{}
+		osc.SetAPIVersion(osmmigration.OperatingSystemManagerAPIVersion)
+		osc.SetKind(osmmigration.OperatingSystemConfigKind)
+
+		if err = r.seedClient.DeleteAllOf(ctx, osc, listOpts); err != nil {
 			errs = append(errs, fmt.Errorf("failed to delete OperatingSystemConfigs: %w", err))
 		}
 	}
