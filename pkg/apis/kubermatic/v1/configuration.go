@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=always;externalCloudProvider;nonAMD64WithCanalAndIPVS
+// +kubebuilder:validation:Enum=always;externalCloudProvider
 
 // ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version.
 type ConditionType string
@@ -33,9 +33,6 @@ const (
 	AlwaysCondition ConditionType = "always"
 	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
 	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
-	// NonAMD64WithCanalAndIPVSClusterCondition is an incompatibility condition that represents the usage of non-amd64 nodes in the cluster
-	// running Canal and kube-proxy in the IPVS mode.
-	NonAMD64WithCanalAndIPVSClusterCondition ConditionType = "nonAMD64WithCanalAndIPVS"
 )
 
 // +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
