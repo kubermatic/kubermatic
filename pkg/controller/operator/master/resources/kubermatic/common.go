@@ -99,6 +99,11 @@ func IngressReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Na
 			}
 			i.Annotations["kubernetes.io/ingress.class"] = cfg.Spec.Ingress.ClassName
 
+			// NGINX ingress annotations to avoid timeout of websocket connections after 1 minute.
+			// Needed for Web Terminal feature, for example.
+			i.Annotations["nginx.ingress.kubernetes.io/proxy-read-timeout"] = "3600" // 1 hour
+			i.Annotations["nginx.ingress.kubernetes.io/proxy-send-timeout"] = "3600" // 1 hour
+
 			// If a Certificate is being issued, configure cert-manager by
 			// setting up the required annotations.
 			issuer := cfg.Spec.Ingress.CertificateIssuer
