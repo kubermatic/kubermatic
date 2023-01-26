@@ -19,9 +19,7 @@ package vsphere
 import (
 	"context"
 	"fmt"
-
 	vapitags "github.com/vmware/govmomi/vapi/tags"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
@@ -29,10 +27,7 @@ import (
 func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var (
 		clusterTags = cluster.Spec.Cloud.VSphere.Tags
-		defaultTag  = &kubermaticv1.VSphereTag{
-			Name:       controllerOwnershipTag(cluster.Name),
-			CategoryID: cluster.Spec.Cloud.VSphere.TagCategory.ID,
-		}
+		defaultTag  = getDefaultTag(cluster)
 	)
 
 	if clusterTags[defaultTag.Name] == nil {
@@ -40,16 +35,23 @@ func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kuber
 			clusterTags = map[string]*kubermaticv1.VSphereTag{}
 		}
 
+		defaultTag.CategoryID = cluster.Spec.Cloud.VSphere.TagCategory.Name
 		clusterTags[defaultTag.Name] = defaultTag
+		_, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.VSphere.Tags = clusterTags
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tagManager := vapitags.NewManager(restSession.Client)
-	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.ID)
+	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tag %w", err)
 	}
 
-	if err := syncCreatedClusterTags(ctx, restSession, clusterTags, categoryTags, cluster.Name, update); err != nil {
+	if err := syncCreatedClusterTags(ctx, restSession, clusterTags, categoryTags); err != nil {
 		return nil, fmt.Errorf("failed to sync created tags %w", err)
 	}
 
@@ -61,26 +63,19 @@ func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kuber
 }
 
 func syncCreatedClusterTags(ctx context.Context, s *RESTSession, tags map[string]*kubermaticv1.VSphereTag,
-	categoryTags []vapitags.Tag, clusterName string, update provider.ClusterUpdater) error {
+	categoryTags []vapitags.Tag) error {
 	for _, tag := range tags {
-		fetchedTagID := filterTag(categoryTags, tag.Name)
+		var (
+			fetchedTagID string
+			err          error
+		)
 
-		if fetchedTagID != "" {
-			continue
-		}
-
-		tagID, err := createTag(ctx, s, tag.CategoryID, tag.Name)
-		if err != nil {
-			return fmt.Errorf("failed to create tag %s category: %w", tag.Name, err)
-		}
-
-		_, err = update(ctx, clusterName, func(cluster *kubermaticv1.Cluster) {
-			if updatedTag, ok := cluster.Spec.Cloud.VSphere.Tags[tag.Name]; ok {
-				updatedTag.ID = tagID
+		fetchedTagID = filterTag(categoryTags, tag.Name)
+		if fetchedTagID == "" {
+			fetchedTagID, err = createTag(ctx, s, tag.CategoryID, tag.Name)
+			if err != nil {
+				return fmt.Errorf("failed to create tag %s category: %w", tag.Name, err)
 			}
-		})
-		if err != nil {
-			return err
 		}
 	}
 
@@ -127,4 +122,11 @@ func createTag(ctx context.Context, restSession *RESTSession, categoryID, name s
 		Name:       name,
 		CategoryID: categoryID,
 	})
+}
+
+func getDefaultTag(cluster *kubermaticv1.Cluster) *kubermaticv1.VSphereTag {
+	return &kubermaticv1.VSphereTag{
+		Name:       controllerOwnershipTag(cluster.Name),
+		CategoryID: cluster.Spec.Cloud.VSphere.TagCategory.ID,
+	}
 }

@@ -28,20 +28,41 @@ import (
 )
 
 func reconcileTagCategory(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	defaultCategory := defaultTagCategory(cluster)
+	if cluster.Spec.Cloud.VSphere.TagCategory == nil {
+		defaultCategory := defaultTagCategory(cluster)
+		categoryID, err := fetchTagCategory(ctx, restSession, defaultCategory)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch tag category: %w", err)
+		}
 
-	categoryID, err := fetchTagCategory(ctx, restSession, defaultCategory)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch tag category: %w", err)
-	}
+		if categoryID != "" {
+			cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+				if !kuberneteshelper.HasFinalizer(updatedCluster, tagCategoryCleanupFinilizer) {
+					kuberneteshelper.AddFinalizer(updatedCluster, tagCategoryCleanupFinilizer)
+				}
 
-	if categoryID != "" {
-		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-			if !kuberneteshelper.HasFinalizer(updatedCluster, tagCategoryCleanupFinilizer) {
-				kuberneteshelper.AddFinalizer(updatedCluster, tagCategoryCleanupFinilizer)
+				updatedCluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
+					Name: defaultCategory,
+					ID:   categoryID,
+				}
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
 			}
 
-			updatedCluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
+			return cluster, nil
+		}
+
+		categoryID, err = createTagCategory(ctx, restSession, defaultCategory)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create default tag category: %w", err)
+		}
+
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			if !kuberneteshelper.HasFinalizer(cluster, tagCategoryCleanupFinilizer) {
+				kuberneteshelper.AddFinalizer(cluster, tagCategoryCleanupFinilizer)
+			}
+			cluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
 				Name: defaultCategory,
 				ID:   categoryID,
 			}
@@ -49,26 +70,6 @@ func reconcileTagCategory(ctx context.Context, restSession *RESTSession, cluster
 		if err != nil {
 			return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
 		}
-
-		return cluster, nil
-	}
-
-	categoryID, err = createTagCategory(ctx, restSession, defaultCategory)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create default tag category: %w", err)
-	}
-
-	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		if !kuberneteshelper.HasFinalizer(cluster, tagCategoryCleanupFinilizer) {
-			kuberneteshelper.AddFinalizer(cluster, tagCategoryCleanupFinilizer)
-		}
-		cluster.Spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
-			Name: defaultCategory,
-			ID:   categoryID,
-		}
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
 	}
 
 	return cluster, nil
@@ -120,6 +121,32 @@ func deleteTagCategory(ctx context.Context, restSession *RESTSession, cluster *k
 		if category.Name == defaultCategoryName {
 			return tagManager.DeleteCategory(ctx, &tags.Category{ID: category.ID})
 		}
+	}
+
+	return nil
+}
+
+func defaultClusterSpecTagCategory(ctx context.Context, spec *kubermaticv1.ClusterSpec, category *kubermaticv1.TagCategory, restSession *RESTSession) error {
+	if category.ID != "" {
+		tagManager := tags.NewManager(restSession.Client)
+		category, err := tagManager.GetCategory(ctx, category.ID)
+		if err != nil {
+			return fmt.Errorf("failed to get tag categories %w", err)
+		}
+
+		spec.Cloud.VSphere.TagCategory.Name = category.Name
+
+		return nil
+	}
+
+	if category.Name != "" {
+		tagManager := tags.NewManager(restSession.Client)
+		category, err := tagManager.GetCategory(ctx, category.Name)
+		if err != nil {
+			return fmt.Errorf("failed to get tag categories %w", err)
+		}
+
+		spec.Cloud.VSphere.TagCategory.ID = category.ID
 	}
 
 	return nil

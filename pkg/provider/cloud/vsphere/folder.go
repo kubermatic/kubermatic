@@ -23,6 +23,7 @@ import (
 	"path"
 	"strings"
 
+	vapiobjects "github.com/vmware/govmomi/object"
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -40,46 +41,60 @@ func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, 
 	// If the user did not specify a folder, we create a own folder for this cluster to improve
 	// the VM management in vCenter
 	clusterFolder := path.Join(rootPath, cluster.Name)
-	err := createVMFolder(ctx, s, restSession, clusterFolder)
+
+	defaultTag := getDefaultTag(cluster)
+	defaultTagID := cluster.Spec.Cloud.VSphere.Tags[defaultTag.Name].ID
+	folder, created, err := createVMFolder(ctx, s, clusterFolder)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
 	}
 
-	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
-			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
+	if created {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			if !kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+				kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
+			}
+
+			cluster.Spec.Cloud.VSphere.Folder = clusterFolder
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
 		}
 
-		cluster.Spec.Cloud.VSphere.Folder = clusterFolder
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCategoryCleanupFinilizer, err)
+		tagManager := vapitags.NewManager(restSession.Client)
+		if err := tagManager.AttachTag(ctx, defaultTagID, folder); err != nil {
+			return nil, fmt.Errorf("faile to attach default cluster tag to cluster folder: %v", err)
+		}
 	}
+
 	return cluster, nil
 }
 
 // createVMFolder creates the specified vm folder if it does not exist yet. It returns true if a new folder has been created
 // and false if no new folder is created or on reported errors, other than not found error.
-func createVMFolder(ctx context.Context, session *Session, restSession *RESTSession, fullPath string) error {
+func createVMFolder(ctx context.Context, session *Session, fullPath string) (*vapiobjects.Folder, bool, error) {
 	rootPath, newFolder := path.Split(fullPath)
 
 	rootFolder, err := session.Finder.Folder(ctx, rootPath)
 	if err != nil {
-		return fmt.Errorf("couldn't find rootpath, see: %w", err)
+		return nil, false, fmt.Errorf("couldn't find rootpath, see: %w", err)
 	}
 
-	if _, err = session.Finder.Folder(ctx, newFolder); err != nil {
+	createdFolder, err := session.Finder.Folder(ctx, newFolder)
+	if err != nil {
 		if !isNotFound(err) {
-			return fmt.Errorf("failed to get folder %s: %w", fullPath, err)
+			return nil, false, fmt.Errorf("failed to get folder %s: %w", fullPath, err)
 		}
 
-		_, err := rootFolder.CreateFolder(ctx, newFolder)
+		createdFolder, err = rootFolder.CreateFolder(ctx, newFolder)
 		if err != nil {
-			return fmt.Errorf("failed to create folder %s: %w", fullPath, err)
+			return nil, false, fmt.Errorf("failed to create folder %s: %w", fullPath, err)
 		}
+
+		return createdFolder, true, nil
 	}
 
-	return nil
+	return createdFolder, false, nil
 }
 
 // deleteVMFolder deletes the specified folder.

@@ -124,11 +124,26 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
-func (v *VSphere) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.ClusterSpec) error {
+func (v *VSphere) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
 	if spec.Cloud.VSphere.TagCategory == nil {
 		spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
 			ID: v.dc.DefaultTagCategoryID,
 		}
+	}
+
+	if tagCategory := spec.Cloud.VSphere.TagCategory; tagCategory != nil {
+		username, password, err := getCredentialsForCluster(spec.Cloud, v.secretKeySelector, v.dc)
+		if err != nil {
+			return err
+		}
+
+		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
+		if err != nil {
+			return fmt.Errorf("failed to create REST client session: %w", err)
+		}
+		defer restSession.Logout(ctx)
+
+		return defaultClusterSpecTagCategory(ctx, spec, tagCategory, restSession)
 	}
 
 	return nil

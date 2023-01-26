@@ -61,7 +61,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			}
 			defer restSession.Logout(context.TODO())
 
-			if err := createVMFolder(context.Background(), session, restSession, test.expectedFolder); err != nil {
+			if _, _, err := createVMFolder(context.Background(), session, test.expectedFolder); err != nil {
 				t.Fatal(err)
 			}
 
