@@ -26,7 +26,6 @@ import (
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
-	"k8c.io/operating-system-manager/pkg/providerconfig/sles"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 )
 
@@ -42,8 +41,6 @@ func DefaultSpec(os providerconfig.OperatingSystem, cloudProvider kubermaticv1.P
 		return NewRHELSpecBuilder(cloudProvider).Build(), nil
 	case providerconfig.OperatingSystemRockyLinux:
 		return NewRockyLinuxSpecBuilder(cloudProvider).Build(), nil
-	case providerconfig.OperatingSystemSLES:
-		return NewSLESSpecBuilder(cloudProvider).Build(), nil
 	case providerconfig.OperatingSystemUbuntu:
 		return NewUbuntuSpecBuilder(cloudProvider).Build(), nil
 	default:
@@ -121,23 +118,6 @@ func (b *RHELSpecBuilder) WithDistUpgradeOnBoot(enable bool) *RHELSpecBuilder {
 
 func (b *RHELSpecBuilder) WithPatch(patch func(*RHELSpecBuilder)) *RHELSpecBuilder {
 	patch(b)
-	return b
-}
-
-type SLESSpecBuilder struct {
-	sles.Config
-}
-
-func (b *SLESSpecBuilder) Build() sles.Config {
-	return b.Config
-}
-
-func NewSLESSpecBuilder(_ kubermaticv1.ProviderType) *SLESSpecBuilder {
-	return &SLESSpecBuilder{}
-}
-
-func (b *SLESSpecBuilder) WithDistUpgradeOnBoot(enable bool) *SLESSpecBuilder {
-	b.DistUpgradeOnBoot = enable
 	return b
 }
 

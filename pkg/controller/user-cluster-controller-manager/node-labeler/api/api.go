@@ -26,9 +26,6 @@ const (
 	// UbuntuLabelValue is the value of the label for Ubuntu.
 	UbuntuLabelValue = "ubuntu"
 
-	// SLESLabelValue is the value of the label for SLES.
-	SLESLabelValue = "sles"
-
 	// RHELLabelValue is the value of the label for RHEL.
 	RHELLabelValue = "rhel"
 
@@ -47,7 +44,6 @@ const (
 var OSLabelMatchValues = map[string][]string{
 	CentOSLabelValue:      {"centos"},
 	UbuntuLabelValue:      {"ubuntu"},
-	SLESLabelValue:        {"sles"},
 	RHELLabelValue:        {"rhel"},
 	FlatcarLabelValue:     {"flatcar container linux"},
 	RockyLinuxLabelValue:  {"rockylinux", "rocky linux"},
