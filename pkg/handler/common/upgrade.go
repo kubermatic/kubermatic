@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,22 +70,6 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	externalCloudProvider := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 	if externalCloudProvider {
 		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
-	}
-
-	nodes := &corev1.NodeList{}
-	if err := client.List(ctx, nodes); err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-	var nonAMD64Nodes bool
-	for _, node := range nodes.Items {
-		if node.Status.NodeInfo.Architecture != "amd64" {
-			nonAMD64Nodes = true
-		}
-	}
-	if nonAMD64Nodes &&
-		cluster.Spec.CNIPlugin != nil && cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal &&
-		cluster.Spec.ClusterNetwork.ProxyMode == "ipvs" {
-		updateConditions = append(updateConditions, kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition)
 	}
 
 	config, err := configGetter(ctx)
