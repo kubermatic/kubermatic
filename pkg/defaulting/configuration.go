@@ -319,21 +319,6 @@ var (
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
-			{
-				// Applies to all providers.
-				Provider:  "",
-				Version:   "1.23.*",
-				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-			{
-				// Applies to all providers.
-				Provider:  "",
-				Version:   "1.24.*",
-				Condition: kubermaticv1.NonAMD64WithCanalAndIPVSClusterCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-
 			// External CCM on AWS requires Kubernetes 1.24+
 			{
 				Provider:  kubermaticv1.AWSCloudProvider,
