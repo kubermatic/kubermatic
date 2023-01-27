@@ -40,8 +40,6 @@ func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	var binary string
 
 	switch version.MajorMinor() {
-	case "1.22":
-		binary = kubectl123
 	case "1.23":
 		binary = kubectl123
 	case "1.24":

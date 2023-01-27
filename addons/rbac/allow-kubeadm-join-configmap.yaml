@@ -22,7 +22,6 @@ rules:
   - ""
   resourceNames:
   - kubelet-config
-  - kubelet-config-1.22
   - kubelet-config-1.23
   - kube-proxy
   - kubeadm-config
