@@ -170,13 +170,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 	if result == nil {
 		result = &reconcile.Result{}
-
-		if r.systemAppEnforceInterval != 0 {
-			// Reconciliation was successful, but requeue in systemAppEnforceInterval minutes if set.
-			// We do this to make sure that ApplicationInstallation in the user cluster is not modified in a wrong way / deleted accidentally.
-			// Even though it is protected by a webhook, not all unwanted modifications can be easily prevented there.
-			result.RequeueAfter = time.Duration(r.systemAppEnforceInterval) * time.Minute
-		}
 	}
 	return *result, err
 }
@@ -231,7 +224,15 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 		}
 	}
 
-	return nil, nil
+	result := &reconcile.Result{}
+	if r.systemAppEnforceInterval != 0 {
+		// Reconciliation was successful, but requeue in systemAppEnforceInterval minutes if set.
+		// We do this to make sure that ApplicationInstallation in the user cluster is not modified in a wrong way / deleted accidentally.
+		// Even though it is protected by a webhook, not all unwanted modifications can be easily prevented there.
+		result.RequeueAfter = time.Duration(r.systemAppEnforceInterval) * time.Minute
+	}
+
+	return result, nil
 }
 
 func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
