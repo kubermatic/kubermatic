@@ -243,7 +243,7 @@ var (
 				// Auto-upgrade unsupported clusters.
 				From:      "1.23.*",
 				To:        "1.24.9",
-				Automatic: pointer.BoolPtr(true),
+				Automatic: pointer.Bool(true),
 			},
 			// ======= 1.24 =======
 			{
