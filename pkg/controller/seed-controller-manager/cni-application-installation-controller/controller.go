@@ -71,13 +71,15 @@ type Reconciler struct {
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
+	systemAppEnforceInterval      int
 	overwriteRegistry             string
 }
 
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions, overwriteRegistry string) error {
+func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, systemAppEnforceInterval int, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions, overwriteRegistry string) error {
 	reconciler := &Reconciler{
 		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
+		systemAppEnforceInterval:      systemAppEnforceInterval,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log.Named(ControllerName),
@@ -175,6 +177,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	log := logger.With("CNIType", cluster.Spec.CNIPlugin.Type, "CNIVersion", cluster.Spec.CNIPlugin.Version)
 
+	if !cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
+		return &reconcile.Result{}, nil // in case that CNI changed since last requeue, skip if it is not managed by this controller
+	}
+
 	// Make sure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
 		log.Debug("Requeue CNI reconciliation as Application controller is not healthy")
@@ -218,7 +224,15 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 		}
 	}
 
-	return nil, nil
+	result := &reconcile.Result{}
+	if r.systemAppEnforceInterval != 0 {
+		// Reconciliation was successful, but requeue in systemAppEnforceInterval minutes if set.
+		// We do this to make sure that ApplicationInstallation in the user cluster is not modified in a wrong way / deleted accidentally.
+		// Even though it is protected by a webhook, not all unwanted modifications can be easily prevented there.
+		result.RequeueAfter = time.Duration(r.systemAppEnforceInterval) * time.Minute
+	}
+
+	return result, nil
 }
 
 func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {

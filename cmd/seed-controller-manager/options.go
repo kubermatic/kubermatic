@@ -66,6 +66,7 @@ type controllerRunOptions struct {
 	namespace                string
 	concurrentClusterUpdate  int
 	addonEnforceInterval     int
+	systemAppEnforceInterval int
 	caBundle                 *certificates.CABundle
 
 	// for development purposes, a local configuration file
@@ -134,6 +135,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for Seed resources")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
+	flag.IntVar(&c.systemAppEnforceInterval, "system-app-enforce-interval", 5, "Check and ensure system ApplicationInstallations in user cluster every interval in minutes. Set to 0 to disable.")
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
 	flag.Var(&c.tunnelingAgentIP, "tunneling-agent-ip", "The address used by the tunneling agents.")
 	flag.BoolVar(&c.enableUserClusterMLA, "enable-user-cluster-mla", false, "Enables user cluster MLA (Monitoring, Logging & Alerting) stack in the seed.")

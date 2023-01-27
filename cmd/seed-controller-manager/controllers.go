@@ -325,6 +325,7 @@ func createCNIApplicationInstallationController(ctrlCtx *controllerContext) erro
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.systemAppEnforceInterval,
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
