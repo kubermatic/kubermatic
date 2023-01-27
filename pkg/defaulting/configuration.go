@@ -225,12 +225,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.23
-			newSemver("v1.23.6"),
-			newSemver("v1.23.9"),
-			newSemver("v1.23.12"),
-			newSemver("v1.23.14"),
-			newSemver("v1.23.15"),
 			// Kubernetes 1.24
 			newSemver("v1.24.3"),
 			newSemver("v1.24.6"),
@@ -244,32 +238,12 @@ var (
 			newSemver("v1.26.0"),
 		},
 		Updates: []kubermaticv1.Update{
-			{
-				// Allow to next minor release
-				From: "1.22.*",
-				To:   "1.23.*",
-			},
-
 			// ======= 1.23 =======
 			{
-				// Allow to change to any patch version
-				From: "1.23.*",
-				To:   "1.23.*",
-			},
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2022-3172 (fixed >= 1.23.11)
-				// - CVE-2021-25749 (fixed >= 1.23.11)
-				// - CVE-2022-3162 (fixed >= 1.23.14)
-				// - CVE-2022-3294 (fixed >= 1.23.14)
-				From:      ">= 1.23.0, < 1.23.14",
-				To:        "1.23.14",
+				// Auto-upgrade unsupported clusters.
+				From:      "1.23.*",
+				To:        "1.24.9",
 				Automatic: pointer.Bool(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.23.*",
-				To:   "1.24.*",
 			},
 			// ======= 1.24 =======
 			{
@@ -320,6 +294,9 @@ var (
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
 			// External CCM on AWS requires Kubernetes 1.24+
+			// this can be removed for 2.23 - while we don't support < 1.24 anymore,
+			// we are still going to have 1.23 clusters temporarily during an upgrade,
+			// so let's keep this just to make sure.
 			{
 				Provider:  kubermaticv1.AWSCloudProvider,
 				Version:   "< 1.24.0",

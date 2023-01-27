@@ -13,9 +13,6 @@
 # limitations under the License.
 
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.22" }}
-{{ $version = "v1.22.2"}}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
 {{ $version = "v1.23.1"}}
 {{ end }}
