@@ -1006,10 +1006,11 @@ func (r rawClusterGen) Do() *kubermaticv1.Cluster {
 			Name: r.Name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Version:        r.Version,
-			Cloud:          r.CloudSpec,
-			ClusterNetwork: r.NetworkConfig,
-			CNIPlugin:      r.CNIPluginSpec,
+			ContainerRuntime: "containerd",
+			Version:          r.Version,
+			Cloud:            r.CloudSpec,
+			ClusterNetwork:   r.NetworkConfig,
+			CNIPlugin:        r.CNIPluginSpec,
 		},
 		Status: kubermaticv1.ClusterStatus{
 			Versions: kubermaticv1.ClusterVersionsStatus{
