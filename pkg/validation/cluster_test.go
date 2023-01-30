@@ -30,6 +30,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -68,6 +69,48 @@ func TestValidateClusterSpec(t *testing.T) {
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)
+			}
+		})
+	}
+}
+
+func TestValidateContainerRuntime(t *testing.T) {
+	tests := []struct {
+		name  string
+		spec  *kubermaticv1.ClusterSpec
+		valid bool
+	}{
+		{
+			name: "valid container runtime",
+			spec: &kubermaticv1.ClusterSpec{
+				ContainerRuntime: "containerd",
+				Version:          *semver.NewSemverOrDie("1.24.0"),
+			},
+			valid: true,
+		},
+		{
+			name: "use docker with 1.24",
+			spec: &kubermaticv1.ClusterSpec{
+				ContainerRuntime: "docker",
+				Version:          *semver.NewSemverOrDie("1.24.0"),
+			},
+			valid: false,
+		},
+		{
+			name: "use empty container runtime",
+			spec: &kubermaticv1.ClusterSpec{
+				ContainerRuntime: "",
+			},
+			valid: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ValidateContainerRuntime(test.spec)
+
+			if (err == nil) != test.valid {
+				t.Errorf("Extected validation result to be %v, got error %v", test.valid, err)
 			}
 		})
 	}
