@@ -171,6 +171,12 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 			if !clusterVersionIsConfigured(clusterVersion, defaulted, upgradeConstraints) {
 				errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seedName))
 			}
+
+			// we effectively don't support docker in KKP 2.22; Kubernetes 1.23 clusters that are
+			// still running it need to be upgraded before proceeding with the KKP upgrade.
+			if cluster.Spec.ContainerRuntime == "docker" {
+				errs = append(errs, fmt.Errorf("cluster %s on Seed %s is running 'docker' as container runtime; please upgrade it to 'containerd' before proceeding", cluster.Name, seedName))
+			}
 		}
 	}
 
