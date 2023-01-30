@@ -32,8 +32,8 @@ import (
 
 const (
 	folderCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-folder"
-	// categoryCleanupFinilizer will instruct the deletion of the default category tag.
-	tagCleanupFinilizer = "kubermatic.k8c.io/cleanup-vsphere-tags"
+	// tagCleanupFinalizer will instruct the deletion of the default category tag.
+	tagCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-tags"
 )
 
 // VSphere represents the vsphere provider.
@@ -116,7 +116,7 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 func (v *VSphere) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
 	if spec.Cloud.VSphere.Tags == nil {
 		if v.dc.DefaultTagCategoryID != "" {
-			spec.Cloud.VSphere.Tags = &kubermaticv1.VSphereTags{
+			spec.Cloud.VSphere.Tags = &kubermaticv1.VSphereTag{
 				CategoryID: v.dc.DefaultTagCategoryID,
 			}
 		}
@@ -209,9 +209,9 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 		return nil, fmt.Errorf("failed to cleanup cluster tags: %w", err)
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinilizer) {
+	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinilizer)
+			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
