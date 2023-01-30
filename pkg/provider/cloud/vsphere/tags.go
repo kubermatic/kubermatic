@@ -45,14 +45,8 @@ func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kuber
 func syncCreatedClusterTags(ctx context.Context, s *RESTSession, tags map[string]*kubermaticv1.VSphereTag,
 	categoryTags []vapitags.Tag) error {
 	for _, tag := range tags {
-		var (
-			fetchedTagID string
-			err          error
-		)
-
-		fetchedTagID = filterTag(categoryTags, tag.Name)
-		if fetchedTagID == "" {
-			fetchedTagID, err = createTag(ctx, s, tag.CategoryID, tag.Name)
+		if filterTag(categoryTags, tag.Name) == "" {
+			_, err := createTag(ctx, s, tag.CategoryID, tag.Name)
 			if err != nil {
 				return fmt.Errorf("failed to create tag %s category: %w", tag.Name, err)
 			}

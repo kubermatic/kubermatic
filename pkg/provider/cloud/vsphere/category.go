@@ -54,7 +54,7 @@ func fetchTagCategory(ctx context.Context, restSession *RESTSession, name string
 	tagManager := tags.NewManager(restSession.Client)
 	categories, err := tagManager.GetCategories(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get tag categories %w", err)
+		return nil, fmt.Errorf("failed to get tag categories: %w", err)
 	}
 
 	for _, category := range categories {
@@ -71,7 +71,7 @@ func defaultClusterSpecTagCategory(ctx context.Context, spec *kubermaticv1.Clust
 		tagManager := tags.NewManager(restSession.Client)
 		category, err := tagManager.GetCategory(ctx, category.ID)
 		if err != nil {
-			return fmt.Errorf("failed to get tag categories %w", err)
+			return fmt.Errorf("failed to get tag categories: %w", err)
 		}
 
 		spec.Cloud.VSphere.TagCategory.Name = category.Name
@@ -83,7 +83,7 @@ func defaultClusterSpecTagCategory(ctx context.Context, spec *kubermaticv1.Clust
 		tagManager := tags.NewManager(restSession.Client)
 		category, err := tagManager.GetCategory(ctx, category.Name)
 		if err != nil {
-			return fmt.Errorf("failed to get tag categories %w", err)
+			return fmt.Errorf("failed to get tag categories: %w", err)
 		}
 
 		spec.Cloud.VSphere.TagCategory.ID = category.ID

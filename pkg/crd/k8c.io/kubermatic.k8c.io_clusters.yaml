@@ -968,6 +968,8 @@ spec:
                             name:
                               description: Name represents the name of vSphere tag category that will be used to create and attach tags on VMS.
                               type: string
+                          required:
+                            - name
                           type: object
                         tags:
                           additionalProperties:

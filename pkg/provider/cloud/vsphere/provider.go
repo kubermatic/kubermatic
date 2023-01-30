@@ -204,14 +204,14 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 		if tagCategory.ID != "" {
 			tagManager := vapi.NewManager(restSession.Client)
 			if _, err := tagManager.GetCategory(ctx, tagCategory.ID); err != nil {
-				return fmt.Errorf("failed to get tag categories %w", err)
+				return fmt.Errorf("failed to get tag categories: %w", err)
 			}
 		}
 
 		if tagCategory.Name != "" {
 			tagManager := vapi.NewManager(restSession.Client)
 			if _, err := tagManager.GetCategory(ctx, tagCategory.Name); err != nil {
-				return fmt.Errorf("failed to get tag categories %w", err)
+				return fmt.Errorf("failed to get tag categories: %w", err)
 			}
 		}
 	}
@@ -257,7 +257,7 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	}
 
 	if err := syncDeletedClusterTags(ctx, restSession, categoryTags, cluster); err != nil {
-		return nil, fmt.Errorf("failed to cleanup cluster tags: %v", err)
+		return nil, fmt.Errorf("failed to cleanup cluster tags: %w", err)
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinilizer) {
