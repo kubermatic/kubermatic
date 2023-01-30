@@ -21,34 +21,36 @@ import (
 	"fmt"
 
 	vapitags "github.com/vmware/govmomi/vapi/tags"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	tagManager := vapitags.NewManager(restSession.Client)
-	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tag %w", err)
-	}
-
-	if err := syncCreatedClusterTags(ctx, restSession, cluster.Spec.Cloud.VSphere.Tags, categoryTags); err != nil {
+	if err := syncCreatedClusterTags(ctx, restSession, cluster); err != nil {
 		return nil, fmt.Errorf("failed to sync created tags %w", err)
 	}
 
-	if err := syncDeletedClusterTags(ctx, restSession, categoryTags, cluster); err != nil {
+	if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
 		return nil, fmt.Errorf("failed to sync deleted tags %w", err)
 	}
 
 	return cluster, nil
 }
 
-func syncCreatedClusterTags(ctx context.Context, s *RESTSession, tags map[string]*kubermaticv1.VSphereTag,
-	categoryTags []vapitags.Tag) error {
-	for _, tag := range tags {
-		if filterTag(categoryTags, tag.Name) == "" {
-			_, err := createTag(ctx, s, tag.CategoryID, tag.Name)
+func syncCreatedClusterTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) error {
+	tagManager := vapitags.NewManager(restSession.Client)
+	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.Tags.CategoryID)
+	if err != nil {
+		return fmt.Errorf("failed to get tag %w", err)
+	}
+
+	for _, vsphereTag := range cluster.Spec.Cloud.VSphere.Tags.Tags {
+		if filterTag(categoryTags, vsphereTag) == "" {
+			_, err := createTag(ctx, restSession, cluster.Spec.Cloud.VSphere.Tags.CategoryID, vsphereTag)
 			if err != nil {
-				return fmt.Errorf("failed to create tag %s category: %w", tag.Name, err)
+				return fmt.Errorf("failed to create tag %s category: %w", vsphereTag, err)
 			}
 		}
 	}
@@ -56,19 +58,23 @@ func syncCreatedClusterTags(ctx context.Context, s *RESTSession, tags map[string
 	return nil
 }
 
-func syncDeletedClusterTags(ctx context.Context, s *RESTSession, categoryTags []vapitags.Tag,
-	cluster *kubermaticv1.Cluster) error {
-	tagManager := vapitags.NewManager(s.Client)
+func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) error {
+	tagManager := vapitags.NewManager(restSession.Client)
+	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.Tags.CategoryID)
+	if err != nil {
+		return fmt.Errorf("failed to get tag %w", err)
+	}
 
-	for _, tag := range categoryTags {
-		if _, ok := cluster.Spec.Cloud.VSphere.Tags[tag.Name]; ok {
+	clusterTags := sets.NewString(cluster.Spec.Cloud.VSphere.Tags.Tags...)
+	for _, vsphereTag := range categoryTags {
+		if _, ok := clusterTags[vsphereTag.Name]; ok {
 			if cluster.DeletionTimestamp == nil {
 				continue
 			}
 		}
 
-		if err := tagManager.DeleteTag(ctx, &tag); err != nil {
-			return fmt.Errorf("failed to delete tag %s: %w", tag.Name, err)
+		if err := tagManager.DeleteTag(ctx, &vsphereTag); err != nil {
+			return fmt.Errorf("failed to delete tag %s: %w", vsphereTag.Name, err)
 		}
 	}
 

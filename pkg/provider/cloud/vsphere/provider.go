@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 
-	vapi "github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -77,13 +76,6 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil, fmt.Errorf("failed to create REST client session: %w", err)
 	}
 
-	if cluster.Spec.Cloud.VSphere.TagCategory != nil && cluster.Spec.Cloud.VSphere.TagCategory.Name != "" {
-		cluster, err = reconcileTagCategory(ctx, restSession, cluster, update)
-		if err != nil {
-			return nil, fmt.Errorf("failed to reconcile cluster tag category: %w", err)
-		}
-	}
-
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
 		cluster, err = reconcileTags(ctx, restSession, cluster)
 		if err != nil {
@@ -122,27 +114,12 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 
 // DefaultCloudSpec adds defaults to the cloud spec.
 func (v *VSphere) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
-	if spec.Cloud.VSphere.TagCategory == nil {
+	if spec.Cloud.VSphere.Tags == nil {
 		if v.dc.DefaultTagCategoryID != "" {
-			spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
-				ID: v.dc.DefaultTagCategoryID,
+			spec.Cloud.VSphere.Tags = &kubermaticv1.VSphereTags{
+				CategoryID: v.dc.DefaultTagCategoryID,
 			}
 		}
-	}
-
-	if tagCategory := spec.Cloud.VSphere.TagCategory; tagCategory != nil {
-		username, password, err := getCredentialsForCluster(spec.Cloud, v.secretKeySelector, v.dc)
-		if err != nil {
-			return err
-		}
-
-		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
-		if err != nil {
-			return fmt.Errorf("failed to create REST client session: %w", err)
-		}
-		defer restSession.Logout(ctx)
-
-		return defaultClusterSpecTagCategory(ctx, spec, tagCategory, restSession)
 	}
 
 	return nil
@@ -194,28 +171,6 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 		}
 	}
 
-	if tagCategory := spec.VSphere.TagCategory; tagCategory != nil {
-		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
-		if err != nil {
-			return fmt.Errorf("failed to create REST client session: %w", err)
-		}
-		defer restSession.Logout(ctx)
-
-		if tagCategory.ID != "" {
-			tagManager := vapi.NewManager(restSession.Client)
-			if _, err := tagManager.GetCategory(ctx, tagCategory.ID); err != nil {
-				return fmt.Errorf("failed to get tag categories: %w", err)
-			}
-		}
-
-		if tagCategory.Name != "" {
-			tagManager := vapi.NewManager(restSession.Client)
-			if _, err := tagManager.GetCategory(ctx, tagCategory.Name); err != nil {
-				return fmt.Errorf("failed to get tag categories: %w", err)
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -250,13 +205,7 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 		return nil, err
 	}
 
-	tagManager := vapi.NewManager(restSession.Client)
-	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tag %w", err)
-	}
-
-	if err := syncDeletedClusterTags(ctx, restSession, categoryTags, cluster); err != nil {
+	if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
 		return nil, fmt.Errorf("failed to cleanup cluster tags: %w", err)
 	}
 
