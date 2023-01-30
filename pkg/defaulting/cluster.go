@@ -84,6 +84,11 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		spec.ExposeStrategy = seed.Spec.ExposeStrategy
 	}
 
+	// set container runtime to containerd if unset; this is in line with our CRD comments.
+	if spec.ContainerRuntime == "" {
+		spec.ContainerRuntime = "containerd"
+	}
+
 	// Though the caller probably had already determined the datacenter
 	// to construct the cloud provider instance, we do not take the DC
 	// as a parameter, to keep this function's signature at least somewhat
