@@ -17,6 +17,8 @@ limitations under the License.
 package vsphere
 
 import (
+	"context"
+	"crypto/x509"
 	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -108,4 +110,18 @@ func getCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	}
 
 	return username, password, nil
+}
+
+// ValidateCredentials allows to verify username and password for a specific vSphere datacenter. It does so by attempting
+// to create a new session and finding the default folder.
+func ValidateCredentials(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) error {
+	session, err := newSession(ctx, dc, username, password, caBundle)
+	if err != nil {
+		return err
+	}
+	defer session.Logout(ctx)
+
+	_, err = session.Finder.DefaultFolder(ctx)
+
+	return err
 }
