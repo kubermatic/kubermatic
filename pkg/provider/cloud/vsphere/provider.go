@@ -22,7 +22,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/vmware/govmomi/vapi/tags"
+	vapi "github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -34,10 +34,7 @@ import (
 const (
 	folderCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-folder"
 	// categoryCleanupFinilizer will instruct the deletion of the default category tag.
-	tagCategoryCleanupFinilizer = "kubermatic.k8c.io/cleanup-vsphere-tag-category"
-
-	defaultCategoryPrefix = "kubermatic.k8c.io/tag-category"
-	defaultTagPrefix      = "kubermatic.k8c.io/tag"
+	tagCleanupFinilizer = "kubermatic.k8c.io/cleanup-vsphere-tags"
 )
 
 // VSphere represents the vsphere provider.
@@ -80,15 +77,15 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil, fmt.Errorf("failed to create REST client session: %w", err)
 	}
 
-	if force || cluster.Spec.Cloud.VSphere.TagCategory == nil {
+	if cluster.Spec.Cloud.VSphere.TagCategory != nil && cluster.Spec.Cloud.VSphere.TagCategory.Name != "" {
 		cluster, err = reconcileTagCategory(ctx, restSession, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster tag category: %w", err)
 		}
 	}
 
-	if force || cluster.Spec.Cloud.VSphere.Tags == nil {
-		cluster, err = reconcileTags(ctx, restSession, cluster, update)
+	if cluster.Spec.Cloud.VSphere.Tags != nil {
+		cluster, err = reconcileTags(ctx, restSession, cluster)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster tags: %w", err)
 		}
@@ -126,8 +123,10 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 // DefaultCloudSpec adds defaults to the cloud spec.
 func (v *VSphere) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
 	if spec.Cloud.VSphere.TagCategory == nil {
-		spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
-			ID: v.dc.DefaultTagCategoryID,
+		if v.dc.DefaultTagCategoryID != "" {
+			spec.Cloud.VSphere.TagCategory = &kubermaticv1.TagCategory{
+				ID: v.dc.DefaultTagCategoryID,
+			}
 		}
 	}
 
@@ -203,14 +202,14 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 		defer restSession.Logout(ctx)
 
 		if tagCategory.ID != "" {
-			tagManager := tags.NewManager(restSession.Client)
+			tagManager := vapi.NewManager(restSession.Client)
 			if _, err := tagManager.GetCategory(ctx, tagCategory.ID); err != nil {
 				return fmt.Errorf("failed to get tag categories %w", err)
 			}
 		}
 
 		if tagCategory.Name != "" {
-			tagManager := tags.NewManager(restSession.Client)
+			tagManager := vapi.NewManager(restSession.Client)
 			if _, err := tagManager.GetCategory(ctx, tagCategory.Name); err != nil {
 				return fmt.Errorf("failed to get tag categories %w", err)
 			}
@@ -241,7 +240,7 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	}
 	defer restSession.Logout(ctx)
 
-	if err := deleteVMFolder(ctx, session, restSession, cluster.Name, cluster.Spec.Cloud.VSphere.Folder); err != nil {
+	if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
 		return nil, err
 	}
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -251,12 +250,19 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 		return nil, err
 	}
 
-	if kuberneteshelper.HasFinalizer(cluster, tagCategoryCleanupFinilizer) {
-		if err := deleteTagCategory(ctx, restSession, cluster); err != nil {
-			return nil, err
-		}
+	tagManager := vapi.NewManager(restSession.Client)
+	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.TagCategory.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tag %w", err)
+	}
+
+	if err := syncDeletedClusterTags(ctx, restSession, categoryTags, cluster); err != nil {
+		return nil, fmt.Errorf("failed to cleanup cluster tags: %v", err)
+	}
+
+	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinilizer) {
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kuberneteshelper.RemoveFinalizer(cluster, tagCategoryCleanupFinilizer)
+			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinilizer)
 		})
 		if err != nil {
 			return nil, err
