@@ -194,6 +194,8 @@ func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconcilin
 				if err := unstructured.SetNestedField(u.Object, constraint.Spec.EnforcementAction, spec, enforcementAction); err != nil {
 					return nil, fmt.Errorf("error setting constraint nested EnforcementAction: %w", err)
 				}
+			} else {
+				unstructured.RemoveNestedField(u.Object, spec, enforcementAction)
 			}
 
 			return u, nil
