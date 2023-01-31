@@ -228,6 +228,37 @@ func TestReconcile(t *testing.T) {
 				WithScheme(scheme.Scheme).
 				Build(),
 		},
+		{
+			name: "scenario 8: update constraint to user cluster with enforcement Action removed",
+			namespacedName: types.NamespacedName{
+				Namespace: "namespace",
+				Name:      constraintName,
+			},
+			expectedConstraint: func() apiv2.Constraint {
+				constraint := generator.GenDefaultAPIConstraint(constraintName, kind)
+				return constraint
+			}(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(
+					func() *kubermaticv1.Constraint {
+						constraint := generator.GenConstraint(constraintName, "namespace", kind)
+						return constraint
+					}(),
+				).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(&test.RequiredLabel{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: constraintName,
+					},
+					Spec: test.ConstraintSpec{EnforcementAction: "warn"},
+				}).
+				Build(),
+		},
 	}
 
 	for _, tc := range testCases {
