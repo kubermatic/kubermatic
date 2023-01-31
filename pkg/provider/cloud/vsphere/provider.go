@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 
+	vapitags "github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -168,6 +169,18 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 	if ds := spec.VSphere.Datastore; ds != "" {
 		if _, err = session.Finder.Datastore(ctx, ds); err != nil {
 			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %w", ds, err)
+		}
+	}
+
+	if spec.VSphere.Tags != nil && spec.VSphere.Tags.CategoryID != "" {
+		restSession, err := newRESTSession(ctx, v.dc, username, password, v.caBundle)
+		if err != nil {
+			return fmt.Errorf("failed to create REST client session: %w", err)
+		}
+		defer restSession.Logout(ctx)
+
+		if _, err := vapitags.NewManager(restSession.Client).GetCategory(ctx, spec.VSphere.Tags.CategoryID); err != nil {
+			return fmt.Errorf("failed to fetch tag category: %w", err)
 		}
 	}
 
