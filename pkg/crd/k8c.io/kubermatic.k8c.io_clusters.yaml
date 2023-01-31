@@ -959,34 +959,20 @@ spec:
                         storagePolicy:
                           description: StoragePolicy to be used for storage provisioning
                           type: string
-                        tagCategory:
-                          description: TagCategory is the vSphere tag category that is owned by KKP. It is really important to note that, if the user set this field manually, KKP will claim this category as it's own, thus if the cluster has been deleted, the category and it is all underlying tags will be deleted as well.
-                          properties:
-                            id:
-                              description: ID represents the category id for the machine deployment tags.
-                              type: string
-                            name:
-                              description: Name represents the name of vSphere tag category that will be used to create and attach tags on VMS.
-                              type: string
-                          type: object
                         tags:
-                          additionalProperties:
-                            description: VSphereTag represents the tags that are attached or created on the cluster level, that are then propagated down to the MachineDeployments. In order to attach tags on MachineDeployment, users must create the tag on a cluster level first then attach that tag on the MachineDeployment.
-                            properties:
-                              categoryID:
-                                description: CategoryID is the id of the vsphere category that the tag belongs to. If the category id is left empty, the default category id for the cluster will be used.
+                          description: Tags represents the tags that are attached or created on the cluster level, that are then propagated down to the MachineDeployments. In order to attach tags on MachineDeployment, users must create the tag on a cluster level first then attach that tag on the MachineDeployment.
+                          properties:
+                            categoryID:
+                              description: CategoryID is the id of the vsphere category that the tag belongs to. If the category id is left empty, the default category id for the cluster will be used.
+                              type: string
+                            tags:
+                              description: Tags represents the name of the created tags.
+                              items:
                                 type: string
-                              id:
-                                description: ID represents the generated vsphere tag id.
-                                type: string
-                              name:
-                                description: Name represents the name of the created tag.
-                                type: string
-                            required:
-                              - categoryID
-                              - name
-                            type: object
-                          description: Tags represent the tags that are attached or created on the cluster level and propagated to MachineDeployment level afterwards.
+                              type: array
+                          required:
+                            - categoryID
+                            - tags
                           type: object
                         username:
                           description: Username is the vSphere user name.

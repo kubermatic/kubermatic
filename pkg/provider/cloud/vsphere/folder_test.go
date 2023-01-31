@@ -61,7 +61,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			}
 			defer restSession.Logout(context.TODO())
 
-			if err := createVMFolder(context.Background(), session, restSession, test.expectedFolder); err != nil {
+			if err := createVMFolder(context.Background(), session, test.expectedFolder); err != nil {
 				t.Fatal(err)
 			}
 
@@ -76,7 +76,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 				if folder.Path == test.expectedFolder {
 					folderFound = true
 
-					if err := deleteVMFolder(context.Background(), session, restSession, "", test.expectedFolder); err != nil {
+					if err := deleteVMFolder(context.Background(), session, test.expectedFolder); err != nil {
 						t.Fatal(err)
 					}
 				}
