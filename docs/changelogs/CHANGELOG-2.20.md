@@ -13,6 +13,13 @@
 - [v2.20.10](#v22010)
 - [v2.20.11](#v22011)
 - [v2.20.12](#v22012)
+- [v2.20.13](#v22013)
+
+## [v2.20.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.13)
+
+### Updates
+
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.1 ([#11750](https://github.com/kubermatic/kubermatic/pull/11750))
 
 ## [v2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.12)
 
