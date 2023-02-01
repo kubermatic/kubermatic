@@ -216,10 +216,6 @@ func GenerateCluster(
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	// Default container runtime if it is empty and run the validation.
-	if spec.ContainerRuntime == "" {
-		spec.ContainerRuntime = "containerd"
-	}
 	if err = validation.ValidateContainerRuntime(spec); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

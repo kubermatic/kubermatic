@@ -1052,6 +1052,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 			HumanReadableName:     name,
 			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 			ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
+			ContainerRuntime:      "containerd",
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				DNSDomain: "cluster.local",
 				ProxyMode: "ipvs",

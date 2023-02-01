@@ -85,6 +85,11 @@ func Spec(ctx context.Context, apiCluster apiv1.Cluster, template *kubermaticv1.
 		spec.ClusterNetwork = *apiCluster.Spec.ClusterNetwork
 	}
 
+	// Default container runtime if it is empty.
+	if spec.ContainerRuntime == "" {
+		spec.ContainerRuntime = "containerd"
+	}
+
 	cloudProvider, err := CloudProviderForCluster(spec, dc, secretKeyGetter, caBundle)
 	if err != nil {
 		return nil, err
