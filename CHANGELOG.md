@@ -15,6 +15,13 @@
 - [v2.19.12](#v21912)
 - [v2.19.13](#v21913)
 - [v2.19.14](#v21914)
+- [v2.19.15](#v21915)
+
+## [v2.19.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.19.15)
+
+### Bugfixes
+
+- Update machine-controller to v1.42.9 and operating-system-manager (OSM) to v0.3.10. This fixes the issue with the new nodes not joining the cluster because of non-existing containerd and Docker packages. containerd is updated to v1.6 (from 1.4) and Docker is updated to 20.10 (from 19.03) ([#11797](https://github.com/kubermatic/kubermatic/pull/11797))
  
 ## [v2.19.14](https://github.com/kubermatic/kubermatic/releases/tag/2.19.14)
 
