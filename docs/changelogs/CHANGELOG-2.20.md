@@ -17,6 +17,10 @@
 
 ## [v2.20.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.13)
 
+### Bugfixes
+
+- Update machine-controller to v1.45.6 and operating-system-manager (OSM) to v0.4.6. This fixes the issue with the new nodes not joining the cluster because of non-existing containerd and Docker packages. containerd is updated to v1.6 (from 1.4) and Docker is updated to 20.10 (from 19.03) ([#11796](https://github.com/kubermatic/kubermatic/pull/11796))
+
 ### Updates
 
 - Update Anexia CCM (cloud-controller-manager) to version 1.5.1 ([#11750](https://github.com/kubermatic/kubermatic/pull/11750))
