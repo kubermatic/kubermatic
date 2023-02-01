@@ -218,8 +218,10 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 		return nil, err
 	}
 
-	if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
-		return nil, fmt.Errorf("failed to cleanup cluster tags: %w", err)
+	if cluster.Spec.Cloud.VSphere.Tags != nil {
+		if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
+			return nil, fmt.Errorf("failed to cleanup cluster tags: %w", err)
+		}
 	}
 
 	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {

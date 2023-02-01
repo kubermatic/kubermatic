@@ -53,7 +53,7 @@ var (
 const (
 	Name = "machine-controller"
 	// TODO: update to tagged machine-controller version.
-	Tag = "132ea69c770a7c937eca6471c99a85f26a2db876"
+	Tag = "07702e76ae500b54cdaf542e574fdf74d6a074a3"
 )
 
 type machinecontrollerData interface {
