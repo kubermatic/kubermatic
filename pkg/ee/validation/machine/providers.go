@@ -26,6 +26,7 @@ package machine
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"strconv"
 
@@ -93,7 +94,7 @@ const (
 	envKubeVirtKubeconfig = "KUBEVIRT_KUBECONFIG"
 )
 
-func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine, certPool *x509.CertPool) (*ResourceDetails, error) {
 	config, err := types.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
@@ -114,7 +115,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	case types.CloudProviderVsphere:
 		quotaUsage, err = getVsphereResourceRequirements(config)
 	case types.CloudProviderOpenstack:
-		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, certPool)
 	case types.CloudProviderAlibaba:
 		quotaUsage, err = getAlibabaResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderHetzner:
@@ -349,7 +350,7 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, certPool *x509.CertPool) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := openstacktypes.GetConfig(*config)
@@ -407,7 +408,7 @@ func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntim
 		return nil, fmt.Errorf("failed to get the value of openstack \"region\" field: %w", err)
 	}
 
-	flavor, err := openstack.DescribeFlavor(creds, identityEndpoint, region, caBundle.CertPool(), flavorName)
+	flavor, err := openstack.DescribeFlavor(creds, identityEndpoint, region, certPool, flavorName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of openstack \"flavorSize\" field: %w", err)
 	}
