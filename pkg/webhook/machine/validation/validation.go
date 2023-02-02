@@ -81,7 +81,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		return err
 	}
 	if quota != nil {
-		return validateQuota(ctx, log, v.userClient, machine, v.caBundle, quota)
+		return validateQuota(ctx, log, v.userClient, machine, v.caBundle.CertPool(), quota)
 	}
 	return nil
 }

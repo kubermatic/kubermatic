@@ -20,6 +20,7 @@ package validation
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -27,15 +28,14 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	eemachinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func validateQuota(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client,
-	machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle, resourceQuota *kubermaticv1.ResourceQuota) error {
-	return eemachinevalidation.ValidateQuota(ctx, log, userClient, machine, caBundle, resourceQuota)
+	machine *clusterv1alpha1.Machine, certPool *x509.CertPool, resourceQuota *kubermaticv1.ResourceQuota) error {
+	return eemachinevalidation.ValidateQuota(ctx, log, userClient, machine, certPool, resourceQuota)
 }
 
 func getResourceQuota(ctx context.Context, seedClient ctrlruntimeclient.Client, subjectSelector labels.Selector) (*kubermaticv1.ResourceQuota, error) {
