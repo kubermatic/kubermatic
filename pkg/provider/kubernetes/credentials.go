@@ -302,6 +302,19 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	if spec.Domain == "" {
 		spec.Domain = oldCred.Domain
 	}
+	if spec.Username == "" {
+		spec.Username = oldCred.Username
+	}
+	if spec.Password == "" {
+		spec.Password = oldCred.Password
+	}
+	if spec.ApplicationCredentialID == "" {
+		spec.ApplicationCredentialID = oldCred.ApplicationCredentialID
+	}
+	if spec.ApplicationCredentialSecret == "" {
+		spec.ApplicationCredentialSecret = oldCred.ApplicationCredentialSecret
+	}
+
 	authToken := ""
 	if spec.UseToken {
 		if spec.Token == "" {
