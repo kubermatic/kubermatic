@@ -316,7 +316,7 @@ Konnectivity is now GA.
 - Add GET `/api/v2/providers/eks/clusterroles` endpoint to list EKS Cluster Roles ([#10778](https://github.com/kubermatic/kubermatic/pull/10778))
 - Add GET `/api/v2/providers/eks/noderoles` endpoint to list EKS Worker Node Roles ([#10939](https://github.com/kubermatic/kubermatic/pull/10939))
 - Add GET endpoint `/api/v2/providers/aks/resourcegroups` to list AKS resource groups ([#10921](https://github.com/kubermatic/kubermatic/pull/10921))
-- Replace GET `api/v2/providers/eks/noderoles` endpoint with `/api/v2/projects/{project\_id}/kubernetes/clusters/{cluster\_id}/providers/eks/noderoles` endpoint to list EKS NodeRoles ([#10975](https://github.com/kubermatic/kubermatic/pull/10975))
+- Replace GET `api/v2/providers/eks/noderoles` endpoint with `/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/providers/eks/noderoles` endpoint to list EKS NodeRoles ([#10975](https://github.com/kubermatic/kubermatic/pull/10975))
 - Add API endpoints to create service accounts and get associated kubeconfig ([#11120](https://github.com/kubermatic/kubermatic/pull/11120))
     - GET, POST `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount`
     - DELETE `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}`
