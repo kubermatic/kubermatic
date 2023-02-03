@@ -38,7 +38,6 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Add support for ToplogySpreadConstraint for Kubevirt VM ([#11114](https://github.com/kubermatic/kubermatic/pull/11114))
 - Add support for instancetype/preference ([#11182](https://github.com/kubermatic/kubermatic/pull/11182))
 - Update KubeVirt CCM to v0.4.0 and kubevirt.io/api to v0.58.0 ([#11249](https://github.com/kubermatic/kubermatic/pull/11249))
-- Add Images option in KubeVirt DataCenter which supports download and caching of VM images from HTTP source ([#11302](https://github.com/kubermatic/kubermatic/pull/11302))
 - Switch StorageClasses init configuration from annotation to DC ([#11716](https://github.com/kubermatic/kubermatic/pull/11716))
 - Update KubeVirt DC: add additional network policies configuration ([#11659](https://github.com/kubermatic/kubermatic/pull/11659))
 - Update seed and cluster to config StorageClasses from seed ([#11701](https://github.com/kubermatic/kubermatic/pull/11701))
