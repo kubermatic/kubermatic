@@ -65,7 +65,7 @@ Konnectivity is now GA.
 
 - Add `.spec.projects` field to `Preset` resources to allow binding Presets to specific projects ([#11100](https://github.com/kubermatic/kubermatic/pull/11100))
 
-#### OIDC Support
+#### OIDC
 
 - Add groups in OIDC kubeconfig ([#11121](https://github.com/kubermatic/kubermatic/pull/11121))
 - Add `OIDCProviderConfiguration` to Seed's spec allowing to configure dedicated OIDC provider for each Seed ([#11668](https://github.com/kubermatic/kubermatic/pull/11668))
@@ -251,6 +251,10 @@ Konnectivity is now GA.
 - Use seed proxy configuration for seed-controller-manager ([#11561](https://github.com/kubermatic/kubermatic/pull/11561))
 - Paused external clusters will not be processed ([#11447](https://github.com/kubermatic/kubermatic/pull/11447))
 
+#### Bugfixes (EE)
+
+- Fix a bug in metering that lead to outdated Project and/or Cluster labels in reports ([#11743](https://github.com/kubermatic/kubermatic/pull/11743))
+
 ### Updates
 
 - Update to Cilium v1.12.2 and v1.11.9 ([#11013](https://github.com/kubermatic/kubermatic/pull/11013))
@@ -271,7 +275,6 @@ Konnectivity is now GA.
     - Add average-used-cpu-millicores to Cluster and Namespace reports
     - Add average-available-cpu-millicores add average-cluster-machines field to Cluster reports
     - Fix a bug that causes wrong values if metric is not continuously present for the aggregation window 
-- Fix a bug in metering that lead to outdated Project and/or Cluster labels in reports ([#11743](https://github.com/kubermatic/kubermatic/pull/11743))
 
 ### Miscellaneous
 
@@ -405,6 +408,7 @@ Konnectivity is now GA.
 - Add an resource quota endpoint which given a provider node size and replica count, returns the calculation of what the projects resource quota usage would be and a message if the quota is exceeded.`POST /api/v2/projects/{project_id}/quotacalculation` ([#5315](https://github.com/kubermatic/dashboard/pull/5315))
 - The quota widget is shown on the external cluster list, wizard, and import dialog ([#5145](https://github.com/kubermatic/dashboard/pull/5145))
 - The quota widget will show a warning icon when the quota limit is exceeded. The quota widget is now visible on the clusters details and machine deployment details page ([#5105](https://github.com/kubermatic/dashboard/pull/5105))
+- Add support for live quota update ([#5519](https://github.com/kubermatic/dashboard/pull/5519))
 
 #### Cleanup
 
@@ -418,7 +422,7 @@ Konnectivity is now GA.
 #### Design
 
 - Add a Back button in the import external cluster dialog ([#5063](https://github.com/kubermatic/dashboard/pull/5063))
-- Add edit product button in project overview page,  rearrangement for the create resource list ([#5536](https://github.com/kubermatic/dashboard/pull/5536))
+- Add edit product button in project overview page, rearrangement for the create resource list ([#5536](https://github.com/kubermatic/dashboard/pull/5536))
 - Add new section in admin settings to view seed configurations ([#5285](https://github.com/kubermatic/dashboard/pull/5285))
 - Change the showing advance settings button to expanding arrow in the edit md dialog  and rearrange some fields in it ([#5182](https://github.com/kubermatic/dashboard/pull/5182))
 - Cluster Template (Creation, Edit and Customize) UX enhancement ([#5497](https://github.com/kubermatic/dashboard/pull/5497))
@@ -436,6 +440,5 @@ Konnectivity is now GA.
 - Code and dependencies for API and Web have been split into dedicated modules ([#5257](https://github.com/kubermatic/dashboard/pull/5257))
 - While creating a cluster while using the KubeVirt provider, "ADVANCED DISK CONFIGURATION" will be expanded by default. Info text under "ADVANCED DISK CONFIGURATION" will stay visible after the user clicks the "Add local Disk" button. Validation is added to Custom local disks' "name" and ADVANCED SCHEDULING SETTINGS "node affinity preset values" inputs ([#5183](https://github.com/kubermatic/dashboard/pull/5183))
 - Add extend session functionality to web terminal ([#5353](https://github.com/kubermatic/dashboard/pull/5353))
-- Add support for live quota update ([#5519](https://github.com/kubermatic/dashboard/pull/5519))
 - Update to Go 1.19.3 ([#5188](https://github.com/kubermatic/dashboard/pull/5188))
 - Hide KKP managed applications from add application dialog and only allow admin to view them ([#5510](https://github.com/kubermatic/dashboard/pull/5510))
