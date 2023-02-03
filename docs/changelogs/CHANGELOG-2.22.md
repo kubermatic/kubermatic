@@ -219,7 +219,7 @@ Konnectivity is now GA.
 - Support to filter machines based on resources (CPU, RAM, GPU) per datacenter ([#11130](https://github.com/kubermatic/kubermatic/pull/11130))
 - Add Canal CNI version v3.24 ([#11575](https://github.com/kubermatic/kubermatic/pull/11575))
 
-### New Features (EE)
+#### New Features (EE)
 
 - Add support for GroupProjectBindings in MLA Grafana ([#11076](https://github.com/kubermatic/kubermatic/pull/11076))
 
@@ -265,37 +265,13 @@ Konnectivity is now GA.
 - Update Prometheus to 2.40.2 ([#11423](https://github.com/kubermatic/kubermatic/pull/11423))
 - Update to etcd 3.5.6 to prevent potential data inconsistency issues during online defragmentation ([#11403](https://github.com/kubermatic/kubermatic/pull/11403))
 
-### Updates (EE)
+#### Updates (EE)
 
 - Update metering to version 1.0.1 ([#11282](https://github.com/kubermatic/kubermatic/pull/11282))
     - Add average-used-cpu-millicores to Cluster and Namespace reports
     - Add average-available-cpu-millicores add average-cluster-machines field to Cluster reports
     - Fix a bug that causes wrong values if metric is not continuously present for the aggregation window 
 - Fix a bug in metering that lead to outdated Project and/or Cluster labels in reports ([#11743](https://github.com/kubermatic/kubermatic/pull/11743))
-
-### Dashboard & API
-
-- The KKP API is run based on the Dashboard's Docker image now ([#11229](https://github.com/kubermatic/kubermatic/pull/11229))
-- Add GET `/api/v2/providers/eks/clusterroles` endpoint to list EKS Cluster Roles ([#10778](https://github.com/kubermatic/kubermatic/pull/10778))
-- Add GET `/api/v2/providers/eks/noderoles` endpoint to list EKS Worker Node Roles ([#10939](https://github.com/kubermatic/kubermatic/pull/10939))
-- Add GET endpoint `/api/v2/providers/aks/resourcegroups` to list AKS resource groups ([#10921](https://github.com/kubermatic/kubermatic/pull/10921))
-- Replace GET `api/v2/providers/eks/noderoles` endpoint with `/api/v2/projects/{project\_id}/kubernetes/clusters/{cluster\_id}/providers/eks/noderoles` endpoint to list EKS NodeRoles ([#10975](https://github.com/kubermatic/kubermatic/pull/10975))
-- Add API endpoints to create service accounts and get associated kubeconfig ([#11120](https://github.com/kubermatic/kubermatic/pull/11120))
-    - GET, POST `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount`
-    - DELETE `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}`
-    - GET `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}/kubeconfig`
-- Fix API error in extended disk configuration for provider Anexia ([#11030](https://github.com/kubermatic/kubermatic/pull/11030))
-- Fix Openstack `api/v1/providers/openstack/tenants` API endpoint for some cases where "couldn't get projects: couldn't get tenants for region XX: couldn't get identity endpoint: No suitable endpoint could be found in the service catalog." was wrongly returned ([#10968](https://github.com/kubermatic/kubermatic/pull/10968))
-- Fix issue in KKP API where deleting all datacenters from a Seed and then trying to add a new one would cause a panic ([#10953](https://github.com/kubermatic/kubermatic/pull/10953))
-- Enhance cluster rbac to allow to bind service account to clusterRole and Role. ([#11096](https://github.com/kubermatic/kubermatic/pull/11096)) Following endpoint has been updated:
-    - GET `/api/v2/projects/{project_id}/clusters/{cluster_id}/bindings`
-    - POST `/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings`
-    - DELETE `/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings`
-    - GET `/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterbindings`
-    - POST `/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/role_id/clusterbindings`
-    - DELETE `/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/role_id/clusterbindings`
-- KubeVirt: add new API endpoints to list instancetypes and preferences ([#11085](https://github.com/kubermatic/kubermatic/pull/11085))
-- Add API endpoints for GKE that allow using project-scoped Presets as credentials ([#11156](https://github.com/kubermatic/kubermatic/pull/11156))
 
 ### Miscellaneous
 
@@ -314,3 +290,152 @@ Konnectivity is now GA.
 
 - Remove `metrics-server` addon. The addon was deprecated in v2.9 and should not be part of any usercluster anymore ([#11184](https://github.com/kubermatic/kubermatic/pull/11184))
 - Remove unused `Cluster.Status.CloudProviderRevision` field which carried no useful information anymore ([#11299](https://github.com/kubermatic/kubermatic/pull/11299))
+
+### Dashboard & API
+
+#### API Changes
+
+- Add API endpoint for Equinix Metal that allow using project-scoped Presets as credentials ([#5407](https://github.com/kubermatic/dashboard/pull/5407))
+- Add API endpoint for Hetzner that allows using project-scoped Presets as credentials ([#5246](https://github.com/kubermatic/dashboard/pull/5246))
+- Add API endpoints for Alibaba that allow using project-scoped Presets as credentials ([#5531](https://github.com/kubermatic/dashboard/pull/5531))
+- Add API endpoints for Anexia that allow using project-scoped Presets as credentials ([#5395](https://github.com/kubermatic/dashboard/pull/5395))
+- Add API endpoints for AWS that allow using project-scoped Presets as credentials ([#5441](https://github.com/kubermatic/dashboard/pull/5441))
+- Add API endpoints for Azure that allow using project-scoped Presets as credentials ([#5324](https://github.com/kubermatic/dashboard/pull/5324))
+- Add API endpoints for DigitalOcean that allow using project-scoped Presets as credentials ([#5498](https://github.com/kubermatic/dashboard/pull/5498))
+- Add API endpoints for EKS that allow using project-scoped Presets as credentials ([#5125](https://github.com/kubermatic/dashboard/pull/5125))
+- Add API endpoints for GCP that allow using project-scoped Presets as credentials ([#5330](https://github.com/kubermatic/dashboard/pull/5330))
+- Add API endpoints for KubeVirt that allow using project-scoped Presets as credentials ([#5509](https://github.com/kubermatic/dashboard/pull/5509))
+- Add API endpoints for Nutanix that allow using project-scoped Presets as credentials ([#5154](https://github.com/kubermatic/dashboard/pull/5154))
+- Add API endpoints for OpenStack that allow using project-scoped Presets as credentials ([#5489](https://github.com/kubermatic/dashboard/pull/5489))
+    - ACTION REQUIRED: Headers for API operations `listOpenstackServerGroups` and `listOpenstackSubnetPools` have been renamed from `Tenant`, `TenantID`, `Project`, `ProjectID` to `OpenstackTenant`, `OpenstackTenantID`, `OpenstackProject` and `OpenstackProjectID`, respectively 
+- Add API endpoints for VMware Cloud Director that allow using project-scoped Presets as credentials ([#5512](https://github.com/kubermatic/dashboard/pull/5512))
+- Add API endpoints for vSphere that allow using project-scoped Presets as credentials ([#5508](https://github.com/kubermatic/dashboard/pull/5508))
+- Add API endpoints for GKE that allow using project-scoped Presets as credentials ([#11156](https://github.com/kubermatic/kubermatic/pull/11156))
+- Add API endpoints for AKS that allow using project-scoped Presets as credentials ([#5427](https://github.com/kubermatic/dashboard/pull/5427))
+- Add GET `/api/v2/providers/eks/clusterroles` endpoint to list EKS Cluster Roles ([#10778](https://github.com/kubermatic/kubermatic/pull/10778))
+- Add GET `/api/v2/providers/eks/noderoles` endpoint to list EKS Worker Node Roles ([#10939](https://github.com/kubermatic/kubermatic/pull/10939))
+- Add GET endpoint `/api/v2/providers/aks/resourcegroups` to list AKS resource groups ([#10921](https://github.com/kubermatic/kubermatic/pull/10921))
+- Replace GET `api/v2/providers/eks/noderoles` endpoint with `/api/v2/projects/{project\_id}/kubernetes/clusters/{cluster\_id}/providers/eks/noderoles` endpoint to list EKS NodeRoles ([#10975](https://github.com/kubermatic/kubermatic/pull/10975))
+- Add API endpoints to create service accounts and get associated kubeconfig ([#11120](https://github.com/kubermatic/kubermatic/pull/11120))
+    - GET, POST `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount`
+    - DELETE `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}`
+    - GET `/api/v2/projects/{project_id}/clusters/{cluster_id}/serviceaccount/{namespace}/{service_account_id}/kubeconfig`
+- Enhance cluster rbac to allow to bind service account to clusterRole and Role. ([#11096](https://github.com/kubermatic/kubermatic/pull/11096)) Following endpoint has been updated:
+    - GET `/api/v2/projects/{project_id}/clusters/{cluster_id}/bindings`
+    - POST `/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings`
+    - DELETE `/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings`
+    - GET `/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterbindings`
+    - POST `/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/role_id/clusterbindings`
+    - DELETE `/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/role_id/clusterbindings`
+- KubeVirt: add new API endpoints to list instancetypes and preferences ([#11085](https://github.com/kubermatic/kubermatic/pull/11085))
+- Add KubeVirt list images endpoint ([#5566](https://github.com/kubermatic/dashboard/pull/5566))
+- Add create endpoint for ApplicationDefinitions ([#5307](https://github.com/kubermatic/dashboard/pull/5307))
+- Add delete endpoint for ApplicationDefinitions ([#5399](https://github.com/kubermatic/dashboard/pull/5399))
+- Add `api/v2/projects/<PROJECT>/clusters/<CLUSTER_ID>/serviceacount/<NAMESPACE>/<SA_ID>/permissions` that returns permissions of the Service Account ([#5394](https://github.com/kubermatic/dashboard/pull/5394))
+- Add an admin API endpoint which shows the total resource quota allocation and usage ([#5485](https://github.com/kubermatic/dashboard/pull/5485))
+- Add the option to set autoscaler min and max replicas for a machine deployment through the KKP API. They are only relevant if the autoscaler addon is installed ([#5361](https://github.com/kubermatic/dashboard/pull/5361))
+- Endpoint `/providers/{provider_name}/dc/{dc}/cluster` was introduced to retrieve the default cluster spec for the given provider and datacenter ([#5377](https://github.com/kubermatic/dashboard/pull/5377))
+- Fix Openstack `api/v1/providers/openstack/tenants` API endpoint for some cases where "couldn't get projects: couldn't get tenants for region XX: couldn't get identity endpoint: No suitable endpoint could be found in the service catalog." was wrongly returned ([#10968](https://github.com/kubermatic/kubermatic/pull/10968))
+
+#### Bugfixes
+
+- Dark mode and general UI UX fixes ([#5023](https://github.com/kubermatic/dashboard/pull/5023))
+- Delete button is not shown for external clusters which are already deleted ([#5054](https://github.com/kubermatic/dashboard/pull/5054))
+- Fix API error in the extended disk configuration for provider Anexia ([#5481](https://github.com/kubermatic/dashboard/pull/5481))
+- Fix API error in extended disk configuration for provider Anexia ([#11030](https://github.com/kubermatic/kubermatic/pull/11030))
+- Fix for listing Operating System Profiles for Equinix Metal ([#4969](https://github.com/kubermatic/dashboard/pull/4969))
+- The cluster details step form will be filled with default values when the user re-selects preset/credentials ([#4975](https://github.com/kubermatic/dashboard/pull/4975))
+- The KKP API/UI will now return partial results from requests to resources which are listed across seeds, as the broken/unaccesible seeds will now be skipped. The behaviour before was that the whole request fails ([#5226](https://github.com/kubermatic/dashboard/pull/5226))
+- Unset `tunnelingAgentIP` if cluster expose strategy is not set to Tunneling ([#5528](https://github.com/kubermatic/dashboard/pull/5528))
+- Fix issue in KKP API where deleting all datacenters from a Seed and then trying to add a new one would cause a panic ([#10953](https://github.com/kubermatic/kubermatic/pull/10953))
+
+#### New Features
+
+- Add Web terminal support for user clusters ([#4492](https://github.com/kubermatic/dashboard/pull/4492))
+- [Admin] Clicking Show All Projects toggle: The loading spinner is shown when all projects are fetched ([#5041](https://github.com/kubermatic/dashboard/pull/5041))
+- Add `io2` and `gp3` to AWS provider disk types list ([#5449](https://github.com/kubermatic/dashboard/pull/5449))
+- Add an option to restrict preset to projects ([#5599](https://github.com/kubermatic/dashboard/pull/5599))
+- Add functionality to configure default project quota ([#5565](https://github.com/kubermatic/dashboard/pull/5565))
+- Add functionality to edit initial values of Cilium application when Cilium plugin is selected ([#5579](https://github.com/kubermatic/dashboard/pull/5579))
+- Add new field to enter the instance types when add new MD ([#4906](https://github.com/kubermatic/dashboard/pull/4906))
+- Add separate list and details pages for KubeOne clusters ([#5412](https://github.com/kubermatic/dashboard/pull/5412))
+- Add support for OIDC provider logout URL ([#5521](https://github.com/kubermatic/dashboard/pull/5521))
+- Add support for service account creation and (cluster/namespace) binding ([#5464](https://github.com/kubermatic/dashboard/pull/5464))
+- Add support for using project-scoped Presets ([#5539](https://github.com/kubermatic/dashboard/pull/5539))
+- Add support to import Azure KubeOne cluster ([#5488](https://github.com/kubermatic/dashboard/pull/5488))
+- Add support to import GCP KubeOne cluster ([#5460](https://github.com/kubermatic/dashboard/pull/5460))
+- Add support to migrate KubeOne cluster container runtime ([#5499](https://github.com/kubermatic/dashboard/pull/5499))
+- Add support to select preset in credentials step of KubeOne wizard ([#5504](https://github.com/kubermatic/dashboard/pull/5504))
+- Add support to unset default backup destination in seed ([#5523](https://github.com/kubermatic/dashboard/pull/5523))
+- Add support to upgrade KubeOne machine deployment version ([#5561](https://github.com/kubermatic/dashboard/pull/5561))
+- Add the machine types and disk types fields for GKE cluster creation ([#4917](https://github.com/kubermatic/dashboard/pull/4917))
+- Add TunnelingAgentIP into NetworkDefaults part of the cluster API ([#5288](https://github.com/kubermatic/dashboard/pull/5288))
+- Add update endpoint for ApplicationDefinitions ([#5393](https://github.com/kubermatic/dashboard/pull/5393))
+- Add wizard to import KubeOne clusters, with initial support for AWS provider ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
+- Convert Operating System Image to a dropdown with options specific to selected operating system ([#5568](https://github.com/kubermatic/dashboard/pull/5568))
+- Display instance type and preference category instead of `kind` on cluster summary and node list details page ([#5294](https://github.com/kubermatic/dashboard/pull/5294))
+- Display machines count in cluster list ([#5070](https://github.com/kubermatic/dashboard/pull/5070))
+- External clusters on EKS now support assume role ([#5199](https://github.com/kubermatic/dashboard/pull/5199))
+- In the interface section of admin settings, Enable Kubernetes Dashboard checkbox will be disabled when either OIDCKubeCfgEndpoint or OpenIDAuthPlugin feature flags are disabled ([#5250](https://github.com/kubermatic/dashboard/pull/5250))
+- Introduced an option in admin settings to enforce custom disk for OpenStack Machines ([#5266](https://github.com/kubermatic/dashboard/pull/5266))
+- KubeVirt switch StorageClass config from annotation to DataCenter ([#5569](https://github.com/kubermatic/dashboard/pull/5569))
+- KubeVirt: remove kubevirt/vmflavors endpoints ([#5309](https://github.com/kubermatic/dashboard/pull/5309))
+- KubeVirt: split CSI driver deployment between user and infra cluster ([#5318](https://github.com/kubermatic/dashboard/pull/5318))
+- KubeVirt: switch from flavor to VirtualMachineInstanceType and VirtualMachinePreference ([#5221](https://github.com/kubermatic/dashboard/pull/5221))
+- Make Konnectivity generally available without feature gate ([#5520](https://github.com/kubermatic/dashboard/pull/5520))
+- New admin api endpoint for fetching seed's details ([#5213](https://github.com/kubermatic/dashboard/pull/5213))
+- PodNodeSelector admission plugin: node labels with clusterDefaultNodeSelector namespace are enforced ([#5013](https://github.com/kubermatic/dashboard/pull/5013))
+- Remove Pod Affinity/Anti-affinity settings and add support to configure topology spread constraints in KubeVirt provider ([#5296](https://github.com/kubermatic/dashboard/pull/5296))
+- Replace flavor with instance type and preference in KubeVirt provider ([#5289](https://github.com/kubermatic/dashboard/pull/5289))
+- Show system applications on cluster details page to all users ([#5535](https://github.com/kubermatic/dashboard/pull/5535))
+- Support for configuring expose strategy and API server allow list for clusters ([#5269](https://github.com/kubermatic/dashboard/pull/5269))
+- Support for customization of cluster templates ([#5295](https://github.com/kubermatic/dashboard/pull/5295))
+- Support for managing tag creation for vSphere clusters ([#5629](https://github.com/kubermatic/dashboard/pull/5629))
+- Support for tag association for vSphere machines ([#5636](https://github.com/kubermatic/dashboard/pull/5636))
+- Support for using server groups with OpenStack ([#5201](https://github.com/kubermatic/dashboard/pull/5201))
+- Support to filter machines based on resources(CPU, RAM, GPU) per datacenter ([#5164](https://github.com/kubermatic/dashboard/pull/5164))
+- The quota widget will be visible on the following places:- cluster template page- add cluster from template dialog- add/edit machine deployment dialog ([#5075](https://github.com/kubermatic/dashboard/pull/5075))
+- Update the states for aks, add the provisioning state and power state for aks clusters in the cluster detail page and in the list of machine deployments and in the machine deployment detail page and delete the labels in the machine deployment list for all providers ([#5038](https://github.com/kubermatic/dashboard/pull/5038))
+- Add new option under admin/interface page to enable/disable web terminal from cluster details page ([#5186](https://github.com/kubermatic/dashboard/pull/5186))
+- Allow user to select Node IAM role from dropdown list ([#5016](https://github.com/kubermatic/dashboard/pull/5016))
+- Provide options for autoscaling nodes ([#5369](https://github.com/kubermatic/dashboard/pull/5369))
+
+##### New Features (EE)
+
+- Add an resource quota endpoint which given a provider node size and replica count, returns the calculation of what the projects resource quota usage would be and a message if the quota is exceeded.`POST /api/v2/projects/{project_id}/quotacalculation` ([#5315](https://github.com/kubermatic/dashboard/pull/5315))
+- The quota widget is shown on the external cluster list, wizard, and import dialog ([#5145](https://github.com/kubermatic/dashboard/pull/5145))
+- The quota widget will show a warning icon when the quota limit is exceeded. The quota widget is now visible on the clusters details and machine deployment details page ([#5105](https://github.com/kubermatic/dashboard/pull/5105))
+
+#### Cleanup
+
+- Remove configuring of optional secondary disks to mount nodes ([#5439](https://github.com/kubermatic/dashboard/pull/5439))
+- Remove support for Pod Security Policy Admission Plugin with k8s v1.25 ([#5212](https://github.com/kubermatic/dashboard/pull/5212))
+- Limit data when Listing AppDefs and AppInstalls and add GET endpoint for AppDefs ([#5184](https://github.com/kubermatic/dashboard/pull/5184))
+- KKP specific Nutanix categories (`KKPProject` and `KKPCluster`) are hidden in API responses ([#5282](https://github.com/kubermatic/dashboard/pull/5282))
+- Remove support for SLES operating system ([#5529](https://github.com/kubermatic/dashboard/pull/5529))
+- The initial KubermaticSetting's ResourceFilter is changed from minCPU=1 to minCPU=2. This only affects new KKP installations and just the API/UI. The initial values can be changed as always in the KKP UI Admin settings, or in the KubermaticSetting `globalsettings` resource manually. The change was done to help avoid the creation of clusters which are too small to function properly ([#5331](https://github.com/kubermatic/dashboard/pull/5331))
+
+#### Design
+
+- Add a Back button in the import external cluster dialog ([#5063](https://github.com/kubermatic/dashboard/pull/5063))
+- Add edit product button in project overview page,  rearrangement for the create resource list ([#5536](https://github.com/kubermatic/dashboard/pull/5536))
+- Add new section in admin settings to view seed configurations ([#5285](https://github.com/kubermatic/dashboard/pull/5285))
+- Change the showing advance settings button to expanding arrow in the edit md dialog  and rearrange some fields in it ([#5182](https://github.com/kubermatic/dashboard/pull/5182))
+- Cluster Template (Creation, Edit and Customize) UX enhancement ([#5497](https://github.com/kubermatic/dashboard/pull/5497))
+- Delete button on cluster details page is disabled if cluster is being deleted ([#5049](https://github.com/kubermatic/dashboard/pull/5049))
+- Display list of groups on project overview page in enterprise edition + has permission of owners ([#5171](https://github.com/kubermatic/dashboard/pull/5171))
+- Redesign the Admin settings sidenav bar ([#5308](https://github.com/kubermatic/dashboard/pull/5308))
+- Redesign the project sidenav bar ([#5211](https://github.com/kubermatic/dashboard/pull/5211))
+- Redesign the cluster summary step ([#5242](https://github.com/kubermatic/dashboard/pull/5242))
+- Show empty state project card placeholder when no project exists ([#5001](https://github.com/kubermatic/dashboard/pull/5001))
+
+#### Miscellaneous
+
+- The KKP API is run based on the Dashboard's Docker image now ([#11229](https://github.com/kubermatic/kubermatic/pull/11229))
+- Change primary branch from `master` to `main` ([#5090](https://github.com/kubermatic/dashboard/pull/5090))
+- Code and dependencies for API and Web have been split into dedicated modules ([#5257](https://github.com/kubermatic/dashboard/pull/5257))
+- While creating a cluster while using the KubeVirt provider, "ADVANCED DISK CONFIGURATION" will be expanded by default. Info text under "ADVANCED DISK CONFIGURATION" will stay visible after the user clicks the "Add local Disk" button. Validation is added to Custom local disks' "name" and ADVANCED SCHEDULING SETTINGS "node affinity preset values" inputs ([#5183](https://github.com/kubermatic/dashboard/pull/5183))
+- Add extend session functionality to web terminal ([#5353](https://github.com/kubermatic/dashboard/pull/5353))
+- Add support for live quota update ([#5519](https://github.com/kubermatic/dashboard/pull/5519))
+- Update to Go 1.19.3 ([#5188](https://github.com/kubermatic/dashboard/pull/5188))
+- Hide KKP managed applications from add application dialog and only allow admin to view them ([#5510](https://github.com/kubermatic/dashboard/pull/5510))
