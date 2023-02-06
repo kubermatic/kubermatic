@@ -46,6 +46,18 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Fix KubeVirt LB issue (wrong custer-isolation netpol): LB not accessible from outside user-cluster ([#11640](https://github.com/kubermatic/kubermatic/pull/11640))
 - Change CustomNetworkPolicies type (extract name) ([#11666](https://github.com/kubermatic/kubermatic/pull/11666))
 
+#### KubeOne Cluster Support
+
+- Update KubeOne image to v1.5.3 for KubeOne external cluster controller ([#11388](https://github.com/kubermatic/kubermatic/pull/11388))
+- Add separate list and details pages for KubeOne clusters ([#5412](https://github.com/kubermatic/dashboard/pull/5412))
+- Add wizard to import KubeOne clusters ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
+- Add support to import AWS KubeOne clusters ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
+- Add support to import Azure KubeOne clusters ([#5488](https://github.com/kubermatic/dashboard/pull/5488))
+- Add support to import GCP KubeOne clusters ([#5460](https://github.com/kubermatic/dashboard/pull/5460))
+- Add support to migrate KubeOne cluster container runtime ([#5499](https://github.com/kubermatic/dashboard/pull/5499))
+- Add support to select preset in credentials step of KubeOne wizard ([#5504](https://github.com/kubermatic/dashboard/pull/5504))
+- Add support to upgrade KubeOne machine deployment version ([#5561](https://github.com/kubermatic/dashboard/pull/5561))
+
 #### Web Terminal
 
 - Add Web terminal support for user clusters ([#4492](https://github.com/kubermatic/dashboard/pull/4492))
@@ -261,7 +273,6 @@ Konnectivity is now GA.
 ### Updates
 
 - Update to Cilium v1.12.2 and v1.11.9 ([#11013](https://github.com/kubermatic/kubermatic/pull/11013))
-- Update KubeOne image to v1.5.3 for KubeOne external cluster controller ([#11388](https://github.com/kubermatic/kubermatic/pull/11388))
 - Update MetalLB version to v0.13.7 ([#11252](https://github.com/kubermatic/kubermatic/pull/11252))
 - Update cert-manager to 1.10.1 ([#11412](https://github.com/kubermatic/kubermatic/pull/11412))
 - Update Dex to 2.35.3 ([#11413](https://github.com/kubermatic/kubermatic/pull/11413))
@@ -363,20 +374,13 @@ Konnectivity is now GA.
 - Add functionality to configure default project quota ([#5565](https://github.com/kubermatic/dashboard/pull/5565))
 - Add functionality to edit initial values of Cilium application when Cilium plugin is selected ([#5579](https://github.com/kubermatic/dashboard/pull/5579))
 - Add new field to enter the instance types when add new MD ([#4906](https://github.com/kubermatic/dashboard/pull/4906))
-- Add separate list and details pages for KubeOne clusters ([#5412](https://github.com/kubermatic/dashboard/pull/5412))
 - Add support for OIDC provider logout URL ([#5521](https://github.com/kubermatic/dashboard/pull/5521))
+- Add support to unset default backup destination in seed ([#5523](https://github.com/kubermatic/dashboard/pull/5523))
 - Add support for service account creation and (cluster/namespace) binding ([#5464](https://github.com/kubermatic/dashboard/pull/5464))
 - Add support for using project-scoped Presets ([#5539](https://github.com/kubermatic/dashboard/pull/5539))
-- Add support to import Azure KubeOne cluster ([#5488](https://github.com/kubermatic/dashboard/pull/5488))
-- Add support to import GCP KubeOne cluster ([#5460](https://github.com/kubermatic/dashboard/pull/5460))
-- Add support to migrate KubeOne cluster container runtime ([#5499](https://github.com/kubermatic/dashboard/pull/5499))
-- Add support to select preset in credentials step of KubeOne wizard ([#5504](https://github.com/kubermatic/dashboard/pull/5504))
-- Add support to unset default backup destination in seed ([#5523](https://github.com/kubermatic/dashboard/pull/5523))
-- Add support to upgrade KubeOne machine deployment version ([#5561](https://github.com/kubermatic/dashboard/pull/5561))
 - Add the machine types and disk types fields for GKE cluster creation ([#4917](https://github.com/kubermatic/dashboard/pull/4917))
 - Add TunnelingAgentIP into NetworkDefaults part of the cluster API ([#5288](https://github.com/kubermatic/dashboard/pull/5288))
 - Add update endpoint for ApplicationDefinitions ([#5393](https://github.com/kubermatic/dashboard/pull/5393))
-- Add wizard to import KubeOne clusters, with initial support for AWS provider ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
 - Convert Operating System Image to a dropdown with options specific to selected operating system ([#5568](https://github.com/kubermatic/dashboard/pull/5568))
 - Display instance type and preference category instead of `kind` on cluster summary and node list details page ([#5294](https://github.com/kubermatic/dashboard/pull/5294))
 - Display machines count in cluster list ([#5070](https://github.com/kubermatic/dashboard/pull/5070))
