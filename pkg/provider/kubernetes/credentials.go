@@ -271,13 +271,24 @@ func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclie
 
 func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
 	spec := cluster.Spec.Cloud.Openstack
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+
+	// TenantID and Tenant fields are deprecated, if we find them in the credentials reference secret
+	// then we have to trigger the secret update.
+	tenantToProjectMigrated := true
+	if val, _ := secretKeySelector(cluster.Spec.Cloud.Openstack.CredentialsReference, resources.OpenstackTenant); val != "" {
+		tenantToProjectMigrated = false
+	}
+	if val, _ := secretKeySelector(cluster.Spec.Cloud.Openstack.CredentialsReference, resources.OpenstackTenantID); val != "" {
+		tenantToProjectMigrated = false
+	}
+	clusterSpecMigrated := spec.Username == "" && spec.Password == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
+	if tenantToProjectMigrated && clusterSpecMigrated {
 		return false, nil
 	}
 
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
 	oldCred, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
 	if err != nil {
 		return false, err
@@ -291,6 +302,19 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	if spec.Domain == "" {
 		spec.Domain = oldCred.Domain
 	}
+	if spec.Username == "" {
+		spec.Username = oldCred.Username
+	}
+	if spec.Password == "" {
+		spec.Password = oldCred.Password
+	}
+	if spec.ApplicationCredentialID == "" {
+		spec.ApplicationCredentialID = oldCred.ApplicationCredentialID
+	}
+	if spec.ApplicationCredentialSecret == "" {
+		spec.ApplicationCredentialSecret = oldCred.ApplicationCredentialSecret
+	}
+
 	authToken := ""
 	if spec.UseToken {
 		if spec.Token == "" {
