@@ -36,11 +36,18 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	dvDeleteAfterCompletionAnnotationKey = "cdi.kubevirt.io/storage.deleteAfterCompletion"
+)
+
 type StorageClassAnnotationFilter func(map[string]string) bool
 
 func dataVolumeCreator(datavolume *cdiv1beta1.DataVolume) reconciling.NamedCDIv1beta1DataVolumeCreatorGetter {
 	return func() (name string, create reconciling.CDIv1beta1DataVolumeCreator) {
 		return datavolume.Name, func(dv *cdiv1beta1.DataVolume) (*cdiv1beta1.DataVolume, error) {
+			dv.Annotations = map[string]string{
+				dvDeleteAfterCompletionAnnotationKey: "false",
+			}
 			dv.Spec = datavolume.Spec
 			return dv, nil
 		}
