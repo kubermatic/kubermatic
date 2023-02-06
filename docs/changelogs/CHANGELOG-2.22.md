@@ -29,7 +29,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 #### KubeVirt
 
-KubeVirt cloud provider support is leaving the "technical preview" phase and is now considered GA.
+KubeVirt cloud provider support is leaving the "technical preview" phase and is now considered GA. A [migration guide](https://docs.kubermatic.com/kubermatic/v2.22/architecture/supported-providers/kubevirt/kubevirt/#migration-from-kkp-221-to-kkp-222) is available, please read it before proceeding with the KKP upgrade.
 
 - Fix to ensure that we do not raise an error when reconciling the namespace in the infrastructure KubeVirt cluster, until we get the value of the namespace to create, avoiding transient errors ([#10849](https://github.com/kubermatic/kubermatic/pull/10849))
 - Bugfix for KubeVirt infra CSI token creation due to auto-creation disabled in k8s 1.24 ([#10908](https://github.com/kubermatic/kubermatic/pull/10908))
