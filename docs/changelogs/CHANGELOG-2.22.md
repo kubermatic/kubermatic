@@ -46,7 +46,11 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Fix KubeVirt LB issue (wrong custer-isolation netpol): LB not accessible from outside user-cluster ([#11640](https://github.com/kubermatic/kubermatic/pull/11640))
 - Change CustomNetworkPolicies type (extract name) ([#11666](https://github.com/kubermatic/kubermatic/pull/11666))
 
-### Applications
+#### Web Terminal
+
+- Add Web terminal support for user clusters ([#4492](https://github.com/kubermatic/dashboard/pull/4492))
+
+#### Applications
 
 - Update `ApplicationDefinition` CRD to handle credentials at "templating" time. This allows downloading helm dependencies from an authenticated registry when application's source is git ([#11452](https://github.com/kubermatic/kubermatic/pull/11452))
 - Add new field  `ReconciliationInterval` in `ApplicationInstallation` to force reconciliation, even if the `ApplicationInstallation` CR has not changed ([#11467](https://github.com/kubermatic/kubermatic/pull/11467))
@@ -353,7 +357,6 @@ Konnectivity is now GA.
 
 #### New Features
 
-- Add Web terminal support for user clusters ([#4492](https://github.com/kubermatic/dashboard/pull/4492))
 - [Admin] Clicking Show All Projects toggle: The loading spinner is shown when all projects are fetched ([#5041](https://github.com/kubermatic/dashboard/pull/5041))
 - Add `io2` and `gp3` to AWS provider disk types list ([#5449](https://github.com/kubermatic/dashboard/pull/5449))
 - Add an option to restrict preset to projects ([#5599](https://github.com/kubermatic/dashboard/pull/5599))
