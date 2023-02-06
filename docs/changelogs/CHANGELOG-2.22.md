@@ -46,6 +46,17 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Fix KubeVirt LB issue (wrong custer-isolation netpol): LB not accessible from outside user-cluster ([#11640](https://github.com/kubermatic/kubermatic/pull/11640))
 - Change CustomNetworkPolicies type (extract name) ([#11666](https://github.com/kubermatic/kubermatic/pull/11666))
 
+### Applications
+
+- Update `ApplicationDefinition` CRD to handle credentials at "templating" time. This allows downloading helm dependencies from an authenticated registry when application's source is git ([#11452](https://github.com/kubermatic/kubermatic/pull/11452))
+- Add new field  `ReconciliationInterval` in `ApplicationInstallation` to force reconciliation, even if the `ApplicationInstallation` CR has not changed ([#11467](https://github.com/kubermatic/kubermatic/pull/11467))
+- Extend `ApplicationDefinition` and `ApplicationInstallation` CRD with `DeployOptions.HelmDeployOptions` to control how applications are deployed with `Helm`([#11608](https://github.com/kubermatic/kubermatic/pull/11608))
+    - ApplicationInstallation: set condition ready to `unknown` with reason `InstallationInProgress` before starting the installation
+    - ApplicationInstallation: don't try to install / upgrade the application if the max number of retries is exceeded 
+- Use string Version type for `ApplicationInstallation` CRD ([#11359](https://github.com/kubermatic/kubermatic/pull/11359))
+- Make uninstall for Applications idempotent ([#11622](https://github.com/kubermatic/kubermatic/pull/11622))
+- Add validating and defaulting webhook for Application deployOptions ([#11633](https://github.com/kubermatic/kubermatic/pull/11633))
+
 #### Konnectivity
 
 Konnectivity is now GA.
@@ -68,11 +79,6 @@ Konnectivity is now GA.
 - Add groups in OIDC kubeconfig ([#11121](https://github.com/kubermatic/kubermatic/pull/11121))
 - Add `OIDCProviderConfiguration` to Seed's spec allowing to configure dedicated OIDC provider for each Seed ([#11668](https://github.com/kubermatic/kubermatic/pull/11668))
 
-#### OS Support
-
-- KKP now defaults to Ubuntu 22.04 LTS when Ubuntu is selected as an operating system ([#11007](https://github.com/kubermatic/kubermatic/pull/11007))
-- KKP no longer supports SLES operating system ([#11711](https://github.com/kubermatic/kubermatic/pull/11711))
-
 #### Resource Quotas (EE)
 
 - Add a default project resource quota setting which can be set in KKP's global `KubermaticSettings`. By managing the default quota, for all the projects which do not have a custom quota already set, their ResourceQuota is created/updated/deleted ([#11582](https://github.com/kubermatic/kubermatic/pull/11582))
@@ -91,12 +97,10 @@ Konnectivity is now GA.
 
 ### API Changes
 
-- Extend disk configuration for provider Anexia ([#10816](https://github.com/kubermatic/kubermatic/pull/10816))
 - Add external cluster EKS/AKS/GKE provider configuration into the `ExternalCluster` CRD ([#10982](https://github.com/kubermatic/kubermatic/pull/10982))
 - The `address` field in the Cluster CRD was deprecated in KKP 2.21 and removed in this release. Use `status.address` instead. Existing clusters were migrated automatically by the seed-controller-manager in release 2.21 ([#10906](https://github.com/kubermatic/kubermatic/pull/10906))
 - Instead of an `apiv1.NodeDeployment`, a `clusterv1alpha1.MachineDeployment` must be stored in the `kubermatic.io/initial-machinedeployment-request` annotation on new clusters ([#11339](https://github.com/kubermatic/kubermatic/pull/11339))
 - Seed spec no longer requires `defaultDestination` for `etcdBackupRestore`; Omitting it allows to disable default etcd backups ([#11594](https://github.com/kubermatic/kubermatic/pull/11594))
-- `availabilityZone`, `dnsServers` and `nodeSizeRequirements` are now optional in the Openstack datacenter spec ([#11605](https://github.com/kubermatic/kubermatic/pull/11605))
 
 ### Cloud Providers
 
@@ -127,6 +131,7 @@ Konnectivity is now GA.
 - Support for using server groups with OpenStack ([#11298](https://github.com/kubermatic/kubermatic/pull/11298))
 - Add support for enforcing custom disk for OpenStack in KubermaticSettings ([#11338](https://github.com/kubermatic/kubermatic/pull/11338))
 - Update OpenStack Cinder CSI to v1.24.5 and v1.25.3 ([#11454](https://github.com/kubermatic/kubermatic/pull/11454))
+- `availabilityZone`, `dnsServers` and `nodeSizeRequirements` are now optional in the Openstack datacenter spec ([#11605](https://github.com/kubermatic/kubermatic/pull/11605))
 - Fix OpenStack cloud provider tenant to project fields migration ([#11818](https://github.com/kubermatic/kubermatic/pull/11818))
 
 #### DigitalOcean
@@ -136,6 +141,7 @@ Konnectivity is now GA.
 #### Anexia
 
 - Update Anexia CCM (cloud-controller-manager) to version 1.5.1 ([#11656](https://github.com/kubermatic/kubermatic/pull/11656))
+- Extend disk configuration for provider Anexia ([#10816](https://github.com/kubermatic/kubermatic/pull/10816))
 
 ### MLA
 
@@ -150,16 +156,10 @@ Konnectivity is now GA.
     - Update Loki to 2.6.1
     - Update minio to RELEASE.2022-09-17T00-09-45Z 
 
-### Applications
+### OS Support
 
-- Update `ApplicationDefinition` CRD to handle credentials at "templating" time. This allows downloading helm dependencies from an authenticated registry when application's source is git ([#11452](https://github.com/kubermatic/kubermatic/pull/11452))
-- Add new field  `ReconciliationInterval` in `ApplicationInstallation` to force reconciliation, even if the `ApplicationInstallation` CR has not changed ([#11467](https://github.com/kubermatic/kubermatic/pull/11467))
-- Extend `ApplicationDefinition` and `ApplicationInstallation` CRD with `DeployOptions.HelmDeployOptions` to control how applications are deployed with `Helm`([#11608](https://github.com/kubermatic/kubermatic/pull/11608))
-    - ApplicationInstallation: set condition ready to `unknown` with reason `InstallationInProgress` before starting the installation
-    - ApplicationInstallation: don't try to install / upgrade the application if the max number of retries is exceeded 
-- Use string Version type for `ApplicationInstallation` CRD ([#11359](https://github.com/kubermatic/kubermatic/pull/11359))
-- Make uninstall for Applications idempotent ([#11622](https://github.com/kubermatic/kubermatic/pull/11622))
-- Add validating and defaulting webhook for Application deployOptions ([#11633](https://github.com/kubermatic/kubermatic/pull/11633))
+- KKP now defaults to Ubuntu 22.04 LTS when Ubuntu is selected as an operating system ([#11007](https://github.com/kubermatic/kubermatic/pull/11007))
+- KKP no longer supports SLES operating system ([#11711](https://github.com/kubermatic/kubermatic/pull/11711))
 
 ### etcd-launcher
 
