@@ -127,6 +127,7 @@ Konnectivity is now GA.
 - Support for using server groups with OpenStack ([#11298](https://github.com/kubermatic/kubermatic/pull/11298))
 - Add support for enforcing custom disk for OpenStack in KubermaticSettings ([#11338](https://github.com/kubermatic/kubermatic/pull/11338))
 - Update OpenStack Cinder CSI to v1.24.5 and v1.25.3 ([#11454](https://github.com/kubermatic/kubermatic/pull/11454))
+- Fix OpenStack cloud provider tenant to project fields migration ([#11818](https://github.com/kubermatic/kubermatic/pull/11818))
 
 #### DigitalOcean
 
