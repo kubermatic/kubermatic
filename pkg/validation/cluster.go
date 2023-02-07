@@ -49,6 +49,9 @@ var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider.
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
 	azureLoadBalancerSKUTypes = sets.New("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
+
+	gte125Constraint, _                                  = semverlib.NewConstraint(">= 1.25.0")
+	errPodSecurityPolicyAdmissionPluginWithVersionGte125 = errors.New("admission plugin \"PodSecurityPolicy\" is not supported in Kubernetes v1.25 and later")
 )
 
 const (
@@ -70,6 +73,8 @@ const (
 
 	// EARKeyLength is required key length for encryption at rest.
 	EARKeyLength = 32
+
+	podSecurityPolicyAdmissionPluginName = "PodSecurityPolicy"
 )
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
@@ -106,6 +111,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 
 		if !versionValid {
 			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("version"), spec.Version.String(), validVersions))
+		}
+
+		if err := validatePodSecurityPolicyAdmissionPluginForVersion(spec); err != nil {
+			allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("admissionPlugins"), err.Error()))
 		}
 	}
 
@@ -1233,4 +1242,20 @@ func checkVersionConstraint(version *semverlib.Version, constraint string) bool 
 		return false
 	}
 	return c.Check(version)
+}
+
+func validatePodSecurityPolicyAdmissionPluginForVersion(spec *kubermaticv1.ClusterSpec) error {
+	isK8sVersionGte125 := gte125Constraint.Check(spec.Version.Semver())
+
+	// Admissin plugin "PodSecurityPolicy" was removed in Kubernetes v1.25 and is no longer supported.
+	if spec.UsePodSecurityPolicyAdmissionPlugin && isK8sVersionGte125 {
+		return errPodSecurityPolicyAdmissionPluginWithVersionGte125
+	}
+	for _, admissionPlugin := range spec.AdmissionPlugins {
+		if admissionPlugin == podSecurityPolicyAdmissionPluginName && isK8sVersionGte125 {
+			return errPodSecurityPolicyAdmissionPluginWithVersionGte125
+		}
+	}
+
+	return nil
 }

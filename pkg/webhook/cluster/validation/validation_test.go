@@ -1700,6 +1700,218 @@ func TestHandle(t *testing.T) {
 			}.BuildPtr(),
 			wantAllowed: false,
 		},
+		{
+			name: "Reject UsePodSecurityPolicyAdmissionPlugin for Version >= 1.25",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				UsePodSecurityPolicyAdmissionPlugin: true,
+				Version:                             semver.NewSemverOrDie("1.25.4"),
+			}.Build(),
+			wantAllowed: false,
+		},
+		{
+			name: "Reject PodSecurityPolicy admission plugin for Version >= 1.25",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				AdmissionPlugins: []string{"PodSecurityPolicy"},
+				Version:          semver.NewSemverOrDie("1.25.5"),
+			}.Build(),
+			wantAllowed: false,
+		},
+		{
+			name: "Allow old Kubernetes version update with PodSecurityPolicy admission plugin",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				AdmissionPlugins: []string{"PodSecurityPolicy"},
+				Version:          semver.NewSemverOrDie("1.24.9"),
+			}.Build(),
+			oldCluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				AdmissionPlugins: []string{"PodSecurityPolicy"},
+				Version:          semver.NewSemverOrDie("1.24.8"),
+			}.BuildPtr(),
+			wantAllowed: true,
+		},
+		{
+			name: "Reject unsupported Kubernetes version update with PodSecurityPolicy admission plugin",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				AdmissionPlugins: []string{"PodSecurityPolicy"},
+				Version:          semver.NewSemverOrDie("1.26.0"),
+			}.Build(),
+			oldCluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				AdmissionPlugins: []string{"PodSecurityPolicy"},
+				Version:          semver.NewSemverOrDie("1.24.8"),
+			}.BuildPtr(),
+			wantAllowed: false,
+		},
+		{
+			name: "Allow Kubernetes version update removing the PodSecurityPolicy admission plugin",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.25.5"),
+			}.Build(),
+			oldCluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				AdmissionPlugins: []string{"PodSecurityPolicy"},
+				Version:          semver.NewSemverOrDie("1.24.8"),
+			}.BuildPtr(),
+			wantAllowed: true,
+		},
 	}
 
 	seedClient := ctrlruntimefakeclient.
@@ -1743,17 +1955,19 @@ func TestHandle(t *testing.T) {
 }
 
 type rawClusterGen struct {
-	Name                  string
-	Namespace             string
-	CloudProviderName     string
-	Labels                map[string]string
-	ExposeStrategy        string
-	EnableUserSSHKey      *bool
-	ExternalCloudProvider bool
-	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
-	ComponentSettings     kubermaticv1.ComponentSettings
-	CNIPlugin             *kubermaticv1.CNIPluginSettings
-	Version               *semver.Semver
+	Name                                string
+	Namespace                           string
+	CloudProviderName                   string
+	Labels                              map[string]string
+	ExposeStrategy                      string
+	EnableUserSSHKey                    *bool
+	ExternalCloudProvider               bool
+	NetworkConfig                       kubermaticv1.ClusterNetworkingConfig
+	ComponentSettings                   kubermaticv1.ComponentSettings
+	CNIPlugin                           *kubermaticv1.CNIPluginSettings
+	UsePodSecurityPolicyAdmissionPlugin bool
+	AdmissionPlugins                    []string
+	Version                             *semver.Semver
 }
 
 func (r rawClusterGen) BuildPtr() *kubermaticv1.Cluster {
@@ -1792,11 +2006,13 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			Features: map[string]bool{
 				"externalCloudProvider": r.ExternalCloudProvider,
 			},
-			ExposeStrategy:        kubermaticv1.ExposeStrategy(r.ExposeStrategy),
-			EnableUserSSHKeyAgent: r.EnableUserSSHKey,
-			ClusterNetwork:        r.NetworkConfig,
-			ComponentsOverride:    r.ComponentSettings,
-			CNIPlugin:             r.CNIPlugin,
+			ExposeStrategy:                      kubermaticv1.ExposeStrategy(r.ExposeStrategy),
+			EnableUserSSHKeyAgent:               r.EnableUserSSHKey,
+			ClusterNetwork:                      r.NetworkConfig,
+			ComponentsOverride:                  r.ComponentSettings,
+			CNIPlugin:                           r.CNIPlugin,
+			UsePodSecurityPolicyAdmissionPlugin: r.UsePodSecurityPolicyAdmissionPlugin,
+			AdmissionPlugins:                    r.AdmissionPlugins,
 		},
 	}
 
