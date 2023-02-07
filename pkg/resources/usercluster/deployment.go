@@ -68,6 +68,7 @@ type userclusterControllerData interface {
 	GetOpenVPNServerPort() (int32, error)
 	GetKonnectivityServerPort() (int32, error)
 	GetKonnectivityKeepAliveTime() string
+	GetTunnelingAgentIP() string
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
@@ -188,7 +189,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			}
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-				args = append(args, "-tunneling-agent-ip", data.Cluster().Spec.ClusterNetwork.TunnelingAgentIP)
+				args = append(args, "-tunneling-agent-ip", data.GetTunnelingAgentIP())
 				args = append(args, "-kas-secure-port", fmt.Sprint(resources.APIServerSecurePort))
 			}
 
