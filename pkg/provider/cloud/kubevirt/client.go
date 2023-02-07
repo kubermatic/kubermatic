@@ -23,11 +23,23 @@ import (
 	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	nativescheme "k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+var scheme = runtime.NewScheme()
+
+func init() {
+	utilruntime.Must(nativescheme.AddToScheme(scheme))
+	utilruntime.Must(kubevirtv1.AddToScheme(scheme))
+	utilruntime.Must(kvinstancetypev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(cdiv1beta1.AddToScheme(scheme))
+}
 
 // Client represents a struct that includes controller runtime client and rest configuration
 // that is needed for service accounts kubeconfig generation.
@@ -48,6 +60,7 @@ type ClientOptions struct {
 
 func newClient(kubeconfig string, opts ClientOptions) (*Client, error) {
 	var client ctrlruntimeclient.Client
+	opts.ControllerRuntimeOptions.Scheme = scheme
 
 	config, err := base64.StdEncoding.DecodeString(kubeconfig)
 	if err != nil {
@@ -68,18 +81,6 @@ func newClient(kubeconfig string, opts ClientOptions) (*Client, error) {
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	if err = kubevirtv1.AddToScheme(client.Scheme()); err != nil {
-		return nil, err
-	}
-
-	if err = kvinstancetypev1alpha1.AddToScheme(client.Scheme()); err != nil {
-		return nil, err
-	}
-
-	if err = cdiv1beta1.AddToScheme(client.Scheme()); err != nil {
-		return nil, err
 	}
 
 	return &Client{Client: client, RestConfig: restConfig}, nil
