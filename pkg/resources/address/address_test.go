@@ -337,7 +337,6 @@ func TestSyncClusterAddress(t *testing.T) {
 				Seed(seed).
 				ExternalURL(fakeExternalURL).
 				lookupFunc(testLookupFunction).
-				TunnelingAgentIP(resources.DefaultTunnelingAgentIP).
 				Build(context.Background())
 			if err != nil {
 				if tc.errExpected {

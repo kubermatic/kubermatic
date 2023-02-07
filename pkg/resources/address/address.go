@@ -44,8 +44,6 @@ type ModifiersBuilder struct {
 	externalURL string
 	// used to ease unit tests
 	lookupFunction lookupFunction
-	// ip used by tunneling agents (tunneling expose strategy only)
-	tunnelingAgentIP string
 }
 
 func NewModifiersBuilder(log *zap.SugaredLogger) *ModifiersBuilder {
@@ -72,11 +70,6 @@ func (m *ModifiersBuilder) Seed(s *kubermaticv1.Seed) *ModifiersBuilder {
 
 func (m *ModifiersBuilder) ExternalURL(e string) *ModifiersBuilder {
 	m.externalURL = e
-	return m
-}
-
-func (m *ModifiersBuilder) TunnelingAgentIP(ip string) *ModifiersBuilder {
-	m.tunnelingAgentIP = ip
 	return m
 }
 
