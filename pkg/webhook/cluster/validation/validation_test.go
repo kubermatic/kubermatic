@@ -1808,6 +1808,7 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 		Spec: kubermaticv1.ClusterSpec{
 			HumanReadableName: "a test cluster",
 			Version:           *version,
+			ContainerRuntime:  "containerd",
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 				ProviderName:   string(kubermaticv1.HetznerCloudProvider),

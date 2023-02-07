@@ -93,6 +93,11 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		}
 	}
 
+	// Validate if container runtime is valid for this cluster (in particular this checks for docker support).
+	if err := ValidateContainerRuntime(spec); err != nil {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("containerRuntime"), spec.ContainerRuntime, fmt.Sprintf("failed to validate container runtime: %s", err)))
+	}
+
 	if !kubermaticv1.AllExposeStrategies.Has(spec.ExposeStrategy) {
 		allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("exposeStrategy"), spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
 	}
