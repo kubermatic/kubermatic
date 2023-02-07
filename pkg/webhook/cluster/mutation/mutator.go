@@ -162,6 +162,13 @@ func (m *Mutator) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, con
 		}
 	}
 
+	// For KubeVirt, we want to mutate and always have ClusterFeatureCCMClusterName = true
+	// It's not handled by the previous loop for the migration 2.21 to 2.22
+	// as ExternalCloudProvider feature not is set for the first time.
+	if newCluster.Spec.Cloud.Kubevirt != nil {
+		newCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
+	}
+
 	// just because spec.Version might say 1.23 doesn't say that the cluster is already on 1.23,
 	// so for all feature toggles and migrations we should base this on the actual, current apiserver
 	curVersion := newCluster.Status.Versions.ControlPlane
