@@ -124,6 +124,12 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 					Resources: []string{"customresourcedefinitions"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
+				// This should be removed with KKP 2.23 when we remove the Migration for OSM.
+				{
+					APIGroups: []string{"operatingsystemmanager.k8c.io"},
+					Resources: []string{"operatingsystemprofiles", "operatingsystemconfigs"},
+					Verbs:     []string{"*"},
+				},
 				{
 					APIGroups: []string{appskubermaticv1.GroupName},
 					Resources: []string{appskubermaticv1.ApplicationDefinitionResourceName},
