@@ -18,6 +18,7 @@ package nodeportproxy
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -429,7 +430,12 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 			if data.Cluster().Spec.APIServerAllowedIPRanges != nil {
 				sourceIPList.Insert(data.Cluster().Spec.APIServerAllowedIPRanges.CIDRBlocks...)
 			}
-			s.Spec.LoadBalancerSourceRanges = sets.List(sourceIPList)
+
+			if sourceIPList.Len() > 0 {
+				s.Spec.LoadBalancerSourceRanges = sets.List(sourceIPList)
+				// for wider compatibility, we also set the source ranges via the service.beta.kubernetes.io annotation
+				s.Annotations["service.beta.kubernetes.io/load-balancer-source-ranges"] = strings.Join(sets.List(sourceIPList), ",")
+			}
 
 			if data.Cluster().Spec.Cloud.AWS != nil {
 				// NOTE: While KKP uses in-tree CCM for AWS, we use annotations defined in
