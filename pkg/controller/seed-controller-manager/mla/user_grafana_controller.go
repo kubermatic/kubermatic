@@ -339,7 +339,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 			project, ok := projectMap[projectName]
 			if !ok {
 				// don't stop reconciling if there is an upb/gbp which was not cleaned up properly
-				r.log.Warnw("user-bound project not found", "user", user.Name, "project", project.Name)
+				r.log.Warnw("user-bound project not found", "user", user.Name, "project", projectName)
 				continue
 			}
 			if err := ensureOrgUser(ctx, grafanaClient, project, user.Spec.Email, role); err != nil {
