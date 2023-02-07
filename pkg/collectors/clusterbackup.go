@@ -106,8 +106,10 @@ func (c *clusterBackupCollector) collect(ctx context.Context, ch chan<- promethe
 	// only configures full BackupContainerSpecs.
 	// Because of that, this collector can only work with the
 	// new backup/restore mechanism.
-	if !seed.IsDefaultEtcdAutomaticBackupEnabled() {
-		return nil
+	if etcdBkpCfg := seed.Spec.EtcdBackupRestore; etcdBkpCfg != nil {
+		if len(etcdBkpCfg.Destinations) > 0 {
+			return nil
+		}
 	}
 
 	clusterList := &kubermaticv1.ClusterList{}

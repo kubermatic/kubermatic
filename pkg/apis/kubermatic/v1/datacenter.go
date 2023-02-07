@@ -944,13 +944,17 @@ type OIDCProviderConfiguration struct {
 	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
 }
 
-// IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
-func (s *Seed) IsDefaultEtcdAutomaticBackupEnabled() bool {
+// IsEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
+func (s *Seed) IsEtcdAutomaticBackupEnabled() bool {
 	if cfg := s.Spec.EtcdBackupRestore; cfg != nil {
-		return len(cfg.Destinations) > 0 && cfg.DefaultDestination != ""
+		return len(cfg.Destinations) > 0
 	}
-
 	return false
+}
+
+// IsDefaultEtcdAutomaticBackupEnabled returns true if etcd automatic backup with default destination is configured for the seed.
+func (s *Seed) IsDefaultEtcdAutomaticBackupEnabled() bool {
+	return s.IsEtcdAutomaticBackupEnabled() && s.Spec.EtcdBackupRestore.DefaultDestination != ""
 }
 
 func (s *Seed) GetEtcdBackupDestination(destinationName string) *BackupDestination {

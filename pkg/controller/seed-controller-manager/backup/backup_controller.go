@@ -236,7 +236,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 
 	// the etcdbackup/etcdrestore controllers are enabled (at least for this seed), so we
 	// only perform cleanup for older clusters when needed
-	controllerEnabled := !seed.IsDefaultEtcdAutomaticBackupEnabled()
+	controllerEnabled := seed.IsEtcdAutomaticBackupEnabled()
 
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
