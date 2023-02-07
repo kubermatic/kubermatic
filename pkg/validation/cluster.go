@@ -51,7 +51,7 @@ var (
 	azureLoadBalancerSKUTypes = sets.New("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
 
 	gte125Constraint, _                                  = semverlib.NewConstraint(">= 1.25.0")
-	errPodSecurityPolicyAdmissionPluginWithVersionGte125 = errors.New("admissin plugin \"PodSecurityPolicy\" is not supported in Kubernetes v1.25 and later")
+	errPodSecurityPolicyAdmissionPluginWithVersionGte125 = errors.New("admission plugin \"PodSecurityPolicy\" is not supported in Kubernetes v1.25 and later")
 )
 
 const (
