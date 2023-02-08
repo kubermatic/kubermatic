@@ -1,6 +1,6 @@
 # E2E conformance tester
 
-Runs static test scenarios against a set of KKP usercllusters.
+Runs static test scenarios against a set of KKP userclusters.
 
 The conformance tester will, by default, test all supported versions on providers using all supported operating systems,
 by creting one cluster for each combination, waiting for it to become healthy, adding nodes and then executing the
@@ -23,7 +23,7 @@ The command which will execute the following tests:
 - Telemetry: Verify that telemetry data is sent by the usercluster.
 - Metrics: Verify that all components expose their expected metrics.
 
-Check `pkg/tests/` for all the invididual testcases.
+Check `pkg/tests/` for all the individual testcases.
 
 ## Caveats
 

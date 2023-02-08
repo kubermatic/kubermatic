@@ -671,7 +671,7 @@ func (r *TestRunner) updateClusterToNextMinor(
 
 	// Wait a moment to let the controllers begin reconciling, otherwise the wait loop below
 	// might just see the current healthy state and not actually wait for the reconciliation to complete.
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	clusterName := cluster.Name
 
