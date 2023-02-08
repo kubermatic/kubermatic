@@ -119,6 +119,10 @@ Konnectivity is now GA.
 - Instead of an `apiv1.NodeDeployment`, a `clusterv1alpha1.MachineDeployment` must be stored in the `kubermatic.io/initial-machinedeployment-request` annotation on new clusters ([#11339](https://github.com/kubermatic/kubermatic/pull/11339))
 - Seed spec no longer requires `defaultDestination` for `etcdBackupRestore`; Omitting it allows to disable default etcd backups ([#11594](https://github.com/kubermatic/kubermatic/pull/11594))
 
+### Deprecations
+
+- machine-controller's built-in user data to provision new nodes is deprecated with this release and will be removed in a future release. OSM is the recommended way to generate user data.
+
 ### Cloud Providers
 
 - The cloud-config and cloud-config-csi for user clusters is now stored in a `Secret` instead of `ConfigMap` on the seed cluster (in each user cluster namespace) ([#10759](https://github.com/kubermatic/kubermatic/pull/10759))
