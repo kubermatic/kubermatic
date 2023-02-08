@@ -45,6 +45,7 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Split CSI driver deployment between user and infra cluster and remove user cluster CSI access to KubeVirt cluster ([#11370](https://github.com/kubermatic/kubermatic/pull/11370))
 - Fix KubeVirt LB issue (wrong custer-isolation netpol): LB not accessible from outside user-cluster ([#11640](https://github.com/kubermatic/kubermatic/pull/11640))
 - Change CustomNetworkPolicies type (extract name) ([#11666](https://github.com/kubermatic/kubermatic/pull/11666))
+- Fix missing ccmClusterName feature in KubeVirt clusters upgraded to KKP 2.22 ([#11844](https://github.com/kubermatic/kubermatic/pull/11844))
 
 #### KubeOne Cluster Support
 
@@ -265,6 +266,7 @@ Konnectivity is now GA.
 - Set nginx ingress `proxy-read-timeout` and `proxy-send-timeout` to 1 hour to support long-lasting connections (e.g. websocket) ([#11756](https://github.com/kubermatic/kubermatic/pull/11756))
 - Use seed proxy configuration for seed-controller-manager ([#11561](https://github.com/kubermatic/kubermatic/pull/11561))
 - Paused external clusters will not be processed ([#11447](https://github.com/kubermatic/kubermatic/pull/11447))
+- Admission plugin "PodSecurityPolicy" is not supported anymore on Kubernetes version 1.25 and later ([#11836](https://github.com/kubermatic/kubermatic/pull/11836))
 
 #### Bugfixes (EE)
 
