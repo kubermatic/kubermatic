@@ -920,6 +920,8 @@ github.com/kubermatic/grafanasdk v0.9.12 h1:f2ovRMGlnHGafuxIMmrl17LihHp4uEdhs5xj
 github.com/kubermatic/grafanasdk v0.9.12/go.mod h1:rjbIRhEXuIdXR4BCYTxtgJ3Ekmemq1WV9rnh5n5YORM=
 github.com/kubermatic/machine-controller v1.55.1-0.20230201122903-ab8cf636f599 h1:tmgLZtkkzxZt3/U5dUoUbq9/kqBg1VEwp3ZktS1rTOg=
 github.com/kubermatic/machine-controller v1.55.1-0.20230201122903-ab8cf636f599/go.mod h1:qeI20IOUpkGsBEV8RHu3nJj58mrJlkDWpffD2ffOKxU=
+github.com/kubermatic/machine-controller v1.55.1-0.20230208124131-c175998eebd4 h1:l/bM9S+0phSUHzVLUH/CX8xLVXlphzzhIH6hzNh9y+A=
+github.com/kubermatic/machine-controller v1.55.1-0.20230208124131-c175998eebd4/go.mod h1:qeI20IOUpkGsBEV8RHu3nJj58mrJlkDWpffD2ffOKxU=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/labstack/echo/v4 v4.6.1/go.mod h1:RnjgMWNDB9g/HucVWhQYNQP9PvbYf6adqftqryo7s9k=
