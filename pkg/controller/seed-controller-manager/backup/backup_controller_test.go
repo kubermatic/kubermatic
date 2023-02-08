@@ -129,17 +129,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		caBundle:             certificates.NewFakeCABundle(),
 		configGetter:         configGetter,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return generator.GenTestSeed(func(seed *kubermaticv1.Seed) {
-				seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
-					DefaultDestination: "minio",
-					Destinations: map[string]*kubermaticv1.BackupDestination{
-						"s3": {
-							Endpoint:   "http://minio.minio.svc.cluster.local:9000",
-							BucketName: "testbackups",
-						},
-					},
-				}
-			}), nil
+			return generator.GenTestSeed(), nil
 		},
 	}
 
