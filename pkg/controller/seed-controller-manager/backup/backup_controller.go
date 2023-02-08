@@ -234,15 +234,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		return fmt.Errorf("failed to create backup cleanup container: %w", err)
 	}
 
-	// the etcdbackup/etcdrestore controllers are enabled (at least for this seed), so we
+	// the new etcdbackup/etcdrestore controllers are enabled (at least for this seed), so we
 	// only perform cleanup for older clusters when needed
-	controllerEnabled := !seed.IsDefaultEtcdAutomaticBackupEnabled()
+	legacyControllerEnabled := !seed.IsEtcdAutomaticBackupEnabled()
 
 	// Cluster got deleted - regardless if the cluster was ever running, we cleanup
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
 		if kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
-			if controllerEnabled {
+			if legacyControllerEnabled {
 				// IgnoreAlreadyExists, otherwise we end up in a loop when we are able to
 				// create the job but not remove the finalizer.
 				if err := r.Create(ctx, r.cleanupJob(cluster, backupCleanupContainer)); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
@@ -267,7 +267,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 	}
 
 	// Always add the finalizer first
-	if controllerEnabled {
+	if legacyControllerEnabled {
 		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, cleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to add finalizer: %w", err)
 		}
@@ -281,7 +281,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 		return fmt.Errorf("failed to reconcile configmaps: %w", err)
 	}
 
-	if !controllerEnabled {
+	if !legacyControllerEnabled {
 		return r.deleteCronJob(ctx, cluster)
 	}
 
