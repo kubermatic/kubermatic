@@ -91,6 +91,8 @@ func (*UserClusterMLA) Name() string {
 }
 
 func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+	opt.Logger.Info("ℹ️ For usercluster-mla deployment, it is recommended to extend helm timeout by using flag --helm-timeout=15m0s...")
+
 	if err := deployMLASecrets(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy MLA Secrets: %w", err)
 	}
@@ -209,6 +211,16 @@ func deployConsul(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
+	v22 := semverlib.MustParse("2.22.0")
+
+	if release != nil && release.Version.LessThan(v22) && !chart.Version.LessThan(v22) {
+		sublogger.Warn("Installation process will temporarily remove and then upgrade Statefulset used by Consul.")
+
+		err = upgradeConsulStatefulsets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		if err != nil {
+			return fmt.Errorf("failed to prepare Consul for upgrade: %w", err)
+		}
+	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, ConsulNamespace, ConsulReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
@@ -244,7 +256,7 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 
 		err = upgradeCortexStatefulsets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare nginx-ingress-controller for upgrade: %w", err)
+			return fmt.Errorf("failed to prepare Cortex for upgrade: %w", err)
 		}
 	}
 
@@ -413,7 +425,7 @@ func upgradeCortexStatefulsets(
 ) error {
 	logger.Infof("%s: %s detected, performing upgrade to %s…", release.Name, release.Version.String(), chart.Version.String())
 	// 1: find the old deployment
-	logger.Info("Backing up old ingress deployment…")
+	logger.Info("Backing up old memcached statefulsets…")
 
 	statefulsetsList := &unstructured.UnstructuredList{}
 	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
@@ -479,4 +491,51 @@ func getMemcachedStatefulsets(
 		return nil, fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
 	}
 	return statefulsetsList, nil
+}
+
+func upgradeConsulStatefulsets(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	helmClient helm.Client,
+	opt stack.DeployOptions,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s: %s detected, performing upgrade to %s…", release.Name, release.Version.String(), chart.Version.String())
+	// 1: find the old deployment
+	logger.Info("Backing up old consul statefulset…")
+
+	statefulsetsList := &unstructured.UnstructuredList{}
+	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Kind:    "StatefulSetList",
+		Version: "v1",
+	})
+
+	consulMatcher := ctrlruntimeclient.MatchingLabels{
+		"app":                          ConsulReleaseName,
+		"app.kubernetes.io/managed-by": "Helm",
+		"release":                      release.Name,
+	}
+	if err := kubeClient.List(ctx, statefulsetsList, ctrlruntimeclient.InNamespace(ConsulNamespace), consulMatcher); err != nil {
+		return fmt.Errorf("Error querying API for the existing StatefulSet object, aborting upgrade process.")
+	}
+
+	// 2: store the deployment for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", ConsulReleaseName, backupTS)
+	logger.Infof("Attempting to store the statefulsets in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, statefulsetsList.Items); err != nil {
+		return fmt.Errorf("failed to back up the statefulsets, it is not removed: %w", err)
+	}
+
+	// 3: delete the deployment
+	logger.Info("Deleting the statefulsets from the cluster")
+	for _, obj := range statefulsetsList.Items {
+		if err := kubeClient.Delete(ctx, &obj); err != nil {
+			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
+		}
+	}
+	return nil
 }
