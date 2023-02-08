@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	kubevirtImageHttpServerSvc = "http://image-repo.kube-system.svc.cluster.local/images"
+	kubevirtImageHttpServerSvc = "http://image-repo.kube-system.svc/images"
 	kubevirtCPUs               = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
