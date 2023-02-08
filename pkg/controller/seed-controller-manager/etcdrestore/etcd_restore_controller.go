@@ -124,7 +124,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// this feature is not enabled for this seed, do nothing
-	if !seed.IsDefaultEtcdAutomaticBackupEnabled() {
+	if !seed.IsEtcdAutomaticBackupEnabled() {
 		return reconcile.Result{}, nil
 	}
 
