@@ -15,7 +15,7 @@
 FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-ENV KUBECTL_VERSION=v1.24.9 \
+ENV KUBECTL_VERSION=v1.25.6 \
     HELM_VERSION=v3.10.3
 
 RUN apk add --no-cache -U \

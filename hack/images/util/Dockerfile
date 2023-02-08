@@ -16,7 +16,7 @@ FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
 ENV MC_VERSION=RELEASE.2022-12-24T15-21-38Z \
-    KUBECTL_VERSION=v1.24.9 \
+    KUBECTL_VERSION=v1.25.6 \
     HELM_VERSION=v3.10.3 \
     VAULT_VERSION=1.12.2 \
     YQ_VERSION=4.30.6
