@@ -123,7 +123,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
-	cmd.PersistentFlags().Var(flagopts.SetFlag(opt.SkipSeedValidation), "skip-seed-validation", "comma-separated list of seed clusters to skip running the preflight checks on")
+	cmd.PersistentFlags().Var(flagopts.SetFlag(opt.SkipSeedValidation), "skip-seed-validation", "comma-separated list of seed clusters to skip running the preflight checks on (use with caution, as this can lead to defunct KKP setups)")
 	cmd.PersistentFlags().BoolVar(&opt.Force, "force", false, "perform Helm upgrades even when the release is up-to-date")
 
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", sets.List(common.SupportedStorageClassProviders())))
