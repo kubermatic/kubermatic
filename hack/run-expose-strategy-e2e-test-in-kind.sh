@@ -76,6 +76,10 @@ make -C cmd/nodeport-proxy docker \
   GOOS="${GOOS}" \
   DOCKER_REPO="${DOCKER_REPO}" \
   TAG="${TAG}"
+make -C cmd/etcd-launcher docker \
+  GOOS="${GOOS}" \
+  DOCKER_REPO="${DOCKER_REPO}" \
+  TAG="${TAG}"
 make -C cmd/kubeletdnat-controller docker \
   GOOS="${GOOS}" \
   DOCKER_REPO="${DOCKER_REPO}" \
@@ -102,6 +106,7 @@ time kind create cluster --name="${KIND_CLUSTER_NAME}"
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
 # load nodeport-proxy image
+time kind load docker-image "${DOCKER_REPO}/etcd-launcher:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
