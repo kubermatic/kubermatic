@@ -50,6 +50,8 @@ const (
 	// exposed and the hostname, this is only used when the ExposeType is
 	// SNIType.
 	PortHostMappingAnnotationKey = "nodeport-proxy.k8s.io/port-mapping"
+
+	loadBalancerSourceRangesAnnotationKey = "service.beta.kubernetes.io/load-balancer-source-ranges"
 )
 
 // ExposeType defines the strategy used to expose the service.
@@ -431,10 +433,12 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 				sourceIPList.Insert(data.Cluster().Spec.APIServerAllowedIPRanges.CIDRBlocks...)
 			}
 
+			s.Spec.LoadBalancerSourceRanges = sets.List(sourceIPList)
+			// for wider compatibility, we also set the source ranges via the service.beta.kubernetes.io annotation
 			if sourceIPList.Len() > 0 {
-				s.Spec.LoadBalancerSourceRanges = sets.List(sourceIPList)
-				// for wider compatibility, we also set the source ranges via the service.beta.kubernetes.io annotation
-				s.Annotations["service.beta.kubernetes.io/load-balancer-source-ranges"] = strings.Join(sets.List(sourceIPList), ",")
+				s.Annotations[loadBalancerSourceRangesAnnotationKey] = strings.Join(sets.List(sourceIPList), ",")
+			} else {
+				delete(s.Annotations, loadBalancerSourceRangesAnnotationKey)
 			}
 
 			if data.Cluster().Spec.Cloud.AWS != nil {
