@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/web-terminal
-VERSION=0.4.0
+VERSION=0.5.0
 SUFFIX=""
 
 docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}${SUFFIX}" .
