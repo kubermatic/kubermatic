@@ -17,14 +17,15 @@ limitations under the License.
 package flagopts
 
 import (
-	"flag"
 	"strings"
+
+	"github.com/spf13/pflag"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // SetFlag wraps a given set so it can be used as a CLI flag.
-func SetFlag(set sets.Set[string]) flag.Value {
+func SetFlag(set sets.Set[string]) pflag.Value {
 	return &setFlag{set: set}
 }
 
@@ -50,4 +51,8 @@ func (f *setFlag) Set(value string) error {
 	}
 
 	return nil
+}
+
+func (f *setFlag) Type() string {
+	return "strings" // see pflag's flag.go
 }
