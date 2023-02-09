@@ -30,6 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/clients"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
@@ -39,6 +40,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -136,13 +139,14 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 	fmt.Println("")
 	fmt.Println("========================== RESULT ===========================")
 	fmt.Println("Parameters:")
-	fmt.Printf("  KKP Version.........: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
-	fmt.Printf("  Name Prefix.........: %q\n", r.opts.NamePrefix)
-	fmt.Printf("  OSM Enabled.........: %v\n", r.opts.OperatingSystemManagerEnabled)
-	fmt.Printf("  Dualstack Enabled...: %v\n", r.opts.DualStackEnabled)
-	fmt.Printf("  Konnectivity Enabled: %v\n", r.opts.KonnectivityEnabled)
-	fmt.Printf("  Enabled Tests.......: %v\n", sets.List(r.opts.Tests))
-	fmt.Printf("  Scenario Options....: %v\n", sets.List(r.opts.ScenarioOptions))
+	fmt.Printf("  KKP Version............: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
+	fmt.Printf("  Name Prefix............: %q\n", r.opts.NamePrefix)
+	fmt.Printf("  OSM Enabled............: %v\n", r.opts.OperatingSystemManagerEnabled)
+	fmt.Printf("  Dualstack Enabled......: %v\n", r.opts.DualStackEnabled)
+	fmt.Printf("  Konnectivity Enabled...: %v\n", r.opts.KonnectivityEnabled)
+	fmt.Printf("  Cluster Updates Enabled: %v\n", r.opts.TestClusterUpdate)
+	fmt.Printf("  Enabled Tests..........: %v\n", sets.List(r.opts.Tests))
+	fmt.Printf("  Scenario Options.......: %v\n", sets.List(r.opts.ScenarioOptions))
 	fmt.Println("")
 	fmt.Println("Test results:")
 
@@ -162,7 +166,14 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 			hadFailure = true
 		}
 		duration := result.duration.Round(time.Second)
-		scenarioResultMsg := fmt.Sprintf("[%s] - %s (%s)", prefix, result.scenario.Name(), duration)
+		scenarioResultMsg := fmt.Sprintf("[%s] - %s", prefix, result.scenario.Name())
+
+		if r.opts.TestClusterUpdate && result.cluster != nil {
+			scenarioResultMsg = fmt.Sprintf("%s (updated to %s)", scenarioResultMsg, result.cluster.Spec.Version)
+		}
+
+		scenarioResultMsg = fmt.Sprintf("%s (%s)", scenarioResultMsg, duration)
+
 		if result.err != nil {
 			scenarioResultMsg = fmt.Sprintf("%s: %v", scenarioResultMsg, result.err)
 		}
@@ -179,7 +190,10 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 
 func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenarios.Scenario, results chan<- testResult) {
 	for s := range scenarios {
-		var report *reporters.JUnitTestSuite
+		var (
+			report  *reporters.JUnitTestSuite
+			cluster *kubermaticv1.Cluster
+		)
 
 		scenarioLog := s.NamedLog(r.log)
 		scenarioLog.Info("Starting to test scenario...")
@@ -188,7 +202,7 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 
 		err := metrics.MeasureTime(metrics.ScenarioRuntimeMetric.With(prometheus.Labels{"scenario": s.Name()}), scenarioLog, func() error {
 			var err error
-			report, err = r.executeScenario(ctx, scenarioLog, s)
+			report, cluster, err = r.executeScenario(ctx, scenarioLog, s)
 			return err
 		})
 		if err != nil {
@@ -202,11 +216,12 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 			duration: time.Since(start),
 			scenario: s,
 			err:      err,
+			cluster:  cluster,
 		}
 	}
 }
 
-func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*reporters.JUnitTestSuite, error) {
+func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*reporters.JUnitTestSuite, *kubermaticv1.Cluster, error) {
 	report := &reporters.JUnitTestSuite{
 		Name: scenario.Name(),
 	}
@@ -215,7 +230,7 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 	// We'll store the report there and all kinds of logs
 	scenarioFolder := path.Join(r.opts.ReportsRoot, scenario.Name())
 	if err := os.MkdirAll(scenarioFolder, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("failed to create the scenario folder %q: %w", scenarioFolder, err)
+		return nil, nil, fmt.Errorf("failed to create the scenario folder %q: %w", scenarioFolder, err)
 	}
 
 	// We need the closure to defer the evaluation of the time.Since(totalStart) call
@@ -239,14 +254,19 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 	// create a cluster if no existing one should be used
 	cluster, err := r.ensureCluster(ctx, log, scenario, report)
 	if err != nil {
-		return report, err
+		return report, nil, err
 	}
 
 	log = log.With("cluster", cluster.Name)
 	testError := r.executeTests(ctx, log, cluster, report, scenario)
 
+	// refresh the variable with the latest state
+	if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
+		return nil, nil, err
+	}
+
 	if !r.opts.DeleteClusterAfterTests {
-		return report, testError
+		return report, cluster, testError
 	}
 
 	deleteTimeout := 15 * time.Minute
@@ -276,7 +296,7 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 		errs = append(errs, projectDeleteError)
 	}
 
-	return report, kerrors.NewAggregate(errs)
+	return report, cluster, kerrors.NewAggregate(errs)
 }
 
 func (r *TestRunner) ensureCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, report *reporters.JUnitTestSuite) (*kubermaticv1.Cluster, error) {
@@ -476,6 +496,20 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed to test cluster: %w", err)
 	}
 
+	if r.opts.TestClusterUpdate {
+		if err := r.updateClusterToNextMinor(ctx, log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
+			return fmt.Errorf("failed to test cluster: %w", err)
+		}
+
+		if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+			return err
+		}
+
+		if err := r.testCluster(ctx, log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
+			return fmt.Errorf("failed to test updated cluster: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -603,6 +637,123 @@ func (r *TestRunner) testCluster(
 	}
 
 	log.Info("All tests completed.")
+
+	return nil
+}
+
+func (r *TestRunner) updateClusterToNextMinor(
+	ctx context.Context,
+	log *zap.SugaredLogger,
+	scenario scenarios.Scenario,
+	cluster *kubermaticv1.Cluster,
+	userClusterClient ctrlruntimeclient.Client,
+	kubeconfigFilename string,
+	cloudConfigFilename string,
+	report *reporters.JUnitTestSuite,
+) error {
+	var err error
+
+	currentVersion := cluster.Spec.Version.Semver()
+	nextRelease := fmt.Sprintf("%d.%d", currentVersion.Major(), currentVersion.Minor()+1)
+
+	nextVersion := test.LatestKubernetesVersionForRelease(nextRelease, r.opts.KubermaticConfiguration)
+	if nextVersion == nil {
+		return fmt.Errorf("cannot update cluster as there is no %s.x version configured", nextRelease)
+	}
+
+	oldCluster := cluster.DeepCopy()
+	cluster.Spec.Version = *nextVersion
+
+	log.Infow("Updating cluster to next release", "from", currentVersion.String(), "to", nextVersion.String())
+	if err := r.opts.SeedClusterClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return fmt.Errorf("failed to patch cluster with new version %q: %w", nextVersion, err)
+	}
+
+	// Wait a moment to let the controllers begin reconciling, otherwise the wait loop below
+	// might just see the current healthy state and not actually wait for the reconciliation to complete.
+	time.Sleep(10 * time.Second)
+
+	clusterName := cluster.Name
+
+	if err := util.JUnitWrapper("[KKP] Wait for control plane", report, metrics.TimeMeasurementWrapper(
+		metrics.SeedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+		log,
+		func() error {
+			cluster, err = waitForControlPlane(ctx, log, r.opts, clusterName)
+			return err
+		},
+	)); err != nil {
+		return fmt.Errorf("failed waiting for control plane to become ready: %w", err)
+	}
+
+	// Check that we actually upgraded.
+	if !cluster.Status.Versions.ControlPlane.Equal(nextVersion) {
+		return fmt.Errorf("cluster control plane version is %q after the update to %q, something did not work", cluster.Status.Versions.ControlPlane, nextVersion)
+	}
+
+	// Upgrade all MDs to the new cluster version.
+	mdList := &clusterv1alpha1.MachineDeploymentList{}
+	if err := userClusterClient.List(ctx, mdList); err != nil {
+		return fmt.Errorf("failed to list MachineDeployments: %w", err)
+	}
+
+	log.Info("Updating MachineDeployments...")
+	for _, md := range mdList.Items {
+		err = wait.PollLog(ctx, log, 1*time.Second, 30*time.Second, func() (transient error, terminal error) {
+			oldMD := md.DeepCopy()
+			md.Spec.Template.Spec.Versions.Kubelet = nextVersion.String()
+
+			return userClusterClient.Patch(ctx, &md, ctrlruntimeclient.MergeFrom(oldMD)), nil
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update MachineDeployment %q: %w", md.Name, err)
+		}
+	}
+
+	// Wait for all nodes to reach the new version.
+	err = wait.PollLog(ctx, log, 30*time.Second, 2*r.opts.NodeReadyTimeout, func() (transient error, terminal error) {
+		nodeList := &corev1.NodeList{}
+		if err := userClusterClient.List(ctx, nodeList); err != nil {
+			return fmt.Errorf("failed to list nodes: %w", err), nil
+		}
+
+		outdated := sets.New[string]()
+		unready := sets.New[string]()
+
+		for _, node := range nodeList.Items {
+			if !util.NodeIsReady(node) {
+				unready.Insert(node.Name)
+				continue
+			}
+
+			kubeletVersion := semver.NewSemverOrDie(node.Status.NodeInfo.KubeletVersion)
+			if !kubeletVersion.Equal(nextVersion) {
+				outdated.Insert(node.Name)
+			}
+		}
+
+		if outdated.Len() > 0 || unready.Len() > 0 {
+			return fmt.Errorf("not all nodes rotated: %v are unready, %v are outdated", sets.List(unready), sets.List(outdated)), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for all nodes to be rotated: %w", err)
+	}
+
+	// And now wait for all pods.
+	if err := util.JUnitWrapper("[KKP] Wait for Pods inside usercluster to be ready", report, metrics.TimeMeasurementWrapper(
+		metrics.SeedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+		log,
+		func() error {
+			return waitUntilAllPodsAreReady(ctx, log, r.opts, userClusterClient, r.opts.NodeReadyTimeout)
+		},
+	)); err != nil {
+		return fmt.Errorf("failed to wait for all pods to get ready: %w", err)
+	}
+
+	log.Info("Cluster update complete.")
 
 	return nil
 }

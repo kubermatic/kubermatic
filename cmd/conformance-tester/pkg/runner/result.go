@@ -23,6 +23,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 type testResult struct {
@@ -30,6 +31,7 @@ type testResult struct {
 	duration time.Duration
 	err      error
 	scenario scenarios.Scenario
+	cluster  *kubermaticv1.Cluster
 }
 
 func (t *testResult) Passed() bool {
