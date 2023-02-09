@@ -278,6 +278,11 @@ func (h HelmClient) Upgrade(chartLoc, releaseName string, values map[string]inte
 	upgradeClient.Timeout = deployOpts.timeout
 	upgradeClient.Atomic = deployOpts.atomic
 
+	// Don't reuse values from the previous release.
+	// By default, Helm will merge values with the ones of the last release. This behavior may be helpful to for CLI but
+	// as CR is the source of truth, we don't want that.
+	upgradeClient.ResetValues = true
+
 	rel, err := upgradeClient.RunWithContext(h.ctx, releaseName, chartToUpgrade, values)
 	if err != nil {
 		// even if an error occurred release may be not null (e.g if timeout is reached)
