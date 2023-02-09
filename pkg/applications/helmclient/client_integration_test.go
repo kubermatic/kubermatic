@@ -160,6 +160,23 @@ func TestHelmClient(t *testing.T) {
 				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, "another-version")
 			},
 		},
+		// tests for https://github.com/kubermatic/kubermatic/issues/11864
+		{
+			name: "upgrade from archive with no values should upgrade chart with default values",
+			testFunc: func(t *testing.T) {
+				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
+				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+			},
+		},
+		{
+			name: "upgrade from dir with no values should upgrade chart with default values",
+			testFunc: func(t *testing.T) {
+				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version")
+				upgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel)
+			},
+		},
 		{
 			name: "upgrade from archive should failed if not already installed",
 			testFunc: func(t *testing.T) {
