@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -59,11 +60,12 @@ type DeployOptions struct {
 	Kubeconfig  string
 	KubeContext string
 
-	HelmBinary       string
-	HelmValues       string
-	HelmTimeout      time.Duration
-	SkipDependencies bool
-	Force            bool
+	HelmBinary         string
+	HelmValues         string
+	HelmTimeout        time.Duration
+	SkipDependencies   bool
+	SkipSeedValidation sets.Set[string]
+	Force              bool
 
 	StorageClass       string
 	DisableTelemetry   bool
@@ -81,8 +83,9 @@ type DeployOptions struct {
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := DeployOptions{
-		HelmTimeout: 5 * time.Minute,
-		HelmBinary:  "helm",
+		HelmTimeout:        5 * time.Minute,
+		HelmBinary:         "helm",
+		SkipSeedValidation: sets.New[string](),
 	}
 
 	cmd := &cobra.Command{
@@ -120,6 +123,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
+	cmd.PersistentFlags().Var(flagopts.SetFlag(opt.SkipSeedValidation), "skip-seed-validation", "comma-separated list of seed clusters to skip running the preflight checks on (use with caution, as this can lead to defunct KKP setups)")
 	cmd.PersistentFlags().BoolVar(&opt.Force, "force", false, "perform Helm upgrades even when the release is up-to-date")
 
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", sets.List(common.SupportedStorageClassProviders())))

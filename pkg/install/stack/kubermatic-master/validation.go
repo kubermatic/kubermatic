@@ -124,7 +124,14 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 	}
 
 	for seedName, seed := range allSeeds {
-		opt.Logger.WithField("seed", seedName).Info("Checking seed cluster…")
+		seedLog := opt.Logger.WithField("seed", seedName)
+
+		if opt.SkipSeedValidation.Has(seedName) {
+			seedLog.Info("Seed validation was skipped.")
+			continue
+		}
+
+		seedLog.Info("Checking seed cluster…")
 
 		// ensure seeds are also up-to-date before we continue
 		seedVersion := seed.Status.Versions.Kubermatic
