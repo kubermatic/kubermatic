@@ -148,6 +148,10 @@ func statusRequiresPurge(status helm.ReleaseStatus) bool {
 }
 
 func dumpHelmValues(values *yamled.Document) (string, error) {
+	if values.IsEmpty() {
+		return "", nil
+	}
+
 	f, err := os.CreateTemp("", "helmvalues.*")
 	if err != nil {
 		return "", err

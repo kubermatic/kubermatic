@@ -108,8 +108,13 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 	command := []string{
 		"upgrade",
 		"--install",
-		"--values", valuesFile,
 		"--timeout", c.timeout.String(),
+	}
+
+	if valuesFile != "" {
+		command = append(command, "--values", valuesFile)
+	} else {
+		command = append(command, "--reset-values")
 	}
 
 	command = append(command, valuesToFlags(values)...)

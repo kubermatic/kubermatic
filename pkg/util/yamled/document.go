@@ -232,3 +232,7 @@ func (d *Document) Equal(other *Document) bool {
 
 	return equality.Semantic.DeepEqual(dData, otherData)
 }
+
+func (d *Document) IsEmpty() bool {
+	return len(d.root.Content) == 0
+}
