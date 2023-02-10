@@ -256,13 +256,13 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	oldAppInstallation := appInstallation.DeepCopy()
 	appSourcePath, downloadErr := r.appInstaller.DonwloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
 	if downloadErr != nil {
-		appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownaloadSourceFailed", downloadErr.Error())
+		appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownloadSourceFailed", downloadErr.Error())
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 			return fmt.Errorf("failed to update status: %w", err)
 		}
 		return downloadErr
 	}
-	appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownaloadSourceSuccessful", "application's source successfully downloaded")
+	appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionTrue, "DownloadSourceSuccessful", "application's source successfully downloaded")
 	appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionUnknown, "InstallationInProgress", "application is installing or upgrading")
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 		return fmt.Errorf("failed to update status: %w", err)
