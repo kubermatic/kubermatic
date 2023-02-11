@@ -6,6 +6,24 @@
 - [v2.21.3](#v2213)
 - [v2.21.4](#v2214)
 - [v2.21.5](#v2215)
+- [v2.21.6](#v2216)
+
+## [v2.21.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.6)
+
+### Bugfixes
+
+- Allow k8s version upgrade for clusters with non-amd64 nodes & Canal CNI and IPVS for all k8s versions ([#11766](https://github.com/kubermatic/kubermatic/pull/11766))
+- Container runtime configuration is properly validated while creating or upgrading clusters ([#11780](https://github.com/kubermatic/kubermatic/pull/11780))
+- Fix OpenStack cloud provider tenant to project fields migration ([#11818](https://github.com/kubermatic/kubermatic/pull/11818))
+- Prevent DataVolumes from being Garbage Collected with KubeVirt version >=1.55.0 ([#11830](https://github.com/kubermatic/kubermatic/pull/11830))
+- Observe configured addons tag suffix when extracting addon images in `kubermatic-installer mirror-images` command ([#11702](https://github.com/kubermatic/kubermatic/pull/11702))
+- Persist annotations when upgrading a cluster ([#11853](https://github.com/kubermatic/kubermatic/pull/11853))
+- Unblock etcd backup controller's reconciliation loop in case `defaultDestination` field is missing on Seed CR ([#11854](https://github.com/kubermatic/kubermatic/pull/11854))
+- Fix a bug that lead to outdated Project and/or Cluster labels in metering reports ([#11754](https://github.com/kubermatic/kubermatic/pull/11754))
+
+### New Feature
+
+- Add keepalive-time Konnectivity setting + set keepalive to 1m by default ([#11786](https://github.com/kubermatic/kubermatic/pull/11786))
 
 ## [v2.21.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.5)
 
