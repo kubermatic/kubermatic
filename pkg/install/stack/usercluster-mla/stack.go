@@ -91,7 +91,7 @@ func (*UserClusterMLA) Name() string {
 }
 
 func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) error {
-	opt.Logger.Info("ℹ️ For usercluster-mla deployment, it is recommended to extend helm timeout by using flag --helm-timeout=15m0s...")
+	opt.Logger.Info("ℹ️ For usercluster-mla deployment, it is recommended to extend Helm timeout by using the flag --helm-timeout=15m0s...")
 
 	if err := deployMLASecrets(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy MLA Secrets: %w", err)
