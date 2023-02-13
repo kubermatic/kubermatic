@@ -19,16 +19,13 @@ package kubevirt
 import (
 	"context"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	csiResourceName = "kubevirt-csi"
 )
 
 func csiServiceAccountReconciler(name, namespace string) reconciling.NamedServiceAccountReconcilerFactory {
@@ -44,7 +41,7 @@ func csiSecretTokenReconciler(name string) reconciling.NamedSecretReconcilerFact
 	return func() (string, reconciling.SecretReconciler) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
 			s.SetAnnotations(map[string]string{
-				corev1.ServiceAccountNameKey: csiResourceName,
+				corev1.ServiceAccountNameKey: resources.KubeVirtCSIServiceAccountName,
 			})
 
 			s.Type = corev1.SecretTypeServiceAccountToken
@@ -104,14 +101,14 @@ func csiRoleBindingReconciler(name, namespace string) reconciling.NamedRoleBindi
 // reconcileCSIRoleRoleBinding reconciles the Role and RoleBinding needed by CSI driver.
 func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
 	roleReconcilers := []reconciling.NamedRoleReconcilerFactory{
-		csiRoleReconciler(csiResourceName),
+		csiRoleReconciler(resources.KubeVirtCSIServiceAccountName),
 	}
 	if err := reconciling.ReconcileRoles(ctx, roleReconcilers, namespace, client); err != nil {
 		return err
 	}
 
 	roleBindingReconcilers := []reconciling.NamedRoleBindingReconcilerFactory{
-		csiRoleBindingReconciler(csiResourceName, namespace),
+		csiRoleBindingReconciler(resources.KubeVirtCSIServiceAccountName, namespace),
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingReconcilers, namespace, client); err != nil {
 		return err
@@ -123,14 +120,14 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 // ReconcileInfraTokenAccess generates a service account token for KubeVirt CSI access.
 func ReconcileInfraTokenAccess(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
-		csiServiceAccountReconciler(csiResourceName, namespace),
+		csiServiceAccountReconciler(resources.KubeVirtCSIServiceAccountName, namespace),
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, namespace, client); err != nil {
 		return err
 	}
 
 	sa := corev1.ServiceAccount{}
-	err := client.Get(ctx, types.NamespacedName{Name: csiResourceName, Namespace: namespace}, &sa)
+	err := client.Get(ctx, types.NamespacedName{Name: resources.KubeVirtCSIServiceAccountName, Namespace: namespace}, &sa)
 	if err != nil {
 		return err
 	}
@@ -138,7 +135,7 @@ func ReconcileInfraTokenAccess(ctx context.Context, namespace string, client ctr
 	if len(sa.Secrets) == 0 {
 		// k8s 1.24 by default disabled automatic token creation for service accounts
 		seReconcilers := []reconciling.NamedSecretReconcilerFactory{
-			csiSecretTokenReconciler(csiResourceName),
+			csiSecretTokenReconciler(resources.KubeVirtCSIServiceAccountName),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, seReconcilers, namespace, client); err != nil {
 			return err
