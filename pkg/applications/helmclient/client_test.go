@@ -473,69 +473,106 @@ func TestBuildDependencies(t *testing.T) {
 
 func TestNewDeploySettings(t *testing.T) {
 	tests := []struct {
-		name    string
-		wait    bool
-		timeout time.Duration
-		atomic  bool
-		want    *DeployOpts
-		wantErr bool
+		name      string
+		wait      bool
+		timeout   time.Duration
+		atomic    bool
+		enableDns bool
+		want      *DeployOpts
+		wantErr   bool
 	}{
 		{
-			name:    "test valid: no wait, timeout and atomic",
-			wait:    false,
-			timeout: 0,
-			atomic:  false,
+			name:      "test valid: no wait, timeout, atomic and enableDNS",
+			wait:      false,
+			timeout:   0,
+			atomic:    false,
+			enableDns: false,
 			want: &DeployOpts{
-				wait:    false,
-				timeout: 0,
-				atomic:  false,
+				wait:      false,
+				timeout:   0,
+				atomic:    false,
+				enableDNS: false,
 			},
 			wantErr: false,
 		},
 		{
-			name:    "test valid: wait=true timeout=10s and no atomic",
-			wait:    true,
-			timeout: 10 * time.Second,
-			atomic:  false,
+			name:      "test valid: wait=true timeout=10s and no atomic",
+			wait:      true,
+			timeout:   10 * time.Second,
+			atomic:    false,
+			enableDns: false,
 			want: &DeployOpts{
-				wait:    true,
-				timeout: 10 * time.Second,
-				atomic:  false,
+				wait:      true,
+				timeout:   10 * time.Second,
+				atomic:    false,
+				enableDNS: false,
 			},
 			wantErr: false,
 		},
 		{
-			name:    "test valid: wait=true timeout=10s atomic=true",
-			wait:    true,
-			timeout: 10 * time.Second,
-			atomic:  true,
+			name:      "test valid: wait=true timeout=10s atomic=true",
+			wait:      true,
+			timeout:   10 * time.Second,
+			atomic:    true,
+			enableDns: false,
 			want: &DeployOpts{
-				wait:    true,
-				timeout: 10 * time.Second,
-				atomic:  true,
+				wait:      true,
+				timeout:   10 * time.Second,
+				atomic:    true,
+				enableDNS: false,
 			},
 			wantErr: false,
 		},
 		{
-			name:    "test invalid: wait=true without timeout",
-			wait:    true,
-			timeout: 0,
-			atomic:  false,
-			want:    nil,
-			wantErr: true,
+			name:      "test valid: wait=true timeout=10s atomic=true enableDns=true",
+			wait:      true,
+			timeout:   10 * time.Second,
+			atomic:    true,
+			enableDns: true,
+			want: &DeployOpts{
+				wait:      true,
+				timeout:   10 * time.Second,
+				atomic:    true,
+				enableDNS: true,
+			},
+			wantErr: false,
 		},
 		{
-			name:    "test invalid: atomic=true without wait",
-			wait:    false,
-			timeout: 10 * time.Second,
-			atomic:  true,
-			want:    nil,
-			wantErr: true,
+			name:      "test valid: wait=false timeout=0 atomic=false enableDns=true",
+			wait:      false,
+			timeout:   0,
+			atomic:    false,
+			enableDns: true,
+			want: &DeployOpts{
+				wait:      false,
+				timeout:   0,
+				atomic:    false,
+				enableDNS: true,
+			},
+			wantErr: false,
+		},
+		{
+			name:      "test invalid: wait=true without timeout",
+			wait:      true,
+			timeout:   0,
+			atomic:    false,
+			enableDns: false,
+			want:      nil,
+			wantErr:   true,
+		},
+		{
+			name:      "test invalid: atomic=true without wait",
+			wait:      false,
+			timeout:   10 * time.Second,
+			atomic:    true,
+			enableDns: false,
+			want:      nil,
+			wantErr:   true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewDeployOpts(tt.wait, tt.timeout, tt.atomic)
+			got, err := NewDeployOpts(tt.wait, tt.timeout, tt.atomic, tt.enableDns)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("NewDeployOpts() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -548,6 +585,9 @@ func TestNewDeploySettings(t *testing.T) {
 				}
 				if tt.want.atomic != got.atomic {
 					t.Errorf("want DeployOpts.atomic=%v, got %v", tt.want.atomic, got.atomic)
+				}
+				if tt.want.enableDNS != got.enableDNS {
+					t.Errorf("want DeployOpts.enableDNS=%v, got %v", tt.want.enableDNS, got.enableDNS)
 				}
 			}
 		})
