@@ -130,7 +130,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcileInfraTokenAccess(ctx, cluster.Status.NamespaceName, client)
+	err = ReconcileInfraTokenAccess(ctx, cluster.Status.NamespaceName, client)
 	if err != nil {
 		return cluster, err
 	}

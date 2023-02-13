@@ -120,8 +120,8 @@ func reconcileCSIRoleRoleBinding(ctx context.Context, namespace string, client c
 	return nil
 }
 
-// reconcileInfraTokenAccess generates a service account token for KubeVirt CSI access.
-func reconcileInfraTokenAccess(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
+// ReconcileInfraTokenAccess generates a service account token for KubeVirt CSI access.
+func ReconcileInfraTokenAccess(ctx context.Context, namespace string, client ctrlruntimeclient.Client) error {
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		csiServiceAccountReconciler(csiResourceName, namespace),
 	}
