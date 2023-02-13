@@ -211,6 +211,17 @@ func TestSetNewRootKey(t *testing.T) {
 	assertEqualYAML(t, doc, expected)
 }
 
+func TestSetNewRootKeyInEmptyDocument(t *testing.T) {
+	doc, expected := loadTestcase(t, "set-new-root-key-empty-document.yaml")
+
+	ok := doc.Set(Path{"newKey"}, "new value")
+	if !ok {
+		t.Fatal("should have been able to set a new root level key")
+	}
+
+	assertEqualYAML(t, doc, expected)
+}
+
 func TestSetNewSubKey(t *testing.T) {
 	doc, expected := loadTestcase(t, "set-new-sub-key.yaml")
 
@@ -510,5 +521,18 @@ func TestEqual(t *testing.T) {
 	docA.Set(Path{"rootIntKey"}, 12)
 	if !docA.Equal(docB) {
 		t.Fatal("After un-editing one of the documents, they should be equal again.")
+	}
+}
+
+func TestIsEmpty(t *testing.T) {
+	emptyDoc, _ := loadTestcase(t, "empty-document.yaml")
+	nonEmptyDoc, _ := loadTestcase(t, "nonempty-document.yaml")
+
+	if !emptyDoc.IsEmpty() {
+		t.Fatal("An empty document wasn't tested empty.")
+	}
+
+	if nonEmptyDoc.IsEmpty() {
+		t.Fatal("A non-empty document was tested empty.")
 	}
 }

@@ -104,7 +104,7 @@ func DeployHelmChart(
 			return fmt.Errorf("failed to retrieve Helm values used for release: %w", err)
 		}
 
-		if appliedValues.Equal(values) {
+		if (!values.IsEmpty() && appliedValues.Equal(values)) || (values.IsEmpty() && appliedValues.IsEmpty()) {
 			log.Info("Release is up-to-date, nothing to do. Set --force to re-install anyway.")
 			return nil
 		}

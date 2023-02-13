@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -82,15 +81,16 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 }
 
 func loadHelmValues(filename string) (*yamled.Document, error) {
-	f := strings.NewReader("---\n")
-
-	if filename != "" {
-		f, err := os.Open(filename)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
+	if filename == "" {
+		doc, _ := yamled.Load(bytes.NewReader([]byte("---\n")))
+		return doc, nil
 	}
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
 
 	values, err := yamled.Load(f)
 	if err != nil {
