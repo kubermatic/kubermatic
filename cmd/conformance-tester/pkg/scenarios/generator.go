@@ -27,7 +27,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -112,11 +111,7 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 						return nil, err
 					}
 
-					scenario.SetDualstackEnabled(g.enableDualstack)
-
-					if isValidNewScenario(opts, log, scenario) {
-						scenarios = append(scenarios, scenario)
-					}
+					scenarios = append(scenarios, scenario)
 				}
 			}
 		}
@@ -173,9 +168,10 @@ func providerScenario(
 	base := baseScenario{
 		cloudProvider:    provider,
 		operatingSystem:  os,
-		version:          version,
+		clusterVersion:   version,
 		containerRuntime: containerRuntime,
 		datacenter:       datacenter,
+		dualstackEnabled: opts.DualStackEnabled,
 	}
 
 	switch provider {
@@ -212,30 +208,6 @@ func providerScenario(
 	default:
 		return nil, fmt.Errorf("cloud provider %q is not supported yet in conformance-tester", provider)
 	}
-}
-
-func isValidNewScenario(opts *types.Options, log *zap.SugaredLogger, scenario Scenario) bool {
-	// check if the CRI is enabled by the user
-	if !opts.ContainerRuntimes.Has(scenario.ContainerRuntime()) {
-		scenario.Log(log).Debugw("Skipping because this CRI is not enabled.")
-		return false
-	}
-
-	// check if the OS is enabled by the user
-	if !opts.Distributions.Has(string(scenario.OperatingSystem())) {
-		scenario.Log(log).Debugw("Skipping because this OS is not enabled.")
-		return false
-	}
-
-	// apply static filters
-	clusterVersion := scenario.Version()
-	dockerSupported := clusterVersion.LessThan(semver.NewSemverOrDie("1.24"))
-	if !dockerSupported && scenario.ContainerRuntime() == resources.ContainerRuntimeDocker {
-		scenario.Log(log).Infow("Skipping because CRI is not supported in this Kubernetes version.")
-		return false
-	}
-
-	return scenario.IsValid(opts, log)
 }
 
 func shuffle(vals []Scenario) []Scenario {

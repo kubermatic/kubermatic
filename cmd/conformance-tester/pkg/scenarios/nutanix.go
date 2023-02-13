@@ -53,7 +53,7 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				ProjectName: secrets.Nutanix.ProjectName,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 

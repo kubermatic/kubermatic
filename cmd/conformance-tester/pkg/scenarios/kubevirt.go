@@ -55,7 +55,7 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 				},
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 

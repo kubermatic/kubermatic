@@ -39,7 +39,7 @@ func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				AccessKeyID:     secrets.Alibaba.AccessKeyID,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 

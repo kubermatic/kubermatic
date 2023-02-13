@@ -131,6 +131,17 @@ func main() {
 		log.Fatalw("No scenarios match the given criteria.")
 	}
 
+	// optionally restrict the full set of scenarios to those that previously did not succeed
+	var previousResults *runner.ResultsFile
+	if opts.RetryFailedScenarios {
+		previousResults, err = loadPreviousResults(opts)
+		if err != nil {
+			log.Fatalw("Failed to load previous test results", zap.Error(err))
+		}
+
+		scenarios = keepOnlyFailedScenarios(log, scenarios, previousResults, *opts)
+	}
+
 	if err := testRunner.SetupProject(rootCtx); err != nil {
 		log.Fatalw("Failed to setup project", zap.Error(err))
 	}
@@ -140,7 +151,31 @@ func main() {
 	// let the magic happen!
 	log.Info("Running E2E tests...")
 	start := time.Now()
-	if err := testRunner.Run(rootCtx, scenarios); err != nil {
+
+	results, err := testRunner.Run(rootCtx, scenarios)
+
+	// always print the test results
+	if results != nil {
+		results.PrintJUnitDetails()
+		results.PrintSummary()
+
+		if filename := opts.ResultsFile; filename != "" {
+			log.Infow("Writing results file", "filename", filename)
+
+			// Merge the previous tests with the new, current results; otherwise if we'd only
+			// dump the new results, those would not contain skipped/successful scenarios from
+			// the previous run, effectively shrinking the results file every time it is used.
+			if previousResults != nil {
+				results = runner.MergeResults(previousResults, results)
+			}
+
+			if err := results.WriteToFile(filename); err != nil {
+				log.Warnw("Failed to write results file", zap.Error(err))
+			}
+		}
+	}
+
+	if err != nil {
 		log.Fatalw("Test failed", zap.Error(err))
 	}
 
@@ -257,4 +292,55 @@ func setupHomeDir(log *zap.SugaredLogger) (string, []byte, error) {
 
 	log.Infof("Finished setting up temporary home dir %s", homeDir)
 	return homeDir, pubKeyBytes, nil
+}
+
+func loadPreviousResults(opts *types.Options) (*runner.ResultsFile, error) {
+	if opts.ResultsFile == "" {
+		return nil, nil
+	}
+
+	// non-existing or empty files are okay
+	stat, err := os.Stat(opts.ResultsFile)
+	if err != nil || stat.Size() == 0 {
+		return nil, nil
+	}
+
+	return runner.LoadResultsFile(opts.ResultsFile)
+}
+
+func keepOnlyFailedScenarios(log *zap.SugaredLogger, allScenarios []scenarios.Scenario, previousResults *runner.ResultsFile, opts types.Options) []scenarios.Scenario {
+	if optionsChanged(previousResults.Configuration, opts) {
+		log.Warn("Disregarding previous test results as current options do not match previous options.")
+		return allScenarios
+	}
+
+	filtered := []scenarios.Scenario{}
+	for i, scenario := range allScenarios {
+		hasSuccess := false
+
+		for _, previous := range previousResults.Results {
+			if previous.MatchesScenario(scenario) && previous.Status == runner.ScenarioPassed {
+				hasSuccess = true
+				break
+			}
+		}
+
+		if hasSuccess {
+			scenario.Log(log).Info("Skipping because scenario succeeded in a previous run.")
+			continue
+		}
+
+		filtered = append(filtered, allScenarios[i])
+	}
+
+	return filtered
+}
+
+func optionsChanged(previous runner.TestConfiguration, current types.Options) bool {
+	return false ||
+		previous.OSMEnabled != current.OperatingSystemManagerEnabled ||
+		previous.KonnectivityEnabled != current.KonnectivityEnabled ||
+		previous.DualstackEnabled != current.DualStackEnabled ||
+		previous.TestClusterUpdate != current.TestClusterUpdate ||
+		!sets.New(previous.Tests...).IsSuperset(current.Tests)
 }

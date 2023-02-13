@@ -18,8 +18,7 @@ package scenarios
 
 import (
 	"context"
-
-	"go.uber.org/zap"
+	"errors"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -38,17 +37,16 @@ type anexiaScenario struct {
 	baseScenario
 }
 
-func (s *anexiaScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bool {
-	if !s.baseScenario.IsValid(opts, log) {
-		return false
+func (s *anexiaScenario) IsValid() error {
+	if err := s.baseScenario.IsValid(); err != nil {
+		return err
 	}
 
 	if s.operatingSystem != providerconfig.OperatingSystemFlatcar {
-		s.Log(log).Debug("Skipping because provider only supports Flatcar.")
-		return false
+		return errors.New("provider only supports Flatcar")
 	}
 
-	return true
+	return nil
 }
 
 func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -60,7 +58,7 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 				Token: secrets.Anexia.Token,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 

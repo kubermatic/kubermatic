@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sort"
 	"time"
 
 	"github.com/onsi/ginkgo/reporters"
@@ -93,9 +92,9 @@ func (r *TestRunner) SetupProject(ctx context.Context) error {
 	return nil
 }
 
-func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario) error {
+func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario) (*Results, error) {
 	scenariosCh := make(chan scenarios.Scenario, len(testScenarios))
-	resultsCh := make(chan testResult, len(testScenarios))
+	resultsCh := make(chan ScenarioResult, len(testScenarios))
 
 	r.log.Infow("Test suite:", "total", len(testScenarios))
 	for _, scenario := range testScenarios {
@@ -111,114 +110,126 @@ func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario
 
 	success := 0
 	failures := 0
+	skipped := 0
 	remaining := len(testScenarios)
 
-	var results []testResult
+	var results []ScenarioResult
 	for range testScenarios {
 		result := <-resultsCh
 
 		remaining--
-		if result.Passed() {
+		switch result.Status {
+		case ScenarioPassed:
 			success++
-		} else {
+		case ScenarioFailed:
 			failures++
+		case ScenarioSkipped:
+			skipped++
 		}
 
 		results = append(results, result)
-		r.log.Infow("Scenario finished.", "successful", success, "failed", failures, "remaining", remaining)
+		r.log.Infow("Scenario finished.", "successful", success, "failed", failures, "skipped", skipped, "remaining", remaining)
 	}
 
 	r.log.Info("All scenarios have finished.")
 
-	for _, result := range results {
-		if result.report != nil {
-			printDetailedReport(result.report)
-		}
-	}
-
-	fmt.Println("")
-	fmt.Println("========================== RESULT ===========================")
-	fmt.Println("Parameters:")
-	fmt.Printf("  KKP Version............: %s (%s)\n", r.opts.KubermaticConfiguration.Status.KubermaticVersion, r.opts.KubermaticConfiguration.Status.KubermaticEdition)
-	fmt.Printf("  Name Prefix............: %q\n", r.opts.NamePrefix)
-	fmt.Printf("  OSM Enabled............: %v\n", r.opts.OperatingSystemManagerEnabled)
-	fmt.Printf("  Dualstack Enabled......: %v\n", r.opts.DualStackEnabled)
-	fmt.Printf("  Konnectivity Enabled...: %v\n", r.opts.KonnectivityEnabled)
-	fmt.Printf("  Cluster Updates Enabled: %v\n", r.opts.TestClusterUpdate)
-	fmt.Printf("  Enabled Tests..........: %v\n", sets.List(r.opts.Tests))
-	fmt.Printf("  Scenario Options.......: %v\n", sets.List(r.opts.ScenarioOptions))
-	fmt.Println("")
-	fmt.Println("Test results:")
-
-	// sort results alphabetically
-	sort.Slice(results, func(i, j int) bool {
-		iname := results[i].scenario.Name()
-		jname := results[j].scenario.Name()
-
-		return iname < jname
-	})
-
-	hadFailure := false
-	for _, result := range results {
-		prefix := " OK "
-		if !result.Passed() {
-			prefix = "FAIL"
-			hadFailure = true
-		}
-		duration := result.duration.Round(time.Second)
-		scenarioResultMsg := fmt.Sprintf("[%s] - %s", prefix, result.scenario.Name())
-
-		if r.opts.TestClusterUpdate && result.cluster != nil {
-			scenarioResultMsg = fmt.Sprintf("%s (updated to %s)", scenarioResultMsg, result.cluster.Spec.Version)
-		}
-
-		scenarioResultMsg = fmt.Sprintf("%s (%s)", scenarioResultMsg, duration)
-
-		if result.err != nil {
-			scenarioResultMsg = fmt.Sprintf("%s: %v", scenarioResultMsg, result.err)
-		}
-
-		fmt.Println(scenarioResultMsg)
-	}
-
-	if hadFailure {
-		return errors.New("not all scenarios have passed all selected tests")
-	}
-
-	return nil
+	return &Results{
+		Options:   r.opts,
+		Scenarios: results,
+	}, nil
 }
 
-func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenarios.Scenario, results chan<- testResult) {
-	for s := range scenarios {
+func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenarios.Scenario, results chan<- ScenarioResult) {
+	for scenario := range scenarios {
 		var (
 			report  *reporters.JUnitTestSuite
 			cluster *kubermaticv1.Cluster
 		)
 
-		scenarioLog := s.NamedLog(r.log)
+		clusterVersion := scenario.ClusterVersion()
+
+		result := ScenarioResult{
+			scenarioName:      scenario.Name(),
+			CloudProvider:     scenario.CloudProvider(),
+			OperatingSystem:   scenario.OperatingSystem(),
+			ContainerRuntime:  scenario.ContainerRuntime(),
+			KubernetesRelease: clusterVersion.MajorMinor(),
+			KubernetesVersion: clusterVersion,
+		}
+
+		// This check could be done much earlier, but doing it rather late ensures that
+		// skipped scenarios end up in the test result like normal without any special handling.
+		if err := r.isValidNewScenario(scenario); err != nil {
+			scenario.Log(r.log).Infof("Skipping scenario: %v", err.Error())
+
+			result.Status = ScenarioSkipped
+			result.Message = fmt.Sprintf("Skipped: %v", err)
+			results <- result
+
+			continue
+		}
+
+		scenarioLog := scenario.NamedLog(r.log)
 		scenarioLog.Info("Starting to test scenario...")
 
 		start := time.Now()
 
-		err := metrics.MeasureTime(metrics.ScenarioRuntimeMetric.With(prometheus.Labels{"scenario": s.Name()}), scenarioLog, func() error {
+		err := metrics.MeasureTime(metrics.ScenarioRuntimeMetric.With(prometheus.Labels{"scenario": scenario.Name()}), scenarioLog, func() error {
 			var err error
-			report, cluster, err = r.executeScenario(ctx, scenarioLog, s)
+			report, cluster, err = r.executeScenario(ctx, scenarioLog, scenario)
 			return err
 		})
+		if err == nil {
+			switch {
+			case report == nil:
+				err = errors.New("test report is empty")
+			case len(report.TestCases) == 0:
+				err = errors.New("test report contains no test cases")
+			case report.Errors > 0 || report.Failures > 0:
+				err = fmt.Errorf("test report contains %d errors and %d failures", report.Errors, report.Failures)
+			}
+		}
+
 		if err != nil {
+			result.Status = ScenarioFailed
+			result.Message = err.Error()
 			scenarioLog.Warnw("Finished with error", zap.Error(err))
 		} else {
+			result.Status = ScenarioPassed
 			scenarioLog.Info("Finished successfully")
 		}
 
-		results <- testResult{
-			report:   report,
-			duration: time.Since(start),
-			scenario: s,
-			err:      err,
-			cluster:  cluster,
+		if cluster != nil {
+			result.ClusterName = cluster.Name
+			result.KubermaticVersion = cluster.Status.Conditions[kubermaticv1.ClusterConditionClusterInitialized].KubermaticVersion
 		}
+
+		result.Duration = time.Since(start)
+		result.report = report
+
+		results <- result
 	}
+}
+
+func (r *TestRunner) isValidNewScenario(scenario scenarios.Scenario) error {
+	// check if the CRI is enabled by the user
+	if !r.opts.ContainerRuntimes.Has(scenario.ContainerRuntime()) {
+		return fmt.Errorf("CRI is not enabled")
+	}
+
+	// check if the OS is enabled by the user
+	if !r.opts.Distributions.Has(string(scenario.OperatingSystem())) {
+		return fmt.Errorf("OS is not enabled")
+	}
+
+	// apply static filters
+	clusterVersion := scenario.ClusterVersion()
+	dockerSupported := clusterVersion.LessThan(semver.NewSemverOrDie("1.24"))
+	if !dockerSupported && scenario.ContainerRuntime() == resources.ContainerRuntimeDocker {
+		return fmt.Errorf("CRI is not supported in this Kubernetes version")
+	}
+
+	return scenario.IsValid()
 }
 
 func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*reporters.JUnitTestSuite, *kubermaticv1.Cluster, error) {

@@ -142,4 +142,5 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS:-}" \
   -exclude-tests="${EXCLUDE_TESTS:-}" \
   -enable-osm=${KUBERMATIC_OSM_ENABLED:-true} \
-  -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"
+  -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091" \
+  -results-file "$ARTIFACTS/conformance-tester-results.json"

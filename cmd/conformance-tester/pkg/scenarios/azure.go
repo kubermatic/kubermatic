@@ -46,7 +46,7 @@ func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 				LoadBalancerSKU: kubermaticv1.AzureStandardLBSKU,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 

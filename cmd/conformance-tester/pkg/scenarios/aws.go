@@ -53,7 +53,7 @@ func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 				AccessKeyID:     secrets.AWS.AccessKeyID,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 
