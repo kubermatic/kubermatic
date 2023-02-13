@@ -190,8 +190,8 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	log.Debug("Reconciling CNI")
 
 	// Ensure legacy CNI addon is removed if it was deployed as older CNI version
-	if err := r.ensureLegacyCNIAddonIsRemoved(ctx, cluster); err != nil {
-		return &reconcile.Result{}, err
+	if requeueAfter, err := r.ensureLegacyCNIAddonIsRemoved(ctx, cluster); requeueAfter > 0 || err != nil {
+		return &reconcile.Result{RequeueAfter: requeueAfter}, err
 	}
 
 	// Prepare initialValues for the CNI ApplicationInstallation. These values will be used if the ApplicationInstallation does not exist yet.
@@ -235,32 +235,41 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	return result, nil
 }
 
-func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	cniAddon := &kubermaticv1.Addon{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cluster.Spec.CNIPlugin.Type.String(),
-			Namespace: cluster.Status.NamespaceName,
-		},
-	}
-	err := r.Client.Delete(ctx, cniAddon)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete CNI addon %s: %w", cniAddon.GetName(), err)
+// ensureLegacyCNIAddonIsRemoved unsintalls CNI addons.
+// It triggers the addon uninstall and checks if the addon has been uninstalled.
+// If the addon has not been uninstalled, it will requeue after 5 seconds.
+func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) (time.Duration, error) {
+	addons := []string{cluster.Spec.CNIPlugin.Type.String()}
+	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+		addons = append(addons, "hubble")
 	}
 
-	// In case of Cilium we also need to remove the Hubble addon
-	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+	requeueAfter := time.Duration(0)
+	for _, addon := range addons {
 		cniAddon := &kubermaticv1.Addon{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "hubble",
+				Name:      addon,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		}
+		// trigger addon uninstall
 		err := r.Client.Delete(ctx, cniAddon)
 		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete Hubble addon %s: %w", cniAddon.GetName(), err)
+			return 0, fmt.Errorf("failed to delete CNI addon %s: %w", cniAddon.GetName(), err)
+		}
+
+		// check addon has been uninstalled
+		err = r.Client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cniAddon), cniAddon)
+		if err != nil {
+			if !apierrors.IsNotFound(err) {
+				return 0, fmt.Errorf("failed to check CNI addon %s has been uninstalled: %w", cniAddon.GetName(), err)
+			}
+		} else {
+			requeueAfter = 5 * time.Second
 		}
 	}
-	return nil
+
+	return requeueAfter, nil
 }
 
 func (r *Reconciler) parseCNIValuesAnnotation(cluster *kubermaticv1.Cluster, values map[string]any) error {
