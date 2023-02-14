@@ -96,7 +96,7 @@ func NewFromConfiguration(config *kubermaticv1.KubermaticConfiguration) *Manager
 
 	for _, incomp := range k8s.ProviderIncompatibilities {
 		incompatibilities = append(incompatibilities, &ProviderIncompatibility{
-			Provider:  incomp.Provider,
+			Provider:  kubermaticv1.ProviderType(incomp.Provider),
 			Version:   incomp.Version,
 			Condition: incomp.Condition,
 			Operation: incomp.Operation,

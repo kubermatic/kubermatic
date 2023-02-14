@@ -301,19 +301,19 @@ var (
 			// we are still going to have 1.23 clusters temporarily during an upgrade,
 			// so let's keep this just to make sure.
 			{
-				Provider:  kubermaticv1.AWSCloudProvider,
+				Provider:  string(kubermaticv1.AWSCloudProvider),
 				Version:   "< 1.24.0",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
 				Operation: kubermaticv1.SupportOperation,
 			},
 			{
-				Provider:  kubermaticv1.AWSCloudProvider,
+				Provider:  string(kubermaticv1.AWSCloudProvider),
 				Version:   "< 1.24.0",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
 				Operation: kubermaticv1.CreateOperation,
 			},
 			{
-				Provider:  kubermaticv1.AWSCloudProvider,
+				Provider:  string(kubermaticv1.AWSCloudProvider),
 				Version:   "< 1.24.0",
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
 				Operation: kubermaticv1.UpdateOperation,

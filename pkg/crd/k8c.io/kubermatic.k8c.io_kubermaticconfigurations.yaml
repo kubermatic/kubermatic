@@ -531,6 +531,7 @@ spec:
                           provider:
                             description: Provider to which to apply the compatibility check. Empty string matches all providers
                             enum:
+                              - ""
                               - digitalocean
                               - hetzner
                               - azure
