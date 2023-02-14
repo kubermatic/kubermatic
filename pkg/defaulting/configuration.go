@@ -324,23 +324,23 @@ var (
 	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-		Default: semver.NewSemverOrDie("v1.22"),
+		Default: semver.NewSemverOrDie("v1.24"),
 		Versions: []semver.Semver{
+			newSemver("v1.24"),
 			newSemver("v1.23"),
 			newSemver("v1.22"),
 			newSemver("v1.21"),
-			newSemver("v1.20"),
 		},
 	}
 
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-		Default: semver.NewSemverOrDie("v1.23"),
+		Default: semver.NewSemverOrDie("v1.24"),
 		Versions: []semver.Semver{
+			newSemver("v1.25"),
 			newSemver("v1.24"),
 			newSemver("v1.23"),
-			newSemver("v1.22"),
 		},
 	}
 
