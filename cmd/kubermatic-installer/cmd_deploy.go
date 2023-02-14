@@ -49,7 +49,8 @@ import (
 )
 
 var (
-	MinHelmVersion = semverlib.MustParse("v3.0.0")
+	MinHelmVersion            = semverlib.MustParse("v3.0.0")
+	UserClusterMinHelmTimeout = 15 * time.Minute
 )
 
 type DeployOptions struct {
@@ -152,6 +153,15 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			fields["git"] = versions.KubermaticCommit
 		}
 
+		stackName := ""
+		if len(args) > 0 {
+			stackName = args[0]
+		}
+		if stackName == "usercluster-mla" && opt.HelmTimeout <= UserClusterMinHelmTimeout {
+			logger.Infof("🚦️ For usercluster-mla deployment, it is recommended to use Helm timeout value of at least %v. Overriding the current value of %s.", UserClusterMinHelmTimeout, opt.HelmTimeout)
+			opt.HelmTimeout = UserClusterMinHelmTimeout
+		}
+
 		// error out early if there is no useful Helm binary
 		helmClient, err := helm.NewCLI(opt.HelmBinary, opt.Kubeconfig, opt.KubeContext, opt.HelmTimeout, logger)
 		if err != nil {
@@ -170,11 +180,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 				opt.HelmBinary,
 				helmVersion,
 			)
-		}
-
-		stackName := ""
-		if len(args) > 0 {
-			stackName = args[0]
 		}
 
 		var kubermaticStack stack.Stack
