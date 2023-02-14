@@ -119,13 +119,18 @@ type DeployOpts struct {
 	// time to wait for any individual Kubernetes operation.
 	timeout time.Duration
 
-	// atomic corresponds to the --timeout flag on Helm cli.
+	// atomic corresponds to the --atomic flag on Helm cli.
 	// if set, the installation process deletes the installation on failure; the upgrade process rolls back changes made in case of failed upgrade.
 	atomic bool
+
+	// enableDNS  corresponds to the --enable-dns flag on Helm cli.
+	// enable DNS lookups when rendering templates.
+	// if you enable this flag, you have to verify that helm template function 'getHostByName' is not being used in a chart to disclose any information you do not want to be passed to DNS servers.(c.f CVE-2023-25165)
+	enableDNS bool
 }
 
 // NewDeployOpts creates a new DeployOpts. It raises an error if the inputs are not valid.
-func NewDeployOpts(wait bool, timeout time.Duration, atomic bool) (*DeployOpts, error) {
+func NewDeployOpts(wait bool, timeout time.Duration, atomic bool, enableDNS bool) (*DeployOpts, error) {
 	if atomic && !wait {
 		return nil, fmt.Errorf("invalid values: if atomic=true then wait must also be true")
 	}
@@ -133,9 +138,10 @@ func NewDeployOpts(wait bool, timeout time.Duration, atomic bool) (*DeployOpts, 
 		return nil, fmt.Errorf("invalid values: if wait = true then timeout must be greater than 0")
 	}
 	return &DeployOpts{
-		wait:    wait,
-		timeout: timeout,
-		atomic:  atomic,
+		wait:      wait,
+		timeout:   timeout,
+		atomic:    atomic,
+		enableDNS: enableDNS,
 	}, nil
 }
 
@@ -255,6 +261,7 @@ func (h HelmClient) Install(chartLoc string, releaseName string, values map[stri
 	installClient.Wait = deployOpts.wait
 	installClient.Timeout = deployOpts.timeout
 	installClient.Atomic = deployOpts.atomic
+	installClient.EnableDNS = deployOpts.enableDNS
 
 	rel, err := installClient.RunWithContext(h.ctx, chartToInstall, values)
 	if err != nil {
@@ -277,6 +284,7 @@ func (h HelmClient) Upgrade(chartLoc, releaseName string, values map[string]inte
 	upgradeClient.Wait = deployOpts.wait
 	upgradeClient.Timeout = deployOpts.timeout
 	upgradeClient.Atomic = deployOpts.atomic
+	upgradeClient.EnableDNS = deployOpts.enableDNS
 
 	// Don't reuse values from the previous release.
 	// By default, Helm will merge values with the ones of the last release. This behavior may be helpful to for CLI but

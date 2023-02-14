@@ -200,14 +200,14 @@ func getReleaseName(applicationInstallation *appskubermaticv1.ApplicationInstall
 func getDeployOpts(appDefinition *appskubermaticv1.ApplicationDefinition, appInstall *appskubermaticv1.ApplicationInstallation) (*helmclient.DeployOpts, error) {
 	// Read options from applicationInstallation.
 	if appInstall.Spec.DeployOptions != nil && appInstall.Spec.DeployOptions.Helm != nil {
-		return helmclient.NewDeployOpts(appInstall.Spec.DeployOptions.Helm.Wait, appInstall.Spec.DeployOptions.Helm.Timeout.Duration, appInstall.Spec.DeployOptions.Helm.Atomic)
+		return helmclient.NewDeployOpts(appInstall.Spec.DeployOptions.Helm.Wait, appInstall.Spec.DeployOptions.Helm.Timeout.Duration, appInstall.Spec.DeployOptions.Helm.Atomic, appInstall.Spec.DeployOptions.Helm.EnableDNS)
 	}
 
 	// Fallback to options defined in ApplicationDefinition.
 	if appDefinition.Spec.DefaultDeployOptions != nil && appDefinition.Spec.DefaultDeployOptions.Helm != nil {
-		return helmclient.NewDeployOpts(appDefinition.Spec.DefaultDeployOptions.Helm.Wait, appDefinition.Spec.DefaultDeployOptions.Helm.Timeout.Duration, appDefinition.Spec.DefaultDeployOptions.Helm.Atomic)
+		return helmclient.NewDeployOpts(appDefinition.Spec.DefaultDeployOptions.Helm.Wait, appDefinition.Spec.DefaultDeployOptions.Helm.Timeout.Duration, appDefinition.Spec.DefaultDeployOptions.Helm.Atomic, appDefinition.Spec.DefaultDeployOptions.Helm.EnableDNS)
 	}
 
 	// Fallback to default options.
-	return helmclient.NewDeployOpts(false, 0, false)
+	return helmclient.NewDeployOpts(false, 0, false, false)
 }

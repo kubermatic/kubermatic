@@ -81,7 +81,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, nil)
 
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVerionLabel, 1, false)
 			},
 		},
 		{
@@ -92,7 +92,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), nil)
 
 				appendDefaultValues(customCmData, test.DefaultData) // its check that object values are merged with default object values
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1, false)
 			},
 		},
 		{
@@ -103,7 +103,7 @@ func TestHelmProvider(t *testing.T) {
 				customVersionLabel := "1.2.3"
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.VersionLabelKey, customVersionLabel), nil)
 
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, customVersionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, customVersionLabel, 1, false)
 			},
 		},
 		{
@@ -114,13 +114,13 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), nil)
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1, false)
 
 				// Upgrade application
 				newCustomCmData := map[string]string{"c": "d", "e": "f"}
 				app.Spec.Values.Raw = toHelmRawValues(t, test.CmDataKey, newCustomCmData)
 				appendDefaultValues(newCustomCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, newCustomCmData, test.DefaultVerionLabel, 2)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, newCustomCmData, test.DefaultVerionLabel, 2, false)
 			},
 		},
 		{
@@ -131,7 +131,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), nil)
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1, false)
 
 				// test uninstall app
 				template := HelmTemplate{
@@ -179,7 +179,7 @@ func TestHelmProvider(t *testing.T) {
 				createCredentialSecret(t, ctx, client, regCredFile)
 
 				// Test chart is installed.
-				installOrUpgradeTest(t, ctx, client, testNs, app, chartFullPath, test.DefaultData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, testNs, app, chartFullPath, test.DefaultData, test.DefaultVerionLabel, 1, false)
 
 				// Ensure dependency has been installed too.
 				cm := &corev1.ConfigMap{}
@@ -289,6 +289,16 @@ func TestHelmProvider(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "when an application is created with no values and enableDns=true, it should install app with default values and dns should be resolved",
+			testFunc: func(t *testing.T) {
+				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: false, Timeout: metav1.Duration{Duration: 0}, Atomic: false, EnableDNS: true}}
+				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				app := createApplicationInstallation(testNs, nil, deployOpts)
+
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVerionLabel, 1, true)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -296,7 +306,7 @@ func TestHelmProvider(t *testing.T) {
 	}
 }
 
-func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int) {
+func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int, enableDns bool) {
 	template := HelmTemplate{
 		Ctx:             context.Background(),
 		Kubeconfig:      kubeconfigPath,
@@ -312,7 +322,7 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 	}
 	statusUpdater(&app.Status)
 
-	test.CheckConfigMap(t, ctx, client, testNs, expectedData, expectedVersionLabel)
+	test.CheckConfigMap(t, ctx, client, testNs, expectedData, expectedVersionLabel, enableDns)
 	assertStatusIsUpdated(t, app, statusUpdater, expectedVersion)
 }
 func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, deployOpts *appskubermaticv1.DeployOptions) *appskubermaticv1.ApplicationInstallation {

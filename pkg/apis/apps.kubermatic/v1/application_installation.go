@@ -100,6 +100,11 @@ type HelmDeployOptions struct {
 	// Atomic corresponds to the --atomic flag on Helm cli.
 	// if set, the installation process deletes the installation on failure; the upgrade process rolls back changes made in case of failed upgrade.
 	Atomic bool `json:"atomic,omitempty"`
+
+	// EnableDNS  corresponds to the --enable-dns flag on Helm cli.
+	// enable DNS lookups when rendering templates.
+	// if you enable this flag, you have to verify that helm template function 'getHostByName' is not being used in a chart to disclose any information you do not want to be passed to DNS servers.(c.f. CVE-2023-25165)
+	EnableDNS bool `json:"enableDNS,omitempty"`
 }
 
 // AppNamespaceSpec describe the desired state of the namespace where application will be created.

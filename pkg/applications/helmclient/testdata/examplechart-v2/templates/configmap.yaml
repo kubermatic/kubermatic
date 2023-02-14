@@ -17,6 +17,7 @@ kind: ConfigMap
 metadata:
   name: testcm
   labels:
+    enableDNSLabel: {{ getHostByName "kubermatic.com"  | quote }}
 {{ if .Values.versionLabel }}
     versionLabel: {{ .Values.versionLabel | quote}}
 {{ end }}

@@ -60,6 +60,9 @@ const (
 	// DefaultVerionLabelV2 is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart-v2 chart.
 	DefaultVerionLabelV2 = "2.0"
 
+	// EnableDNSLabelKey is the label key on cmData examplechart that allow test the enableDns deployOption.
+	EnableDNSLabelKey = "enableDNSLabel"
+
 	// SvcName is the name of the service deployed by chart chart-with-lb.
 	SvcName = "svc-1"
 
