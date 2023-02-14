@@ -69,6 +69,7 @@ func TestAutomaticNodeUpdate(t *testing.T) {
 					{Version: semverlib.MustParse(tc.updates[0].To)},
 				},
 			}
+
 			version, err := m.AutomaticNodeUpdate(tc.fromVersion, tc.controlPlaneVersion)
 			// a simple err comparison considers them different, because they contain different
 			// semver pointers, even thought their value is equal

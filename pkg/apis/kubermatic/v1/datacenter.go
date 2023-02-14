@@ -28,7 +28,6 @@ import (
 )
 
 // +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
-
 type ProviderType string
 
 // +kubebuilder:validation:Pattern:=`^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$`
