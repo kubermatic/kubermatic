@@ -177,7 +177,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 			},
 			incompatibilities: []kubermaticv1.Incompatibility{
 				{
-					Provider:  kubermaticv1.VSphereCloudProvider,
+					Provider:  string(kubermaticv1.VSphereCloudProvider),
 					Version:   "1.22.*",
 					Condition: kubermaticv1.AlwaysCondition,
 					Operation: kubermaticv1.UpdateOperation,
