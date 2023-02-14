@@ -136,7 +136,7 @@ usercluster-mla)
 kubermatic)
   if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
     export IMAGE_PULL_SECRET_CONTENT="$(cat $IMAGE_PULL_SECRET)"
-    yq --inplace ".kubermaticOperator.imagePullSecret = env(IMAGE_PULL_SECRET_CONTENT)" charts/kubermatic-operator/values.yaml
+    yq --inplace ".kubermaticOperator.imagePullSecret = strenv(IMAGE_PULL_SECRET_CONTENT)" charts/kubermatic-operator/values.yaml
   fi
 
   # Kubermatic
