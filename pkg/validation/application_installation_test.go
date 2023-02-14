@@ -199,7 +199,7 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			err := ValidateApplicationInstallationSpec(context.Background(), fakeClient, testCase.ai.Spec)
+			err := ValidateApplicationInstallationSpec(context.Background(), fakeClient, *testCase.ai)
 			if fmt.Sprint(err) != testCase.expectedError {
 				if testCase.expectedError == "[]" {
 					testCase.expectedError = "nil"
@@ -222,6 +222,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 
 	ai := getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, nil)
 
+	aiVersionDoesExist := getApplicationInstallation(defaultAppName, defaultAppName, "0.0.0-does-not-exist", nil)
 	testCases := []struct {
 		name          string
 		ai            *appskubermaticv1.ApplicationInstallation
@@ -238,6 +239,17 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					spec.ApplicationRef.Version = defaultAppSecondaryVersion
 					return *spec
 				}(),
+			},
+			expectedError: "[]",
+		},
+		{
+			name: "Update deleting ApplicationInstallation Success (app def version does not exist)",
+			ai:   aiVersionDoesExist,
+			updatedAI: &appskubermaticv1.ApplicationInstallation{
+				ObjectMeta: metav1.ObjectMeta{
+					DeletionTimestamp: &metav1.Time{Time: time.Now()},
+				},
+				Spec: *aiVersionDoesExist.Spec.DeepCopy(),
 			},
 			expectedError: "[]",
 		},

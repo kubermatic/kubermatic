@@ -73,7 +73,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.Decode(req, ad); err != nil {
 			return webhook.Errored(http.StatusBadRequest, err)
 		}
-		allErrs = append(allErrs, validation.ValidateApplicationInstallationSpec(ctx, h.client, ad.Spec)...)
+		allErrs = append(allErrs, validation.ValidateApplicationInstallationSpec(ctx, h.client, *ad)...)
 
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, ad); err != nil {

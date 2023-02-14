@@ -33,39 +33,41 @@ import (
 )
 
 // ValidateApplicationInstallationSpec validates the ApplicationInstallation Spec.
-func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntimeclient.Client, spec appskubermaticv1.ApplicationInstallationSpec) field.ErrorList {
+func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntimeclient.Client, ai appskubermaticv1.ApplicationInstallation) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
+	spec := ai.Spec
 
 	if spec.ReconciliationInterval.Duration < 0 {
 		allErrs = append(allErrs, field.Invalid(specPath.Child("reconciliationInterval"), spec.ReconciliationInterval.Duration.String(), "should be a positive value, or zero to disable"))
 	}
 
-	// Ensure that the referenced ApplicationDefinition exists
-	ad := &appskubermaticv1.ApplicationDefinition{}
-	err := client.Get(ctx, types.NamespacedName{Name: spec.ApplicationRef.Name}, ad)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			allErrs = append(allErrs, field.NotFound(specPath.Child("applicationRef", "name"), spec.ApplicationRef.Name))
-		} else {
-			allErrs = append(allErrs, field.InternalError(specPath.Child("applicationRef", "name"), err))
+	// Ensure that the referenced ApplicationDefinition exists only if applicationInstallation is not deleting (removing finalizer raise an UPDATE event)
+	if ai.DeletionTimestamp.IsZero() {
+		ad := &appskubermaticv1.ApplicationDefinition{}
+		err := client.Get(ctx, types.NamespacedName{Name: spec.ApplicationRef.Name}, ad)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				allErrs = append(allErrs, field.NotFound(specPath.Child("applicationRef", "name"), spec.ApplicationRef.Name))
+			} else {
+				allErrs = append(allErrs, field.InternalError(specPath.Child("applicationRef", "name"), err))
+			}
+			return allErrs
 		}
-		return allErrs
-	}
 
-	// Ensure that there is matching version defined in ApplicationDefinition
-	exists := false
-	desiredVersion := spec.ApplicationRef.Version
-	for _, version := range ad.Spec.Versions {
-		if version.Version == desiredVersion {
-			exists = true
+		// Ensure that there is matching version defined in ApplicationDefinition
+		exists := false
+		desiredVersion := spec.ApplicationRef.Version
+		for _, version := range ad.Spec.Versions {
+			if version.Version == desiredVersion {
+				exists = true
+			}
+		}
+
+		if !exists {
+			allErrs = append(allErrs, field.NotFound(specPath.Child("applicationRef", "version"), spec.ApplicationRef.Version))
 		}
 	}
-
-	if !exists {
-		allErrs = append(allErrs, field.NotFound(specPath.Child("applicationRef", "version"), spec.ApplicationRef.Version))
-	}
-
 	allErrs = append(allErrs, ValidateDeployOpts(spec.DeployOptions, specPath.Child("deployOptions"))...)
 	return allErrs
 }
@@ -93,7 +95,7 @@ func ValidateApplicationInstallationUpdate(ctx context.Context, client ctrlrunti
 	allErrs := field.ErrorList{}
 
 	// Validation for new ApplicationInstallation Spec
-	if errs := ValidateApplicationInstallationSpec(ctx, client, newAI.Spec); len(errs) > 0 {
+	if errs := ValidateApplicationInstallationSpec(ctx, client, newAI); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 

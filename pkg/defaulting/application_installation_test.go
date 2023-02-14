@@ -119,7 +119,7 @@ func TestDefaultApplicationInstallation(t *testing.T) {
 			}
 
 			// test that mutate object is valid
-			if errs := validation.ValidateApplicationInstallationSpec(context.Background(), fakeClient, tc.appInstall.Spec); len(errs) > 0 {
+			if errs := validation.ValidateApplicationInstallationSpec(context.Background(), fakeClient, *tc.appInstall); len(errs) > 0 {
 				t.Fatalf("mutated applicationInstllation does not pass validation: %v", errs)
 			}
 		})
