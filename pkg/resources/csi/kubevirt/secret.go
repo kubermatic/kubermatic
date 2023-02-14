@@ -54,6 +54,12 @@ func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateDa
 				return nil, err
 			}
 
+			// Ensure reconciliation of csi SA and secret token
+			err = kubevirt.ReconcileInfraTokenAccess(ctx, data.Cluster().Status.NamespaceName, infraClient)
+			if err != nil {
+				return nil, err
+			}
+
 			// Get the infra csi SA and compute csiKubeConfig from it
 			csiSA := corev1.ServiceAccount{}
 			err = infraClient.Get(ctx, types.NamespacedName{Name: resources.KubeVirtCSIServiceAccountName, Namespace: data.Cluster().Status.NamespaceName}, &csiSA)
