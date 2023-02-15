@@ -19,7 +19,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -83,7 +82,8 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 
 func loadHelmValues(filename string) (*yamled.Document, error) {
 	if filename == "" {
-		return nil, errors.New("no file specified via --helm-values flag")
+		doc, _ := yamled.Load(bytes.NewReader([]byte("---\n")))
+		return doc, nil
 	}
 
 	f, err := os.Open(filename)

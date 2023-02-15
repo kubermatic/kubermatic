@@ -80,6 +80,9 @@ func (d *Document) DecodeAtPath(path Path, dst interface{}) error {
 }
 
 func (d *Document) GetNode(path Path) (*yaml.Node, bool) {
+	if d.IsEmpty() {
+		return nil, false
+	}
 	return traversePath(d.root, path)
 }
 
@@ -231,4 +234,9 @@ func (d *Document) Equal(other *Document) bool {
 	}
 
 	return equality.Semantic.DeepEqual(dData, otherData)
+}
+
+func (d *Document) IsEmpty() bool {
+	contents, _ := d.MarshalYAML()
+	return contents == nil
 }
