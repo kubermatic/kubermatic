@@ -33,8 +33,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	utilpredicate "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -111,83 +114,71 @@ func (r *reconciler) reconcile(ctx context.Context, setting *kubermaticv1.Kuberm
 		return fmt.Errorf("failed to list resource quotas: %w", err)
 	}
 
-	projectQuotas := pairProjectQuotas(projects, resourceQuotas)
-	// if the setting is nil, remove all default resource quotas
+	// Delete all default project quotas if user didn't specify any default project quota.
 	if setting.Spec.DefaultProjectResourceQuota == nil {
-		if err := r.handleDeletion(ctx, projectQuotas); err != nil {
-			return fmt.Errorf("error deleting default project quotas %w", err)
-		}
-		return nil
+		return r.handleDeletion(ctx)
 	}
 
-	for _, pQuota := range projectQuotas {
-		if err := r.ensureDefaultProjectQuota(ctx, setting, &pQuota.project, pQuota.quota); err != nil {
-			return fmt.Errorf("error ensuring default project quotas: %w", err)
-		}
-	}
-
-	return nil
+	return r.synchronizeResourceQuotas(ctx, setting.Spec.DefaultProjectResourceQuota, projects, resourceQuotas)
 }
 
-func (r *reconciler) handleDeletion(ctx context.Context, quotas map[string]*projectQuota) error {
-	for _, pQuota := range quotas {
-		if pQuota.quota != nil {
-			if err := r.masterClient.Delete(ctx, pQuota.quota); err != nil {
-				return fmt.Errorf("error deleting default quota %q: %w", pQuota.quota.Name, err)
-			}
-		}
-	}
-	return nil
-}
+func (r *reconciler) synchronizeResourceQuotas(ctx context.Context, defaultResourceQuota *kubermaticv1.DefaultProjectResourceQuota, projects *kubermaticv1.ProjectList, quotas *kubermaticv1.ResourceQuotaList) error {
+	// We need to synchronize default resource quotas.
+	var defaultResourceQuotas []reconciling.NamedResourceQuotaReconcilerFactory
 
-type projectQuota struct {
-	project kubermaticv1.Project
-	quota   *kubermaticv1.ResourceQuota
-}
-
-func pairProjectQuotas(projects *kubermaticv1.ProjectList, quotas *kubermaticv1.ResourceQuotaList) map[string]*projectQuota {
-	projectQuotaMap := map[string]*projectQuota{}
-	for _, project := range projects.Items {
-		projectQuotaMap[project.Name] = &projectQuota{project: project}
-	}
-
+	// Create a lookup for projects with resource quotas.
+	resourceQuotaLookup := map[string]kubermaticv1.ResourceQuota{}
 	for _, quota := range quotas.Items {
 		if quota.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind {
-			// prune projects with custom quotas
-			if quota.Labels == nil || !(quota.Labels[DefaultProjectResourceQuotaKey] == DefaultProjectResourceQuotaValue) {
-				delete(projectQuotaMap, quota.Spec.Subject.Name)
-				continue
-			}
-
-			pQuota, ok := projectQuotaMap[quota.Spec.Subject.Name]
-			if !ok {
-				// skip if quota does not have project, should not happen but maybe in a race during deletion it could
-				continue
-			}
-			pQuota.quota = &quota
+			resourceQuotaLookup[quota.Spec.Subject.Name] = quota
 		}
 	}
-	return projectQuotaMap
-}
 
-func (r *reconciler) ensureDefaultProjectQuota(ctx context.Context, settings *kubermaticv1.KubermaticSetting,
-	project *kubermaticv1.Project, quota *kubermaticv1.ResourceQuota) error {
-	// if missing, create
-	if quota == nil {
-		newQuota := genDefaultResourceQuota(settings, project)
-		if err := r.masterClient.Create(ctx, newQuota); err != nil {
-			return fmt.Errorf("error creating default resource quota: %w", err)
+	// Iterate over all the projects and synchronize projects with their default quotas.
+	for _, project := range projects.Items {
+		// Ignore projects that are queued for deletion.
+		if project.DeletionTimestamp == nil {
+			continue
 		}
-	} else {
-		quota.Spec.Quota = settings.Spec.DefaultProjectResourceQuota.Quota
-		if err := r.masterClient.Update(ctx, quota); err != nil {
-			return fmt.Errorf("error updating default resource quota: %w", err)
+
+		quota, ok := resourceQuotaLookup[project.Name]
+		if !ok {
+			// Default resource quota doesn't exist.
+			resourceQuota := genDefaultResourceQuota(defaultResourceQuota, &project)
+			defaultResourceQuotas = append(defaultResourceQuotas, projectQuotaReconcilerFactory(resourceQuota))
+			continue
 		}
+		// Quota already exists and we need to update it.
+		quota.Spec.Quota = defaultResourceQuota.Quota
+		defaultResourceQuotas = append(defaultResourceQuotas, projectQuotaReconcilerFactory(&quota))
+	}
+
+	// Create or Update the resource quotas.
+	if err := reconciling.ReconcileResourceQuotas(ctx, defaultResourceQuotas, "", r.masterClient); err != nil {
+		return fmt.Errorf("failed to reconcile ResourceQuotas: %w", err)
 	}
 	return nil
 }
 
-func genDefaultResourceQuota(settings *kubermaticv1.KubermaticSetting, project *kubermaticv1.Project) *kubermaticv1.ResourceQuota {
+func (r *reconciler) handleDeletion(ctx context.Context) error {
+	req, err := labels.NewRequirement(DefaultProjectResourceQuotaKey, selection.Equals, []string{DefaultProjectResourceQuotaValue})
+	if err != nil {
+		return err
+	}
+	listOpts := ctrlruntimeclient.ListOptions{
+		LabelSelector: labels.NewSelector().Add(*req),
+	}
+	deleteAllOfOptions := &ctrlruntimeclient.DeleteAllOfOptions{
+		ListOptions: listOpts,
+	}
+
+	if err = r.masterClient.DeleteAllOf(ctx, &kubermaticv1.ResourceQuota{}, deleteAllOfOptions); err != nil {
+		return fmt.Errorf("failed to delete defalt ResourceQuotas: %w", err)
+	}
+	return nil
+}
+
+func genDefaultResourceQuota(defaultResourceQuota *kubermaticv1.DefaultProjectResourceQuota, project *kubermaticv1.Project) *kubermaticv1.ResourceQuota {
 	quota := &kubermaticv1.ResourceQuota{}
 	quota.Labels = map[string]string{
 		DefaultProjectResourceQuotaKey: DefaultProjectResourceQuotaValue,
@@ -196,7 +187,7 @@ func genDefaultResourceQuota(settings *kubermaticv1.KubermaticSetting, project *
 		Name: project.Name,
 		Kind: kubermaticv1.ProjectSubjectKind,
 	}
-	quota.Spec.Quota = settings.Spec.DefaultProjectResourceQuota.Quota
+	quota.Spec.Quota = defaultResourceQuota.Quota
 	quota.Name = buildNameFromSubject(quota.Spec.Subject)
 	return quota
 }
@@ -228,5 +219,13 @@ func withSettingsEventFilter() predicate.Predicate {
 		GenericFunc: func(e event.GenericEvent) bool {
 			return false
 		},
+	}
+}
+
+func projectQuotaReconcilerFactory(q *kubermaticv1.ResourceQuota) reconciling.NamedResourceQuotaReconcilerFactory {
+	return func() (name string, create reconciling.ResourceQuotaReconciler) {
+		return q.Name, func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
+			return existing, nil
+		}
 	}
 }
