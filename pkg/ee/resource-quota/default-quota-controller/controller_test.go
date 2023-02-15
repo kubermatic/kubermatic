@@ -171,6 +171,8 @@ func TestReconcile(t *testing.T) {
 			// remove resource version
 			for _, rq := range rqs.Items {
 				rq.SetResourceVersion("")
+				rq.Kind = ""
+				rq.APIVersion = ""
 				resultRqs = append(resultRqs, rq)
 			}
 

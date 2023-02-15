@@ -124,7 +124,7 @@ func (r *reconciler) reconcile(ctx context.Context, setting *kubermaticv1.Kuberm
 
 func (r *reconciler) synchronizeResourceQuotas(ctx context.Context, defaultResourceQuota *kubermaticv1.DefaultProjectResourceQuota, projects *kubermaticv1.ProjectList, quotas *kubermaticv1.ResourceQuotaList) error {
 	// We need to synchronize default resource quotas.
-	var defaultResourceQuotas []reconciling.NamedResourceQuotaReconcilerFactory
+	var defaultQuotaFactories []reconciling.NamedResourceQuotaReconcilerFactory
 
 	// Create a lookup for projects with resource quotas.
 	resourceQuotaLookup := map[string]kubermaticv1.ResourceQuota{}
@@ -137,7 +137,7 @@ func (r *reconciler) synchronizeResourceQuotas(ctx context.Context, defaultResou
 	// Iterate over all the projects and synchronize projects with their default quotas.
 	for _, project := range projects.Items {
 		// Ignore projects that are queued for deletion.
-		if project.DeletionTimestamp == nil {
+		if project.DeletionTimestamp != nil {
 			continue
 		}
 
@@ -145,16 +145,22 @@ func (r *reconciler) synchronizeResourceQuotas(ctx context.Context, defaultResou
 		if !ok {
 			// Default resource quota doesn't exist.
 			resourceQuota := genDefaultResourceQuota(defaultResourceQuota, &project)
-			defaultResourceQuotas = append(defaultResourceQuotas, projectQuotaReconcilerFactory(resourceQuota))
+			defaultQuotaFactories = append(defaultQuotaFactories, projectQuotaReconcilerFactory(resourceQuota))
 			continue
 		}
+
+		// This is not a default quota and should be skipped.
+		if val, ok := quota.Labels[DefaultProjectResourceQuotaKey]; !ok || val != DefaultProjectResourceQuotaValue {
+			continue
+		}
+
 		// Quota already exists and we need to update it.
 		quota.Spec.Quota = defaultResourceQuota.Quota
-		defaultResourceQuotas = append(defaultResourceQuotas, projectQuotaReconcilerFactory(&quota))
+		defaultQuotaFactories = append(defaultQuotaFactories, projectQuotaReconcilerFactory(&quota))
 	}
 
 	// Create or Update the resource quotas.
-	if err := reconciling.ReconcileResourceQuotas(ctx, defaultResourceQuotas, "", r.masterClient); err != nil {
+	if err := reconciling.ReconcileResourceQuotas(ctx, defaultQuotaFactories, "", r.masterClient); err != nil {
 		return fmt.Errorf("failed to reconcile ResourceQuotas: %w", err)
 	}
 	return nil
@@ -173,7 +179,7 @@ func (r *reconciler) handleDeletion(ctx context.Context) error {
 	}
 
 	if err = r.masterClient.DeleteAllOf(ctx, &kubermaticv1.ResourceQuota{}, deleteAllOfOptions); err != nil {
-		return fmt.Errorf("failed to delete defalt ResourceQuotas: %w", err)
+		return fmt.Errorf("failed to delete default ResourceQuotas: %w", err)
 	}
 	return nil
 }
@@ -222,9 +228,12 @@ func withSettingsEventFilter() predicate.Predicate {
 	}
 }
 
-func projectQuotaReconcilerFactory(q *kubermaticv1.ResourceQuota) reconciling.NamedResourceQuotaReconcilerFactory {
-	return func() (name string, create reconciling.ResourceQuotaReconciler) {
-		return q.Name, func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
+func projectQuotaReconcilerFactory(resourceQuota *kubermaticv1.ResourceQuota) reconciling.NamedResourceQuotaReconcilerFactory {
+	return func() (string, reconciling.ResourceQuotaReconciler) {
+		return resourceQuota.Name, func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
+			existing.Spec = resourceQuota.Spec
+			existing.Labels = resourceQuota.Labels
+			existing.Annotations = resourceQuota.Annotations
 			return existing, nil
 		}
 	}
