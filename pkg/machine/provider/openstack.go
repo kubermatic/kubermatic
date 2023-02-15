@@ -130,6 +130,7 @@ func CompleteOpenstackProviderSpec(config *openstack.RawConfig, cluster *kuberma
 			config.Subnet.Value = cluster.Spec.Cloud.Openstack.SubnetID
 		}
 
+		config.SecurityGroups = filterEmptyValues(config.SecurityGroups)
 		if len(config.SecurityGroups) == 0 && len(cluster.Spec.Cloud.Openstack.SecurityGroups) > 0 {
 			config.SecurityGroups = []providerconfig.ConfigVarString{{Value: cluster.Spec.Cloud.Openstack.SecurityGroups}}
 		}
@@ -147,4 +148,14 @@ func CompleteOpenstackProviderSpec(config *openstack.RawConfig, cluster *kuberma
 	}
 
 	return config, nil
+}
+
+func filterEmptyValues(vals []providerconfig.ConfigVarString) []providerconfig.ConfigVarString {
+	var filtered []providerconfig.ConfigVarString
+	for _, val := range vals {
+		if len(val.Value) > 0 {
+			filtered = append(filtered, val)
+		}
+	}
+	return filtered
 }
