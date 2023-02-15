@@ -16,14 +16,17 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add support for Kubernetes 1.26 ([#11621](https://github.com/kubermatic/kubermatic/pull/11621))
 - Support for Kubernetes 1.22 and 1.23 user clusters has been removed; User clusters remaining on 1.23 will be automatically upgraded with this KKP version ([#11286](https://github.com/kubermatic/kubermatic/pull/11286), [#11767](https://github.com/kubermatic/kubermatic/pull/11767))
 - Allow Kubernetes version upgrade for clusters with non-amd64 nodes & Canal CNI and IPVS for all Kubernetes versions ([#11765](https://github.com/kubermatic/kubermatic/pull/11765))
+- Add support for Kubernetes v1.24.10, v1.25.6, and v1.26.1 ([#11859](https://github.com/kubermatic/kubermatic/pull/11859))
 
 #### Supported Versions
 
 - 1.24.8
 - 1.24.9
-- 1.25.4 
-- 1.25.5
-- 1.26.0
+- 1.24.10
+- 1.25.4
+- 1.25.6
+- 1.25.6
+- 1.26.1
 
 ### Highlights
 
@@ -73,6 +76,8 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Use string Version type for `ApplicationInstallation` CRD ([#11359](https://github.com/kubermatic/kubermatic/pull/11359))
 - Make uninstall for Applications idempotent ([#11622](https://github.com/kubermatic/kubermatic/pull/11622))
 - Add validating and defaulting webhook for Application deployOptions ([#11633](https://github.com/kubermatic/kubermatic/pull/11633))
+- Don't reuse values when upgrading Applications. The values defined in the ApplicationInstallation CR are the source of truth ([#11871](https://github.com/kubermatic/kubermatic/pull/11871))
+- Fix bug preventing deletion of an ApplicationInstallation if the ApplicationDefinition was removed before ([#11888](https://github.com/kubermatic/kubermatic/pull/11888))
 
 #### Konnectivity
 
@@ -111,6 +116,7 @@ Konnectivity is now GA.
 - CustomOperatingSystemProfile CRD is introduced for maintaining custom OSPs at the seed level. For more information [see our docs](https://docs.kubermatic.com/kubermatic/v2.22/tutorials-howtos/operating-system-manager/usage/#custom-operatingsystemprofiles) ([#11720](https://github.com/kubermatic/kubermatic/pull/11720))
     - OSP and OSC resources have been moved to user clusters. KKP will take care of migrating the existing resources
     - Custom OperatingSystemProfiles should now be created for the kind `CustomOperatingSystemProfile` instead of `OperatingSystemProfile` in the seed namespace
+- Action required on applications: helm has been bumped to version 3.11. Due to a [CVE](https://github.com/helm/helm/security/advisories/GHSA-pwcw-6f5g-gxf8) in the previous version, the helm template function [getHostByName](https://helm.sh/docs/chart_template_guide/function_list/#network-functions has been disabled (function will return an empty string).  If you want to enable this function, you have to set `deployOptions.helm.enableDNS` to true and *verify* this function 'getHostByName' is not being used in a chart to disclose any information you do not want to be passed to DNS servers.(c.f. CVE-2023-25165) ([#11887](https://github.com/kubermatic/kubermatic/pull/11887))
 
 ### API Changes
 
@@ -175,7 +181,8 @@ Konnectivity is now GA.
     - Update Cortex to 1.13.1
     - Update Grafana to 9.3.1
     - Update Loki to 2.6.1
-    - Update minio to RELEASE.2022-09-17T00-09-45Z 
+    - Update minio to RELEASE.2022-09-17T00-09-45Z
+- MLA: Cortex and Consul operation will be briefly interrupted during the upgrade to patch the required objects ([#11861](https://github.com/kubermatic/kubermatic/pull/11861))
 
 ### OS Support
 
@@ -223,6 +230,7 @@ Konnectivity is now GA.
 - Remove dependency on `docker` binary when using `kubermatic-installer mirror-images` (removes the `--docker-binary` flag) ([#11717](https://github.com/kubermatic/kubermatic/pull/11717))
 - Do not require addons flags in `kubermatic-installer mirror-images` and fall back to default addons image ([#11135](https://github.com/kubermatic/kubermatic/pull/11135))
 - Ignore repository overrides in `KubermaticConfiguration` by default when mirroring images with `kubermatic-installer mirror-images` (can be disabled with `--ignore-repository-overrides=false`) ([#11703](https://github.com/kubermatic/kubermatic/pull/11703))
+- Add `--skip-seed-validation` flag to installer to make it skip validating the given seeds (should be used with great caution only) ([#11874](https://github.com/kubermatic/kubermatic/pull/11874))
 
 ### New Features
 
@@ -271,6 +279,7 @@ Konnectivity is now GA.
 - Use seed proxy configuration for seed-controller-manager ([#11561](https://github.com/kubermatic/kubermatic/pull/11561))
 - Paused external clusters will not be processed ([#11447](https://github.com/kubermatic/kubermatic/pull/11447))
 - Admission plugin "PodSecurityPolicy" is not supported anymore on Kubernetes version 1.25 and later ([#11836](https://github.com/kubermatic/kubermatic/pull/11836))
+- Fix a bug where setting a provider incompatibility rule for all providers was not working ([#11891](https://github.com/kubermatic/kubermatic/pull/11891))
 
 #### Bugfixes (EE)
 
