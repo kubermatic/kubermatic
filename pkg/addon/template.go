@@ -36,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 	"k8c.io/kubermatic/v2/pkg/version/cni"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
@@ -109,7 +109,7 @@ func NewTemplateData(
 		storagePolicy = cluster.Spec.Cloud.VSphere.StoragePolicy
 	}
 
-	csiMigration := v1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || kubermaticv1helper.CCMMigrationCompleted(cluster)
+	csiMigration := metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || kubermaticv1helper.CCMMigrationCompleted(cluster)
 
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
