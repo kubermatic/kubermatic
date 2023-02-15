@@ -304,6 +304,10 @@ type dexClient struct {
 }
 
 func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
+	if helmValues.IsEmpty() {
+		return []error{fmt.Errorf("No Helm Values file was provided, or the file was empty; installation cannot proceed. Please use the flag --helm-values=<valuesfile.yaml>")}
+	}
+
 	failures := []error{}
 
 	path := yamled.Path{"kubermaticOperator", "imagePullSecret"}

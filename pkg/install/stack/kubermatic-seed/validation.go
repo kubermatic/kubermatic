@@ -42,6 +42,10 @@ func (*SeedStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfigura
 }
 
 func validateHelmValues(helmValues *yamled.Document) []error {
+	if helmValues.IsEmpty() {
+		return []error{fmt.Errorf("No Helm Values file was provided, or the file was empty; installation cannot proceed. Please use the flag --helm-values=<valuesfile.yaml>")}
+	}
+
 	failures := []error{}
 
 	path := yamled.Path{"minio", "credentials", "accessKey"}
