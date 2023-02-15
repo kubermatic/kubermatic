@@ -143,7 +143,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 			td := NewTemplateDataBuilder().
 				WithCluster(tc.cluster).
 				Build()
-			if a, e := sets.New(td.GetCSIMigrationFeatureGates()...), tc.wantFeatureGates; !a.Equal(e) {
+			if a, e := sets.New(td.GetCSIMigrationFeatureGates(nil)...), tc.wantFeatureGates; !a.Equal(e) {
 				t.Errorf("Want feature gates %v, but got %v", e, a)
 			}
 		})

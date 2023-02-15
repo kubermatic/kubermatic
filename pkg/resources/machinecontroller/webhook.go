@@ -74,7 +74,7 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 				args = append(args, "-node-external-cloud-provider")
 			}
 
-			featureGates := data.GetCSIMigrationFeatureGates()
+			featureGates := data.GetCSIMigrationFeatureGates(nil)
 			if len(featureGates) > 0 {
 				args = append(args, "-node-kubelet-feature-gates", strings.Join(featureGates, ","))
 			}
