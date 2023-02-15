@@ -101,7 +101,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)
 	}
-	if err := userprojectbinding.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
+	if err := userprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create user-project-binding controller: %w", err)
 	}
 	if err := usersshkeyprojectownershipcontroller.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
