@@ -162,7 +162,15 @@ func setValue(root *yaml.Node, path Path, newValue interface{}) (*yaml.Node, boo
 	if headKey, ok := endKey.(string); ok {
 		// check if we are really in a map
 		if target.Kind != yaml.MappingNode {
-			return nil, false
+			// if we're at the root and the document was empty (=> null), we
+			// default the target node to an empty object
+			if target == root {
+				*target = yaml.Node{
+					Kind: yaml.MappingNode,
+				}
+			} else {
+				return nil, false
+			}
 		}
 
 		node, exists := traversePath(target, Path{headKey})
