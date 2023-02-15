@@ -431,7 +431,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		)
 	}
 
-	if fg := data.GetCSIMigrationFeatureGates(); len(fg) > 0 {
+	if fg := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver()); len(fg) > 0 {
 		flags = append(flags, "--feature-gates")
 		flags = append(flags, strings.Join(fg, ","))
 	}

@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -63,7 +65,7 @@ type operatingSystemManagerData interface {
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	NodeLocalDNSCacheEnabled() bool
-	GetCSIMigrationFeatureGates() []string
+	GetCSIMigrationFeatureGates(version *semverlib.Version) []string
 	DC() *kubermaticv1.Datacenter
 	ComputedNodePortRange() string
 	OperatingSystemManagerImageTag() string
@@ -169,7 +171,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
-					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(), data.Cluster().Spec.ImagePullSecret),
+					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(nil), data.Cluster().Spec.ImagePullSecret),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{

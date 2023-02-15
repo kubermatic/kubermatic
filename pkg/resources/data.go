@@ -540,8 +540,8 @@ func (d *TemplateData) GetCloudProviderName() (string, error) {
 	return kubermaticv1helper.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
-func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
-	return GetCSIMigrationFeatureGates(d.Cluster())
+func (d *TemplateData) GetCSIMigrationFeatureGates(version *semverlib.Version) []string {
+	return GetCSIMigrationFeatureGates(d.Cluster(), version)
 }
 
 // KCMCloudControllersDeactivated return true if the KCM is ready and the
@@ -669,15 +669,17 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 		(hasCSIMigrationCompletedCond || !metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation))
 }
 
-func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
+func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverlib.Version) []string {
 	var featureFlags []string
 	gte23, _ := semverlib.NewConstraint(">= 1.23.0")
 	lt25, _ := semverlib.NewConstraint("< 1.25.0")
 	ccm := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
-	curVersion := cluster.Status.Versions.ControlPlane
-	if curVersion == "" {
-		curVersion = cluster.Spec.Version
+	if version == nil {
+		version = cluster.Status.Versions.ControlPlane.Semver()
+		if version == nil {
+			version = cluster.Spec.Version.Semver()
+		}
 	}
 
 	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
@@ -709,7 +711,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 				featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")
 			}
 		}
-	} else if !ccm && gte23.Check(curVersion.Semver()) && lt25.Check(curVersion.Semver()) {
+	} else if !ccm && gte23.Check(version) && lt25.Check(version) {
 		// We disable CSIMigration only if Kubernetes version is >= 1.23 and
 		// there's no external CCM.
 		// If there's external CCM, in-tree volumes plugin is not enabled

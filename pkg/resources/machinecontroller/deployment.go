@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -64,7 +66,7 @@ type machinecontrollerData interface {
 	DC() *kubermaticv1.Datacenter
 	NodeLocalDNSCacheEnabled() bool
 	Seed() *kubermaticv1.Seed
-	GetCSIMigrationFeatureGates() []string
+	GetCSIMigrationFeatureGates(version *semverlib.Version) []string
 	MachineControllerImageTag() string
 	MachineControllerImageRepository() string
 	GetEnvVars() ([]corev1.EnvVar, error)
