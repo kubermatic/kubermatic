@@ -232,8 +232,25 @@ func projectQuotaReconcilerFactory(resourceQuota *kubermaticv1.ResourceQuota) re
 	return func() (string, reconciling.ResourceQuotaReconciler) {
 		return resourceQuota.Name, func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
 			existing.Spec = resourceQuota.Spec
-			existing.Labels = resourceQuota.Labels
-			existing.Annotations = resourceQuota.Annotations
+
+			if resourceQuota.Labels != nil {
+				if existing.Labels == nil {
+					existing.Labels = map[string]string{}
+				}
+				for k, v := range resourceQuota.Labels {
+					existing.Labels[k] = v
+				}
+			}
+
+			if resourceQuota.Annotations != nil {
+				if existing.Annotations == nil {
+					existing.Annotations = map[string]string{}
+				}
+				for k, v := range resourceQuota.Annotations {
+					existing.Annotations[k] = v
+				}
+			}
+
 			return existing, nil
 		}
 	}
