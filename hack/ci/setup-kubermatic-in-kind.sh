@@ -96,6 +96,7 @@ beforeDockerBuild=$(nowms)
   make build
   IMAGE_NAME="quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
   time retry 5 docker build -t "${IMAGE_NAME}" .
+  # we use docker push here as the ssh-agent works independently of the kind cluster and therefore needs to be available publicly
   time retry 5 docker push "${IMAGE_NAME}"
 )
 (
