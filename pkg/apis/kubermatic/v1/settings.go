@@ -92,6 +92,10 @@ type SettingSpec struct {
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
 
+func (s SettingSpec) HasDefaultProjectResourceQuota() bool {
+	return s.DefaultProjectResourceQuota != nil && !s.DefaultProjectResourceQuota.Quota.IsEmpty()
+}
+
 type CustomLinks []CustomLink
 
 type CustomLink struct {

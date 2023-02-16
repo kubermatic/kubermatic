@@ -86,6 +86,10 @@ type ResourceDetails struct {
 	Storage *resource.Quantity `json:"storage,omitempty"`
 }
 
+func (r ResourceDetails) IsEmpty() bool {
+	return (r.CPU == nil || r.CPU.IsZero()) && (r.Memory == nil || r.Memory.IsZero()) && (r.Storage == nil || r.Storage.IsZero())
+}
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 

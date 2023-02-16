@@ -46,6 +46,6 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return validateUpdate(ctx, oldObj, newObj)
 }
 
-func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	return validateDelete(ctx, obj, v.client)
 }
