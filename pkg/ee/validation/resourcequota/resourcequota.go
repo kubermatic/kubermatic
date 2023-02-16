@@ -109,7 +109,7 @@ func ValidateDelete(ctx context.Context,
 	}
 
 	globalSettings := &kubermaticv1.KubermaticSetting{}
-	if err := client.Get(context.Background(), types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
 		if apierrors.IsNotFound(err) {
 			// Since KubermaticSettings don't exist, no validation is required.
 			return nil
