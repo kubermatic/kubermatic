@@ -80,7 +80,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
-		cluster, err = reconcileTags(ctx, restSession, cluster)
+		cluster, err = reconcileTags(ctx, restSession, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster tags: %w", err)
 		}
