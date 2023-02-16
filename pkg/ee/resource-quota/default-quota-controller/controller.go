@@ -277,6 +277,7 @@ func enqueueProjectQuotas(client ctrlruntimeclient.Client) handler.EventHandler 
 		globalSettings := &kubermaticv1.KubermaticSetting{}
 		if err := client.Get(context.Background(), types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to get global settings %q: %w", kubermaticv1.GlobalSettingsName, err))
+			return requests
 		}
 
 		if globalSettings.Spec.HasDefaultProjectResourceQuota() {
