@@ -30,6 +30,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -38,7 +40,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const controllerName = "kkp-user-project-binding-controller"
+const (
+	controllerName = "kkp-user-project-binding-controller"
+
+	userProjectBindingEmailKey = ".spec.userEmail"
+)
 
 // reconcileSyncProjectBinding reconciles UserProjectBinding objects.
 type reconcileSyncProjectBinding struct {
@@ -47,7 +53,7 @@ type reconcileSyncProjectBinding struct {
 	log *zap.SugaredLogger
 }
 
-func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
+func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error {
 	r := &reconcileSyncProjectBinding{
 		Client: mgr.GetClient(),
 
@@ -63,6 +69,20 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 	// Watch for changes to UserProjectBinding
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return err
+	}
+
+	// Add index on field "userProjectBinding.spec.userEmail" for using it as listing filter
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &kubermaticv1.UserProjectBinding{}, userProjectBindingEmailKey,
+		func(rawObj ctrlruntimeclient.Object) []string {
+			a := rawObj.(*kubermaticv1.UserProjectBinding)
+			return []string{a.Spec.UserEmail}
+		}); err != nil {
+		return fmt.Errorf("failed to add index on userProjectBinding.spec.userEmail: %w", err)
+	}
+
+	// Watch for changes in User resources to sync their UserProjectBinding resources
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, enqueueUserProjectBindingsForUser(r.Client, r.log)); err != nil {
+		return fmt.Errorf("failed to create watch for users: %w", err)
 	}
 
 	return nil
@@ -204,4 +224,26 @@ func (r *reconcileSyncProjectBinding) getProjectForBinding(ctx context.Context, 
 	err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: projectBinding.Spec.ProjectID}, project)
 
 	return project, err
+}
+
+func enqueueUserProjectBindingsForUser(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		user := a.(*kubermaticv1.User)
+
+		userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
+		if err := client.List(context.Background(), userProjectBindingList, ctrlruntimeclient.MatchingFields{
+			userProjectBindingEmailKey: user.Spec.Email,
+		}); err != nil {
+			log.Error(err)
+			utilruntime.HandleError(fmt.Errorf("failed to list userprojectbindings for user: %w", err))
+		}
+
+		requests := make([]reconcile.Request, len(userProjectBindingList.Items))
+
+		for i, userProjectBinding := range userProjectBindingList.Items {
+			requests[i] = reconcile.Request{NamespacedName: types.NamespacedName{Name: userProjectBinding.Name}}
+		}
+
+		return requests
+	})
 }
