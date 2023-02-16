@@ -31,6 +31,7 @@ import (
 
 	"go.uber.org/zap"
 
+	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	utilpredicate "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -38,6 +39,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -81,6 +84,15 @@ func Add(mgr manager.Manager,
 		return fmt.Errorf("failed to create watch for kubermatic global settings: %w", err)
 	}
 
+	// Watch for creation of Project; we need to make sure that we create default project quotas, if required.
+	if err := c.Watch(
+		&source.Kind{Type: &kubermaticv1.Project{}},
+		enqueueProjectQuotas(reconciler.masterClient),
+		projectEventFilter(),
+	); err != nil {
+		return fmt.Errorf("failed to create watch for projects: %w", err)
+	}
+
 	return nil
 }
 
@@ -115,7 +127,7 @@ func (r *reconciler) reconcile(ctx context.Context, setting *kubermaticv1.Kuberm
 	}
 
 	// Delete all default project quotas if user didn't specify any default project quota.
-	if setting.Spec.DefaultProjectResourceQuota == nil {
+	if !setting.Spec.HasDefaultProjectResourceQuota() {
 		return r.handleDeletion(ctx)
 	}
 
@@ -154,9 +166,11 @@ func (r *reconciler) synchronizeResourceQuotas(ctx context.Context, defaultResou
 			continue
 		}
 
-		// Quota already exists and we need to update it.
-		quota.Spec.Quota = defaultResourceQuota.Quota
-		defaultQuotaFactories = append(defaultQuotaFactories, projectQuotaReconcilerFactory(&quota))
+		// Quota already exists and we need to update it
+		if !k8cequality.Semantic.DeepEqual(quota.Spec.Quota, defaultResourceQuota.Quota) {
+			quota.Spec.Quota = defaultResourceQuota.Quota
+			defaultQuotaFactories = append(defaultQuotaFactories, projectQuotaReconcilerFactory(&quota))
+		}
 	}
 
 	// Create or Update the resource quotas.
@@ -253,5 +267,40 @@ func projectQuotaReconcilerFactory(resourceQuota *kubermaticv1.ResourceQuota) re
 
 			return existing, nil
 		}
+	}
+}
+
+func enqueueProjectQuotas(client ctrlruntimeclient.Client) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		var requests []reconcile.Request
+
+		globalSettings := &kubermaticv1.KubermaticSetting{}
+		if err := client.Get(context.Background(), types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to get global settings %q: %w", kubermaticv1.GlobalSettingsName, err))
+		}
+
+		if globalSettings.Spec.HasDefaultProjectResourceQuota() {
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
+				Name: globalSettings.GetName(),
+			}})
+		}
+		return requests
+	})
+}
+
+func projectEventFilter() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			return false
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return false
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return false
+		},
 	}
 }

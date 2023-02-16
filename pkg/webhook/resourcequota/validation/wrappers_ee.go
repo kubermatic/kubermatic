@@ -40,3 +40,10 @@ func validateUpdate(ctx context.Context,
 ) error {
 	return eeresourcequotavalidation.ValidateUpdate(ctx, oldObj, newObj)
 }
+
+func validateDelete(ctx context.Context,
+	obj runtime.Object,
+	client ctrlruntimeclient.Client,
+) error {
+	return eeresourcequotavalidation.ValidateDelete(ctx, obj, client)
+}

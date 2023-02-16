@@ -38,3 +38,10 @@ func validateUpdate(_ context.Context,
 ) error {
 	return nil
 }
+
+func validateDelete(_ context.Context,
+	_ runtime.Object,
+	_ ctrlruntimeclient.Client,
+) error {
+	return nil
+}

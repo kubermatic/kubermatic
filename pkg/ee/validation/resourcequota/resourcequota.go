@@ -30,8 +30,11 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	resourcequotadefaultcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/default-quota-controller"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -86,5 +89,36 @@ func ValidateUpdate(ctx context.Context,
 		return fmt.Errorf("Operation not permitted: updating ResourceQuota Subject is not allowed!")
 	}
 
+	return nil
+}
+
+func ValidateDelete(ctx context.Context,
+	obj runtime.Object,
+	client ctrlruntimeclient.Client) error {
+	resourceQuota, ok := obj.(*kubermaticv1.ResourceQuota)
+	if !ok {
+		return errors.New("object is not a Resource Quota")
+	}
+	if resourceQuota == nil || resourceQuota.Labels == nil {
+		return nil
+	}
+
+	// Ignore if it's not a default resource quota.
+	if val, ok := resourceQuota.Labels[resourcequotadefaultcontroller.DefaultProjectResourceQuotaKey]; !ok || val != resourcequotadefaultcontroller.DefaultProjectResourceQuotaValue {
+		return nil
+	}
+
+	globalSettings := &kubermaticv1.KubermaticSetting{}
+	if err := client.Get(context.Background(), types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
+		if apierrors.IsNotFound(err) {
+			// Since KubermaticSettings don't exist, no validation is required.
+			return nil
+		}
+		return fmt.Errorf("failed to get global settings %q: %w", kubermaticv1.GlobalSettingsName, err)
+	}
+
+	if globalSettings.Spec.HasDefaultProjectResourceQuota() {
+		return fmt.Errorf("Removing default Project Quota resource is not allowed. Either remove the default/global project quota configuration from KubermaticSettings or update the Project Quota resource to empty or desired values.")
+	}
 	return nil
 }
