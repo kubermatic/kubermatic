@@ -35,7 +35,7 @@ const (
 	folderCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-folder"
 	// tagCleanupFinalizer will instruct the deletion of the default category tag.
 	tagCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-tags"
-	// tagCategoryCleanupFinalizer is a legacy finalizer that needs to be removed unconditionally
+	// tagCategoryCleanupFinalizer is a legacy finalizer that needs to be removed unconditionally.
 	tagCategoryCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-tag-category"
 )
 
