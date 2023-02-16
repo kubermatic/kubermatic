@@ -589,6 +589,20 @@ grafana:
           disableDeletion: false
           options:
             path: /var/lib/grafana/dashboards/default
+        - name: "kubernetes"
+          folder: "Kubernetes"
+          org_id: 1
+          type: file
+          disableDeletion: false
+          options:
+            path: /var/lib/grafana/dashboards/kubernetes
+        - name: "kubermatic"
+          folder: "Kubermatic"
+          org_id: 1
+          type: file
+          disableDeletion: false
+          options:
+            path: /var/lib/grafana/dashboards/kubermatic
   #  dashboardproviders.yaml:
   #    apiVersion: 1
   #    providers:
@@ -641,7 +655,9 @@ grafana:
   ##   example-dashboard.json: |
   ##     RAW_JSON
   ##
-  dashboardsConfigMaps: {}
+  dashboardsConfigMaps:
+    kubernetes: grafana-dashboards-mla-kubernetes-overview
+    kubermatic: grafana-dashboards-mla-kkp-kubernetes
   #  default: ""
 
   ## Grafana's primary configuration
