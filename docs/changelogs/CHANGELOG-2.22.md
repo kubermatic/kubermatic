@@ -384,7 +384,7 @@ Konnectivity is now GA.
 - Fix API error in extended disk configuration for provider Anexia ([#11030](https://github.com/kubermatic/kubermatic/pull/11030))
 - Fix for listing Operating System Profiles for Equinix Metal ([#4969](https://github.com/kubermatic/dashboard/pull/4969))
 - The cluster details step form will be filled with default values when the user re-selects preset/credentials ([#4975](https://github.com/kubermatic/dashboard/pull/4975))
-- The KKP API/UI will now return partial results from requests to resources which are listed across seeds, as the broken/unaccesible seeds will now be skipped. The behaviour before was that the whole request fails ([#5226](https://github.com/kubermatic/dashboard/pull/5226))
+- The KKP API/UI will now return partial results from requests to resources which are listed across seeds, as the broken/inaccessible seeds will now be skipped. The behaviour before was that the whole request fails ([#5226](https://github.com/kubermatic/dashboard/pull/5226))
 - Unset `tunnelingAgentIP` if cluster expose strategy is not set to Tunneling ([#5528](https://github.com/kubermatic/dashboard/pull/5528))
 - Fix issue in KKP API where deleting all datacenters from a Seed and then trying to add a new one would cause a panic ([#10953](https://github.com/kubermatic/kubermatic/pull/10953))
 - Fix validation for cron expressions for Etcd backups and metering schedule ([#5693](https://github.com/kubermatic/dashboard/pull/5693))
