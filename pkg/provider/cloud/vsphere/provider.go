@@ -121,7 +121,13 @@ func (v *VSphere) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clust
 		if v.dc.DefaultTagCategoryID != "" {
 			spec.Cloud.VSphere.Tags = &kubermaticv1.VSphereTag{
 				CategoryID: v.dc.DefaultTagCategoryID,
+				Tags:       []string{},
 			}
+		}
+	} else {
+		// If tags were specified without a CategoryID then use the default CategoryID, if configured at seed level.
+		if v.dc.DefaultTagCategoryID != "" && spec.Cloud.VSphere.Tags.CategoryID == "" {
+			spec.Cloud.VSphere.Tags.CategoryID = v.dc.DefaultTagCategoryID
 		}
 	}
 
@@ -142,6 +148,10 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 
 	if spec.VSphere.DatastoreCluster != "" && spec.VSphere.Datastore != "" {
 		return errors.New("either datastore or datastore cluster can be selected")
+	}
+
+	if spec.VSphere.Tags != nil && spec.VSphere.Tags.CategoryID == "" && v.dc.DefaultTagCategoryID == "" {
+		return errors.New("CategoryID must be specified with tags")
 	}
 
 	session, err := newSession(ctx, v.dc, username, password, v.caBundle)

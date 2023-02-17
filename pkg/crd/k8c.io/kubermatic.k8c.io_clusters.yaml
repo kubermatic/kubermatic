@@ -971,7 +971,6 @@ spec:
                                 type: string
                               type: array
                           required:
-                            - categoryID
                             - tags
                           type: object
                         username:
