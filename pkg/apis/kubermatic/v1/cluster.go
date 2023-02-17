@@ -1040,7 +1040,7 @@ type VSphereTag struct {
 	Tags []string `json:"tags"`
 	// CategoryID is the id of the vsphere category that the tag belongs to. If the category id is left empty, the default
 	// category id for the cluster will be used.
-	CategoryID string `json:"categoryID"`
+	CategoryID string `json:"categoryID,omitempty"`
 }
 
 // VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.
