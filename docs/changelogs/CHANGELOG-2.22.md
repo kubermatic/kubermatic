@@ -148,10 +148,12 @@ Konnectivity is now GA.
 - Rework vSphere user clusters tagging mechanism to adjust tags and tag categories creation and deletion, as part of the vSphere cloud provider resources reconciliation ([#11665](https://github.com/kubermatic/kubermatic/pull/11665))
 - Update vSphere CSI driver to v2.7.0 ([#11724](https://github.com/kubermatic/kubermatic/pull/11724))
 - Cleanup default tag categories creation and only create tags in the tag category which assigned on the user cluster level ([#11790](https://github.com/kubermatic/kubermatic/pull/11790))
+- Fix a bug where ccm/csi migrated clusters on vsphere have a partially deployed csi validating webhook ([#11899](https://github.com/kubermatic/kubermatic/pull/11899))
 
 #### GCP
 
 - Add support for GCP CSI Driver in Kubernetes 1.25+ clusters ([#11268](https://github.com/kubermatic/kubermatic/pull/11268))
+- Fix updating GCP clusters from 1.24 to 1.25 ([#11904](https://github.com/kubermatic/kubermatic/pull/11904))
 
 #### OpenStack
 
@@ -183,6 +185,7 @@ Konnectivity is now GA.
     - Update Loki to 2.6.1
     - Update minio to RELEASE.2022-09-17T00-09-45Z
 - MLA: Cortex and Consul operation will be briefly interrupted during the upgrade to patch the required objects ([#11861](https://github.com/kubermatic/kubermatic/pull/11861))
+- Fix loading default dashboards into MLA Grafana instance ([#11921](https://github.com/kubermatic/kubermatic/pull/11921))
 
 ### OS Support
 
@@ -246,6 +249,7 @@ Konnectivity is now GA.
 - Support for setting default OperatingSystemProfiles at the seed level ([#11105](https://github.com/kubermatic/kubermatic/pull/11105))
 - Support to filter machines based on resources (CPU, RAM, GPU) per datacenter ([#11130](https://github.com/kubermatic/kubermatic/pull/11130))
 - Add Canal CNI version v3.24 ([#11575](https://github.com/kubermatic/kubermatic/pull/11575))
+- Add support for Cilium CNI 1.13.0 managed by KKP Applications infra ([#11908](https://github.com/kubermatic/kubermatic/pull/11908))
 
 #### New Features (EE)
 
@@ -297,6 +301,8 @@ Konnectivity is now GA.
 - Update OPA integration Gatekeeper to 3.7.2 ([#11188](https://github.com/kubermatic/kubermatic/pull/11188))
 - Update Prometheus to 2.40.2 ([#11423](https://github.com/kubermatic/kubermatic/pull/11423))
 - Update to etcd 3.5.6 to prevent potential data inconsistency issues during online defragmentation ([#11403](https://github.com/kubermatic/kubermatic/pull/11403))
+- New release of telemetry-client v0.3.0 ([#11915](https://github.com/kubermatic/kubermatic/pull/11915))
+- Update supported kubernetes versions for EKS and AKS clusters ([#11892](https://github.com/kubermatic/kubermatic/pull/11892))
 
 #### Updates (EE)
 
