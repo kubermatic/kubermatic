@@ -231,7 +231,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	}
 
 	// Install or upgrade application only if max number of retries is not exceeded.
-	if appInstallation.Status.Failures > maxRetries {
+	if appInstallation.Status.Failures > maxRetries && hasLimitedRetries(appDefinition, appInstallation) {
 		oldAppInstallation := appInstallation.DeepCopy()
 		appInstallation.SetCondition(appskubermaticv1.Ready, corev1.ConditionFalse, "InstallationFailedRetriesExceeded", "Max number of retries was exceeded. Last error: "+oldAppInstallation.Status.Conditions[appskubermaticv1.Ready].Message)
 
@@ -273,7 +273,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	statusUpdater, installErr := r.appInstaller.Apply(ctx, log, r.seedClient, r.userClient, appDefinition, appInstallation, appSourcePath)
 
 	statusUpdater(&appInstallation.Status)
-	appInstallation.SetReadyCondition(installErr)
+	appInstallation.SetReadyCondition(installErr, hasLimitedRetries(appDefinition, appInstallation))
 
 	// we set condition in every case and condition update the LastHeartbeatTime. So patch will not be empty.
 	if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
@@ -281,6 +281,20 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 	}
 
 	return installErr
+}
+
+func hasLimitedRetries(appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) bool {
+	// todo VGR factorize code with pkg/applications/providers/template/helm.go::getDeployOpts
+	// Read atomic from applicationInstallation.
+	if appInstallation.Spec.DeployOptions != nil && appInstallation.Spec.DeployOptions.Helm != nil {
+		return appInstallation.Spec.DeployOptions.Helm.Atomic
+	}
+	// Fallback to atomic defined in ApplicationDefinition.
+	if appDefinition.Spec.DefaultDeployOptions != nil && appDefinition.Spec.DefaultDeployOptions.Helm != nil {
+		return appDefinition.Spec.DefaultDeployOptions.Helm.Atomic
+	}
+	//  Fallback to default
+	return false
 }
 
 // resetFailuresIfSpecHasChanged set Status.Failures to 0 if the spec has changed. Returns an error if status can not be updated.

@@ -266,10 +266,12 @@ func (appInstallation *ApplicationInstallation) SetCondition(conditionType Appli
 }
 
 // SetReadyCondition sets the ReadyCondition and appInstallation.Status.Failures counter according to the installError.
-func (appInstallation *ApplicationInstallation) SetReadyCondition(installErr error) {
+func (appInstallation *ApplicationInstallation) SetReadyCondition(installErr error, hasLimitedRetries bool) {
 	if installErr != nil {
 		appInstallation.SetCondition(Ready, corev1.ConditionFalse, "InstallationFailed", installErr.Error())
-		appInstallation.Status.Failures++
+		if hasLimitedRetries { // increment only if limited retries to avoid overflow otherwise
+			appInstallation.Status.Failures++
+		}
 	} else {
 		appInstallation.SetCondition(Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
 		appInstallation.Status.Failures = 0
