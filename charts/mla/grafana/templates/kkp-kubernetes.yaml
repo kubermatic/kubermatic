@@ -19,5 +19,15 @@ metadata:
   name: grafana-dashboards-mla-kkp-kubernetes
   namespace: mla
 data:
-  kkp-kubernetes.json: |-
-    {{- (.Files.Get "files/kkp-kubernetes.json") |nindent 4 -}}
+  nodes-overview.json: |-
+    {{- (.Files.Get "files/kkp-kubernetes-nodes-overview.json") | nindent 4 }}
+
+  nodes.json: |-
+    {{- (.Files.Get "files/kkp-kubernetes-nodes.json") | nindent 4 }}
+
+  pods.json: |-
+    {{- (.Files.Get "files/kkp-kubernetes-pods.json") | nindent 4 }}
+
+  statefulsets.json: |-
+    {{- (.Files.Get "files/kkp-kubernetes-statefulsets.json") | nindent 4 }}
+

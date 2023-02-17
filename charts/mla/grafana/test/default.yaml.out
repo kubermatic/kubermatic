@@ -111,7 +111,7 @@ metadata:
   name: grafana-dashboards-mla-kkp-kubernetes
   namespace: mla
 data:
-  kkp-kubernetes.json: |-
+  nodes-overview.json: |-
     {
       "annotations": {
         "list": []
@@ -1088,7 +1088,9 @@ data:
       "uid": "13yQpUxiz",
       "version": 1
     }
-    nodes.json: |
+    
+
+  nodes.json: |-
     {
       "annotations": {
         "list": []
@@ -2317,7 +2319,9 @@ data:
       "uid": "9799befff62f",
       "version": 1
     }
-    pods.json: |
+    
+
+  pods.json: |-
     {
       "annotations": {
         "list": []
@@ -2830,7 +2834,9 @@ data:
       "uid": "c2438b9deadd",
       "version": 1
     }
-    statefulset.json: |
+    
+
+  statefulsets.json: |-
     {
       "annotations": {
         "list": []
