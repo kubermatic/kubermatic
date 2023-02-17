@@ -129,6 +129,12 @@ Konnectivity is now GA.
 
 - machine-controller's built-in user data to provision new nodes is deprecated with this release and will be removed in a future release. OSM is the recommended way to generate user data.
 
+### Removals
+
+- Remove configuring of optional secondary disks to mount nodes ([#5439](https://github.com/kubermatic/dashboard/pull/5439))
+- Remove support for Pod Security Policy Admission Plugin with k8s v1.25 ([#5212](https://github.com/kubermatic/dashboard/pull/5212))
+- Remove Docker as a supported container runtime
+
 ### Cloud Providers
 
 - The cloud-config and cloud-config-csi for user clusters is now stored in a `Secret` instead of `ConfigMap` on the seed cluster (in each user cluster namespace) ([#10759](https://github.com/kubermatic/kubermatic/pull/10759))
@@ -444,8 +450,6 @@ Konnectivity is now GA.
 
 #### Cleanup
 
-- Remove configuring of optional secondary disks to mount nodes ([#5439](https://github.com/kubermatic/dashboard/pull/5439))
-- Remove support for Pod Security Policy Admission Plugin with k8s v1.25 ([#5212](https://github.com/kubermatic/dashboard/pull/5212))
 - Limit data when Listing AppDefs and AppInstalls and add GET endpoint for AppDefs ([#5184](https://github.com/kubermatic/dashboard/pull/5184))
 - KKP specific Nutanix categories (`KKPProject` and `KKPCluster`) are hidden in API responses ([#5282](https://github.com/kubermatic/dashboard/pull/5282))
 - Remove support for SLES operating system ([#5529](https://github.com/kubermatic/dashboard/pull/5529))
