@@ -349,7 +349,7 @@ Konnectivity is now GA.
 - Add API endpoints for VMware Cloud Director that allow using project-scoped Presets as credentials ([#5512](https://github.com/kubermatic/dashboard/pull/5512))
 - Add API endpoints for vSphere that allow using project-scoped Presets as credentials ([#5508](https://github.com/kubermatic/dashboard/pull/5508))
 - Add API endpoints for GKE that allow using project-scoped Presets as credentials ([#11156](https://github.com/kubermatic/kubermatic/pull/11156))
-- Add API endpoints for AKS that allow using project-scoped Presets as credentials ([#5427](https://github.com/kubermatic/dashboard/pull/5427))
+- Add API endpoints for AKS that allow using project-scoped Presets as credentials ([#5736](https://github.com/kubermatic/dashboard/pull/5736))
 - Add GET `/api/v2/providers/eks/clusterroles` endpoint to list EKS Cluster Roles ([#10778](https://github.com/kubermatic/kubermatic/pull/10778))
 - Add GET `/api/v2/providers/eks/noderoles` endpoint to list EKS Worker Node Roles ([#10939](https://github.com/kubermatic/kubermatic/pull/10939))
 - Add GET endpoint `/api/v2/providers/aks/resourcegroups` to list AKS resource groups ([#10921](https://github.com/kubermatic/kubermatic/pull/10921))
@@ -374,6 +374,7 @@ Konnectivity is now GA.
 - Add the option to set autoscaler min and max replicas for a machine deployment through the KKP API. They are only relevant if the autoscaler addon is installed ([#5361](https://github.com/kubermatic/dashboard/pull/5361))
 - Endpoint `/providers/{provider_name}/dc/{dc}/cluster` was introduced to retrieve the default cluster spec for the given provider and datacenter ([#5377](https://github.com/kubermatic/dashboard/pull/5377))
 - Fix Openstack `api/v1/providers/openstack/tenants` API endpoint for some cases where "couldn't get projects: couldn't get tenants for region XX: couldn't get identity endpoint: No suitable endpoint could be found in the service catalog." was wrongly returned ([#10968](https://github.com/kubermatic/kubermatic/pull/10968))
+- Add `skip_kubelet_version_validation` query param to PATCH `api/v2/projects/<project>/clusters/<cluster>` request in order to enable switching off kubelet version validation ([#5738](https://github.com/kubermatic/dashboard/pull/5738))
 
 #### Bugfixes
 
@@ -386,6 +387,10 @@ Konnectivity is now GA.
 - The KKP API/UI will now return partial results from requests to resources which are listed across seeds, as the broken/unaccesible seeds will now be skipped. The behaviour before was that the whole request fails ([#5226](https://github.com/kubermatic/dashboard/pull/5226))
 - Unset `tunnelingAgentIP` if cluster expose strategy is not set to Tunneling ([#5528](https://github.com/kubermatic/dashboard/pull/5528))
 - Fix issue in KKP API where deleting all datacenters from a Seed and then trying to add a new one would cause a panic ([#10953](https://github.com/kubermatic/kubermatic/pull/10953))
+- Fix validation for cron expressions for Etcd backups and metering schedule ([#5693](https://github.com/kubermatic/dashboard/pull/5693))
+- Mark KubeVirt node affinity preset key as required ([#5662](https://github.com/kubermatic/dashboard/pull/5662))
+- Persist annotations when upgrading a cluster ([#5666](https://github.com/kubermatic/dashboard/pull/5666))
+- Remove dynamic kubelet config setting and set it to always disabled ([#5700](https://github.com/kubermatic/dashboard/pull/5700))
 
 #### New Features
 
