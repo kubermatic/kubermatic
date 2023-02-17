@@ -123,7 +123,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		expectedInstallCondition appskubermaticv1.ApplicationInstallationCondition
 	}{
 		{
-			name:                  "installation succeeds",
+			name:                  "[atomic=true -> limited retries]installation succeeds",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -137,7 +137,26 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
 		},
 		{
-			name:                  "installation fails: app.Status.Failures should be increased and condition set to false",
+			name:                  "[atomic=false -> unlimited retries] installation succeeds",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					func() *appskubermaticv1.ApplicationInstallation {
+						appInstall := genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0)
+						appInstall.Spec.DeployOptions.Helm.Atomic = false
+						return appInstall
+					}(),
+				).
+				Build(),
+			appInstaller:             fake.ApplicationInstallerLogger{},
+			installErr:               nil,
+			wantErr:                  false,
+			expectedFailure:          0,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
+		},
+		{
+			name:                  "[atomic=true -> limited retries] installation fails [atomic=true -> limited retries]: app.Status.Failures should be increased and condition set to false",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -151,7 +170,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
 		},
 		{
-			name:                  "installation succeeds after a failure: app.Status.Failures should be reset and condition set to true",
+			name:                  "[atomic=true -> limited retries] installation succeeds after a failure: app.Status.Failures should be reset and condition set to true",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -165,7 +184,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
 		},
 		{
-			name:                  "installation fails after failure and spec changed app.Status.Failures should be set to 1 (reset + failure) and condition set to false",
+			name:                  "[atomic=true -> limited retries] installation fails after failure and spec changed app.Status.Failures should be set to 1 (reset + failure) and condition set to false",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -179,7 +198,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
 		},
 		{
-			name:                  "installation fails and reaches max retries: condition should be set to fails and no error should be returned (to not requeue object)",
+			name:                  "[atomic=true -> limited retries] installation fails and reaches max retries: condition should be set to fails and no error should be returned (to not requeue object)",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -194,7 +213,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 
 		{
-			name:                  "installation has reached max retries and then spec has changed (with working install): app.Status.Failures should be reset and condition set to true",
+			name:                  "[atomic=true -> limited retries] installation has reached max retries and then spec has changed (with working install): app.Status.Failures should be reset and condition set to true",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -208,7 +227,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionTrue, Reason: "InstallationSuccessful", Message: "application successfully installed or upgraded"},
 		},
 		{
-			name:                  "installation has reached max retries and then spec has changed (with not working install): app.Status.Failures should be set to 1 ( reset + failure) and condition set to false",
+			name:                  "[atomic=true -> limited retries] installation has reached max retries and then spec has changed (with not working install): app.Status.Failures should be set to 1 ( reset + failure) and condition set to false",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -219,6 +238,25 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			installErr:               installError,
 			wantErr:                  true,
 			expectedFailure:          1,
+			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
+		},
+		{
+			name:                  "[atomic=false -> unlimited retries] installation fails: retries should not be incremented",
+			applicationDefinition: genApplicationDefinition("app-def-1"),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(
+					func() *appskubermaticv1.ApplicationInstallation {
+						appInstall := genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 1)
+						appInstall.Spec.DeployOptions.Helm.Atomic = false
+						return appInstall
+					}(),
+				).
+				Build(),
+			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
+			installErr:               installError,
+			wantErr:                  true,
+			expectedFailure:          0,
 			expectedInstallCondition: appskubermaticv1.ApplicationInstallationCondition{Status: corev1.ConditionFalse, Reason: "InstallationFailed", Message: "an install error"},
 		},
 	}
@@ -327,13 +365,94 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 				Name:    applicationDefName,
 				Version: appVersion,
 			},
+			DeployOptions: &appskubermaticv1.DeployOptions{
+				Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true},
+			},
 		},
-
 		Status: appskubermaticv1.ApplicationInstallationStatus{
 			Failures: failures,
 			Conditions: map[appskubermaticv1.ApplicationInstallationConditionType]appskubermaticv1.ApplicationInstallationCondition{
 				appskubermaticv1.Ready: {Message: message, ObservedGeneration: observedGeneration},
 			},
 		},
+	}
+}
+
+func TestHasLimitedRetries(t *testing.T) {
+	tests := []struct {
+		name                 string
+		defaultDeployOptions *appskubermaticv1.DeployOptions
+		deployOptions        *appskubermaticv1.DeployOptions
+		want                 bool
+	}{
+		// tests default value
+		{
+			name:                 "hasLimitedRetries should be false when defaultDeployOptions and deployOptions are nil",
+			defaultDeployOptions: nil,
+			deployOptions:        nil,
+			want:                 false,
+		},
+		{
+			name:                 "hasLimitedRetries should be false when defaultDeployOptions.helm=nil and  deployOptions.helm=nil",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: nil},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: nil},
+			want:                 false,
+		},
+		{
+			name:                 "hasLimitedRetries should be false when defaultDeployOptions.helm=nil and  deployOptions.helm=nil",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: nil},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: nil},
+			want:                 false,
+		},
+		// test value defined at applicationInstall level only
+		{
+			name:                 "hasLimitedRetries should be false when defaultDeployOptions.helm=nil and  deployOptions.helm.atomic=false (defined at appInstall level)",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: nil},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false}},
+			want:                 false,
+		},
+		{
+			name:                 "hasLimitedRetries should be true when defaultDeployOptions.helm=nil and  deployOptions.helm.atomic=true (defined at appInstall level)",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: nil},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}},
+			want:                 true,
+		},
+		// test fallback to applicationDefinition
+		{
+			name:                 "hasLimitedRetries should be false when defaultDeployOptions.helm.atomic=false  and  deployOptions.helm=nil(use default at appDef level)",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false}},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: nil},
+			want:                 false,
+		},
+		{
+			name:                 "hasLimitedRetries should be true when defaultDeployOptions.helm.atomic=true and  deployOptions.helm.=nil (use default at appDef level)",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: nil},
+			want:                 true,
+		},
+		// test applicationInstallation value has priority
+		{
+			name:                 "hasLimitedRetries should be false when defaultDeployOptions.helm.atomic=true  and  deployOptions.helm.atomic=false (priority to appInstall level)",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false}},
+			want:                 false,
+		},
+		{
+			name:                 "hasLimitedRetries should be true when defaultDeployOptions.helm.atomic=false  and  deployOptions.helm.atomic=true (priority to appInstall level)",
+			defaultDeployOptions: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false}},
+			deployOptions:        &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}},
+			want:                 true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			appDefinition := &appskubermaticv1.ApplicationDefinition{Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: tt.defaultDeployOptions}}
+			appInstallation := &appskubermaticv1.ApplicationInstallation{
+				Spec: appskubermaticv1.ApplicationInstallationSpec{DeployOptions: tt.deployOptions}}
+
+			if got := hasLimitedRetries(appDefinition, appInstallation); got != tt.want {
+				t.Errorf("hasLimitedRetries() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
