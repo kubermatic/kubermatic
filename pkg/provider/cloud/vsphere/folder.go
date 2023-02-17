@@ -51,7 +51,7 @@ func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, 
 		cluster.Spec.Cloud.VSphere.Folder = clusterFolder
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCleanupFinalizer, err)
+		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", folderCleanupFinalizer, err)
 	}
 	return cluster, nil
 }

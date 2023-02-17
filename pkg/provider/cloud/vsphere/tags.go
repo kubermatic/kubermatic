@@ -23,17 +23,28 @@ import (
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
+func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	if err := syncCreatedClusterTags(ctx, restSession, cluster); err != nil {
 		return nil, fmt.Errorf("failed to sync created tags %w", err)
 	}
 
 	if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
 		return nil, fmt.Errorf("failed to sync deleted tags %w", err)
+	}
+
+	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
+			kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
+		}
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCleanupFinalizer, err)
 	}
 
 	return cluster, nil

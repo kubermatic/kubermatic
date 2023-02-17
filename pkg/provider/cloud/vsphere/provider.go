@@ -35,6 +35,8 @@ const (
 	folderCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-folder"
 	// tagCleanupFinalizer will instruct the deletion of the default category tag.
 	tagCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-tags"
+	// tagCategoryCleanupFinalizer is a legacy finalizer that needs to be removed unconditionally.
+	tagCategoryCleanupFinalizer = "kubermatic.k8c.io/cleanup-vsphere-tag-category"
 )
 
 // VSphere represents the vsphere provider.
@@ -78,7 +80,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
-		cluster, err = reconcileTags(ctx, restSession, cluster)
+		cluster, err = reconcileTags(ctx, restSession, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster tags: %w", err)
 		}
@@ -227,6 +229,16 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	if kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// remove orphaned Category finalizer
+	if kuberneteshelper.HasFinalizer(cluster, tagCategoryCleanupFinalizer) {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, tagCategoryCleanupFinalizer)
 		})
 		if err != nil {
 			return nil, err
