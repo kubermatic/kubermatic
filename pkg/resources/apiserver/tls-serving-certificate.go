@@ -34,6 +34,7 @@ import (
 type tlsServingCertReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
+	GetTunnelingAgentIP() string
 }
 
 // TLSServingCertificateReconciler returns a function to create/update the secret with the apiserver tls certificate used to serve https.
@@ -87,6 +88,8 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 					return nil, errors.New("no external IP")
 				}
 				altNames.IPs = append(altNames.IPs, externalIPParsed)
+			} else {
+				altNames.IPs = append(altNames.IPs, net.ParseIP(data.GetTunnelingAgentIP()))
 			}
 
 			if b, exists := se.Data[resources.ApiserverTLSCertSecretKey]; exists {
