@@ -209,6 +209,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithEtcdDiskSize(r.etcdDiskSize).
 		WithUserClusterMLAEnabled(r.userClusterMLAEnabled).
 		WithKonnectivityEnabled(konnectivityEnabled).
+		WithTunnelingAgentIP(r.tunnelingAgentIP).
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
