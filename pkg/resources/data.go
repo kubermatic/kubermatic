@@ -87,6 +87,8 @@ type TemplateData struct {
 
 	userClusterMLAEnabled bool
 	isKonnectivityEnabled bool
+
+	tunnelingAgentIP string
 }
 
 type TemplateDataBuilder struct {
@@ -209,6 +211,11 @@ func (td *TemplateDataBuilder) WithMachineControllerImageTag(tag string) *Templa
 
 func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository string) *TemplateDataBuilder {
 	td.data.machineControllerImageRepository = repository
+	return td
+}
+
+func (td *TemplateDataBuilder) WithTunnelingAgentIP(tunnelingAgentIP string) *TemplateDataBuilder {
+	td.data.tunnelingAgentIP = tunnelingAgentIP
 	return td
 }
 
@@ -437,6 +444,10 @@ func (d *TemplateData) GetKonnectivityKeepAliveTime() string {
 		return t
 	}
 	return kubermaticv1.DefaultKonnectivityKeepaliveTime
+}
+
+func (d *TemplateData) GetTunnelingAgentIP() string {
+	return d.tunnelingAgentIP
 }
 
 // GetMLAGatewayPort returns the NodePort of the external MLA Gateway service.
