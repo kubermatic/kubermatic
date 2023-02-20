@@ -78,6 +78,7 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Add validating and defaulting webhook for Application deployOptions ([#11633](https://github.com/kubermatic/kubermatic/pull/11633))
 - Don't reuse values when upgrading Applications. The values defined in the ApplicationInstallation CR are the source of truth ([#11871](https://github.com/kubermatic/kubermatic/pull/11871))
 - Fix bug preventing deletion of an ApplicationInstallation if the ApplicationDefinition was removed before ([#11888](https://github.com/kubermatic/kubermatic/pull/11888))
+- Limit the number of retries only if deployOptions.Helm.atomic=true ([#11927](https://github.com/kubermatic/kubermatic/pull/11927))
 
 #### Konnectivity
 
