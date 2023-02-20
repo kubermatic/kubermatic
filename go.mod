@@ -77,7 +77,6 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.11.1
-	k8c.io/kubeone v1.5.4
 	k8c.io/operating-system-manager v1.2.0
 	k8c.io/reconciler v0.3.1
 	k8s.io/api v0.26.1
@@ -181,7 +180,7 @@ require (
 	github.com/coreos/container-linux-config-transpiler v0.9.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
-	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
+	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/coreos/ignition v0.35.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -352,3 +351,6 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
+
+// TODO: This image tag needs to be replaced with a semver tag after the kubeone release.
+require k8c.io/kubeone v1.5.0-beta.0.0.20230216134849-7f23d49b8002
