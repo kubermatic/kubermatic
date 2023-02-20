@@ -4,7 +4,7 @@
 
 ## [v2.22.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.0)
 
-Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.22/tutorials-howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
+Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.22/tutorials-howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure user cluster reconciliations will not cause resource exhaustion on seed clusters.
 
 ### Supported Kubernetes Versions
 
