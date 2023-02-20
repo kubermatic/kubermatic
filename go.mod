@@ -352,5 +352,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-// TODO: This image tag needs to be replaced with a semver tag before the release.
-require k8c.io/kubeone v1.5.0-beta.0.0.20230215125531-ec71a98562df
+// TODO: This image tag needs to be replaced with a semver tag after the kubeone release.
+require k8c.io/kubeone v1.5.0-beta.0.0.20230216134849-7f23d49b8002
