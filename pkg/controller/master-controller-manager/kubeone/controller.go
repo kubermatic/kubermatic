@@ -445,7 +445,7 @@ func (r *reconciler) importAction(
 			log.Errorw("failed to import kubeone cluster", zap.Error(err))
 			return err
 		}
-	} else if externalCluster.Spec.KubeconfigReference != nil {
+	} else if externalCluster.Spec.KubeconfigReference != nil && externalCluster.Status.Condition.Phase == kubermaticv1.ExternalClusterPhaseRunning {
 		// checking if cluster is accessible using client
 		clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
 		if err != nil {
