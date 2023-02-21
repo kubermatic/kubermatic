@@ -66,6 +66,8 @@ const (
 	// This controller is responsible for managing the lifecycle of KubeOne clusters within KKP.
 	ControllerName = "kkp-kubeone-controller"
 
+	JobNameLabel = "job-name"
+
 	// kubernetes pod status.
 	podPhaseKey = "status.phase"
 
@@ -522,7 +524,6 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 		return errors.New("kubeone import failed")
 	}
 
-	// job succeeded.
 	podList := &corev1.PodList{}
 	err = r.List(ctx,
 		podList,
@@ -531,7 +532,7 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 			Namespace:     job.Namespace,
 			FieldSelector: fields.OneTermEqualSelector(podPhaseKey, string(corev1.PodSucceeded)),
 		},
-		&ctrlruntimeclient.MatchingLabels{"job-name": job.Name},
+		&ctrlruntimeclient.MatchingLabels{JobNameLabel: job.Name},
 	)
 	if err != nil {
 		return err
@@ -598,6 +599,7 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	log *zap.SugaredLogger,
 	externalCluster *kubermaticv1.ExternalCluster) error {
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
+	kubeOneNamespaceName := externalCluster.GetKubeOneNamespaceName()
 
 	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
 	if err != nil {
@@ -617,8 +619,21 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	}
 	desiredPhaseBool := sets.NewString(desiredPhases...).Has(string(externalCluster.Status.Condition.Phase))
 
-	// reached desired state
-	if desiredVersion.Equal(currentVersion) && externalCluster.Status.Condition.Phase == kubermaticv1.KubeOnePhaseReconcilingUpgrade {
+	// check if pod succeeded
+	podList := &corev1.PodList{}
+	err = r.List(ctx,
+		podList,
+		&ctrlruntimeclient.ListOptions{
+			FieldSelector: fields.OneTermEqualSelector(podPhaseKey, string(corev1.PodSucceeded)),
+			Namespace:     kubeOneNamespaceName,
+			Limit:         1,
+		},
+		&ctrlruntimeclient.MatchingLabels{JobNameLabel: KubeOneUpgradeJob},
+	)
+	if err != nil {
+		return err
+	}
+	if externalCluster.Status.Condition.Phase == kubermaticv1.KubeOnePhaseReconcilingUpgrade && len(podList.Items) == 1 && desiredVersion.Equal(currentVersion) {
 		log.Info("KubeOne Cluster Upgraded!")
 		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
 			Phase: kubermaticv1.ExternalClusterPhaseRunning,
@@ -703,7 +718,6 @@ func (r *reconciler) initiateClusterUpgrade(ctx context.Context,
 		return err
 	}
 
-	log.Info("Creating kubeone job to upgrade kubeone...")
 	if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 		return err
 	}
