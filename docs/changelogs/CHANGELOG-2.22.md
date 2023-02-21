@@ -8,15 +8,13 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### Supported Kubernetes Versions
 
-- Add support for Kubernetes 1.24.8. Those Kubernetes patch releases fix CVE-2022-3162 and CVE-2022-3294, both in kube-apiserver. We strongly recommend upgrading to those Kubernetes patch releases as soon as possible ([#11340](https://github.com/kubermatic/kubermatic/pull/11340))
-    - [CVE-2022-3162: Unauthorized read of Custom Resources](https://groups.google.com/g/kubernetes-announce/c/oR2PUBiODNA/m/tShPgvpUDQAJ)
-    - [CVE-2022-3294: Node address isn't always verified when proxying](https://groups.google.com/g/kubernetes-announce/c/eR0ghAXy2H8/m/sCuQQZlVDQAJ)
-- Add support for Kubernetes v1.24.9 ([#11553](https://github.com/kubermatic/kubermatic/pull/11553))
-- Add support for Kubernetes 1.25 ([#11049](https://github.com/kubermatic/kubermatic/pull/11049))
-- Add support for Kubernetes 1.26 ([#11621](https://github.com/kubermatic/kubermatic/pull/11621))
+- Add support for Kubernetes v1.24.8, v1.24.9, v1.24.10 ([#11340](https://github.com/kubermatic/kubermatic/pull/11340), [#11553](https://github.com/kubermatic/kubermatic/pull/11553), [#11859](https://github.com/kubermatic/kubermatic/pull/11859))
+    - v1.24.8+ fixes [CVE-2022-3162: Unauthorized read of Custom Resources](https://groups.google.com/g/kubernetes-announce/c/oR2PUBiODNA/m/tShPgvpUDQAJ)
+    - v1.24.8+ fixes [CVE-2022-3294: Node address isn't always verified when proxying](https://groups.google.com/g/kubernetes-announce/c/eR0ghAXy2H8/m/sCuQQZlVDQAJ)
+- Add support for Kubernetes v1.25.4, v1.25.5, v1.25.6 ([#11049](https://github.com/kubermatic/kubermatic/pull/11049), [#11859](https://github.com/kubermatic/kubermatic/pull/11859))
+- Add support for Kubernetes v1.26.1 ([#11621](https://github.com/kubermatic/kubermatic/pull/11621), [#11859](https://github.com/kubermatic/kubermatic/pull/11859))
 - Support for Kubernetes 1.22 and 1.23 user clusters has been removed; User clusters remaining on 1.23 will be automatically upgraded with this KKP version ([#11286](https://github.com/kubermatic/kubermatic/pull/11286), [#11767](https://github.com/kubermatic/kubermatic/pull/11767))
 - Allow Kubernetes version upgrade for clusters with non-amd64 nodes & Canal CNI and IPVS for all Kubernetes versions ([#11765](https://github.com/kubermatic/kubermatic/pull/11765))
-- Add support for Kubernetes v1.24.10, v1.25.6, and v1.26.1 ([#11859](https://github.com/kubermatic/kubermatic/pull/11859))
 
 #### Supported Versions
 
@@ -52,7 +50,7 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 
 #### KubeOne Cluster Support
 
-- Update KubeOne image to v1.5.3 for KubeOne external cluster controller ([#11388](https://github.com/kubermatic/kubermatic/pull/11388))
+- Use KubeOne v1.6.0 for external KubeOne clusters (TBD)
 - Add separate list and details pages for KubeOne clusters ([#5412](https://github.com/kubermatic/dashboard/pull/5412))
 - Add wizard to import KubeOne clusters ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
 - Add support to import AWS KubeOne clusters ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
@@ -64,7 +62,7 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 
 #### Web Terminal
 
-- Add Web terminal support for user clusters ([#4492](https://github.com/kubermatic/dashboard/pull/4492))
+- Add Web terminal support for user clusters. This allows users to connect to their clusters from the KKP dashboard using only their browser ([#4492](https://github.com/kubermatic/dashboard/pull/4492))
 
 #### Applications
 
@@ -105,6 +103,8 @@ Konnectivity is now GA.
 #### Resource Quotas (EE)
 
 - Add a default project resource quota setting which can be set in KKP's global `KubermaticSettings`. By managing the default quota, for all the projects which do not have a custom quota already set, their ResourceQuota is created/updated/deleted ([#11582](https://github.com/kubermatic/kubermatic/pull/11582))
+- Add functionality to configure default project quota ([#5565](https://github.com/kubermatic/dashboard/pull/5565))
+- The quota widget will be visible on the following places: Cluster template page, Add cluster from template dialog, Add/edit machine deployment dialog ([#5075](https://github.com/kubermatic/dashboard/pull/5075))
 
 ### Breaking Changes
 
@@ -117,7 +117,13 @@ Konnectivity is now GA.
 - CustomOperatingSystemProfile CRD is introduced for maintaining custom OSPs at the seed level. For more information [see our docs](https://docs.kubermatic.com/kubermatic/v2.22/tutorials-howtos/operating-system-manager/usage/#custom-operatingsystemprofiles) ([#11720](https://github.com/kubermatic/kubermatic/pull/11720))
     - OSP and OSC resources have been moved to user clusters. KKP will take care of migrating the existing resources
     - Custom OperatingSystemProfiles should now be created for the kind `CustomOperatingSystemProfile` instead of `OperatingSystemProfile` in the seed namespace
-- Action required on applications: helm has been bumped to version 3.11. Due to a [CVE](https://github.com/helm/helm/security/advisories/GHSA-pwcw-6f5g-gxf8) in the previous version, the helm template function [getHostByName](https://helm.sh/docs/chart_template_guide/function_list/#network-functions has been disabled (function will return an empty string).  If you want to enable this function, you have to set `deployOptions.helm.enableDNS` to true and *verify* this function 'getHostByName' is not being used in a chart to disclose any information you do not want to be passed to DNS servers.(c.f. CVE-2023-25165) ([#11887](https://github.com/kubermatic/kubermatic/pull/11887))
+- Helm has been bumped to v3.11 for Applications. Due to a [CVE](https://github.com/helm/helm/security/advisories/GHSA-pwcw-6f5g-gxf8) in the previous version, the helm template function [getHostByName](https://helm.sh/docs/chart_template_guide/function_list/#network-functions) has been disabled (function will return an empty string). If you want to enable this function, you have to set `deployOptions.helm.enableDNS` to true and *verify* the function `getHostByName` is not being used in a chart to disclose any information you do not want to be passed to DNS servers.(c.f. CVE-2023-25165) ([#11887](https://github.com/kubermatic/kubermatic/pull/11887))
+
+#### Removals
+
+- Remove configuring of optional secondary disks to mount nodes ([#5439](https://github.com/kubermatic/dashboard/pull/5439))
+- Remove support for Pod Security Policy Admission Plugin with k8s v1.25 ([#5212](https://github.com/kubermatic/dashboard/pull/5212))
+- Remove Docker as a supported container runtime
 
 ### API Changes
 
@@ -129,12 +135,6 @@ Konnectivity is now GA.
 ### Deprecations
 
 - machine-controller's built-in user data to provision new nodes is deprecated with this release and will be removed in a future release. OSM is the recommended way to generate user data.
-
-### Removals
-
-- Remove configuring of optional secondary disks to mount nodes ([#5439](https://github.com/kubermatic/dashboard/pull/5439))
-- Remove support for Pod Security Policy Admission Plugin with k8s v1.25 ([#5212](https://github.com/kubermatic/dashboard/pull/5212))
-- Remove Docker as a supported container runtime
 
 ### Cloud Providers
 
@@ -224,6 +224,7 @@ Konnectivity is now GA.
 - Change the Tunneling agent interface default IP from `192.168.30.10` to `100.64.30.10` ([#11504](https://github.com/kubermatic/kubermatic/pull/11504))
 - Prioritise public IP over private IP in front LoadBalancer service ([#11512](https://github.com/kubermatic/kubermatic/pull/11512))
 - Fix external cluster address in cluster's status.address.ip for the Tunneling expose strategy ([#11687](https://github.com/kubermatic/kubermatic/pull/11687))
+- Include tunneling agent IP in apiserver's TLS cert SANs ([#11932](https://github.com/kubermatic/kubermatic/pull/11932))
 
 ### Installer
 
@@ -321,7 +322,6 @@ Konnectivity is now GA.
 ### Miscellaneous
 
 - Update codebase to Kubernetes 1.26 ([#11600](https://github.com/kubermatic/kubermatic/pull/11600))
-- Update Go to version 1.19.4 ([#11530](https://github.com/kubermatic/kubermatic/pull/11530))
 - Update to controller-runtime 0.13.0 ([#10957](https://github.com/kubermatic/kubermatic/pull/10957))
 - Enhanced AKS external cluster status information on errors or warning states ([#10913](https://github.com/kubermatic/kubermatic/pull/10913))
 - The `quay.io/kubermatic/util:2.2.0` Docker image does not ship with `yq3` and `yq4` anymore, but only `yq` (version 4.x) ([#10665](https://github.com/kubermatic/kubermatic/pull/10665))
@@ -330,6 +330,7 @@ Konnectivity is now GA.
 - Move mutation to add default OSP annotations to `MachineDeployments` to a new operating-system-manager webhook ([#11325](https://github.com/kubermatic/kubermatic/pull/11325))
 - Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 - Use `topology.kubernetes.io/zone` instead of `failure-domain.beta.kubernetes.io/zone` for KKP components ([#10808](https://github.com/kubermatic/kubermatic/pull/10808))
+- KKP is now built with Go 1.19.6 ([#11931](https://github.com/kubermatic/kubermatic/pull/11931))
 
 ### Cleanup
 
@@ -404,7 +405,6 @@ Konnectivity is now GA.
 - [Admin] Clicking Show All Projects toggle: The loading spinner is shown when all projects are fetched ([#5041](https://github.com/kubermatic/dashboard/pull/5041))
 - Add `io2` and `gp3` to AWS provider disk types list ([#5449](https://github.com/kubermatic/dashboard/pull/5449))
 - Add an option to restrict preset to projects ([#5599](https://github.com/kubermatic/dashboard/pull/5599))
-- Add functionality to configure default project quota ([#5565](https://github.com/kubermatic/dashboard/pull/5565))
 - Add functionality to edit initial values of Cilium application when Cilium plugin is selected ([#5579](https://github.com/kubermatic/dashboard/pull/5579))
 - Add new field to enter the instance types when add new MD ([#4906](https://github.com/kubermatic/dashboard/pull/4906))
 - Add support for OIDC provider logout URL ([#5521](https://github.com/kubermatic/dashboard/pull/5521))
@@ -436,7 +436,6 @@ Konnectivity is now GA.
 - Support for tag association for vSphere machines ([#5636](https://github.com/kubermatic/dashboard/pull/5636))
 - Support for using server groups with OpenStack ([#5201](https://github.com/kubermatic/dashboard/pull/5201))
 - Support to filter machines based on resources(CPU, RAM, GPU) per datacenter ([#5164](https://github.com/kubermatic/dashboard/pull/5164))
-- The quota widget will be visible on the following places:- cluster template page- add cluster from template dialog- add/edit machine deployment dialog ([#5075](https://github.com/kubermatic/dashboard/pull/5075))
 - Update the states for aks, add the provisioning state and power state for aks clusters in the cluster detail page and in the list of machine deployments and in the machine deployment detail page and delete the labels in the machine deployment list for all providers ([#5038](https://github.com/kubermatic/dashboard/pull/5038))
 - Add new option under admin/interface page to enable/disable web terminal from cluster details page ([#5186](https://github.com/kubermatic/dashboard/pull/5186))
 - Allow user to select Node IAM role from dropdown list ([#5016](https://github.com/kubermatic/dashboard/pull/5016))
