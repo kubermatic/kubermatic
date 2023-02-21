@@ -64,6 +64,11 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 
 - Add Web terminal support for user clusters. This allows users to connect to their clusters from the KKP dashboard using only their browser ([#4492](https://github.com/kubermatic/dashboard/pull/4492))
 
+#### Dashboard Design
+
+- Redesign the Admin settings sidenav bar ([#5308](https://github.com/kubermatic/dashboard/pull/5308))
+- Redesign the project sidenav bar ([#5211](https://github.com/kubermatic/dashboard/pull/5211))
+
 #### Applications
 
 - Update `ApplicationDefinition` CRD to handle credentials at "templating" time. This allows downloading helm dependencies from an authenticated registry when application's source is git ([#11452](https://github.com/kubermatic/kubermatic/pull/11452))
@@ -100,10 +105,15 @@ Konnectivity is now GA.
 - Add groups in OIDC kubeconfig ([#11121](https://github.com/kubermatic/kubermatic/pull/11121))
 - Add `OIDCProviderConfiguration` to Seed's spec allowing to configure dedicated OIDC provider for each Seed ([#11668](https://github.com/kubermatic/kubermatic/pull/11668))
 
+#### Applications CNI
+
+- Manage Cilium CNI via Applications. Cilium values can be freely customized now ([#11414](https://github.com/kubermatic/kubermatic/pull/11414))
+
 #### Resource Quotas (EE)
 
 - Add a default project resource quota setting which can be set in KKP's global `KubermaticSettings`. By managing the default quota, for all the projects which do not have a custom quota already set, their ResourceQuota is created/updated/deleted ([#11582](https://github.com/kubermatic/kubermatic/pull/11582))
 - Add functionality to configure default project quota ([#5565](https://github.com/kubermatic/dashboard/pull/5565))
+- Add support for live quota update ([#5519](https://github.com/kubermatic/dashboard/pull/5519))
 - The quota widget will be visible on the following places: Cluster template page, Add cluster from template dialog, Add/edit machine deployment dialog ([#5075](https://github.com/kubermatic/dashboard/pull/5075))
 
 ### Breaking Changes
@@ -251,7 +261,6 @@ Konnectivity is now GA.
 - Add option for configuring OCI Helm repository for storing system Applications (e.g. Cilium CNI) ([#11708](https://github.com/kubermatic/kubermatic/pull/11708))
 - Add support for kube-dns configmap for NodeLocal DNSCache to allow customization of dns.Fixes an issue with a wrong mounted Corefile in NodeLocal DNSCache ([#11664](https://github.com/kubermatic/kubermatic/pull/11664))
 - External clusters on EKS now support assume role ([#11259](https://github.com/kubermatic/kubermatic/pull/11259))
-- Manage Cilium CNI via Applications infra ([#11414](https://github.com/kubermatic/kubermatic/pull/11414))
 - OPA integration: allow to define enforcementAction in KKP's constraint.EnforcementAction defines the action to take in response to a constraint being violated.By default, EnforcementAction is set to deny as the default behavior is to deny admission requests with any violation ([#11723](https://github.com/kubermatic/kubermatic/pull/11723))
 - seed proxy: increase memory limit from 32Mi to 64Mi ([#10984](https://github.com/kubermatic/kubermatic/pull/10984))
 - Support for setting default OperatingSystemProfiles at the seed level ([#11105](https://github.com/kubermatic/kubermatic/pull/11105))
@@ -446,7 +455,6 @@ Konnectivity is now GA.
 - Add an resource quota endpoint which given a provider node size and replica count, returns the calculation of what the projects resource quota usage would be and a message if the quota is exceeded.`POST /api/v2/projects/{project_id}/quotacalculation` ([#5315](https://github.com/kubermatic/dashboard/pull/5315))
 - The quota widget is shown on the external cluster list, wizard, and import dialog ([#5145](https://github.com/kubermatic/dashboard/pull/5145))
 - The quota widget will show a warning icon when the quota limit is exceeded. The quota widget is now visible on the clusters details and machine deployment details page ([#5105](https://github.com/kubermatic/dashboard/pull/5105))
-- Add support for live quota update ([#5519](https://github.com/kubermatic/dashboard/pull/5519))
 
 #### Cleanup
 
@@ -464,8 +472,6 @@ Konnectivity is now GA.
 - Cluster Template (Creation, Edit and Customize) UX enhancement ([#5497](https://github.com/kubermatic/dashboard/pull/5497))
 - Delete button on cluster details page is disabled if cluster is being deleted ([#5049](https://github.com/kubermatic/dashboard/pull/5049))
 - Display list of groups on project overview page in enterprise edition + has permission of owners ([#5171](https://github.com/kubermatic/dashboard/pull/5171))
-- Redesign the Admin settings sidenav bar ([#5308](https://github.com/kubermatic/dashboard/pull/5308))
-- Redesign the project sidenav bar ([#5211](https://github.com/kubermatic/dashboard/pull/5211))
 - Redesign the cluster summary step ([#5242](https://github.com/kubermatic/dashboard/pull/5242))
 - Show empty state project card placeholder when no project exists ([#5001](https://github.com/kubermatic/dashboard/pull/5001))
 
