@@ -128,6 +128,7 @@ Konnectivity is now GA.
     - OSP and OSC resources have been moved to user clusters. KKP will take care of migrating the existing resources
     - Custom OperatingSystemProfiles should now be created for the kind `CustomOperatingSystemProfile` instead of `OperatingSystemProfile` in the seed namespace
 - Helm has been bumped to v3.11 for Applications. Due to a [CVE](https://github.com/helm/helm/security/advisories/GHSA-pwcw-6f5g-gxf8) in the previous version, the helm template function [getHostByName](https://helm.sh/docs/chart_template_guide/function_list/#network-functions) has been disabled (function will return an empty string). If you want to enable this function, you have to set `deployOptions.helm.enableDNS` to true and *verify* the function `getHostByName` is not being used in a chart to disclose any information you do not want to be passed to DNS servers.(c.f. CVE-2023-25165) ([#11887](https://github.com/kubermatic/kubermatic/pull/11887))
+- vSphere user clusters will no longer have the field `.spec.cloud.vsphere.tagCategoryID` as it will get removed during the upgrade to KKP 2.22. To make KKP remember that it manages the tag category, please store the values of `.spec.cloud.vsphere.tagCategoryID` somewhere and add them back to the cluster post-upgrade as `.spec.cloud.vsphere.tags.categoryID` ([#11665](https://github.com/kubermatic/kubermatic/pull/11665)))
 
 #### Removals
 
