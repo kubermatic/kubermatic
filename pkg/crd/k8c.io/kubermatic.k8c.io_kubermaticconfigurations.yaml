@@ -520,6 +520,7 @@ spec:
                             enum:
                               - always
                               - externalCloudProvider
+                              - inTreeProvider
                             type: string
                           operation:
                             description: Operation is the operation triggering the compatibility check (CREATE or UPDATE)

@@ -369,6 +369,70 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:        "Check with InTreeCloudProvider Incompatibility for OpenStack 1.26",
+			provider:    kubermaticv1.OpenstackCloudProvider,
+			fromVersion: "1.25.0",
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.InTreeCloudProviderCondition},
+			manager: New([]*Version{
+				{
+					Version: semverlib.MustParse("1.25.0"),
+					Default: true,
+				},
+				{
+					Version: semverlib.MustParse("1.26.0"),
+					Default: false,
+				},
+			}, []*Update{
+				{
+					From:      "1.25.*",
+					To:        "1.26.*",
+					Automatic: true,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.OpenstackCloudProvider,
+					Version:   "1.26.0",
+					Operation: kubermaticv1.UpdateOperation,
+					Condition: kubermaticv1.InTreeCloudProviderCondition,
+				},
+			}),
+			expectedVersions: []*Version{},
+		},
+		{
+			name:        "Check with InTreeCloudProvider Incompatibility for OpenStack 1.26 with external CCM",
+			provider:    kubermaticv1.OpenstackCloudProvider,
+			fromVersion: "1.25.0",
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
+			manager: New([]*Version{
+				{
+					Version: semverlib.MustParse("1.25.0"),
+					Default: true,
+				},
+				{
+					Version: semverlib.MustParse("1.26.0"),
+					Default: false,
+				},
+			}, []*Update{
+				{
+					From:      "1.25.*",
+					To:        "1.26.*",
+					Automatic: true,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.OpenstackCloudProvider,
+					Version:   "1.26.0",
+					Operation: kubermaticv1.UpdateOperation,
+					Condition: kubermaticv1.InTreeCloudProviderCondition,
+				},
+			}),
+			expectedVersions: []*Version{
+				{
+					Version: semverlib.MustParse("1.26.0"),
+				},
+			},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

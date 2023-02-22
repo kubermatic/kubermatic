@@ -688,7 +688,10 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 			featureFlags = append(featureFlags, "CSIMigration=true", "ExpandCSIVolumes=true")
 		}
-		if cluster.Spec.Cloud.Openstack != nil {
+
+		// This flag is GA since 1.24 and enabled by default; it seems to be gone
+		// from Kubernetes 1.26, so we don't need to set it anymore.
+		if cluster.Spec.Cloud.Openstack != nil && lt25.Check(version) {
 			featureFlags = append(featureFlags, "CSIMigrationOpenStack=true")
 		}
 		if cluster.Spec.Cloud.VSphere != nil {

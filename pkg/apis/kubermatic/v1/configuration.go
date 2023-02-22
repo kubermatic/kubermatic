@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=always;externalCloudProvider
+// +kubebuilder:validation:Enum=always;externalCloudProvider;inTreeProvider
 
 // ConditionType is the type defining the cluster or datacenter condition that must be met to block a specific version.
 type ConditionType string
@@ -33,6 +33,8 @@ const (
 	AlwaysCondition ConditionType = "always"
 	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
 	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
+	// InTreeCloudProviderCondition is an incompatibility condition that represents the usage of the in-tree Cloud Provider.
+	InTreeCloudProviderCondition ConditionType = "inTreeProvider"
 )
 
 // +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
