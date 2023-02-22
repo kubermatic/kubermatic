@@ -33,6 +33,8 @@ const (
 	AlwaysCondition ConditionType = "always"
 	// ExternalCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
 	ExternalCloudProviderCondition ConditionType = ClusterFeatureExternalCloudProvider
+	// InTreeCloudProviderCondition is an incompatibility condition that represents the usage of the external Cloud Provider.
+	InTreeCloudProviderCondition ConditionType = "inTreeProvider"
 )
 
 // +kubebuilder:validation:Enum=CREATE;UPGRADE;SUPPORT
