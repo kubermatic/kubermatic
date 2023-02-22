@@ -180,6 +180,7 @@ Konnectivity is now GA.
 - Update OpenStack Cinder CSI to v1.24.5 and v1.25.3 ([#11454](https://github.com/kubermatic/kubermatic/pull/11454))
 - `availabilityZone`, `dnsServers` and `nodeSizeRequirements` are now optional in the Openstack datacenter spec ([#11605](https://github.com/kubermatic/kubermatic/pull/11605))
 - Fix OpenStack cloud provider tenant to project fields migration ([#11818](https://github.com/kubermatic/kubermatic/pull/11818))
+- User clusters on OpenStack need to be migrated to external CCM/CSI before upgrading to Kubernetes 1.26 ([#11939](https://github.com/kubermatic/kubermatic/pull/11939))
 
 #### DigitalOcean
 
