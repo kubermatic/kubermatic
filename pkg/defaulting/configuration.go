@@ -323,13 +323,13 @@ var (
 			// at that point we still might have clusters that needs to be upgraded from 1.25 to 1.26).
 			{
 				Provider:  string(kubermaticv1.OpenstackCloudProvider),
-				Version:   "> 1.26.0",
+				Version:   ">= 1.26.0",
 				Condition: kubermaticv1.InTreeCloudProviderCondition,
 				Operation: kubermaticv1.CreateOperation,
 			},
 			{
 				Provider:  string(kubermaticv1.OpenstackCloudProvider),
-				Version:   "> 1.26.0",
+				Version:   ">= 1.26.0",
 				Condition: kubermaticv1.InTreeCloudProviderCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
