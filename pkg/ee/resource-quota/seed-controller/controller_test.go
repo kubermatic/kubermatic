@@ -31,7 +31,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,11 +47,6 @@ const projectId = "project1"
 func TestReconcile(t *testing.T) {
 	scheme := runtime.NewScheme()
 	_ = kubermaticv1.AddToScheme(scheme)
-
-	workerSelector, err := workerlabel.LabelSelector("")
-	if err != nil {
-		t.Fatalf("failed to build worker-name selector: %v", err)
-	}
 
 	testCases := []struct {
 		name          string
@@ -81,10 +75,9 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			r := &reconciler{
-				log:                     kubermaticlog.Logger,
-				recorder:                &record.FakeRecorder{},
-				workerNameLabelSelector: workerSelector,
-				seedClient:              tc.seedClient,
+				log:        kubermaticlog.Logger,
+				recorder:   &record.FakeRecorder{},
+				seedClient: tc.seedClient,
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
@@ -111,8 +104,8 @@ func genResourceQuota(name string) *kubermaticv1.ResourceQuota {
 	rq.Name = name
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
 		Subject: kubermaticv1.Subject{
-			Name: "project1",
-			Kind: "project",
+			Name: projectId,
+			Kind: kubermaticv1.ProjectSubjectKind,
 		},
 	}
 

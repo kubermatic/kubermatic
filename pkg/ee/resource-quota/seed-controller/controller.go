@@ -56,27 +56,23 @@ import (
 var ControllerName = "kkp-resource-quota-seed-controller"
 
 type reconciler struct {
-	log                     *zap.SugaredLogger
-	workerNameLabelSelector labels.Selector
-	recorder                record.EventRecorder
-	seedClient              ctrlruntimeclient.Client
+	log        *zap.SugaredLogger
+	workerName string
+	recorder   record.EventRecorder
+	seedClient ctrlruntimeclient.Client
 }
 
-func Add(mgr manager.Manager,
+func Add(
+	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	workerName string,
 	numWorkers int,
 ) error {
-	workerSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %w", err)
-	}
-
 	reconciler := &reconciler{
-		log:                     log.Named(ControllerName),
-		workerNameLabelSelector: workerSelector,
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
-		seedClient:              mgr.GetClient(),
+		log:        log.Named(ControllerName),
+		workerName: workerName,
+		recorder:   mgr.GetEventRecorderFor(ControllerName),
+		seedClient: mgr.GetClient(),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -86,7 +82,7 @@ func Add(mgr manager.Manager,
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.Cluster{}},
-		enqueueResourceQuota(reconciler.seedClient, reconciler.log),
+		enqueueResourceQuota(reconciler.seedClient, reconciler.log, workerName),
 		workerlabel.Predicates(workerName),
 		withClusterEventFilter(),
 	); err != nil {
@@ -123,6 +119,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.ResourceQuota, log *zap.SugaredLogger) error {
+	// If the controller is in worker-name mode, ignore all non-Cluster-RQ's
+	// (i.e. all RQ's that span multiple clusters), as it makes no sense to
+	// update an RQ's status with data that spans only a subset of subjects.
+	// As of now, only project RQ's exist and so there is no single-cluster-RQ.
+	if r.workerName != "" /* resourceQuota.Spec.Subject.Kind != "cluster" */ {
+		log.Debug("Ignoring request because worker-name is set.")
+		return nil
+	}
+
 	// skip reconcile if resourceQuota is in delete state
 	if !resourceQuota.DeletionTimestamp.IsZero() {
 		log.Debug("resource quota is in deletion, skipping")
@@ -136,7 +141,7 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList,
-		&ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector.Add(*projectIdReq)}); err != nil {
+		&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectIdReq)}); err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
@@ -208,7 +213,7 @@ func withClusterEventFilter() predicate.Predicate {
 	}
 }
 
-func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
+func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogger, workerName string) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
@@ -216,26 +221,45 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 		projectId, ok := clusterLabels[kubermaticv1.ProjectIDLabelKey]
 		if !ok {
 			log.Debugw("cluster does not have `project-id` label, skipping", "cluster", a.GetName())
+			return requests
 		}
+
 		subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectId})
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("error creating subject name req: %w", err))
+			return requests
+		}
+
+		subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{kubermaticv1.ProjectSubjectKind})
+		if err != nil {
+			utilruntime.HandleError(fmt.Errorf("error creating subject name req: %w", err))
+			return requests
 		}
 
 		resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
 
 		if err := client.List(context.Background(), resourceQuotaList,
-			&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*subjectNameReq)},
+			&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*subjectKindReq, *subjectNameReq)},
 		); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list resourceQuotas: %w", err))
+			return requests
 		}
 
 		for _, rq := range resourceQuotaList.Items {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
-				Name:      rq.Name,
-				Namespace: rq.Namespace,
-			}})
+			// If a worker-name is given, we want to only reconcile clusters that have that label;
+			// this means for multi-cluster resources (e.g. project quotas for projects), we should
+			// skip them, as they will contain data for both worker-named and unnamed clusters;
+			// otherwise this controller (with a worker-name) would fight another controller (without
+			// a worker-name) about the current status of the resource quota.
+			// As of now, only project quotas exist though.
+			if workerName == "" || rq.Spec.Subject.Kind != kubermaticv1.ProjectSubjectKind {
+				requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
+					Name:      rq.Name,
+					Namespace: rq.Namespace,
+				}})
+			}
 		}
+
 		return requests
 	})
 }
