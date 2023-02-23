@@ -52,7 +52,7 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 
 #### KubeOne Cluster Support
 
-- Use KubeOne v1.6.0 for external KubeOne clusters (TBD)
+- Use KubeOne v1.6 for external KubeOne clusters ([#1953](https://github.com/kubermatic/kubermatic/pull/11953))
 - Add separate list and details pages for KubeOne clusters ([#5412](https://github.com/kubermatic/dashboard/pull/5412))
 - Add wizard to import KubeOne clusters ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
 - Add support to import AWS KubeOne clusters ([#5362](https://github.com/kubermatic/dashboard/pull/5362))
