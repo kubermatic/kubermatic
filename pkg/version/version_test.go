@@ -433,6 +433,70 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:        "Check with InTreeCloudProvider Incompatibility for vSphere 1.25 with external CCM",
+			provider:    kubermaticv1.VSphereCloudProvider,
+			fromVersion: "1.24.0",
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
+			manager: New([]*Version{
+				{
+					Version: semverlib.MustParse("1.24.0"),
+					Default: true,
+				},
+				{
+					Version: semverlib.MustParse("1.25.0"),
+					Default: false,
+				},
+			}, []*Update{
+				{
+					From:      "1.24.*",
+					To:        "1.25.*",
+					Automatic: true,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.VSphereCloudProvider,
+					Version:   "1.25.0",
+					Operation: kubermaticv1.UpdateOperation,
+					Condition: kubermaticv1.InTreeCloudProviderCondition,
+				},
+			}),
+			expectedVersions: []*Version{
+				{
+					Version: semverlib.MustParse("1.25.0"),
+				},
+			},
+		},
+		{
+			name:        "Check with InTreeCloudProvider Incompatibility for vSphere 1.25",
+			provider:    kubermaticv1.VSphereCloudProvider,
+			fromVersion: "1.24.0",
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.InTreeCloudProviderCondition},
+			manager: New([]*Version{
+				{
+					Version: semverlib.MustParse("1.24.0"),
+					Default: true,
+				},
+				{
+					Version: semverlib.MustParse("1.25.0"),
+					Default: false,
+				},
+			}, []*Update{
+				{
+					From:      "1.24.*",
+					To:        "1.25.*",
+					Automatic: true,
+				},
+			}, []*ProviderIncompatibility{
+				{
+					Provider:  kubermaticv1.VSphereCloudProvider,
+					Version:   "1.25.0",
+					Operation: kubermaticv1.UpdateOperation,
+					Condition: kubermaticv1.InTreeCloudProviderCondition,
+				},
+			}),
+			expectedVersions: []*Version{},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
