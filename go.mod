@@ -353,4 +353,4 @@ require (
 )
 
 // TODO: This image tag needs to be replaced with a semver tag after the kubeone release.
-require k8c.io/kubeone v1.5.0-beta.0.0.20230216134849-7f23d49b8002
+require k8c.io/kubeone v1.6.0-rc.1.0.20230223102440-e8f511e983d1
