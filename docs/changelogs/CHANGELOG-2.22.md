@@ -15,6 +15,8 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add support for Kubernetes v1.26.1 ([#11621](https://github.com/kubermatic/kubermatic/pull/11621), [#11859](https://github.com/kubermatic/kubermatic/pull/11859))
 - Support for Kubernetes 1.22 and 1.23 user clusters has been removed; User clusters remaining on 1.23 will be automatically upgraded with this KKP version ([#11286](https://github.com/kubermatic/kubermatic/pull/11286), [#11767](https://github.com/kubermatic/kubermatic/pull/11767))
 - Allow Kubernetes version upgrade for clusters with non-amd64 nodes & Canal CNI and IPVS for all Kubernetes versions ([#11765](https://github.com/kubermatic/kubermatic/pull/11765))
+- User clusters on OpenStack need to be migrated to external CCM/CSI before upgrading to Kubernetes 1.26 ([#11939](https://github.com/kubermatic/kubermatic/pull/11939))
+- User clusters on vSphere need to be migrated to external CCM/CSI before upgrading to Kubernetes 1.25 ([#11951](https://github.com/kubermatic/kubermatic/pull/11951))
 
 #### Supported Versions
 
@@ -180,7 +182,6 @@ Konnectivity is now GA.
 - Update OpenStack Cinder CSI to v1.24.5 and v1.25.3 ([#11454](https://github.com/kubermatic/kubermatic/pull/11454))
 - `availabilityZone`, `dnsServers` and `nodeSizeRequirements` are now optional in the Openstack datacenter spec ([#11605](https://github.com/kubermatic/kubermatic/pull/11605))
 - Fix OpenStack cloud provider tenant to project fields migration ([#11818](https://github.com/kubermatic/kubermatic/pull/11818))
-- User clusters on OpenStack need to be migrated to external CCM/CSI before upgrading to Kubernetes 1.26 ([#11939](https://github.com/kubermatic/kubermatic/pull/11939))
 
 #### DigitalOcean
 
