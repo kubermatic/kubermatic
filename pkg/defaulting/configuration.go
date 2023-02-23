@@ -333,6 +333,22 @@ var (
 				Condition: kubermaticv1.InTreeCloudProviderCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
+			// In-tree cloud provider for vSphere is not supported by KKP 2.22.0 since CSI
+			// migration is on by default for Kubernetes 1.25. We want to make sure that
+			// migrations happen before upgrading to that version, so we are enforcing it.
+			// This can be removed once we drop support for Kubernetes 1.25.
+			{
+				Provider:  string(kubermaticv1.VSphereCloudProvider),
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.InTreeCloudProviderCondition,
+				Operation: kubermaticv1.CreateOperation,
+			},
+			{
+				Provider:  string(kubermaticv1.VSphereCloudProvider),
+				Version:   ">= 1.25.0",
+				Condition: kubermaticv1.InTreeCloudProviderCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
 		},
 	}
 
