@@ -24,7 +24,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - 1.24.9
 - 1.24.10
 - 1.25.4
-- 1.25.6
+- 1.25.5
 - 1.25.6
 - 1.26.1
 
