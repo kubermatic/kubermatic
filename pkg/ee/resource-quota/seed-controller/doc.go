@@ -21,7 +21,14 @@
 */
 
 /*
-Package seedcontroller is responsible for ensuring the calculation of the local resource usage for the resource quotas by listing
-all clusters of the resource quota project and adding up their resource usage.
+Package seedcontroller is responsible for ensuring the calculation of the local
+resource usage for the resource quotas by listing all clusters of the resource
+quota project and adding up their resource usage.
+
+If a worker-name is given, this controller currently is mostly disabled, as
+Resource Quotas are attached to projects and projects contain multiple clusters,
+only some of which might have the given worker-name. Therefore this controller
+would only reconcile non-project Resource Quotas, which are not implemented
+right now.
 */
 package seedcontroller
