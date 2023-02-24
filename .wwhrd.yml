@@ -27,8 +27,8 @@ allowlist:
   - ISC
 
 exceptions:
-  - github.com/cristim/ec2-instances-info # Public domain: https://github.com/cristim/ec2-instances-info/blob/master/LICENSE.
-  - github.com/cristim/ec2-instances-info/data # MIT: https://github.com/powdahound/ec2instances.info/blob/master/LICENSE.
+  - github.com/LeanerCloud/ec2-instances-info # Public domain: https://github.com/LeanerCloud/ec2-instances-info/blob/master/LICENSE.
+  - github.com/LeanerCloud/ec2-instances-info/data # MIT: https://github.com/powdahound/ec2instances.info/blob/master/LICENSE.
   - github.com/acomagu/bufpipe # MIT: https://github.com/acomagu/bufpipe/blob/master/LICENSE (used by go-git)
   - github.com/gosimple/slug # MPL-2.0. Required for https://github.com/grafana-tools/sdk
   - github.com/hashicorp/go-cleanhttp # MPL-2.0
