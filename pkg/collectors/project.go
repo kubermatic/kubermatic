@@ -73,10 +73,12 @@ func (cc ProjectCollector) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	kubernetesLabels := sets.New[string]()
+	kubernetesLabelSet := sets.New[string]()
 	for _, project := range projects.Items {
-		kubernetesLabels = kubernetesLabels.Union(sets.KeySet(project.Labels))
+		kubernetesLabelSet = kubernetesLabelSet.Union(sets.KeySet(project.Labels))
 	}
+
+	kubernetesLabels := caseInsensitiveSort(sets.List(kubernetesLabelSet))
 
 	prometheusLabels := convertToPrometheusLabels(kubernetesLabels)
 	labelsGauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -89,7 +91,7 @@ func (cc ProjectCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 }
 
-func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kubermaticv1.Project, kubernetesLabels sets.Set[string], labelsGaugeVec *prometheus.GaugeVec) {
+func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kubermaticv1.Project, kubernetesLabels []string, labelsGaugeVec *prometheus.GaugeVec) {
 	owner := ""
 	for _, ref := range p.OwnerReferences {
 		if ref.APIVersion == kubermaticv1.SchemeGroupVersion.String() && ref.Kind == "User" {
@@ -112,7 +114,7 @@ func (cc *ProjectCollector) collectProject(ch chan<- prometheus.Metric, p *kuber
 	// taking special care of label key conflicts
 	projectLabels := []string{p.Name}
 	usedLabels := sets.New[string]()
-	for _, key := range sets.List(kubernetesLabels) {
+	for _, key := range kubernetesLabels {
 		prometheusLabel := convertToPrometheusLabel(key)
 		if !usedLabels.Has(prometheusLabel) {
 			projectLabels = append(projectLabels, p.Labels[key])
