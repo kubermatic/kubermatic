@@ -11,7 +11,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork v1.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription v1.0.0
-	github.com/LeanerCloud/ec2-instances-info v0.0.0-20230220145943-8a2b283fdcd0
+	github.com/LeanerCloud/ec2-instances-info v0.0.0-20230220145158-57eda6429c43
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/aliyun/alibaba-cloud-sdk-go v1.62.186

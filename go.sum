@@ -76,8 +76,8 @@ github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/DATA-DOG/go-sqlmock v1.5.0 h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=
-github.com/LeanerCloud/ec2-instances-info v0.0.0-20230220145943-8a2b283fdcd0 h1:oFvJO4lM73bMBH9vNzzb7YB25NRdN3UU0R9GwgeMiNA=
-github.com/LeanerCloud/ec2-instances-info v0.0.0-20230220145943-8a2b283fdcd0/go.mod h1:H8Ig4zk6ZXt1jldIT6AlC/5T1HFG2KCxawtaclu7rVQ=
+github.com/LeanerCloud/ec2-instances-info v0.0.0-20230220145158-57eda6429c43 h1:BS5ZdQFJSM/eEifD7KUpI0Jx/TFpWSRgc+9g7dNKMp4=
+github.com/LeanerCloud/ec2-instances-info v0.0.0-20230220145158-57eda6429c43/go.mod h1:H8Ig4zk6ZXt1jldIT6AlC/5T1HFG2KCxawtaclu7rVQ=
 github.com/MakeNowJust/heredoc v1.0.0 h1:cXCdzVdstXyiTqTvfqk9SDHpKNjxuom+DOlyEeQ4pzQ=
 github.com/MakeNowJust/heredoc v1.0.0/go.mod h1:mG5amYoWBHf8vpLOuehzbGGw0EHxpZZ6lCpQ4fNJ8LE=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
