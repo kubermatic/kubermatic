@@ -30,11 +30,13 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
@@ -103,7 +105,7 @@ func NewTemplateData(
 		csiOptions.SsSegmentedIscsiNetwork = cluster.Spec.Cloud.Nutanix.CSI.SsSegmentedIscsiNetwork
 	}
 
-	_, csiMigration := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+	csiMigration := metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || kubermaticv1helper.CCMMigrationCompleted(cluster)
 
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
