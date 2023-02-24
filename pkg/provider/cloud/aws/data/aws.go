@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	ec2 "github.com/cristim/ec2-instances-info"
+	ec2 "github.com/LeanerCloud/ec2-instances-info"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
