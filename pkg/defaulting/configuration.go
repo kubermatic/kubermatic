@@ -489,11 +489,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", configCopy.Spec.Ingress.CertificateIssuer.Kind)
 	}
 
-	if configCopy.Spec.UI.Config == "" {
-		configCopy.Spec.UI.Config = strings.TrimSpace(DefaultUIConfig)
-		logger.Debugw("Defaulting field", "field", "ui.config", "value", configCopy.Spec.UI.Config)
-	}
-
 	if configCopy.Spec.UI.Replicas == nil {
 		configCopy.Spec.UI.Replicas = pointer.Int32(DefaultUIReplicas)
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *configCopy.Spec.UI.Replicas)
@@ -878,11 +873,6 @@ env:
       name: kubermatic-s3-credentials
       key: SECRET_ACCESS_KEY
 `
-
-const DefaultUIConfig = `
-{
-  "share_kubeconfig": false
-}`
 
 const DefaultKubernetesAddons = `
 apiVersion: v1
