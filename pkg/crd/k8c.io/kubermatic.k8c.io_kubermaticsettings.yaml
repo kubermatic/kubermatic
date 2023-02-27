@@ -112,6 +112,10 @@ spec:
                   type: boolean
                 enableOIDCKubeconfig:
                   type: boolean
+                enableShareCluster:
+                  default: true
+                  description: EnableShareCluster enables the Share Cluster feature for the user clusters.
+                  type: boolean
                 enableWebTerminal:
                   default: false
                   description: EnableWebTerminal enables the Web Terminal feature for the user clusters.
