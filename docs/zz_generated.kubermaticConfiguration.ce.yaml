@@ -311,10 +311,7 @@ spec:
   # UI configures the dashboard.
   ui:
     # Config sets flags for various dashboard features.
-    config: |-
-      {
-        "share_kubeconfig": false
-      }
+    config: ""
     # DockerRepository is the repository containing the Kubermatic dashboard image.
     dockerRepository: quay.io/kubermatic/dashboard
     # Replicas sets the number of pod replicas for the UI deployment.
