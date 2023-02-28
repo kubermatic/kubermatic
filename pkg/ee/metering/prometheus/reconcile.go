@@ -44,6 +44,7 @@ const (
 // ReconcilePrometheus reconciles the prometheus instance used as a datasource for metering.
 func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, getRegistry registry.WithOverwriteFunc, seed *kubermaticv1.Seed) error {
 	seedOwner := common.OwnershipModifierFactory(seed, scheme)
+	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(ctx, client)
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		prometheusServiceAccount(),
@@ -71,7 +72,7 @@ func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, s
 
 	if err := reconciling.ReconcileStatefulSets(ctx, []reconciling.NamedStatefulSetCreatorGetter{
 		prometheusStatefulSet(getRegistry, seed),
-	}, seed.Namespace, client, common.VolumeRevisionLabelsModifierFactory(ctx, client), seedOwner); err != nil {
+	}, seed.Namespace, client, common.VolumeRevisionLabelsModifierFactory(ctx, client), seedOwner, volumeLabelModifier); err != nil {
 		return fmt.Errorf("failed to reconcile StatefuleSet: %w", err)
 	}
 
