@@ -134,6 +134,7 @@ func NewTemplateData(
 				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
 				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
 				StrictArp:         *cluster.Spec.ClusterNetwork.IPVS.StrictArp,
+				NodePortRange:     cluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
@@ -209,6 +210,7 @@ type ClusterNetwork struct {
 	ServiceCIDRBlocks []string
 	ProxyMode         string
 	StrictArp         bool
+	NodePortRange     string
 }
 
 type CNIPlugin struct {
