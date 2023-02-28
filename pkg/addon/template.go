@@ -162,6 +162,7 @@ func NewTemplateData(
 				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),
 				NodeCIDRMaskSizeIPv6: resources.GetClusterNodeCIDRMaskSizeIPv6(cluster),
 				IPAMAllocations:      ipamAllocationsData,
+				NodePortRange:        cluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
 			},
 			CNIPlugin: CNIPlugin{
 				Type:    cluster.Spec.CNIPlugin.Type.String(),
@@ -248,6 +249,7 @@ type ClusterNetwork struct {
 	NodeCIDRMaskSizeIPv4 int32
 	NodeCIDRMaskSizeIPv6 int32
 	IPAMAllocations      map[string]IPAMAllocation
+	NodePortRange        string
 }
 
 type IPAMAllocation struct {

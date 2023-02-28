@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -131,6 +132,13 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		values["kubeProxyReplacement"] = "strict"
 		values["k8sServiceHost"] = cluster.Status.Address.ExternalName
 		values["k8sServicePort"] = cluster.Status.Address.Port
+
+		nodePortRange := cluster.Spec.ComponentsOverride.Apiserver.NodePortRange
+		if nodePortRange != "" && nodePortRange != resources.DefaultNodePortRange {
+			values["nodePort"] = map[string]any{
+				"range": strings.ReplaceAll(nodePortRange, "-", ","),
+			}
+		}
 	} else {
 		values["kubeProxyReplacement"] = "disabled"
 	}
