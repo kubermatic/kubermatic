@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"path"
 
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
@@ -93,7 +94,11 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	defer session.Logout(ctx)
 
 	rootPath := getVMRootPath(v.dc)
-	if cluster.Spec.Cloud.VSphere.Folder == "" {
+
+	clusterFolder := path.Join(rootPath, cluster.Name)
+
+	// Only reconcile folders that are KKP managed at the clusterFolder location.
+	if cluster.Spec.Cloud.VSphere.Folder == "" || cluster.Spec.Cloud.VSphere.Folder == clusterFolder {
 		logger.Infow("reconciling vsphere folder", "folder", cluster.Spec.Cloud.VSphere.Folder)
 		session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
@@ -101,7 +106,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		}
 		defer session.Logout(ctx)
 
-		cluster, err = reconcileFolder(ctx, session, restSession, rootPath, cluster, update)
+		cluster, err = reconcileFolder(ctx, session, clusterFolder, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster folder: %w", err)
 		}
