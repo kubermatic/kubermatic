@@ -171,6 +171,9 @@ data:
 {{ if eq .Cluster.Network.ProxyMode "ebpf" }}
   kube-proxy-replacement:  "strict"
   kube-proxy-replacement-healthz-bind-address: ""
+  {{ if ne .Cluster.Network.NodePortRange "" }}
+  node-port-range: {{ .Cluster.Network.NodePortRange | replace "-" "," | quote }}
+  {{ end }}
 {{ else }}
   kube-proxy-replacement:  "disabled"
 {{ end }}
