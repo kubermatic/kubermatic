@@ -63,10 +63,10 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 var _ provider.ReconcilingCloudProvider = &VSphere{}
 
 func (v *VSphere) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return v.reconcileCluster(ctx, cluster, update, true)
+	return v.reconcileCluster(ctx, cluster, update)
 }
 
-func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool) (*kubermaticv1.Cluster, error) {
+func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	logger := v.log.With("cluster", cluster.Name)
 
 	username, password, err := getCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
@@ -93,7 +93,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	defer session.Logout(ctx)
 
 	rootPath := getVMRootPath(v.dc)
-	if force || cluster.Spec.Cloud.VSphere.Folder == "" {
+	if cluster.Spec.Cloud.VSphere.Folder == "" {
 		logger.Infow("reconciling vsphere folder", "folder", cluster.Spec.Cloud.VSphere.Folder)
 		session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
@@ -112,7 +112,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
 func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return v.reconcileCluster(ctx, cluster, update, false)
+	return v.reconcileCluster(ctx, cluster, update)
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
