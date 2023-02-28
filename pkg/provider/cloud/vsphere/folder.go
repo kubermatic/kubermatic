@@ -33,10 +33,9 @@ type Folder struct {
 	Path string
 }
 
-// reconcileFolder reconciles a vSphere folder
+// reconcileFolder reconciles a vSphere folder.
 func reconcileFolder(ctx context.Context, s *Session, folderPath string,
 	cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-
 	err := createVMFolder(ctx, s, folderPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the VM folder %q: %w", folderPath, err)
