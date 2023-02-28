@@ -225,14 +225,16 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	}
 	defer restSession.Logout(ctx)
 
-	if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
-		return nil, err
-	}
-	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
-	})
-	if err != nil {
-		return nil, err
+	if kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
+			return nil, err
+		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
