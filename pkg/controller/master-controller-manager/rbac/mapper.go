@@ -659,6 +659,10 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 			return []string{"get", "update", "delete"}, nil
 		case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == secretV1Kind:
 			return []string{"get", "update", "delete"}, nil
+		case strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == secretV1Kind:
+			return []string{"get"}, nil
+		case strings.HasPrefix(groupName, ViewerGroupNamePrefix) && resourceKind == secretV1Kind:
+			return []string{"get"}, nil
 		case resourceKind == secretV1Kind:
 			return nil, nil
 		}
