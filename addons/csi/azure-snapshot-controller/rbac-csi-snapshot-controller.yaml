@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/v1.18.0/rbac-csi-snapshot-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.27.0/deploy/v1.27.0/rbac-csi-snapshot-controller.yaml
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
 ---
@@ -23,8 +23,8 @@ metadata:
   namespace: kube-system
 
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: csi-snapshot-controller-role
 rules:
@@ -57,8 +57,8 @@ rules:
     verbs: ["update", "patch"]
 
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: csi-snapshot-controller-binding
 subjects:
@@ -71,8 +71,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: csi-snapshot-controller-leaderelection-role
 rules:
@@ -81,8 +81,8 @@ rules:
     verbs: ["get", "watch", "list", "delete", "update", "create", "patch"]
 
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: csi-snapshot-controller-leaderelection-binding
 subjects:
