@@ -88,6 +88,7 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 						"--allow-untagged-cloud",
 						// "false" as we use IPAM in kube-controller-manager
 						"--allocate-node-cidrs=false",
+						"--configure-cloud-routes=false",
 					},
 					Env: append(
 						getEnvVars(),
