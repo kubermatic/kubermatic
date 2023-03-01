@@ -140,11 +140,13 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 }
 
 func getAWSCCMVersion(version semver.Semver) string {
+	// https://github.com/kubernetes/cloud-provider-aws/releases
+
 	switch version.MajorMinor() {
 	case v124:
 		return "v1.24.4"
 	case v125:
-		return "v1.25.1"
+		return "v1.25.3"
 	case v126:
 		fallthrough
 	//	By default return latest version
