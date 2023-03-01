@@ -15,7 +15,7 @@
 apiVersion: v2
 name: cert-manager
 version: v9.9.9-dev
-appVersion: v1.10.1
+appVersion: v1.11.0
 description: A Helm chart for cert-manager
 keywords:
   - kubermatic
@@ -31,4 +31,4 @@ maintainers:
 dependencies:
   - repository: https://charts.jetstack.io
     name: cert-manager
-    version: 1.10.1
+    version: 1.11.0
