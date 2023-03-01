@@ -120,7 +120,7 @@ var (
 		{
 			cloudProvider: kubermaticv1.AWSCloudProvider,
 			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemRHEL,
+				// providerconfig.OperatingSystemRHEL, // TODO: disabled due to "BPF host reachable services for UDP needs kernel 4.19.57, 5.1.16, 5.2.0 or newer"
 				providerconfig.OperatingSystemUbuntu,
 				providerconfig.OperatingSystemFlatcar,
 				providerconfig.OperatingSystemRockyLinux,
