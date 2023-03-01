@@ -18,14 +18,15 @@ package collectors
 
 import (
 	"regexp"
+	"sort"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func convertToPrometheusLabels(labelKeys sets.String) []string {
+func convertToPrometheusLabels(labelKeys []string) []string {
 	promLabels := sets.NewString()
-	for _, key := range labelKeys.List() {
+	for _, key := range labelKeys {
 		// due to conversion, different labels might result in the same Prometheus label
 		// (e.g. "foo-bar" and "foo/bar" will both be normalised to "foo_bar"), hence we
 		// use a set.
@@ -39,4 +40,13 @@ var validMetricLabel = regexp.MustCompile(`[^a-z0-9_]`)
 
 func convertToPrometheusLabel(label string) string {
 	return "label_" + validMetricLabel.ReplaceAllString(strings.ToLower(label), "_")
+}
+
+// caseInsensitiveSort sorts Kubernetes labels case-insensitive (!), as the Pprometheus
+// labels will later be lowercase and that could influence their sorting order.
+func caseInsensitiveSort(values []string) []string {
+	sort.Slice(values, func(i, j int) bool {
+		return strings.ToLower(values[i]) < strings.ToLower(values[j])
+	})
+	return values
 }
