@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.18.0/deploy/v1.18.0/rbac-csi-azurefile-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.26.1/deploy/v1.26.1/rbac-csi-azurefile-controller.yaml
 #
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
@@ -24,9 +24,8 @@ metadata:
   namespace: kube-system
 
 ---
-
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: azurefile-external-provisioner-role
 rules:
@@ -57,10 +56,10 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create", "patch"]
----
 
-kind: ClusterRoleBinding
+---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: azurefile-csi-provisioner-binding
 subjects:
@@ -73,9 +72,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: azurefile-external-attacher-role
 rules:
@@ -97,10 +95,10 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create", "patch"]
----
 
-kind: ClusterRoleBinding
+---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: azurefile-csi-attacher-binding
 subjects:
@@ -113,9 +111,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: azurefile-external-snapshotter-role
 rules:
@@ -124,7 +121,7 @@ rules:
     verbs: ["list", "watch", "create", "update", "patch"]
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list"]
+    verbs: ["get"]
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshotclasses"]
     verbs: ["get", "list", "watch"]
@@ -139,9 +136,8 @@ rules:
     verbs: ["get", "watch", "list", "delete", "update", "create", "patch"]
 
 ---
-
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: azurefile-csi-snapshotter-binding
 subjects:
@@ -154,9 +150,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: azurefile-external-resizer-role
 rules:
@@ -174,8 +169,8 @@ rules:
     verbs: ["list", "watch", "create", "update", "patch"]
 
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: azurefile-csi-resizer-role
 subjects:
@@ -188,18 +183,18 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: csi-azurefile-controller-secret-role
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list", "create"]
+    verbs: ["get", "list"]
 
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: csi-azurefile-controller-secret-binding
 subjects:
