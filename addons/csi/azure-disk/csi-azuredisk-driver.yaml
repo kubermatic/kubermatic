@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/v1.18.0/csi-azuredisk-driver.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.27.0/deploy/v1.27.0/csi-azuredisk-driver.yaml
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.18.0" }}
+{{ $version := "1.27.0" }}
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver

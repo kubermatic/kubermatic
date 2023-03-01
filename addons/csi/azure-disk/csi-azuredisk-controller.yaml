@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/v1.18.0/csi-azuredisk-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.27.0/deploy/v1.27.0/csi-azuredisk-controller.yaml
 #
 # Changes:
 # - image source includes registry templating
@@ -23,10 +23,10 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.18.0" }}
+{{ $version := "1.27.0" }}
 ---
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: csi-azuredisk-controller
   namespace: kube-system
@@ -50,17 +50,19 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-provisioner
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-provisioner:v3.1.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-provisioner:v3.3.0" }}
           args:
             - "--feature-gates=Topology=true"
             - "--csi-address=$(ADDRESS)"
             - "--v=2"
-            - "--timeout=15s"
+            - "--timeout=30s"
             - "--leader-election"
             - "--leader-election-namespace=kube-system"
-            - "--worker-threads=40"
+            - "--worker-threads=100"
             - "--extra-create-metadata=true"
             - "--strict-topology=true"
+            - "--kube-api-qps=50"
+            - "--kube-api-burst=100"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -74,14 +76,16 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-attacher
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-attacher:v3.4.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-attacher:v4.0.0" }}
           args:
             - "-v=2"
             - "-csi-address=$(ADDRESS)"
-            - "-timeout=600s"
+            - "-timeout=1200s"
             - "-leader-election"
             - "--leader-election-namespace=kube-system"
-            - "-worker-threads=500"
+            - "-worker-threads=1000"
+            - "-kube-api-qps=200"
+            - "-kube-api-burst=400"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -114,7 +118,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-resizer
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-resizer:v1.4.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-resizer:v1.6.0" }}
           args:
             - "-csi-address=$(ADDRESS)"
             - "-v=2"
@@ -136,7 +140,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: liveness-probe
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/livenessprobe:v2.6.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/livenessprobe:v2.8.0" }}
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
