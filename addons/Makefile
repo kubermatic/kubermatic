@@ -63,8 +63,7 @@ aws-ebs-csi-driver:
 	  --skip-tests \
 	  >> $(OUTPUT_FILE)
 	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
-	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
-	sed -i 's/k8s.gcr.io/{{ Registry "registry.k8s.io" }}/g' $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
 
 .PHONY: gcp-csi-driver
 gcp-csi-driver: OUTPUT_FILE=csi/gcp/driver.yaml
