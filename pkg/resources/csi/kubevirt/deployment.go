@@ -89,13 +89,6 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				return nil, err
 			}
 			d.Spec.Template.Spec.ServiceAccountName = resources.KubeVirtCSIServiceAccountName
-			d.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-				{
-					Key:      "node-role.kubernetes.io/master",
-					Operator: corev1.TolerationOpExists,
-					Effect:   corev1.TaintEffectNoSchedule,
-				},
-			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "csi-driver",
