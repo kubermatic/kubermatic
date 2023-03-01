@@ -41,6 +41,7 @@ spec:
         args:
         - restic
         - server
+        - --uploader-type=restic
         {{- if .Values.velero.credentials.azure }}
         envFrom:
         - secretRef:
