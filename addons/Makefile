@@ -40,7 +40,7 @@ aws-node-termination-handler:
 	helm repo update
 	cat aws-node-termination-handler/_header.txt > $(OUTPUT_FILE)
 	helm template aws-node-termination-handler eks/aws-node-termination-handler \
-	  --version 0.18.2 \
+	  --version 0.21.0 \
 	  --namespace kube-system \
 	  --values values-aws-node-termination-handler.yaml \
 	  >> $(OUTPUT_FILE)
