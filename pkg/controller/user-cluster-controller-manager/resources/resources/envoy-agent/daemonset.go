@@ -156,7 +156,7 @@ func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRew
 
 			// This amount of logs will be kept for the Tech Preview of
 			// the new expose strategy
-			Args: []string{"--config-path", "etc/envoy/envoy.yaml", "--component-log-level", "upstream:trace,connection:trace,http:trace,router:trace,filter:trace"},
+			Args: []string{"--config-path", "etc/envoy/envoy.yaml"},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "config-volume",
