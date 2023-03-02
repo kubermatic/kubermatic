@@ -72,7 +72,7 @@ func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, s
 
 	if err := reconciling.ReconcileStatefulSets(ctx, []reconciling.NamedStatefulSetReconcilerFactory{
 		prometheusStatefulSet(getRegistry, seed),
-	}, seed.Namespace, client, common.VolumeRevisionLabelsModifierFactory(ctx, client), seedOwner, volumeLabelModifier); err != nil {
+	}, seed.Namespace, client, seedOwner, volumeLabelModifier); err != nil {
 		return fmt.Errorf("failed to reconcile StatefuleSet: %w", err)
 	}
 
