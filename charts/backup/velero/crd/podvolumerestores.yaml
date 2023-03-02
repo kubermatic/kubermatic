@@ -1,4 +1,4 @@
-# This file has been generated with Velero v1.9.0. Do not edit.
+# This file has been generated with Velero v1.10.1. Do not edit.
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -25,6 +25,10 @@ spec:
         - description: Name of the pod containing the volume to be restored
           jsonPath: .spec.pod.name
           name: Pod
+          type: string
+        - description: The type of the uploader to handle data transfer
+          jsonPath: .spec.uploaderType
+          name: Uploader Type
           type: string
         - description: Name of the volume to be restored
           jsonPath: .spec.volume
@@ -63,7 +67,7 @@ spec:
               description: PodVolumeRestoreSpec is the specification for a PodVolumeRestore.
               properties:
                 backupStorageLocation:
-                  description: BackupStorageLocation is the name of the backup storage location where the restic repository is stored.
+                  description: BackupStorageLocation is the name of the backup storage location where the backup repository is stored.
                   type: string
                 pod:
                   description: Pod is a reference to the pod containing the volume to be restored.
@@ -91,10 +95,20 @@ spec:
                       type: string
                   type: object
                 repoIdentifier:
-                  description: RepoIdentifier is the restic repository identifier.
+                  description: RepoIdentifier is the backup repository identifier.
                   type: string
                 snapshotID:
                   description: SnapshotID is the ID of the volume snapshot to be restored.
+                  type: string
+                sourceNamespace:
+                  description: SourceNamespace is the original namespace for namaspace mapping.
+                  type: string
+                uploaderType:
+                  description: UploaderType is the type of the uploader to handle the data transfer.
+                  enum:
+                    - kopia
+                    - restic
+                    - ""
                   type: string
                 volume:
                   description: Volume is the name of the volume within the Pod to be restored.
@@ -104,6 +118,7 @@ spec:
                 - pod
                 - repoIdentifier
                 - snapshotID
+                - sourceNamespace
                 - volume
               type: object
             status:

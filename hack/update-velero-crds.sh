@@ -23,7 +23,7 @@ containerize ./hack/update-velero-crds.sh
 
 velero=velero
 if ! [ -x "$(command -v $velero)" ]; then
-  version=v1.9.0
+  version=v1.10.1
   url="https://github.com/vmware-tanzu/velero/releases/download/$version/velero-$version-linux-amd64.tar.gz"
   velero=/tmp/velero
 
