@@ -83,6 +83,7 @@ type ClusterNetwork struct {
 	ServiceCIDRBlocks []string
 	ProxyMode         string
 	StrictArp         bool
+	NodePortRange     string
 }
 
 type CNIPlugin struct {
