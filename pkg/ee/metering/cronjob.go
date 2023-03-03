@@ -40,10 +40,11 @@ import (
 )
 
 // cronJobReconciler returns the func to create/update the metering report cronjob.
-func cronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, getRegistry registry.ImageRewriter, namespace string) reconciling.NamedCronJobReconcilerFactory {
+func cronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, getRegistry registry.ImageRewriter, namespace string) reconciling.NamedCronJobReconcilerFactory {
 	return func() (string, reconciling.CronJobReconciler) {
 		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			var args []string
+			args = append(args, fmt.Sprintf("--ca-bundle=%s", "/opt/ca-bundle/ca-bundle.pem"))
 			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, namespace))
 			args = append(args, fmt.Sprintf("--last-number-of-days=%d", mrc.Interval))
 			args = append(args, fmt.Sprintf("--output-dir=%s", reportName))
@@ -113,9 +114,28 @@ func cronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 							},
 						},
 					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "ca-bundle",
+							MountPath: "/opt/ca-bundle/",
+							ReadOnly:  true,
+						},
+					},
 				},
 			}
 
+			job.Spec.JobTemplate.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "ca-bundle",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: caBundleName,
+							},
+						},
+					},
+				},
+			}
 			return job, nil
 		}
 	}
