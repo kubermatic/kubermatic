@@ -119,10 +119,13 @@ func SearchFuncInvocationsForPackages(mapper *AWSPermissionFuncMapping, pkgToSea
 		return nil, err
 	}
 
-	// TODO I saw this somewhere, but not sure if we need to handle this as well
-	/* if packages.PrintErrors(pkgs) > 0 { */
-	/* 	t.Fatal("Encountered more Print errors") */
-	/* } */
+	// handle errors like no 'Go files found in pkg' upfront
+	for _, pkg := range pkgs {
+		for _, err := range pkg.Errors {
+			// TODO turn into log statement
+			fmt.Printf("WARN: error loading pkg %q: %q\n", pkg.ID, err.Msg) // we have to use pkg.ID here, as fields like name are not set
+		}
+	}
 
 	for _, pkg := range pkgs {
 		for _, obj := range pkg.TypesInfo.Uses {
