@@ -34,18 +34,31 @@ func NewFlatAWSPolicyCreator() *FlatAWSPolicyCreator {
 	}
 }
 
+type printableAWSPolicyStatement struct {
+	Effect   string   `json:"Effect"`
+	Actions  []string `json:"Action"`
+	Resource string   `json:"Resource"`
+}
+
+type printableAWSPolicyDocument struct {
+	Version    string                         `json:"Version"`
+	Statements []*printableAWSPolicyStatement `json:"Statement"`
+}
+
+// Sorting a printableAWSPolicyDocument sorts its statements by the effect name
+func (p *printableAWSPolicyDocument) Less(i, j int) bool {
+	return p.Statements[i].Effect < p.Statements[j].Effect
+}
+
+func (p *printableAWSPolicyDocument) Len() int {
+	return len(p.Statements)
+}
+
+func (p *printableAWSPolicyDocument) Swap(i, j int) {
+	p.Statements[i], p.Statements[j] = p.Statements[j], p.Statements[i]
+}
+
 func (apd *FlatAWSPolicyCreator) MarshalJSON() ([]byte, error) {
-	type printableAWSPolicyStatement struct {
-		Effect   string   `json:"Effect"`
-		Actions  []string `json:"Action"`
-		Resource string   `json:"Resource"`
-	}
-
-	type printableAWSPolicyDocument struct {
-		Version    string                         `json:"Version"`
-		Statements []*printableAWSPolicyStatement `json:"Statement"`
-	}
-
 	out := &printableAWSPolicyDocument{}
 	out.Version = apd.Version
 
@@ -68,6 +81,8 @@ func (apd *FlatAWSPolicyCreator) MarshalJSON() ([]byte, error) {
 	for _, statement := range out.Statements {
 		sort.Strings(statement.Actions)
 	}
+
+	sort.Sort(out)
 
 	return json.Marshal(out)
 }
