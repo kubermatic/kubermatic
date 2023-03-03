@@ -131,6 +131,12 @@ func SearchFuncInvocationsForPackages(mapper *AWSPermissionFuncMapping, pkgToSea
 		for _, obj := range pkg.TypesInfo.Uses {
 			// filter out all the func types
 			if _, ok := obj.(*types.Func); ok {
+				// some (error).Error() objects do not have a Pkg. Filter these out so .Pkg().Path() does not panic
+				if obj.Pkg() == nil {
+					// fmt.Printf("%s xxxxxx %s xxxxx %s\n", obj, obj.Pkg(), pkg.Fset.Position(obj.Pos()).String())
+					continue
+				}
+
 				// filter out only funcs where package matches
 				if r.Match([]byte(obj.Pkg().Path())) {
 					id := FuncCallID{ModulePath: obj.Pkg().Path(), Funcname: obj.Name()}
