@@ -22,6 +22,11 @@ modules:
           "*":
             actions:
               - "ec2:AuthorizeSecurityGroupIngress"
+      CancelSpotInstanceRequests:
+        permissions:
+          "*":
+            actions:
+              - "ec2:CancelSpotInstanceRequests"
       CreateSecurityGroup:
         permissions:
           "*":
@@ -42,6 +47,26 @@ modules:
           "*":
             actions:
               - "ec2:DeleteTags"
+      DescribeAvailabilityZones:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeAvailabilityZones"
+      DescribeImages:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeImages"
+      DescribeInstances:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeInstances"
+      DescribeInstanceTypes:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeInstanceTypes"
       DescribeInstanceTypeOfferings:
         permissions:
           "*":
@@ -72,6 +97,16 @@ modules:
           "*":
             actions:
               - "ec2:DescribeVpcs"
+      RunInstances:
+        permissions:
+          "*":
+            actions:
+              - "ec2:RunInstances"
+      TerminateInstances:
+        permissions:
+          "*":
+            actions:
+              - "ec2:TerminateInstances"
       NewFromConfig: null
 
   github.com/aws/aws-sdk-go-v2/service/eks:
@@ -160,3 +195,9 @@ modules:
   github.com/aws/aws-sdk-go-v2/service/sts:
     funcs:
       NewFromConfig: null
+
+  github.com/aws/aws-sdk-go-v2/aws:
+    funcs:
+      String: null
+      Int32: null
+      Bool: null
