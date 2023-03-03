@@ -1,0 +1,162 @@
+# mapper
+modules:
+  github.com/aws/aws-sdk-go-v2/config:
+    funcs:
+      LoadDefaultConfig: null
+      WithCredentialsProvider: null
+      WithRegion: null
+      WithRetryMaxAttempts: null
+
+  github.com/aws/aws-sdk-go-v2/credentials:
+    funcs:
+      NewStaticCredentialsProvider: null
+
+  github.com/aws/aws-sdk-go-v2/credentials/stscreds:
+    funcs:
+      NewAssumeRoleProvider: null
+
+  github.com/aws/aws-sdk-go-v2/service/ec2:
+    funcs:
+      AuthorizeSecurityGroupIngress:
+        permissions:
+          "*":
+            actions:
+              - "ec2:AuthorizeSecurityGroupIngress"
+      CreateSecurityGroup:
+        permissions:
+          "*":
+            actions:
+              - "ec2:CreateSecurityGroup"
+      CreateTags:
+        permissions:
+          "*":
+            actions:
+              - "ec2:CreateTags"
+      DeleteSecurityGroup:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DeleteSecurityGroup"
+      DeleteTags:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DeleteTags"
+      DescribeInstanceTypeOfferings:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeInstanceTypeOfferings"
+      DescribeRegions:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeRegions"
+      DescribeRouteTables:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeRouteTables"
+      DescribeSecurityGroups:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeSecurityGroups"
+      DescribeSubnets:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeSubnets"
+      DescribeVpcs:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeVpcs"
+      NewFromConfig: null
+
+  github.com/aws/aws-sdk-go-v2/service/eks:
+    funcs:
+      NewFromConfig: null
+
+  github.com/aws/aws-sdk-go-v2/service/iam:
+    funcs:
+      AddRoleToInstanceProfile:
+        permissions:
+          "*":
+            actions:
+              - "iam:AddRoleToInstanceProfile"
+      CreateInstanceProfile:
+        permissions:
+          "*":
+            actions:
+              - "iam:CreateInstanceProfile"
+      CreateRole:
+        permissions:
+          "*":
+            actions:
+              - "iam:CreateRole"
+      DeleteInstanceProfile:
+        permissions:
+          "*":
+            actions:
+              - "iam:DeleteInstanceProfile"
+      DeleteRole:
+        permissions:
+          "*":
+            actions:
+              - "iam:DeleteRole"
+      DeleteRolePolicy:
+        permissions:
+          "*":
+            actions:
+              - "iam:DeleteRolePolicy"
+      DetachRolePolicy:
+        permissions:
+          "*":
+            actions:
+              - "iam:DetachRolePolicy"
+      GetInstanceProfile:
+        permissions:
+          "*":
+            actions:
+              - "iam:GetInstanceProfile"
+      GetRole:
+        permissions:
+          "*":
+            actions:
+              - "iam:GetRole"
+      ListAttachedRolePolicies:
+        permissions:
+          "*":
+            actions:
+              - "iam:ListAttachedRolePolicies"
+      ListRolePolicies:
+        permissions:
+          "*":
+            actions:
+              - "iam:ListRolePolicies"
+      NewFromConfig: null
+      PutRolePolicy:
+        permissions:
+          "*":
+            actions:
+              - "iam:PutRolePolicy"
+      RemoveRoleFromInstanceProfile:
+        permissions:
+          "*":
+            actions:
+              - "iam:RemoveRoleFromInstanceProfile"
+      TagInstanceProfile:
+        permissions:
+          "*":
+            actions:
+              - "iam:TagInstanceProfile"
+      TagRole:
+        permissions:
+          "*":
+            actions:
+              - "iam:TagRole"
+
+  github.com/aws/aws-sdk-go-v2/service/sts:
+    funcs:
+      NewFromConfig: null
