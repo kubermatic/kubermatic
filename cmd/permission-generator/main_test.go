@@ -27,10 +27,11 @@ func TestAddPolicyStatement(t *testing.T) {
 	fmt.Println(string(b))
 }
 
-func TestSearchFuncInvocationsForPackages(t *testing.T) {
-	pkgs := []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"}
-	filter := "github.com/aws/aws-sdk-go-v2/*"
+var pkgs = []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"}
 
+const filter = "github.com/aws/aws-sdk-go-v2/*"
+
+func TestSearchFuncInvocationsForPackages(t *testing.T) {
 	res, err := SearchFuncInvocationsForPackages(nil, pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
@@ -55,9 +56,6 @@ func TestAWSPermissionFuncMapping(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pkgs := []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"}
-	filter := "github.com/aws/aws-sdk-go-v2/*"
-
 	res, err := SearchFuncInvocationsForPackages(mapper, pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
@@ -78,9 +76,6 @@ func TestGeneratingAWSPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	pkgs := []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"}
-	filter := "github.com/aws/aws-sdk-go-v2/*"
 
 	res, err := SearchFuncInvocationsForPackages(mapper, pkgs, filter)
 	if err != nil {
