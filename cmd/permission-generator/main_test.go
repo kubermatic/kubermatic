@@ -4,16 +4,10 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
-	"go/types"
 	"os"
-	"strings"
 	"testing"
 	"text/tabwriter"
 
-	"golang.org/x/tools/go/packages"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,115 +25,6 @@ func TestAddPolicyStatement(t *testing.T) {
 	}
 
 	fmt.Println(string(b))
-}
-
-func TestAstParsing(t *testing.T) {
-	fpath := "/Users/simonbein/github/simontheleg/kubermatic/pkg/provider/cloud/aws/api.go"
-	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, fpath, nil, parser.ParseComments)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	type result = struct {
-		funcname string
-	}
-	res := []result{}
-
-	// for _, decl := range node.Decls {
-	// 	ast.Inspect(decl, func(n ast.Node) bool {
-	// 		f, ok := n.(*ast.FuncDecl)
-	// 		if ok {
-	// 			res = append(res, result{funcname: f.Name.Name})
-	// 			return true
-	// 		}
-	// 		return false
-	// 	})
-	// }
-
-	getSubNetsF := node.Decls[1]
-
-	ast.Inspect(getSubNetsF, func(node ast.Node) bool {
-		if n, ok := node.(*ast.SelectorExpr); ok {
-			fmt.Println(n.Sel.Name)
-			// ident, ok := n.Fun.(*ast.Ident)
-			// if ok {
-			// 	res = append(res, result{funcname: ident.Name})
-			// }
-		}
-		return true
-	})
-
-	fmt.Println(len(res))
-	// for _, p := range res {
-	// 	fmt.Println(p.funcname)
-	// }
-}
-
-// func TestNewApproach(t *testing.T) {
-// 	fpath := "/Users/simonbein/github/simontheleg/kubermatic/pkg/provider/cloud/aws/api.go"
-// 	fset := token.NewFileSet()
-// 	f, err := parser.ParseFile(fset, fpath, nil, parser.ParseComments)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-
-// 	conf := packages.Config{Importer: importer.Default()}
-// 	pkg, err := conf.Check("k8c.io/kubermatic/v2/pkg/provider/cloud/aws", fset, []*ast.File{f}, nil)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	fmt.Printf("Package  %q\n", pkg.Path())
-// 	fmt.Printf("Name:    %s\n", pkg.Name())
-// 	fmt.Printf("Imports: %s\n", pkg.Imports())
-// 	fmt.Printf("Scope:   %s\n", pkg.Scope())
-// }
-
-func TestNewApproach(t *testing.T) {
-	// fpath := "/Users/simonbein/github/simontheleg/kubermatic/pkg/provider/cloud/aws/api.go"
-	// fset := token.NewFileSet()
-	// f, err := parser.ParseFile(fset, fpath, nil, parser.ParseComments)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-
-	conf := &packages.Config{Mode: packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo}
-	pkgs, err := packages.Load(conf, "k8c.io/kubermatic/v2/pkg/provider/cloud/aws")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if packages.PrintErrors(pkgs) > 0 {
-		// TODO proper error message
-		t.Fatal("Encountered more Print errors")
-	}
-
-	for _, pkg := range pkgs {
-		for _, obj := range pkg.TypesInfo.Uses {
-			// filter out all the func types
-			if _, ok := obj.(*types.Func); ok {
-				// filter out only funcs where package matches
-				if strings.Contains(obj.Pkg().Path(), "github.com/aws/aws-sdk-go-v2") {
-					fmt.Printf("func %s\t%s\t%s\t%s\n", obj.Name(), obj.Pkg().Name(), obj.Pkg().Path(), pkg.Fset.Position(obj.Pos()))
-				}
-			}
-		}
-		// fmt.Println(pkg.TypesInfo)
-		// scope := pkg.Types.Scope()
-
-		// for _, name := range scope.Names() {
-		// 	obj := scope.Lookup(name)
-		// 	fmt.Println(obj)
-		// 	// filter out all the func types
-		// 	// if _, ok := obj.(*types.Func); ok {
-		// 	// 	fmt.Printf(obj.Name()+" %s\n", (pkg.Fset.Position(obj.Pos())))
-		// 	// }
-
-		// }
-		// if obj.Type() == types.{
-		// 	fmt.Println(obj)
-		// }
-	}
-
 }
 
 func TestSearchFuncInvocationsForPackages(t *testing.T) {
