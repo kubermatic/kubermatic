@@ -117,32 +117,32 @@ modules:
     funcs:
       AddRoleToInstanceProfile:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:AddRoleToInstanceProfile"
       CreateInstanceProfile:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:CreateInstanceProfile"
       CreateRole:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:CreateRole"
       DeleteInstanceProfile:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:DeleteInstanceProfile"
       DeleteRole:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:DeleteRole"
       DeleteRolePolicy:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:DeleteRolePolicy"
       DetachRolePolicy:
@@ -152,28 +152,31 @@ modules:
               - "iam:DetachRolePolicy"
       GetInstanceProfile:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/*":
+            actions:
+              - "iam:GetInstanceProfile"
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:GetInstanceProfile"
       GetRole:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:GetRole"
       ListAttachedRolePolicies:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:ListAttachedRolePolicies"
       ListRolePolicies:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:ListRolePolicies"
       NewFromConfig: null
       PutRolePolicy:
         permissions:
-          "*":
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_CLUSTER_NAME-*":
             actions:
               - "iam:PutRolePolicy"
       RemoveRoleFromInstanceProfile:
