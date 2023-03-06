@@ -47,6 +47,7 @@ loki:
       enforce_metric_name: false
       reject_old_samples: true
       reject_old_samples_max_age: 144h
+      retention_period: 720h
     schema_config:
       configs:
       - from: 2018-04-15
@@ -83,6 +84,12 @@ loki:
     compactor:
       working_directory: /data/loki/boltdb-shipper-compactor
       shared_store: filesystem
+      compaction_interval: 10m
+      retention_enabled: true
+      retention_delete_delay: 10m
+      retention_delete_worker_count: 150
+      max_compaction_parallelism: 10
+
 
   ## The app name of loki clients
   client: {}
