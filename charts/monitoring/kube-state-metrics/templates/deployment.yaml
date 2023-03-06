@@ -56,17 +56,6 @@ spec:
 
       - name: addon-resizer
         image: {{ .Values.kubeStateMetrics.resizer.image.repository }}:{{ .Values.kubeStateMetrics.resizer.image.tag }}
-        resources:
-{{ toYaml .Values.kubeStateMetrics.resizer.resources | indent 10 }}
-        env:
-        - name: MY_POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: MY_POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         command:
           - /pod_nanny
           - --container=kube-state-metrics
@@ -76,6 +65,25 @@ spec:
           - --extra-memory=30Mi
           - --threshold=5
           - --deployment=kube-state-metrics
+          - --pod=$(MY_POD_NAME)
+          - --namespace=$(MY_POD_NAMESPACE)
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        livenessProbe:
+          httpGet:
+            path: /health-check
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+{{ toYaml .Values.kubeStateMetrics.resizer.resources | indent 10 }}
       nodeSelector:
 {{ toYaml .Values.kubeStateMetrics.nodeSelector | indent 8 }}
       affinity:
