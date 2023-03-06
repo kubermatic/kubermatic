@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"path"
 
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
@@ -63,10 +64,10 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 var _ provider.ReconcilingCloudProvider = &VSphere{}
 
 func (v *VSphere) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return v.reconcileCluster(ctx, cluster, update, true)
+	return v.reconcileCluster(ctx, cluster, update)
 }
 
-func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool) (*kubermaticv1.Cluster, error) {
+func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	logger := v.log.With("cluster", cluster.Name)
 
 	username, password, err := getCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
@@ -93,7 +94,11 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	defer session.Logout(ctx)
 
 	rootPath := getVMRootPath(v.dc)
-	if force || cluster.Spec.Cloud.VSphere.Folder == "" {
+
+	clusterFolder := path.Join(rootPath, cluster.Name)
+
+	// Only reconcile folders that are KKP managed at the clusterFolder location.
+	if cluster.Spec.Cloud.VSphere.Folder == "" || cluster.Spec.Cloud.VSphere.Folder == clusterFolder {
 		logger.Infow("reconciling vsphere folder", "folder", cluster.Spec.Cloud.VSphere.Folder)
 		session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
@@ -101,7 +106,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		}
 		defer session.Logout(ctx)
 
-		cluster, err = reconcileFolder(ctx, session, restSession, rootPath, cluster, update)
+		cluster, err = reconcileFolder(ctx, session, clusterFolder, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster folder: %w", err)
 		}
@@ -112,7 +117,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 // InitializeCloudProvider initializes the vsphere cloud provider by setting up vm folders for the cluster.
 func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	return v.reconcileCluster(ctx, cluster, update, false)
+	return v.reconcileCluster(ctx, cluster, update)
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec.
@@ -220,14 +225,16 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	}
 	defer restSession.Logout(ctx)
 
-	if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
-		return nil, err
-	}
-	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
-	})
-	if err != nil {
-		return nil, err
+	if kuberneteshelper.HasFinalizer(cluster, folderCleanupFinalizer) {
+		if err := deleteVMFolder(ctx, session, cluster.Spec.Cloud.VSphere.Folder); err != nil {
+			return nil, err
+		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cluster.Spec.Cloud.VSphere.Tags != nil {

@@ -33,14 +33,12 @@ type Folder struct {
 	Path string
 }
 
-func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, rootPath string,
+// reconcileFolder reconciles a vSphere folder.
+func reconcileFolder(ctx context.Context, s *Session, folderPath string,
 	cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	// If the user did not specify a folder, we create a own folder for this cluster to improve
-	// the VM management in vCenter
-	clusterFolder := path.Join(rootPath, cluster.Name)
-	err := createVMFolder(ctx, s, clusterFolder)
+	err := createVMFolder(ctx, s, folderPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create the VM folder %q: %w", clusterFolder, err)
+		return nil, fmt.Errorf("failed to create the VM folder %q: %w", folderPath, err)
 	}
 
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
@@ -48,7 +46,7 @@ func reconcileFolder(ctx context.Context, s *Session, restSession *RESTSession, 
 			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
 		}
 
-		cluster.Spec.Cloud.VSphere.Folder = clusterFolder
+		cluster.Spec.Cloud.VSphere.Folder = folderPath
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", folderCleanupFinalizer, err)
