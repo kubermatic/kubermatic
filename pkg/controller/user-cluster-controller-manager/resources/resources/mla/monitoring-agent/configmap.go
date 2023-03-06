@@ -317,8 +317,7 @@ metrics:
 {{- with .CustomScrapeConfigs }}
     #######################################################################
     # custom scraping configurations
-
-    {{ . | indent 4 }}
+{{ . | indent 4 }}
 {{- end }}
 
 `
