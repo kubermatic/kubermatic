@@ -90,21 +90,7 @@ func DaemonSetCreator(overrides *corev1.ResourceRequirements, registryWithOverwr
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
 			}
-			ds.Spec.Template.Spec.InitContainers = []corev1.Container{
-				{
-					Name:            "init-inotify",
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryDocker), initImageName, initImageTag),
-					ImagePullPolicy: corev1.PullAlways,
-					Command: []string{
-						"sh",
-						"-c",
-						fmt.Sprintf("sysctl -w fs.inotify.max_user_instances=%d", inotifyMaxUserInstances),
-					},
-					SecurityContext: &corev1.SecurityContext{
-						Privileged: pointer.BoolPtr(true),
-					},
-				},
-			}
+			ds.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            containerName,
