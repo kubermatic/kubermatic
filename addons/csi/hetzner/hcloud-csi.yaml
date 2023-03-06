@@ -13,11 +13,11 @@
 # limitations under the License.
 
 # This is based on
-# https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.6.0/deploy/kubernetes/hcloud-csi.yml
-# and is applicable for k8s 1.20+ clusters.
+# https://raw.githubusercontent.com/hetznercloud/csi-driver/v2.2.0/deploy/kubernetes/hcloud-csi.yml
+# and is applicable for k8s 1.23+ clusters.
 # modifications:
 # - seccomp profile in DaemonSet hcloud-csi-node
-# - seccomp profile in StatefulSet hcloud-csi-controller
+# - seccomp profile in Deployment hcloud-csi-controller
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
@@ -35,6 +35,7 @@ metadata:
   name: csi.hetzner.cloud
 spec:
   attachRequired: true
+  fsGroupPolicy: File
   podInfoOnMount: true
   volumeLifecycleModes:
     - Persistent
@@ -47,63 +48,144 @@ metadata:
   name: hcloud-csi
   namespace: kube-system
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: hcloud-csi
 rules:
-  # attacher
-  - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update", "patch"]
-  - apiGroups: [""]
-    resources: ["nodes"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["csi.storage.k8s.io"]
-    resources: ["csinodeinfos"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["csinodes"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update", "patch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["volumeattachments/status"]
-    verbs: ["patch"]
-  # provisioner
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "create", "delete", "patch"]
-  - apiGroups: [""]
-    resources: ["persistentvolumeclaims", "persistentvolumeclaims/status"]
-    verbs: ["get", "list", "watch", "update", "patch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["list", "watch", "create", "update", "patch"]
-  - apiGroups: ["snapshot.storage.k8s.io"]
-    resources: ["volumesnapshots"]
-    verbs: ["get", "list"]
-  - apiGroups: ["snapshot.storage.k8s.io"]
-    resources: ["volumesnapshotcontents"]
-    verbs: ["get", "list"]
-  # resizer
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch"]
-  # node
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - csi.storage.k8s.io
+    resources:
+      - csinodeinfos
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csinodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattachments
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattachments/status
+    verbs:
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+      - persistentvolumeclaims/status
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - storageclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshots
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotcontents
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: hcloud-csi
 subjects:
@@ -115,8 +197,8 @@ roleRef:
   name: hcloud-csi
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: StatefulSet
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: hcloud-csi-controller
   namespace: kube-system
@@ -124,7 +206,6 @@ spec:
   selector:
     matchLabels:
       app: hcloud-csi-controller
-  serviceName: hcloud-csi-controller
   replicas: 1
   template:
     metadata:
@@ -137,41 +218,29 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.2.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.1.0" }}'
+          args:
+            - --default-fstype=ext4
           volumeMounts:
             - name: socket-dir
               mountPath: /run/csi
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
         - name: csi-resizer
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.2.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.7.0" }}'
           volumeMounts:
             - name: socket-dir
               mountPath: /run/csi
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
         - name: csi-provisioner
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v2.2.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.4.0" }}'
           args:
             - --feature-gates=Topology=true
             - --default-fstype=ext4
           volumeMounts:
             - name: socket-dir
               mountPath: /run/csi
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
         - name: hcloud-csi-driver
-          image: '{{ Image "hetznercloud/hcloud-csi-driver:1.6.0" }}'
-          imagePullPolicy: Always
+          image: '{{ Image "hetznercloud/hcloud-csi-driver:2.2.0" }}'
+          command:
+            - /bin/hcloud-csi-driver-controller
           env:
             - name: CSI_ENDPOINT
               value: unix:///run/csi/socket
@@ -189,9 +258,6 @@ spec:
                 secretKeyRef:
                   name: hcloud-csi
                   key: token
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /run/csi
           ports:
             - containerPort: 9189
               name: metrics
@@ -206,14 +272,11 @@ spec:
             initialDelaySeconds: 10
             timeoutSeconds: 3
             periodSeconds: 2
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /run/csi
         - name: liveness-probe
-          imagePullPolicy: Always
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.3.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}'
           volumeMounts:
             - mountPath: /run/csi
               name: socket-dir
@@ -221,8 +284,8 @@ spec:
         - name: socket-dir
           emptyDir: {}
 ---
-kind: DaemonSet
 apiVersion: apps/v1
+kind: DaemonSet
 metadata:
   name: hcloud-csi-node
   namespace: kube-system
@@ -253,31 +316,23 @@ spec:
                     operator: NotIn
                     values:
                       - "true"
-      serviceAccount: hcloud-csi
       securityContext:
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: csi-node-driver-registrar
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.2.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0" }}'
           args:
             - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.hetzner.cloud/socket
-          env:
-            - name: KUBE_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
           volumeMounts:
             - name: plugin-dir
               mountPath: /run/csi
             - name: registration-dir
               mountPath: /registration
-          securityContext:
-            privileged: true
         - name: hcloud-csi-driver
-          image: '{{ Image "hetznercloud/hcloud-csi-driver:1.6.0" }}'
-          imagePullPolicy: Always
+          image: '{{ Image "hetznercloud/hcloud-csi-driver:2.2.0" }}'
+          command:
+            - /bin/hcloud-csi-driver-node
           env:
             - name: CSI_ENDPOINT
               value: unix:///run/csi/socket
@@ -285,24 +340,6 @@ spec:
               value: 0.0.0.0:9189
             - name: ENABLE_METRICS
               value: "true"
-            - name: HCLOUD_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: hcloud-csi
-                  key: token
-            - name: KUBE_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
-          volumeMounts:
-            - name: kubelet-dir
-              mountPath: /var/lib/kubelet
-              mountPropagation: "Bidirectional"
-            - name: plugin-dir
-              mountPath: /run/csi
-            - name: device-dir
-              mountPath: /dev
           securityContext:
             privileged: true
           ports:
@@ -317,11 +354,18 @@ spec:
               path: /healthz
               port: healthz
             initialDelaySeconds: 10
-            timeoutSeconds: 3
             periodSeconds: 2
+            timeoutSeconds: 3
+          volumeMounts:
+            - mountPath: /var/lib/kubelet
+              mountPropagation: Bidirectional
+              name: kubelet-dir
+            - mountPath: /run/csi
+              name: plugin-dir
+            - mountPath: /dev
+              name: device-dir
         - name: liveness-probe
-          imagePullPolicy: Always
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.3.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}'
           volumeMounts:
             - mountPath: /run/csi
               name: plugin-dir
