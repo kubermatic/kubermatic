@@ -16,7 +16,7 @@ FROM quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-1
 LABEL maintainer="support@kubermatic.com"
 
 # envtest binaries are not available for all k8s patch releases, so beware when updating
-ENV KUBE_VERSION=1.23.5
+ENV KUBE_VERSION=1.26.1
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \

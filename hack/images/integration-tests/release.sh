@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/integration-tests
-VERSION=7
+VERSION=8
 BUILD_SUFFIX=0
 
 docker build --no-cache --pull -t "$REPOSITORY:$VERSION-$BUILD_SUFFIX" .
