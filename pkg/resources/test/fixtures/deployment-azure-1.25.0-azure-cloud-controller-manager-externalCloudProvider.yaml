@@ -32,7 +32,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"cloud-controller-manager","args":["--allocate-node-cidrs=false","--configure-cloud-routes=false","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=4","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=azure","--leader-elect=true","--route-reconciliation-period=10s","--port=10267","--controllers=*,-cloud-node"]}'
+        - '{"command":"cloud-controller-manager","args":["--allocate-node-cidrs=false","--configure-cloud-routes=false","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=4","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=azure","--leader-elect=true","--route-reconciliation-period=10s","--secure-port=10258","--controllers=*,-cloud-node"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -43,7 +43,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /healthz
-            port: 10267
+            port: 10258
             scheme: HTTP
           initialDelaySeconds: 20
           periodSeconds: 10
