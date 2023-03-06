@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-8
+        - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-1
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -70,7 +70,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-8
+        - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-1
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -111,7 +111,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-8
+        - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-1
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -152,7 +152,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.19-node-18-kind-0.17-8
+        - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-1
           env:
             - name: KUBERMATIC_EDITION
               value: ee
