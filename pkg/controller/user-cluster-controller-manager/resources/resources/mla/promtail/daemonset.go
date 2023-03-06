@@ -35,8 +35,6 @@ import (
 const (
 	imageName     = "grafana/promtail"
 	imageTag      = "2.5.0"
-	initImageName = "busybox"
-	initImageTag  = "1.34"
 	appName       = "mla-promtail"
 	containerName = "promtail"
 
@@ -50,8 +48,6 @@ const (
 	podVolumeName            = "pods"
 	podVolumeMountPath       = "/var/log/pods"
 	metricsPortName          = "http-metrics"
-
-	inotifyMaxUserInstances = 256
 )
 
 var (
