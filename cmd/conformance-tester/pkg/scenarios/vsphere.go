@@ -44,7 +44,7 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 
 	if s.customFolder {

@@ -18,8 +18,10 @@ package scenarios
 
 import (
 	"context"
+	"errors"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
@@ -39,6 +41,18 @@ type vmwareCloudDirectorScenario struct {
 	baseScenario
 }
 
+func (s *vmwareCloudDirectorScenario) IsValid() error {
+	if err := s.baseScenario.IsValid(); err != nil {
+		return err
+	}
+
+	if s.operatingSystem != providerconfig.OperatingSystemUbuntu {
+		return errors.New("provider only supports Flatcar")
+	}
+
+	return nil
+}
+
 func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
@@ -55,7 +69,7 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 				},
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 
 	return spec

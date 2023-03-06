@@ -18,11 +18,15 @@ package scenarios
 
 import (
 	"context"
+	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -31,6 +35,24 @@ const (
 
 type digitaloceanScenario struct {
 	baseScenario
+}
+
+func (s *digitaloceanScenario) IsValid() error {
+	if err := s.baseScenario.IsValid(); err != nil {
+		return err
+	}
+
+	supported := sets.New(
+		string(providerconfig.OperatingSystemCentOS),
+		string(providerconfig.OperatingSystemRockyLinux),
+		string(providerconfig.OperatingSystemUbuntu),
+	)
+
+	if !supported.Has(string(s.operatingSystem)) {
+		return fmt.Errorf("provider only supports %v", sets.List(supported))
+	}
+
+	return nil
 }
 
 func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -42,7 +64,7 @@ func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.Clus
 				Token: secrets.Digitalocean.Token,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 

@@ -19,8 +19,7 @@ package scenarios
 import (
 	"context"
 	"encoding/base64"
-
-	"go.uber.org/zap"
+	"errors"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -33,17 +32,16 @@ type googleScenario struct {
 	baseScenario
 }
 
-func (s *googleScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bool {
-	if !s.baseScenario.IsValid(opts, log) {
-		return false
+func (s *googleScenario) IsValid() error {
+	if err := s.baseScenario.IsValid(); err != nil {
+		return err
 	}
 
 	if s.operatingSystem != providerconfig.OperatingSystemUbuntu {
-		s.Log(log).Debug("Skipping because provider only supports Ubuntu.")
-		return false
+		return errors.New("provider only supports Ubuntu")
 	}
 
-	return true
+	return nil
 }
 
 func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
@@ -57,7 +55,7 @@ func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 				Subnetwork:     secrets.GCP.Subnetwork,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 

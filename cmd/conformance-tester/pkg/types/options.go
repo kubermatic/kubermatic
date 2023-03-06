@@ -63,6 +63,11 @@ type Options struct {
 	Tests                sets.Set[string]
 	ContainerRuntimes    sets.Set[string]
 
+	// The tester can export the result status for all executed scenarios
+	// into a JSON file and then re-read that to retry failed runs.
+	ResultsFile          string
+	RetryFailedScenarios bool
+
 	// additional settings identical for all scenarios
 
 	OperatingSystemManagerEnabled bool
@@ -162,6 +167,8 @@ func (o *Options) AddFlags() {
 	flag.BoolVar(&o.KonnectivityEnabled, "enable-konnectivity", true, "When set, enables Konnectivity (proxy service for control plane communication) in the user cluster. When set to false, OpenVPN is used")
 	flag.BoolVar(&o.TestClusterUpdate, "update-cluster", false, "When set, will first run the selected tests, then update the cluster and nodes to their next minor release and then run the same tests again")
 	flag.StringVar(&o.PushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
+	flag.StringVar(&o.ResultsFile, "results-file", "", "path to a JSON file where the test result will be written to / read from (when also using --retry)")
+	flag.BoolVar(&o.RetryFailedScenarios, "retry", false, "when using --results-file, will filter the given scenarios to only run those that previously failed")
 	o.Secrets.AddFlags()
 }
 

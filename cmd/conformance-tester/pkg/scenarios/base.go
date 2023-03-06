@@ -41,24 +41,21 @@ type Scenario interface {
 	CloudProvider() kubermaticv1.ProviderType
 	OperatingSystem() providerconfig.OperatingSystem
 	ContainerRuntime() string
-	DualstackEnabled() bool
-	Version() semver.Semver
+	ClusterVersion() semver.Semver
 	Datacenter() *kubermaticv1.Datacenter
 	Name() string
 	Log(log *zap.SugaredLogger) *zap.SugaredLogger
 	NamedLog(log *zap.SugaredLogger) *zap.SugaredLogger
-	IsValid(opts *types.Options, log *zap.SugaredLogger) bool
+	IsValid() error
 
 	Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error)
-
-	SetDualstackEnabled(bool)
 }
 
 type baseScenario struct {
 	cloudProvider    kubermaticv1.ProviderType
 	operatingSystem  providerconfig.OperatingSystem
-	version          semver.Semver
+	clusterVersion   semver.Semver
 	containerRuntime string
 	dualstackEnabled bool
 	datacenter       *kubermaticv1.Datacenter
@@ -72,20 +69,12 @@ func (s *baseScenario) OperatingSystem() providerconfig.OperatingSystem {
 	return s.operatingSystem
 }
 
-func (s *baseScenario) Version() semver.Semver {
-	return s.version
+func (s *baseScenario) ClusterVersion() semver.Semver {
+	return s.clusterVersion
 }
 
 func (s *baseScenario) ContainerRuntime() string {
 	return s.containerRuntime
-}
-
-func (s *baseScenario) DualstackEnabled() bool {
-	return s.dualstackEnabled
-}
-
-func (s *baseScenario) SetDualstackEnabled(enabled bool) {
-	s.dualstackEnabled = enabled
 }
 
 func (s *baseScenario) Datacenter() *kubermaticv1.Datacenter {
@@ -96,7 +85,7 @@ func (s *baseScenario) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
 	return log.With(
 		"provider", s.cloudProvider,
 		"os", s.operatingSystem,
-		"version", s.version.String(),
+		"version", s.clusterVersion.String(),
 		"cri", s.containerRuntime,
 	)
 }
@@ -106,11 +95,11 @@ func (s *baseScenario) NamedLog(log *zap.SugaredLogger) *zap.SugaredLogger {
 }
 
 func (s *baseScenario) Name() string {
-	return fmt.Sprintf("%s-%s-%s-%s", s.cloudProvider, s.operatingSystem, s.containerRuntime, s.version.String())
+	return fmt.Sprintf("%s-%s-%s-%s", s.cloudProvider, s.operatingSystem, s.containerRuntime, s.clusterVersion.String())
 }
 
-func (s *baseScenario) IsValid(opts *types.Options, log *zap.SugaredLogger) bool {
-	return true
+func (s *baseScenario) IsValid() error {
+	return nil
 }
 
 func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, replicas int, cloudProviderSpec interface{}, sshPubKeys []string) (clusterv1alpha1.MachineDeployment, error) {
@@ -158,7 +147,7 @@ func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, re
 				},
 				Spec: clusterv1alpha1.MachineSpec{
 					Versions: clusterv1alpha1.MachineVersionInfo{
-						Kubelet: s.version.String(),
+						Kubelet: s.clusterVersion.String(),
 					},
 					ProviderSpec: *providerSpec,
 				},

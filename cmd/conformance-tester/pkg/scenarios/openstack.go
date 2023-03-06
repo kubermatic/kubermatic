@@ -51,7 +51,7 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 				FloatingIPPool: openStackFloatingIPPool,
 			},
 		},
-		Version: s.version,
+		Version: s.clusterVersion,
 	}
 }
 
