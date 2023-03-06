@@ -47,10 +47,8 @@ kubectl --namespace "$NAMESPACE" get secret admin-kubeconfig --output json |
     > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
 echo "Using kubeconfig $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE"
 
-SEED_SERVICEACCOUNT_TOKEN="$(kubectl --namespace "$NAMESPACE" get secret -o json |
-  jq -r '.items[]|select(.metadata.annotations["kubernetes.io/service-account.name"] == "kubermatic-usercluster-controller-manager")|.data.token' |
-  base64 -d)"
 SEED_KUBECONFIG=$(mktemp)
+SEED_SERVICEACCOUNT_TOKEN="$(kubectl --namespace "$NAMESPACE" create token kubermatic-usercluster-controller-manager --duration=8h)"
 kubectl config view --flatten --minify -ojson |
   jq --arg token "$SEED_SERVICEACCOUNT_TOKEN" 'del(.users[0].user)|.users[0].user.token = $token' > $SEED_KUBECONFIG
 
