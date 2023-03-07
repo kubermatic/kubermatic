@@ -113,6 +113,7 @@ func TestHandle(t *testing.T) {
 		features    features.FeatureGate
 		cluster     kubermaticv1.Cluster
 		oldCluster  *kubermaticv1.Cluster
+		datacenter  *kubermaticv1.Datacenter
 		wantAllowed bool
 	}{
 		{
@@ -1366,61 +1367,6 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
-			name: "Allow upgrade to Canal v3.22 necessary for k8s >= v1.23",
-			op:   admissionv1.Update,
-			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				CNIPlugin: &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.22",
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32000",
-					},
-				},
-				Version: test.LatestKubernetesVersionForRelease("1.23", &config),
-			}.Build(),
-			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				CNIPlugin: &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.20",
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32000",
-					},
-				},
-				Version: semver.NewSemverOrDie("1.22.12"),
-			}.BuildPtr(),
-			wantAllowed: true,
-		},
-		{
 			name: "Reject remove CNIPlugin settings",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
@@ -1912,19 +1858,150 @@ func TestHandle(t *testing.T) {
 			}.BuildPtr(),
 			wantAllowed: true,
 		},
+		{
+			name: "Reject Kubernetes version update for vSphere >= 1.25 with in-tree provider",
+			op:   admissionv1.Update,
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					VSphere: &kubermaticv1.DatacenterSpecVSphere{},
+				}},
+			cluster: rawClusterGen{
+				Name:              "foo",
+				Namespace:         "kubermatic",
+				CloudProviderName: string(kubermaticv1.VSphereCloudProvider),
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.25.6"),
+			}.Build(),
+			oldCluster: rawClusterGen{
+				Name:              "foo",
+				Namespace:         "kubermatic",
+				CloudProviderName: string(kubermaticv1.VSphereCloudProvider),
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.24.9"),
+			}.BuildPtr(),
+			wantAllowed: false,
+		},
+		{
+			name: "Allow Kubernetes version update for vSphere >= 1.25 with out-of-tree provider",
+			op:   admissionv1.Update,
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					VSphere: &kubermaticv1.DatacenterSpecVSphere{},
+				}},
+			cluster: rawClusterGen{
+				Name:                  "foo",
+				Namespace:             "kubermatic",
+				CloudProviderName:     string(kubermaticv1.VSphereCloudProvider),
+				ExternalCloudProvider: true,
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.25.6"),
+			}.Build(),
+			oldCluster: rawClusterGen{
+				Name:              "foo",
+				Namespace:         "kubermatic",
+				CloudProviderName: string(kubermaticv1.VSphereCloudProvider),
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project2.Name,
+				},
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPVSProxyMode,
+					NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCanal,
+					Version: "v3.19",
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32000",
+					},
+				},
+				Version: semver.NewSemverOrDie("1.24.9"),
+			}.BuildPtr(),
+			wantAllowed: true,
+		},
 	}
-
-	seedClient := ctrlruntimefakeclient.
-		NewClientBuilder().
-		WithScheme(testScheme).
-		WithObjects(&seed, &project1, &project2).
-		Build()
-
-	seedGetter := test.NewSeedGetter(&seed)
-	configGetter := test.NewConfigGetter(&config)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			testSeed := seed.DeepCopy()
+
+			if tt.datacenter != nil {
+				testSeed.Spec.Datacenters = map[string]kubermaticv1.Datacenter{
+					datacenterName: *tt.datacenter,
+				}
+			}
+
+			seedClient := ctrlruntimefakeclient.
+				NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(testSeed, &project1, &project2).
+				Build()
+
+			seedGetter := test.NewSeedGetter(testSeed)
+			configGetter := test.NewConfigGetter(&config)
+
 			clusterValidator := validator{
 				features:                  tt.features,
 				client:                    seedClient,
@@ -2018,6 +2095,15 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 
 	if r.CloudProviderName != "" {
 		c.Spec.Cloud.ProviderName = r.CloudProviderName
+		c.Spec.Cloud.Hetzner = nil
+
+		switch r.CloudProviderName {
+		case string(kubermaticv1.VSphereCloudProvider):
+			c.Spec.Cloud.VSphere = &kubermaticv1.VSphereCloudSpec{
+				Username: "fake",
+				Password: "fake",
+			}
+		}
 	}
 
 	return c

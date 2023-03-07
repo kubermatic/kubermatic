@@ -65,7 +65,7 @@ func TestValidateClusterSpec(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			err := ValidateClusterSpec(test.spec, dc, features.FeatureGate{}, version.New([]*version.Version{{
 				Version: semverlib.MustParse("1.2.3"),
-			}}, nil, nil), nil).ToAggregate()
+			}}, nil, nil), nil, nil).ToAggregate()
 
 			if (err == nil) != test.valid {
 				t.Errorf("Extected err to be %v, got %v", test.valid, err)
@@ -1021,6 +1021,191 @@ func TestValidateEncryptionConfiguration(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			err := validateEncryptionConfiguration(test.clusterSpec, field.NewPath("spec", "encryptionConfiguration"))
 			assert.Equal(t, test.expectErr, err)
+		})
+	}
+}
+
+func TestValidateVersion(t *testing.T) {
+	tests := []struct {
+		name           string
+		spec           *kubermaticv1.ClusterSpec
+		versionManager *version.Manager
+		currentVersion *semver.Semver
+		valid          bool
+	}{
+		{
+			name:  "empty spec should not cause a panic",
+			valid: false,
+			spec:  &kubermaticv1.ClusterSpec{},
+		},
+		{
+			name:  "version supported",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.2.3"),
+			},
+			versionManager: version.New([]*version.Version{{
+				Version: semverlib.MustParse("1.2.3"),
+			}}, nil, nil),
+		},
+		{
+			name:  "version not supported",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.2.4"),
+			},
+			versionManager: version.New([]*version.Version{{
+				Version: semverlib.MustParse("1.2.3"),
+			}}, nil, nil),
+		},
+		{
+			name:           "version update supported",
+			valid:          true,
+			currentVersion: semver.NewSemverOrDie("1.2.3"),
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.2.4"),
+			},
+			versionManager: version.New(
+				[]*version.Version{
+					{
+						Version: semverlib.MustParse("1.2.3"),
+					},
+					{
+						Version: semverlib.MustParse("1.2.4"),
+					},
+				},
+				[]*version.Update{{
+					From: "1.2.*",
+					To:   "1.2.*",
+				}}, nil),
+		},
+		{
+			name:           "version update not supported",
+			valid:          false,
+			currentVersion: semver.NewSemverOrDie("1.2.2"),
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.2.4"),
+			},
+			versionManager: version.New(
+				[]*version.Version{
+					{
+						Version: semverlib.MustParse("1.2.2"),
+					},
+					{
+						Version: semverlib.MustParse("1.2.3"),
+					},
+					{
+						Version: semverlib.MustParse("1.2.4"),
+					},
+				},
+				[]*version.Update{{
+					From: "1.2.*",
+					To:   "1.2.3",
+				}}, nil),
+		},
+		{
+			name:  "cloud provider incompatibility version supported",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.2.0"),
+				Cloud: kubermaticv1.CloudSpec{
+					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+				},
+			},
+			versionManager: version.New(
+				[]*version.Version{
+					{
+						Version: semverlib.MustParse("1.2.0"),
+					},
+					{
+						Version: semverlib.MustParse("1.3.0"),
+					},
+				}, nil, []*version.ProviderIncompatibility{
+					{
+						Provider:  kubermaticv1.OpenstackCloudProvider,
+						Condition: kubermaticv1.InTreeCloudProviderCondition,
+						Operation: kubermaticv1.CreateOperation,
+						Version:   ">= 1.3.0",
+					},
+				},
+			),
+		},
+		{
+			name:  "cloud provider incompatibility version not supported",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.3.0"),
+				Cloud: kubermaticv1.CloudSpec{
+					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+				},
+			},
+			versionManager: version.New(
+				[]*version.Version{
+					{
+						Version: semverlib.MustParse("1.2.0"),
+					},
+					{
+						Version: semverlib.MustParse("1.3.0"),
+					},
+				}, nil,
+				[]*version.ProviderIncompatibility{
+					{
+						Provider:  kubermaticv1.OpenstackCloudProvider,
+						Condition: kubermaticv1.InTreeCloudProviderCondition,
+						Operation: kubermaticv1.CreateOperation,
+						Version:   ">= 1.3.0",
+					},
+				},
+			),
+		},
+		{
+			name:           "cloud provider incompatibility version upgrade not supported",
+			valid:          false,
+			currentVersion: semver.NewSemverOrDie("1.2.0"),
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.3.0"),
+				Cloud: kubermaticv1.CloudSpec{
+					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+				},
+			},
+			versionManager: version.New(
+				[]*version.Version{
+					{
+						Version: semverlib.MustParse("1.2.0"),
+					},
+					{
+						Version: semverlib.MustParse("1.3.0"),
+					},
+				},
+				[]*version.Update{
+					{
+						From: "1.2.*",
+						To:   "1.2.*",
+					},
+					{
+						From: "1.2.*",
+						To:   "1.3.*",
+					},
+				},
+				[]*version.ProviderIncompatibility{
+					{
+						Provider:  kubermaticv1.OpenstackCloudProvider,
+						Condition: kubermaticv1.InTreeCloudProviderCondition,
+						Operation: kubermaticv1.UpdateOperation,
+						Version:   ">= 1.3.0",
+					},
+				},
+			),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := ValidateVersion(test.spec, test.versionManager, test.currentVersion, nil)
+
+			if (err == nil) != test.valid {
+				t.Errorf("Extected err to be %v, got %v", test.valid, err)
+			}
 		})
 	}
 }

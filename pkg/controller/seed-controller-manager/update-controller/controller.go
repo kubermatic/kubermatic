@@ -490,13 +490,7 @@ func hasOwnerRefToAny(obj ctrlruntimeclient.Object, ownerKind string, ownerNames
 }
 
 func getNextApiServerVersion(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, cluster *kubermaticv1.Cluster) (*semver.Semver, error) {
-	var updateConditions []kubermaticv1.ConditionType
-	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-		updateConditions = append(updateConditions, kubermaticv1.ExternalCloudProviderCondition)
-	} else {
-		updateConditions = append(updateConditions, kubermaticv1.InTreeCloudProviderCondition)
-	}
-
+	updateConditions := cluster.Spec.GetVersionConditions()
 	updateManager := version.NewFromConfiguration(config)
 	currentVersion := cluster.Status.Versions.Apiserver.Semver()
 	targetVersion := cluster.Spec.Version.Semver()
