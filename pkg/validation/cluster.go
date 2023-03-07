@@ -81,41 +81,15 @@ const (
 // routine, parentFieldPath can be nil.
 //
 //gocyclo:ignore
-func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versionManager *version.Manager, currentVersion *semver.Semver, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.HumanReadableName == "" {
 		allErrs = append(allErrs, field.Required(parentFieldPath.Child("humanReadableName"), "no name specified"))
 	}
 
-	if spec.Version.Semver() == nil || spec.Version.String() == "" {
-		allErrs = append(allErrs, field.Required(parentFieldPath.Child("version"), "version is required but was not specified"))
-	} else {
-		var (
-			validVersions []string
-			versionValid  bool
-		)
-
-		versions, err := versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(spec.Cloud.ProviderName))
-		if err != nil {
-			allErrs = append(allErrs, field.InternalError(parentFieldPath.Child("version"), fmt.Errorf("failed to get available versions: %w", err)))
-		}
-
-		for _, availableVersion := range versions {
-			validVersions = append(validVersions, availableVersion.Version.String())
-			if spec.Version.Semver().Equal(availableVersion.Version) {
-				versionValid = true
-				break
-			}
-		}
-
-		if !versionValid {
-			allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("version"), spec.Version.String(), validVersions))
-		}
-
-		if err := validatePodSecurityPolicyAdmissionPluginForVersion(spec); err != nil {
-			allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("admissionPlugins"), err.Error()))
-		}
+	if err := ValidateVersion(spec, versionManager, currentVersion, parentFieldPath.Child("version")); err != nil {
+		allErrs = append(allErrs, err)
 	}
 
 	// Validate if container runtime is valid for this cluster (in particular this checks for docker support).
@@ -197,7 +171,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, versionManager *version.Manager, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if errs := ValidateClusterSpec(spec, dc, enabledFeatures, versionManager, parentFieldPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(spec, dc, enabledFeatures, versionManager, nil, parentFieldPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -224,7 +198,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	allErrs := field.ErrorList{}
 
 	// perform general basic checks on the new cluster spec
-	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, versionManager, specPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, versionManager, &oldCluster.Spec.Version, specPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -312,6 +286,52 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	return allErrs
+}
+
+func ValidateVersion(spec *kubermaticv1.ClusterSpec, versionManager *version.Manager, currentVersion *semver.Semver, fldPath *field.Path) *field.Error {
+	if spec.Version.Semver() == nil || spec.Version.String() == "" {
+		return field.Required(fldPath, "version is required but was not specified")
+	}
+
+	var (
+		validVersions []string
+		versionValid  bool
+		versions      []*version.Version
+		err           error
+	)
+
+	conditions := spec.GetVersionConditions()
+
+	// if a current version is passed, we are doing a version upgrade
+	if currentVersion != nil && !spec.Version.Equal(currentVersion) {
+		versions, err = versionManager.GetPossibleUpdates(currentVersion.String(), kubermaticv1.ProviderType(spec.Cloud.ProviderName), conditions...)
+		if err != nil {
+			return field.InternalError(fldPath, fmt.Errorf("failed to get available version updates: %w", err))
+		}
+	} else {
+		versions, err = versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(spec.Cloud.ProviderName), conditions...)
+		if err != nil {
+			return field.InternalError(fldPath, fmt.Errorf("failed to get available versions: %w", err))
+		}
+	}
+
+	for _, availableVersion := range versions {
+		validVersions = append(validVersions, availableVersion.Version.String())
+		if spec.Version.Semver().Equal(availableVersion.Version) {
+			versionValid = true
+			break
+		}
+	}
+
+	if !versionValid {
+		return field.NotSupported(fldPath, spec.Version.String(), validVersions)
+	}
+
+	if err := validatePodSecurityPolicyAdmissionPluginForVersion(spec); err != nil {
+		return field.Forbidden(fldPath, err.Error())
+	}
+
+	return nil
 }
 
 func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *kubermaticv1.Datacenter, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path) field.ErrorList {

@@ -264,6 +264,20 @@ func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
 }
 
+// GetVersionConditions returns a kubermaticv1.ConditionType list that should be used when checking
+// for available versions in a VersionManager instance.
+func (c ClusterSpec) GetVersionConditions() []ConditionType {
+	conditions := []ConditionType{}
+
+	if c.Features[ClusterFeatureExternalCloudProvider] {
+		conditions = append(conditions, ExternalCloudProviderCondition)
+	} else {
+		conditions = append(conditions, InTreeCloudProviderCondition)
+	}
+
+	return conditions
+}
+
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
 type CNIPluginSettings struct {
 	// Type is the CNI plugin type to be used.
