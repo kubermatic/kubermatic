@@ -76,6 +76,34 @@ gcp-csi-driver:
 	rm csi/gcp/kustomization.yaml
 	./templatify-images.sh $(OUTPUT_FILE)
 
+.PHONY: nutanix-csi-driver
+nutanix-csi-driver: OUTPUT_FILE_DRIVER=csi/nutanix/csi-driver.yaml
+nutanix-csi-driver: OUTPUT_FILE_SNAPSHOT=csi/nutanix/snapshot-controller.yaml
+nutanix-csi-driver:
+	helm repo add nutanix https://nutanix.github.io/helm || true
+	helm repo update
+	mkdir -p csi/nutanix
+
+	helm --namespace kube-system template nutanix-csi-storage nutanix/nutanix-csi-storage \
+	  --version 2.6.2 \
+	  --values values-nutanix-csi.yaml \
+	  > $(OUTPUT_FILE_DRIVER)
+	./inject-security-context.sh $(OUTPUT_FILE_DRIVER)
+	./inject-ca-bundle-mount.sh $(OUTPUT_FILE_DRIVER)
+	./templatify-images.sh $(OUTPUT_FILE_DRIVER)
+	cat csi/nutanix/_header.txt $(OUTPUT_FILE_DRIVER) csi/nutanix/_footer.txt > $(OUTPUT_FILE_DRIVER).complete
+	mv $(OUTPUT_FILE_DRIVER).complete $(OUTPUT_FILE_DRIVER)
+
+	helm --namespace kube-system template nutanix-csi-snapshot nutanix/nutanix-csi-snapshot \
+	  --version 6.0.2 \
+	  --values values-nutanix-csi-snapshot.yaml \
+	  > $(OUTPUT_FILE_SNAPSHOT)
+	./inject-security-context.sh $(OUTPUT_FILE_SNAPSHOT)
+	./inject-ca-bundle-mount.sh $(OUTPUT_FILE_SNAPSHOT)
+	./templatify-images.sh $(OUTPUT_FILE_SNAPSHOT)
+	cat csi/nutanix/_header.txt $(OUTPUT_FILE_SNAPSHOT) csi/nutanix/_footer.txt > $(OUTPUT_FILE_SNAPSHOT).complete
+	mv $(OUTPUT_FILE_SNAPSHOT).complete $(OUTPUT_FILE_SNAPSHOT)
+
 .PHONY: metallb
 metallb: OUTPUT_FILE=metallb/00_metallb.yaml
 metallb:
