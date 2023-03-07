@@ -300,8 +300,13 @@ func ValidateVersion(spec *kubermaticv1.ClusterSpec, versionManager *version.Man
 
 	conditions := spec.GetVersionConditions()
 
-	// if a current version is passed, we are doing a version upgrade
-	if currentVersion != nil && !spec.Version.Equal(currentVersion) {
+	// if a current version is passed, we are doing a version upgrade.
+	if currentVersion != nil {
+		// we return early here so we don't reject ClusterSpecs if the version hasn't changed.
+		if spec.Version.Equal(currentVersion) {
+			return nil
+		}
+
 		versions, err = versionManager.GetPossibleUpdates(currentVersion.String(), kubermaticv1.ProviderType(spec.Cloud.ProviderName), conditions...)
 		if err != nil {
 			return field.InternalError(fldPath, fmt.Errorf("failed to get available version updates: %w", err))
