@@ -50,11 +50,11 @@ type Results struct {
 func (r *Results) HasFailures() bool {
 	for _, scenario := range r.Scenarios {
 		if scenario.Status == ScenarioFailed {
-			return false
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func (r *Results) PrintSummary() {
