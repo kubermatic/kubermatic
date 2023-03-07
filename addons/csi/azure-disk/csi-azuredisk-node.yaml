@@ -101,7 +101,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: azuredisk
-          image: {{ Image (print "mcr.microsoft.com/k8s/csi/azuredisk-csi:v" $version) }}
+          image: {{ Image (print "mcr.microsoft.com/oss/kubernetes-csi/azuredisk-csi:v" $version) }}
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
