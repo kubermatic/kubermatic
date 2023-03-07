@@ -59,7 +59,6 @@ func TestValidateClusterSpec(t *testing.T) {
 			valid: false,
 			spec:  &kubermaticv1.ClusterSpec{},
 		},
-		{},
 	}
 
 	for _, test := range tests {
