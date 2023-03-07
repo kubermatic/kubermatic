@@ -40,7 +40,7 @@ aws-node-termination-handler:
 	helm repo update
 	cat aws-node-termination-handler/_header.txt > $(OUTPUT_FILE)
 	helm template aws-node-termination-handler eks/aws-node-termination-handler \
-	  --version 0.18.2 \
+	  --version 0.21.0 \
 	  --namespace kube-system \
 	  --values values-aws-node-termination-handler.yaml \
 	  >> $(OUTPUT_FILE)
@@ -55,15 +55,15 @@ aws-ebs-csi-driver:
 	mkdir -p csi/aws-ebs
 	cat csi/aws-ebs/_header.txt > $(OUTPUT_FILE)
 	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
-	  --version 2.11.1 \
+	  --version 2.17.1 \
 	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
 	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
 	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
 	  --api-versions 'policy/v1/PodDisruptionBudget' \
+	  --skip-tests \
 	  >> $(OUTPUT_FILE)
 	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
-	sed -i 's/public.ecr.aws/{{ Registry "public.ecr.aws" }}/g' $(OUTPUT_FILE)
-	sed -i 's/k8s.gcr.io/{{ Registry "registry.k8s.io" }}/g' $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
 
 .PHONY: gcp-csi-driver
 gcp-csi-driver: OUTPUT_FILE=csi/gcp/driver.yaml

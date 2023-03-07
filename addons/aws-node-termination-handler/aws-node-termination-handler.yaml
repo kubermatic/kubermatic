@@ -26,10 +26,10 @@ metadata:
   labels:
     app.kubernetes.io/name: aws-node-termination-handler
     app.kubernetes.io/instance: aws-node-termination-handler
-    app.kubernetes.io/version: "1.16.2"
+    app.kubernetes.io/version: "1.19.0"
     app.kubernetes.io/part-of: aws-node-termination-handler
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: aws-node-termination-handler-0.18.2
+    helm.sh/chart: aws-node-termination-handler-0.21.0
 ---
 # Source: aws-node-termination-handler/templates/clusterrole.yaml
 kind: ClusterRole
@@ -39,10 +39,10 @@ metadata:
   labels:
     app.kubernetes.io/name: aws-node-termination-handler
     app.kubernetes.io/instance: aws-node-termination-handler
-    app.kubernetes.io/version: "1.16.2"
+    app.kubernetes.io/version: "1.19.0"
     app.kubernetes.io/part-of: aws-node-termination-handler
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: aws-node-termination-handler-0.18.2
+    helm.sh/chart: aws-node-termination-handler-0.21.0
 rules:
 - apiGroups:
     - ""
@@ -87,10 +87,10 @@ metadata:
   labels:
     app.kubernetes.io/name: aws-node-termination-handler
     app.kubernetes.io/instance: aws-node-termination-handler
-    app.kubernetes.io/version: "1.16.2"
+    app.kubernetes.io/version: "1.19.0"
     app.kubernetes.io/part-of: aws-node-termination-handler
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: aws-node-termination-handler-0.18.2
+    helm.sh/chart: aws-node-termination-handler-0.21.0
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -109,10 +109,10 @@ metadata:
   labels:
     app.kubernetes.io/name: aws-node-termination-handler
     app.kubernetes.io/instance: aws-node-termination-handler
-    app.kubernetes.io/version: "1.16.2"
+    app.kubernetes.io/version: "1.19.0"
     app.kubernetes.io/part-of: aws-node-termination-handler
     app.kubernetes.io/managed-by: Helm
-    helm.sh/chart: aws-node-termination-handler-0.18.2
+    helm.sh/chart: aws-node-termination-handler-0.21.0
     app.kubernetes.io/component: daemonset
 spec:
   updateStrategy:
@@ -150,7 +150,7 @@ spec:
             runAsGroup: 1000
             runAsNonRoot: true
             runAsUser: 1000
-          image: {{ Image "public.ecr.aws/aws-ec2/aws-node-termination-handler:v1.16.2" }}
+          image: {{ Image "public.ecr.aws/aws-ec2/aws-node-termination-handler:v1.19.0" }}
           imagePullPolicy: IfNotPresent
           env:
             - name: NODE_NAME
@@ -175,6 +175,8 @@ spec:
               value: "info"
             - name: JSON_LOGGING
               value: "false"
+            - name: LOG_FORMAT_VERSION
+              value: "1"
             - name: ENABLE_PROMETHEUS_SERVER
               value: "false"
             - name: PROMETHEUS_SERVER_PORT
@@ -202,7 +204,7 @@ spec:
             - name: ENABLE_SPOT_INTERRUPTION_DRAINING
               value: "true"
             - name: ENABLE_SCHEDULED_EVENT_DRAINING
-              value: "false"
+              value: "true"
             - name: ENABLE_REBALANCE_MONITORING
               value: "false"
             - name: ENABLE_REBALANCE_DRAINING
