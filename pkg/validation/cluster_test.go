@@ -1128,7 +1128,8 @@ func TestValidateVersion(t *testing.T) {
 						Operation: kubermaticv1.CreateOperation,
 						Version:   ">= 1.3.0",
 					},
-				}),
+				},
+			),
 		},
 		{
 			name:  "cloud provider incompatibility version not supported",
@@ -1136,7 +1137,8 @@ func TestValidateVersion(t *testing.T) {
 			spec: &kubermaticv1.ClusterSpec{
 				Version: semver.Semver("1.3.0"),
 				Cloud: kubermaticv1.CloudSpec{
-					ProviderName: string(kubermaticv1.OpenstackCloudProvider)},
+					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+				},
 			},
 			versionManager: version.New(
 				[]*version.Version{
@@ -1146,14 +1148,16 @@ func TestValidateVersion(t *testing.T) {
 					{
 						Version: semverlib.MustParse("1.3.0"),
 					},
-				}, nil, []*version.ProviderIncompatibility{
+				}, nil,
+				[]*version.ProviderIncompatibility{
 					{
 						Provider:  kubermaticv1.OpenstackCloudProvider,
 						Condition: kubermaticv1.InTreeCloudProviderCondition,
 						Operation: kubermaticv1.CreateOperation,
 						Version:   ">= 1.3.0",
 					},
-				}),
+				},
+			),
 		},
 		{
 			name:           "cloud provider incompatibility version upgrade not supported",
@@ -1162,7 +1166,8 @@ func TestValidateVersion(t *testing.T) {
 			spec: &kubermaticv1.ClusterSpec{
 				Version: semver.Semver("1.3.0"),
 				Cloud: kubermaticv1.CloudSpec{
-					ProviderName: string(kubermaticv1.OpenstackCloudProvider)},
+					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+				},
 			},
 			versionManager: version.New(
 				[]*version.Version{
@@ -1190,7 +1195,8 @@ func TestValidateVersion(t *testing.T) {
 						Operation: kubermaticv1.UpdateOperation,
 						Version:   ">= 1.3.0",
 					},
-				}),
+				},
+			),
 		},
 	}
 
