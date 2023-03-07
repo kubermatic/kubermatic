@@ -1110,7 +1110,8 @@ func TestValidateVersion(t *testing.T) {
 			spec: &kubermaticv1.ClusterSpec{
 				Version: semver.Semver("1.2.0"),
 				Cloud: kubermaticv1.CloudSpec{
-					ProviderName: string(kubermaticv1.OpenstackCloudProvider)},
+					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+				},
 			},
 			versionManager: version.New(
 				[]*version.Version{
