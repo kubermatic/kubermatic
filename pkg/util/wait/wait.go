@@ -89,7 +89,7 @@ func enrich(poller PollFunc, ctx context.Context, log *zap.SugaredLogger, interv
 	})
 
 	if errors.Is(waitErr, k8swait.ErrWaitTimeout) && lastErr != nil {
-		waitErr = fmt.Errorf("%w; last error was: %v", waitErr, lastErr)
+		waitErr = fmt.Errorf("%w; last error was: %w", waitErr, lastErr)
 	}
 
 	return waitErr

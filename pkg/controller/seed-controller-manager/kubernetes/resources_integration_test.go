@@ -42,7 +42,6 @@ import (
 )
 
 type testUserClusterConnectionProvider struct {
-	userClusterConnectionProvider
 	ctrlruntimeclient.Client
 }
 
