@@ -28,32 +28,6 @@ WORKERS=''
 
 start_docker_daemon_ci
 
-# Make debugging a bit better
-echodate "Configuring bash"
-cat << EOF >> ~/.bashrc
-# Gets set to the CI clusters kubeconfig from a preset
-unset KUBECONFIG
-
-cn() {
-  kubectl config set-context --current --namespace=\$1
-}
-
-kubeconfig() {
-  TMP_KUBECONFIG=\$(mktemp);
-  kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > \$TMP_KUBECONFIG;
-  export KUBECONFIG=\$TMP_KUBECONFIG;
-  cn kube-system
-}
-
-# this alias makes it so that watch can be used with other aliases, like "watch k get pods"
-alias watch='watch '
-alias k=kubectl
-alias ll='ls -lh --file-type --group-directories-first'
-alias lll='ls -lahF --group-directories-first'
-source <(k completion bash )
-source <(k completion bash | sed s/kubectl/k/g)
-EOF
-
 # Create kind cluster
 TEST_NAME="Create kind cluster"
 
