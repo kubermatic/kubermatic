@@ -173,12 +173,12 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	// If no suitable CSIDriver was found, we have to rely on the user to tell us about their provider
 	// and then we assume an in-tree (legacy) provider should be used.
 	if csiDriverName == "" {
-		sublogger.Warnf("The %s StorageClass does not exist yet and no suitable CSIDriver was detected.", common.StorageClassName)
-		sublogger.Warn("Depending on your environment, the installer can auto-create a class for you,")
-		sublogger.Warn("see the --storageclass CLI flag (should only be used when in-tree CSI driver is still used).")
-		sublogger.Warn("Alternatively, please manually create a StorageClass and then re-run the installer to continue.")
-
 		if opt.StorageClassProvider == "" {
+			sublogger.Warnf("The %s StorageClass does not exist yet and no suitable CSIDriver was detected.", common.StorageClassName)
+			sublogger.Warn("Depending on your environment, the installer can auto-create a class for you,")
+			sublogger.Warn("see the --storageclass CLI flag (should only be used when in-tree CSI driver is still used).")
+			sublogger.Warn("Alternatively, please manually create a StorageClass and then re-run the installer to continue.")
+
 			return errors.New("no --storageclass flag given")
 		}
 
@@ -191,7 +191,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	} else {
 		// Even if a CSI Driver was found, the user might not want us to blindly create our
 		// own StorageClass, but instead copy the default. So if --storageclass=copy-default,
-		// this has precendence over the detected cloud provider.
+		// this has precedence over the detected cloud provider.
 		if opt.StorageClassProvider == string(common.CopyDefaultCloudProvider) {
 			cloudProvider = common.CopyDefaultCloudProvider
 		}

@@ -21,7 +21,6 @@ export CGO_ENABLED=0
 
 .PHONY: build
 build:
-	go env
 	go build $(GOTOOLFLAGS) -tags "$(KUBERMATIC_EDITION)" -o ./_build/user-ssh-keys-agent
 
 .PHONY: docker
