@@ -47,8 +47,6 @@ func TestInClusterApiserverIP(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			cluster := &kubermaticv1.Cluster{}
 			cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{tc.cidr}
 
@@ -84,8 +82,6 @@ func TestUserClusterDNSResolverIP(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			cluster := &kubermaticv1.Cluster{}
 			cluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{tc.cidr}
 
@@ -622,7 +618,6 @@ func TestGetNodePortsAllowedIPRanges(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			var result kubermaticv1.NetworkRanges
-			t.Parallel()
 
 			cluster := &kubermaticv1.Cluster{}
 			result = GetNodePortsAllowedIPRanges(cluster, &tc.allowedIPRanges, tc.allowedIPRange)
