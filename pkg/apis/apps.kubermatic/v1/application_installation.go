@@ -37,6 +37,7 @@ const (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName=appinstall
 
 // ApplicationInstallation describes a single installation of an Application.
 type ApplicationInstallation struct {
