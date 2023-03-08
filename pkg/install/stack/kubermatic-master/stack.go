@@ -190,6 +190,13 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		}
 
 		cloudProvider = kubermaticv1.ProviderType(chosenProvider)
+	} else {
+		// Even if a CSI Driver was found, the user might not want us to blindly create our
+		// own StorageClass, but instead copy the default. So if --storageclass=copy-default,
+		// this has precendence over the detected cloud provider.
+		if opt.StorageClassProvider == string(common.CopyDefaultCloudProvider) {
+			cloudProvider = common.CopyDefaultCloudProvider
+		}
 	}
 
 	factory, err := common.StorageClassCreator(cloudProvider)

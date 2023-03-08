@@ -47,7 +47,6 @@ var (
 		"dobs.csi.digitalocean.com":                kubermaticv1.DigitaloceanCloudProvider,
 		"pd.csi.storage.gke.io":                    kubermaticv1.GCPCloudProvider,
 		"csi.hetzner.cloud":                        kubermaticv1.HetznerCloudProvider,
-		"csi.nutanix.com":                          kubermaticv1.NutanixCloudProvider,
 		"cinder.csi.openstack.org":                 kubermaticv1.OpenstackCloudProvider,
 		"named-disk.csi.cloud-director.vmware.com": kubermaticv1.VMwareCloudDirectorCloudProvider,
 		"csi.vsphere.vmware.com":                   kubermaticv1.VSphereCloudProvider,
@@ -160,6 +159,38 @@ var (
 
 			sc.Provisioner = csiDriverName
 			sc.AllowVolumeExpansion = pointer.Bool(true)
+
+			return nil
+		},
+		kubermaticv1.OpenstackCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" { // = in-tree CSI
+				sc.Provisioner = "kubernetes.io/cinder"
+			} else { // out-of-tree CSI
+				sc.Provisioner = csiDriverName
+				sc.AllowVolumeExpansion = pointer.Bool(true)
+				sc.VolumeBindingMode = &waitForFirstCustomer
+			}
+
+			return nil
+		},
+		kubermaticv1.VSphereCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" { // = in-tree CSI
+				sc.Provisioner = "kubernetes.io/vsphere-volume"
+				sc.Parameters["diskformat"] = "thin"
+			} else { // out-of-tree CSI
+				sc.Provisioner = csiDriverName
+			}
+
+			return nil
+		},
+		kubermaticv1.VMwareCloudDirectorCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" {
+				return errors.New("only out-of-tree CSIDriver is supported for this provider")
+			}
+
+			sc.Provisioner = csiDriverName
+			sc.AllowVolumeExpansion = pointer.Bool(true)
+			sc.Parameters["filesystem"] = "ext4"
 
 			return nil
 		},
