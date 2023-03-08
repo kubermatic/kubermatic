@@ -76,8 +76,11 @@ presubmits:
               value: ee
             - name: PROVIDER
               value: vsphere
+            # KKP 2.22+ does not support Kubernetes >= 1.25 with in-tree, so we only
+            # need to support the CCM migration for 1.24. This test can be removed once
+            # 1.24 support is dropped.
             - name: VERSION_TO_TEST
-              value: '1.25'
+              value: '1.24'
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
