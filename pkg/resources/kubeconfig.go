@@ -54,7 +54,7 @@ func AdminKubeconfigReconciler(data adminKubeconfigReconcilerData) reconciling.N
 			address := data.Cluster().Status.Address
 			config := GetBaseKubeconfig(ca.Cert, address.URL, data.Cluster().Name)
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
-				KubeconfigDefaultContextKey: {
+				KubeconfigDefaultAuthInfoKey: {
 					Token: address.AdminToken,
 				},
 			}
@@ -90,7 +90,7 @@ func ViewerKubeconfigReconciler(data *TemplateData) reconciling.NamedSecretRecon
 				return nil, fmt.Errorf("failed to get token: %w", err)
 			}
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
-				KubeconfigDefaultContextKey: {
+				KubeconfigDefaultAuthInfoKey: {
 					Token: token,
 				},
 			}
@@ -166,7 +166,7 @@ func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizat
 	}
 
 	baseKubconfig.AuthInfos = map[string]*clientcmdapi.AuthInfo{
-		KubeconfigDefaultContextKey: {
+		KubeconfigDefaultAuthInfoKey: {
 			ClientCertificateData: triple.EncodeCertPEM(kp.Cert),
 			ClientKeyData:         triple.EncodePrivateKeyPEM(kp.Key),
 		},
@@ -189,7 +189,7 @@ func GetBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *cl
 		Contexts: map[string]*clientcmdapi.Context{
 			clusterName: {
 				Cluster:  clusterName,
-				AuthInfo: KubeconfigDefaultContextKey,
+				AuthInfo: KubeconfigDefaultAuthInfoKey,
 			},
 		},
 	}
@@ -207,7 +207,7 @@ func IsValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server,
 
 	baseKubeconfig := GetBaseKubeconfig(caCert, server, clusterName)
 
-	authInfo := existingKubeconfig.AuthInfos[KubeconfigDefaultContextKey]
+	authInfo := existingKubeconfig.AuthInfos[KubeconfigDefaultAuthInfoKey]
 	if authInfo == nil {
 		return false, nil
 	}
