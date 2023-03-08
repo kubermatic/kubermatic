@@ -369,7 +369,7 @@ func (r *TestRunner) executeTests(
 	healthCheck := func() error {
 		log.Info("Waiting for cluster to be successfully reconciled...")
 
-		return wait.PollLog(ctx, log, 5*time.Second, 50*time.Minute, func() (transient error, terminal error) {
+		return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
 			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 				return err, nil
 			}
