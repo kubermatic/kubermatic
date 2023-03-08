@@ -6,7 +6,7 @@
 
 ## Goals
 
-Dehydration is a functionality for KKP user clusters that will allow to temporarily "pause" a cluster to free up cloud resources used by the cluster. The feature will allow to optimize resource consumption and subsequent spending on cloud resources. State (e.g. storage) should not be affected by this functionality.
+Dehydration is a functionality for KKP user clusters that will allow to temporarily "suspend" a cluster to free up cloud resources used by the cluster. The feature will allow to optimize resource consumption and subsequent spending on cloud resources. State (e.g. storage) should not be affected by this functionality.
 
 ## Non-Goals
 
@@ -26,7 +26,7 @@ Having a "one click" solution to dehydrate your user cluster will provide the fo
 
 * Quickly free up resources in a resource-constrainted environment.
 * Restart work right where it was left off maybe days or even weeks ago while staying cost-efficient.
-* No maintenance for custom scripts or other automation that does similiar things.
+* No maintenance for custom scripts or other automation that does similar things.
 
 To make sure this feature is useful for end users, we have made the following key decisions:
 
@@ -54,7 +54,7 @@ spec:
 
 The user experience for this feature should be pretty straightforward: User clusters have a button / UI interface to deyhdrate a cluster. It gives proper warning what the feature does, worded something like this:
 
-> Dehydrating a user cluster will evict all workloads, terminate all active nodes and make the Kubernetes API unavailable. Persistent storage, load balancers and similiar cloud resources will not be affected and will continue to exist. Make sure that this cluster is not actively used before dehydrating it. Dehydrated user clusters can be restored at any given time, assuming resource quotas allow the re-creation of nodes. Are you sure you want to dehydrate your cluster?
+> Dehydrating a user cluster will evict all workloads, terminate all active nodes and make the Kubernetes API unavailable. Persistent storage, load balancers and similar cloud resources will not be affected and will continue to exist. Make sure that this cluster is not actively used before dehydrating it. Dehydrated user clusters can be restored at any given time, assuming resource quotas allow the re-creation of nodes. Are you sure you want to dehydrate your cluster?
 
 The key takeaway here is that because of its destructive nature, this should require confirmation when done from the UI.
 
@@ -64,7 +64,7 @@ When a cluster is dehydrated, the UI should show this, perhaps even with a speci
 
 If `spec.dehydrated=true` is set, a `(de-)hydration-controller` needs to ensure the following things:
 
-1. All nodes are drained completely, evicting all running pods. In particular, this needs to deal with `PodDisruptionBudgets` properly (by not honoring them). Because of this limitation, the controller might opt for cordoning off all nodes and directly deleting pods (in constrast to using the eviction API to gracefully evict pods), which is a highly disruptive process.
+1. All nodes are drained completely, evicting all running pods. In particular, this needs to deal with `PodDisruptionBudgets` properly (by not honoring them). Because of this limitation, the controller might opt for cordoning off all nodes and directly deleting pods (in contrast to using the eviction API to gracefully evict pods), which is a highly disruptive process.
 1. All MachineDeployments are scaled down to zero to remove the nodes and associated VMs on the cloud provider side. The controller needs to store the pre-dehydration replica count in an annotation, so the state before dehydrating the cluster is remembered and can be restored later.
 1. The control plane components in the seed are scaled to zero, either by the `dehydration-controller` or by the controllers usually managing them.
 1. Controllers need to be aware of a cluster being dehydrated and should skip reconciling them.
