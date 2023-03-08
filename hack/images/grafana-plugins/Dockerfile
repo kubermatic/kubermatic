@@ -18,7 +18,11 @@ LABEL maintainer="support@kubermatic.com"
 RUN mkdir -p /plugins
 WORKDIR /plugins
 
-RUN wget -O- https://grafana.com/api/plugins/grafana-piechart-panel/versions/1.6.2/download | unzip -
-RUN wget -O- https://grafana.com/api/plugins/farski-blendstat-panel/versions/1.0.3/download | unzip -
-RUN wget -O- https://grafana.com/api/plugins/michaeldmoore-multistat-panel/versions/1.7.2/download | unzip -
-RUN wget -O- https://grafana.com/api/plugins/vonage-status-panel/versions/1.0.11/download | unzip -
+# Not all plugin files support stream decoding, so we cannot just
+# pipe `wget -O- <url> | unzip`, even if it might work with _some_
+# of the plugins.
+
+RUN wget -O plugin.zip https://grafana.com/api/plugins/grafana-piechart-panel/versions/1.6.4/download && unzip plugin.zip && rm plugin.zip
+RUN wget -O plugin.zip https://grafana.com/api/plugins/farski-blendstat-panel/versions/1.0.3/download && unzip plugin.zip && rm plugin.zip
+RUN wget -O plugin.zip https://grafana.com/api/plugins/michaeldmoore-multistat-panel/versions/1.7.2/download && unzip plugin.zip && rm plugin.zip
+RUN wget -O plugin.zip https://grafana.com/api/plugins/vonage-status-panel/versions/1.0.11/download && unzip plugin.zip && rm plugin.zip

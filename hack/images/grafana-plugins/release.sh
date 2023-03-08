@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/grafana-plugins
-VERSION=1.3.1
+VERSION=1.3.2
 
 docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}" .
 docker push "${REPOSITORY}:${VERSION}"
