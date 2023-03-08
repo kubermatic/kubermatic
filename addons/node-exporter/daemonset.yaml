@@ -20,7 +20,7 @@ metadata:
   labels:
     addonmanager.kubernetes.io/mode: Reconcile
     app.kubernetes.io/name: node-exporter
-    app.kubernetes.io/version: v1.2.2
+    app.kubernetes.io/version: v1.5.0
 spec:
   updateStrategy:
     type: RollingUpdate
@@ -38,7 +38,7 @@ spec:
       serviceAccountName: node-exporter
       containers:
       - name: node-exporter
-        image: '{{ Image "quay.io/prometheus/node-exporter:v1.2.2" }}'
+        image: '{{ Image "quay.io/prometheus/node-exporter:v1.5.0" }}'
         args:
         - '--path.procfs=/host/proc'
         - '--path.sysfs=/host/sys'
@@ -64,11 +64,9 @@ spec:
           mountPropagation: HostToContainer
 
       - name: kube-rbac-proxy
-        image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.11.0" }}'
+        image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.14.0" }}'
         args:
-        - '--logtostderr'
         - '--secure-listen-address=$(IP):9100'
-        - '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'
         - '--upstream=http://127.0.0.1:9100/'
         env:
         - name: IP

@@ -63,9 +63,7 @@ spec:
       - name: kube-rbac-proxy
         image: "{{ .Values.nodeExporter.rbacProxy.image.repository }}:{{ .Values.nodeExporter.rbacProxy.image.tag }}"
         args:
-        - "--logtostderr"
         - "--secure-listen-address=$(IP):9100"
-        - "--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
         - "--upstream=http://127.0.0.1:9100/"
         env:
         - name: IP
@@ -92,6 +90,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       nodeSelector:
 {{ toYaml .Values.nodeExporter.nodeSelector | indent 8 }}
       affinity:
