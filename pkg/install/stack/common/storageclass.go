@@ -23,6 +23,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
@@ -31,95 +33,140 @@ import (
 
 const (
 	StorageClassName = "kubermatic-fast"
+
+	// This is a special, custom fake provider that is only used during
+	// the installation and is meant to signal that the installer should
+	// copy whatever default StorageClass exists.
+	CopyDefaultCloudProvider kubermaticv1.ProviderType = "copy-default"
 )
 
-type StorageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, string) (storagev1.StorageClass, error)
+var (
+	preferredCSIDrivers = map[string]kubermaticv1.ProviderType{
+		"ebs.csi.aws.com":                          kubermaticv1.AWSCloudProvider,
+		"disk.csi.azure.com":                       kubermaticv1.AzureCloudProvider,
+		"dobs.csi.digitalocean.com":                kubermaticv1.DigitaloceanCloudProvider,
+		"pd.csi.storage.gke.io":                    kubermaticv1.GCPCloudProvider,
+		"csi.hetzner.cloud":                        kubermaticv1.HetznerCloudProvider,
+		"csi.nutanix.com":                          kubermaticv1.NutanixCloudProvider,
+		"cinder.csi.openstack.org":                 kubermaticv1.OpenstackCloudProvider,
+		"named-disk.csi.cloud-director.vmware.com": kubermaticv1.VMwareCloudDirectorCloudProvider,
+		"csi.vsphere.vmware.com":                   kubermaticv1.VSphereCloudProvider,
+	}
+
+	waitForFirstCustomer = storagev1.VolumeBindingWaitForFirstConsumer
+)
+
+func GetPreferredCSIDriver(ctx context.Context, kubeClient ctrlruntimeclient.Client) (string, kubermaticv1.ProviderType, error) {
+	csiDrivers := storagev1.CSIDriverList{}
+	if err := kubeClient.List(ctx, &csiDrivers); err != nil {
+		return "", "", fmt.Errorf("failed to list CSIDrivers: %w", err)
+	}
+
+	for _, driver := range csiDrivers.Items {
+		for name, provider := range preferredCSIDrivers {
+			if name == driver.Name {
+				return name, provider, nil
+			}
+		}
+	}
+
+	return "", "", nil
+}
+
+type StorageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, *storagev1.StorageClass, string) error
 
 var (
-	storageClassFactories = map[string]StorageClassFactory{
-		"copy-default": func(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
-			s := &storagev1.StorageClass{
-				Parameters: map[string]string{},
-			}
-			s.Name = name
-
+	storageClassFactories = map[kubermaticv1.ProviderType]StorageClassFactory{
+		CopyDefaultCloudProvider: func(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, sc *storagev1.StorageClass, _ string) error {
 			classes := storagev1.StorageClassList{}
 			if err := kubeClient.List(ctx, &classes); err != nil {
-				return *s, fmt.Errorf("cannot list existing StorageClasses: %w", err)
+				return fmt.Errorf("cannot list existing StorageClasses: %w", err)
 			}
 
 			for _, class := range classes.Items {
 				if isDefaultStorageClass(class) {
 					logger.Infof("Duplicating existing default class %q…", class.Name)
 
-					s = class.DeepCopy()
-					s.Annotations = map[string]string{}
-					s.Labels = map[string]string{}
-					s.ResourceVersion = ""
-					s.Name = name
+					sc.Annotations = class.Annotations
+					sc.Labels = class.Labels
+					sc.Provisioner = class.Provisioner
+					sc.Parameters = class.Parameters
+					sc.ReclaimPolicy = class.ReclaimPolicy
+					sc.MountOptions = class.MountOptions
+					sc.AllowVolumeExpansion = class.AllowVolumeExpansion
+					sc.VolumeBindingMode = class.VolumeBindingMode
+					sc.AllowedTopologies = class.AllowedTopologies
 
-					return *s, nil
+					return nil
 				}
 			}
 
-			return *s, errors.New("cannot duplicate existing default StorageClass, because none of the classes are marked as the default")
+			return errors.New("cannot duplicate existing default StorageClass, because none of the classes are marked as the default")
 		},
-		"gce": func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
-			s := storagev1.StorageClass{
-				Parameters: map[string]string{},
+		kubermaticv1.GCPCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" { // = in-tree CSI
+				sc.Provisioner = "kubernetes.io/gce-pd"
+			} else { // out-of-tree CSI
+				sc.Provisioner = csiDriverName
 			}
-			s.Name = name
-			s.Provisioner = "kubernetes.io/gce-pd"
-			s.Parameters["type"] = "pd-ssd"
 
-			return s, nil
+			sc.Parameters["type"] = "pd-ssd"
+			sc.VolumeBindingMode = &waitForFirstCustomer
+
+			return nil
 		},
-		"aws": func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
-			s := storagev1.StorageClass{
-				Parameters: map[string]string{},
+		kubermaticv1.AWSCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" { // = in-tree CSI
+				sc.Provisioner = "kubernetes.io/aws-ebs"
+				sc.Parameters["type"] = "gp2"
+			} else { // out-of-tree CSI
+				sc.Provisioner = csiDriverName
+				sc.Parameters["type"] = "gp3"
 			}
-			s.Name = name
-			s.Provisioner = "kubernetes.io/aws-ebs"
-			s.Parameters["type"] = "gp2"
 
-			return s, nil
+			sc.VolumeBindingMode = &waitForFirstCustomer
+
+			return nil
 		},
-		"azure": func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
-			s := storagev1.StorageClass{
-				Parameters: map[string]string{},
+		kubermaticv1.AzureCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" { // = in-tree CSI
+				sc.Provisioner = "kubernetes.io/azure-disk"
+			} else { // out-of-tree CSI
+				sc.Provisioner = csiDriverName
+				sc.AllowVolumeExpansion = pointer.Bool(true)
+				sc.VolumeBindingMode = &waitForFirstCustomer
 			}
-			s.Name = name
-			s.Provisioner = "kubernetes.io/azure-disk"
-			s.Parameters["storageaccounttype"] = "Standard_LRS"
-			s.Parameters["kind"] = "managed"
 
-			return s, nil
+			sc.Parameters["storageaccounttype"] = "Standard_LRS"
+			sc.Parameters["kind"] = "managed"
+
+			return nil
 		},
-		"hetzner": func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
-			s := storagev1.StorageClass{
-				Parameters: map[string]string{},
+		kubermaticv1.HetznerCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" {
+				return errors.New("only out-of-tree CSIDriver is supported for this provider")
 			}
-			s.Name = name
-			s.Provisioner = "csi.hetzner.cloud"
 
-			return s, nil
+			sc.Provisioner = csiDriverName
+			sc.VolumeBindingMode = &waitForFirstCustomer
+			sc.AllowVolumeExpansion = pointer.Bool(true)
+
+			return nil
 		},
-		"digitalocean": func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
-			s := storagev1.StorageClass{
-				Parameters: map[string]string{},
+		kubermaticv1.DigitaloceanCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+			if csiDriverName == "" {
+				return errors.New("only out-of-tree CSIDriver is supported for this provider")
 			}
-			s.Name = name
 
-			// see https://github.com/digitalocean/csi-digitalocean/blob/master/deploy/kubernetes/releases/csi-digitalocean-v1.3.0.yaml
-			s.Provisioner = "dobs.csi.digitalocean.com"
-			s.AllowVolumeExpansion = pointer.Bool(true)
+			sc.Provisioner = csiDriverName
+			sc.AllowVolumeExpansion = pointer.Bool(true)
 
-			return s, nil
+			return nil
 		},
 	}
 )
 
-func StorageClassCreator(provider string) (StorageClassFactory, error) {
+func StorageClassCreator(provider kubermaticv1.ProviderType) (StorageClassFactory, error) {
 	factory, ok := storageClassFactories[provider]
 	if !ok {
 		return nil, fmt.Errorf("unknown StorageClass provider %q", provider)
@@ -129,7 +176,12 @@ func StorageClassCreator(provider string) (StorageClassFactory, error) {
 }
 
 func SupportedStorageClassProviders() sets.Set[string] {
-	return sets.KeySet(storageClassFactories)
+	all := sets.New[string]()
+	for k := range storageClassFactories {
+		all.Insert(string(k))
+	}
+
+	return all
 }
 
 func isDefaultStorageClass(sc storagev1.StorageClass) bool {
