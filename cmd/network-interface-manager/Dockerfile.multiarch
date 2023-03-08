@@ -28,7 +28,7 @@ WORKDIR /go/src/k8c.io/kubermatic
 COPY . .
 RUN make -C ./cmd/network-interface-manager build
 
-FROM docker.io/alpine:3.13
+FROM docker.io/alpine:3.17
 LABEL maintainer="support@kubermatic.com"
 
 COPY --from=builder /go/src/k8c.io/kubermatic/cmd/network-interface-manager/_build/network-interface-manager /usr/local/bin/network-interface-manager
