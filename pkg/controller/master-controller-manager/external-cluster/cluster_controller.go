@@ -214,6 +214,28 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 }
 
 func (r *Reconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	cloud := cluster.Spec.CloudSpec
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
+
+	// cleanup cluster
+	if cloud.AKS != nil {
+		if err := aks.DeleteAKSCluster(ctx, secretKeySelector, cloud.AKS); err != nil {
+			return err
+		}
+	}
+
+	if cloud.EKS != nil {
+		if err := eks.DeleteEKSCluster(ctx, secretKeySelector, cloud.EKS); err != nil {
+			return err
+		}
+	}
+
+	if cloud.GKE != nil {
+		if err := gke.DeleteGKECluster(ctx, secretKeySelector, cloud.GKE); err != nil {
+			return err
+		}
+	}
+
 	if kuberneteshelper.HasFinalizer(cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer) {
 		if err := r.cleanUpKubeconfigSecret(ctx, cluster); err != nil {
 			return err

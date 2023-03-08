@@ -460,3 +460,20 @@ func ListAzureResourceGroups(ctx context.Context, cred *resources.AKSCredentials
 
 	return resourceGroupList, nil
 }
+
+func DeleteAKSCluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloud *kubermaticv1.ExternalClusterAKSCloudSpec) error {
+	cred, err := GetCredentialsForCluster(cloud, secretKeySelector)
+	if err != nil {
+		return err
+	}
+	aksClient, err := GetClusterClient(cred)
+	if err != nil {
+		return err
+	}
+	err = DeleteCluster(ctx, aksClient, cloud)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -62,6 +62,20 @@ type EKSCredentials struct {
 	AssumeRoleExternalID string
 }
 
+func DeleteEKSCluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) error {
+	creds, err := GetCredentialsForCluster(cloudSpec, secretKeySelector)
+	if err != nil {
+		return err
+	}
+
+	client, err := getClientSet(ctx, creds, cloudSpec.Region, "")
+	if err != nil {
+		return err
+	}
+
+	return DeleteCluster(ctx, client, cloudSpec.Name)
+}
+
 func getClientSet(ctx context.Context, creds EKSCredentials, region, endpoint string) (*awsprovider.ClientSet, error) {
 	cfg, err := awsprovider.GetAWSConfig(ctx, creds.AccessKeyID, creds.SecretAccessKey, creds.AssumeRoleARN, creds.AssumeRoleExternalID, region, endpoint)
 	if err != nil {

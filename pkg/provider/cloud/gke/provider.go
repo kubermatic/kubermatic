@@ -501,3 +501,22 @@ func DecodeError(err error) error {
 
 	return err
 }
+
+func DeleteGKECluster(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterGKECloudSpec) error {
+	sa, err := secretKeySelector(cloudSpec.CredentialsReference, resources.GCPServiceAccount)
+	if err != nil {
+		return err
+	}
+	svc, project, err := ConnectToContainerService(ctx, sa)
+	if err != nil {
+		return err
+	}
+
+	req := svc.Projects.Zones.Clusters.Delete(project, cloudSpec.Zone, cloudSpec.Name)
+	_, err = req.Context(ctx).Do()
+	if err != nil {
+		return DecodeError(err)
+	}
+
+	return nil
+}
