@@ -185,9 +185,9 @@ func GetBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *cl
 				Server:                   server,
 			},
 		},
-		CurrentContext: KubeconfigDefaultContextKey,
+		CurrentContext: clusterName,
 		Contexts: map[string]*clientcmdapi.Context{
-			KubeconfigDefaultContextKey: {
+			clusterName: {
 				Cluster:  clusterName,
 				AuthInfo: KubeconfigDefaultContextKey,
 			},
