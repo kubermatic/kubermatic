@@ -573,9 +573,6 @@ const (
 	EtcdRestoreS3EndpointKey      = "ENDPOINT"
 	EtcdRestoreDefaultS3SEndpoint = "s3.amazonaws.com"
 
-	// KubeconfigDefaultAuthInfoKey is the Auth Info key used for all kubeconfigs.
-	KubeconfigDefaultAuthInfoKey = "default"
-
 	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt.
 	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
 	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key.
