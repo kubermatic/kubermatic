@@ -96,6 +96,9 @@ var (
 					sc.VolumeBindingMode = class.VolumeBindingMode
 					sc.AllowedTopologies = class.AllowedTopologies
 
+					delete(sc.Annotations, "storageclass.kubernetes.io/is-default-class")
+					delete(sc.Annotations, "storageclass.beta.kubernetes.io/is-default-class")
+
 					return nil
 				}
 			}
