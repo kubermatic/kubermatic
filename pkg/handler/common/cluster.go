@@ -535,6 +535,7 @@ func PatchEndpoint(
 	newInternalCluster.Spec.MLA = patchedCluster.Spec.MLA
 	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime
 	newInternalCluster.Spec.ClusterNetwork.KonnectivityEnabled = patchedCluster.Spec.ClusterNetwork.KonnectivityEnabled
+	newInternalCluster.Spec.ClusterNetwork.ProxyMode = patchedCluster.Spec.ClusterNetwork.ProxyMode
 	newInternalCluster.Spec.CNIPlugin = patchedCluster.Spec.CNIPlugin
 	newInternalCluster.Spec.ExposeStrategy = patchedCluster.Spec.ExposeStrategy
 	newInternalCluster.Spec.EnableOperatingSystemManager = patchedCluster.Spec.EnableOperatingSystemManager
