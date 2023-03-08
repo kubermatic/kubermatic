@@ -168,7 +168,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	machineDeployment, err := r.parseMachineDeployment(cluster, datacenter, request)
 	if err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
-			return nil, fmt.Errorf("failed to remove invalid (%v) initial MachineDeployment annotation: %w", err, removeErr)
+			return nil, fmt.Errorf("failed to remove invalid (%w) initial MachineDeployment annotation: %w", err, removeErr)
 		}
 
 		return nil, err

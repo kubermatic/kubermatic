@@ -146,7 +146,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	applications, err := r.parseApplications(cluster, request)
 	if err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
-			return nil, fmt.Errorf("failed to remove invalid (%v) initial ApplicationInstallation annotation: %w", err, removeErr)
+			return nil, fmt.Errorf("failed to remove invalid (%w) initial ApplicationInstallation annotation: %w", err, removeErr)
 		}
 
 		return nil, err

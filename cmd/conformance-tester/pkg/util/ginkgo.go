@@ -118,7 +118,7 @@ func (r *GinkgoRun) Run(ctx context.Context, parentLog *zap.SugaredLogger, clien
 		if errors.As(err, &exitErr) {
 			log.Debugf("Ginkgo exited with a non-zero return code %d: %v", exitErr.ExitCode(), exitErr)
 		} else {
-			return nil, fmt.Errorf("ginkgo failed to start: %T %w", err, err)
+			return nil, fmt.Errorf("ginkgo failed to start: %w", err)
 		}
 	}
 

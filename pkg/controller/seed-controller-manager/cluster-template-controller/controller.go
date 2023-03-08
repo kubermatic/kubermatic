@@ -161,7 +161,7 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 				if patchErr := r.patchInstance(ctx, instance, func(i *kubermaticv1.ClusterTemplateInstance) {
 					i.Spec.Replicas = totalReplicas - created
 				}); patchErr != nil {
-					return fmt.Errorf("error patching cluster template instance (%v), after cluster creation fail: %w", patchErr, err)
+					return fmt.Errorf("error patching cluster template instance (%w), after cluster creation fail: %w", patchErr, err)
 				}
 
 				return fmt.Errorf("failed to create desired number of clusters. Created %d of %d: %w", created, totalReplicas, err)

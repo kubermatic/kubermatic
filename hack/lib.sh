@@ -393,6 +393,10 @@ start_docker_daemon_ci() {
   # DOCKER_REGISTRY_MIRROR_ADDR is injected via Prow preset;
   # start-docker.sh is part of the build image.
   DOCKER_REGISTRY_MIRROR="${DOCKER_REGISTRY_MIRROR_ADDR:-}" DOCKER_MTU=1400 start-docker.sh
+
+  # enable the modern buildx plugin
+  echodate "Enabling dockerx plugin"
+  docker buildx install
 }
 
 start_docker_daemon() {
