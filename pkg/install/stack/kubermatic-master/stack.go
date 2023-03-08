@@ -67,8 +67,6 @@ const (
 	TelemetryNamespace   = "telemetry-system"
 
 	NodePortProxyService = "nodeport-proxy"
-
-	StorageClassName = "kubermatic-fast"
 )
 
 type MasterStack struct{}
@@ -150,19 +148,19 @@ func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 }
 
 func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
-	logger.Infof("💾 Deploying %s StorageClass…", StorageClassName)
+	logger.Infof("💾 Deploying %s StorageClass…", common.StorageClassName)
 	sublogger := log.Prefix(logger, "   ")
 
 	// Check if the StorageClass exists already.
 	cls := storagev1.StorageClass{}
-	err := kubeClient.Get(ctx, types.NamespacedName{Name: StorageClassName}, &cls)
+	err := kubeClient.Get(ctx, types.NamespacedName{Name: common.StorageClassName}, &cls)
 	if err == nil {
 		logger.Info("✅ StorageClass exists, nothing to do.")
 		return nil
 	}
 
 	if !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to check for StorageClass %s: %w", StorageClassName, err)
+		return fmt.Errorf("failed to check for StorageClass %s: %w", common.StorageClassName, err)
 	}
 
 	// Class does not yet exist. We can automatically create it based on CSIDrivers if the
@@ -175,7 +173,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	// If no suitable CSIDriver was found, we have to rely on the user to tell us about their provider
 	// and then we assume an in-tree (legacy) provider should be used.
 	if csiDriverName == "" {
-		sublogger.Warnf("The %s StorageClass does not exist yet and no suitable CSIDriver was detected.", StorageClassName)
+		sublogger.Warnf("The %s StorageClass does not exist yet and no suitable CSIDriver was detected.", common.StorageClassName)
 		sublogger.Warn("Depending on your environment, the installer can auto-create a class for you,")
 		sublogger.Warn("see the --storageclass CLI flag (should only be used when in-tree CSI driver is still used).")
 		sublogger.Warn("Alternatively, please manually create a StorageClass and then re-run the installer to continue.")
@@ -207,7 +205,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	storageClass := storagev1.StorageClass{
 		Parameters: map[string]string{},
 	}
-	storageClass.Name = StorageClassName
+	storageClass.Name = common.StorageClassName
 
 	if err := factory(ctx, sublogger, kubeClient, &storageClass, csiDriverName); err != nil {
 		return fmt.Errorf("failed to define StorageClass: %w", err)
