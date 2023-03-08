@@ -50,11 +50,11 @@ type Results struct {
 func (r *Results) HasFailures() bool {
 	for _, scenario := range r.Scenarios {
 		if scenario.Status == ScenarioFailed {
-			return false
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func (r *Results) PrintSummary() {
@@ -149,6 +149,15 @@ func MergeResults(previous *ResultsFile, current *Results) *Results {
 }
 
 func (r *Results) WriteToFile(filename string) error {
+	for i, scenario := range r.Scenarios {
+		// when saving a previously loaded result back, the
+		// duration is not set and getting the seconds would
+		// overwrite the previously read value
+		if scenario.Duration > 0 {
+			r.Scenarios[i].DurationSeconds = int(scenario.Duration.Seconds())
+		}
+	}
+
 	output := ResultsFile{
 		Configuration: TestConfiguration{
 			OSMEnabled:          r.Options.OperatingSystemManagerEnabled,
@@ -195,7 +204,8 @@ type ScenarioResult struct {
 	KubernetesRelease string                         `json:"kubernetesRelease"`
 	KubernetesVersion semver.Semver                  `json:"kubernetesVersion"`
 	KubermaticVersion string                         `json:"kubermaticVersion"`
-	Duration          time.Duration                  `json:"duration"`
+	Duration          time.Duration                  `json:"-"`
+	DurationSeconds   int                            `json:"durationInSeconds"`
 	ClusterName       string                         `json:"clusterName"`
 	Status            ScenarioStatus                 `json:"status"`
 	Message           string                         `json:"message"`

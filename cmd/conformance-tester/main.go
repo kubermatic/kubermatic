@@ -176,7 +176,12 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatalw("Test failed", zap.Error(err))
+		log.Fatalw("Failed to execute tests", zap.Error(err))
+	}
+
+	if results.HasFailures() {
+		// Fatalw() because Fatal() trips up the linter because of the previous defer.
+		log.Fatalw("Not all tests have passed")
 	}
 
 	log.Infow("Test suite has completed successfully", "runtime", time.Since(start))
