@@ -1,29 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -31,6 +13,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -127,6 +110,7 @@
           "refId": "C"
         }
       ],
+      "timeRegions": [],
       "title": "memstats",
       "transparent": true,
       "type": "timeseries"
@@ -135,6 +119,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -221,6 +206,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Mallocs",
       "transparent": true,
       "type": "timeseries"
@@ -230,6 +216,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -365,6 +352,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Go Versions",
       "transformations": [
         {
@@ -381,6 +369,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -504,6 +493,7 @@
           "refId": "C"
         }
       ],
+      "timeRegions": [],
       "title": "GC Duration",
       "transparent": true,
       "type": "timeseries"
@@ -512,6 +502,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -625,6 +616,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Goroutines",
       "transparent": true,
       "type": "timeseries"
@@ -638,11 +630,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -655,11 +643,7 @@
         "type": "datasource"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "kube-system",
-          "value": "kube-system"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
@@ -684,11 +668,7 @@
         "useTags": false
       },
       {
-        "current": {
-          "selected": false,
-          "text": "vpa-admission-controller-695c8ddf98-k4m5x",
-          "value": "vpa-admission-controller-695c8ddf98-k4m5x"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
@@ -713,12 +693,7 @@
         "useTags": false
       },
       {
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
