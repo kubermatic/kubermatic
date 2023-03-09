@@ -1,29 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -57,6 +39,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -187,6 +170,7 @@
           "refId": "B"
         }
       ],
+      "timeRegions": [],
       "title": "$controller",
       "transparent": true,
       "type": "timeseries"
@@ -283,7 +267,7 @@
           "color": "rgba(255,0,255,0.7)"
         },
         "filterValues": {
-          "le": 1e-9
+          "le": 1e-09
         },
         "legend": {
           "show": false
@@ -350,11 +334,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Data Source",
@@ -369,11 +349,7 @@
       },
       {
         "allValue": "*",
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },

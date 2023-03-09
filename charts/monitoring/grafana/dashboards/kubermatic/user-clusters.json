@@ -1,29 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -57,6 +39,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -119,6 +102,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Cloud Providers",
       "transparent": true,
       "type": "piechart"
@@ -127,6 +111,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -189,6 +174,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Datacenters",
       "transparent": true,
       "type": "piechart"
@@ -197,6 +183,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -287,6 +274,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Total User Clusters",
       "transparent": true,
       "type": "timeseries"
@@ -295,6 +283,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -383,6 +372,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Cloud Provider History",
       "transparent": true,
       "type": "timeseries"
@@ -391,6 +381,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -479,6 +470,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Datacenter History",
       "transparent": true,
       "type": "timeseries"
@@ -513,6 +505,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -573,6 +566,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Minor Releases",
       "transparent": true,
       "type": "piechart"
@@ -581,6 +575,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -640,6 +635,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Releases",
       "transparent": true,
       "type": "piechart"
@@ -648,6 +644,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -736,6 +733,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Minor Release History",
       "transparent": true,
       "type": "timeseries"
@@ -744,6 +742,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -832,6 +831,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Release History",
       "transparent": true,
       "type": "timeseries"
@@ -845,11 +845,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Data Source",
@@ -865,7 +861,7 @@
     ]
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {

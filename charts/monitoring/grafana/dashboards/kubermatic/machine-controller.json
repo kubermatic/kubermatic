@@ -1,29 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -31,6 +13,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -118,6 +101,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Total Machines",
       "transparent": true,
       "type": "timeseries"
@@ -127,6 +111,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -216,6 +201,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "machine-controller workers",
       "transparent": true,
       "type": "timeseries"
@@ -225,6 +211,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -314,6 +301,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Total Nodes",
       "transparent": true,
       "type": "timeseries"
@@ -323,6 +311,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -412,6 +401,7 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "5min Error Rate",
       "transparent": true,
       "type": "timeseries"
@@ -425,11 +415,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Data Source",
@@ -443,15 +429,7 @@
         "type": "datasource"
       },
       {
-        "current": {
-          "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
