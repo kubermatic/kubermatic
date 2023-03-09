@@ -49,7 +49,7 @@ import (
 )
 
 var (
-	credentials jig.HetznerCredentials
+	credentials jig.AWSCredentials
 
 	logOptions            = utils.DefaultLogOptions
 	ctKind                = "RequiredLabels"
@@ -81,7 +81,7 @@ func TestOPAIntegration(t *testing.T) {
 	utilruntime.Must(constrainttemplatev1.AddToScheme(seedClient.Scheme()))
 
 	// create test environment
-	testJig := jig.NewHetznerCluster(seedClient, logger, credentials, 1)
+	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
 	testJig.ClusterJig.WithTestName("opa")
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
