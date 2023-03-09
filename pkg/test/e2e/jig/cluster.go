@@ -470,7 +470,7 @@ func (j *ClusterJig) installAddons(ctx context.Context) error {
 }
 
 func (j *ClusterJig) EnsureAddon(ctx context.Context, addon Addon) error {
-	j.log.Info("Installing addon...", "addon", addon.Name)
+	j.log.Infow("Installing addon...", "addon", addon.Name)
 
 	cluster, err := j.Cluster(ctx)
 	if err != nil {
