@@ -1,29 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -31,6 +13,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -101,6 +84,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Controller Request Volume",
       "transparent": true,
       "type": "stat"
@@ -109,6 +93,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -180,6 +165,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Controller Connections",
       "transparent": true,
       "type": "stat"
@@ -189,6 +175,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -266,6 +253,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Controller Success Rate (non-4|5xx responses)",
       "transparent": true,
       "type": "stat"
@@ -274,6 +262,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -346,6 +335,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Config Reloads",
       "transparent": true,
       "type": "stat"
@@ -354,6 +344,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -426,6 +417,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Last Config Failed",
       "transparent": true,
       "type": "stat"
@@ -434,6 +426,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -542,6 +535,7 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Network I/O pressure",
       "transparent": true,
       "type": "timeseries"
@@ -550,6 +544,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -690,6 +685,7 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Average Memory Usage",
       "transparent": true,
       "type": "timeseries"
@@ -699,6 +695,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -823,6 +820,7 @@
           "step": 10
         }
       ],
+      "timeRegions": [],
       "title": "Average CPU Usage",
       "transparent": true,
       "type": "timeseries"
@@ -831,6 +829,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1161,6 +1160,7 @@
           "refId": "G"
         }
       ],
+      "timeRegions": [],
       "title": "Ingress Percentile Response Times and Transfer Rates",
       "transformations": [
         {
@@ -1178,6 +1178,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1286,6 +1287,7 @@
           "step": 1
         }
       ],
+      "timeRegions": [],
       "title": "Ingress Certificate Expiry",
       "transformations": [
         {
@@ -1310,11 +1312,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Data Source",
@@ -1329,11 +1327,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
@@ -1359,11 +1353,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
@@ -1389,11 +1379,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
