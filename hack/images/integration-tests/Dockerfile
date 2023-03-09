@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-2
+FROM quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-3
 LABEL maintainer="support@kubermatic.com"
 
 # envtest binaries are not available for all k8s patch releases, so beware when updating
