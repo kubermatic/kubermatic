@@ -13,6 +13,8 @@ spec:
     kind: ApplicationDefinition
     listKind: ApplicationDefinitionList
     plural: applicationdefinitions
+    shortNames:
+      - appdef
     singular: applicationdefinition
   scope: Cluster
   versions:

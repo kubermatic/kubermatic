@@ -204,7 +204,7 @@ type ApplicationDefinitionSpec struct {
 }
 
 //+kubebuilder:object:root=true
-//+kubebuilder:resource:scope=Cluster
+//+kubebuilder:resource:scope=Cluster,shortName=appdef
 
 // ApplicationDefinition is the Schema for the applicationdefinitions API.
 type ApplicationDefinition struct {

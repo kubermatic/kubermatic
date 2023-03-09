@@ -13,6 +13,8 @@ spec:
     kind: ApplicationInstallation
     listKind: ApplicationInstallationList
     plural: applicationinstallations
+    shortNames:
+      - appinstall
     singular: applicationinstallation
   scope: Namespaced
   versions:
