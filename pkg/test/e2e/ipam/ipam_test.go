@@ -44,7 +44,7 @@ import (
 )
 
 var (
-	credentials jig.HetznerCredentials
+	credentials jig.AWSCredentials
 	logOptions  = utils.DefaultLogOptions
 )
 
@@ -260,7 +260,7 @@ func createUserCluster(
 	seedClient ctrlruntimeclient.Client,
 	name string,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, func(), error) {
-	testJig := jig.NewHetznerCluster(seedClient, log, credentials, 1)
+	testJig := jig.NewAWSCluster(seedClient, log, credentials, 1, nil)
 	testJig.ProjectJig.WithHumanReadableName("IPAM test")
 	testJig.ClusterJig.
 		WithTestName(name).

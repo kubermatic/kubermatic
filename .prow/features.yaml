@@ -18,13 +18,12 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-hetzner: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
-      preset-vault: "true"
       preset-goproxy: "true"
       preset-e2e-ssh: "true"
     spec:
@@ -59,7 +58,6 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
-      preset-vault: "true"
       preset-goproxy: "true"
       preset-e2e-ssh: "true"
     spec:
@@ -94,7 +92,6 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
-      preset-vault: "true"
       preset-goproxy: "true"
       preset-e2e-ssh: "true"
     spec:
@@ -129,7 +126,6 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
-      preset-vault: "true"
       preset-goproxy: "true"
       preset-e2e-ssh: "true"
     spec:
@@ -184,13 +180,12 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-hetzner: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
-      preset-vault: "true"
       preset-goproxy: "true"
       preset-e2e-ssh: "true"
     spec:
@@ -248,13 +243,12 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-hetzner: "true"
+      preset-aws-e2e-kkp: "true"
       preset-kubeconfig-ci: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-kind-volume-mounts: "true"
-      preset-vault: "true"
       preset-goproxy: "true"
       preset-e2e-ssh: "true"
     spec:

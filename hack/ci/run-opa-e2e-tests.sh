@@ -55,7 +55,7 @@ source hack/ci/setup-kubermatic-in-kind.sh
 echodate "Running OPA tests..."
 
 go_test opa_e2e -timeout 30m -tags e2e,ee -v ./pkg/test/e2e/opa \
-  -hetzner-kkp-datacenter hetzner-nbg1 \
+  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Tests completed successfully!"
