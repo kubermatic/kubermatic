@@ -120,12 +120,11 @@ var (
 		kubermaticv1.AWSCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" { // = in-tree CSI
 				sc.Provisioner = "kubernetes.io/aws-ebs"
-				sc.Parameters["type"] = "gp2"
 			} else { // out-of-tree CSI
 				sc.Provisioner = csiDriverName
-				sc.Parameters["type"] = "gp3"
 			}
 
+			sc.Parameters["type"] = "io1"
 			sc.VolumeBindingMode = &waitForFirstCustomer
 
 			return nil
