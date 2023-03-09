@@ -54,7 +54,7 @@ if [ -z "$GIT_HEAD_TAG" ]; then
   # only defined in presubmits); in postsubmits we check against the current branch
   UIBRANCH="${PULL_BASE_REF:-$GIT_BRANCH}"
 
-  # the dasboard only publishes Docker images for tagged releases and all
+  # the dashboard only publishes Docker images for tagged releases and all
   # main branch revisions; this means for Kubermatic tests in release branches
   # we need to use the latest tagged dashboard of the same branch
   if [ "$UIBRANCH" == "main" ]; then
