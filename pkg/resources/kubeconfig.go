@@ -33,6 +33,11 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
+const (
+	// kubeconfigDefaultAuthInfoKey is the Auth Info key used for all kubeconfigs.
+	kubeconfigDefaultAuthInfoKey = "default"
+)
+
 type adminKubeconfigReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
@@ -54,7 +59,7 @@ func AdminKubeconfigReconciler(data adminKubeconfigReconcilerData) reconciling.N
 			address := data.Cluster().Status.Address
 			config := GetBaseKubeconfig(ca.Cert, address.URL, data.Cluster().Name)
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
-				KubeconfigDefaultContextKey: {
+				kubeconfigDefaultAuthInfoKey: {
 					Token: address.AdminToken,
 				},
 			}
@@ -90,7 +95,7 @@ func ViewerKubeconfigReconciler(data *TemplateData) reconciling.NamedSecretRecon
 				return nil, fmt.Errorf("failed to get token: %w", err)
 			}
 			config.AuthInfos = map[string]*clientcmdapi.AuthInfo{
-				KubeconfigDefaultContextKey: {
+				kubeconfigDefaultAuthInfoKey: {
 					Token: token,
 				},
 			}
@@ -166,7 +171,7 @@ func buildNewKubeconfig(ca *triple.KeyPair, server, commonName string, organizat
 	}
 
 	baseKubconfig.AuthInfos = map[string]*clientcmdapi.AuthInfo{
-		KubeconfigDefaultContextKey: {
+		kubeconfigDefaultAuthInfoKey: {
 			ClientCertificateData: triple.EncodeCertPEM(kp.Cert),
 			ClientKeyData:         triple.EncodePrivateKeyPEM(kp.Key),
 		},
@@ -185,11 +190,11 @@ func GetBaseKubeconfig(caCert *x509.Certificate, server, clusterName string) *cl
 				Server:                   server,
 			},
 		},
-		CurrentContext: KubeconfigDefaultContextKey,
+		CurrentContext: clusterName,
 		Contexts: map[string]*clientcmdapi.Context{
-			KubeconfigDefaultContextKey: {
+			clusterName: {
 				Cluster:  clusterName,
-				AuthInfo: KubeconfigDefaultContextKey,
+				AuthInfo: kubeconfigDefaultAuthInfoKey,
 			},
 		},
 	}
@@ -207,7 +212,7 @@ func IsValidKubeconfig(kubeconfigBytes []byte, caCert *x509.Certificate, server,
 
 	baseKubeconfig := GetBaseKubeconfig(caCert, server, clusterName)
 
-	authInfo := existingKubeconfig.AuthInfos[KubeconfigDefaultContextKey]
+	authInfo := existingKubeconfig.AuthInfos[kubeconfigDefaultAuthInfoKey]
 	if authInfo == nil {
 		return false, nil
 	}
