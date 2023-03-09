@@ -125,6 +125,7 @@ var (
 			}
 
 			sc.Parameters["type"] = "io1"
+			sc.Parameters["iopsPerGB"] = "25"
 			sc.VolumeBindingMode = &waitForFirstCustomer
 
 			return nil
