@@ -1,29 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -33,6 +15,7 @@
         "uid": "$datasource"
       },
       "description": "Servers which are DOWN RIGHT NOW!",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -107,6 +90,7 @@
         }
       ],
       "timeFrom": "1s",
+      "timeRegions": [],
       "title": "Currently Down",
       "transformations": [
         {
@@ -124,6 +108,7 @@
         "uid": "$datasource"
       },
       "description": "Total number of time series in prometheus",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -198,6 +183,7 @@
           "step": 40
         }
       ],
+      "timeRegions": [],
       "title": "Total Series",
       "transparent": true,
       "type": "stat"
@@ -206,6 +192,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -277,6 +264,7 @@
           "step": 40
         }
       ],
+      "timeRegions": [],
       "title": "Memory Chunks",
       "transparent": true,
       "type": "stat"
@@ -286,6 +274,7 @@
         "uid": "$datasource"
       },
       "description": "The total number of rule group evaluations missed due to slow rule group evaluation.",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -359,6 +348,7 @@
           "step": 40
         }
       ],
+      "timeRegions": [],
       "title": "Missed Iterations",
       "transparent": true,
       "type": "stat"
@@ -368,6 +358,7 @@
         "uid": "$datasource"
       },
       "description": "Total number of scrapes that hit the sample limit and were rejected.",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -441,6 +432,7 @@
           "step": 40
         }
       ],
+      "timeRegions": [],
       "title": "Tardy Scrapes",
       "transparent": true,
       "type": "stat"
@@ -450,6 +442,7 @@
         "uid": "$datasource"
       },
       "description": "Number of times the database failed to reload block data from disk.",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -523,6 +516,7 @@
           "step": 40
         }
       ],
+      "timeRegions": [],
       "title": "Reload Failures",
       "transparent": true,
       "type": "stat"
@@ -532,6 +526,7 @@
         "uid": "$datasource"
       },
       "description": "Sum of all skipped scrapes",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -605,6 +600,7 @@
           "step": 40
         }
       ],
+      "timeRegions": [],
       "title": "Skipped Scrapes",
       "transparent": true,
       "type": "stat"
@@ -614,6 +610,7 @@
         "uid": "$datasource"
       },
       "description": "All non-zero failures and errors",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -901,6 +898,7 @@
           "step": 2
         }
       ],
+      "timeRegions": [],
       "title": "Failures and Errors",
       "transparent": true,
       "type": "timeseries"
@@ -909,6 +907,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1000,6 +999,7 @@
           "step": 2
         }
       ],
+      "timeRegions": [],
       "title": "Upness (stacked)",
       "transparent": true,
       "type": "timeseries"
@@ -1008,6 +1008,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1097,6 +1098,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Storage Memory Chunks",
       "transparent": true,
       "type": "timeseries"
@@ -1105,6 +1107,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1194,6 +1197,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Series Count",
       "transparent": true,
       "type": "timeseries"
@@ -1202,6 +1206,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1314,6 +1319,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Series Created / Removed",
       "transparent": true,
       "type": "timeseries"
@@ -1323,6 +1329,7 @@
         "uid": "$datasource"
       },
       "description": "Rate of total number of appended samples",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1411,6 +1418,7 @@
           "step": 2
         }
       ],
+      "timeRegions": [],
       "title": "Appended Samples per Second",
       "transparent": true,
       "type": "timeseries"
@@ -1420,6 +1428,7 @@
         "uid": "$datasource"
       },
       "description": "Total number of syncs that were executed on a scrape pool.",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1510,6 +1519,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Scrape Sync Rate",
       "transparent": true,
       "type": "timeseries"
@@ -1519,6 +1529,7 @@
         "uid": "$datasource"
       },
       "description": "Actual interval to sync the scrape pool.",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1607,6 +1618,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Target Sync",
       "transparent": true,
       "type": "timeseries"
@@ -1615,6 +1627,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1704,6 +1717,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Scrape Duration",
       "transparent": true,
       "type": "timeseries"
@@ -1713,6 +1727,7 @@
         "uid": "$datasource"
       },
       "description": "Total number of rejected scrapes",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1838,6 +1853,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Rejected Scrapes",
       "transparent": true,
       "type": "timeseries"
@@ -1847,6 +1863,7 @@
         "uid": "$datasource"
       },
       "description": "The duration of rule group evaluations",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1936,6 +1953,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Average Rule Evaluation Duration",
       "transparent": true,
       "type": "timeseries"
@@ -1944,6 +1962,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2032,6 +2051,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "HTTP Request Duration",
       "transparent": true,
       "type": "timeseries"
@@ -2040,6 +2060,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2128,6 +2149,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Prometheus Engine Query Duration Seconds",
       "transparent": true,
       "type": "timeseries"
@@ -2137,6 +2159,7 @@
         "uid": "$datasource"
       },
       "description": "Rule-group evaluations \n - total\n - missed due to slow rule group evaluation\n - skipped due to throttled metric storage",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2236,6 +2259,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Rule Evaluator Iterations",
       "transparent": true,
       "type": "timeseries"
@@ -2244,6 +2268,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2332,6 +2357,7 @@
           "step": 2
         }
       ],
+      "timeRegions": [],
       "title": "Notifications Sent",
       "transparent": true,
       "type": "timeseries"
@@ -2340,6 +2366,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2429,6 +2456,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Minutes Since Successful Config Reload",
       "transparent": true,
       "type": "timeseries"
@@ -2437,6 +2465,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2526,6 +2555,7 @@
           "step": 4
         }
       ],
+      "timeRegions": [],
       "title": "Successful Config Reload",
       "transparent": true,
       "type": "timeseries"
@@ -2535,6 +2565,7 @@
         "uid": "$datasource"
       },
       "description": "GC invocation durations",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2623,6 +2654,7 @@
           "step": 2
         }
       ],
+      "timeRegions": [],
       "title": "GC Rate",
       "transparent": true,
       "type": "timeseries"
@@ -2636,11 +2668,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -2695,11 +2723,7 @@
         "type": "custom"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
