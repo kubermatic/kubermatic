@@ -136,9 +136,9 @@ var (
 			} else { // out-of-tree CSI
 				sc.Provisioner = csiDriverName
 				sc.AllowVolumeExpansion = pointer.Bool(true)
-				sc.VolumeBindingMode = &waitForFirstCustomer
 			}
 
+			sc.VolumeBindingMode = &waitForFirstCustomer
 			sc.Parameters["storageaccounttype"] = "Standard_LRS"
 			sc.Parameters["kind"] = "managed"
 
@@ -162,6 +162,7 @@ var (
 
 			sc.Provisioner = csiDriverName
 			sc.AllowVolumeExpansion = pointer.Bool(true)
+			sc.VolumeBindingMode = &waitForFirstCustomer
 
 			return nil
 		},
@@ -182,6 +183,7 @@ var (
 				sc.Parameters["diskformat"] = "thin"
 			} else { // out-of-tree CSI
 				sc.Provisioner = csiDriverName
+				sc.VolumeBindingMode = &waitForFirstCustomer
 			}
 
 			return nil
