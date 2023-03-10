@@ -122,7 +122,7 @@ func (p *Provider) GetClientConfig(ctx context.Context, c *kubermaticv1.Cluster,
 
 	iconfig := clientcmd.NewNonInteractiveClientConfig(
 		*cfg,
-		c.Name,
+		"",
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
