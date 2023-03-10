@@ -178,7 +178,7 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 //
 //	releaseName := applicationInstallation.Name[:43] + "-" + sha1Sum(applicationInstallation.Namespace )[:9]
 func getReleaseName(applicationInstallation *appskubermaticv1.ApplicationInstallation) string {
-	// tech note: in fact releaseName must respect more constrainst to be valid cf https://github.com/helm/helm/blob/v3.9.0/pkg/chartutil/validate_name.go#L66
+	// tech note: in fact releaseName must respect more constraints to be valid cf https://github.com/helm/helm/blob/v3.9.0/pkg/chartutil/validate_name.go#L66
 	namespacedName := applicationInstallation.Namespace + "-" + applicationInstallation.Name
 	if len(namespacedName) > 53 {
 		hash := sha1.New()

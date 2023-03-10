@@ -655,7 +655,7 @@ func TestValidateHelmCredentials(t *testing.T) {
 			},
 			0,
 		},
-		"valid: username and passord are defined and RegistryConfigFile is undefined": {
+		"valid: username and password are defined and RegistryConfigFile is undefined": {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
@@ -665,7 +665,7 @@ func TestValidateHelmCredentials(t *testing.T) {
 			},
 			0,
 		},
-		"valid: username and passord are undefined and RegistryConfigFile is defined": {
+		"valid: username and password are undefined and RegistryConfigFile is defined": {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
