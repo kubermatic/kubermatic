@@ -38,7 +38,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.25.3
+        image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.26.1
         name: cloud-controller-manager
         resources:
           limits:
