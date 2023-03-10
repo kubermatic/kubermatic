@@ -28,9 +28,16 @@ GIT_HEAD_TAG="$(git tag -l "$PULL_BASE_REF")"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
-# we only want to create the "latest" tag if we're building the main branch
 if [ "$GIT_BRANCH" == "main" ]; then
+  # we only want to create the "latest" tag if we're building the main branch
   TAGS="$TAGS latest"
+elif [[ "$GIT_BRANCH" =~ release/v[0-9]+.* ]]; then
+  # the dashboard e2e jobs in a release branch rely on a "latest" tag being
+  # available for KKP, so we turn "release/v2.21" into "v2.21-latest"
+  RELEASE_LATEST="${GIT_BRANCH#release/}"
+  RELEASE_LATEST="${RELEASE_LATEST//\//-}-latest"
+
+  TAGS="$TAGS $RELEASE_LATEST"
 fi
 
 apt install time -y
@@ -54,7 +61,7 @@ if [ -z "$GIT_HEAD_TAG" ]; then
   # only defined in presubmits); in postsubmits we check against the current branch
   UIBRANCH="${PULL_BASE_REF:-$GIT_BRANCH}"
 
-  # the dasboard only publishes Docker images for tagged releases and all
+  # the dashboard only publishes Docker images for tagged releases and all
   # main branch revisions; this means for Kubermatic tests in release branches
   # we need to use the latest tagged dashboard of the same branch
   if [ "$UIBRANCH" == "main" ]; then
