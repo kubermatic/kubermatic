@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.18.0/deploy/v1.18.0/csi-azuredisk-node.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.27.0/deploy/v1.27.0/csi-azuredisk-node.yaml
 #
 # Changes:
 # - image source includes registry templating
@@ -22,10 +22,10 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.18.0" }}
+{{ $version := "1.27.0" }}
 ---
-kind: DaemonSet
 apiVersion: apps/v1
+kind: DaemonSet
 metadata:
   name: csi-azuredisk-node
   namespace: kube-system
@@ -58,7 +58,7 @@ spec:
           volumeMounts:
             - mountPath: /csi
               name: socket-dir
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/livenessprobe:v2.6.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/livenessprobe:v2.8.0" }}
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
@@ -71,7 +71,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: node-driver-registrar
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-node-driver-registrar:v2.5.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-node-driver-registrar:v2.6.2" }}
           args:
             - --csi-address=$(ADDRESS)
             - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
@@ -101,7 +101,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: azuredisk
-          image: {{ Image (print "mcr.microsoft.com/k8s/csi/azuredisk-csi:v" $version) }}
+          image: {{ Image (print "mcr.microsoft.com/oss/kubernetes-csi/azuredisk-csi:v" $version) }}
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"

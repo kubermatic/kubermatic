@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.18.0/deploy/v1.18.0/csi-azurefile-driver.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.26.1/deploy/v1.26.1/csi-azurefile-driver.yaml
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.18.0" }}
+{{ $version := "1.26.1" }}
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver

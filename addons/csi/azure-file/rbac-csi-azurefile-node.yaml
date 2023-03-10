@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.18.0/deploy/v1.18.0/rbac-csi-azurefile-node.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.26.1/deploy/v1.26.1/rbac-csi-azurefile-node.yaml
 #
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
@@ -24,18 +24,18 @@ metadata:
   namespace: kube-system
 
 ---
-kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
   name: csi-azurefile-node-secret-role
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "list"]
+    verbs: ["get"]
 
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: csi-azurefile-node-secret-binding
 subjects:

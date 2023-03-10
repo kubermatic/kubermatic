@@ -96,7 +96,7 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 							HTTPGet: &corev1.HTTPGetAction{
 								Scheme: corev1.URISchemeHTTP,
 								Path:   "/healthz",
-								Port:   intstr.FromInt(10267),
+								Port:   intstr.FromInt(10258),
 							},
 						},
 						SuccessThreshold:    1,
@@ -126,11 +126,15 @@ func getAzureVersion(version semver.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
 	case v123:
-		return "1.23.11", nil
+		return "1.23.28", nil
 	case v124:
+		return "1.24.15", nil
+	case v125:
+		return "1.25.9", nil
+	case v126:
 		fallthrough
 	default:
-		return "1.24.0", nil
+		return "1.26.5", nil
 	}
 }
 
@@ -146,7 +150,9 @@ func getAzureFlags(data *resources.TemplateData) []string {
 		"--cloud-provider=azure",
 		"--leader-elect=true",
 		"--route-reconciliation-period=10s",
-		"--port=10267",
+		// This configures the secure port, but the CCM allows unauthenticated
+		// access to /healthz, /readyz and /livez for the health checks.
+		"--secure-port=10258",
 		"--controllers=*,-cloud-node",
 	}
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
