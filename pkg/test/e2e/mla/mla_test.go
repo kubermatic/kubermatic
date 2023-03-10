@@ -68,7 +68,7 @@ alertmanager_config: |
 )
 
 var (
-	credentials jig.HetznerCredentials
+	credentials jig.AWSCredentials
 	logOptions  = utils.DefaultLogOptions
 )
 
@@ -92,7 +92,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	// create test environment
-	testJig := jig.NewHetznerCluster(seedClient, logger, credentials, 1)
+	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
 	testJig.ClusterJig.WithTestName("mla")
 
 	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)

@@ -41,11 +41,9 @@ source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
-echodate "Getting secrets from Vault"
-retry 5 vault_ci_login
-
 if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
   echodate "Getting default SSH pubkey for machines from Vault"
+  retry 5 vault_ci_login
   E2E_SSH_PUBKEY="$(mktemp)"
   vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
 else
@@ -56,14 +54,10 @@ fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
-export AWS_E2E_TESTS_KEY_ID=$(vault kv get -field=accessKeyID dev/e2e-aws-kkp)
-export AWS_E2E_TESTS_SECRET=$(vault kv get -field=secretAccessKey dev/e2e-aws-kkp)
-
-echodate "Successfully got secrets for dev from Vault"
 echodate "Running Cilium tests..."
 
 go_test cilium_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/cilium \
-  -aws-kkp-datacenter aws-eu-central-1a \
+  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Cilium tests done."

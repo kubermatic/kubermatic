@@ -57,7 +57,7 @@ echodate "Running IPAM tests..."
 
 go_test ipam_e2e -timeout 45m -tags ipam -v ./pkg/test/e2e/ipam \
   -kubeconfig "$KUBECONFIG" \
-  -hetzner-kkp-datacenter hetzner-nbg1 \
+  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Tests completed successfully!"
