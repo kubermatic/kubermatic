@@ -18,6 +18,7 @@ package kubermaticseed
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
@@ -84,17 +85,9 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	logger.Infof("💾 Deploying %s StorageClass…", common.StorageClassName)
 	sublogger := log.Prefix(logger, "   ")
 
-	chosenProvider := opt.StorageClassProvider
-	if chosenProvider != "" && !common.SupportedStorageClassProviders().Has(chosenProvider) {
-		return fmt.Errorf("invalid provider %q given", chosenProvider)
-	}
-
+	// Check if the StorageClass exists already.
 	cls := storagev1.StorageClass{}
-	key := types.NamespacedName{Name: common.StorageClassName}
-
-	err := kubeClient.Get(ctx, key, &cls)
-
-	// storage class exists already
+	err := kubeClient.Get(ctx, types.NamespacedName{Name: common.StorageClassName}, &cls)
 	if err == nil {
 		logger.Info("✅ StorageClass exists, nothing to do.")
 		return nil
@@ -104,25 +97,53 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		return fmt.Errorf("failed to check for StorageClass %s: %w", common.StorageClassName, err)
 	}
 
-	if opt.StorageClassProvider == "" {
-		sublogger.Warnf("The %s StorageClass does not exist yet. Depending on your environment,", common.StorageClassName)
-		sublogger.Warn("the installer can auto-create a class for you, see the --storageclass CLI flag.")
-		sublogger.Warn("Alternatively, please manually create a StorageClass and then re-run the installer to continue.")
-
-		return fmt.Errorf("no %s StorageClass found", common.StorageClassName)
+	// Class does not yet exist. We can automatically create it based on CSIDrivers if the
+	// cluster is already using out-of-tree CSI drivers.
+	csiDriverName, cloudProvider, err := common.GetPreferredCSIDriver(ctx, kubeClient)
+	if err != nil {
+		return fmt.Errorf("failed to determine existing CSIDrivers: %w", err)
 	}
 
-	factory, err := common.StorageClassCreator(opt.StorageClassProvider)
+	// If no suitable CSIDriver was found, we have to rely on the user to tell us about their provider
+	// and then we assume an in-tree (legacy) provider should be used.
+	if csiDriverName == "" {
+		if opt.StorageClassProvider == "" {
+			sublogger.Warnf("The %s StorageClass does not exist yet and no suitable CSIDriver was detected.", common.StorageClassName)
+			sublogger.Warn("Depending on your environment, the installer can auto-create a class for you,")
+			sublogger.Warn("see the --storageclass CLI flag (should only be used when in-tree CSI driver is still used).")
+			sublogger.Warn("Alternatively, please manually create a StorageClass and then re-run the installer to continue.")
+
+			return errors.New("no --storageclass flag given")
+		}
+
+		chosenProvider := opt.StorageClassProvider
+		if !common.SupportedStorageClassProviders().Has(chosenProvider) {
+			return fmt.Errorf("invalid --storageclass flag %q given", chosenProvider)
+		}
+
+		cloudProvider = kubermaticv1.ProviderType(chosenProvider)
+	} else if opt.StorageClassProvider == string(common.CopyDefaultCloudProvider) {
+		// Even if a CSI Driver was found, the user might not want us to blindly create our
+		// own StorageClass, but instead copy the default. So if --storageclass=copy-default,
+		// this has precedence over the detected cloud provider.
+		cloudProvider = common.CopyDefaultCloudProvider
+	}
+
+	factory, err := common.StorageClassCreator(cloudProvider)
 	if err != nil {
 		return fmt.Errorf("invalid StorageClass provider: %w", err)
 	}
 
-	sc, err := factory(ctx, sublogger, kubeClient, common.StorageClassName)
-	if err != nil {
+	storageClass := storagev1.StorageClass{
+		Parameters: map[string]string{},
+	}
+	storageClass.Name = common.StorageClassName
+
+	if err := factory(ctx, sublogger, kubeClient, &storageClass, csiDriverName); err != nil {
 		return fmt.Errorf("failed to define StorageClass: %w", err)
 	}
 
-	if err := kubeClient.Create(ctx, &sc); err != nil {
+	if err := kubeClient.Create(ctx, &storageClass); err != nil {
 		return fmt.Errorf("failed to create StorageClass: %w", err)
 	}
 
