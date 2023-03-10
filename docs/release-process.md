@@ -37,7 +37,7 @@ This section covers the process to create a new Kubermatic release. Reflects the
     - Tag the matching release in `kubermatic` repo
     - Ensure it's built and pushed successfully
 1. Documentation:
-    - Update changelog (using https://github.com/kubermatic/gchl in `main` branch of Kubermatic repo)
+    - Update changelog (using `hack/changelog-gen.sh`)
       - Remember to include changes from the `dashboard` repo as well, if any
     - Copy it over to matching chapters and branches in docs
       - Strip the Github links from the GCHL version

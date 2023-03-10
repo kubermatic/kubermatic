@@ -14,74 +14,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### Create a changelog since last release, commit and create a new release tag
-###
-###     Usage:
-###     changelog-gen.sh -r v2.x.x - create changelog, commit and tag new release, using closed PRs release-note
-
-set -e
+set -euo pipefail
 
 cd $(dirname $0)/..
-CHANGELOG_FILE=CHANGELOG.md
 
-usage() {
-  echo "Usage: changelog-gen.sh -r NEW-RELEASE_TAG - create changelog, commit and tag new release, using closed PRs release-note"
-  exit 1
-}
+VERSION=""
+END=""
 
 # Get arguments from cli
-while getopts r:help: opts; do
+while getopts v:e: opts; do
   case ${opts} in
-  r)
-    NEW_RELEASE=${OPTARG}
+  v)
+    VERSION=${OPTARG}
     ;;
-  ?)
-    usage
+  e)
+    END=${OPTARG}
     ;;
   esac
 done
 
-# Check if a version flag is provided.
-if [ "$NEW_RELEASE" == "" ]; then
-  usage
-fi
-
-if [ "$(git rev-parse --abbrev-ref HEAD)" == "main" ]; then
-  echo "Error, releases must not be created on main branch!"
-  exit 1
-fi
-
-if git tag -l | grep -q $NEW_RELEASE; then
-  echo "Error: Tag $NEW_RELEASE already exists!"
-  exit 1
-fi
-
-if ! echo -n $NEW_RELEASE | egrep -q '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'; then
-  echo "Error: Release version \"$NEW_RELEASE\" does not match regex '^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$'"
-  echo "Valid version must look like this: v1.2.3"
+if [ -z "$VERSION" ]; then
+  echo "Usage: ./changelog-gen.sh -v VERSION [-e END_GIT_HASH]"
+  echo ""
+  echo "       Use -e to perform incremental changelogs: Once the"
+  echo "       beta changelog has been generated, -e can be used"
+  echo "       to only include changes since the beta when updating"
+  echo "       the changelog for the final release."
   exit 1
 fi
 
 # Install gchl if not installed
 if ! [ -x "$(command -v gchl)" ]; then
-  echo "gchl not installed!"
-  echo "Executing go get on github.com/kubermatic/gchl ..."
-  go get github.com/kubermatic/gchl
-  echo "Done!"
+  echo "Installing k8c.io/gchl…"
+  go install k8c.io/gchl@latest
 fi
 
-# Create CHANGELOG.md if not exists in order for the cat not to fail
-[ -f $CHANGELOG_FILE ] || touch $CHANGELOG_FILE
+FILENAME="$VERSION-$(date +%s).md"
 
-# Generate changelog
-OUTPUT="$(gchl --for-version $NEW_RELEASE since $(git describe --abbrev=0 --tags) --release-notes)"
-echo "${OUTPUT}" | cat - $CHANGELOG_FILE > temp
-mv temp $CHANGELOG_FILE
-
-# Commit generated changelog and create a new tag
-echo "Creating new commit and tag new release"
-git add $CHANGELOG_FILE
-git commit -m "Added changelog for new release $NEW_RELEASE"
-git tag $NEW_RELEASE
-
-echo "Successfully created new release $NEW_RELEASE, verify via \`git show\`, then do a \`git push origin $(git rev-parse --abbrev-ref HEAD) --tags\`"
+echo "Generating changelog in $FILENAME…"
+gchl \
+  --organization kubermatic \
+  --repository kubermatic \
+  --end "$END" \
+  --for-version "$VERSION" > "$FILENAME"
