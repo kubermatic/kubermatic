@@ -416,6 +416,54 @@ scrape_configs:
         target_label: endpoint
     scheme: http
   - honor_labels: true
+    job_name: kube_node_info
+    kubernetes_sd_configs:
+      - role: endpoints
+    metrics_path: /federate
+    params:
+      match[]:
+        - '{__name__="kube_node_info"}'
+    relabel_configs:
+      - action: keep
+        regex: user
+        replacement: $1
+        separator: ;
+        source_labels:
+          - __meta_kubernetes_service_label_cluster
+      - action: keep
+        regex: web
+        replacement: $1
+        separator: ;
+        source_labels:
+          - __meta_kubernetes_endpoint_port_name
+      - action: replace
+        regex: (.*)
+        replacement: $1
+        separator: ;
+        source_labels:
+          - __meta_kubernetes_namespace
+        target_label: Namespace
+      - action: replace
+        regex: (.*)
+        replacement: $1
+        separator: ;
+        source_labels:
+          - __meta_kubernetes_pod_name
+        target_label: pod
+      - action: replace
+        regex: (.*)
+        replacement: $1
+        separator: ;
+        source_labels:
+          - __meta_kubernetes_service_name
+        target_label: service
+      - action: replace
+        regex: (.*)
+        replacement: web
+        separator: ;
+        target_label: endpoint
+    scheme: http
+  - honor_labels: true
     job_name: container_cpu_usage_seconds_total
     kubernetes_sd_configs:
       - role: endpoints
