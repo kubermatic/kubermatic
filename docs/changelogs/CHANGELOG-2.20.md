@@ -14,6 +14,15 @@
 - [v2.20.11](#v22011)
 - [v2.20.12](#v22012)
 - [v2.20.13](#v22013)
+- [v2.20.14](#v22014)
+
+## [v2.20.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.14)
+
+### Bugfixes
+
+- Fix a bug where ccm/csi migrated clusters on vSphere have a partially deployed csi validating webhook ([#11911](https://github.com/kubermatic/kubermatic/pull/11911))
+- Include tunneling agent IP in apiserver's TLS cert SANs ([#11956](https://github.com/kubermatic/kubermatic/pull/11956))
+- Set proper NodePort range in Cilium config if non-default range is used ([#11977](https://github.com/kubermatic/kubermatic/pull/11977))
 
 ## [v2.20.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.13)
 
