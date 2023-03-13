@@ -94,7 +94,7 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	return nil
 }
 
-func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, caBundle corev1.TypedLocalObjectReference,  overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
+func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, caBundle corev1.TypedLocalObjectReference, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
 	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations, seed.Namespace); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
