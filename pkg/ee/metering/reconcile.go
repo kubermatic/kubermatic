@@ -87,14 +87,14 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 		common.OwnershipModifierFactory(seed, scheme),
 	}
 
-	if err := reconcileMeteringReportConfigurations(ctx, client, seed, overwriter, modifiers...); err != nil {
+	if err := reconcileMeteringReportConfigurations(ctx, client, seed, cfg.Spec.CABundle, overwriter, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile metering report configurations: %w", err)
 	}
 
 	return nil
 }
 
-func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
+func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, caBundle corev1.TypedLocalObjectReference, overwriter registry.WithOverwriteFunc, modifiers ...reconciling.ObjectModifier) error {
 	if err := cleanupOrphanedReportingCronJobs(ctx, client, seed.Spec.Metering.ReportConfigurations, seed.Namespace); err != nil {
 		return fmt.Errorf("failed to cleanup orphaned reporting cronjobs: %w", err)
 	}
@@ -103,7 +103,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	var cronJobs []reconciling.NamedCronJobCreatorGetter
 
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
-		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, overwriter, seed.Namespace))
+		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, caBundle.Name, overwriter, seed.Namespace))
 
 		if reportConf.Retention != nil {
 			config.Rules = append(config.Rules, lifecycle.Rule{
