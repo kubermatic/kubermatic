@@ -51,7 +51,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg by (node_name) (sum by (node_name) (irate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
+          "expr": "avg by (node_name) (100 - (irate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -162,7 +162,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "avg (sum by (node_name) (irate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
+          "expr": "avg (100 - (irate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A"
