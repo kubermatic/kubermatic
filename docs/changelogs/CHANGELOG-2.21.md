@@ -27,7 +27,8 @@
 
 ### Updates
 
-- Update machine-controller to v1.54.5. This fixes an issue with Flatcar nodes not joining the cluster for clusters that don't use OSM ([#11897](https://github.com/kubermatic/kubermatic/pull/11897))
+- Update machine-controller to v1.54.5 ([#11897](https://github.com/kubermatic/kubermatic/pull/11897))
+    - This fixes an issue with Flatcar nodes not joining the cluster for clusters that don't use OSM.
 - Update Operating System Manager to v1.1.3 ([#12049](https://github.com/kubermatic/kubermatic/pull/12049))
     - Fix an issue where cloud-init scripts re-ran on machine reboot.
 - Update Metering to v1.0.3 ([#12035](https://github.com/kubermatic/kubermatic/pull/12035))
