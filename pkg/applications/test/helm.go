@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,6 +39,8 @@ import (
 	registry2 "helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/repo/repotest"
 	"helm.sh/helm/v3/pkg/uploader"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 )
 
 // Const relative to pkg/applications/helmclient/testdata/examplechart chart.
@@ -197,10 +200,36 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string)
 
 	go func() {
 		if err := r.ListenAndServe(); err != nil {
-			t.Errorf("can not start http registry: %s", err)
+			t.Errorf("can not start OCI registry: %s", err)
 			return
 		}
 	}()
+
+	// Ensure registry is listening
+	var lastError error
+	if !utils.WaitFor(500*time.Millisecond, 5*time.Second, func() bool {
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+		defer cancel()
+		request, err := http.NewRequestWithContext(ctx, http.MethodHead, strings.Replace(ociRegistryUrl, "oci://", "http://", 1), nil)
+		if err != nil {
+			lastError = fmt.Errorf("failed to created request to test oci registry is up: %w", err)
+			return false
+		}
+
+		resp, err := http.DefaultClient.Do(request)
+		lastError = err
+		defer func() {
+			if resp != nil {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("Failed to close response body from testing oci registry :%s", err)
+				}
+			}
+		}()
+
+		return lastError == nil
+	}) {
+		t.Fatalf("failed to check if oci registry is up: %s", lastError)
+	}
 
 	if glob != "" {
 		options := []registry2.ClientOption{registry2.ClientOptWriter(os.Stdout)}
