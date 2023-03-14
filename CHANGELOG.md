@@ -7,6 +7,28 @@
 - [v2.21.4](#v2214)
 - [v2.21.5](#v2215)
 - [v2.21.6](#v2216)
+- [v2.21.7](#v2217)
+
+## [v2.21.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.7)
+
+### Bugfixes
+
+- Fix a bug where ccm/csi migrated clusters on vSphere have a partially deployed csi validating webhook ([#11912](https://github.com/kubermatic/kubermatic/pull/11912))
+- Fix a bug where setting a provider incompatibility rule for all providers was not working ([#11898](https://github.com/kubermatic/kubermatic/pull/11898))
+- Fix wrong labels in cluster/project metrics when uppercase labels were used ([#11970](https://github.com/kubermatic/kubermatic/pull/11970))
+- Include tunneling agent IP in apiserver's TLS cert SANs ([#11933](https://github.com/kubermatic/kubermatic/pull/11933))
+- Remove promtail sidecar from user cluster MLA that sets `fs.inotify.max_user_instances` ([#11981](https://github.com/kubermatic/kubermatic/pull/11981))
+- Set proper NodePort range in Cilium config if non-default range is used ([#11976](https://github.com/kubermatic/kubermatic/pull/11976))
+
+### Misc
+
+- Add support for ca-bundle to metering cronjobs ([#12032](https://github.com/kubermatic/kubermatic/pull/12032))
+- Allow updating of the `clusterNetwork.proxyMode` via the KKP API (PATCH endpoint) ([#12011](https://github.com/kubermatic/kubermatic/pull/12011))
+
+### Updates
+
+- Update machine-controller to v1.54.5. This fixes an issue with Flatcar nodes not joining the cluster for clusters that don't use OSM ([#11897](https://github.com/kubermatic/kubermatic/pull/11897))
+- Update Metering to v1.0.3 ([#12035](https://github.com/kubermatic/kubermatic/pull/12035))
 
 ## [v2.21.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.6)
 
@@ -658,6 +680,26 @@ Note that in the current state, declarative working skips KKP authentication and
 - [v2.20.10](#v22010)
 - [v2.20.11](#v22011)
 - [v2.20.12](#v22012)
+- [v2.20.13](#v22013)
+- [v2.20.14](#v22014)
+
+## [v2.20.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.14)
+
+### Bugfixes
+
+- Fix a bug where ccm/csi migrated clusters on vSphere have a partially deployed csi validating webhook ([#11911](https://github.com/kubermatic/kubermatic/pull/11911))
+- Include tunneling agent IP in apiserver's TLS cert SANs ([#11956](https://github.com/kubermatic/kubermatic/pull/11956))
+- Set proper NodePort range in Cilium config if non-default range is used ([#11977](https://github.com/kubermatic/kubermatic/pull/11977))
+
+## [v2.20.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.13)
+
+### Bugfixes
+
+- Update machine-controller to v1.45.6 and operating-system-manager (OSM) to v0.4.6. This fixes the issue with the new nodes not joining the cluster because of non-existing containerd and Docker packages. containerd is updated to v1.6 (from 1.4) and Docker is updated to 20.10 (from 19.03) ([#11796](https://github.com/kubermatic/kubermatic/pull/11796))
+
+### Updates
+
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.1 ([#11750](https://github.com/kubermatic/kubermatic/pull/11750))
 
 ## [2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/2.20.12)
 
