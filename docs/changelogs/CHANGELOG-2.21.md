@@ -28,8 +28,12 @@
 ### Updates
 
 - Update machine-controller to v1.54.5. This fixes an issue with Flatcar nodes not joining the cluster for clusters that don't use OSM ([#11897](https://github.com/kubermatic/kubermatic/pull/11897))
+- Update Operating System Manager to v1.2.1. ([#12049](https://github.com/kubermatic/kubermatic/pull/12049))
+    - Fix an issue where cloud-init scripts re-ran on machine reboot.
 - Update Metering to v1.0.3 ([#12035](https://github.com/kubermatic/kubermatic/pull/12035))
-- Update Operating System Manager to v1.2.1. Fix an issue where cloud-init scripts re-ran on machine reboot ([#12049](https://github.com/kubermatic/kubermatic/pull/12049))
+    - Add non machine-controller managed machines to `average-cluster-machines`. Note that this is based on a new metric that will be collected together in the same release, therefore information prior this update is not available.
+    - Fixes a bug that leads to low CPU usage values.
+    - Remove redundant label quotation.
 
 ## [v2.21.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.6)
 
