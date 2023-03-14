@@ -14,7 +14,12 @@
 
 ### Updates
 
-- Update Metering to v1.0.3 with the following changes: * Add non machine-controller managed machines to `average-cluster-machines`. Note that this is based on a new metric that will be collected together in the same release, therefore information prior this update is not available.* Fixes a bug that leads to low CPU usage values* Remove redundant label quotation ([#12035](https://github.com/kubermatic/kubermatic/pull/12035))
+- Update Operating System Manager to v1.2.1. ([#12049](https://github.com/kubermatic/kubermatic/pull/12049))
+    - Fix an issue where cloud-init scripts re-ran on machine reboot.
+- Update Metering to v1.0.3 ([#12035](https://github.com/kubermatic/kubermatic/pull/12035))
+    - Add non machine-controller managed machines to `average-cluster-machines`. Note that this is based on a new metric that will be collected together in the same release, therefore information prior this update is not available.
+    - Fixes a bug that leads to low CPU usage values.
+    - Remove redundant label quotation.
 
 ### Misc
 
