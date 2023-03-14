@@ -7,6 +7,34 @@
 - [v2.21.4](#v2214)
 - [v2.21.5](#v2215)
 - [v2.21.6](#v2216)
+- [v2.21.7](#v2217)
+
+## [v2.21.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.7)
+
+### Bugfixes
+
+- Fix a bug where ccm/csi migrated clusters on vSphere have a partially deployed csi validating webhook ([#11912](https://github.com/kubermatic/kubermatic/pull/11912))
+- Fix a bug where setting a provider incompatibility rule for all providers was not working ([#11898](https://github.com/kubermatic/kubermatic/pull/11898))
+- Fix wrong labels in cluster/project metrics when uppercase labels were used ([#11970](https://github.com/kubermatic/kubermatic/pull/11970))
+- Include tunneling agent IP in apiserver's TLS cert SANs ([#11933](https://github.com/kubermatic/kubermatic/pull/11933))
+- Remove promtail sidecar from user cluster MLA that sets `fs.inotify.max_user_instances` ([#11981](https://github.com/kubermatic/kubermatic/pull/11981))
+- Set proper NodePort range in Cilium config if non-default range is used ([#11976](https://github.com/kubermatic/kubermatic/pull/11976))
+
+### Misc
+
+- Add support for ca-bundle to metering cronjobs ([#12032](https://github.com/kubermatic/kubermatic/pull/12032))
+- Allow updating of the `clusterNetwork.proxyMode` via the KKP API (PATCH endpoint) ([#12011](https://github.com/kubermatic/kubermatic/pull/12011))
+
+### Updates
+
+- Update machine-controller to v1.54.5 ([#11897](https://github.com/kubermatic/kubermatic/pull/11897))
+    - Fix an issue with Flatcar nodes not joining the cluster for clusters that don't use OSM.
+- Update Operating System Manager to v1.1.3 ([#12049](https://github.com/kubermatic/kubermatic/pull/12049))
+    - Fix an issue where cloud-init scripts re-ran on machine reboot.
+- Update Metering to v1.0.3 ([#12035](https://github.com/kubermatic/kubermatic/pull/12035))
+    - Add non machine-controller managed machines to `average-cluster-machines`. Note that this is based on a new metric that will be collected together in the same release, therefore information prior this update is not available.
+    - Fixes a bug that leads to low CPU usage values.
+    - Remove redundant label quotation.
 
 ## [v2.21.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.6)
 
