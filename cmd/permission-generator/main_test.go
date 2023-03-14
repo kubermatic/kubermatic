@@ -1,14 +1,11 @@
 package main
 
 import (
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
 	"text/tabwriter"
-
-	"gopkg.in/yaml.v3"
 )
 
 func TestAddPolicyStatement(t *testing.T) {
@@ -32,7 +29,7 @@ var pkgs = []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws", "github.com/k
 const filter = "github.com/aws/aws-sdk-go-v2/*"
 
 func TestSearchFuncInvocationsForPackages(t *testing.T) {
-	res, err := SearchFuncInvocationsForPackages(nil, pkgs, filter)
+	res, err := SearchFuncInvocationsForPackages(pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,17 +43,8 @@ func TestSearchFuncInvocationsForPackages(t *testing.T) {
 	}
 }
 
-//go:embed mapper.yml
-var mapperyml []byte
-
 func TestAWSPermissionFuncMapping(t *testing.T) {
-	mapper := &AWSPermissionFuncMapping{}
-	err := yaml.Unmarshal(mapperyml, mapper)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	res, err := SearchFuncInvocationsForPackages(mapper, pkgs, filter)
+	res, err := SearchFuncInvocationsForPackages(pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,33 +52,25 @@ func TestAWSPermissionFuncMapping(t *testing.T) {
 	w := new(tabwriter.Writer)
 	w.Init(os.Stdout, 8, 8, 0, '\t', 0)
 
-	for k, v := range res {
-		fmt.Fprintf(w, "%s\t%s\t%s\n", k.Funcname, k.ModulePath, v.ScopePermissions)
+	for k := range res {
+		fmt.Fprintf(w, "%s\t%s\n", k.Funcname, k.ModulePath)
 	}
 	w.Flush()
 }
 
 func TestGeneratingAWSPolicy(t *testing.T) {
-	mapper := &AWSPermissionFuncMapping{}
-	err := yaml.Unmarshal(mapperyml, mapper)
+	mapper, err := NewDefaultMapper()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	res, err := SearchFuncInvocationsForPackages(mapper, pkgs, filter)
+	invoc, err := SearchFuncInvocationsForPackages(pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// create a policy from our funcs
-	fapc := NewFlatAWSPolicyCreator()
-	for _, metadata := range res {
-		for scope, actions := range metadata.ScopePermissions {
-			fapc.AddPolicyStatement(scope, "Allow", actions)
-		}
-	}
-
-	b, err := json.MarshalIndent(fapc, "", "  ")
+	apc := NewAWSPolicyCreator(mapper)
+	b, err := apc.GeneratePolicy(invoc)
 	if err != nil {
 		t.Fatal(err)
 	}
