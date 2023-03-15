@@ -1,6 +1,29 @@
 # Kubermatic 2.22
 
 - [v2.22.0](#v2220)
+- [v2.22.1](#v2221)
+
+## [v2.22.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.1)
+
+### Bugfixes
+
+- Fix a bug where KKP managed vSphere folders are enforced but shouldn't ([#11962](https://github.com/kubermatic/kubermatic/pull/11962))
+- Fix mla-monitoring-agent configuration being invalid when custom scraping configuration is provided ([#11988](https://github.com/kubermatic/kubermatic/pull/11988))
+- Fix wrong labels in cluster/project metrics when uppercase labels were used ([#11947](https://github.com/kubermatic/kubermatic/pull/11947))
+- Set proper NodePort range in Cilium config if non-default range is used ([#11963](https://github.com/kubermatic/kubermatic/pull/11963))
+
+### Updates
+
+- Update Operating System Manager to v1.2.1 ([#12049](https://github.com/kubermatic/kubermatic/pull/12049))
+    - Fix an issue where cloud-init scripts re-ran on machine reboot.
+- Update Metering to v1.0.3 ([#12035](https://github.com/kubermatic/kubermatic/pull/12035))
+    - Add non machine-controller managed machines to `average-cluster-machines`. Note that this is based on a new metric that will be collected together in the same release, therefore information prior this update is not available.
+    - Fixes a bug that leads to low CPU usage values.
+    - Remove redundant label quotation.
+
+### Misc
+
+- Add support for ca-bundle to metering cronjobs ([#11979](https://github.com/kubermatic/kubermatic/pull/11979))
 
 ## [v2.22.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.0)
 
