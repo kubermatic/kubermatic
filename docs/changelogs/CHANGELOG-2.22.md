@@ -21,7 +21,6 @@
     - Fixes a bug that leads to low CPU usage values.
     - Remove redundant label quotation.
 
-
 ### Misc
 
 - Add support for ca-bundle to metering cronjobs ([#11979](https://github.com/kubermatic/kubermatic/pull/11979))
