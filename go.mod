@@ -78,19 +78,19 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.11.1
 	k8c.io/kubeone v1.6.0
-	k8c.io/operating-system-manager v1.2.0
+	k8c.io/operating-system-manager v1.2.1-0.20230314113238-07720b8706ee
 	k8c.io/reconciler v0.3.1
-	k8s.io/api v0.26.1
-	k8s.io/apiextensions-apiserver v0.26.1
-	k8s.io/apimachinery v0.26.1
+	k8s.io/api v0.26.2
+	k8s.io/apiextensions-apiserver v0.26.2
+	k8s.io/apimachinery v0.26.2
 	k8s.io/apiserver v0.26.1
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.13.0
 	k8s.io/cli-runtime v0.26.1
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.26.1
+	k8s.io/code-generator v0.26.2
 	k8s.io/klog/v2 v2.90.0
 	k8s.io/kube-aggregator v0.26.1
-	k8s.io/kube-openapi v0.0.0-20230217203603-ff9a8e8fa21d
+	k8s.io/kube-openapi v0.0.0-20230228151317-19cbebb19cb7
 	k8s.io/kubectl v0.26.1
 	k8s.io/metrics v0.26.1
 	k8s.io/test-infra v0.0.0-20230224035733-afa88634622b
@@ -288,7 +288,7 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_model v0.3.0 // indirect
-	github.com/prometheus/common v0.39.0 // indirect
+	github.com/prometheus/common v0.40.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -326,7 +326,7 @@ require (
 	go.starlark.net v0.0.0-20220223235035-243c74974e97 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
+	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
@@ -339,10 +339,10 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.26.1 // indirect
+	k8s.io/component-base v0.26.2 // indirect
 	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	k8s.io/klog v1.0.0
-	k8s.io/kubelet v0.26.1 // indirect
+	k8s.io/kubelet v0.26.2 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.2 // indirect
 	sigs.k8s.io/gateway-api v0.6.0 // indirect

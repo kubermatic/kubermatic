@@ -4,7 +4,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
-    kubermatic.k8c.io/location: "seed"
   creationTimestamp: null
   name: customoperatingsystemprofiles.operatingsystemmanager.k8c.io
 spec:
@@ -375,6 +374,13 @@ spec:
                         type: object
                       type: array
                   type: object
+                provisioningUtility:
+                  default: cloud-init
+                  description: ProvisioningConfig is used for configurating the worker node. Defaults to cloud-init.
+                  enum:
+                    - cloud-init
+                    - ignition
+                  type: string
                 supportedCloudProviders:
                   description: SupportedCloudProviders represent the cloud providers that support the given operating system version
                   items:
