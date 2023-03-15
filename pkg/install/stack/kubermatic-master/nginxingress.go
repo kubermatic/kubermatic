@@ -38,10 +38,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, "nginx-ingress-controller") {
+		logger.Info("⏭️ Skipping nginx-ingress-controller deployment.")
+		return nil
+	}
+
 	logger.Info("📦 Deploying nginx-ingress-controller…")
 	sublogger := log.Prefix(logger, "   ")
 

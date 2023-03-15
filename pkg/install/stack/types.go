@@ -60,6 +60,8 @@ type DeployOptions struct {
 	MLASkipMinioLifecycleMgr bool
 	MLAForceSecrets          bool
 	MLAIncludeIap            bool
+
+	SkipCharts []string
 }
 
 type Stack interface {
