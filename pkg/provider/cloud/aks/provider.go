@@ -175,7 +175,7 @@ func GetCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClust
 	return &aksCluster.ManagedCluster, nil
 }
 
-func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterAKSCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterAKSCloudSpec) (*kubermaticv1.ExternalClusterCondition, error) {
 	cred, err := GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -189,8 +189,8 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 	if err != nil {
 		return nil, err
 	}
-	status := &apiv2.ExternalClusterStatus{
-		State: apiv2.UnknownExternalClusterState,
+	condition := &kubermaticv1.ExternalClusterCondition{
+		Phase: kubermaticv1.ExternalClusterPhaseUnknown,
 	}
 	if aksCluster.Properties != nil {
 		var powerState armcontainerservice.Code
@@ -201,20 +201,17 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 		if aksCluster.Properties.ProvisioningState != nil {
 			provisioningState = *aksCluster.Properties.ProvisioningState
 		}
-		status.State = ConvertStatus(provisioningState, powerState)
-		status.AKS = &apiv2.AKSClusterStatus{
-			ProvisioningState: apiv2.AKSProvisioningState(provisioningState),
-			PowerState:        apiv2.AKSPowerState(powerState),
-		}
-		switch status.State {
-		case apiv2.StoppedExternalClusterState:
-			status.StatusMessage = "The Kubernetes service is currently stopped. You can only start or delete a stopped AKS cluster. To perform any operation like scale or upgrade, start your cluster first."
-		case apiv2.WarningExternalClusterState:
-			status.StatusMessage = "The last operation attempted on this cluster failed. The nodes may still be running. Check previous operations on the cluster to resolve any failures."
+		condition.Phase = ConvertStatus(provisioningState, powerState)
+		fmt.Println("//condition.Phase", condition.Phase)
+		switch condition.Phase {
+		case kubermaticv1.ExternalClusterPhaseStopped:
+			condition.Message = "The Kubernetes service is currently stopped. You can only start or delete a stopped AKS cluster. To perform any operation like scale or upgrade, start your cluster first."
+		case kubermaticv1.ExternalClusterPhaseWarning:
+			condition.Message = "The last operation attempted on this cluster failed. The nodes may still be running. Check previous operations on the cluster to resolve any failures."
 		}
 	}
 
-	return status, nil
+	return condition, nil
 }
 
 func DeleteCluster(ctx context.Context, aksClient *armcontainerservice.ManagedClustersClient, cloudSpec *kubermaticv1.ExternalClusterAKSCloudSpec) error {
@@ -225,26 +222,28 @@ func DeleteCluster(ctx context.Context, aksClient *armcontainerservice.ManagedCl
 	return DecodeError(err)
 }
 
-func ConvertStatus(provisioningState string, powerState armcontainerservice.Code) apiv2.ExternalClusterState {
+func ConvertStatus(provisioningState string, powerState armcontainerservice.Code) kubermaticv1.ExternalClusterPhase {
 	switch {
 	case provisioningState == string(resources.CreatingAKSState):
-		return apiv2.ProvisioningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseProvisioning
 	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.RunningAKSState):
-		return apiv2.RunningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseRunning
 	case provisioningState == string(resources.StartingAKSState):
-		return apiv2.StartingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseStarting
 	case provisioningState == string(resources.StoppingAKSState):
-		return apiv2.StoppingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseStopping
 	case provisioningState == string(resources.SucceededAKSState) && powerState == armcontainerservice.Code(resources.StoppedAKSState):
-		return apiv2.StoppedExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseStopped
 	case provisioningState == string(resources.FailedAKSState) && powerState == armcontainerservice.Code(resources.RunningAKSState):
-		return apiv2.WarningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseWarning
+	case provisioningState == string(resources.FailedAKSState) && powerState == armcontainerservice.Code(resources.StoppedAKSState):
+		return kubermaticv1.ExternalClusterPhaseError
 	case provisioningState == string(resources.DeletingAKSState):
-		return apiv2.DeletingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseDeleting
 	case provisioningState == string(resources.UpgradingAKSState):
-		return apiv2.ReconcilingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseReconciling
 	default:
-		return apiv2.UnknownExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseUnknown
 	}
 }
 

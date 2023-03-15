@@ -185,6 +185,14 @@ const (
 	// ExternalClusterPhaseRunning status indicates the cluster is fully usable.
 	ExternalClusterPhaseRunning ExternalClusterPhase = "Running"
 
+	ExternalClusterPhaseStarting ExternalClusterPhase = "Starting"
+
+	ExternalClusterPhaseStopping ExternalClusterPhase = "Stopping"
+
+	ExternalClusterPhaseStopped ExternalClusterPhase = "Stopped"
+
+	ExternalClusterPhaseWarning ExternalClusterPhase = "Warning"
+
 	// ExternalClusterPhaseReconciling status indicates that some work is actively being done on the cluster, such as upgrading the master or
 	// node software. Details can be found in the `StatusMessage` field.
 	ExternalClusterPhaseReconciling ExternalClusterPhase = "Reconciling"
