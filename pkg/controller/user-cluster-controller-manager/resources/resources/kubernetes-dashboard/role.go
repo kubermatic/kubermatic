@@ -44,13 +44,13 @@ func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
 				{
 					APIGroups:     []string{""},
 					Resources:     []string{"services"},
-					ResourceNames: []string{"heapster", "dashboard-metrics-scraper"},
+					ResourceNames: []string{"dashboard-metrics-scraper"},
 					Verbs:         []string{"proxy"},
 				},
 				{
 					APIGroups:     []string{""},
 					Resources:     []string{"services/proxy"},
-					ResourceNames: []string{"heapster", "http:heapster:", "https:heapster:", "dashboard-metrics-scraper", "http:dashboard-metrics-scraper"},
+					ResourceNames: []string{"dashboard-metrics-scraper", "http:dashboard-metrics-scraper"},
 					Verbs:         []string{"get"},
 				},
 			}
