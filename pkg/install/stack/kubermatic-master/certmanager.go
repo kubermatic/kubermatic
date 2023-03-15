@@ -44,10 +44,16 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, "cert-manager") {
+		logger.Info("⏭️ Skipping cert-manager deployment.")
+		return nil
+	}
+
 	logger.Info("📦 Deploying cert-manager…")
 	sublogger := log.Prefix(logger, "   ")
 

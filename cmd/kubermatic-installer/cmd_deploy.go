@@ -71,6 +71,8 @@ type DeployOptions struct {
 	MigrateNginx               bool
 	MigrateOpenstackCSI        bool
 	MigrateLogrotate           bool
+
+	SkipCharts []string
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -124,6 +126,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateOpenstackCSI, "migrate-openstack-csidrivers", false, "(kubermatic-seed only) enable the data migration of CSIDriver of openstack user-clusters")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateLogrotate, "migrate-logrotate", false, "enable the data migration to delete the logrotate addon")
+
+	cmd.PersistentFlags().StringSliceVar(&opt.SkipCharts, "skip-charts", nil, "skip helm chart deployment (some of cert-manager, nginx-ingress-controller, dex)")
 
 	return cmd
 }
@@ -207,6 +211,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			DisableTelemetry:                   opt.DisableTelemetry,
 			DisableDependencyUpdate:            opt.SkipDependencies,
 			Versions:                           versions,
+			SkipCharts:                         opt.SkipCharts,
 		}
 
 		// prepapre Kubernetes and Helm clients

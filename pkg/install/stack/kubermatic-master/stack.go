@@ -39,6 +39,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -199,6 +200,11 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 }
 
 func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, "dex") {
+		logger.Info("⏭️ Skipping dex deployment.")
+		return nil
+	}
+
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")
 

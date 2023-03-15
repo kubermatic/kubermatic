@@ -54,6 +54,8 @@ type DeployOptions struct {
 	EnableLogrotateMigration           bool
 	DisableTelemetry                   bool
 	DisableDependencyUpdate            bool
+
+	SkipCharts []string
 }
 
 type Stack interface {
