@@ -314,6 +314,10 @@ spec:
     config: ""
     # DockerRepository is the repository containing the Kubermatic dashboard image.
     dockerRepository: quay.io/kubermatic/dashboard-ee
+    # DockerTagSuffix is appended to the KKP version used for referring to the custom dashboard image.
+    # If left empty, either the `DockerTag` if specified or the original dashboard Docker image tag will be used.
+    # With DockerTagSuffix the tag becomes <KKP_VERSION:SUFFIX> i.e. "v2.15.0-SUFFIX".
+    dockerTagSuffix: ""
     # Replicas sets the number of pod replicas for the UI deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.

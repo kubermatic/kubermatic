@@ -17,6 +17,8 @@ limitations under the License.
 package kubermatic
 
 import (
+	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -54,6 +56,8 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 			tag := versions.UI
 			if cfg.Spec.UI.DockerTag != "" {
 				tag = cfg.Spec.UI.DockerTag
+			} else if cfg.Spec.UI.DockerTagSuffix != "" {
+				tag = fmt.Sprintf("%s-%s", versions.Kubermatic, cfg.Spec.UI.DockerTagSuffix)
 			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{

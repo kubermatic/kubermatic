@@ -329,7 +329,10 @@ spec:
                       description: DockerRepository is the repository containing the Kubermatic dashboard image.
                       type: string
                     dockerTag:
-                      description: DockerTag is used to overwrite the dashboard Docker image tag and is only for development purposes. This field must not be set in production environments. ---
+                      description: DockerTag is used to overwrite the dashboard Docker image tag and is only for development purposes. This field must not be set in production environments. If DockerTag is specified then DockerTagSuffix will be ignored. ---
+                      type: string
+                    dockerTagSuffix:
+                      description: DockerTagSuffix is appended to the KKP version used for referring to the custom dashboard image. If left empty, either the `DockerTag` if specified or the original dashboard Docker image tag will be used. With DockerTagSuffix the tag becomes <KKP_VERSION:SUFFIX> i.e. "v2.15.0-SUFFIX".
                       type: string
                     replicas:
                       description: Replicas sets the number of pod replicas for the UI deployment.

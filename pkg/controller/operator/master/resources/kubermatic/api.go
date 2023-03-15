@@ -245,6 +245,8 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 			tag := versions.UI
 			if cfg.Spec.UI.DockerTag != "" {
 				tag = cfg.Spec.UI.DockerTag
+			} else if cfg.Spec.UI.DockerTagSuffix != "" {
+				tag = fmt.Sprintf("%s-%s", versions.Kubermatic, cfg.Spec.UI.DockerTagSuffix)
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
