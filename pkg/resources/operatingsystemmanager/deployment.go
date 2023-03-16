@@ -56,7 +56,7 @@ var (
 
 const (
 	Name = "operating-system-manager"
-	Tag  = "v1.2.0"
+	Tag  = "fefdb70fecee30d6c08615c83446b3ea1e60c161"
 )
 
 type operatingSystemManagerData interface {

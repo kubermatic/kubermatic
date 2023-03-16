@@ -375,6 +375,13 @@ spec:
                         type: object
                       type: array
                   type: object
+                provisioningUtility:
+                  default: cloud-init
+                  description: ProvisioningConfig is used for configurating the worker node. Defaults to cloud-init.
+                  enum:
+                    - cloud-init
+                    - ignition
+                  type: string
                 supportedCloudProviders:
                   description: SupportedCloudProviders represent the cloud providers that support the given operating system version
                   items:

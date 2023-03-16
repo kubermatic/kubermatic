@@ -360,6 +360,14 @@ spec:
                       type: string
                     type: array
                 type: object
+              provisioningUtility:
+                default: cloud-init
+                description: ProvisioningConfig is used for configurating the worker
+                  node. Defaults to cloud-init.
+                enum:
+                - cloud-init
+                - ignition
+                type: string
             required:
             - bootstrapConfig
             - cloudProvider
