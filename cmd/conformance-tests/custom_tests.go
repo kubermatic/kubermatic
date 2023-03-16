@@ -29,6 +29,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -425,4 +426,62 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(ctx context.Context, log *
 
 	log.Info("Successfully validated user cluster pod and node metrics.")
 	return nil
+}
+
+func (r *testRunner) testNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	log.Infof("Testing that no k8s.gcr.io images exist in control plane ...")
+
+	pods := &corev1.PodList{}
+
+	if err := r.seedClusterClient.List(ctx, pods, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		return fmt.Errorf("failed to list control plane pods: %w", err)
+	}
+
+	if len(pods.Items) == 0 {
+		return fmt.Errorf("no control plane pods found")
+	}
+
+	errors := []string{}
+
+	for _, pod := range pods.Items {
+		for _, container := range pod.Spec.Containers {
+			if strings.HasPrefix(container.Image, resources.RegistryK8SGCR) {
+				errors = append(
+					errors,
+					fmt.Sprintf("Container %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
+				)
+			}
+			if strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				errors = append(
+					errors,
+					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
+				)
+			}
+		}
+
+		for _, initContainer := range pod.Spec.InitContainers {
+			if strings.HasPrefix(initContainer.Image, resources.RegistryK8SGCR) {
+				errors = append(
+					errors,
+					fmt.Sprintf("InitContainer %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
+				)
+			}
+			if strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				errors = append(
+					errors,
+					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
+				)
+			}
+		}
+	}
+
+	if len(errors) == 0 {
+		return nil
+	}
+
+	return fmt.Errorf(strings.Join(errors, "\n"))
 }

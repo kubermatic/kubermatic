@@ -51,7 +51,7 @@ var (
 func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrite registry.WithOverwriteFunc) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		const (
-			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
+			name    = "kas-network-proxy/proxy-agent"
 			version = "v0.0.33"
 		)
 
@@ -78,8 +78,8 @@ func DeploymentCreator(kServerHost string, kServerPort int, registryWithOverwrit
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            resources.KonnectivityAgentContainer,
-					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryEUGCR), name, version),
-					ImagePullPolicy: corev1.PullAlways,
+					Image:           fmt.Sprintf("%s/%s:%s", registryWithOverwrite(resources.RegistryK8S), name, version),
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/proxy-agent"},
 					Args: []string{
 						"--logtostderr=true",
