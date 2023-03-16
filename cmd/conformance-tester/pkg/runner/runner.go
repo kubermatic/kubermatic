@@ -574,6 +574,15 @@ func (r *TestRunner) testCluster(
 		log.Errorf("failed to verify that pods have a seccomp profile: %v", err)
 	}
 
+	// Check for Pods with k8s.gcr.io images on user cluster
+	if err := util.JUnitWrapper("[KKP] Test container images not containing k8s.gcr.io on user cluster", report, func() error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
+			return tests.TestUserClusterNoK8sGcrImages(ctx, log, r.opts, cluster, userClusterClient)
+		})
+	}); err != nil {
+		log.Errorf("failed to verify that no user cluster containers has k8s.gcr.io image: %v", err)
+	}
+
 	// Check security context (seccomp profiles) for control plane pods running on seed cluster
 	if err := util.JUnitWrapper("[KKP] Test pod security context on seed cluster", report, func() error {
 		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
@@ -581,6 +590,15 @@ func (r *TestRunner) testCluster(
 		})
 	}); err != nil {
 		log.Errorf("failed to verify security context for control plane pods: %v", err)
+	}
+
+	// Check for Pods with k8s.gcr.io images on user cluster
+	if err := util.JUnitWrapper("[KKP] Test container images not containing k8s.gcr.io on seed cluster", report, func() error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
+			return tests.TestNoK8sGcrImages(ctx, log, r.opts, cluster)
+		})
+	}); err != nil {
+		log.Errorf("failed to verify that no seed cluster containers has k8s.gcr.io image: %v", err)
 	}
 
 	// Check telemetry is working

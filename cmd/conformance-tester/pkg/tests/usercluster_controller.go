@@ -165,6 +165,64 @@ func TestUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger,
 	return fmt.Errorf(strings.Join(errors, "\n"))
 }
 
+func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
+	if !opts.Tests.Has(ctypes.UserClusterSeccompTests) {
+		log.Info("User cluster Seccomp tests disabled, skipping.")
+		return nil
+	}
+
+	pods := &corev1.PodList{}
+
+	errors := []string{}
+
+	// get all Pods running on the cluster
+	if err := userClusterClient.List(ctx, pods, &ctrlruntimeclient.ListOptions{Namespace: ""}); err != nil {
+		return fmt.Errorf("failed to list Pods in user cluster: %w", err)
+	}
+
+	for _, pod := range pods.Items {
+		for _, container := range pod.Spec.Containers {
+			if strings.HasPrefix(container.Image, resources.RegistryK8SGCR) {
+				errors = append(
+					errors,
+					fmt.Sprintf("Container %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
+				)
+			}
+			if strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				errors = append(
+					errors,
+					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
+				)
+			}
+		}
+
+		for _, initContainer := range pod.Spec.InitContainers {
+			if strings.HasPrefix(initContainer.Image, resources.RegistryK8SGCR) {
+				errors = append(
+					errors,
+					fmt.Sprintf("InitContainer %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
+				)
+			}
+			if strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				errors = append(
+					errors,
+					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
+				)
+			}
+		}
+	}
+
+	if len(errors) == 0 {
+		return nil
+	}
+
+	return fmt.Errorf(strings.Join(errors, "\n"))
+}
+
 func rbacResourceNames() []string {
 	return []string{rbacusercluster.ResourceOwnerName, rbacusercluster.ResourceEditorName, rbacusercluster.ResourceViewerName}
 }

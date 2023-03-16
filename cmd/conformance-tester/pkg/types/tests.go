@@ -25,6 +25,7 @@ const (
 	MetricsTests            = "metrics"
 	SecurityContextTests    = "securitycontext"
 	TelemetryTests          = "telemetry"
+	K8sGcrImageTests        = "gcr-images"
 	UserClusterRBACTests    = "usercluster-rbac"
 	UserClusterSeccompTests = "usercluster-seccomp"
 )
@@ -36,6 +37,7 @@ var AllTests = sets.NewString(
 	MetricsTests,
 	SecurityContextTests,
 	TelemetryTests,
+	K8sGcrImageTests,
 	UserClusterRBACTests,
 	UserClusterSeccompTests,
 )
