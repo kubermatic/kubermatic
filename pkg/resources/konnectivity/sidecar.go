@@ -43,13 +43,13 @@ var (
 // ProxySidecar returns container that runs konnectivity proxy server as a sidecar in apiserver pods.
 func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Container, error) {
 	const (
-		name    = "k8s-artifacts-prod/kas-network-proxy/proxy-server"
+		name    = "kas-network-proxy/proxy-server"
 		version = "v0.0.35"
 	)
 
 	return &corev1.Container{
 		Name:            resources.KonnectivityServerContainer,
-		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryEUGCR, name, version))),
+		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryK8S, name, version))),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
 			"/proxy-server",
