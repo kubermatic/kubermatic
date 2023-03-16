@@ -51,7 +51,7 @@ var (
 func DeploymentReconciler(kServerHost string, kServerPort int, kKeepaliveTime string, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		const (
-			name    = "k8s-artifacts-prod/kas-network-proxy/proxy-agent"
+			name    = "kas-network-proxy/proxy-agent"
 			version = "v0.0.35"
 		)
 
@@ -78,7 +78,7 @@ func DeploymentReconciler(kServerHost string, kServerPort int, kKeepaliveTime st
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            resources.KonnectivityAgentContainer,
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryEUGCR, name, version))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryK8S, name, version))),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/proxy-agent"},
 					Args: []string{
