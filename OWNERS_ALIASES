@@ -4,7 +4,6 @@
 aliases:
   sig-api:
     - ahmedwaleedmalik
-    - hbernardo
     - pkprzekwas
     - simontheleg
   sig-app-management:
@@ -20,7 +19,6 @@ aliases:
     - ahmedwaleedmalik
     - embik
     - hdurand0710
-    - imharshita
     - kron4eg
     - moadqassem
     - moelsayed
@@ -34,7 +32,6 @@ aliases:
   sig-ui:
     - ahmadhamzh
     - ahmedwaleedmalik
-    - khizerrehan
     - waseem826
   sig-virtualization:
     - hdurand0710
