@@ -227,8 +227,8 @@ github.com/chromedp/sysutil v1.0.0/go.mod h1:kgWmDdq8fTzXYcKIBqIYvRRTnYb9aNS9moA
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1/go.mod h1:Q3SI9o4m/ZMnBNeIyt5eFwwo7qiLfzFZmjNmxjkiQlU=
-github.com/cilium/cilium v1.13.0 h1:EvNLY130la48c9TqvB1LLmy921osJbw/qSiUBzfeXb8=
-github.com/cilium/cilium v1.13.0/go.mod h1:X9PvyHYj5he3V/n9wj1/0XPIfdsll4abdzbF9sAf35E=
+github.com/cilium/cilium v1.13.1 h1:6JzlYiZw1HqToqZJd5Hb6Xk1QasptOEUS1UUO4LneBQ=
+github.com/cilium/cilium v1.13.1/go.mod h1:xHiUYiRvIsJTqkkTq7xNWXBDZZ5UqyrYJktYZJYuYjI=
 github.com/clarketm/json v1.13.4 h1:0JketcMdLC16WGnRGJiNmTXuQznDEQaiknxSPRBxg+k=
 github.com/clarketm/json v1.13.4/go.mod h1:ynr2LRfb0fQU34l07csRNBTcivjySLLiY1YzQqKVfdo=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
