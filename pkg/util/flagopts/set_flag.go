@@ -25,19 +25,24 @@ import (
 )
 
 // SetFlag wraps a given set so it can be used as a CLI flag.
-func SetFlag(set sets.Set[string]) pflag.Value {
-	return &setFlag{set: set}
+func SetFlag[T ~string](set sets.Set[T]) pflag.Value {
+	return &setFlag[T]{set: set}
 }
 
-type setFlag struct {
-	set sets.Set[string]
+type setFlag[T ~string] struct {
+	set sets.Set[T]
 }
 
-func (f *setFlag) String() string {
-	return strings.Join(sets.List(f.set), ",")
+func (f *setFlag[T]) String() string {
+	values := []string{}
+	for _, val := range sets.List(f.set) {
+		values = append(values, string(val))
+	}
+
+	return strings.Join(values, ",")
 }
 
-func (f *setFlag) Set(value string) error {
+func (f *setFlag[T]) Set(value string) error {
 	// clear set content
 	f.set.Delete(f.set.UnsortedList()...)
 
@@ -45,7 +50,7 @@ func (f *setFlag) Set(value string) error {
 		for _, val := range strings.Split(value, ",") {
 			val = strings.TrimSpace(val)
 			if val != "" {
-				f.set.Insert(val)
+				f.set.Insert(T(val))
 			}
 		}
 	}
@@ -53,6 +58,6 @@ func (f *setFlag) Set(value string) error {
 	return nil
 }
 
-func (f *setFlag) Type() string {
+func (f *setFlag[T]) Type() string {
 	return "strings" // see pflag's flag.go
 }

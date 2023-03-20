@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -44,7 +44,7 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 	}
 
 	// ensure that a ClusterTemplate has a project reference
-	if scope == kubermaticv1.ProjectClusterTemplateScope {
+	if scope == kubermaticv1.TemplateScopeProjectCluster {
 		projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
 		if !ok || projectId == "" {
 			allErrs = append(allErrs, field.Required(
@@ -66,7 +66,7 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 	}
 
 	// For seed scope ClusterTemplate, cloud provider specification configurations are not allowed.
-	if scope == kubermaticv1.SeedTemplateScope {
+	if scope == kubermaticv1.TemplateScopeSeed {
 		cloudSpecPath := field.NewPath("spec", "cloud")
 		if template.Spec.Cloud.ProviderName != "" {
 			allErrs = append(allErrs, field.Required(

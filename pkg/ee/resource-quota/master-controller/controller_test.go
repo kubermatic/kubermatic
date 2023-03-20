@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -101,7 +101,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get resource quota: %v", err)
 			}
 
-			if !diff.SemanticallyEqual(tc.expectedUsage, rq.Status.GlobalUsage) {
+			if !diff.SemanticallyEqual(&tc.expectedUsage, rq.Status.GlobalUsage) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(tc.expectedUsage, rq.Status.GlobalUsage))
 			}
 		})
@@ -112,16 +112,24 @@ func genResourceQuota(name string, localUsage kubermaticv1.ResourceDetails) *kub
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
-		Subject: kubermaticv1.Subject{
+		Subject: kubermaticv1.ResourceQuotaSubject{
 			Name: "project1",
-			Kind: "project",
+			Kind: kubermaticv1.ResourceQuotaSubjectProject,
 		},
 	}
 
-	rq.Status.LocalUsage = localUsage
+	rq.Status.LocalUsage = &localUsage
 	return rq
 }
 
 func genResourceDetails(cpu, mem, storage string) *kubermaticv1.ResourceDetails {
-	return kubermaticv1.NewResourceDetails(resource.MustParse(cpu), resource.MustParse(mem), resource.MustParse(storage))
+	cpuResources := resource.MustParse(cpu)
+	memResources := resource.MustParse(mem)
+	storageResources := resource.MustParse(storage)
+
+	return &kubermaticv1.ResourceDetails{
+		CPU:     &cpuResources,
+		Memory:  &memResources,
+		Storage: &storageResources,
+	}
 }

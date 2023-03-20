@@ -21,7 +21,7 @@ import (
 
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
 
 	"k8s.io/utils/pointer"
@@ -87,7 +87,7 @@ func (b *nutanixConfig) WithCategory(catKey string, catValue string) *nutanixCon
 	return b
 }
 
-func CompleteNutanixProviderSpec(config *nutanix.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecNutanix, os providerconfig.OperatingSystem) (*nutanix.RawConfig, error) {
+func CompleteNutanixProviderSpec(config *nutanix.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecNutanix, os kubermaticv1.OperatingSystem) (*nutanix.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.Nutanix == nil {
 		return nil, fmt.Errorf("cannot use cluster to create Nutanix cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
 	}

@@ -21,8 +21,8 @@ import (
 	"time"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
@@ -42,7 +42,7 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.OpenStack.KKPDatacenter,
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
+			OpenStack: &kubermaticv1.OpenStackCloudSpec{
 				Domain:         secrets.OpenStack.Domain,
 				Project:        secrets.OpenStack.Project,
 				ProjectID:      secrets.OpenStack.ProjectID,
@@ -56,7 +56,7 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 }
 
 func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
-	cloudProviderSpec := provider.NewOpenstackConfig().
+	cloudProviderSpec := provider.NewOpenStackConfig().
 		WithFlavor(openStackFlavor).
 		WithInstanceReadyCheckPeriod(openStackInstanceReadyCheckPeriod).
 		WithInstanceReadyCheckTimeout(openStackInstanceReadyCheckTimeout).

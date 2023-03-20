@@ -22,13 +22,14 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -74,7 +75,13 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed to start testenv: %v", err)
 	}
 
-	mgr, err := manager.New(cfg, manager.Options{})
+	ctx := context.Background()
+
+	mgr, err := manager.New(cfg, manager.Options{
+		BaseContext: func() context.Context {
+			return ctx
+		},
+	})
 	if err != nil {
 		t.Fatalf("failed to construct manager: %v", err)
 	}
@@ -90,10 +97,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		ErrorIfPathMissing: true,
 	}
 	if _, err := envtest.InstallCRDs(cfg, crdInstallOpts); err != nil {
-		t.Fatalf("failed install crds: %v", err)
+		t.Fatalf("failed to install CRDs: %v", err)
 	}
-
-	ctx := context.Background()
 
 	// the manager needs to be stopped because the testenv can be torn down;
 	// create a cancellable context to achieve this, plus a channel that signals
@@ -133,7 +138,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			},
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "my-dc",
-				Fake:           &kubermaticv1.FakeCloudSpec{},
+				ProviderName:   kubermaticv1.CloudProviderBringYourOwn,
+				BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
 			},
 			Version: *version,
 		},
@@ -184,6 +190,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed to create testcluster: %v", err)
 	}
 
+	up := kubermaticv1.HealthStatusUp
+
 	testCluster.Status = kubermaticv1.ClusterStatus{
 		UserEmail:     "test@example.com",
 		NamespaceName: clusterNamespace,
@@ -193,7 +201,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			Controller:                   kubermaticv1.HealthStatusUp,
 			MachineController:            kubermaticv1.HealthStatusUp,
 			Etcd:                         kubermaticv1.HealthStatusUp,
-			OpenVPN:                      kubermaticv1.HealthStatusUp,
+			OpenVPN:                      &up,
 			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 		},
@@ -237,7 +245,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		log:                  kubermaticlog.Logger,
 		Client:               mgr.GetClient(),
 		dockerPullConfigJSON: []byte("{}"),
-		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
+		nodeAccessNetwork:    defaulting.DefaultNodeAccessNetwork,
 		kubermaticImage:      defaulting.DefaultKubermaticImage,
 		dnatControllerImage:  defaulting.DefaultDNATControllerImage,
 		etcdLauncherImage:    defaulting.DefaultEtcdLauncherImage,
@@ -250,9 +258,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				},
 			}, nil
 		},
-		configGetter: func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
-			return &kubermaticv1.KubermaticConfiguration{}, nil
-		},
+		configGetter:            test.NewConfigGetter(&kubermaticv1.KubermaticConfiguration{}),
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
 		versions:                kubermatic.NewFakeVersions(),

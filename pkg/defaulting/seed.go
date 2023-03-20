@@ -21,10 +21,15 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/pointer"
+)
+
+const (
+	DefaultSSHPort     = 22
+	DefaultKubeletPort = 10250
 )
 
 // DefaultSeed fills in missing values in the Seed's spec by copying them from the global
@@ -39,6 +44,22 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 
 	if seedCopy.Spec.ExposeStrategy == "" {
 		seedCopy.Spec.ExposeStrategy = config.Spec.ExposeStrategy
+	}
+
+	if seedCopy.Spec.NodeportProxy == nil {
+		seedCopy.Spec.NodeportProxy = &kubermaticv1.NodeportProxyConfig{}
+	}
+
+	if seedCopy.Spec.NodeportProxy.Envoy == nil {
+		seedCopy.Spec.NodeportProxy.Envoy = &kubermaticv1.NodePortProxyComponentEnvoy{}
+	}
+
+	if seedCopy.Spec.NodeportProxy.EnvoyManager == nil {
+		seedCopy.Spec.NodeportProxy.EnvoyManager = &kubermaticv1.NodeportProxyComponent{}
+	}
+
+	if seedCopy.Spec.NodeportProxy.Updater == nil {
+		seedCopy.Spec.NodeportProxy.Updater = &kubermaticv1.NodeportProxyComponent{}
 	}
 
 	if err := defaultDockerRepo(&seedCopy.Spec.NodeportProxy.Envoy.DockerRepository, DefaultEnvoyDockerRepository, "nodeportProxy.envoy.dockerRepository", logger); err != nil {
@@ -65,6 +86,10 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 		return seedCopy, err
 	}
 
+	if seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService == nil {
+		seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService = &kubermaticv1.EnvoyLoadBalancerService{}
+	}
+
 	if len(seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations) == 0 {
 		seedCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations = DefaultNodeportProxyServiceAnnotations
 		logger.Debugw("Defaulting field", "field", "nodeportProxy.envoy.loadBalancerService.annotations", "value", seedCopy.Spec.NodeportProxy.Annotations)
@@ -73,7 +98,11 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 	// apply settings from the KubermaticConfiguration to the Seed, in case they are not set there;
 	// over time, we move pretty much all of this into the Seed, but this code copies the still existing,
 	// deprecated fields over.
-	settings := &seedCopy.Spec.DefaultComponentSettings
+	if seedCopy.Spec.DefaultComponentSettings == nil {
+		seedCopy.Spec.DefaultComponentSettings = &kubermaticv1.ComponentSettings{}
+	}
+
+	settings := seedCopy.Spec.DefaultComponentSettings
 
 	if settings.Apiserver.Replicas == nil {
 		settings.Apiserver.Replicas = config.Spec.UserCluster.APIServerReplicas
@@ -104,7 +133,7 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 	}
 
 	if settings.Etcd.ClusterSize == nil {
-		settings.Etcd.ClusterSize = pointer.Int32(kubermaticv1.DefaultEtcdClusterSize)
+		settings.Etcd.ClusterSize = pointer.Int32(DefaultEtcdClusterSize)
 	}
 
 	return seedCopy, nil

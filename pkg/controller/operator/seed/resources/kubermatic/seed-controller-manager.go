@@ -19,7 +19,7 @@ package kubermatic
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -89,12 +89,15 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				args = append(args, "-v=2")
 			}
 
-			mcCfg := cfg.Spec.UserCluster.MachineController
-			if mcCfg.ImageTag != "" {
-				args = append(args, fmt.Sprintf("-machine-controller-image-tag=%s", mcCfg.ImageTag))
-			}
-			if mcCfg.ImageRepository != "" {
-				args = append(args, fmt.Sprintf("-machine-controller-image-repository=%s", mcCfg.ImageRepository))
+			if uCfg := cfg.Spec.UserCluster; uCfg != nil {
+				if mcCfg := uCfg.MachineController; mcCfg != nil {
+					if mcCfg.ImageTag != "" {
+						args = append(args, fmt.Sprintf("-machine-controller-image-tag=%s", mcCfg.ImageTag))
+					}
+					if mcCfg.ImageRepository != "" {
+						args = append(args, fmt.Sprintf("-machine-controller-image-repository=%s", mcCfg.ImageRepository))
+					}
+				}
 			}
 
 			sharedAddonVolume := "addons"
@@ -184,8 +187,11 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 						},
 					},
 					VolumeMounts: volumeMounts,
-					Resources:    cfg.Spec.SeedController.Resources,
 				},
+			}
+
+			if res := cfg.Spec.SeedController.Resources; res != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
 			return d, nil
@@ -193,7 +199,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 	}
 }
 
-func createAddonsInitContainer(cfg kubermaticv1.KubermaticAddonsConfiguration, addonVolume string, version string) corev1.Container {
+func createAddonsInitContainer(cfg *kubermaticv1.KubermaticAddonsConfiguration, addonVolume string, version string) corev1.Container {
 	return corev1.Container{
 		Name:    "copy-addons",
 		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
@@ -211,7 +217,7 @@ func createAddonsInitContainer(cfg kubermaticv1.KubermaticAddonsConfiguration, a
 	}
 }
 
-func getAddonDockerTag(cfg kubermaticv1.KubermaticAddonsConfiguration, version string) string {
+func getAddonDockerTag(cfg *kubermaticv1.KubermaticAddonsConfiguration, version string) string {
 	if cfg.DockerTagSuffix != "" {
 		version = fmt.Sprintf("%s-%s", version, cfg.DockerTagSuffix)
 	}

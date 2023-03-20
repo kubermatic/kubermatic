@@ -17,7 +17,7 @@ limitations under the License.
 package csi
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
 	"k8c.io/reconciler/pkg/reconciling"
 )
@@ -27,7 +27,7 @@ func ServiceAccountReconcilers(cluster *kubermaticv1.Cluster) []reconciling.Name
 	creatorGetters := []reconciling.NamedServiceAccountReconcilerFactory{}
 
 	switch {
-	case cluster.Spec.Cloud.Kubevirt != nil:
+	case cluster.Spec.Cloud.KubeVirt != nil:
 		creatorGetters = append(creatorGetters, kubevirt.ServiceAccountsReconcilers(cluster)...)
 	}
 
@@ -39,7 +39,7 @@ func ClusterRolesReconcilers(c *kubermaticv1.Cluster) []reconciling.NamedCluster
 	creatorGetters := []reconciling.NamedClusterRoleReconcilerFactory{}
 
 	switch {
-	case c.Spec.Cloud.Kubevirt != nil:
+	case c.Spec.Cloud.KubeVirt != nil:
 		creatorGetters = kubevirt.ClusterRolesReconcilers()
 	}
 
@@ -51,7 +51,7 @@ func RoleBindingsReconcilers(c *kubermaticv1.Cluster) []reconciling.NamedRoleBin
 	creatorGetters := []reconciling.NamedRoleBindingReconcilerFactory{}
 
 	switch {
-	case c.Spec.Cloud.Kubevirt != nil:
+	case c.Spec.Cloud.KubeVirt != nil:
 		creatorGetters = kubevirt.RoleBindingsReconcilers(c)
 	}
 

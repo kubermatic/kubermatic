@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -109,7 +109,7 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 				return err, nil
 			}
 
-			if p.Status.Phase != kubermaticv1.ProjectActive {
+			if p.Status.Phase != kubermaticv1.ProjectPhaseActive {
 				return errors.New("project is not active"), nil
 			}
 

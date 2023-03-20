@@ -29,8 +29,9 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
@@ -53,16 +54,24 @@ func txtFuncMap(overwriteRegistry string) template.FuncMap {
 	return funcs
 }
 
-// This alias exists purely because it makes the go doc we generate easier to
-// read, as it does not hint at a different package anymore.
-type Credentials = resources.Credentials
+// This struct exists to keep BC compatibility between KKP 2.22 and 2.23,
+// where Openstack => OpenStack and Kubevirt => KubeVirt were renamed.
+type ClusterCredentials struct {
+	resources.Credentials
+
+	// Deprecated: Use OpenStack (capital S) instead.
+	Openstack resources.OpenStackCredentials
+
+	// Deprecated: Use KubeVirt (capital V) instead.
+	Kubevirt resources.KubeVirtCredentials
+}
 
 // TemplateData is the root context injected into each addon manifest file.
 type TemplateData struct {
 	SeedName       string
 	DatacenterName string
 	Cluster        ClusterData
-	Credentials    Credentials
+	Credentials    ClusterCredentials
 	Variables      map[string]interface{}
 }
 
@@ -104,7 +113,7 @@ func NewTemplateData(
 		csiOptions.StorageProfile = cluster.Spec.Cloud.VMwareCloudDirector.CSI.StorageProfile
 	}
 
-	csiMigration := metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || kubermaticv1helper.CCMMigrationCompleted(cluster)
+	csiMigration := metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || clusterhelper.CCMMigrationCompleted(cluster)
 
 	var ipvs kubermaticv1.IPVSConfiguration
 	if cluster.Spec.ClusterNetwork.IPVS != nil {
@@ -112,8 +121,8 @@ func NewTemplateData(
 	}
 
 	var kubeVirtStorageClasses []kubermaticv1.KubeVirtInfraStorageClass
-	if cluster.Spec.Cloud.Kubevirt != nil {
-		kubeVirtStorageClasses = cluster.Spec.Cloud.Kubevirt.StorageClasses
+	if cluster.Spec.Cloud.KubeVirt != nil {
+		kubeVirtStorageClasses = cluster.Spec.Cloud.KubeVirt.StorageClasses
 	}
 
 	var ipamAllocationsData map[string]IPAMAllocation
@@ -128,10 +137,16 @@ func NewTemplateData(
 		}
 	}
 
+	templateCredentials := ClusterCredentials{
+		Credentials: credentials,
+	}
+	templateCredentials.Openstack = templateCredentials.OpenStack
+	templateCredentials.Kubevirt = templateCredentials.KubeVirt
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
-		Credentials:    credentials,
+		Credentials:    templateCredentials,
 		Cluster: ClusterData{
 			Type:              ClusterTypeKubernetes,
 			Name:              cluster.Name,
@@ -144,7 +159,7 @@ func NewTemplateData(
 			OwnerName:         cluster.Status.UserName,
 			OwnerEmail:        cluster.Status.UserEmail,
 			Address:           cluster.Status.Address,
-			CloudProviderName: providerName,
+			CloudProviderName: string(providerName),
 			Version:           semverlib.MustParse(cluster.Status.Versions.ControlPlane.String()),
 			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),
 			Features:          sets.KeySet(cluster.Spec.Features),
@@ -156,7 +171,7 @@ func NewTemplateData(
 				ServiceCIDRBlocks:    cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
 				ProxyMode:            cluster.Spec.ClusterNetwork.ProxyMode,
 				StrictArp:            ipvs.StrictArp,
-				DualStack:            cluster.IsDualStack(),
+				DualStack:            cluster.Spec.ClusterNetwork.IsDualStack(),
 				PodCIDRIPv4:          cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(),
 				PodCIDRIPv6:          cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR(),
 				NodeCIDRMaskSizeIPv4: resources.GetClusterNodeCIDRMaskSizeIPv4(cluster),

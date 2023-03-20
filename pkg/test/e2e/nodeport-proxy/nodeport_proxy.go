@@ -25,7 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	npptest "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy/test"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -101,7 +101,7 @@ func (d *NodeportProxy) getConfig() *kubermaticv1.KubermaticConfiguration {
 			Namespace: d.Namespace,
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+			UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
 				EtcdVolumeSize: "500Mi",
 			},
 		},

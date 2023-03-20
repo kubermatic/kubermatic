@@ -1,4 +1,6 @@
-# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+#!/usr/bin/env bash
+
+# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-run:
-  modules-download-mode: readonly
-  skip-files:
-    - zz_generated.*.go
+set -euo pipefail
 
-linters:
-  enable:
-    - tagliatelle
-  disable-all: true
+cd $(dirname $0)/..
+source hack/lib.sh
 
-linters-settings:
-  tagliatelle:
-    case:
-      rules:
-        json: goCamel
-        yaml: goCamel
+# This will re-download the CRDs for the currently used k8c.io/api version.
+NO_UPDATE=1 ./hack/update-kkp-api.sh
+
+echodate "Diffing..."
+if ! git diff --exit-code pkg; then
+  echodate "The k8c.io CRDs are out of date. Please run hack/update-kkp-api.sh."
+  exit 1
+fi
+
+echodate "CRDs are in-sync."

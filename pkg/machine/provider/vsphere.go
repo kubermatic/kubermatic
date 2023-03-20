@@ -20,8 +20,7 @@ import (
 	"fmt"
 
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/utils/pointer"
 )
@@ -78,7 +77,7 @@ func (b *vsphereConfig) WithAllowInsecure(allow bool) *vsphereConfig {
 	return b
 }
 
-func CompleteVSphereProviderSpec(config *vsphere.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecVSphere, os providerconfig.OperatingSystem) (*vsphere.RawConfig, error) {
+func CompleteVSphereProviderSpec(config *vsphere.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecVSphere, os kubermaticv1.OperatingSystem) (*vsphere.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.VSphere == nil {
 		return nil, fmt.Errorf("cannot use cluster to create VSphere cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
 	}

@@ -19,12 +19,11 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-# This will update both generated code and the CRDs for *.k8c.io
 ./hack/update-codegen.sh
 
 echodate "Diffing..."
-if ! git diff --exit-code pkg charts; then
-  echodate "The generated code / CRDs are out of date. Please run hack/update-codegen.sh."
+if ! git diff --exit-code pkg; then
+  echodate "The generated code is out of date. Please run hack/update-codegen.sh."
   exit 1
 fi
 

@@ -31,9 +31,9 @@ import (
 
 	"go.uber.org/zap"
 
-	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	k8cequality "k8c.io/api/v2/pkg/apis/equality"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -145,7 +145,12 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
-	localUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
+	localUsage := &kubermaticv1.ResourceDetails{
+		CPU:     &resource.Quantity{},
+		Memory:  &resource.Quantity{},
+		Storage: &resource.Quantity{},
+	}
+
 	for _, cluster := range clusterList.Items {
 		if cluster.Status.ResourceUsage != nil {
 			clusterUsage := cluster.Status.ResourceUsage
@@ -182,8 +187,8 @@ func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogge
 		"memory", localUsage.Memory.String(),
 		"storage", localUsage.Storage.String())
 
-	return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
-		rq.Status.LocalUsage = *localUsage
+	return kuberneteshelper.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+		rq.Status.LocalUsage = localUsage
 	})
 }
 
@@ -230,7 +235,7 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 			return requests
 		}
 
-		subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{kubermaticv1.ProjectSubjectKind})
+		subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{string(kubermaticv1.ResourceQuotaSubjectProject)})
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("error creating subject name req: %w", err))
 			return requests
@@ -252,7 +257,7 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 			// otherwise this controller (with a worker-name) would fight another controller (without
 			// a worker-name) about the current status of the resource quota.
 			// As of now, only project quotas exist though.
-			if workerName == "" || rq.Spec.Subject.Kind != kubermaticv1.ProjectSubjectKind {
+			if workerName == "" || rq.Spec.Subject.Kind != kubermaticv1.ResourceQuotaSubjectProject {
 				requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
 					Name:      rq.Name,
 					Namespace: rq.Namespace,

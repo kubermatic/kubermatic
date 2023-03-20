@@ -21,12 +21,12 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
@@ -91,7 +91,7 @@ func TestHandle(t *testing.T) {
 			Name: "my project",
 		},
 		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectActive,
+			Phase: kubermaticv1.ProjectPhaseActive,
 		},
 	}
 
@@ -103,7 +103,7 @@ func TestHandle(t *testing.T) {
 			Name: "my other project",
 		},
 		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectActive,
+			Phase: kubermaticv1.ProjectPhaseActive,
 		},
 	}
 
@@ -175,8 +175,8 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:    "NodePort",
-				CloudProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
+				ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
+				CloudProviderName: kubermaticv1.CloudProviderDigitalocean,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -201,7 +201,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: "NodePort",
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -251,7 +251,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -280,7 +280,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -309,7 +309,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -338,7 +338,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -367,7 +367,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -397,7 +397,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -427,7 +427,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -457,7 +457,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					IPFamily:                 kubermaticv1.IPFamilyDualStack,
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd01::/48"}},
@@ -488,7 +488,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					IPFamily:                 kubermaticv1.IPFamilyDualStack,
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd01::/48"}},
@@ -519,7 +519,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:   "NodePort",
+				ExposeStrategy:   kubermaticv1.ExposeStrategyNodePort,
 				EnableUserSSHKey: pointer.Bool(true),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -540,7 +540,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:   "NodePort",
+				ExposeStrategy:   kubermaticv1.ExposeStrategyNodePort,
 				EnableUserSSHKey: pointer.Bool(false),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -565,7 +565,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:        "NodePort",
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: false,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -591,7 +591,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:        "NodePort",
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -617,7 +617,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:        "NodePort",
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -638,7 +638,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:        "NodePort",
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: false,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -664,7 +664,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:        "NodePort",
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: false,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -685,7 +685,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy:        "NodePort",
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -711,7 +711,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -731,7 +731,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -756,7 +756,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -776,7 +776,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -801,7 +801,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -826,7 +826,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -851,7 +851,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -871,7 +871,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -896,7 +896,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -920,7 +920,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -949,7 +949,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -973,7 +973,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1002,7 +1002,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1026,7 +1026,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1055,7 +1055,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1079,7 +1079,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1108,7 +1108,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1132,7 +1132,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1162,7 +1162,7 @@ func TestHandle(t *testing.T) {
 					kubermaticv1.ProjectIDLabelKey:   project1.Name,
 					validation.UnsafeCNIUpgradeLabel: "true",
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1186,7 +1186,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1215,7 +1215,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1239,7 +1239,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1269,7 +1269,7 @@ func TestHandle(t *testing.T) {
 					kubermaticv1.ProjectIDLabelKey:     project1.Name,
 					validation.UnsafeCNIMigrationLabel: "true",
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1293,7 +1293,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1322,7 +1322,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1346,7 +1346,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1375,7 +1375,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1395,7 +1395,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1424,7 +1424,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1448,7 +1448,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1470,7 +1470,7 @@ func TestHandle(t *testing.T) {
 			cluster: rawClusterGen{
 				Name:           "foo",
 				Namespace:      "kubermatic",
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1499,7 +1499,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1523,7 +1523,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project1.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1552,7 +1552,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1578,7 +1578,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1604,7 +1604,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1625,7 +1625,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1655,7 +1655,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1682,7 +1682,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1709,7 +1709,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1731,7 +1731,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1762,7 +1762,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1784,7 +1784,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1815,7 +1815,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1836,7 +1836,7 @@ func TestHandle(t *testing.T) {
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1868,11 +1868,11 @@ func TestHandle(t *testing.T) {
 			cluster: rawClusterGen{
 				Name:              "foo",
 				Namespace:         "kubermatic",
-				CloudProviderName: string(kubermaticv1.VSphereCloudProvider),
+				CloudProviderName: kubermaticv1.CloudProviderVSphere,
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1894,11 +1894,11 @@ func TestHandle(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name:              "foo",
 				Namespace:         "kubermatic",
-				CloudProviderName: string(kubermaticv1.VSphereCloudProvider),
+				CloudProviderName: kubermaticv1.CloudProviderVSphere,
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1929,12 +1929,12 @@ func TestHandle(t *testing.T) {
 			cluster: rawClusterGen{
 				Name:                  "foo",
 				Namespace:             "kubermatic",
-				CloudProviderName:     string(kubermaticv1.VSphereCloudProvider),
+				CloudProviderName:     kubermaticv1.CloudProviderVSphere,
 				ExternalCloudProvider: true,
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1956,11 +1956,11 @@ func TestHandle(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name:              "foo",
 				Namespace:         "kubermatic",
-				CloudProviderName: string(kubermaticv1.VSphereCloudProvider),
+				CloudProviderName: kubermaticv1.CloudProviderVSphere,
 				Labels: map[string]string{
 					kubermaticv1.ProjectIDLabelKey: project2.Name,
 				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -2034,9 +2034,9 @@ func TestHandle(t *testing.T) {
 type rawClusterGen struct {
 	Name                                string
 	Namespace                           string
-	CloudProviderName                   string
+	CloudProviderName                   kubermaticv1.CloudProvider
 	Labels                              map[string]string
-	ExposeStrategy                      string
+	ExposeStrategy                      kubermaticv1.ExposeStrategy
 	EnableUserSSHKey                    *bool
 	ExternalCloudProvider               bool
 	NetworkConfig                       kubermaticv1.ClusterNetworkingConfig
@@ -2074,7 +2074,7 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			ContainerRuntime:  "containerd",
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
-				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+				ProviderName:   kubermaticv1.CloudProviderHetzner,
 				Hetzner: &kubermaticv1.HetznerCloudSpec{
 					Token:   "thisis.reallyreallyfake",
 					Network: "this-is-required-for-ccm",
@@ -2083,7 +2083,7 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 			Features: map[string]bool{
 				"externalCloudProvider": r.ExternalCloudProvider,
 			},
-			ExposeStrategy:                      kubermaticv1.ExposeStrategy(r.ExposeStrategy),
+			ExposeStrategy:                      r.ExposeStrategy,
 			EnableUserSSHKeyAgent:               r.EnableUserSSHKey,
 			ClusterNetwork:                      r.NetworkConfig,
 			ComponentsOverride:                  r.ComponentSettings,
@@ -2098,7 +2098,7 @@ func (r rawClusterGen) Build() kubermaticv1.Cluster {
 		c.Spec.Cloud.Hetzner = nil
 
 		switch r.CloudProviderName {
-		case string(kubermaticv1.VSphereCloudProvider):
+		case kubermaticv1.CloudProviderVSphere:
 			c.Spec.Cloud.VSphere = &kubermaticv1.VSphereCloudSpec{
 				Username: "fake",
 				Password: "fake",

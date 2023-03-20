@@ -28,8 +28,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -152,7 +151,7 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -286,7 +285,7 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(ctx context.Co
 }
 
 func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx context.Context, cluster *kubermaticv1.Cluster, errC error) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return kubernetes.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Remove the alertmanager config status in Cluster CR
 		c.Status.ExtendedHealth.AlertmanagerConfig = nil
 		if errC != nil && !apierrors.IsNotFound(errC) {
@@ -492,7 +491,7 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 	}
 
 	// Update alertmanager config status in Cluster CR
-	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	err = kubernetes.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.AlertmanagerConfig = clusterStatus
 	})
 	if err != nil {

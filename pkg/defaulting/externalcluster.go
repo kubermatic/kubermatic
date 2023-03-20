@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 )
 
 // DefaultExternalClusterSpec defaults the cluster spec when creating a new external cluster.
@@ -34,7 +34,7 @@ func DefaultExternalClusterSpec(ctx context.Context, spec *kubermaticv1.External
 		return fmt.Errorf("failed to determine cloud provider: %w", err)
 	}
 
-	spec.CloudSpec.ProviderName = kubermaticv1.ExternalClusterProvider(providerName)
+	spec.CloudSpec.ProviderName = providerName
 
 	return nil
 }

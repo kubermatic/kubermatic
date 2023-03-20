@@ -23,7 +23,8 @@ import (
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	opa "k8c.io/api/v2/pkg/apis/open-policy-agent"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -57,7 +58,7 @@ func TestReconcile(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		requestName          string
-		expectedCT           *kubermaticv1.ConstraintTemplate
+		expectedCT           *constrainttemplatev1.ConstraintTemplate
 		expectedGetErrStatus metav1.StatusReason
 		seedClient           ctrlruntimeclient.Client
 		userClient           ctrlruntimeclient.Client
@@ -65,7 +66,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:        "scenario 1: sync ct to user cluster",
 			requestName: ctName,
-			expectedCT:  genConstraintTemplate(ctName, false),
+			expectedCT:  genGKConstraintTemplate(ctName),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
@@ -215,25 +216,29 @@ func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTe
 }
 
 func genGKConstraintTemplate(name string) *constrainttemplatev1.ConstraintTemplate {
+	kkpSpec := genCTSpec()
+
+	spec, err := convertConstraintTemplateSpec(&kkpSpec)
+	if err != nil {
+		panic(err)
+	}
+
 	ct := &constrainttemplatev1.ConstraintTemplate{}
 	ct.Name = name
-	ct.Spec = constrainttemplatev1.ConstraintTemplateSpec{
-		CRD:     genCTSpec().CRD,
-		Targets: genCTSpec().Targets,
-	}
+	ct.Spec = *spec
 
 	return ct
 }
 
 func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 	return kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1.CRD{
-			Spec: constrainttemplatev1.CRDSpec{
-				Names: constrainttemplatev1.Names{
+		CRD: opa.CRD{
+			Spec: opa.CRDSpec{
+				Names: opa.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &constrainttemplatev1.Validation{
+				Validation: &opa.Validation{
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							"labels": {
@@ -249,7 +254,7 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 				},
 			},
 		},
-		Targets: []constrainttemplatev1.Target{
+		Targets: []opa.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `

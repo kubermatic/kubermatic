@@ -30,6 +30,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -47,9 +48,9 @@ import (
 
 var (
 	logOptions              = utils.DefaultLogOptions
-	enabledOperatingSystems = sets.New[string]()
+	enabledOperatingSystems = sets.New[kubermaticv1.OperatingSystem]()
 	enabledCNIs             = sets.New[string]()
-	enabledProviders        = sets.New[string]()
+	enabledProviders        = sets.New[kubermaticv1.CloudProvider]()
 
 	userconfig             string
 	ipFamily               string
@@ -75,7 +76,7 @@ func init() {
 	equinixMetalCredentials.AddFlags(flag.CommandLine)
 	gcpCredentials.AddFlags(flag.CommandLine)
 	hetznerCredentials.AddFlags(flag.CommandLine)
-	openstackCredentials.AddFlags(flag.CommandLine)
+	openStackCredentials.AddFlags(flag.CommandLine)
 	vsphereCredentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)

@@ -23,7 +23,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -97,7 +97,7 @@ func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, addon *kuber
 	clusterName := parts[1]
 
 	notCreated := 1
-	if addon.Status.Conditions[kubermaticv1.AddonResourcesCreated].Status == corev1.ConditionTrue {
+	if addon.Status.Conditions[kubermaticv1.AddonConditionResourcesCreated].Status == corev1.ConditionTrue {
 		notCreated = 0
 	}
 

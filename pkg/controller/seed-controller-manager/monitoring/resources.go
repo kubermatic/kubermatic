@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/kubestatemetrics"
@@ -50,6 +50,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
+	npr := ""
+	if uc := config.Spec.UserCluster; uc != nil {
+		npr = uc.NodePortRange
+	}
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(client).
@@ -58,7 +63,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		WithSeed(seed.DeepCopy()).
 		WithKubermaticConfiguration(config.DeepCopy()).
 		WithOverwriteRegistry(r.overwriteRegistry).
-		WithNodePortRange(config.Spec.UserCluster.NodePortRange).
+		WithNodePortRange(npr).
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithBackupPeriod(20 * time.Minute).

@@ -20,8 +20,7 @@ import (
 	"fmt"
 
 	vmwareclouddirector "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/utils/pointer"
 )
@@ -78,7 +77,7 @@ func (b *vcdConfig) WithAllowInsecure(allow bool) *vcdConfig {
 	return b
 }
 
-func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecVMwareCloudDirector, os providerconfig.OperatingSystem) (*vmwareclouddirector.RawConfig, error) {
+func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecVMwareCloudDirector, os kubermaticv1.OperatingSystem) (*vmwareclouddirector.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.VMwareCloudDirector == nil {
 		return nil, fmt.Errorf("cannot use cluster to create VMware Cloud Director cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
 	}

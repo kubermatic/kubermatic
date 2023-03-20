@@ -23,8 +23,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,7 +79,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.Cluster{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ClusterKindName,
+					Kind:       "Cluster",
 				},
 			},
 			destination: destinationSeed,
@@ -89,7 +89,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.UserSSHKey{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.SSHKeyKind,
+					Kind:       "UserSSHKey",
 				},
 			},
 		},
@@ -98,7 +98,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.UserProjectBinding{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.UserProjectBindingKind,
+					Kind:       "UserProjectBinding",
 				},
 			},
 		},
@@ -120,7 +120,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.User{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.UserKindName,
+					Kind:       "User",
 				},
 			},
 			predicate: func(o ctrlruntimeclient.Object) bool {
@@ -132,7 +132,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.ExternalCluster{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ExternalClusterKind,
+					Kind:       "ExternalCluster",
 				},
 			},
 		},
@@ -141,7 +141,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.ClusterTemplateInstance{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ClusterTemplateInstanceKindName,
+					Kind:       "ClusterTemplateInstance",
 				},
 			},
 			destination: destinationSeed,
@@ -151,7 +151,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.ResourceQuota{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ResourceQuotaKindName,
+					Kind:       "ResourceQuota",
 				},
 			},
 		},
@@ -160,7 +160,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 			object: &kubermaticv1.GroupProjectBinding{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.GroupProjectBindingKind,
+					Kind:       "GroupProjectBinding",
 				},
 			},
 		},

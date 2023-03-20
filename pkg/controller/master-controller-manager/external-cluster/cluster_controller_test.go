@@ -20,8 +20,7 @@ import (
 	"context"
 	"testing"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -125,7 +124,7 @@ func genExternalCluster(name string, isDelete bool) *kubermaticv1.ExternalCluste
 		deletionTimestamp := metav1.Now()
 		cluster.DeletionTimestamp = &deletionTimestamp
 	}
-	cluster.Spec.KubeconfigReference = &providerconfig.GlobalSecretKeySelector{
+	cluster.Spec.KubeconfigReference = &kubermaticv1.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
 			Namespace: resources.KubermaticNamespace,
 			Name:      cluster.GetKubeconfigSecretName(),

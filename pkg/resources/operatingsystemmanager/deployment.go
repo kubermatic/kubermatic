@@ -22,9 +22,8 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -61,7 +60,7 @@ const (
 
 type operatingSystemManagerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	NodeLocalDNSCacheEnabled() bool
@@ -227,7 +226,7 @@ type clusterSpec struct {
 	Name             string
 	clusterDNSIP     string
 	containerRuntime string
-	cloudProvider    string
+	cloudProvider    kubermaticv1.CloudProvider
 	nodePortRange    string
 	podCidr          string
 }
@@ -255,11 +254,11 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 		if len(nodeSettings.RegistryMirrors) > 0 {
 			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
 		}
-		if !nodeSettings.HTTPProxy.Empty() {
-			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
+		if val := pointer.StringDeref(nodeSettings.HTTPProxy, ""); val != "" {
+			flags = append(flags, "-node-http-proxy", val)
 		}
-		if !nodeSettings.NoProxy.Empty() {
-			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
+		if val := pointer.StringDeref(nodeSettings.NoProxy, ""); val != "" {
+			flags = append(flags, "-node-no-proxy", val)
 		}
 		if nodeSettings.PauseImage != "" {
 			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
@@ -307,8 +306,8 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", ValueFrom: refTo(resources.AzureTenantID)})
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", ValueFrom: refTo(resources.AzureSubscriptionID)})
 	}
-	if data.Cluster().Spec.Cloud.Openstack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
+	if data.Cluster().Spec.Cloud.OpenStack != nil {
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.OpenStack.AuthURL})
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(resources.OpenstackUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(resources.OpenstackPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(resources.OpenstackDomain)})
@@ -325,7 +324,7 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(resources.GCPServiceAccount)})
 	}
-	if data.Cluster().Spec.Cloud.Kubevirt != nil {
+	if data.Cluster().Spec.Cloud.KubeVirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(resources.KubeVirtKubeconfig)})
 	}
 

@@ -23,7 +23,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
@@ -404,7 +404,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	oidcSettings := cluster.Spec.OIDC
-	if oidcSettings.IssuerURL != "" && oidcSettings.ClientID != "" {
+	if oidcSettings != nil && oidcSettings.IssuerURL != "" && oidcSettings.ClientID != "" {
 		flags = append(flags,
 			"--oidc-ca-file", fmt.Sprintf("/etc/kubernetes/pki/ca-bundle/%s", resources.CABundleConfigMapKey),
 			"--oidc-issuer-url", oidcSettings.IssuerURL,

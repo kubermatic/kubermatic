@@ -20,8 +20,7 @@ import (
 	"testing"
 
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestVSphereConfigBuilder(t *testing.T) {
@@ -41,7 +40,7 @@ func TestVSphereConfigBuilder(t *testing.T) {
 type vsphereTestcase struct {
 	baseTestcase[vsphere.RawConfig, kubermaticv1.DatacenterSpecVSphere]
 
-	os providerconfig.OperatingSystem
+	os kubermaticv1.OperatingSystem
 }
 
 func (tt *vsphereTestcase) Run(cluster *kubermaticv1.Cluster) (*vsphere.RawConfig, error) {
@@ -66,7 +65,7 @@ func TestCompleteVSphereProviderConfigBasics(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.VSphereCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderVSphere,
 		VSphere:      &kubermaticv1.VSphereCloudSpec{},
 	})
 
@@ -100,12 +99,12 @@ func TestCompleteVSphereProviderConfigBasics(t *testing.T) {
 				name: "should select the correct AMI based on the OS",
 				datacenter: &kubermaticv1.DatacenterSpecVSphere{
 					Templates: kubermaticv1.ImageList{
-						providerconfig.OperatingSystemFlatcar: "testimage",
+						kubermaticv1.OperatingSystemFlatcar: "testimage",
 					},
 				},
 				expected: cloneBuilder(goodMachine).WithTemplateVMName("testimage"),
 			},
-			os: providerconfig.OperatingSystemFlatcar,
+			os: kubermaticv1.OperatingSystemFlatcar,
 		},
 	}
 

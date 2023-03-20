@@ -24,10 +24,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -318,14 +318,14 @@ func (j *ClusterJig) clusterReconcilerFactory(project *kubermaticv1.Project, pre
 
 			if preset != nil {
 				switch cluster.Spec.Cloud.ProviderName {
-				case string(kubermaticv1.AWSCloudProvider):
+				case kubermaticv1.CloudProviderAWS:
 					cluster.Spec.Cloud.AWS.AccessKeyID = preset.Spec.AWS.AccessKeyID
 					cluster.Spec.Cloud.AWS.SecretAccessKey = preset.Spec.AWS.SecretAccessKey
 					cluster.Spec.Cloud.AWS.VPCID = preset.Spec.AWS.VPCID
 					cluster.Spec.Cloud.AWS.SecurityGroupID = preset.Spec.AWS.SecurityGroupID
 					cluster.Spec.Cloud.AWS.InstanceProfileName = preset.Spec.AWS.InstanceProfileName
 
-				case string(kubermaticv1.HetznerCloudProvider):
+				case kubermaticv1.CloudProviderHetzner:
 					cluster.Spec.Cloud.Hetzner.Token = preset.Spec.Hetzner.Token
 					cluster.Spec.Cloud.Hetzner.Network = preset.Spec.Hetzner.Network
 

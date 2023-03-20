@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/machine"
@@ -63,6 +63,8 @@ func init() {
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
+	up := kubermaticv1.HealthStatusUp
+
 	return kubermaticv1.ExtendedClusterHealth{
 		Apiserver:                    kubermaticv1.HealthStatusUp,
 		ApplicationController:        kubermaticv1.HealthStatusUp,
@@ -70,7 +72,7 @@ func healthy() kubermaticv1.ExtendedClusterHealth {
 		Controller:                   kubermaticv1.HealthStatusUp,
 		MachineController:            kubermaticv1.HealthStatusUp,
 		Etcd:                         kubermaticv1.HealthStatusUp,
-		OpenVPN:                      kubermaticv1.HealthStatusUp,
+		OpenVPN:                      &up,
 		CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 		UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 	}
@@ -91,7 +93,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			Version: *kubernetesVersion,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
-				ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+				ProviderName:   kubermaticv1.CloudProviderHetzner,
 				Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 			},
 		},
@@ -106,7 +108,7 @@ func TestReconcile(t *testing.T) {
 	logger := zap.NewNop().Sugar()
 
 	providerSpec, err := machine.NewBuilder().
-		WithOperatingSystemSpec(operatingsystem.NewUbuntuSpecBuilder(kubermaticv1.HetznerCloudProvider).Build()).
+		WithOperatingSystemSpec(operatingsystem.NewUbuntuSpecBuilder(kubermaticv1.CloudProviderHetzner).Build()).
 		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx21").Build()).
 		BuildProviderSpec()
 	if err != nil {

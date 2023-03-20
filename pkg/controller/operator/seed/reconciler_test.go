@@ -25,7 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -106,7 +106,7 @@ func getSeeds(now metav1.Time) map[string]*kubermaticv1.Seed {
 				Namespace: "kubermatic",
 			},
 			Spec: kubermaticv1.SeedSpec{
-				NodeportProxy: kubermaticv1.NodeportProxyConfig{
+				NodeportProxy: &kubermaticv1.NodeportProxyConfig{
 					Annotations: map[string]string{
 						"foo.bar": "baz",
 					},

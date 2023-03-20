@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/utils/pointer"
 )
@@ -153,7 +153,7 @@ func CompleteAzureProviderSpec(config *azure.RawConfig, cluster *kubermaticv1.Cl
 		}
 
 		assignPublicIP := config.AssignPublicIP.Value != nil && *config.AssignPublicIP.Value
-		if assignPublicIP && config.LoadBalancerSku.Value == string(kubermaticv1.AzureStandardLBSKU) {
+		if assignPublicIP && config.LoadBalancerSku.Value == string(kubermaticv1.AzureLBSKUStandard) {
 			config.PublicIPSKU = pointer.String(config.LoadBalancerSku.Value)
 		}
 

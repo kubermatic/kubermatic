@@ -22,9 +22,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -113,7 +113,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kc *kubermaticv1.KubermaticConfiguration) error {
-	return kubermaticv1helper.UpdateKubermaticConfigurationStatus(ctx, r, kc, func(config *kubermaticv1.KubermaticConfiguration) {
+	return kuberneteshelper.UpdateKubermaticConfigurationStatus(ctx, r, kc, func(config *kubermaticv1.KubermaticConfiguration) {
 		config.Status.KubermaticEdition = r.versions.KubermaticEdition.ShortString()
 		config.Status.KubermaticVersion = r.versions.KubermaticCommit
 	})

@@ -25,9 +25,9 @@ import (
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -144,7 +144,7 @@ func Add(
 	}
 
 	cronJobMapFn := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		if ownerRef := metav1.GetControllerOf(a); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
+		if ownerRef := metav1.GetControllerOf(a); ownerRef != nil && ownerRef.Kind == "Cluster" {
 			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: ownerRef.Name}}}
 		}
 		return nil
@@ -201,7 +201,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	_, err = kubermaticv1helper.ClusterReconcileWrapper(
+	_, err = util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -290,7 +290,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, conf
 
 func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
 	// a customized container is configured
-	if cfg.Spec.SeedController.BackupStoreContainer != "" {
+	if cfg.Spec.SeedController != nil && cfg.Spec.SeedController.BackupStoreContainer != "" {
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
 	}
 
@@ -299,7 +299,7 @@ func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *ku
 
 func getBackupCleanupContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
 	// a customized container is configured
-	if cfg.Spec.SeedController.BackupCleanupContainer != "" {
+	if cfg.Spec.SeedController != nil && cfg.Spec.SeedController.BackupCleanupContainer != "" {
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupCleanupContainer)
 	}
 
@@ -439,7 +439,7 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster, storeContainer *core
 		return fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name), func(cronJob *batchv1.CronJob) (*batchv1.CronJob, error) {
 			gv := kubermaticv1.SchemeGroupVersion
 			cronJob.OwnerReferences = []metav1.OwnerReference{
-				*metav1.NewControllerRef(cluster, gv.WithKind(kubermaticv1.ClusterKindName)),
+				*metav1.NewControllerRef(cluster, gv.WithKind("Cluster")),
 			}
 
 			// Spec

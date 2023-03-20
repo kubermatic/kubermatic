@@ -25,11 +25,13 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
@@ -156,7 +158,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -261,7 +263,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return &reconcile.Result{}, err
 		}
 
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+		if err := kuberneteshelper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 			if c.Status.Encryption.ActiveKey != keyHint || !isEqualSlice(c.Status.Encryption.EncryptedResources, resourceList) {
 				// the active key as per the parsed EncryptionConfiguration has changed; we need to re-run encryption
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded
@@ -294,7 +296,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 
 			log.Debugf("configured key %q != %q, moving cluster to EncryptionPhase 'Pending'", configuredKey, cluster.Status.Encryption.ActiveKey)
-			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+			if err := kuberneteshelper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhasePending
 			}); err != nil {
 				return &reconcile.Result{}, err
@@ -304,11 +306,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		// encryption is set to "identity", thus secrets are unencrypted, and encryption is longer wished.
 		// This means we can fully reset the encryption status
 		if cluster.Status.Encryption.ActiveKey == encryptionresources.IdentityKey && !cluster.IsEncryptionEnabled() {
-			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+			if err := kuberneteshelper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.Encryption = nil
 				kubermaticv1helper.SetClusterCondition(
 					cluster,
-					r.versions,
+					r.versions.KubermaticCommit,
 					kubermaticv1.ClusterConditionEncryptionInitialized,
 					corev1.ConditionFalse,
 					"",
@@ -353,7 +355,7 @@ func (r *Reconciler) validateSecretRef(ctx context.Context, cluster *kubermaticv
 
 func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// set the encryption initialized condition (should only happen once on every cluster)
-	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+	if err := kuberneteshelper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 		if cluster.Status.Encryption == nil {
 			cluster.Status.Encryption = &kubermaticv1.ClusterEncryptionStatus{
 				Phase:              kubermaticv1.ClusterEncryptionPhasePending,
@@ -363,7 +365,7 @@ func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kuber
 
 		kubermaticv1helper.SetClusterCondition(
 			cluster,
-			r.versions,
+			r.versions.KubermaticCommit,
 			kubermaticv1.ClusterConditionEncryptionInitialized,
 			corev1.ConditionTrue,
 			"",

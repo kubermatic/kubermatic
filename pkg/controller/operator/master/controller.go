@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -114,8 +114,8 @@ func Add(
 			return nil
 		}
 
-		if config.Labels[kubermaticv1.WorkerNameLabelKey] != workerName {
-			log.Debugf("KubermaticConfiguration does not have matching %s label", kubermaticv1.WorkerNameLabelKey)
+		if config.Labels[workerlabel.LabelKey] != workerName {
+			log.Debugf("KubermaticConfiguration does not have matching %s label", workerlabel.LabelKey)
 			return nil
 		}
 

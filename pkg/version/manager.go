@@ -22,7 +22,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
@@ -40,7 +40,7 @@ type Manager struct {
 }
 
 type ProviderIncompatibility struct {
-	Provider  kubermaticv1.ProviderType  `json:"provider"`
+	Provider  kubermaticv1.CloudProvider `json:"provider"`
 	Version   string                     `json:"version"`
 	Condition kubermaticv1.ConditionType `json:"condition"`
 	Operation kubermaticv1.OperationType `json:"operation"`
@@ -96,7 +96,7 @@ func NewFromConfiguration(config *kubermaticv1.KubermaticConfiguration) *Manager
 
 	for _, incomp := range k8s.ProviderIncompatibilities {
 		incompatibilities = append(incompatibilities, &ProviderIncompatibility{
-			Provider:  kubermaticv1.ProviderType(incomp.Provider),
+			Provider:  incomp.Provider,
 			Version:   incomp.Version,
 			Condition: incomp.Condition,
 			Operation: incomp.Operation,
@@ -151,7 +151,7 @@ func (m *Manager) GetVersions() ([]*Version, error) {
 }
 
 // GetVersionsForProvider returns all Versions which don't result in automatic updates.
-func (m *Manager) GetVersionsForProvider(provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
+func (m *Manager) GetVersionsForProvider(provider kubermaticv1.CloudProvider, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
 	versions, err := m.GetVersions()
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (m *Manager) GetVersionsForProvider(provider kubermaticv1.ProviderType, con
 
 	filtered := []*Version{}
 	for _, v := range versions {
-		compatible, err := checkProviderCompatibility(v.Version, provider, kubermaticv1.CreateOperation, m.providerIncompatibilities, conditions...)
+		compatible, err := checkProviderCompatibility(v.Version, provider, kubermaticv1.OperationCreate, m.providerIncompatibilities, conditions...)
 		if err != nil {
 			return nil, err
 		}
@@ -248,7 +248,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw string, isForNode bool) (*Versi
 }
 
 // GetPossibleUpdates returns possible updates for the version passed in.
-func (m *Manager) GetPossibleUpdates(fromVersionRaw string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
+func (m *Manager) GetPossibleUpdates(fromVersionRaw string, provider kubermaticv1.CloudProvider, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
 	from, err := semverlib.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)
@@ -275,7 +275,7 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw string, provider kubermaticv
 	for _, c := range toConstraints {
 		for _, v := range m.versions {
 			if c.Check(v.Version) && !from.Equal(v.Version) {
-				compatible, err := checkProviderCompatibility(v.Version, provider, kubermaticv1.UpdateOperation, m.providerIncompatibilities, conditions...)
+				compatible, err := checkProviderCompatibility(v.Version, provider, kubermaticv1.OperationUpdate, m.providerIncompatibilities, conditions...)
 				if err != nil {
 					return nil, err
 				}
@@ -293,7 +293,7 @@ func (m *Manager) GetIncompatibilities() []*ProviderIncompatibility {
 	return m.providerIncompatibilities
 }
 
-func (m *Manager) GetKubeOnePossibleUpdates(fromVersionRaw string, provider kubermaticv1.ProviderType, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
+func (m *Manager) GetKubeOnePossibleUpdates(fromVersionRaw string, provider kubermaticv1.CloudProvider, conditions ...kubermaticv1.ConditionType) ([]*Version, error) {
 	from, err := semverlib.NewVersion(fromVersionRaw)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %w", fromVersionRaw, err)

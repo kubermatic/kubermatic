@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 
@@ -37,6 +37,20 @@ var (
 	emptySeedMap = map[string]*kubermaticv1.Seed{}
 )
 
+// ApplySeedProxyToDatacenters applies seed-level proxy settings to all datacenters,
+// if the datacenters have no settings on their own.
+func ApplySeedProxyToDatacenters(s *kubermaticv1.Seed) {
+	if !s.Spec.ProxySettings.Empty() {
+		for key, dc := range s.Spec.Datacenters {
+			if dc.Node == nil {
+				dc.Node = &kubermaticv1.NodeSettings{}
+			}
+			s.Spec.ProxySettings.Merge(&dc.Node.ProxySettings)
+			s.Spec.Datacenters[key] = dc
+		}
+	}
+}
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments.
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, seedName string, namespace string) (provider.SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {
@@ -50,7 +64,7 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, see
 			return nil, fmt.Errorf("failed to get seed %q: %w", seedName, err)
 		}
 
-		seed.SetDefaults()
+		ApplySeedProxyToDatacenters(seed)
 
 		return seed, nil
 	}, nil
@@ -69,7 +83,7 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 			return nil, fmt.Errorf("failed to get seed %q: %w", provider.DefaultSeedName, err)
 		}
 
-		seed.SetDefaults()
+		ApplySeedProxyToDatacenters(seed)
 
 		return map[string]*kubermaticv1.Seed{
 			provider.DefaultSeedName: seed,

@@ -22,8 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
@@ -190,7 +189,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update cluster %q", cluster.Name))
 			}
-			if err := helper.UpdateClusterStatus(ctx, seedClient, cluster, func(c *kubermaticv1.Cluster) {
+			if err := kuberneteshelper.UpdateClusterStatus(ctx, seedClient, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.InheritedLabels = getInheritedLabels(project.Labels)
 			}); err != nil {
 				errs = append(errs, fmt.Errorf("failed to update status on cluster %q: %w", cluster.Name, err))

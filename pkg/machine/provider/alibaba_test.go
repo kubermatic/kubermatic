@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestAlibabaConfigBuilder(t *testing.T) {
@@ -65,7 +65,7 @@ func TestCompleteAlibabaProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.AlibabaCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderAlibaba,
 		Alibaba:      &kubermaticv1.AlibabaCloudSpec{},
 	})
 

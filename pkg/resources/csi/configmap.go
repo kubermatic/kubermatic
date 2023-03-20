@@ -27,7 +27,7 @@ func ConfigMapsReconcilers(data *resources.TemplateData) []reconciling.NamedConf
 	creatorGetters := []reconciling.NamedConfigMapReconcilerFactory{}
 
 	switch {
-	case data.Cluster().Spec.Cloud.Kubevirt != nil:
+	case data.Cluster().Spec.Cloud.KubeVirt != nil:
 		creatorGetters = kubevirt.ConfigMapsReconcilers(data)
 	}
 

@@ -24,7 +24,9 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	machinecontroller "k8c.io/api/v2/pkg/apis/machine-controller"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
@@ -54,7 +56,12 @@ func CompleteMachineDeployment(md *clusterv1alpha1.MachineDeployment, cluster *k
 		md.Annotations = make(map[string]string)
 	}
 
-	osp := datacenter.Spec.DefaultOperatingSystemProfiles[config.OperatingSystem]
+	kkpOS, err := kubermaticv1helper.OperatingSystemToKKP(machinecontroller.OperatingSystem(config.OperatingSystem))
+	if err != nil {
+		return nil, err
+	}
+
+	osp := datacenter.Spec.DefaultOperatingSystemProfiles[kkpOS]
 	if osp != "" {
 		md.Annotations[osmresources.MachineDeploymentOSPAnnotation] = osp
 	}
@@ -120,7 +127,13 @@ func CompleteMachineDeployment(md *clusterv1alpha1.MachineDeployment, cluster *k
 // and then re-encodes the cloud provider spec into the provider config.
 func completeCloudProviderSpec(config *providerconfig.Config, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey) error {
 	// determine KKP-name for the cloud provider
-	kkpCloudProvider, err := machine.KubermaticProviderType(config.CloudProvider)
+	kkpCloudProvider, err := kubermaticv1helper.CloudProviderToKKP(machinecontroller.CloudProvider(config.CloudProvider))
+	if err != nil {
+		return err
+	}
+
+	// do the same for the OS
+	kkpOS, err := kubermaticv1helper.OperatingSystemToKKP(machinecontroller.OperatingSystem(config.OperatingSystem))
 	if err != nil {
 		return err
 	}
@@ -132,7 +145,7 @@ func completeCloudProviderSpec(config *providerconfig.Config, cluster *kubermati
 	}
 
 	// fill in missing values
-	cloudProviderSpec, err = machine.CompleteCloudProviderSpec(cloudProviderSpec, kkpCloudProvider, cluster, datacenter, config.OperatingSystem)
+	cloudProviderSpec, err = machine.CompleteCloudProviderSpec(cloudProviderSpec, kkpCloudProvider, cluster, datacenter, kkpOS)
 	if err != nil {
 		return err
 	}

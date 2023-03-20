@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestHetznerConfigBuilder(t *testing.T) {
@@ -65,7 +65,7 @@ func TestCompleteHetznerProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.HetznerCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderHetzner,
 		Hetzner:      &kubermaticv1.HetznerCloudSpec{},
 	})
 

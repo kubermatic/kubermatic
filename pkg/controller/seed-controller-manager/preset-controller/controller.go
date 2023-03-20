@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -127,7 +127,7 @@ func (r *reconciler) reconcile(ctx context.Context, preset *kubermaticv1.Preset,
 			if cluster.Annotations != nil && cluster.Annotations[kubermaticv1.PresetNameAnnotation] == preset.Name {
 				log.Debugw("Update cluster", "cluster", cluster.Name)
 				copyCluster := cluster.DeepCopy()
-				copyCluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = string(kubermaticv1.PresetDeleted)
+				copyCluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] = string(kubermaticv1.PresetInvalidationReasonDeleted)
 				if err := r.seedClient.Update(ctx, copyCluster); err != nil {
 					return err
 				}

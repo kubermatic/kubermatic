@@ -58,6 +58,7 @@ try() {
 try "Verify code generation" make verify
 try "Spellcheck" make spellcheck
 try "Verify go.mod" make check-dependencies
+try "Verify k8c.io CRDs match API" ./hack/verify-kkp-api.sh
 try "Verify generated documentation" ./hack/verify-docs.sh
 try "Verify license compatibility" ./hack/verify-licenses.sh
 try "Verify boilerplate" ./hack/verify-boilerplate.sh

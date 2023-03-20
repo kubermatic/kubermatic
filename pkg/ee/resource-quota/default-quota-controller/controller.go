@@ -31,8 +31,8 @@ import (
 
 	"go.uber.org/zap"
 
-	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	k8cequality "k8c.io/api/v2/pkg/apis/equality"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	utilpredicate "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -141,7 +141,7 @@ func (r *reconciler) synchronizeResourceQuotas(ctx context.Context, defaultResou
 	// Create a lookup for projects with resource quotas.
 	resourceQuotaLookup := map[string]kubermaticv1.ResourceQuota{}
 	for _, quota := range quotas.Items {
-		if quota.Spec.Subject.Kind == kubermaticv1.ProjectSubjectKind {
+		if quota.Spec.Subject.Kind == kubermaticv1.ResourceQuotaSubjectProject {
 			resourceQuotaLookup[quota.Spec.Subject.Name] = quota
 		}
 	}
@@ -168,7 +168,9 @@ func (r *reconciler) synchronizeResourceQuotas(ctx context.Context, defaultResou
 
 		// Quota already exists and we need to update it
 		if !k8cequality.Semantic.DeepEqual(quota.Spec.Quota, defaultResourceQuota.Quota) {
-			quota.Spec.Quota = defaultResourceQuota.Quota
+			if defaultResourceQuota.Quota != nil {
+				quota.Spec.Quota = *defaultResourceQuota.Quota
+			}
 			defaultQuotaFactories = append(defaultQuotaFactories, projectQuotaReconcilerFactory(&quota))
 		}
 	}
@@ -203,16 +205,19 @@ func genDefaultResourceQuota(defaultResourceQuota *kubermaticv1.DefaultProjectRe
 	quota.Labels = map[string]string{
 		DefaultProjectResourceQuotaKey: DefaultProjectResourceQuotaValue,
 	}
-	quota.Spec.Subject = kubermaticv1.Subject{
+	quota.Spec.Subject = kubermaticv1.ResourceQuotaSubject{
 		Name: project.Name,
-		Kind: kubermaticv1.ProjectSubjectKind,
+		Kind: kubermaticv1.ResourceQuotaSubjectProject,
 	}
-	quota.Spec.Quota = defaultResourceQuota.Quota
+	// this condition should always be true, as earlier in the callstack we checked Empty() already
+	if defaultResourceQuota.Quota != nil {
+		quota.Spec.Quota = *defaultResourceQuota.Quota
+	}
 	quota.Name = buildNameFromSubject(quota.Spec.Subject)
 	return quota
 }
 
-func buildNameFromSubject(subject kubermaticv1.Subject) string {
+func buildNameFromSubject(subject kubermaticv1.ResourceQuotaSubject) string {
 	return fmt.Sprintf("%s-%s", subject.Kind, subject.Name)
 }
 

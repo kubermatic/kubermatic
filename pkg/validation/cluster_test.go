@@ -27,10 +27,10 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/stretchr/testify/assert"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -40,7 +40,7 @@ import (
 var (
 	dc = &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+			OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
 				// Used for a test case
 				EnforceFloatingIP: true,
 			},
@@ -127,8 +127,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-				Openstack: &kubermaticv1.OpenstackCloudSpec{
+				ProviderName:   kubermaticv1.CloudProviderOpenStack,
+				OpenStack: &kubermaticv1.OpenStackCloudSpec{
 					Project:  "some-project",
 					Username: "some-user",
 					Password: "some-password",
@@ -143,8 +143,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-				Openstack: &kubermaticv1.OpenstackCloudSpec{
+				ProviderName:   kubermaticv1.CloudProviderOpenStack,
+				OpenStack: &kubermaticv1.OpenStackCloudSpec{
 					ProjectID: "some-project",
 					Username:  "some-user",
 					Password:  "some-password",
@@ -159,8 +159,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "",
-				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-				Openstack: &kubermaticv1.OpenstackCloudSpec{
+				ProviderName:   kubermaticv1.CloudProviderOpenStack,
+				OpenStack: &kubermaticv1.OpenStackCloudSpec{
 					Project:  "some-project",
 					Username: "some-user",
 					Password: "some-password",
@@ -175,8 +175,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-				Openstack: &kubermaticv1.OpenstackCloudSpec{
+				ProviderName:   kubermaticv1.CloudProviderOpenStack,
+				OpenStack: &kubermaticv1.OpenStackCloudSpec{
 					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
@@ -190,11 +190,11 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: false,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+				ProviderName:   kubermaticv1.CloudProviderOpenStack,
 				Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 					Token: "a-token",
 				},
-				Openstack: &kubermaticv1.OpenstackCloudSpec{
+				OpenStack: &kubermaticv1.OpenStackCloudSpec{
 					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
@@ -208,8 +208,8 @@ func TestValidateCloudSpec(t *testing.T) {
 			valid: true,
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
-				ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-				Openstack: &kubermaticv1.OpenstackCloudSpec{
+				ProviderName:   kubermaticv1.CloudProviderOpenStack,
+				OpenStack: &kubermaticv1.OpenStackCloudSpec{
 					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
@@ -224,7 +224,7 @@ func TestValidateCloudSpec(t *testing.T) {
 			spec: kubermaticv1.CloudSpec{
 				DatacenterName: "some-datacenter",
 				ProviderName:   "closedstack", // *giggle*
-				Openstack: &kubermaticv1.OpenstackCloudSpec{
+				OpenStack: &kubermaticv1.OpenStackCloudSpec{
 					Project:        "some-project",
 					Username:       "some-user",
 					Password:       "some-password",
@@ -591,7 +591,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
 						IPv6Enabled: pointer.Bool(true),
 					},
 				},
@@ -610,7 +610,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
 						IPv6Enabled: pointer.Bool(false),
 					},
 				},
@@ -1200,7 +1200,7 @@ func TestValidateVersion(t *testing.T) {
 			spec: &kubermaticv1.ClusterSpec{
 				Version: semver.Semver("1.2.0"),
 				Cloud: kubermaticv1.CloudSpec{
-					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName: kubermaticv1.CloudProviderOpenStack,
 				},
 			},
 			versionManager: version.New(
@@ -1213,9 +1213,9 @@ func TestValidateVersion(t *testing.T) {
 					},
 				}, nil, []*version.ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.OpenstackCloudProvider,
-						Condition: kubermaticv1.InTreeCloudProviderCondition,
-						Operation: kubermaticv1.CreateOperation,
+						Provider:  kubermaticv1.CloudProviderOpenStack,
+						Condition: kubermaticv1.ConditionInTreeCloudProvider,
+						Operation: kubermaticv1.OperationCreate,
 						Version:   ">= 1.3.0",
 					},
 				},
@@ -1227,7 +1227,7 @@ func TestValidateVersion(t *testing.T) {
 			spec: &kubermaticv1.ClusterSpec{
 				Version: semver.Semver("1.3.0"),
 				Cloud: kubermaticv1.CloudSpec{
-					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName: kubermaticv1.CloudProviderOpenStack,
 				},
 			},
 			versionManager: version.New(
@@ -1241,9 +1241,9 @@ func TestValidateVersion(t *testing.T) {
 				}, nil,
 				[]*version.ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.OpenstackCloudProvider,
-						Condition: kubermaticv1.InTreeCloudProviderCondition,
-						Operation: kubermaticv1.CreateOperation,
+						Provider:  kubermaticv1.CloudProviderOpenStack,
+						Condition: kubermaticv1.ConditionInTreeCloudProvider,
+						Operation: kubermaticv1.OperationCreate,
 						Version:   ">= 1.3.0",
 					},
 				},
@@ -1256,7 +1256,7 @@ func TestValidateVersion(t *testing.T) {
 			spec: &kubermaticv1.ClusterSpec{
 				Version: semver.Semver("1.3.0"),
 				Cloud: kubermaticv1.CloudSpec{
-					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName: kubermaticv1.CloudProviderOpenStack,
 				},
 			},
 			versionManager: version.New(
@@ -1280,9 +1280,9 @@ func TestValidateVersion(t *testing.T) {
 				},
 				[]*version.ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.OpenstackCloudProvider,
-						Condition: kubermaticv1.InTreeCloudProviderCondition,
-						Operation: kubermaticv1.UpdateOperation,
+						Provider:  kubermaticv1.CloudProviderOpenStack,
+						Condition: kubermaticv1.ConditionInTreeCloudProvider,
+						Operation: kubermaticv1.OperationUpdate,
 						Version:   ">= 1.3.0",
 					},
 				},

@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -56,7 +56,7 @@ func TestReconcile(t *testing.T) {
 			name: "scenario 1: create default project quota",
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
 				*genResourceQuota(
-					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 					generator.GenDefaultProject().Name,
 					*genResourceDetails("2", "5G", "10G"),
 					true),
@@ -71,7 +71,7 @@ func TestReconcile(t *testing.T) {
 			name: "scenario 2: update default project quota",
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
 				*genResourceQuota(
-					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 					generator.GenDefaultProject().Name,
 					*genResourceDetails("2", "5G", "10G"),
 					true),
@@ -82,7 +82,7 @@ func TestReconcile(t *testing.T) {
 				WithObjects(
 					genSettings(genResourceDetails("2", "5G", "10G")),
 					generator.GenDefaultProject(),
-					genResourceQuota(buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					genResourceQuota(buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 						generator.GenDefaultProject().Name,
 						*genResourceDetails("1", "3G", "7G"),
 						true),
@@ -92,7 +92,7 @@ func TestReconcile(t *testing.T) {
 			name: "scenario 3: dont update custom project quota",
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
 				*genResourceQuota(
-					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 					generator.GenDefaultProject().Name,
 					*genResourceDetails("1", "3G", "7G"),
 					false),
@@ -103,7 +103,7 @@ func TestReconcile(t *testing.T) {
 				WithObjects(
 					genSettings(genResourceDetails("2", "5G", "10G")),
 					generator.GenDefaultProject(),
-					genResourceQuota(buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					genResourceQuota(buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 						generator.GenDefaultProject().Name,
 						*genResourceDetails("1", "3G", "7G"),
 						false),
@@ -118,7 +118,7 @@ func TestReconcile(t *testing.T) {
 				WithObjects(
 					genSettings(nil),
 					generator.GenDefaultProject(),
-					genResourceQuota(buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					genResourceQuota(buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 						generator.GenDefaultProject().Name,
 						*genResourceDetails("1", "3G", "7G"),
 						true),
@@ -128,7 +128,7 @@ func TestReconcile(t *testing.T) {
 			name: "scenario 5: dont delete custom project quota",
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{
 				*genResourceQuota(
-					buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 					generator.GenDefaultProject().Name,
 					*genResourceDetails("1", "3G", "7G"),
 					false),
@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 				WithObjects(
 					genSettings(nil),
 					generator.GenDefaultProject(),
-					genResourceQuota(buildNameFromSubject(kubermaticv1.Subject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ProjectSubjectKind}),
+					genResourceQuota(buildNameFromSubject(kubermaticv1.ResourceQuotaSubject{Name: generator.GenDefaultProject().Name, Kind: kubermaticv1.ResourceQuotaSubjectProject}),
 						generator.GenDefaultProject().Name,
 						*genResourceDetails("1", "3G", "7G"),
 						false),
@@ -186,27 +186,33 @@ func TestReconcile(t *testing.T) {
 func genSettings(resourceDetails *kubermaticv1.ResourceDetails) *kubermaticv1.KubermaticSetting {
 	s := &kubermaticv1.KubermaticSetting{}
 	s.Name = kubermaticv1.GlobalSettingsName
-	if resourceDetails != nil {
-		s.Spec = kubermaticv1.SettingSpec{
-			DefaultProjectResourceQuota: &kubermaticv1.DefaultProjectResourceQuota{
-				Quota: *resourceDetails,
-			},
-		}
+	s.Spec = kubermaticv1.SettingSpec{
+		DefaultProjectResourceQuota: &kubermaticv1.DefaultProjectResourceQuota{
+			Quota: resourceDetails,
+		},
 	}
 	return s
 }
 
 func genResourceDetails(cpu, mem, storage string) *kubermaticv1.ResourceDetails {
-	return kubermaticv1.NewResourceDetails(resource.MustParse(cpu), resource.MustParse(mem), resource.MustParse(storage))
+	cpuResources := resource.MustParse(cpu)
+	memResources := resource.MustParse(mem)
+	storageResources := resource.MustParse(storage)
+
+	return &kubermaticv1.ResourceDetails{
+		CPU:     &cpuResources,
+		Memory:  &memResources,
+		Storage: &storageResources,
+	}
 }
 
 func genResourceQuota(name, subjectName string, quota kubermaticv1.ResourceDetails, def bool) *kubermaticv1.ResourceQuota {
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
-		Subject: kubermaticv1.Subject{
+		Subject: kubermaticv1.ResourceQuotaSubject{
 			Name: subjectName,
-			Kind: kubermaticv1.ProjectSubjectKind,
+			Kind: kubermaticv1.ResourceQuotaSubjectProject,
 		},
 		Quota: quota,
 	}

@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
@@ -76,7 +76,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -89,7 +89,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.ClusterResourceName},
+							Resources:     []string{"clusters"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -102,7 +102,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -115,7 +115,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.ClusterResourceName},
+							Resources:     []string{"clusters"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -127,7 +127,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -140,7 +140,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.ClusterResourceName},
+							Resources:     []string{"clusters"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get"},
 						},
@@ -153,7 +153,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -181,7 +181,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -208,7 +208,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -235,7 +235,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -261,7 +261,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -288,7 +288,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
+								Kind:       "Cluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -323,7 +323,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ProjectKindName,
+							Kind:       "Project",
 							Name:       "thunderball",
 							UID:        "thunderballID",
 						},
@@ -339,7 +339,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -352,7 +352,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.SSHKeyResourceName},
+							Resources:     []string{"usersshkeies"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -365,7 +365,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -378,7 +378,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.SSHKeyResourceName},
+							Resources:     []string{"usersshkeies"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -391,7 +391,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -404,7 +404,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.SSHKeyResourceName},
+							Resources:     []string{"usersshkeies"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -416,7 +416,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -429,7 +429,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.SSHKeyResourceName},
+							Resources:     []string{"usersshkeies"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get"},
 						},
@@ -444,7 +444,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -470,7 +470,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -497,7 +497,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -524,7 +524,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.SSHKeyKind,
+								Kind:       "UserSSHKey",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -559,7 +559,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ProjectKindName,
+							Kind:       "Project",
 							Name:       "thunderball",
 							UID:        "thunderballID",
 						},
@@ -580,7 +580,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.UserProjectBindingKind,
+								Kind:       "UserProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -593,7 +593,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.UserProjectBindingResourceName},
+							Resources:     []string{"userprojectbindings"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -605,7 +605,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.UserProjectBindingKind,
+								Kind:       "UserProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -618,7 +618,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.UserProjectBindingResourceName},
+							Resources:     []string{"userprojectbindings"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -633,7 +633,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.UserProjectBindingKind,
+								Kind:       "UserProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -659,7 +659,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.UserProjectBindingKind,
+								Kind:       "UserProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -710,7 +710,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ProjectKindName,
+							Kind:       "Project",
 							Name:       "thunderball",
 							UID:        "thunderballID",
 						},
@@ -726,7 +726,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ExternalClusterKind,
+								Kind:       "ExternalCluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -739,7 +739,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.ExternalClusterResourceName},
+							Resources:     []string{"externalclusters"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -752,7 +752,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ExternalClusterKind,
+								Kind:       "ExternalCluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -765,7 +765,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.ExternalClusterResourceName},
+							Resources:     []string{"externalclusters"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -777,7 +777,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ExternalClusterKind,
+								Kind:       "ExternalCluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -790,7 +790,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.ExternalClusterResourceName},
+							Resources:     []string{"externalclusters"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get"},
 						},
@@ -805,7 +805,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ExternalClusterKind,
+								Kind:       "ExternalCluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -832,7 +832,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ExternalClusterKind,
+								Kind:       "ExternalCluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -859,7 +859,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ExternalClusterKind,
+								Kind:       "ExternalCluster",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -894,7 +894,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ProjectKindName,
+							Kind:       "Project",
 							Name:       "thunderball",
 							UID:        "thunderballID",
 						},
@@ -915,7 +915,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.GroupProjectBindingKind,
+								Kind:       "GroupProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -928,7 +928,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.GroupProjectBindingResourceName},
+							Resources:     []string{"groupprojectbindings"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -940,7 +940,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.GroupProjectBindingKind,
+								Kind:       "GroupProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -953,7 +953,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.GroupProjectBindingResourceName},
+							Resources:     []string{"groupprojectbindings"},
 							ResourceNames: []string{"abcd"},
 							Verbs:         []string{"get", "update", "patch", "delete"},
 						},
@@ -968,7 +968,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.GroupProjectBindingKind,
+								Kind:       "GroupProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -994,7 +994,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.GroupProjectBindingKind,
+								Kind:       "GroupProjectBinding",
 								Name:       "abcd",
 								UID:        "abcdID", // set manually
 							},
@@ -1027,14 +1027,14 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					OwnerReferences: []metav1.OwnerReference{
 						{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ProjectKindName,
+							Kind:       "Project",
 							Name:       "thunderball",
 							UID:        "thunderballID",
 						},
 					},
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{
+					Subject: kubermaticv1.ResourceQuotaSubject{
 						Name: "thunderball",
 						Kind: "project",
 					},
@@ -1048,7 +1048,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1074,7 +1074,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1100,7 +1100,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1126,7 +1126,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1154,7 +1154,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1181,7 +1181,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1208,7 +1208,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1235,7 +1235,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ResourceQuotaKindName,
+								Kind:       "ResourceQuota",
 								Name:       "project-thunderball",
 								UID:        "abcdID", // set manually
 							},
@@ -1611,7 +1611,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1637,7 +1637,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1663,7 +1663,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1689,7 +1689,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1723,7 +1723,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1749,7 +1749,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1775,7 +1775,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1803,7 +1803,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1829,7 +1829,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1855,7 +1855,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1881,7 +1881,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1916,7 +1916,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1946,7 +1946,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -1976,7 +1976,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2006,7 +2006,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2038,7 +2038,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2068,7 +2068,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2098,7 +2098,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2128,7 +2128,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2165,7 +2165,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
-			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, "projects", "Project", test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{
@@ -2214,7 +2214,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2240,7 +2240,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2266,7 +2266,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2291,7 +2291,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2324,7 +2324,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2349,7 +2349,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2373,7 +2373,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2399,7 +2399,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2424,7 +2424,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2449,7 +2449,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2473,7 +2473,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2506,7 +2506,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2536,7 +2536,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2566,7 +2566,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2596,7 +2596,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2627,7 +2627,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2657,7 +2657,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2686,7 +2686,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2715,7 +2715,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
+								Kind:       "Project",
 								Name:       "thunderball",
 								UID:        "thunderballID", // set manually
 							},
@@ -2751,7 +2751,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
-			err := ensureClusterRBACRoleForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, "projects", "Project", test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{
@@ -2823,7 +2823,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Resources: []string{"constraints"},
 							Verbs:     []string{"get", "list", "create", "update", "delete"},
 						},
 					},
@@ -2839,7 +2839,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Resources: []string{"constraints"},
 							Verbs:     []string{"get", "list", "create", "update", "delete"},
 						},
 					},
@@ -2855,7 +2855,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Resources: []string{"constraints"},
 							Verbs:     []string{"get", "list"},
 						},
 					},
@@ -2954,7 +2954,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Resources: []string{"constraints"},
 							Verbs:     []string{"get", "list", "create", "update", "delete"},
 						},
 					},
@@ -2970,7 +2970,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Resources: []string{"constraints"},
 							Verbs:     []string{"get", "update", "delete"},
 						},
 					},
@@ -3144,7 +3144,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.AlertmanagerResourceName},
+							Resources:     []string{"alertmanagers"},
 							ResourceNames: []string{alertmanagerName},
 							Verbs:         []string{"get", "update"},
 						},
@@ -3161,7 +3161,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.AlertmanagerResourceName},
+							Resources:     []string{"alertmanagers"},
 							ResourceNames: []string{alertmanagerName},
 							Verbs:         []string{"get", "update"},
 						},
@@ -3178,7 +3178,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.AlertmanagerResourceName},
+							Resources:     []string{"alertmanagers"},
 							ResourceNames: []string{alertmanagerName},
 							Verbs:         []string{"get"},
 						},
@@ -3381,7 +3381,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.AlertmanagerResourceName},
+							Resources:     []string{"alertmanagers"},
 							ResourceNames: []string{alertmanagerName},
 							Verbs:         []string{"get", "update"},
 						},
@@ -3398,7 +3398,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources:     []string{kubermaticv1.AlertmanagerResourceName},
+							Resources:     []string{"alertmanagers"},
 							ResourceNames: []string{alertmanagerName},
 							Verbs:         []string{"get", "list", "update", "delete"},
 						},
@@ -3574,7 +3574,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.RuleGroupResourceName},
+							Resources: []string{"rulegroups"},
 							Verbs:     []string{"get", "list", "create", "update", "delete"},
 						},
 					},
@@ -3590,7 +3590,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.RuleGroupResourceName},
+							Resources: []string{"rulegroups"},
 							Verbs:     []string{"get", "list", "create", "update", "delete"},
 						},
 					},
@@ -3606,7 +3606,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.RuleGroupResourceName},
+							Resources: []string{"rulegroups"},
 							Verbs:     []string{"get", "list"},
 						},
 					},
@@ -3704,7 +3704,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.RuleGroupResourceName},
+							Resources: []string{"rulegroups"},
 							Verbs:     []string{"get", "list", "create", "update", "delete"},
 						},
 					},
@@ -3720,7 +3720,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{kubermaticv1.RuleGroupResourceName},
+							Resources: []string{"rulegroups"},
 							Verbs:     []string{"get", "update", "delete"},
 						},
 					},

@@ -24,12 +24,12 @@ import (
 	"github.com/go-test/deep"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 
 	corev1 "k8s.io/api/core/v1"
@@ -50,7 +50,7 @@ var (
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				"openstack-dc": {
 					Spec: kubermaticv1.DatacenterSpec{
-						Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
 					},
 				},
 				"hetzner-dc": {
@@ -60,7 +60,7 @@ var (
 				},
 				"kubevirt-dc": {
 					Spec: kubermaticv1.DatacenterSpec{
-						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
+						KubeVirt: &kubermaticv1.DatacenterSpecKubeVirt{},
 					},
 				},
 			},
@@ -73,7 +73,7 @@ var (
 	// collected here for brevity sake.
 	defaultPatches = []jsonpatch.JsonPatchOperation{
 		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(kubermaticv1.DefaultEtcdClusterSize)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(defaulting.DefaultEtcdClusterSize)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaulting.DefaultEtcdVolumeSize),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaulting.DefaultAPIServerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", resources.DefaultNodePortRange),
@@ -85,8 +85,8 @@ var (
 
 	defaultNetworkingPatchesWithoutProxyMode = []jsonpatch.JsonPatchOperation{
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipFamily", string(kubermaticv1.IPFamilyIPv4)),
-		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{resources.DefaultClusterServicesCIDRIPv4}),
-		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{resources.DefaultClusterPodsCIDRIPv4}),
+		jsonpatch.NewOperation("add", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{resources.DefaultClusterServicesCIDRIPv4}),
+		jsonpatch.NewOperation("add", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{resources.DefaultClusterPodsCIDRIPv4}),
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(resources.DefaultNodeCIDRMaskSizeIPv4)),
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
@@ -118,7 +118,7 @@ func TestMutator(t *testing.T) {
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -214,7 +214,7 @@ func TestMutator(t *testing.T) {
 								},
 							},
 						},
-						Prometheus: kubermaticv1.StatefulSetSettings{
+						Prometheus: &kubermaticv1.StatefulSetSettings{
 							Resources: &corev1.ResourceRequirements{
 								Requests: map[corev1.ResourceName]resource.Quantity{
 									"memory": resource.MustParse("500M"),
@@ -249,13 +249,13 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/storageClass", "fast-storage"),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", "1G"),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/prometheus", map[string]interface{}{"resources": map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}}),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
 				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderOpenStack)),
 			},
 		},
 		{
@@ -264,7 +264,7 @@ func TestMutator(t *testing.T) {
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 			}.Do(),
@@ -292,15 +292,15 @@ func TestMutator(t *testing.T) {
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 				}),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipFamily", string(kubermaticv1.IPFamilyIPv4)),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.32.0/20"}),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"10.241.0.0/16"}),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.32.0/20"}),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"10.241.0.0/16"}),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "example.local"),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderOpenStack)),
 			),
 		},
 		{
@@ -308,9 +308,9 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -343,9 +343,9 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -396,7 +396,7 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderHetzner)),
 			),
 		},
 		{
@@ -404,7 +404,7 @@ func TestMutator(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderHetzner,
 					DatacenterName: "hetzner-dc",
 					Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 				},
@@ -416,7 +416,7 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "hetzner-dc",
 					Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 				},
@@ -428,7 +428,7 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesIptablesProxyMode...),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.HetznerCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderHetzner)),
 			),
 		},
 		{
@@ -436,9 +436,9 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -471,9 +471,9 @@ func TestMutator(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -491,9 +491,9 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -550,9 +550,9 @@ func TestMutator(t *testing.T) {
 				Name:    "foo",
 				Version: *semver.NewSemverOrDie("1.25"),
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -585,7 +585,7 @@ func TestMutator(t *testing.T) {
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -599,7 +599,7 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatches...),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderOpenStack)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
@@ -610,7 +610,7 @@ func TestMutator(t *testing.T) {
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
 					DatacenterName: "kubevirt-dc",
-					Kubevirt:       &kubermaticv1.KubevirtCloudSpec{},
+					KubeVirt:       &kubermaticv1.KubeVirtCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -625,8 +625,8 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipFamily", string(kubermaticv1.IPFamilyIPv4)),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.241.0.0/20"}),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.26.0.0/16"}),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.241.0.0/20"}),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"172.26.0.0/16"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
@@ -634,7 +634,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderKubeVirt)),
 			),
 		},
 		{
@@ -643,7 +643,7 @@ func TestMutator(t *testing.T) {
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -663,7 +663,7 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderOpenStack)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
@@ -674,7 +674,7 @@ func TestMutator(t *testing.T) {
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -691,7 +691,7 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				append(defaultPatches, defaultNetworkingPatchesWithoutProxyMode...),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderOpenStack)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
@@ -702,7 +702,7 @@ func TestMutator(t *testing.T) {
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
@@ -719,8 +719,8 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				defaultPatches,
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{resources.DefaultClusterServicesCIDRIPv4, resources.DefaultClusterServicesCIDRIPv6}),
-				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{resources.DefaultClusterPodsCIDRIPv4, resources.DefaultClusterPodsCIDRIPv6}),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{resources.DefaultClusterServicesCIDRIPv4, resources.DefaultClusterServicesCIDRIPv6}),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{resources.DefaultClusterPodsCIDRIPv4, resources.DefaultClusterPodsCIDRIPv6}),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(resources.DefaultNodeCIDRMaskSizeIPv4)),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv6", float64(resources.DefaultNodeCIDRMaskSizeIPv6)),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
@@ -729,7 +729,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
-				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.CloudProviderOpenStack)),
 			),
 		},
 		{
@@ -737,9 +737,9 @@ func TestMutator(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: false,
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -750,9 +750,9 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -773,9 +773,9 @@ func TestMutator(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -786,9 +786,9 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderOpenStack,
 					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
+					OpenStack:      &kubermaticv1.OpenStackCloudSpec{},
 				},
 				ExternalCloudProvider: true,
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
@@ -804,7 +804,7 @@ func TestMutator(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderHetzner,
 					DatacenterName: "hetzner-dc",
 					Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 				},
@@ -817,7 +817,7 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderHetzner,
 					DatacenterName: "hetzner-dc",
 					Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 				},
@@ -835,7 +835,7 @@ func TestMutator(t *testing.T) {
 			oldCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderHetzner,
 					DatacenterName: "hetzner-dc",
 					Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 				},
@@ -848,7 +848,7 @@ func TestMutator(t *testing.T) {
 			newCluster: rawClusterGen{
 				Name: "foo",
 				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+					ProviderName:   kubermaticv1.CloudProviderHetzner,
 					DatacenterName: "hetzner-dc",
 					Hetzner:        &kubermaticv1.HetznerCloudSpec{},
 				},
@@ -870,7 +870,7 @@ func TestMutator(t *testing.T) {
 			if tt.defaultClusterTemplate != nil {
 				testSeed.Spec.DefaultClusterTemplate = defaultingTemplateName
 
-				tt.defaultClusterTemplate.Labels = map[string]string{"scope": kubermaticv1.SeedTemplateScope}
+				tt.defaultClusterTemplate.Labels = map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: kubermaticv1.TemplateScopeSeed}
 				tt.defaultClusterTemplate.Name = defaultingTemplateName
 				tt.defaultClusterTemplate.Namespace = testSeed.Namespace
 

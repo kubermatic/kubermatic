@@ -24,8 +24,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,14 +41,14 @@ var (
 )
 
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {
-	return cluster.Spec.Cloud.Openstack != nil ||
+	return cluster.Spec.Cloud.OpenStack != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
 		cluster.Spec.Cloud.Azure != nil ||
 		cluster.Spec.Cloud.VSphere != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
 		cluster.Spec.Cloud.Hetzner != nil ||
 		cluster.Spec.Cloud.Nutanix != nil ||
-		cluster.Spec.Cloud.Kubevirt != nil
+		cluster.Spec.Cloud.KubeVirt != nil
 }
 
 func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, attempt int) error {
@@ -140,7 +140,7 @@ func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Optio
 		},
 	}
 
-	if cluster.Spec.Cloud.Kubevirt != nil {
+	if cluster.Spec.Cloud.KubeVirt != nil {
 		set.Spec.VolumeClaimTemplates[0].Spec.StorageClassName = &kubevirtStorageClassName
 	}
 

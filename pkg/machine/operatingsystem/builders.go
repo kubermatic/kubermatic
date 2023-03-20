@@ -19,8 +19,7 @@ package operatingsystem
 import (
 	"fmt"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
 	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
@@ -29,19 +28,19 @@ import (
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 )
 
-func DefaultSpec(os providerconfig.OperatingSystem, cloudProvider kubermaticv1.ProviderType) (interface{}, error) {
+func DefaultSpec(os kubermaticv1.OperatingSystem, cloudProvider kubermaticv1.CloudProvider) (interface{}, error) {
 	switch os {
-	case providerconfig.OperatingSystemAmazonLinux2:
+	case kubermaticv1.OperatingSystemAmazonLinux2:
 		return NewAmazonLinux2SpecBuilder(cloudProvider).Build(), nil
-	case providerconfig.OperatingSystemCentOS:
+	case kubermaticv1.OperatingSystemCentOS:
 		return NewCentOSSpecBuilder(cloudProvider).Build(), nil
-	case providerconfig.OperatingSystemFlatcar:
+	case kubermaticv1.OperatingSystemFlatcar:
 		return NewFlatcarSpecBuilder(cloudProvider).Build(), nil
-	case providerconfig.OperatingSystemRHEL:
+	case kubermaticv1.OperatingSystemRHEL:
 		return NewRHELSpecBuilder(cloudProvider).Build(), nil
-	case providerconfig.OperatingSystemRockyLinux:
+	case kubermaticv1.OperatingSystemRockyLinux:
 		return NewRockyLinuxSpecBuilder(cloudProvider).Build(), nil
-	case providerconfig.OperatingSystemUbuntu:
+	case kubermaticv1.OperatingSystemUbuntu:
 		return NewUbuntuSpecBuilder(cloudProvider).Build(), nil
 	default:
 		return nil, fmt.Errorf("unknown operating system %q", os)
@@ -52,7 +51,7 @@ type UbuntuSpecBuilder struct {
 	ubuntu.Config
 }
 
-func NewUbuntuSpecBuilder(_ kubermaticv1.ProviderType) *UbuntuSpecBuilder {
+func NewUbuntuSpecBuilder(_ kubermaticv1.CloudProvider) *UbuntuSpecBuilder {
 	return &UbuntuSpecBuilder{}
 }
 
@@ -73,7 +72,7 @@ func (b *CentOSSpecBuilder) Build() centos.Config {
 	return b.Config
 }
 
-func NewCentOSSpecBuilder(_ kubermaticv1.ProviderType) *CentOSSpecBuilder {
+func NewCentOSSpecBuilder(_ kubermaticv1.CloudProvider) *CentOSSpecBuilder {
 	return &CentOSSpecBuilder{}
 }
 
@@ -90,7 +89,7 @@ func (b *RockyLinuxSpecBuilder) Build() rockylinux.Config {
 	return b.Config
 }
 
-func NewRockyLinuxSpecBuilder(_ kubermaticv1.ProviderType) *RockyLinuxSpecBuilder {
+func NewRockyLinuxSpecBuilder(_ kubermaticv1.CloudProvider) *RockyLinuxSpecBuilder {
 	return &RockyLinuxSpecBuilder{}
 }
 
@@ -107,7 +106,7 @@ func (b *RHELSpecBuilder) Build() rhel.Config {
 	return b.Config
 }
 
-func NewRHELSpecBuilder(_ kubermaticv1.ProviderType) *RHELSpecBuilder {
+func NewRHELSpecBuilder(_ kubermaticv1.CloudProvider) *RHELSpecBuilder {
 	return &RHELSpecBuilder{}
 }
 
@@ -129,7 +128,7 @@ func (b *AmazonLinux2SpecBuilder) Build() amzn2.Config {
 	return b.Config
 }
 
-func NewAmazonLinux2SpecBuilder(_ kubermaticv1.ProviderType) *AmazonLinux2SpecBuilder {
+func NewAmazonLinux2SpecBuilder(_ kubermaticv1.CloudProvider) *AmazonLinux2SpecBuilder {
 	return &AmazonLinux2SpecBuilder{}
 }
 
@@ -146,7 +145,7 @@ func (b *FlatcarSpecBuilder) Build() flatcar.Config {
 	return b.Config
 }
 
-func NewFlatcarSpecBuilder(provider kubermaticv1.ProviderType) *FlatcarSpecBuilder {
+func NewFlatcarSpecBuilder(provider kubermaticv1.CloudProvider) *FlatcarSpecBuilder {
 	builder := &FlatcarSpecBuilder{
 		Config: flatcar.Config{
 			// We manage Flatcar updates via the CoreOS update operator which requires locksmithd
@@ -157,7 +156,7 @@ func NewFlatcarSpecBuilder(provider kubermaticv1.ProviderType) *FlatcarSpecBuild
 		},
 	}
 
-	if provider == kubermaticv1.AnexiaCloudProvider {
+	if provider == kubermaticv1.CloudProviderAnexia {
 		builder.WithProvisioningUtility(flatcar.CloudInit)
 	}
 

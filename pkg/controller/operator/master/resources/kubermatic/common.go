@@ -21,7 +21,7 @@ import (
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -108,7 +108,7 @@ func IngressReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Na
 			// setting up the required annotations.
 			issuer := cfg.Spec.Ingress.CertificateIssuer
 
-			if issuer.Name != "" {
+			if issuer != nil && issuer.Name != "" {
 				delete(i.Annotations, certmanagerv1.IngressIssuerNameAnnotationKey)
 				delete(i.Annotations, certmanagerv1.IngressClusterIssuerNameAnnotationKey)
 

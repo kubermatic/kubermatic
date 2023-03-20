@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestAnexiaConfigBuilder(t *testing.T) {
@@ -67,7 +67,7 @@ func TestCompleteAnexiaProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.AnexiaCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderAnexia,
 		Anexia:       &kubermaticv1.AnexiaCloudSpec{},
 	})
 

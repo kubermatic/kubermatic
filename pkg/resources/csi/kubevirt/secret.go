@@ -48,7 +48,7 @@ func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateDa
 			if err != nil {
 				return nil, err
 			}
-			infraKubeconfig := credentials.Kubevirt.KubeConfig
+			infraKubeconfig := credentials.KubeVirt.KubeConfig
 			infraClient, err := kubevirt.NewClient(infraKubeconfig, kubevirt.ClientOptions{})
 			if err != nil {
 				return nil, err

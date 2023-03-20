@@ -29,7 +29,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -125,7 +125,7 @@ func Add(
 		versions:                  versions,
 		caBundle:                  caBundle,
 		userClusterMLA:            userClusterMLA,
-		cloudProvider:             kubermaticv1.ProviderType(cloudProviderName),
+		cloudProvider:             kubermaticv1.CloudProvider(cloudProviderName),
 		clusterName:               clusterName,
 		nutanixCSIEnabled:         nutanixCSIEnabled,
 		isKonnectivityEnabled:     konnectivity,
@@ -229,8 +229,8 @@ func Add(
 			UpdateFunc: func(event event.UpdateEvent) bool {
 				oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
 				newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
-				oldResourceRequirements := oldCluster.GetUserClusterMLAResourceRequirements()
-				newResourceRequirements := newCluster.GetUserClusterMLAResourceRequirements()
+				oldResourceRequirements := getClusterMLAResourceRequirements(oldCluster)
+				newResourceRequirements := getClusterMLAResourceRequirements(newCluster)
 				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
 			},
 		}
@@ -250,8 +250,8 @@ func Add(
 			UpdateFunc: func(event event.UpdateEvent) bool {
 				oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
 				newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
-				oldResourceRequirements := oldCluster.GetUserClusterOPAResourceRequirements()
-				newResourceRequirements := newCluster.GetUserClusterOPAResourceRequirements()
+				oldResourceRequirements := getClusterOPAResourceRequirements(oldCluster)
+				newResourceRequirements := getClusterOPAResourceRequirements(newCluster)
 				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
 			},
 		}
@@ -296,7 +296,7 @@ type reconciler struct {
 	versions                  kubermatic.Versions
 	caBundle                  resources.CABundle
 	userClusterMLA            UserClusterMLA
-	cloudProvider             kubermaticv1.ProviderType
+	cloudProvider             kubermaticv1.CloudProvider
 	clusterName               string
 	nutanixCSIEnabled         bool
 	isKonnectivityEnabled     bool
@@ -467,4 +467,26 @@ func (r *reconciler) opaReconcileData(ctx context.Context) (controller, audit *c
 		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 	return cluster.Spec.OPAIntegration.ControllerResources, cluster.Spec.OPAIntegration.AuditResources, nil
+}
+
+func getClusterMLAResourceRequirements(cluster *kubermaticv1.Cluster) map[string]*corev1.ResourceRequirements {
+	if cluster.Spec.MLA == nil {
+		return nil
+	}
+
+	return map[string]*corev1.ResourceRequirements{
+		"monitoring": cluster.Spec.MLA.MonitoringResources,
+		"logging":    cluster.Spec.MLA.LoggingResources,
+	}
+}
+
+func getClusterOPAResourceRequirements(cluster *kubermaticv1.Cluster) map[string]*corev1.ResourceRequirements {
+	if cluster.Spec.OPAIntegration == nil {
+		return nil
+	}
+
+	return map[string]*corev1.ResourceRequirements{
+		"controller": cluster.Spec.OPAIntegration.ControllerResources,
+		"audit":      cluster.Spec.OPAIntegration.AuditResources,
+	}
 }

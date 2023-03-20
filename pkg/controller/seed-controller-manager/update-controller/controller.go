@@ -22,12 +22,14 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/api/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -125,7 +127,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// the cluster namespace).
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -148,10 +150,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) setClusterCondition(ctx context.Context, cluster *kubermaticv1.Cluster, reason, message string) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		kubermaticv1helper.SetClusterCondition(
 			c,
-			r.versions,
+			r.versions.KubermaticCommit,
 			kubermaticv1.ClusterConditionUpdateProgress,
 			corev1.ConditionTrue,
 			reason,
@@ -195,7 +197,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	// Store the currently active apiserver version, as this is what most of the reconciling
 	// of other components like cloud-controller-managers, the user-ccm etc. is based on.
 	if cpStatus.apiserver != nil && !cluster.Status.Versions.ControlPlane.Equal(cpStatus.apiserver) {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if err := kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.Versions.ControlPlane = *cpStatus.apiserver
 		}); err != nil {
 			return fmt.Errorf("failed to update controller-manager version status: %w", err)
@@ -258,7 +260,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	updated := false
 
 	if !versions.Apiserver.Equal(&versions.ControllerManager) {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if err := kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.Versions.ControllerManager = versions.Apiserver
 		}); err != nil {
 			return fmt.Errorf("failed to update controller-manager version status: %w", err)
@@ -270,7 +272,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	if !versions.Apiserver.Equal(&versions.Scheduler) {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if err := kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.Versions.Scheduler = versions.Apiserver
 		}); err != nil {
 			return fmt.Errorf("failed to update scheduler version status: %w", err)
@@ -324,7 +326,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// Set this new target version as the next step on our upgrading journey. This will trigger a
 	// reconciliation for us and also make the KKP kubernetes controller roll out the new apiserver.
-	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	if err := kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.Versions.Apiserver = *newVersion
 	}); err != nil {
 		return fmt.Errorf("failed to update apiserver version: %w", err)
@@ -341,7 +343,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 // status about currently running components is left empty and filled in during later
 // reconciliations.
 func setInitialClusterVersions(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, client, cluster, func(cluster *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, client, cluster, func(cluster *kubermaticv1.Cluster) {
 		spec := normalize(&cluster.Spec.Version)
 
 		if cluster.Status.Versions.Apiserver == "" {
@@ -499,7 +501,7 @@ func getNextApiServerVersion(ctx context.Context, config *kubermaticv1.Kubermati
 	// enough versions and updates are configured to go from 1.20 to 1.23, only
 	// 1 level of updates is applied, so effectively only 1.20 and 1.21 versions
 	// will be returned.
-	versions, err := updateManager.GetPossibleUpdates(currentVersion.String(), kubermaticv1.ProviderType(cluster.Spec.Cloud.ProviderName), updateConditions...)
+	versions, err := updateManager.GetPossibleUpdates(currentVersion.String(), cluster.Spec.Cloud.ProviderName, updateConditions...)
 	if err != nil {
 		return nil, err
 	}

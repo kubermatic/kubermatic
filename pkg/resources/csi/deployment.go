@@ -27,7 +27,7 @@ func DeploymentsReconcilers(data *resources.TemplateData) []reconciling.NamedDep
 	creatorGetters := []reconciling.NamedDeploymentReconcilerFactory{}
 
 	switch {
-	case data.Cluster().Spec.Cloud.Kubevirt != nil:
+	case data.Cluster().Spec.Cloud.KubeVirt != nil:
 		creatorGetters = kubevirt.DeploymentsReconcilers(data)
 	}
 

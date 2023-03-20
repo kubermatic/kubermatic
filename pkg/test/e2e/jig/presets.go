@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 	"k8c.io/kubermatic/v2/pkg/test"
 
@@ -109,7 +109,7 @@ func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.AlibabaCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderAlibaba,
 			Alibaba: &kubermaticv1.AlibabaCloudSpec{
 				AccessKeyID:     credentials.AccessKeyID,
 				AccessKeySecret: credentials.AccessKeySecret,
@@ -137,7 +137,7 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.AWSCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderAWS,
 			AWS: &kubermaticv1.AWSCloudSpec{
 				AccessKeyID:     credentials.AccessKeyID,
 				SecretAccessKey: credentials.SecretAccessKey,
@@ -170,7 +170,7 @@ func NewAzureCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cr
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.AzureCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderAzure,
 			Azure: &kubermaticv1.AzureCloudSpec{
 				TenantID:       credentials.TenantID,
 				SubscriptionID: credentials.SubscriptionID,
@@ -206,7 +206,7 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.HetznerCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderHetzner,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{
 				Token: credentials.Token,
 			},
@@ -225,7 +225,7 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 	}
 }
 
-func NewOpenstackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials OpenstackCredentials, replicas int) *TestJig {
+func NewOpenStackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials OpenStackCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
 	clusterJig := NewClusterJig(client, log).
@@ -233,8 +233,8 @@ func NewOpenstackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
+			ProviderName:   kubermaticv1.CloudProviderOpenStack,
+			OpenStack: &kubermaticv1.OpenStackCloudSpec{
 				Username:       credentials.Username,
 				Password:       credentials.Password,
 				Project:        credentials.Tenant,
@@ -248,7 +248,7 @@ func NewOpenstackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
 		AddSSHPublicKey(SSHPublicKey()).
-		WithCloudProviderSpec(provider.NewOpenstackConfig().WithFlavor("m1.small").Build())
+		WithCloudProviderSpec(provider.NewOpenStackConfig().WithFlavor("m1.small").Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,
@@ -265,7 +265,7 @@ func NewVSphereCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.VSphereCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderVSphere,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				Username: credentials.Username,
 				Password: credentials.Password,
@@ -293,7 +293,7 @@ func NewDigitaloceanCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.DigitaloceanCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderDigitalocean,
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 				Token: credentials.Token,
 			},
@@ -320,7 +320,7 @@ func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.GCPCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderGCP,
 			GCP: &kubermaticv1.GCPCloudSpec{
 				ServiceAccount: test.SafeBase64Encoding(credentials.ServiceAccount),
 			},
@@ -347,7 +347,7 @@ func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.PacketCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderPacket,
 			Packet: &kubermaticv1.PacketCloudSpec{
 				APIKey:    credentials.APIKey,
 				ProjectID: credentials.ProjectID,
@@ -375,7 +375,7 @@ func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 		WithSSHKeyAgent(false).
 		WithCloudSpec(&kubermaticv1.CloudSpec{
 			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.BringYourOwnCloudProvider),
+			ProviderName:   kubermaticv1.CloudProviderBringYourOwn,
 			BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
 		})
 

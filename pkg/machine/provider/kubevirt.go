@@ -24,59 +24,59 @@ import (
 
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
-type kubevirtConfig struct {
+type kubeVirtConfig struct {
 	kubevirt.RawConfig
 }
 
-func NewKubevirtConfig() *kubevirtConfig {
-	return &kubevirtConfig{}
+func NewKubeVirtConfig() *kubeVirtConfig {
+	return &kubeVirtConfig{}
 }
 
-func (b *kubevirtConfig) Build() kubevirt.RawConfig {
+func (b *kubeVirtConfig) Build() kubevirt.RawConfig {
 	return b.RawConfig
 }
 
-func (b *kubevirtConfig) WithCPUs(cpus int) *kubevirtConfig {
+func (b *kubeVirtConfig) WithCPUs(cpus int) *kubeVirtConfig {
 	b.VirtualMachine.Template.CPUs.Value = strconv.Itoa(cpus)
 	return b
 }
 
-func (b *kubevirtConfig) WithMemory(memory string) *kubevirtConfig {
+func (b *kubeVirtConfig) WithMemory(memory string) *kubeVirtConfig {
 	b.VirtualMachine.Template.Memory.Value = memory
 	return b
 }
 
-func (b *kubevirtConfig) WithPrimaryDiskOSImage(image string) *kubevirtConfig {
+func (b *kubeVirtConfig) WithPrimaryDiskOSImage(image string) *kubeVirtConfig {
 	b.VirtualMachine.Template.PrimaryDisk.OsImage.Value = image
 	return b
 }
 
-func (b *kubevirtConfig) WithPrimaryDiskSize(size string) *kubevirtConfig {
+func (b *kubeVirtConfig) WithPrimaryDiskSize(size string) *kubeVirtConfig {
 	b.VirtualMachine.Template.PrimaryDisk.Size.Value = size
 	return b
 }
 
-func (b *kubevirtConfig) WithPrimaryDiskStorageClassName(className string) *kubevirtConfig {
+func (b *kubeVirtConfig) WithPrimaryDiskStorageClassName(className string) *kubeVirtConfig {
 	b.VirtualMachine.Template.PrimaryDisk.StorageClassName.Value = className
 	return b
 }
 
-func (b *kubevirtConfig) WithDNSPolicy(dnsPolicy string) *kubevirtConfig {
+func (b *kubeVirtConfig) WithDNSPolicy(dnsPolicy string) *kubeVirtConfig {
 	b.VirtualMachine.DNSPolicy.Value = dnsPolicy
 	return b
 }
 
-func (b *kubevirtConfig) WithClusterName(clusterName string) *kubevirtConfig {
+func (b *kubeVirtConfig) WithClusterName(clusterName string) *kubeVirtConfig {
 	b.ClusterName = types.ConfigVarString{Value: clusterName}
 	return b
 }
 
-func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecKubevirt) (*kubevirt.RawConfig, error) {
-	if cluster != nil && cluster.Spec.Cloud.Kubevirt == nil {
-		return nil, fmt.Errorf("cannot use cluster to create Kubevirt cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
+func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecKubeVirt) (*kubevirt.RawConfig, error) {
+	if cluster != nil && cluster.Spec.Cloud.KubeVirt == nil {
+		return nil, fmt.Errorf("cannot use cluster to create KubeVirt cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
 	}
 
 	if config == nil {

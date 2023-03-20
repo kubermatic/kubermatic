@@ -25,7 +25,7 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/smithy-go"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 
@@ -123,8 +123,8 @@ func reconcileSecurityGroup(ctx context.Context, client *ec2.Client, cluster *ku
 		groupID = *out.GroupId
 	}
 
-	ipv4Permissions := cluster.IsIPv4Only() || cluster.IsDualStack()
-	ipv6Permissions := cluster.IsIPv6Only() || cluster.IsDualStack()
+	ipv4Permissions := cluster.Spec.ClusterNetwork.IsIPv4Only() || cluster.Spec.ClusterNetwork.IsDualStack()
+	ipv6Permissions := cluster.Spec.ClusterNetwork.IsIPv6Only() || cluster.Spec.ClusterNetwork.IsDualStack()
 
 	permissions := getCommonSecurityGroupPermissions(groupID, ipv4Permissions, ipv6Permissions)
 

@@ -26,9 +26,9 @@ import (
 
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -106,7 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -194,7 +194,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 			// update metrics
 			providerName, _ := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
-			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
+			totalProviderReconciliations.WithLabelValues(cluster.Name, string(providerName)).Inc()
 
 			// reconcile
 			cluster, err = betterProvider.ReconcileCluster(ctx, cluster, r.clusterUpdater)
@@ -203,7 +203,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 
 			// remember that we reconciled
-			err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+			err = kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.LastProviderReconciliation = metav1.Now()
 			})
 			if err != nil {
@@ -211,7 +211,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 
 			// update metrics
-			successfulProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
+			successfulProviderReconciliations.WithLabelValues(cluster.Name, string(providerName)).Inc()
 		}
 	} else {
 		// the provider only offers a one-time init :-(
@@ -221,7 +221,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	if err := kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
 	}); err != nil {
 		return nil, fmt.Errorf("failed to set cluster health: %w", err)
@@ -263,7 +263,7 @@ func (r *Reconciler) clusterUpdater(ctx context.Context, name string, modify fun
 }
 
 func (r *Reconciler) makeGlobalSecretKeySelectorValue(ctx context.Context) provider.SecretKeySelectorValueFunc {
-	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	return func(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
 		return provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)(configVar, key)
 	}
 }

@@ -573,3 +573,25 @@ provider_disabled() {
   echodate "\$$disableEnv is set, tests will be disabled. Apply the label $labelName to this PR to forcefully enable them."
   return 0
 }
+
+kkp_api_dependency() {
+  # in most cases this gives us something like "v2.21.1-0.20221111113237-e6c193aeffb0",
+  # but this can also be a tagged release
+  selector="$(go list -json -m k8c.io/api/v2 | jq -r '.Replace.Version // .Version')"
+
+  # parse Go's pseudo version and extract git hash if possible
+  if ! [[ "$selector" =~ ^v.+-.+-([a-f0-9]+)$ ]]; then
+    # seems like we have a fixed tag like "v2.20.7"
+    echo "$selector"
+    return
+  fi
+
+  # selector is in fact a pseudo version, abuse github to resolve it to the full hash
+  selector="${BASH_REMATCH[1]}"
+  patchURL="https://github.com/kubermatic/api/commit/$selector.patch"
+
+  # first line in the patch file contains the hash and date, like
+  # "From 09081f7b55200900773e079260d15a403382f756 Mon Sep 17 00:00:00 2001";
+  # this uses https://unix.stackexchange.com/a/13472 to extract the hash
+  curl --silent "$patchURL" | grep -oP '^From \K\w+'
+}

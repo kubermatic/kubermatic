@@ -24,19 +24,19 @@ import (
 	"io"
 	"time"
 
-	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	openpolicyagent "k8c.io/api/v2/pkg/apis/open-policy-agent"
+	"k8c.io/api/v2/pkg/semver"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
@@ -184,7 +184,7 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 					},
 					Node: &kubermaticv1.NodeSettings{
 						ProxySettings: kubermaticv1.ProxySettings{
-							HTTPProxy: kubermaticv1.NewProxyValue("HTTPProxy"),
+							HTTPProxy: pointer.String("HTTPProxy"),
 						},
 						InsecureRegistries: []string{"incsecure-registry"},
 						RegistryMirrors:    []string{"http://127.0.0.1:5001"},
@@ -194,7 +194,7 @@ func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed 
 			},
 		},
 	}
-	seed.SetKubermaticVersion(kubermatic.NewFakeVersions())
+	seed.Status.Versions.Kubermatic = kubermatic.NewFakeVersions().KubermaticCommit
 	for _, modifier := range modifiers {
 		modifier(seed)
 	}
@@ -267,7 +267,7 @@ func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.
 
 // GenDefaultProject generates a default project.
 func GenDefaultProject() *kubermaticv1.Project {
-	return GenProject("my-first-project", kubermaticv1.ProjectActive, DefaultCreationTimestamp())
+	return GenProject("my-first-project", kubermaticv1.ProjectPhaseActive, DefaultCreationTimestamp())
 }
 
 // GenBinding generates a binding.
@@ -335,8 +335,8 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "private-do1",
-				ProviderName:   string(kubermaticv1.FakeCloudProvider),
-				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
+				ProviderName:   kubermaticv1.CloudProviderBringYourOwn,
+				BringYourOwn:   &kubermaticv1.BringYourOwnCloudSpec{},
 			},
 			Version:               version,
 			HumanReadableName:     name,
@@ -431,10 +431,10 @@ func GenDefaultPreset() *kubermaticv1.Preset {
 			Name: TestFakeCredential,
 		},
 		Spec: kubermaticv1.PresetSpec{
-			Openstack: &kubermaticv1.Openstack{
+			OpenStack: &kubermaticv1.OpenStackPreset{
 				Username: TestOSuserName, Password: TestOSuserPass, Domain: TestOSdomain,
 			},
-			Fake: &kubermaticv1.Fake{Token: "dummy_pluton_token"},
+			Fake: &kubermaticv1.FakePreset{Token: "dummy_pluton_token"},
 		},
 	}
 }
@@ -462,13 +462,13 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1.CRD{
-			Spec: constrainttemplatev1.CRDSpec{
-				Names: constrainttemplatev1.Names{
+		CRD: openpolicyagent.CRD{
+			Spec: openpolicyagent.CRDSpec{
+				Names: openpolicyagent.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &constrainttemplatev1.Validation{
+				Validation: &openpolicyagent.Validation{
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							"labels": {
@@ -485,7 +485,7 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 				},
 			},
 		},
-		Targets: []constrainttemplatev1.Target{
+		Targets: []openpolicyagent.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `
@@ -501,7 +501,7 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 			},
 		},
 		Selector: kubermaticv1.ConstraintTemplateSelector{
-			Providers: []string{"aws", "gcp"},
+			Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS, kubermaticv1.CloudProviderGCP},
 			LabelSelector: metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
@@ -526,22 +526,25 @@ func RegisterScheme(builder runtime.SchemeBuilder) error {
 
 func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
-	ct.Kind = kubermaticv1.ConstraintKind
+	ct.Kind = "Constraint"
 	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 	ct.Name = name
 	ct.Namespace = namespace
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: kind,
-		Match: kubermaticv1.Match{
-			Kinds: []kubermaticv1.Kind{
-				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
+		Match: kubermaticv1.ConstraintMatch{
+			Kinds: []kubermaticv1.ConstraintMatchKind{
+				{
+					Kinds:     []string{"namespace"},
+					APIGroups: []string{""},
+				},
 			},
 		},
 		Parameters: map[string]json.RawMessage{
 			"labels": []byte(`["gatekeeper","opa"]`),
 		},
-		Selector: kubermaticv1.ConstraintSelector{
-			Providers: []string{"aws", "gcp"},
+		Selector: &kubermaticv1.ConstraintSelector{
+			Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS, kubermaticv1.CloudProviderGCP, kubermaticv1.CloudProviderBringYourOwn},
 			LabelSelector: metav1.LabelSelector{
 				MatchExpressions: []metav1.LabelSelectorRequirement{
 					{
@@ -565,16 +568,16 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 		Name: name,
 		Spec: kubermaticv1.ConstraintSpec{
 			ConstraintType: kind,
-			Match: kubermaticv1.Match{
-				Kinds: []kubermaticv1.Kind{
+			Match: kubermaticv1.ConstraintMatch{
+				Kinds: []kubermaticv1.ConstraintMatchKind{
 					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 				},
 			},
 			Parameters: map[string]json.RawMessage{
 				"labels": []byte(`["gatekeeper","opa"]`),
 			},
-			Selector: kubermaticv1.ConstraintSelector{
-				Providers: []string{"aws", "gcp"},
+			Selector: &kubermaticv1.ConstraintSelector{
+				Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS, kubermaticv1.CloudProviderGCP},
 				LabelSelector: metav1.LabelSelector{
 					MatchExpressions: []metav1.LabelSelectorRequirement{
 						{
@@ -653,7 +656,7 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 			Namespace: kubernetes.NamespaceName(clusterName),
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.RuleGroupKindName,
+			Kind:       "RuleGroup",
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		Spec: kubermaticv1.RuleGroupSpec{
@@ -689,7 +692,7 @@ func GenMLAAdminSetting(name, clusterName string, value int32) *kubermaticv1.MLA
 			Namespace: kubernetes.NamespaceName(clusterName),
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.MLAAdminSettingKindName,
+			Kind:       "MLAAdminSetting",
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		Spec: kubermaticv1.MLAAdminSettingSpec{

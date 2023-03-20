@@ -25,11 +25,10 @@ import (
 
 	"github.com/onsi/ginkgo/reporters"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -198,17 +197,17 @@ type ScenarioResult struct {
 	cluster      *kubermaticv1.Cluster
 	scenarioName string
 
-	CloudProvider     kubermaticv1.ProviderType      `json:"cloudProvider"`
-	OperatingSystem   providerconfig.OperatingSystem `json:"operatingSystem"`
-	ContainerRuntime  string                         `json:"containerRuntime"`
-	KubernetesRelease string                         `json:"kubernetesRelease"`
-	KubernetesVersion semver.Semver                  `json:"kubernetesVersion"`
-	KubermaticVersion string                         `json:"kubermaticVersion"`
-	Duration          time.Duration                  `json:"-"`
-	DurationSeconds   int                            `json:"durationInSeconds"`
-	ClusterName       string                         `json:"clusterName"`
-	Status            ScenarioStatus                 `json:"status"`
-	Message           string                         `json:"message"`
+	CloudProvider     kubermaticv1.CloudProvider   `json:"cloudProvider"`
+	OperatingSystem   kubermaticv1.OperatingSystem `json:"operatingSystem"`
+	ContainerRuntime  string                       `json:"containerRuntime"`
+	KubernetesRelease string                       `json:"kubernetesRelease"`
+	KubernetesVersion semver.Semver                `json:"kubernetesVersion"`
+	KubermaticVersion string                       `json:"kubermaticVersion"`
+	Duration          time.Duration                `json:"-"`
+	DurationSeconds   int                          `json:"durationInSeconds"`
+	ClusterName       string                       `json:"clusterName"`
+	Status            ScenarioStatus               `json:"status"`
+	Message           string                       `json:"message"`
 }
 
 func (sr *ScenarioResult) BetterThan(other ScenarioResult) bool {

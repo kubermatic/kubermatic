@@ -30,9 +30,9 @@ import (
 
 	"go.uber.org/zap"
 
-	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	k8cequality "k8c.io/api/v2/pkg/apis/equality"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -119,7 +119,12 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 	}
 
 	// for all related resource quotas on seeds, calculate global usage
-	globalUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
+	globalUsage := &kubermaticv1.ResourceDetails{
+		CPU:     &resource.Quantity{},
+		Memory:  &resource.Quantity{},
+		Storage: &resource.Quantity{},
+	}
+
 	for seed, seedClient := range r.seedClients {
 		seedResourceQuota := &kubermaticv1.ResourceQuota{}
 		err := seedClient.Get(ctx, types.NamespacedName{Namespace: resourceQuota.Namespace, Name: resourceQuota.Name},
@@ -163,7 +168,7 @@ func (r *reconciler) ensureGlobalUsage(ctx context.Context, log *zap.SugaredLogg
 		"memory", globalUsage.Memory.String(),
 		"storage", globalUsage.Storage.String())
 
-	return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, r.masterClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
-		rq.Status.GlobalUsage = *globalUsage
+	return kuberneteshelper.UpdateResourceQuotaStatus(ctx, r.masterClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+		rq.Status.GlobalUsage = globalUsage
 	})
 }

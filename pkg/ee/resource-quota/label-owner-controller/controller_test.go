@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -61,7 +61,7 @@ func TestReconcile(t *testing.T) {
 			requestName: rqName,
 			expectedLabels: map[string]string{
 				kubermaticv1.ResourceQuotaSubjectNameLabelKey: generator.GenDefaultProject().Name,
-				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: string(kubermaticv1.ResourceQuotaSubjectProject),
 			},
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -127,9 +127,9 @@ func genResourceQuota(name string, localUsage kubermaticv1.ResourceDetails) *kub
 	rq := &kubermaticv1.ResourceQuota{}
 	rq.Name = name
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
-		Subject: kubermaticv1.Subject{
+		Subject: kubermaticv1.ResourceQuotaSubject{
 			Name: generator.GenDefaultProject().Name,
-			Kind: kubermaticv1.ProjectSubjectKind,
+			Kind: kubermaticv1.ResourceQuotaSubjectProject,
 		},
 	}
 

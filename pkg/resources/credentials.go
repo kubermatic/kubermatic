@@ -20,8 +20,7 @@ import (
 	"context"
 	"errors"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,9 +32,9 @@ type Credentials struct {
 	Digitalocean        DigitaloceanCredentials
 	GCP                 GCPCredentials
 	Hetzner             HetznerCredentials
-	Openstack           OpenstackCredentials
+	OpenStack           OpenStackCredentials
 	Packet              PacketCredentials
-	Kubevirt            KubevirtCredentials
+	KubeVirt            KubeVirtCredentials
 	VSphere             VSphereCredentials
 	Alibaba             AlibabaCredentials
 	Anexia              AnexiaCredentials
@@ -94,7 +93,7 @@ type HetznerCredentials struct {
 	Token string
 }
 
-type OpenstackCredentials struct {
+type OpenStackCredentials struct {
 	Username                    string
 	Password                    string
 	Project                     string
@@ -110,7 +109,7 @@ type PacketCredentials struct {
 	ProjectID string
 }
 
-type KubevirtCredentials struct {
+type KubeVirtCredentials struct {
 	// Admin kubeconfig for KubeVirt cluster
 	KubeConfig string
 }
@@ -147,7 +146,7 @@ type NutanixCredentials struct {
 
 type CredentialsData interface {
 	Cluster() *kubermaticv1.Cluster
-	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 }
 
 func NewCredentialsData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) CredentialsData {
@@ -166,14 +165,14 @@ func (cd *credentialsData) Cluster() *kubermaticv1.Cluster {
 	return cd.cluster
 }
 
-func (cd *credentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+func (cd *credentialsData) GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
 	return cd.globalSecretKeySelectorValueFunc(configVar, key)
 }
 
 // GetCredentialsReference returns the CredentialsReference for the cluster's chosen
 // cloud provider (or nil if the provider is BYO). If an unknown provider is used, an
 // error is returned.
-func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.GlobalSecretKeySelector, error) {
+func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*kubermaticv1.GlobalSecretKeySelector, error) {
 	if cluster.Spec.Cloud.AWS != nil {
 		return cluster.Spec.Cloud.AWS.CredentialsReference, nil
 	}
@@ -189,14 +188,14 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return cluster.Spec.Cloud.Hetzner.CredentialsReference, nil
 	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		return cluster.Spec.Cloud.Openstack.CredentialsReference, nil
+	if cluster.Spec.Cloud.OpenStack != nil {
+		return cluster.Spec.Cloud.OpenStack.CredentialsReference, nil
 	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return cluster.Spec.Cloud.Packet.CredentialsReference, nil
 	}
-	if cluster.Spec.Cloud.Kubevirt != nil {
-		return cluster.Spec.Cloud.Kubevirt.CredentialsReference, nil
+	if cluster.Spec.Cloud.KubeVirt != nil {
+		return cluster.Spec.Cloud.KubeVirt.CredentialsReference, nil
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
 		return cluster.Spec.Cloud.VSphere.CredentialsReference, nil
@@ -249,8 +248,8 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 			return Credentials{}, err
 		}
 	}
-	if data.Cluster().Spec.Cloud.Openstack != nil {
-		if credentials.Openstack, err = GetOpenstackCredentials(data); err != nil {
+	if data.Cluster().Spec.Cloud.OpenStack != nil {
+		if credentials.OpenStack, err = GetOpenStackCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -259,8 +258,8 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 			return Credentials{}, err
 		}
 	}
-	if data.Cluster().Spec.Cloud.Kubevirt != nil {
-		if credentials.Kubevirt, err = GetKubevirtCredentials(data); err != nil {
+	if data.Cluster().Spec.Cloud.KubeVirt != nil {
+		if credentials.KubeVirt, err = GetKubeVirtCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -335,18 +334,18 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		}
 		cluster.Spec.Cloud.Hetzner.Token = credentials.Hetzner.Token
 	}
-	if data.Cluster().Spec.Cloud.Openstack != nil {
-		if credentials.Openstack, err = GetOpenstackCredentials(data); err != nil {
+	if data.Cluster().Spec.Cloud.OpenStack != nil {
+		if credentials.OpenStack, err = GetOpenStackCredentials(data); err != nil {
 			return err
 		}
-		cluster.Spec.Cloud.Openstack.Token = credentials.Openstack.Token
-		cluster.Spec.Cloud.Openstack.ProjectID = credentials.Openstack.ProjectID
-		cluster.Spec.Cloud.Openstack.Project = credentials.Openstack.Project
-		cluster.Spec.Cloud.Openstack.Domain = credentials.Openstack.Domain
-		cluster.Spec.Cloud.Openstack.ApplicationCredentialID = credentials.Openstack.ApplicationCredentialID
-		cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = credentials.Openstack.ApplicationCredentialSecret
-		cluster.Spec.Cloud.Openstack.Password = credentials.Openstack.Password
-		cluster.Spec.Cloud.Openstack.Username = credentials.Openstack.Username
+		cluster.Spec.Cloud.OpenStack.Token = credentials.OpenStack.Token
+		cluster.Spec.Cloud.OpenStack.ProjectID = credentials.OpenStack.ProjectID
+		cluster.Spec.Cloud.OpenStack.Project = credentials.OpenStack.Project
+		cluster.Spec.Cloud.OpenStack.Domain = credentials.OpenStack.Domain
+		cluster.Spec.Cloud.OpenStack.ApplicationCredentialID = credentials.OpenStack.ApplicationCredentialID
+		cluster.Spec.Cloud.OpenStack.ApplicationCredentialSecret = credentials.OpenStack.ApplicationCredentialSecret
+		cluster.Spec.Cloud.OpenStack.Password = credentials.OpenStack.Password
+		cluster.Spec.Cloud.OpenStack.Username = credentials.OpenStack.Username
 	}
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
@@ -355,11 +354,11 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		cluster.Spec.Cloud.Packet.ProjectID = credentials.Packet.ProjectID
 		cluster.Spec.Cloud.Packet.APIKey = credentials.Packet.APIKey
 	}
-	if data.Cluster().Spec.Cloud.Kubevirt != nil {
-		if credentials.Kubevirt, err = GetKubevirtCredentials(data); err != nil {
+	if data.Cluster().Spec.Cloud.KubeVirt != nil {
+		if credentials.KubeVirt, err = GetKubeVirtCredentials(data); err != nil {
 			return err
 		}
-		cluster.Spec.Cloud.Kubevirt.Kubeconfig = credentials.Kubevirt.KubeConfig
+		cluster.Spec.Cloud.KubeVirt.Kubeconfig = credentials.KubeVirt.KubeConfig
 	}
 	if data.Cluster().Spec.Cloud.VSphere != nil {
 		if credentials.VSphere, err = GetVSphereCredentials(data); err != nil {
@@ -552,65 +551,65 @@ func GetHetznerCredentials(data CredentialsData) (HetznerCredentials, error) {
 	return hetznerCredentials, nil
 }
 
-func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error) {
-	spec := data.Cluster().Spec.Cloud.Openstack
-	openstackCredentials := OpenstackCredentials{}
+func GetOpenStackCredentials(data CredentialsData) (OpenStackCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.OpenStack
+	openStackCredentials := OpenStackCredentials{}
 	var err error
 
 	// needed for cluster creation with other credentials
 	if spec.Domain != "" {
-		openstackCredentials.Domain = spec.Domain
-	} else if openstackCredentials.Domain, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackDomain); err != nil {
-		return OpenstackCredentials{}, err
+		openStackCredentials.Domain = spec.Domain
+	} else if openStackCredentials.Domain, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackDomain); err != nil {
+		return OpenStackCredentials{}, err
 	}
 
 	if spec.ApplicationCredentialID != "" {
-		openstackCredentials.ApplicationCredentialID = spec.ApplicationCredentialID
-		openstackCredentials.ApplicationCredentialSecret = spec.ApplicationCredentialSecret
-		return openstackCredentials, err
-	} else if openstackCredentials.ApplicationCredentialID, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialID); openstackCredentials.ApplicationCredentialID != "" {
-		openstackCredentials.ApplicationCredentialSecret, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialSecret)
+		openStackCredentials.ApplicationCredentialID = spec.ApplicationCredentialID
+		openStackCredentials.ApplicationCredentialSecret = spec.ApplicationCredentialSecret
+		return openStackCredentials, err
+	} else if openStackCredentials.ApplicationCredentialID, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialID); openStackCredentials.ApplicationCredentialID != "" {
+		openStackCredentials.ApplicationCredentialSecret, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialSecret)
 		if err != nil {
-			return OpenstackCredentials{}, err
+			return OpenStackCredentials{}, err
 		}
-		return openstackCredentials, err
+		return openStackCredentials, err
 	}
 
 	if spec.Username != "" {
-		openstackCredentials.Username = spec.Username
-	} else if openstackCredentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackUsername); err != nil {
-		return OpenstackCredentials{}, err
+		openStackCredentials.Username = spec.Username
+	} else if openStackCredentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackUsername); err != nil {
+		return OpenStackCredentials{}, err
 	}
 
 	if spec.Password != "" {
-		openstackCredentials.Password = spec.Password
-	} else if openstackCredentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackPassword); err != nil {
-		return OpenstackCredentials{}, err
+		openStackCredentials.Password = spec.Password
+	} else if openStackCredentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackPassword); err != nil {
+		return OpenStackCredentials{}, err
 	}
 
 	if spec.Project != "" {
-		openstackCredentials.Project = spec.Project
+		openStackCredentials.Project = spec.Project
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		if openstackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProject); err != nil {
+		if openStackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProject); err != nil {
 			// fallback to tenant
-			if openstackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenant); err != nil {
-				return OpenstackCredentials{}, err
+			if openStackCredentials.Project, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenant); err != nil {
+				return OpenStackCredentials{}, err
 			}
 		}
 	}
 
 	if spec.ProjectID != "" {
-		openstackCredentials.ProjectID = spec.ProjectID
+		openStackCredentials.ProjectID = spec.ProjectID
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		if openstackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProjectID); err != nil {
+		if openStackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackProjectID); err != nil {
 			// fallback to tenantID
-			if openstackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenantID); err != nil {
-				return OpenstackCredentials{}, err
+			if openStackCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenantID); err != nil {
+				return OpenStackCredentials{}, err
 			}
 		}
 	}
 
-	return openstackCredentials, nil
+	return openStackCredentials, nil
 }
 
 func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
@@ -633,18 +632,18 @@ func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
 	return packetCredentials, nil
 }
 
-func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {
-	spec := data.Cluster().Spec.Cloud.Kubevirt
-	kubevirtCredentials := KubevirtCredentials{}
+func GetKubeVirtCredentials(data CredentialsData) (KubeVirtCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.KubeVirt
+	kubeVirtCredentials := KubeVirtCredentials{}
 	var err error
 
 	if spec.Kubeconfig != "" {
-		kubevirtCredentials.KubeConfig = spec.Kubeconfig
-	} else if kubevirtCredentials.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubeVirtKubeconfig); err != nil {
-		return KubevirtCredentials{}, err
+		kubeVirtCredentials.KubeConfig = spec.Kubeconfig
+	} else if kubeVirtCredentials.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, KubeVirtKubeconfig); err != nil {
+		return KubeVirtCredentials{}, err
 	}
 
-	return kubevirtCredentials, nil
+	return kubeVirtCredentials, nil
 }
 
 func GetVSphereCredentials(data CredentialsData) (VSphereCredentials, error) {

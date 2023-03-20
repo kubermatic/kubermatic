@@ -23,8 +23,8 @@ import (
 	"github.com/imdario/mergo"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -33,6 +33,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	DefaultEtcdClusterSize = 3
+	MinEtcdClusterSize     = 3
+	MaxEtcdClusterSize     = 9
+
+	// DefaultNodeAccessNetwork is the default CIDR used for the VPNs
+	// transit network through which we route the ControlPlane -> Node/Pod traffic.
+	DefaultNodeAccessNetwork = "10.254.0.0/16"
 )
 
 // DefaultClusterSpec defaults the cluster spec when creating a new cluster.
@@ -137,7 +147,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	}
 
 	// default cluster networking parameters
-	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
+	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, spec.Cloud.ProviderName, spec.ExposeStrategy)
 
 	return nil
 }
@@ -156,8 +166,8 @@ func GetDefaultingClusterTemplate(ctx context.Context, client ctrlruntimeclient.
 		return nil, fmt.Errorf("failed to get ClusterTemplate: %w", err)
 	}
 
-	if scope := tpl.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
-		return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
+	if scope := tpl.Labels["scope"]; scope != kubermaticv1.TemplateScopeSeed {
+		return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.TemplateScopeSeed)
 	}
 
 	return &tpl, nil
@@ -178,7 +188,7 @@ func DatacenterForClusterSpec(spec *kubermaticv1.ClusterSpec, seed *kubermaticv1
 	return nil, field.Invalid(field.NewPath("spec", "cloud", "dc"), datacenterName, "invalid datacenter name")
 }
 
-func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.ProviderType, exposeStrategy kubermaticv1.ExposeStrategy) kubermaticv1.ClusterNetworkingConfig {
+func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConfig, provider kubermaticv1.CloudProvider, exposeStrategy kubermaticv1.ExposeStrategy) kubermaticv1.ClusterNetworkingConfig {
 	if specClusterNetwork.IPFamily == "" {
 		if len(specClusterNetwork.Pods.CIDRBlocks) < 2 {
 			// single / no pods CIDR means IPv4-only (IPv6-only is not supported yet and not allowed by cluster validation)

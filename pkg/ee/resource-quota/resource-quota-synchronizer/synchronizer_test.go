@@ -29,7 +29,7 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -153,7 +153,7 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 		kubermaticv1.ResourceQuotaSubjectKindLabelKey: "project",
 	}
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
-		Subject: kubermaticv1.Subject{
+		Subject: kubermaticv1.ResourceQuotaSubject{
 			Name: "project1",
 			Kind: "project",
 		},
@@ -164,12 +164,12 @@ func genResourceQuota(name string, deleted bool) *kubermaticv1.ResourceQuota {
 		},
 	}
 	rq.Status = kubermaticv1.ResourceQuotaStatus{
-		GlobalUsage: kubermaticv1.ResourceDetails{
+		GlobalUsage: &kubermaticv1.ResourceDetails{
 			CPU:     &cpu,
 			Memory:  &mem,
 			Storage: &storage,
 		},
-		LocalUsage: kubermaticv1.ResourceDetails{
+		LocalUsage: &kubermaticv1.ResourceDetails{
 			CPU:     &cpu,
 			Memory:  &mem,
 			Storage: &storage,

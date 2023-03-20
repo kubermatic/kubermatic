@@ -23,8 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -212,7 +212,7 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return fmt.Errorf("failed to create cluster: %w", err)
 	}
 
-	if err := helper.UpdateClusterStatus(ctx, r.seedClient, newCluster, func(c *kubermaticv1.Cluster) {
+	if err := kubernetes.UpdateClusterStatus(ctx, r.seedClient, newCluster, func(c *kubermaticv1.Cluster) {
 		c.Status = *newStatus
 	}); err != nil {
 		return fmt.Errorf("failed to set cluster status: %w", err)
@@ -258,7 +258,7 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 	}
 
 	if len(workerName) > 0 {
-		newCluster.Labels[kubermaticv1.WorkerNameLabelKey] = workerName
+		newCluster.Labels[workerlabel.LabelKey] = workerName
 	}
 	newCluster.Labels[kubermaticv1.ProjectIDLabelKey] = instance.Spec.ProjectID
 	newCluster.Labels[kubermaticv1.ClusterTemplateInstanceLabelKey] = instance.Name

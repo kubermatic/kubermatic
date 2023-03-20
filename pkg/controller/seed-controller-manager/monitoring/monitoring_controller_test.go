@@ -17,10 +17,10 @@ limitations under the License.
 package monitoring
 
 import (
-	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,9 +38,14 @@ func newTestReconciler(t *testing.T, objects []ctrlruntimeclient.Object) *Reconc
 		Build()
 
 	reconciler := &Reconciler{
-		Client:               dynamicClient,
-		seedGetter:           seed,
-		configGetter:         kubermaticConfiguration,
+		Client:     dynamicClient,
+		seedGetter: seed,
+		configGetter: test.NewConfigGetter(&kubermaticv1.KubermaticConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kubermatic",
+				Namespace: "kubermatic",
+			},
+		}),
 		nodeAccessNetwork:    "192.0.2.0/24",
 		dockerPullConfigJSON: []byte{},
 		features:             Features{},
@@ -83,15 +88,6 @@ func seed() (*kubermaticv1.Seed, error) {
 					},
 				},
 			},
-		},
-	}, nil
-}
-
-func kubermaticConfiguration(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
-	return &kubermaticv1.KubermaticConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kubermatic",
-			Namespace: "kubermatic",
 		},
 	}, nil
 }

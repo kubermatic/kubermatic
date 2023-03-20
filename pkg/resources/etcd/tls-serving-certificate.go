@@ -21,7 +21,8 @@ import (
 	"fmt"
 	"net"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -52,9 +53,9 @@ func TLSCertificateReconciler(data tlsCertificateReconcilerData) reconciling.Nam
 					net.ParseIP("127.0.0.1"),
 				},
 			}
-			etcdClusterSize := kubermaticv1.DefaultEtcdClusterSize
+			etcdClusterSize := defaulting.DefaultEtcdClusterSize
 			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
-				etcdClusterSize = kubermaticv1.MaxEtcdClusterSize
+				etcdClusterSize = defaulting.MaxEtcdClusterSize
 			}
 			// TODO: make this dynamic based on existing pod count
 			for i := 0; i < etcdClusterSize; i++ {

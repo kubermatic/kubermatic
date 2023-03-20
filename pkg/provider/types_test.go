@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +30,7 @@ import (
 func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 	testCases := []struct {
 		name      string
-		configVar *providerconfig.GlobalSecretKeySelector
+		configVar *kubermaticv1.GlobalSecretKeySelector
 		secret    *corev1.Secret
 		key       string
 
@@ -43,7 +43,7 @@ func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 		},
 		{
 			name: "error on empty name",
-			configVar: &providerconfig.GlobalSecretKeySelector{
+			configVar: &kubermaticv1.GlobalSecretKeySelector{
 				ObjectReference: corev1.ObjectReference{
 					Namespace: "foo",
 				},
@@ -53,7 +53,7 @@ func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 		},
 		{
 			name: "error on empty namespace",
-			configVar: &providerconfig.GlobalSecretKeySelector{
+			configVar: &kubermaticv1.GlobalSecretKeySelector{
 				ObjectReference: corev1.ObjectReference{
 					Name: "foo",
 				},
@@ -63,7 +63,7 @@ func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 		},
 		{
 			name: "error on empty key",
-			configVar: &providerconfig.GlobalSecretKeySelector{
+			configVar: &kubermaticv1.GlobalSecretKeySelector{
 				ObjectReference: corev1.ObjectReference{
 					Namespace: "default",
 					Name:      "foo",
@@ -73,7 +73,7 @@ func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 		},
 		{
 			name: "happy path",
-			configVar: &providerconfig.GlobalSecretKeySelector{
+			configVar: &kubermaticv1.GlobalSecretKeySelector{
 				ObjectReference: corev1.ObjectReference{
 					Namespace: "default",
 					Name:      "foo",

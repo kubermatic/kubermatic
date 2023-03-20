@@ -21,7 +21,7 @@ import (
 	"errors"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -172,7 +172,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 			if err := client.Get(ctx, types.NamespacedName{Name: testCase.cluster.Name}, newCluster); err != nil {
 				t.Fatalf("failed to get cluster after it was updated: %v", err)
 			}
-			clusterConditionValue := newCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue)
+			clusterConditionValue := newCluster.Status.Conditions[kubermaticv1.ClusterConditionSeedResourcesUpToDate].Status == corev1.ConditionTrue
 			if clusterConditionValue != testCase.expectedHasConditionValue {
 				t.Fatalf("condition doesn't have expected value, expects: %v, got: %v", testCase.expectedHasConditionValue, clusterConditionValue)
 			}

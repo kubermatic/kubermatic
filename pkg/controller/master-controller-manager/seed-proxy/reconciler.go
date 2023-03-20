@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -82,7 +82,7 @@ func (r *Reconciler) reconcile(ctx context.Context, seedName string, log *zap.Su
 	}
 
 	// do nothing until the seed-status-controller has validated the kubeconfig
-	if !seed.Status.HasConditionValue(kubermaticv1.SeedConditionKubeconfigValid, corev1.ConditionTrue) {
+	if seed.Status.Conditions[kubermaticv1.SeedConditionKubeconfigValid].Status != corev1.ConditionTrue {
 		log.Debug("Seed cluster has not yet been initialized, skipping.")
 		return nil
 	}

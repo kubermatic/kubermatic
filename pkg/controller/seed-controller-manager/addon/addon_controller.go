@@ -29,13 +29,13 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -205,7 +205,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log = r.log.With("cluster", cluster.Name, "addon", addon.Name)
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -547,12 +547,12 @@ func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermatic
 }
 
 func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
-	if addon.Status.Conditions[kubermaticv1.AddonResourcesCreated].Status == corev1.ConditionTrue {
+	if addon.Status.Conditions[kubermaticv1.AddonConditionResourcesCreated].Status == corev1.ConditionTrue {
 		return nil
 	}
 
 	oldAddon := addon.DeepCopy()
-	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	setAddonCondition(addon, kubermaticv1.AddonConditionResourcesCreated, corev1.ConditionTrue)
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
@@ -638,7 +638,7 @@ func setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditi
 }
 
 func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
-	return addon.Status.Conditions[kubermaticv1.AddonResourcesCreated].Status == corev1.ConditionTrue
+	return addon.Status.Conditions[kubermaticv1.AddonConditionResourcesCreated].Status == corev1.ConditionTrue
 }
 
 func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {

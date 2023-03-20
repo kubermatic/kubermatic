@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strconv"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -100,8 +100,11 @@ func RecommenderDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, 
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: cfg.Spec.VerticalPodAutoscaler.Recommender.Resources,
 				},
+			}
+
+			if res := cfg.Spec.VerticalPodAutoscaler.Recommender.Resources; res != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
 			return d, nil

@@ -22,9 +22,8 @@ import (
 	"net"
 	"strings"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -70,11 +69,11 @@ type userclusterControllerData interface {
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
-	GetCloudProviderName() (string, error)
+	GetCloudProviderName() (kubermaticv1.CloudProvider, error)
 	UserClusterMLAEnabled() bool
 	IsKonnectivityEnabled() bool
 	DC() *kubermaticv1.Datacenter
-	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
@@ -200,7 +199,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			if err != nil {
 				return nil, fmt.Errorf("failed to get cloud provider name: %w", err)
 			}
-			args = append(args, "-cloud-provider-name", providerName)
+			args = append(args, "-cloud-provider-name", providerName.String())
 
 			if data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil {
 				args = append(args, "-nutanix-csi-enabled=true")
@@ -218,7 +217,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, fmt.Sprintf("-enable-mutation=%t", data.Cluster().Spec.OPAIntegration.ExperimentalEnableMutation))
 			}
 
-			if data.Cluster().Spec.Cloud.Kubevirt != nil {
+			if data.Cluster().Spec.Cloud.KubeVirt != nil {
 				args = append(args, "-kv-vmi-eviction-controller")
 				args = append(args, "-kv-infra-kubeconfig", "/etc/kubernetes/kubevirt/infra-kubeconfig")
 			}
@@ -240,11 +239,11 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				}
 			}
 
-			if kubermaticv1helper.NeedCCMMigration(data.Cluster()) {
+			if clusterhelper.NeedCCMMigration(data.Cluster()) {
 				args = append(args, "-ccm-migration")
 			}
 
-			if kubermaticv1helper.CCMMigrationCompleted(data.Cluster()) {
+			if clusterhelper.CCMMigrationCompleted(data.Cluster()) {
 				args = append(args, "-ccm-migration-completed")
 			}
 
@@ -345,7 +344,7 @@ func getVolumes(data userclusterControllerData) []corev1.Volume {
 		},
 	}
 
-	if data.Cluster().Spec.Cloud.Kubevirt != nil {
+	if data.Cluster().Spec.Cloud.KubeVirt != nil {
 		volumes = append(volumes, corev1.Volume{
 			Name: resources.KubeVirtInfraSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -378,7 +377,7 @@ func getVolumeMounts(data userclusterControllerData) []corev1.VolumeMount {
 		},
 	}
 
-	if data.Cluster().Spec.Cloud.Kubevirt != nil {
+	if data.Cluster().Spec.Cloud.KubeVirt != nil {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      resources.KubeVirtInfraSecretName,
 			MountPath: "/etc/kubernetes/kubevirt",

@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestDigitaloceanConfigBuilder(t *testing.T) {
@@ -73,7 +73,7 @@ func TestCompleteDigitaloceanProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderDigitalocean,
 		Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{},
 	})
 

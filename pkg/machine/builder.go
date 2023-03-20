@@ -22,8 +22,8 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -44,7 +44,7 @@ type MachineBuilder struct {
 	datacenter *kubermaticv1.Datacenter
 
 	cluster             *kubermaticv1.Cluster
-	cloudProvider       kubermaticv1.ProviderType
+	cloudProvider       kubermaticv1.CloudProvider
 	cloudProviderSpec   interface{}
 	operatingSystemSpec interface{}
 	networkConfig       *providerconfig.NetworkConfig
@@ -78,7 +78,7 @@ func (b *MachineBuilder) WithDatacenterName(datacenterName string) *MachineBuild
 	return b
 }
 
-func (b *MachineBuilder) WithCloudProvider(cloudProvider kubermaticv1.ProviderType) *MachineBuilder {
+func (b *MachineBuilder) WithCloudProvider(cloudProvider kubermaticv1.CloudProvider) *MachineBuilder {
 	b.cloudProvider = cloudProvider
 	return b
 }
@@ -173,8 +173,8 @@ func (b *MachineBuilder) BuildProviderSpec() (*clusterv1alpha1.ProviderSpec, err
 	return CreateProviderSpec(providerConfig)
 }
 
-func (b *MachineBuilder) determineCloudProvider() (kubermaticv1.ProviderType, error) {
-	var provider kubermaticv1.ProviderType
+func (b *MachineBuilder) determineCloudProvider() (kubermaticv1.CloudProvider, error) {
+	var provider kubermaticv1.CloudProvider
 
 	if b.cluster != nil {
 		clusterProvider, err := kubermaticv1helper.ClusterCloudProviderName(b.cluster.Spec.Cloud)
@@ -182,7 +182,7 @@ func (b *MachineBuilder) determineCloudProvider() (kubermaticv1.ProviderType, er
 			return "", fmt.Errorf("failed to determine cloud provider from cluster: %w", err)
 		}
 
-		provider = kubermaticv1.ProviderType(clusterProvider)
+		provider = clusterProvider
 	}
 
 	// was an explicit provider given (because the caller did not have a Cluster object at hand)?
@@ -196,7 +196,7 @@ func (b *MachineBuilder) determineCloudProvider() (kubermaticv1.ProviderType, er
 
 	// all we have is a spec?
 	if b.cloudProviderSpec != nil {
-		specProvider, err := ProviderTypeFromSpec(b.cloudProviderSpec)
+		specProvider, err := CloudProviderFromSpec(b.cloudProviderSpec)
 		if err != nil {
 			return "", fmt.Errorf("cannot determine cloud provider for given spec: %w", err)
 		}
@@ -251,7 +251,7 @@ func (b *MachineBuilder) determineDatacenter() (*kubermaticv1.Datacenter, error)
 	return nil, fmt.Errorf("unknown datacenter %q in seed %q", datacenterName, b.seed.Name)
 }
 
-func (b *MachineBuilder) completeOperatingSystemSpec(os providerconfig.OperatingSystem, cloudProvider kubermaticv1.ProviderType) (interface{}, error) {
+func (b *MachineBuilder) completeOperatingSystemSpec(os kubermaticv1.OperatingSystem, cloudProvider kubermaticv1.CloudProvider) (interface{}, error) {
 	if b.operatingSystemSpec != nil {
 		return b.operatingSystemSpec, nil
 	}

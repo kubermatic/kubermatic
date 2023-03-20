@@ -21,7 +21,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -110,7 +110,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 
 	configGetter, err := kubernetesprovider.StaticKubermaticConfigurationGetterFactory(&kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
+			SeedController: &kubermaticv1.KubermaticSeedControllerConfiguration{
 				BackupStoreContainer:   encodeContainerAsYAML(t, &testStoreContainer),
 				BackupCleanupContainer: encodeContainerAsYAML(t, &testCleanupContainer),
 			},

@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -45,14 +45,14 @@ var (
 
 	jamesAsOwner = metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.UserKindName,
+		Kind:       "User",
 		UID:        jamesBond.GetUID(),
 		Name:       jamesBond.Name,
 	}
 
 	bobAsOwner = metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.UserKindName,
+		Kind:       "User",
 		UID:        bob.GetUID(),
 		Name:       bob.Name,
 	}

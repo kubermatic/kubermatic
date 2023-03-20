@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/api/compute/v1"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -58,8 +58,8 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 	nodePortRuleName := fmt.Sprintf(nodePortRuleNamePattern, cluster.Name)
 	nodePortIPv6RuleName := fmt.Sprintf(nodePortIPv6RuleNamePattern, cluster.Name)
 
-	ipv4Rules := cluster.IsIPv4Only() || cluster.IsDualStack()
-	ipv6Rules := cluster.IsIPv6Only() || cluster.IsDualStack()
+	ipv4Rules := cluster.Spec.ClusterNetwork.IsIPv4Only() || cluster.Spec.ClusterNetwork.IsDualStack()
+	ipv6Rules := cluster.Spec.ClusterNetwork.IsIPv6Only() || cluster.Spec.ClusterNetwork.IsDualStack()
 
 	// Allow all common IP protocols from within the cluster.
 	var allowedProtocols = []*compute.FirewallAllowed{
@@ -216,8 +216,8 @@ func deleteFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, upd
 	nodePortRuleName := fmt.Sprintf(nodePortRuleNamePattern, cluster.Name)
 	nodePortIPv6RuleName := fmt.Sprintf(nodePortIPv6RuleNamePattern, cluster.Name)
 
-	ipv4Rules := cluster.IsIPv4Only() || cluster.IsDualStack()
-	ipv6Rules := cluster.IsIPv6Only() || cluster.IsDualStack()
+	ipv4Rules := cluster.Spec.ClusterNetwork.IsIPv4Only() || cluster.Spec.ClusterNetwork.IsDualStack()
+	ipv6Rules := cluster.Spec.ClusterNetwork.IsIPv6Only() || cluster.Spec.ClusterNetwork.IsDualStack()
 
 	if kuberneteshelper.HasFinalizer(cluster, firewallSelfCleanupFinalizer) {
 		_, err := firewallService.Delete(projectID, selfRuleName).Context(ctx).Do()

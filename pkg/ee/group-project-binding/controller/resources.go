@@ -29,7 +29,7 @@ import (
 	"fmt"
 	"reflect"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -52,7 +52,7 @@ func clusterRoleBindingReconciler(binding kubermaticv1.GroupProjectBinding, clus
 			crb.OwnerReferences = []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.GroupProjectBindingKind,
+					Kind:       "GroupProjectBinding",
 					Name:       binding.Name,
 					UID:        binding.UID,
 				},
@@ -89,7 +89,7 @@ func roleBindingReconciler(binding kubermaticv1.GroupProjectBinding, role rbacv1
 			rb.OwnerReferences = []metav1.OwnerReference{
 				{
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.GroupProjectBindingKind,
+					Kind:       "GroupProjectBinding",
 					Name:       binding.Name,
 					UID:        binding.UID,
 				},

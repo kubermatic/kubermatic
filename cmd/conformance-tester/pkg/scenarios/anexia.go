@@ -21,9 +21,8 @@ import (
 	"errors"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 )
 
@@ -42,7 +41,7 @@ func (s *anexiaScenario) IsValid() error {
 		return err
 	}
 
-	if s.operatingSystem != providerconfig.OperatingSystemFlatcar {
+	if s.operatingSystem != kubermaticv1.OperatingSystemFlatcar {
 		return errors.New("provider only supports Flatcar")
 	}
 

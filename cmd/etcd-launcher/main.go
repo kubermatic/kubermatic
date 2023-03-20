@@ -39,7 +39,7 @@ import (
 	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -779,7 +779,7 @@ func (e *etcdCluster) KubermaticCluster(ctx context.Context) (*kubermaticv1.Clus
 
 func (e *etcdCluster) SetInitialState(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	// check if the etcd cluster is initialized successfully.
-	if cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
+	if cluster.Status.Conditions[kubermaticv1.ClusterConditionEtcdClusterInitialized].Status == corev1.ConditionTrue {
 		e.initialState = initialStateExisting
 		// if "strict" mode is enforced, set it up for existing clusters
 		if os.Getenv(envPeerTLSMode) == peerTLSModeStrict {

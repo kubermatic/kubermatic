@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,7 +39,7 @@ func TestGetLabelArgsValue(t *testing.T) {
 		},
 		{
 			name:           "Protected labels do not get applied",
-			initialLabels:  map[string]string{"foo": "bar", "project-id": "my-project", "worker-name": "w"},
+			initialLabels:  map[string]string{"foo": "bar", "project-id": "my-project"},
 			expectedLabels: map[string]string{"foo": "bar"},
 		},
 	}

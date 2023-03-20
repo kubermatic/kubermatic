@@ -28,12 +28,11 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermativsemver "k8c.io/api/v2/pkg/semver"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 
@@ -52,12 +51,12 @@ type Options struct {
 	// the Enabled... and Exclude... sets are combined
 	// together to result in the final ... set
 
-	Providers            sets.Set[string]
+	Providers            sets.Set[kubermaticv1.CloudProvider]
 	Releases             sets.Set[string]
 	Versions             []*kubermativsemver.Semver
-	EnableDistributions  sets.Set[string]
-	ExcludeDistributions sets.Set[string]
-	Distributions        sets.Set[string]
+	EnableDistributions  sets.Set[kubermaticv1.OperatingSystem]
+	ExcludeDistributions sets.Set[kubermaticv1.OperatingSystem]
+	Distributions        sets.Set[kubermaticv1.OperatingSystem]
 	EnableTests          sets.Set[string]
 	ExcludeTests         sets.Set[string]
 	Tests                sets.Set[string]
@@ -110,12 +109,12 @@ func NewDefaultOptions() *Options {
 	return &Options{
 		Client:                       "kube",
 		ScenarioOptions:              sets.New[string](),
-		Providers:                    sets.New[string](),
+		Providers:                    sets.New[kubermaticv1.CloudProvider](),
 		Releases:                     sets.New(getLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
 		ContainerRuntimes:            sets.New(resources.ContainerRuntimeContainerd),
-		EnableDistributions:          sets.New[string](),
-		ExcludeDistributions:         sets.New[string](),
-		Distributions:                sets.New[string](),
+		EnableDistributions:          sets.New[kubermaticv1.OperatingSystem](),
+		ExcludeDistributions:         sets.New[kubermaticv1.OperatingSystem](),
+		Distributions:                sets.New[kubermaticv1.OperatingSystem](),
 		EnableTests:                  sets.New[string](),
 		ExcludeTests:                 sets.New[string](),
 		Tests:                        sets.New[string](),
@@ -187,7 +186,7 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		return errors.New("no container runtime was enabled")
 	}
 
-	o.Providers = AllProviders.Intersection(o.Providers)
+	o.Providers = kubermaticv1.AllCloudProviders.Intersection(o.Providers)
 	if o.Providers.Len() == 0 {
 		return errors.New("no cloud provider was enabled")
 	}
@@ -247,13 +246,8 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (o *Options) effectiveDistributions() (sets.Set[string], error) {
-	all := sets.New[string]()
-	for _, os := range providerconfig.AllOperatingSystems {
-		all.Insert(string(os))
-	}
-
-	return combineSets(o.EnableDistributions, o.ExcludeDistributions, all, "distributions")
+func (o *Options) effectiveDistributions() (sets.Set[kubermaticv1.OperatingSystem], error) {
+	return combineSets(o.EnableDistributions, o.ExcludeDistributions, kubermaticv1.AllOperatingSystems, "distributions")
 }
 
 func (o *Options) effectiveTests() (sets.Set[string], error) {
@@ -271,7 +265,7 @@ func (o *Options) effectiveTests() (sets.Set[string], error) {
 	return combineSets(o.EnableTests, o.ExcludeTests, AllTests, "tests")
 }
 
-func combineSets(include, exclude, all sets.Set[string], flagname string) (sets.Set[string], error) {
+func combineSets[T ~string](include, exclude, all sets.Set[T], flagname string) (sets.Set[T], error) {
 	if include.Len() == 0 && exclude.Len() == 0 {
 		return nil, fmt.Errorf("either -%s or -exclude-%s must be given (each is a comma-separated list of %v)", flagname, flagname, sets.List(all))
 	}
@@ -280,7 +274,7 @@ func combineSets(include, exclude, all sets.Set[string], flagname string) (sets.
 		return nil, fmt.Errorf("-%s and -exclude-%s must not be given at the same time", flagname, flagname)
 	}
 
-	var chosen sets.Set[string]
+	var chosen sets.Set[T]
 
 	if include.Len() > 0 {
 		chosen = include

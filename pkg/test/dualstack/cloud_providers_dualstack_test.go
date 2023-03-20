@@ -30,7 +30,7 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -57,8 +57,8 @@ const (
 )
 
 type testCase struct {
-	cloudProvider          kubermaticv1.ProviderType
-	operatingSystems       []providerconfig.OperatingSystem
+	cloudProvider          kubermaticv1.CloudProvider
+	operatingSystems       []kubermaticv1.OperatingSystem
 	cni                    string
 	ipFamily               util.IPFamily
 	skipNodes              bool
@@ -71,24 +71,24 @@ func (t *testCase) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
 }
 
 var (
-	osSpecs = map[providerconfig.OperatingSystem]interface{}{
-		providerconfig.OperatingSystemCentOS:     centos.Config{},
-		providerconfig.OperatingSystemFlatcar:    flatcar.Config{},
-		providerconfig.OperatingSystemRHEL:       rhel.Config{},
-		providerconfig.OperatingSystemRockyLinux: rockylinux.Config{},
-		providerconfig.OperatingSystemUbuntu:     ubuntu.Config{},
+	osSpecs = map[kubermaticv1.OperatingSystem]interface{}{
+		kubermaticv1.OperatingSystemCentOS:     centos.Config{},
+		kubermaticv1.OperatingSystemFlatcar:    flatcar.Config{},
+		kubermaticv1.OperatingSystemRHEL:       rhel.Config{},
+		kubermaticv1.OperatingSystemRockyLinux: rockylinux.Config{},
+		kubermaticv1.OperatingSystemUbuntu:     ubuntu.Config{},
 	}
 
-	cloudProviderJiggers = map[kubermaticv1.ProviderType]CreateJigFunc{
-		kubermaticv1.AlibabaCloudProvider:      newAlibabaTestJig,
-		kubermaticv1.AWSCloudProvider:          newAWSTestJig,
-		kubermaticv1.AzureCloudProvider:        newAzureTestJig,
-		kubermaticv1.DigitaloceanCloudProvider: newDigitaloceanTestJig,
-		kubermaticv1.GCPCloudProvider:          newGCPTestJig,
-		kubermaticv1.HetznerCloudProvider:      newHetznerTestJig,
-		kubermaticv1.OpenstackCloudProvider:    newOpenstackTestJig,
-		kubermaticv1.PacketCloudProvider:       newEquinixMetalTestJig,
-		kubermaticv1.VSphereCloudProvider:      newVSphereTestJig,
+	cloudProviderJiggers = map[kubermaticv1.CloudProvider]CreateJigFunc{
+		kubermaticv1.CloudProviderAlibaba:      newAlibabaTestJig,
+		kubermaticv1.CloudProviderAWS:          newAWSTestJig,
+		kubermaticv1.CloudProviderAzure:        newAzureTestJig,
+		kubermaticv1.CloudProviderDigitalocean: newDigitaloceanTestJig,
+		kubermaticv1.CloudProviderGCP:          newGCPTestJig,
+		kubermaticv1.CloudProviderHetzner:      newHetznerTestJig,
+		kubermaticv1.CloudProviderOpenStack:    newOpenStackTestJig,
+		kubermaticv1.CloudProviderPacket:       newEquinixMetalTestJig,
+		kubermaticv1.CloudProviderVSphere:      newVSphereTestJig,
 	}
 
 	cnis = map[string]*kubermaticv1.CNIPluginSettings{
@@ -102,28 +102,28 @@ var (
 
 	tests = []testCase{
 		{
-			cloudProvider: kubermaticv1.AlibabaCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderAlibaba,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:      CiliumCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.AlibabaCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderAlibaba,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:      CanalCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.AWSCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				// providerconfig.OperatingSystemRHEL, // TODO: disabled due to "BPF host reachable services for UDP needs kernel 4.19.57, 5.1.16, 5.2.0 or newer"
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderAWS,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				// kubermaticv1.OperatingSystemRHEL, // TODO: disabled due to "BPF host reachable services for UDP needs kernel 4.19.57, 5.1.16, 5.2.0 or newer"
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:                 CiliumCNI,
 			ipFamily:            util.IPFamilyIPv4IPv6,
@@ -131,12 +131,12 @@ var (
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudProvider: kubermaticv1.AWSCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemRHEL,
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderAWS,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemRHEL,
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:                 CanalCNI,
 			ipFamily:            util.IPFamilyIPv4IPv6,
@@ -144,32 +144,32 @@ var (
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudProvider: kubermaticv1.AzureCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRHEL,
-				providerconfig.OperatingSystemRockyLinux,
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderAzure,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRHEL,
+				kubermaticv1.OperatingSystemRockyLinux,
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:      CiliumCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.AzureCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemCentOS,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRHEL,
-				providerconfig.OperatingSystemRockyLinux,
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderAzure,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemCentOS,
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRHEL,
+				kubermaticv1.OperatingSystemRockyLinux,
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:      CanalCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.GCPCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderGCP,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:                 CiliumCNI,
 			ipFamily:            util.IPFamilyIPv4IPv6,
@@ -177,9 +177,9 @@ var (
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudProvider: kubermaticv1.GCPCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderGCP,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:                 CanalCNI,
 			ipFamily:            util.IPFamilyIPv4IPv6,
@@ -187,98 +187,98 @@ var (
 			skipHostNetworkPods: true,
 		},
 		{
-			cloudProvider: kubermaticv1.OpenstackCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRHEL,
+			cloudProvider: kubermaticv1.CloudProviderOpenStack,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRHEL,
 			},
 			cni:      CiliumCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.OpenstackCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRHEL,
+			cloudProvider: kubermaticv1.CloudProviderOpenStack,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRHEL,
 			},
 			cni:      CanalCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.HetznerCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderHetzner,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:      CiliumCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.HetznerCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderHetzner,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:      CanalCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderDigitalocean,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:      CiliumCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemCentOS,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderDigitalocean,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemCentOS,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:      CanalCNI,
 			ipFamily: util.IPFamilyIPv4IPv6,
 		},
 		{
-			cloudProvider: kubermaticv1.PacketCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemCentOS,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderPacket,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemCentOS,
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:       CanalCNI,
 			ipFamily:  util.IPFamilyIPv4IPv6,
 			skipNodes: true,
 		},
 		{
-			cloudProvider: kubermaticv1.PacketCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRockyLinux,
+			cloudProvider: kubermaticv1.CloudProviderPacket,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
+				kubermaticv1.OperatingSystemFlatcar,
+				kubermaticv1.OperatingSystemRockyLinux,
 			},
 			cni:       CiliumCNI,
 			ipFamily:  util.IPFamilyIPv4IPv6,
 			skipNodes: true,
 		},
 		{
-			cloudProvider: kubermaticv1.VSphereCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderVSphere,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:                    CanalCNI,
 			ipFamily:               util.IPFamilyIPv4IPv6,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
 		{
-			cloudProvider: kubermaticv1.VSphereCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
+			cloudProvider: kubermaticv1.CloudProviderVSphere,
+			operatingSystems: []kubermaticv1.OperatingSystem{
+				kubermaticv1.OperatingSystemUbuntu,
 			},
 			cni:                    CiliumCNI,
 			ipFamily:               util.IPFamilyIPv4IPv6,
@@ -287,24 +287,8 @@ var (
 	}
 )
 
-func isAll(s sets.Set[string]) bool {
+func isAll[T ~string](s sets.Set[T]) bool {
 	return s.Len() == 0 || (s.Len() == 1 && s.Has("all"))
-}
-
-func osToStringSet(os []providerconfig.OperatingSystem) sets.Set[string] {
-	result := sets.New[string]()
-	for _, o := range os {
-		result.Insert(string(o))
-	}
-	return result
-}
-
-func stringToOSSet(os sets.Set[string]) []providerconfig.OperatingSystem {
-	result := []providerconfig.OperatingSystem{}
-	for _, o := range sets.List(os) {
-		result = append(result, providerconfig.OperatingSystem(o))
-	}
-	return result
 }
 
 // removeDisabledTests removes tests with criteria that are not enabled via
@@ -321,17 +305,17 @@ func removeDisabledTests(allTests []testCase, log *zap.SugaredLogger) []testCase
 			continue
 		}
 
-		if !isAll(enabledProviders) && !enabledProviders.Has(string(test.cloudProvider)) {
+		if !isAll(enabledProviders) && !enabledProviders.Has(test.cloudProvider) {
 			testLog.Info("Skipping scenario because cloud provider is not enabled.")
 			continue
 		}
 
-		var operatingSystems []providerconfig.OperatingSystem
+		var operatingSystems []kubermaticv1.OperatingSystem
 		if isAll(enabledOperatingSystems) {
 			operatingSystems = test.operatingSystems
 		} else {
-			testOperatingSystems := osToStringSet(test.operatingSystems)
-			operatingSystems = stringToOSSet(testOperatingSystems.Intersection(enabledOperatingSystems))
+			testOperatingSystems := sets.New(test.operatingSystems...)
+			operatingSystems = sets.List(testOperatingSystems.Intersection(enabledOperatingSystems))
 		}
 
 		if len(operatingSystems) == 0 {
@@ -425,7 +409,7 @@ func TestNewClusters(t *testing.T) {
 			for _, osName := range test.operatingSystems {
 				osSpec := osSpecs[osName]
 
-				if osName == providerconfig.OperatingSystemRHEL {
+				if osName == kubermaticv1.OperatingSystemRHEL {
 					osSpec = addRHELSubscriptionInfo(osSpec)
 				}
 
@@ -533,55 +517,55 @@ func allPodsHealthy(t *testing.T, pods *corev1.PodList) error {
 }
 
 func parseProviderCredentials(t *testing.T) {
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AlibabaCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderAlibaba) {
 		if err := alibabaCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get alibaba credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AWSCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderAWS) {
 		if err := awsCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get aws credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.AzureCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderAzure) {
 		if err := azureCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get azure credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.DigitaloceanCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderDigitalocean) {
 		if err := digitaloceanCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get digitalocean credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.PacketCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderPacket) {
 		if err := equinixMetalCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get equinixMetal credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.GCPCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderGCP) {
 		if err := gcpCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get gcp credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.HetznerCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderHetzner) {
 		if err := hetznerCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get hetzner credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.OpenstackCloudProvider)) {
-		if err := openstackCredentials.Parse(); err != nil {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderOpenStack) {
+		if err := openStackCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get openstack credentials: %v", err)
 		}
 	}
 
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.VSphereCloudProvider)) {
+	if isAll(enabledProviders) || enabledProviders.Has(kubermaticv1.CloudProviderVSphere) {
 		if err := vsphereCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get vsphere credentials: %v", err)
 		}

@@ -25,9 +25,10 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -141,7 +142,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	// update cluster condition
-	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	if err := kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		conditionType := kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted
 		newStatus := corev1.ConditionFalse
 		reason := kubermaticv1.ReasonClusterCCMMigrationInProgress
@@ -153,7 +154,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			message = "external CCM/CSI migration completed"
 		}
 
-		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, newStatus, reason, message)
+		kubermaticv1helper.SetClusterCondition(c, r.versions.KubermaticCommit, conditionType, newStatus, reason, message)
 	}); err != nil {
 		return fmt.Errorf("failed to update cluster: %w", err)
 	}

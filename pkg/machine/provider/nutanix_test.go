@@ -21,8 +21,7 @@ import (
 	"testing"
 
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestNutanixConfigBuilder(t *testing.T) {
@@ -46,7 +45,7 @@ func TestNutanixConfigBuilder(t *testing.T) {
 type nutanixTestcase struct {
 	baseTestcase[nutanix.RawConfig, kubermaticv1.DatacenterSpecNutanix]
 
-	os providerconfig.OperatingSystem
+	os kubermaticv1.OperatingSystem
 }
 
 func (tt *nutanixTestcase) Run(cluster *kubermaticv1.Cluster) (*nutanix.RawConfig, error) {
@@ -71,7 +70,7 @@ func TestCompleteNutanixProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.NutanixCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderNutanix,
 		Nutanix:      &kubermaticv1.NutanixCloudSpec{},
 	})
 
@@ -104,12 +103,12 @@ func TestCompleteNutanixProviderSpec(t *testing.T) {
 				name: "should select the correct AMI based on the OS",
 				datacenter: &kubermaticv1.DatacenterSpecNutanix{
 					Images: kubermaticv1.ImageList{
-						providerconfig.OperatingSystemFlatcar: "testimage",
+						kubermaticv1.OperatingSystemFlatcar: "testimage",
 					},
 				},
 				expected: cloneBuilder(defaultMachine).WithAllowInsecure(false).WithImageName("testimage"),
 			},
-			os: providerconfig.OperatingSystemFlatcar,
+			os: kubermaticv1.OperatingSystemFlatcar,
 		},
 	}
 

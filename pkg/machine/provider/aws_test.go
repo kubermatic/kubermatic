@@ -20,8 +20,7 @@ import (
 	"testing"
 
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestAWSConfigBuilder(t *testing.T) {
@@ -52,7 +51,7 @@ func TestAWSConfigBuilder(t *testing.T) {
 type awsTestcase struct {
 	baseTestcase[aws.RawConfig, kubermaticv1.DatacenterSpecAWS]
 
-	os providerconfig.OperatingSystem
+	os kubermaticv1.OperatingSystem
 }
 
 func (tt *awsTestcase) Run(cluster *kubermaticv1.Cluster) (*aws.RawConfig, error) {
@@ -77,7 +76,7 @@ func TestCompleteAWSProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.AWSCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderAWS,
 		AWS: &kubermaticv1.AWSCloudSpec{
 			VPCID:               "vpcID",
 			RouteTableID:        "rtID",
@@ -127,12 +126,12 @@ func TestCompleteAWSProviderSpec(t *testing.T) {
 				name: "should select the correct AMI based on the OS",
 				datacenter: &kubermaticv1.DatacenterSpecAWS{
 					Images: kubermaticv1.ImageList{
-						providerconfig.OperatingSystemFlatcar: "testimage",
+						kubermaticv1.OperatingSystemFlatcar: "testimage",
 					},
 				},
 				expected: cloneBuilder(goodMachine).WithAMI("testimage"),
 			},
-			os: providerconfig.OperatingSystemFlatcar,
+			os: kubermaticv1.OperatingSystemFlatcar,
 		},
 	}
 

@@ -31,7 +31,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/lifecycle"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -61,7 +61,12 @@ func getMeteringImage(overwriter registry.ImageRewriter) string {
 
 // ReconcileMeteringResources reconciles the metering related resources.
 func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) error {
-	overwriter := registry.GetImageRewriterFunc(cfg.Spec.UserCluster.OverwriteRegistry)
+	overwrite := ""
+	if uc := cfg.Spec.UserCluster; uc != nil {
+		overwrite = uc.OverwriteRegistry
+	}
+
+	overwriter := registry.GetImageRewriterFunc(overwrite)
 
 	if seed.Spec.Metering == nil || !seed.Spec.Metering.Enabled {
 		return undeploy(ctx, client, seed.Namespace)

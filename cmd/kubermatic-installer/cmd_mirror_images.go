@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
@@ -161,18 +162,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 		// we make sure we omit any repository configured in the loaded config so they get
 		// properly defaulted.
 		if options.IgnoreRepositoryOverrides {
-			config.Spec.API.DockerRepository = ""
-			config.Spec.UI.DockerRepository = ""
-			config.Spec.MasterController.DockerRepository = ""
-			config.Spec.SeedController.DockerRepository = ""
-			config.Spec.Webhook.DockerRepository = ""
-			config.Spec.UserCluster.KubermaticDockerRepository = ""
-			config.Spec.UserCluster.DNATControllerDockerRepository = ""
-			config.Spec.UserCluster.EtcdLauncherDockerRepository = ""
-			config.Spec.UserCluster.Addons.DockerRepository = ""
-			config.Spec.VerticalPodAutoscaler.Recommender.DockerRepository = ""
-			config.Spec.VerticalPodAutoscaler.Updater.DockerRepository = ""
-			config.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository = ""
+			removeDockerRegistries(config)
 		}
 
 		kubermaticConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
@@ -225,8 +215,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 						"provider":    cloudSpec.ProviderName,
 						"cni-plugin":  string(cniPlugin.Type),
 						"cni-version": cniPlugin.Version,
-					},
-					)
+					})
 
 					versionLogger.Debug("Collecting images…")
 
@@ -304,4 +293,55 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		return nil
 	})
+}
+
+func removeDockerRegistries(config *kubermaticv1.KubermaticConfiguration) {
+	if config.Spec.API == nil {
+		config.Spec.API = &kubermaticv1.KubermaticAPIConfiguration{}
+	}
+
+	if config.Spec.UI == nil {
+		config.Spec.UI = &kubermaticv1.KubermaticUIConfiguration{}
+	}
+
+	if config.Spec.MasterController == nil {
+		config.Spec.MasterController = &kubermaticv1.KubermaticMasterControllerConfiguration{}
+	}
+
+	if config.Spec.SeedController == nil {
+		config.Spec.SeedController = &kubermaticv1.KubermaticSeedControllerConfiguration{}
+	}
+
+	if config.Spec.UserCluster == nil {
+		config.Spec.UserCluster = &kubermaticv1.KubermaticUserClusterConfiguration{}
+	}
+
+	if config.Spec.VerticalPodAutoscaler == nil {
+		config.Spec.VerticalPodAutoscaler = &kubermaticv1.KubermaticVPAConfiguration{}
+	}
+
+	if config.Spec.VerticalPodAutoscaler.Recommender == nil {
+		config.Spec.VerticalPodAutoscaler.Recommender = &kubermaticv1.KubermaticVPAComponent{}
+	}
+
+	if config.Spec.VerticalPodAutoscaler.Updater == nil {
+		config.Spec.VerticalPodAutoscaler.Updater = &kubermaticv1.KubermaticVPAComponent{}
+	}
+
+	if config.Spec.VerticalPodAutoscaler.AdmissionController == nil {
+		config.Spec.VerticalPodAutoscaler.AdmissionController = &kubermaticv1.KubermaticVPAComponent{}
+	}
+
+	config.Spec.API.DockerRepository = ""
+	config.Spec.UI.DockerRepository = ""
+	config.Spec.MasterController.DockerRepository = ""
+	config.Spec.SeedController.DockerRepository = ""
+	config.Spec.Webhook.DockerRepository = ""
+	config.Spec.UserCluster.KubermaticDockerRepository = ""
+	config.Spec.UserCluster.DNATControllerDockerRepository = ""
+	config.Spec.UserCluster.EtcdLauncherDockerRepository = ""
+	config.Spec.UserCluster.Addons.DockerRepository = ""
+	config.Spec.VerticalPodAutoscaler.Recommender.DockerRepository = ""
+	config.Spec.VerticalPodAutoscaler.Updater.DockerRepository = ""
+	config.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository = ""
 }

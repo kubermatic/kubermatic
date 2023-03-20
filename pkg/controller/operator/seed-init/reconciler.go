@@ -23,14 +23,16 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/crd"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -75,8 +77,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return nil
 	}
 
-	if seed.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debugw("Seed does not have matching label", "label", kubermaticv1.WorkerNameLabelKey)
+	if seed.Labels[workerlabel.LabelKey] != r.workerName {
+		log.Debugw("Seed does not have matching label", "label", workerlabel.LabelKey)
 		return nil
 	}
 
@@ -89,7 +91,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// Once we've down our initial setup, we never have to do anything again,
 	// as the regular seed-operator takes care of keeping things up-to-date.
-	if seed.Status.IsInitialized() {
+	if seed.Status.Conditions[kubermaticv1.SeedConditionClusterInitialized].Status == corev1.ConditionTrue {
 		log.Debugw("Seed already has been initialized", "condition", kubermaticv1.SeedConditionClusterInitialized)
 		return nil
 	}
@@ -141,7 +143,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 }
 
 func (r *Reconciler) setSeedCondition(ctx context.Context, seed *kubermaticv1.Seed) error {
-	return kubermaticv1helper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
+	return kuberneteshelper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
 		kubermaticv1helper.SetSeedCondition(
 			s,
 			kubermaticv1.SeedConditionClusterInitialized,

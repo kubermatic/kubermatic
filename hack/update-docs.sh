@@ -35,15 +35,15 @@ sed="sed"
 [ "$(command -v gsed)" ] && sed="gsed"
 
 # remove omitempty tags from structs so that genyaml will not skip fields
-$sed -i "s/,omitempty/,$dummy/g" pkg/apis/kubermatic/v1/*.go vendor/k8s.io/api/core/v1/*.go
+$sed -i "s/,omitempty/,$dummy/g" vendor/k8c.io/api/v2/pkg/apis/kubermatic/v1/*.go vendor/k8s.io/api/core/v1/*.go
 
 # there are some fields that we do actually want to ignore
-$sed -i 's/omitgenyaml/omitempty/g' pkg/apis/kubermatic/v1/*.go
+$sed -i 's/omitgenyaml/omitempty/g' vendor/k8c.io/api/v2/pkg/apis/kubermatic/v1/*.go
 
 for edition in ce ee; do
   go run -tags $edition codegen/example-yaml/main.go . docs
 done
 
 # revert our changes
-$sed -i 's/omitempty/omitgenyaml/g' pkg/apis/kubermatic/v1/*.go
-$sed -i "s/,$dummy/,omitempty/g" pkg/apis/kubermatic/v1/*.go vendor/k8s.io/api/core/v1/*.go
+$sed -i 's/omitempty/omitgenyaml/g' vendor/k8c.io/api/v2/pkg/apis/kubermatic/v1/*.go
+$sed -i "s/,$dummy/,omitempty/g" vendor/k8c.io/api/v2/pkg/apis/kubermatic/v1/*.go vendor/k8s.io/api/core/v1/*.go

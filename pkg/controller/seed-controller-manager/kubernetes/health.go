@@ -20,9 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -48,10 +50,10 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
 	}
 
-	showKonnectivity := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
+	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
-	if !showKonnectivity {
-		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: &extendedHealth.OpenVPN, minReady: 1}
+	if !konnectivityEnabled {
+		healthMapping[resources.OpenVPNServerDeploymentName] = &depInfo{healthStatus: extendedHealth.OpenVPN, minReady: 1}
 	}
 
 	for name := range healthMapping {
@@ -63,12 +65,12 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		if healthMapping[name].healthStatus == nil {
 			healthMapping[name].healthStatus = new(kubermaticv1.HealthStatus)
 		}
-		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+		*healthMapping[name].healthStatus = clusterhelper.GetHealthStatus(status, cluster, r.versions)
 	}
 
-	if showKonnectivity {
+	if konnectivityEnabled {
 		// because konnectivity server is in apiserver pod
-		extendedHealth.Konnectivity = extendedHealth.Apiserver
+		extendedHealth.Konnectivity = &extendedHealth.Apiserver
 	}
 
 	var err error
@@ -78,7 +80,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %w", err)
 	}
-	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
+	extendedHealth.Etcd = clusterhelper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
 
 	// check the actual status of the machineController components only if the API server is healthy
 	// because we need to access it to retrieve the machineController mutatingWebhookConfiguration
@@ -89,7 +91,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to get machine controller health: %w", err)
 		}
 	}
-	extendedHealth.MachineController = kubermaticv1helper.GetHealthStatus(mcHealthStatus, cluster, r.versions)
+	extendedHealth.MachineController = clusterhelper.GetHealthStatus(mcHealthStatus, cluster, r.versions)
 
 	applicationControllerHealthStatus := kubermaticv1.HealthStatusDown
 	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
@@ -98,7 +100,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to evaluate application controller health: %w", err)
 		}
 	}
-	extendedHealth.ApplicationController = kubermaticv1helper.GetHealthStatus(applicationControllerHealthStatus, cluster, r.versions)
+	extendedHealth.ApplicationController = clusterhelper.GetHealthStatus(applicationControllerHealthStatus, cluster, r.versions)
 
 	if cluster.Spec.IsOperatingSystemManagerEnabled() {
 		status, err := r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
@@ -125,7 +127,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth = *extendedHealth
 
 		// set ClusterConditionEtcdClusterInitialized, this should be done only once
@@ -133,7 +135,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		if extendedHealth.Etcd == kubermaticv1.HealthStatusUp {
 			kubermaticv1helper.SetClusterCondition(
 				c,
-				r.versions,
+				r.versions.KubermaticCommit,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,
 				corev1.ConditionTrue,
 				"",
@@ -141,10 +143,10 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 			)
 		}
 
-		if kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
+		if clusterhelper.IsClusterInitialized(cluster, r.versions) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
-				r.versions,
+				r.versions.KubermaticCommit,
 				kubermaticv1.ClusterConditionClusterInitialized,
 				corev1.ConditionTrue,
 				"",
@@ -203,7 +205,7 @@ func (r *Reconciler) operatingSystemManagerHealthCheck(ctx context.Context, clus
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
 	}
-	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+	status = clusterhelper.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
 }
 
@@ -214,7 +216,7 @@ func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubernetesDashboardDeploymentName, err)
 	}
-	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+	status = clusterhelper.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
 }
 

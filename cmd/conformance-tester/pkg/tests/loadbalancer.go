@@ -28,8 +28,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -44,7 +44,7 @@ func supportsLoadBalancer(cluster *kubermaticv1.Cluster) bool {
 		cluster.Spec.Cloud.AWS != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
 		cluster.Spec.Cloud.Hetzner != nil ||
-		cluster.Spec.Cloud.Kubevirt != nil
+		cluster.Spec.Cloud.KubeVirt != nil
 }
 
 func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, attempt int) error {

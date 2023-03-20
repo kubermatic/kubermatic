@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -50,7 +50,7 @@ func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.Suga
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource quota subject name requirement: %w", err)
 	}
-	subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{kubermaticv1.ProjectSubjectKind})
+	subjectKindReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectKindLabelKey, selection.Equals, []string{string(kubermaticv1.ResourceQuotaSubjectProject)})
 	if err != nil {
 		return nil, fmt.Errorf("error creating resource quota subject kind requirement: %w", err)
 	}

@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -132,7 +132,7 @@ func generateProject(name string, deleted bool) *kubermaticv1.Project {
 			Name: fmt.Sprintf("project-%s", name),
 		},
 		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectActive,
+			Phase: kubermaticv1.ProjectPhaseActive,
 		},
 	}
 	if deleted {
