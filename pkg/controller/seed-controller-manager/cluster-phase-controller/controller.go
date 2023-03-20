@@ -22,9 +22,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -99,28 +100,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	// deletion timestamp overrides everything else
 	if cluster.DeletionTimestamp != nil {
-		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterTerminating)
+		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterPhaseTerminating)
 	}
 
 	// if this cluster was never fully reconciled (yet), it is in Creating phase
-	if !kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
-		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterCreating)
+	if !clusterhelper.IsClusterInitialized(cluster, r.versions) {
+		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterPhaseCreating)
 	}
 
 	// if there is a pending update condition, the cluster is in Updating phase
 	cond, exists := cluster.Status.Conditions[kubermaticv1.ClusterConditionUpdateProgress]
 	if exists && cond.Reason != updatecontroller.ClusterConditionUpToDate {
-		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterUpdating)
+		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterPhaseUpdating)
 	}
 
 	// in the absence of more smarter logic, every other status is just "Running"
 	// (going to something like "Reconciling" whenever the control plane is unhealthy
 	// might cause maaaaany status changes)
-	return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterRunning)
+	return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterPhaseRunning)
 }
 
 func (r *Reconciler) setClusterPhase(ctx context.Context, cluster *kubermaticv1.Cluster, phase kubermaticv1.ClusterPhase) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.Phase = phase
 	})
 }

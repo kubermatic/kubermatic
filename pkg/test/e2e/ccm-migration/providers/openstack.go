@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,27 +33,27 @@ const (
 	osCCMDeploymentName = "openstack-cloud-controller-manager"
 )
 
-type OpenstackScenario struct {
+type OpenStackScenario struct {
 	commmonScenario
 
-	credentials jig.OpenstackCredentials
+	credentials jig.OpenStackCredentials
 }
 
 var (
-	_ TestScenario = &OpenstackScenario{}
+	_ TestScenario = &OpenStackScenario{}
 )
 
-func NewOpenstackScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.OpenstackCredentials) *OpenstackScenario {
-	return &OpenstackScenario{
+func NewOpenStackScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.OpenStackCredentials) *OpenStackScenario {
+	return &OpenStackScenario{
 		commmonScenario: commmonScenario{
 			seedClient: seedClient,
-			testJig:    jig.NewOpenstackCluster(seedClient, log, credentials, 1),
+			testJig:    jig.NewOpenStackCluster(seedClient, log, credentials, 1),
 		},
 		credentials: credentials,
 	}
 }
 
-func (c *OpenstackScenario) CheckComponents(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) (bool, error) {
+func (c *OpenStackScenario) CheckComponents(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) (bool, error) {
 	ccmDeploy := &appsv1.Deployment{}
 	if err := c.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", cluster.Name), Name: osCCMDeploymentName}, ccmDeploy); err != nil {
 		return false, fmt.Errorf("failed to get %s deployment: %w", osCCMDeploymentName, err)

@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -160,10 +160,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+	if cluster.Labels[workerlabel.LabelKey] != r.workerName {
 		log.Debugw(
 			"Skipping because the cluster has a different worker name set",
-			"cluster-worker-name", cluster.Labels[kubermaticv1.WorkerNameLabelKey],
+			"cluster-worker-name", cluster.Labels[workerlabel.LabelKey],
 		)
 		return nil
 	}

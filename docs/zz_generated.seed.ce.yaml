@@ -111,7 +111,7 @@ spec:
           # While machines can be in multiple networks, a single one must be chosen for the
           # HCloud CCM to work.
           network: ""
-        # Kubevirt configures a KubeVirt datacenter.
+        # KubeVirt configures a KubeVirt datacenter.
         kubevirt:
           # CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
           # in the dedicated infra KubeVirt cluster. They are added to the defaults.
@@ -199,7 +199,7 @@ spec:
             ubuntu: ""
           # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
           port: 9440
-        # Openstack configures an Openstack datacenter.
+        # OpenStack configures an OpenStack datacenter.
         openstack:
           authURL: ""
           availabilityZone: ""
@@ -381,23 +381,7 @@ spec:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: ""
       # Resources describes the requested and maximum allowed CPU/memory usage.
-      resources:
-        # Claims lists the names of resources, defined in spec.resourceClaims,
-        # that are used by this container.
-
-        # This is an alpha field and requires enabling the
-        # DynamicResourceAllocation feature gate.
-
-        # This field is immutable.
-        claims: null
-        # Limits describes the maximum amount of compute resources allowed.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-        limits: null
-        # Requests describes the minimum amount of compute resources required.
-        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-        # otherwise to an implementation-defined value.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-        requests: null
+      resources: null
     # Prometheus configures the Prometheus instance deployed into the cluster control plane.
     prometheus:
       resources: null
@@ -476,7 +460,7 @@ spec:
     storageSize: 100Gi
   # Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
   mla:
-    # Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
+    # Optional: controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
     userClusterMLAEnabled: false
   # NodeportProxy can be used to configure the NodePort proxy service that is
   # responsible for making user-cluster control planes accessible from the outside.

@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
@@ -39,6 +39,7 @@ import (
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	osmmigration "k8c.io/kubermatic/v2/pkg/util/migration"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -101,8 +102,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return nil
 	}
 
-	if seed.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
-		log.Debugf("seed does not have matching %s label", kubermaticv1.WorkerNameLabelKey)
+	if seed.Labels[workerlabel.LabelKey] != r.workerName {
+		log.Debugf("seed does not have matching %s label", workerlabel.LabelKey)
 		return nil
 	}
 
@@ -268,7 +269,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 }
 
 func (r *Reconciler) setSeedCondition(ctx context.Context, seed *kubermaticv1.Seed, status corev1.ConditionStatus, reason string, message string) error {
-	return kubermaticv1helper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
+	return kubernetes.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
 		kubermaticv1helper.SetSeedCondition(s, kubermaticv1.SeedConditionResourcesReconciled, status, reason, message)
 	})
 }

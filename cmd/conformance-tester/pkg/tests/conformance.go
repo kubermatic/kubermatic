@@ -31,12 +31,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -283,13 +282,13 @@ func getGinkgoRuns(
 		args = append(args, "--provider=local")
 
 		switch scenario.OperatingSystem() {
-		case providerconfig.OperatingSystemUbuntu:
+		case kubermaticv1.OperatingSystemUbuntu:
 			args = append(args, "--node-os-distro=ubuntu")
 			env = append(env, "KUBE_SSH_USER=ubuntu")
-		case providerconfig.OperatingSystemCentOS:
+		case kubermaticv1.OperatingSystemCentOS:
 			args = append(args, "--node-os-distro=centos")
 			env = append(env, "KUBE_SSH_USER=centos")
-		case providerconfig.OperatingSystemFlatcar:
+		case kubermaticv1.OperatingSystemFlatcar:
 			args = append(args, "--node-os-distro=flatcar")
 			env = append(env, "KUBE_SSH_USER=core")
 		}

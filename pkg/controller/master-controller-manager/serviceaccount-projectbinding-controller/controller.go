@@ -24,8 +24,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -185,7 +185,7 @@ func (r *reconcileServiceAccountProjectBinding) reconcile(ctx context.Context, l
 	oldBinding := binding.DeepCopy()
 	kuberneteshelper.EnsureUniqueOwnerReference(binding, metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.UserKindName,
+		Kind:       "User",
 		UID:        user.GetUID(),
 		Name:       user.Name,
 	})
@@ -229,7 +229,7 @@ func (r *reconcileServiceAccountProjectBinding) ensureOwnerReference(ctx context
 	oldUser := user.DeepCopy()
 	kuberneteshelper.EnsureUniqueOwnerReference(user, metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.ProjectKindName,
+		Kind:       "Project",
 		UID:        project.UID,
 		Name:       project.Name,
 	})

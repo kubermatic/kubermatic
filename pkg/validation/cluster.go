@@ -27,15 +27,15 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -48,7 +48,7 @@ import (
 var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider.
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
-	azureLoadBalancerSKUTypes = sets.New("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
+	azureLoadBalancerSKUTypes = sets.New(kubermaticv1.AzureLBSKUStandard, kubermaticv1.AzureLBSKUBasic)
 
 	gte125Constraint, _                                  = semverlib.NewConstraint(">= 1.25.0")
 	errPodSecurityPolicyAdmissionPluginWithVersionGte125 = errors.New("admission plugin \"PodSecurityPolicy\" is not supported in Kubernetes v1.25 and later")
@@ -77,6 +77,16 @@ const (
 	podSecurityPolicyAdmissionPluginName = "PodSecurityPolicy"
 )
 
+func toStringSlice[T ~string](list sets.Set[T]) []string {
+	values := []string{}
+
+	for _, value := range sets.List(list) {
+		values = append(values, string(value))
+	}
+
+	return values
+}
+
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
 func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versionManager *version.Manager, currentVersion *semver.Semver, parentFieldPath *field.Path) field.ErrorList {
@@ -96,7 +106,7 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	}
 
 	if !kubermaticv1.AllExposeStrategies.Has(spec.ExposeStrategy) {
-		allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("exposeStrategy"), spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
+		allErrs = append(allErrs, field.NotSupported(parentFieldPath.Child("exposeStrategy"), spec.ExposeStrategy, toStringSlice(kubermaticv1.AllExposeStrategies)))
 	}
 
 	// Validate APIServerAllowedIPRanges for LoadBalancer expose strategy
@@ -307,12 +317,12 @@ func ValidateVersion(spec *kubermaticv1.ClusterSpec, versionManager *version.Man
 			return nil
 		}
 
-		versions, err = versionManager.GetPossibleUpdates(currentVersion.String(), kubermaticv1.ProviderType(spec.Cloud.ProviderName), conditions...)
+		versions, err = versionManager.GetPossibleUpdates(currentVersion.String(), spec.Cloud.ProviderName, conditions...)
 		if err != nil {
 			return field.InternalError(fldPath, fmt.Errorf("failed to get available version updates: %w", err))
 		}
 	} else {
-		versions, err = versionManager.GetVersionsForProvider(kubermaticv1.ProviderType(spec.Cloud.ProviderName), conditions...)
+		versions, err = versionManager.GetVersionsForProvider(spec.Cloud.ProviderName, conditions...)
 		if err != nil {
 			return field.InternalError(fldPath, fmt.Errorf("failed to get available versions: %w", err))
 		}
@@ -418,9 +428,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 				fmt.Sprintf("could not determine cloud provider: %v", err)))
 		}
 
-		cloudProviderType := kubermaticv1.ProviderType(cloudProvider)
-
-		if cloudProviderType.IsIPv6KnownProvider() && !dc.IsIPv6Enabled(cloudProviderType) {
+		if kubermaticv1helper.IsIPv6KnownProvider(cloudProvider) && !kubermaticv1helper.IsIPv6EnabledDatacenter(dc) {
 			allErrs = append(allErrs, field.Invalid(fldPath.Child("ipFamily"), n.IPFamily,
 				fmt.Sprintf("IP family %q requires ipv6 to be enabled for the datacenter", n.IPFamily)),
 			)
@@ -704,10 +712,10 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		providerErr = validateGCPCloudSpec(spec.GCP, dc, ipFamily, gcp.GetGCPSubnetwork)
 	case spec.Hetzner != nil:
 		providerErr = validateHetznerCloudSpec(spec.Hetzner)
-	case spec.Kubevirt != nil:
-		providerErr = validateKubevirtCloudSpec(spec.Kubevirt)
-	case spec.Openstack != nil:
-		providerErr = validateOpenStackCloudSpec(spec.Openstack, dc, externalCCM)
+	case spec.KubeVirt != nil:
+		providerErr = validateKubevirtCloudSpec(spec.KubeVirt)
+	case spec.OpenStack != nil:
+		providerErr = validateOpenStackCloudSpec(spec.OpenStack, dc, externalCCM)
 	case spec.Packet != nil:
 		providerErr = validatePacketCloudSpec(spec.Packet)
 	case spec.VSphere != nil:
@@ -727,7 +735,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	return allErrs
 }
 
-func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter, externalCCM bool) error {
+func validateOpenStackCloudSpec(spec *kubermaticv1.OpenStackCloudSpec, dc *kubermaticv1.Datacenter, externalCCM bool) error {
 	// validate applicationCredentials
 	if spec.ApplicationCredentialID != "" && spec.ApplicationCredentialSecret == "" {
 		return errors.New("no applicationCredentialSecret specified")
@@ -771,7 +779,7 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 		return errors.New("no tenant name or ID specified")
 	}
 
-	if dc != nil && spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+	if dc != nil && spec.FloatingIPPool == "" && dc.Spec.OpenStack != nil && dc.Spec.OpenStack.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
 	}
 
@@ -950,7 +958,7 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 			return err
 		}
 	}
-	if !azureLoadBalancerSKUTypes.Has(string(spec.LoadBalancerSKU)) {
+	if !azureLoadBalancerSKUTypes.Has(spec.LoadBalancerSKU) {
 		return fmt.Errorf("azure LB SKU cannot be %q, allowed values are %v", spec.LoadBalancerSKU, sets.List(azureLoadBalancerSKUTypes))
 	}
 	if spec.NodePortsAllowedIPRange != "" {
@@ -987,7 +995,7 @@ func validateFakeCloudSpec(spec *kubermaticv1.FakeCloudSpec) error {
 	return nil
 }
 
-func validateKubevirtCloudSpec(spec *kubermaticv1.KubevirtCloudSpec) error {
+func validateKubevirtCloudSpec(spec *kubermaticv1.KubeVirtCloudSpec) error {
 	if spec.Kubeconfig == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.KubeVirtKubeconfig); err != nil {
 			return err

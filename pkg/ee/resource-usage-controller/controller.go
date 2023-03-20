@@ -31,11 +31,11 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	machinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	corev1 "k8s.io/api/core/v1"
@@ -125,7 +125,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, machines *clusterv1alpha1.MachineList) error {
-	resourceUsage := kubermaticv1.NewResourceDetails(resource.Quantity{}, resource.Quantity{}, resource.Quantity{})
+	resourceUsage := &kubermaticv1.ResourceDetails{
+		CPU:     &resource.Quantity{},
+		Memory:  &resource.Quantity{},
+		Storage: &resource.Quantity{},
+	}
+
 	for _, machine := range machines.Items {
 		resourceDetails, err := machinevalidation.GetMachineResourceUsage(ctx, r.userClient, &machine, r.caBundle)
 		if err != nil {
@@ -139,7 +144,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	cluster.Status.ResourceUsage = resourceUsage
 
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ResourceUsage = resourceUsage
 	})
 }

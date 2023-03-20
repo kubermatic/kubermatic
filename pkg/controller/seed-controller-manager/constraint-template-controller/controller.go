@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	v1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -141,7 +141,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		}
 
 		err := r.syncAllClusters(ctx, log, constraintTemplate, func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-			err := userClusterClient.Delete(ctx, &v1.ConstraintTemplate{
+			err := userClusterClient.Delete(ctx, &constrainttemplatev1.ConstraintTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: constraintTemplate.Name,
 				},
@@ -222,12 +222,14 @@ func (r *reconciler) syncAllClusters(
 
 func constraintTemplateReconcilerFactory(kubeCT *kubermaticv1.ConstraintTemplate) reconciling.NamedGatekeeperConstraintTemplateReconcilerFactory {
 	return func() (string, reconciling.GatekeeperConstraintTemplateReconciler) {
-		return kubeCT.Name, func(ct *v1.ConstraintTemplate) (*v1.ConstraintTemplate, error) {
-			ct.Name = kubeCT.Name
-			ct.Spec = v1.ConstraintTemplateSpec{
-				CRD:     kubeCT.Spec.CRD,
-				Targets: kubeCT.Spec.Targets,
+		return kubeCT.Name, func(ct *constrainttemplatev1.ConstraintTemplate) (*constrainttemplatev1.ConstraintTemplate, error) {
+			spec, err := convertConstraintTemplateSpec(&kubeCT.Spec)
+			if err != nil {
+				return nil, err
 			}
+
+			ct.Name = kubeCT.Name
+			ct.Spec = *spec
 
 			return ct, nil
 		}

@@ -28,8 +28,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -43,14 +43,22 @@ const (
 
 // FilterClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters.
 func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
-	constraintLabelSelector, err := metav1.LabelSelectorAsSelector(&constraint.Spec.Selector.LabelSelector)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error converting Constraint label selector (%v) to a kubernetes selector: %w", constraint.Spec.Selector.LabelSelector, err)
-	}
-	providersSet := sets.New[string](constraint.Spec.Selector.Providers...)
+	var (
+		constraintLabelSelector = labels.Everything()
+		providersSet            sets.Set[kubermaticv1.CloudProvider]
+		unwanted                []kubermaticv1.Cluster
+		desired                 []kubermaticv1.Cluster
+	)
 
-	var unwanted []kubermaticv1.Cluster
-	var desired []kubermaticv1.Cluster
+	if constraint.Spec.Selector != nil {
+		providersSet = sets.New(constraint.Spec.Selector.Providers...)
+
+		var err error
+		constraintLabelSelector, err = metav1.LabelSelectorAsSelector(&constraint.Spec.Selector.LabelSelector)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error converting Constraint label selector (%v) to a kubernetes selector: %w", constraint.Spec.Selector.LabelSelector, err)
+		}
+	}
 
 	for _, cluster := range clusterList.Items {
 		if !constraintLabelSelector.Matches(labels.Set(cluster.Labels)) {
@@ -58,16 +66,16 @@ func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.C
 			continue
 		}
 
-		name, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
-
+		cloudProvider, err := kubermaticv1helper.ClusterCloudProviderName(cluster.Spec.Cloud)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		if providersSet.Len() != 0 && !providersSet.Has(name) {
+		if providersSet.Len() != 0 && !providersSet.Has(cloudProvider) {
 			unwanted = append(unwanted, cluster)
 			continue
 		}
+
 		desired = append(desired, cluster)
 	}
 

@@ -23,7 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -37,25 +37,25 @@ const (
 	// This is a special, custom fake provider that is only used during
 	// the installation and is meant to signal that the installer should
 	// copy whatever default StorageClass exists.
-	CopyDefaultCloudProvider kubermaticv1.ProviderType = "copy-default"
+	CopyDefaultCloudProvider kubermaticv1.CloudProvider = "copy-default"
 )
 
 var (
-	preferredCSIDrivers = map[string]kubermaticv1.ProviderType{
-		"ebs.csi.aws.com":                          kubermaticv1.AWSCloudProvider,
-		"disk.csi.azure.com":                       kubermaticv1.AzureCloudProvider,
-		"dobs.csi.digitalocean.com":                kubermaticv1.DigitaloceanCloudProvider,
-		"pd.csi.storage.gke.io":                    kubermaticv1.GCPCloudProvider,
-		"csi.hetzner.cloud":                        kubermaticv1.HetznerCloudProvider,
-		"cinder.csi.openstack.org":                 kubermaticv1.OpenstackCloudProvider,
-		"named-disk.csi.cloud-director.vmware.com": kubermaticv1.VMwareCloudDirectorCloudProvider,
-		"csi.vsphere.vmware.com":                   kubermaticv1.VSphereCloudProvider,
+	preferredCSIDrivers = map[string]kubermaticv1.CloudProvider{
+		"ebs.csi.aws.com":                          kubermaticv1.CloudProviderAWS,
+		"disk.csi.azure.com":                       kubermaticv1.CloudProviderAzure,
+		"dobs.csi.digitalocean.com":                kubermaticv1.CloudProviderDigitalocean,
+		"pd.csi.storage.gke.io":                    kubermaticv1.CloudProviderGCP,
+		"csi.hetzner.cloud":                        kubermaticv1.CloudProviderHetzner,
+		"cinder.csi.openstack.org":                 kubermaticv1.CloudProviderOpenStack,
+		"named-disk.csi.cloud-director.vmware.com": kubermaticv1.CloudProviderVMwareCloudDirector,
+		"csi.vsphere.vmware.com":                   kubermaticv1.CloudProviderVSphere,
 	}
 
 	waitForFirstCustomer = storagev1.VolumeBindingWaitForFirstConsumer
 )
 
-func GetPreferredCSIDriver(ctx context.Context, kubeClient ctrlruntimeclient.Client) (string, kubermaticv1.ProviderType, error) {
+func GetPreferredCSIDriver(ctx context.Context, kubeClient ctrlruntimeclient.Client) (string, kubermaticv1.CloudProvider, error) {
 	csiDrivers := storagev1.CSIDriverList{}
 	if err := kubeClient.List(ctx, &csiDrivers); err != nil {
 		return "", "", fmt.Errorf("failed to list CSIDrivers: %w", err)
@@ -75,7 +75,7 @@ func GetPreferredCSIDriver(ctx context.Context, kubeClient ctrlruntimeclient.Cli
 type StorageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, *storagev1.StorageClass, string) error
 
 var (
-	storageClassFactories = map[kubermaticv1.ProviderType]StorageClassFactory{
+	storageClassFactories = map[kubermaticv1.CloudProvider]StorageClassFactory{
 		CopyDefaultCloudProvider: func(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, sc *storagev1.StorageClass, _ string) error {
 			classes := storagev1.StorageClassList{}
 			if err := kubeClient.List(ctx, &classes); err != nil {
@@ -105,7 +105,7 @@ var (
 
 			return errors.New("cannot duplicate existing default StorageClass, because none of the classes are marked as the default")
 		},
-		kubermaticv1.GCPCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderGCP: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" { // = in-tree CSI
 				sc.Provisioner = "kubernetes.io/gce-pd"
 			} else { // out-of-tree CSI
@@ -117,7 +117,7 @@ var (
 
 			return nil
 		},
-		kubermaticv1.AWSCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderAWS: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" { // = in-tree CSI
 				sc.Provisioner = "kubernetes.io/aws-ebs"
 			} else { // out-of-tree CSI
@@ -130,7 +130,7 @@ var (
 
 			return nil
 		},
-		kubermaticv1.AzureCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderAzure: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" { // = in-tree CSI
 				sc.Provisioner = "kubernetes.io/azure-disk"
 			} else { // out-of-tree CSI
@@ -144,7 +144,7 @@ var (
 
 			return nil
 		},
-		kubermaticv1.HetznerCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderHetzner: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" {
 				return errors.New("only out-of-tree CSIDriver is supported for this provider")
 			}
@@ -155,7 +155,7 @@ var (
 
 			return nil
 		},
-		kubermaticv1.DigitaloceanCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderDigitalocean: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" {
 				return errors.New("only out-of-tree CSIDriver is supported for this provider")
 			}
@@ -166,7 +166,7 @@ var (
 
 			return nil
 		},
-		kubermaticv1.OpenstackCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderOpenStack: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" { // = in-tree CSI
 				sc.Provisioner = "kubernetes.io/cinder"
 			} else { // out-of-tree CSI
@@ -177,7 +177,7 @@ var (
 
 			return nil
 		},
-		kubermaticv1.VSphereCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderVSphere: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" { // = in-tree CSI
 				sc.Provisioner = "kubernetes.io/vsphere-volume"
 				sc.Parameters["diskformat"] = "thin"
@@ -188,7 +188,7 @@ var (
 
 			return nil
 		},
-		kubermaticv1.VMwareCloudDirectorCloudProvider: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
+		kubermaticv1.CloudProviderVMwareCloudDirector: func(_ context.Context, _ *logrus.Entry, _ ctrlruntimeclient.Client, sc *storagev1.StorageClass, csiDriverName string) error {
 			if csiDriverName == "" {
 				return errors.New("only out-of-tree CSIDriver is supported for this provider")
 			}
@@ -202,7 +202,7 @@ var (
 	}
 )
 
-func StorageClassCreator(provider kubermaticv1.ProviderType) (StorageClassFactory, error) {
+func StorageClassCreator(provider kubermaticv1.CloudProvider) (StorageClassFactory, error) {
 	factory, ok := storageClassFactories[provider]
 	if !ok {
 		return nil, fmt.Errorf("unknown StorageClass provider %q", provider)

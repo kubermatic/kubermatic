@@ -21,9 +21,8 @@ import (
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 
 	"k8s.io/utils/pointer"
@@ -37,16 +36,16 @@ const (
 	kubevirtStorageClassName   = "px-csi-db"
 )
 
-type kubevirtScenario struct {
+type kubeVirtScenario struct {
 	baseScenario
 }
 
-func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
+func (s *kubeVirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
-			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
+			KubeVirt: &kubermaticv1.KubeVirtCloudSpec{
 				Kubeconfig: secrets.Kubevirt.Kubeconfig,
 				StorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
 					Name:           kubevirtStorageClassName,
@@ -59,13 +58,13 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 	}
 }
 
-func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *kubeVirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
 	}
 
-	cloudProviderSpec := provider.NewKubevirtConfig().
+	cloudProviderSpec := provider.NewKubeVirtConfig().
 		WithCPUs(kubevirtCPUs).
 		WithMemory(kubevirtMemory).
 		WithPrimaryDiskOSImage(image).
@@ -81,11 +80,11 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 	return []clusterv1alpha1.MachineDeployment{md}, nil
 }
 
-func (s *kubevirtScenario) getOSImage() (string, error) {
+func (s *kubeVirtScenario) getOSImage() (string, error) {
 	switch s.operatingSystem {
-	case providerconfig.OperatingSystemUbuntu:
+	case kubermaticv1.OperatingSystemUbuntu:
 		return kubevirtImageHttpServerSvc + "/ubuntu-22.04.img", nil
-	case providerconfig.OperatingSystemCentOS:
+	case kubermaticv1.OperatingSystemCentOS:
 		return kubevirtImageHttpServerSvc + "/centos.img", nil
 	default:
 		return "", fmt.Errorf("unsupported OS %q selected", s.operatingSystem)

@@ -25,8 +25,9 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -401,7 +402,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 
 func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet) int32 {
 	if !data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
-		return kubermaticv1.DefaultEtcdClusterSize
+		return defaulting.DefaultEtcdClusterSize
 	}
 	etcdClusterSize := getClusterSize(data.Cluster().Spec.ComponentsOverride.Etcd)
 	if set.Spec.Replicas == nil { // new replicaset
@@ -424,13 +425,13 @@ func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet
 
 func getClusterSize(settings kubermaticv1.EtcdStatefulSetSettings) int32 {
 	if settings.ClusterSize == nil {
-		return kubermaticv1.DefaultEtcdClusterSize
+		return defaulting.DefaultEtcdClusterSize
 	}
-	if *settings.ClusterSize < kubermaticv1.MinEtcdClusterSize {
-		return kubermaticv1.MinEtcdClusterSize
+	if *settings.ClusterSize < defaulting.MinEtcdClusterSize {
+		return defaulting.MinEtcdClusterSize
 	}
-	if *settings.ClusterSize > kubermaticv1.MaxEtcdClusterSize {
-		return kubermaticv1.MaxEtcdClusterSize
+	if *settings.ClusterSize > defaulting.MaxEtcdClusterSize {
+		return defaulting.MaxEtcdClusterSize
 	}
 	return *settings.ClusterSize
 }

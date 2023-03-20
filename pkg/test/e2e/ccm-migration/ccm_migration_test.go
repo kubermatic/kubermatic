@@ -29,11 +29,11 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
+	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/providers"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
@@ -56,7 +56,7 @@ type testOptions struct {
 
 	provider string
 
-	osCredentials      jig.OpenstackCredentials
+	osCredentials      jig.OpenStackCredentials
 	vsphereCredentials jig.VSphereCredentials
 	azureCredentials   jig.AzureCredentials
 	awsCredentials     jig.AWSCredentials
@@ -87,14 +87,14 @@ func init() {
 }
 
 func TestCCMMigration(t *testing.T) {
-	switch kubermaticv1.ProviderType(options.provider) {
-	case kubermaticv1.AWSCloudProvider:
+	switch kubermaticv1.CloudProvider(options.provider) {
+	case kubermaticv1.CloudProviderAWS:
 		runtime.Must(options.awsCredentials.Parse())
-	case kubermaticv1.AzureCloudProvider:
+	case kubermaticv1.CloudProviderAzure:
 		runtime.Must(options.azureCredentials.Parse())
-	case kubermaticv1.OpenstackCloudProvider:
+	case kubermaticv1.CloudProviderOpenStack:
 		runtime.Must(options.osCredentials.Parse())
-	case kubermaticv1.VSphereCloudProvider:
+	case kubermaticv1.CloudProviderVSphere:
 		runtime.Must(options.vsphereCredentials.Parse())
 	default:
 		t.Fatalf("Unknown provider %q", options.provider)
@@ -126,14 +126,14 @@ func setupClusterByProvider(t *testing.T, ctx context.Context, log *zap.SugaredL
 
 	version := options.KubernetesVersion()
 
-	switch kubermaticv1.ProviderType(options.provider) {
-	case kubermaticv1.OpenstackCloudProvider:
-		scenario = providers.NewOpenstackScenario(log, seedClient, options.osCredentials)
-	case kubermaticv1.VSphereCloudProvider:
+	switch kubermaticv1.CloudProvider(options.provider) {
+	case kubermaticv1.CloudProviderOpenStack:
+		scenario = providers.NewOpenStackScenario(log, seedClient, options.osCredentials)
+	case kubermaticv1.CloudProviderVSphere:
 		scenario = providers.NewVSphereScenario(log, seedClient, options.vsphereCredentials)
-	case kubermaticv1.AzureCloudProvider:
+	case kubermaticv1.CloudProviderAzure:
 		scenario = providers.NewAzureScenario(log, seedClient, options.azureCredentials)
-	case kubermaticv1.AWSCloudProvider:
+	case kubermaticv1.CloudProviderAWS:
 		scenario = providers.NewAWSScenario(log, seedClient, options.awsCredentials)
 	default:
 		return nil, nil, nil, errors.New("provider not supported for CCM tests")
@@ -225,7 +225,7 @@ func testBody(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedCli
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, migratingCluster); err != nil {
 			return false, err
 		}
-		return kubermaticv1helper.CCMMigrationCompleted(migratingCluster), nil
+		return clusterhelper.CCMMigrationCompleted(migratingCluster), nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to wait for migration to finish: %w", err)

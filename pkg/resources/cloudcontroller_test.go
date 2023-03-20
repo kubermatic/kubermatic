@@ -19,7 +19,7 @@ package resources
 import (
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestIsOTC(t *testing.T) {
@@ -61,7 +61,7 @@ func TestIsOTC(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isOTC(&kubermaticv1.DatacenterSpecOpenstack{AuthURL: tt.authURL}); got != tt.want {
+			if got := isOTC(&kubermaticv1.DatacenterSpecOpenStack{AuthURL: tt.authURL}); got != tt.want {
 				t.Errorf("isOTC() = %v, want %v", got, tt.want)
 			}
 		})

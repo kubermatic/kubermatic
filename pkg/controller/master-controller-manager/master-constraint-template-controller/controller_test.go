@@ -21,9 +21,8 @@ import (
 	"testing"
 	"time"
 
-	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	opa "k8c.io/api/v2/pkg/apis/open-policy-agent"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -141,13 +140,13 @@ func genConstraintTemplate(name string, deleted bool) *kubermaticv1.ConstraintTe
 
 func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 	return kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1.CRD{
-			Spec: constrainttemplatev1.CRDSpec{
-				Names: constrainttemplatev1.Names{
+		CRD: opa.CRD{
+			Spec: opa.CRDSpec{
+				Names: opa.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
 				},
-				Validation: &constrainttemplatev1.Validation{
+				Validation: &opa.Validation{
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{
 							"labels": {
@@ -163,7 +162,7 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 				},
 			},
 		},
-		Targets: []constrainttemplatev1.Target{
+		Targets: []opa.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `

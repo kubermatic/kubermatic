@@ -19,6 +19,9 @@ package defaulting_test
 import (
 	"testing"
 
+	"go.uber.org/zap"
+
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/validation"
 )
@@ -27,5 +30,30 @@ func TestDefaultConfigurationIsValid(t *testing.T) {
 	errs := validation.ValidateKubermaticVersioningConfiguration(defaulting.DefaultKubernetesVersioning, nil)
 	for _, err := range errs {
 		t.Error(err)
+	}
+}
+
+func TestDefaultResources(t *testing.T) {
+	config := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			API: &kubermaticv1.KubermaticAPIConfiguration{},
+		},
+	}
+
+	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if defaulted.Spec.API == nil {
+		t.Fatal("Expected .API not to be nil anymore.")
+	}
+
+	if defaulted.Spec.API.Resources == nil {
+		t.Fatal("Expected .API.Resources not to be nil anymore.")
+	}
+
+	if defaulted.Spec.API.Resources.Requests.Cpu().Cmp(*defaulting.DefaultAPIResources.Requests.Cpu()) != 0 {
+		t.Fatalf("Expected %v, but got %v.", defaulting.DefaultAPIResources.Requests.Cpu(), defaulted.Spec.API.Resources.Requests.Cpu())
 	}
 }

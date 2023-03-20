@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -148,7 +148,7 @@ func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Con
 func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlruntimeclient.Object) error {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	// handle only clusters
-	if gvk.Kind != kubermaticv1.ClusterKindName {
+	if gvk.Kind != "Cluster" {
 		return nil
 	}
 
@@ -235,7 +235,7 @@ func userClusterMLAEnabled(cluster *kubermaticv1.Cluster) bool {
 func getProjectName(obj ctrlruntimeclient.Object) (string, error) {
 	projectName := ""
 	for _, owner := range obj.GetOwnerReferences() {
-		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
+		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == "Project" &&
 			len(owner.Name) > 0 && len(owner.UID) > 0 {
 			projectName = owner.Name
 			break
@@ -492,9 +492,9 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(ctx context.Context
 		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.AddonResourceName,
+			"addons",
 			kubermaticv1.GroupName,
-			kubermaticv1.AddonKindName,
+			"Addon",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -537,9 +537,9 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(ctx context.
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.AddonResourceName,
+			"addons",
 			kubermaticv1.GroupName,
-			kubermaticv1.AddonKindName,
+			"Addon",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -552,7 +552,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(ctx context.
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
 			GenerateActualGroupNameFor(projectName, groupPrefix),
-			kubermaticv1.AddonKindName,
+			"Addon",
 		)
 
 		var sharedExistingRoleBinding rbacv1.RoleBinding
@@ -719,7 +719,7 @@ func (c *resourcesController) ensureClusterRBACRoleBindingForEtcdLauncher(ctx co
 		namespace,
 		metav1.OwnerReference{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.ClusterKindName,
+			Kind:       "Cluster",
 			UID:        cluster.GetUID(),
 			Name:       cluster.GetName(),
 		},
@@ -763,8 +763,8 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagers(ctx context.
 			cluster,
 			alertmanagerName,
 			kubermaticv1.GroupName,
-			kubermaticv1.AlertmanagerResourceName,
-			kubermaticv1.AlertmanagerKindName,
+			"alertmanagers",
+			"Alertmanager",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -810,8 +810,8 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx c
 			cluster,
 			alertmanagerName,
 			kubermaticv1.GroupName,
-			kubermaticv1.AlertmanagerResourceName,
-			kubermaticv1.AlertmanagerKindName,
+			"alertmanagers",
+			"Alertmanager",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -824,7 +824,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx c
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceNamedResource(
 			cluster,
 			GenerateActualGroupNameFor(projectName, groupPrefix),
-			kubermaticv1.AlertmanagerKindName,
+			"Alertmanager",
 			alertmanagerName,
 		)
 
@@ -968,9 +968,9 @@ func (c *resourcesController) ensureRBACRoleForClusterConstraints(ctx context.Co
 		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.ConstraintResourceName,
+			"constraints",
 			kubermaticv1.GroupName,
-			kubermaticv1.ConstraintKind,
+			"Constraint",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1013,9 +1013,9 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterConstraints(ctx con
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.ConstraintResourceName,
+			"constraints",
 			kubermaticv1.GroupName,
-			kubermaticv1.ConstraintKind,
+			"Constraint",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1028,7 +1028,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterConstraints(ctx con
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
 			GenerateActualGroupNameFor(projectName, groupPrefix),
-			kubermaticv1.ConstraintKind,
+			"Constraint",
 		)
 
 		var sharedExistingRoleBinding rbacv1.RoleBinding
@@ -1068,9 +1068,9 @@ func (c *resourcesController) ensureRBACRoleForClusterRuleGroups(ctx context.Con
 		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.RuleGroupResourceName,
+			"rulegroups",
 			kubermaticv1.GroupName,
-			kubermaticv1.RuleGroupKindName,
+			"RuleGroup",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1117,7 +1117,7 @@ func (c *resourcesController) ensureClusterRBACRoleForEtcdLauncher(ctx context.C
 		fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name),
 		metav1.OwnerReference{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.ClusterKindName,
+			Kind:       "Cluster",
 			UID:        cluster.GetUID(),
 			Name:       cluster.GetName(),
 		},
@@ -1156,9 +1156,9 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterRuleGroups(ctx cont
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.RuleGroupResourceName,
+			"rulegroups",
 			kubermaticv1.GroupName,
-			kubermaticv1.RuleGroupKindName,
+			"RuleGroup",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1171,7 +1171,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterRuleGroups(ctx cont
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
 			GenerateActualGroupNameFor(projectName, groupPrefix),
-			kubermaticv1.RuleGroupKindName,
+			"RuleGroup",
 		)
 
 		var sharedExistingRoleBinding rbacv1.RoleBinding
@@ -1204,16 +1204,16 @@ func (c *resourcesController) ensureRBACForEtcdLauncher(ctx context.Context, cli
 	if err := c.ensureClusterRBACRoleForEtcdLauncher(ctx, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider: %w", formatMapping(rmapping), c.providerName, err)
 	}
-	if err := c.ensureClusterRBACRoleBindingForEtcdLauncher(ctx, cluster.Name, kubermaticv1.ClusterKindName, cluster.Status.NamespaceName, projectName, cluster); err != nil {
+	if err := c.ensureClusterRBACRoleBindingForEtcdLauncher(ctx, cluster.Name, "Cluster", cluster.Status.NamespaceName, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %w", formatMapping(rmapping), c.providerName, err)
 	}
 	if err := c.ensureClusterRBACRoleBindingForEtcdLauncher(ctx, fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name), "Configmap", cluster.Status.NamespaceName, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %w", formatMapping(rmapping), c.providerName, err)
 	}
-	if err := c.ensureRBACRoleForEtcdLauncher(ctx, cluster, kubermaticv1.EtcdRestoreResourceName, kubermaticv1.GroupName, kubermaticv1.EtcdRestoreKindName); err != nil {
+	if err := c.ensureRBACRoleForEtcdLauncher(ctx, cluster, "etcdrestores", kubermaticv1.GroupName, "EtcdRestore"); err != nil {
 		return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider: %w", formatMapping(rmapping), c.providerName, err)
 	}
-	if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, cluster, kubermaticv1.EtcdRestoreKindName); err != nil {
+	if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, cluster, "EtcdRestore"); err != nil {
 		return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %w", formatMapping(rmapping), c.providerName, err)
 	}
 	if err := c.ensureRBACRoleForEtcdLauncher(ctx, cluster, "secrets", "", "Secret"); err != nil {
@@ -1249,9 +1249,9 @@ func (c *resourcesController) ensureRBACRoleForEtcdBackupConfigs(ctx context.Con
 		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.EtcdBackupConfigResourceName,
+			"etcdbackupconfigs",
 			kubermaticv1.GroupName,
-			kubermaticv1.EtcdBackupConfigKindName,
+			"EtcdBackupConfig",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1294,9 +1294,9 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdBackupConfigs(ctx cont
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.EtcdBackupConfigResourceName,
+			"etcdbackupconfigs",
 			kubermaticv1.GroupName,
-			kubermaticv1.EtcdBackupConfigKindName,
+			"EtcdBackupConfig",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1309,7 +1309,7 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdBackupConfigs(ctx cont
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
 			GenerateActualGroupNameFor(projectName, groupPrefix),
-			kubermaticv1.EtcdBackupConfigKindName,
+			"EtcdBackupConfig",
 		)
 
 		var sharedExistingRoleBinding rbacv1.RoleBinding
@@ -1349,9 +1349,9 @@ func (c *resourcesController) ensureRBACRoleForEtcdRestores(ctx context.Context,
 		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.EtcdRestoreResourceName,
+			"etcdrestores",
 			kubermaticv1.GroupName,
-			kubermaticv1.EtcdRestoreKindName,
+			"EtcdRestore",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1394,9 +1394,9 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdRestores(ctx context.C
 		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
 			projectName,
 			cluster,
-			kubermaticv1.EtcdRestoreResourceName,
+			"etcdrestores",
 			kubermaticv1.GroupName,
-			kubermaticv1.EtcdRestoreKindName,
+			"EtcdRestore",
 			groupPrefix)
 		if err != nil {
 			return err
@@ -1409,7 +1409,7 @@ func (c *resourcesController) ensureRBACRoleBindingForEtcdRestores(ctx context.C
 		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
 			cluster,
 			GenerateActualGroupNameFor(projectName, groupPrefix),
-			kubermaticv1.EtcdRestoreKindName,
+			"EtcdRestore",
 		)
 
 		var sharedExistingRoleBinding rbacv1.RoleBinding

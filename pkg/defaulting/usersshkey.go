@@ -22,7 +22,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func DefaultUserSSHKey(key *kubermaticv1.UserSSHKey, oldKey *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {

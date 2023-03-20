@@ -19,8 +19,8 @@ package kubevirt
 import (
 	"context"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -45,7 +45,7 @@ func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, an
 	return res, nil
 }
 
-func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient.Client, spec *kubermaticv1.KubevirtCloudSpec, dc *kubermaticv1.DatacenterSpecKubevirt) error {
+func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient.Client, spec *kubermaticv1.KubeVirtCloudSpec, dc *kubermaticv1.DatacenterSpecKubeVirt) error {
 	infraStorageClassList, err := ListStorageClasses(ctx, client, nil)
 	if err != nil {
 		return err

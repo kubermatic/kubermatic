@@ -19,7 +19,7 @@ package kubermatic
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -79,7 +79,7 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 					Image:   cfg.Spec.MasterController.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"master-controller-manager"},
 					Args:    args,
-					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
+					Env:     common.KubermaticProxyEnvironmentVars(cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",
@@ -87,8 +87,11 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: cfg.Spec.MasterController.Resources,
 				},
+			}
+
+			if res := cfg.Spec.MasterController.Resources; res != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
 			return d, nil

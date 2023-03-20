@@ -30,9 +30,9 @@ import (
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/smithy-go"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
@@ -457,7 +457,7 @@ func ListUpgrades(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	masterVersions, err := clusterProvider.VersionsEndpoint(ctx, configGetter, kubermaticv1.EKSProviderType)
+	masterVersions, err := clusterProvider.VersionsEndpoint(ctx, configGetter, kubermaticv1.ExternalClusterProviderEKS)
 	if err != nil {
 		return nil, err
 	}

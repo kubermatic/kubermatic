@@ -32,7 +32,7 @@ import (
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -296,13 +296,13 @@ func createConstraint(ctx context.Context, client ctrlruntimeclient.Client, name
 		},
 		Spec: kubermaticv1.ConstraintSpec{
 			ConstraintType: ctKind,
-			Match: kubermaticv1.Match{
-				Kinds: []kubermaticv1.Kind{{
+			Match: kubermaticv1.ConstraintMatch{
+				Kinds: []kubermaticv1.ConstraintMatchKind{{
 					APIGroups: []string{""},
 					Kinds:     []string{"ConfigMap"},
 				}},
 			},
-			Parameters: kubermaticv1.Parameters{
+			Parameters: kubermaticv1.ConstraintParameters{
 				"labels": json.RawMessage(`["gatekeeper"]`),
 			},
 		},

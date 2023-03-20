@@ -22,54 +22,54 @@ import (
 
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/utils/pointer"
 )
 
-type openstackConfig struct {
+type openStackConfig struct {
 	openstack.RawConfig
 }
 
-func NewOpenstackConfig() *openstackConfig {
-	return &openstackConfig{}
+func NewOpenStackConfig() *openStackConfig {
+	return &openStackConfig{}
 }
 
-func (b *openstackConfig) Build() openstack.RawConfig {
+func (b *openStackConfig) Build() openstack.RawConfig {
 	return b.RawConfig
 }
 
-func (b *openstackConfig) WithImage(image string) *openstackConfig {
+func (b *openStackConfig) WithImage(image string) *openStackConfig {
 	b.Image.Value = image
 	return b
 }
 
-func (b *openstackConfig) WithFlavor(flavor string) *openstackConfig {
+func (b *openStackConfig) WithFlavor(flavor string) *openStackConfig {
 	b.Flavor.Value = flavor
 	return b
 }
 
-func (b *openstackConfig) WithRegion(region string) *openstackConfig {
+func (b *openStackConfig) WithRegion(region string) *openStackConfig {
 	b.Region.Value = region
 	return b
 }
 
-func (b *openstackConfig) WithInstanceReadyCheckPeriod(period time.Duration) *openstackConfig {
+func (b *openStackConfig) WithInstanceReadyCheckPeriod(period time.Duration) *openStackConfig {
 	b.InstanceReadyCheckPeriod.Value = period.String()
 	return b
 }
 
-func (b *openstackConfig) WithInstanceReadyCheckTimeout(timeout time.Duration) *openstackConfig {
+func (b *openStackConfig) WithInstanceReadyCheckTimeout(timeout time.Duration) *openStackConfig {
 	b.InstanceReadyCheckTimeout.Value = timeout.String()
 	return b
 }
 
-func (b *openstackConfig) WithTrustDevicePath(trust bool) *openstackConfig {
+func (b *openStackConfig) WithTrustDevicePath(trust bool) *openStackConfig {
 	b.TrustDevicePath.Value = pointer.Bool(trust)
 	return b
 }
 
-func (b *openstackConfig) WithTag(tagKey string, tagValue string) *openstackConfig {
+func (b *openStackConfig) WithTag(tagKey string, tagValue string) *openStackConfig {
 	if b.Tags == nil {
 		b.Tags = map[string]string{}
 	}
@@ -77,8 +77,8 @@ func (b *openstackConfig) WithTag(tagKey string, tagValue string) *openstackConf
 	return b
 }
 
-func CompleteOpenstackProviderSpec(config *openstack.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecOpenstack, os providerconfig.OperatingSystem) (*openstack.RawConfig, error) {
-	if cluster != nil && cluster.Spec.Cloud.Openstack == nil {
+func CompleteOpenStackProviderSpec(config *openstack.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecOpenStack, os kubermaticv1.OperatingSystem) (*openstack.RawConfig, error) {
+	if cluster != nil && cluster.Spec.Cloud.OpenStack == nil {
 		return nil, fmt.Errorf("cannot use cluster to create Openstack cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
 	}
 
@@ -119,19 +119,19 @@ func CompleteOpenstackProviderSpec(config *openstack.RawConfig, cluster *kuberma
 
 	if cluster != nil {
 		if config.FloatingIPPool.Value == "" {
-			config.FloatingIPPool.Value = cluster.Spec.Cloud.Openstack.FloatingIPPool
+			config.FloatingIPPool.Value = cluster.Spec.Cloud.OpenStack.FloatingIPPool
 		}
 
 		if config.Network.Value == "" {
-			config.Network.Value = cluster.Spec.Cloud.Openstack.Network
+			config.Network.Value = cluster.Spec.Cloud.OpenStack.Network
 		}
 
 		if config.Subnet.Value == "" {
-			config.Subnet.Value = cluster.Spec.Cloud.Openstack.SubnetID
+			config.Subnet.Value = cluster.Spec.Cloud.OpenStack.SubnetID
 		}
 
-		if len(config.SecurityGroups) == 0 && len(cluster.Spec.Cloud.Openstack.SecurityGroups) > 0 {
-			config.SecurityGroups = []providerconfig.ConfigVarString{{Value: cluster.Spec.Cloud.Openstack.SecurityGroups}}
+		if len(config.SecurityGroups) == 0 && len(cluster.Spec.Cloud.OpenStack.SecurityGroups) > 0 {
+			config.SecurityGroups = []providerconfig.ConfigVarString{{Value: cluster.Spec.Cloud.OpenStack.SecurityGroups}}
 		}
 
 		if config.Tags == nil {

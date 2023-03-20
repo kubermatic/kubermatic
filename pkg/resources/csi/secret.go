@@ -38,7 +38,7 @@ func SecretsReconcilers(ctx context.Context, data *resources.TemplateData) []rec
 		creatorGetters = vmwareclouddirector.SecretsReconcilers(data)
 	case data.Cluster().Spec.Cloud.Nutanix != nil && data.Cluster().Spec.Cloud.Nutanix.CSI != nil:
 		creatorGetters = nutanix.SecretsReconcilers(data)
-	case data.Cluster().Spec.Cloud.Kubevirt != nil:
+	case data.Cluster().Spec.Cloud.KubeVirt != nil:
 		creatorGetters = kubevirt.SecretsReconcilers(ctx, data)
 	}
 

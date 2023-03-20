@@ -28,7 +28,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -485,7 +486,7 @@ func isEtcdBackupCompleted(status *kubermaticv1.EtcdBackupConfigStatus) bool {
 		return false
 	}
 
-	if status.CurrentBackups[0].BackupPhase == kubermaticv1.BackupStatusPhaseCompleted {
+	if status.CurrentBackups[0].BackupPhase == kubermaticv1.EtcdBackupPhaseCompleted {
 		return true
 	}
 
@@ -498,7 +499,7 @@ func isEtcdRestoreCompleted(status *kubermaticv1.EtcdRestoreStatus) bool {
 
 // resizeEtcd changes the etcd cluster size.
 func resizeEtcd(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, size int) error {
-	if size > kubermaticv1.MaxEtcdClusterSize || size < kubermaticv1.MinEtcdClusterSize {
+	if size > defaulting.MaxEtcdClusterSize || size < defaulting.MinEtcdClusterSize {
 		return fmt.Errorf("Invalid etcd cluster size: %d", size)
 	}
 

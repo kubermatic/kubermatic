@@ -29,10 +29,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	openpolicyagent "k8c.io/api/v2/pkg/apis/open-policy-agent"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -147,12 +147,12 @@ func allowedRegistryCTReconcilerFactory() reconciling.NamedConstraintTemplateRec
 		return AllowedRegistryCTName, func(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
 			ct.Name = AllowedRegistryCTName
 			ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-				CRD: constrainttemplatev1.CRD{
-					Spec: constrainttemplatev1.CRDSpec{
-						Names: constrainttemplatev1.Names{
+				CRD: openpolicyagent.CRD{
+					Spec: openpolicyagent.CRDSpec{
+						Names: openpolicyagent.Names{
 							Kind: AllowedRegistryCTName,
 						},
-						Validation: &constrainttemplatev1.Validation{
+						Validation: &openpolicyagent.Validation{
 							LegacySchema: pointer.Bool(false),
 							OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 								Type: "object",
@@ -170,7 +170,7 @@ func allowedRegistryCTReconcilerFactory() reconciling.NamedConstraintTemplateRec
 						},
 					},
 				},
-				Targets: []constrainttemplatev1.Target{
+				Targets: []openpolicyagent.Target{
 					{
 						Target: "admission.k8s.gatekeeper.sh",
 						Rego:   "package allowedregistry\n\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.containers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.initContainers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}",
@@ -187,7 +187,7 @@ func allowedRegistryConstraintReconcilerFactory(regSet sets.Set[string]) reconci
 	return func() (string, reconciling.ConstraintReconciler) {
 		return AllowedRegistryCTName, func(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
 			ct.Name = AllowedRegistryCTName
-			ct.Spec.Match.Kinds = []kubermaticv1.Kind{
+			ct.Spec.Match.Kinds = []kubermaticv1.ConstraintMatchKind{
 				{
 					APIGroups: []string{""},
 					Kinds:     []string{"Pod"},

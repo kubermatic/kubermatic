@@ -17,10 +17,10 @@ limitations under the License.
 package cloudcontroller
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -109,7 +109,7 @@ func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1
 		VolumeMounts: getVolumeMounts(true),
 		Resources:    vsphereCPIResourceRequirements,
 	}
-	if data.Cluster().IsDualStack() {
+	if data.Cluster().Spec.ClusterNetwork.IsDualStack() {
 		c.Env = append(c.Env, corev1.EnvVar{
 			Name:  "ENABLE_ALPHA_DUAL_STACK",
 			Value: "true",

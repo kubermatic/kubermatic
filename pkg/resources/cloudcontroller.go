@@ -19,8 +19,8 @@ package resources
 import (
 	"net/url"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 )
 
@@ -29,8 +29,8 @@ import (
 // want to verify against the spec'ed (desired) version or the current version
 // in the ClusterStatus.
 func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudSpec *kubermaticv1.CloudSpec, clusterVersion semver.Semver, incompatibilities ...*version.ProviderIncompatibility) bool {
-	switch t := kubermaticv1.ProviderType(cloudSpec.ProviderName); t {
-	case kubermaticv1.OpenstackCloudProvider:
+	switch cloudSpec.ProviderName {
+	case kubermaticv1.CloudProviderOpenStack:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
 		// of LBs fail as documented in the issue below:
 		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
@@ -39,24 +39,24 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudS
 		// `manage-security-groups` should be set to false in cloud config).
 		//
 		// TODO This is a dirty hack to temporarily support OTC using
-		// Openstack provider, remove this when dedicated OTC support is
+		// OpenStack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.Openstack)
+		return !isOTC(dc.Spec.OpenStack)
 
-	case kubermaticv1.HetznerCloudProvider:
+	case kubermaticv1.CloudProviderHetzner:
 		if cloudSpec.Hetzner.Network == "" && dc.Spec.Hetzner.Network == "" {
 			return false
 		}
 
 		fallthrough
 
-	case kubermaticv1.AWSCloudProvider,
-		kubermaticv1.AnexiaCloudProvider,
-		kubermaticv1.AzureCloudProvider,
-		kubermaticv1.DigitaloceanCloudProvider,
-		kubermaticv1.KubevirtCloudProvider,
-		kubermaticv1.VSphereCloudProvider:
-		supported, err := version.IsSupported(clusterVersion.Semver(), t, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+	case kubermaticv1.CloudProviderAWS,
+		kubermaticv1.CloudProviderAnexia,
+		kubermaticv1.CloudProviderAzure,
+		kubermaticv1.CloudProviderDigitalocean,
+		kubermaticv1.CloudProviderKubeVirt,
+		kubermaticv1.CloudProviderVSphere:
+		supported, err := version.IsSupported(clusterVersion.Semver(), cloudSpec.ProviderName, incompatibilities, kubermaticv1.ConditionExternalCloudProvider)
 		if err != nil {
 			return false
 		}
@@ -77,8 +77,8 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		v = cluster.Spec.Version
 	}
 
-	switch t := kubermaticv1.ProviderType(cluster.Spec.Cloud.ProviderName); t {
-	case kubermaticv1.OpenstackCloudProvider:
+	switch t := cluster.Spec.Cloud.ProviderName; t {
+	case kubermaticv1.CloudProviderOpenStack:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
 		// of LBs fail as documented in the issue below:
 		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
@@ -87,14 +87,14 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		// `manage-security-groups` should be set to false in cloud config).
 		//
 		// TODO This is a dirty hack to temporarily support OTC using
-		// Openstack provider, remove this when dedicated OTC support is
+		// OpenStack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.Openstack)
+		return !isOTC(dc.Spec.OpenStack)
 
-	case kubermaticv1.AWSCloudProvider,
-		kubermaticv1.VSphereCloudProvider,
-		kubermaticv1.AzureCloudProvider:
-		supported, err := version.IsSupported(v.Semver(), t, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
+	case kubermaticv1.CloudProviderAWS,
+		kubermaticv1.CloudProviderVSphere,
+		kubermaticv1.CloudProviderAzure:
+		supported, err := version.IsSupported(v.Semver(), t, incompatibilities, kubermaticv1.ConditionExternalCloudProvider)
 		if err != nil {
 			return false
 		}
@@ -108,8 +108,8 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 // ExternalCloudControllerClusterName checks if the ClusterFeatureCCMClusterName is supported
 // for the cloud provider.
 func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool {
-	switch kubermaticv1.ProviderType(cloudSpec.ProviderName) {
-	case kubermaticv1.OpenstackCloudProvider, kubermaticv1.AzureCloudProvider, kubermaticv1.AWSCloudProvider, kubermaticv1.KubevirtCloudProvider:
+	switch cloudSpec.ProviderName {
+	case kubermaticv1.CloudProviderOpenStack, kubermaticv1.CloudProviderAzure, kubermaticv1.CloudProviderAWS, kubermaticv1.CloudProviderKubeVirt:
 		return true
 	default:
 		return false
@@ -118,7 +118,7 @@ func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool 
 
 // isOTC returns `true` if the OpenStack Datacenter uses OTC (i.e.
 // Open Telekom Cloud), `false` otherwise.
-func isOTC(dc *kubermaticv1.DatacenterSpecOpenstack) bool {
+func isOTC(dc *kubermaticv1.DatacenterSpecOpenStack) bool {
 	u, err := url.Parse(dc.AuthURL)
 	if err != nil {
 		return false

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strconv"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -96,79 +96,87 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 				fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
 				fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort),
 			}
-			d.Spec.Template.Spec.Containers = []corev1.Container{
-				{
-					Name:    "envoy-manager",
-					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
-					Command: []string{"/envoy-manager"},
-					Args:    args,
-					Ports: []corev1.ContainerPort{
-						{
-							Name:          "grpc",
-							Protocol:      corev1.ProtocolTCP,
-							ContainerPort: 8001,
-						},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "envoy-config",
-							MountPath: "/etc/envoy",
-						},
-					},
-					Resources: seed.Spec.NodeportProxy.EnvoyManager.Resources,
-				},
 
-				{
-					Name:    "envoy",
-					Image:   seed.Spec.NodeportProxy.Envoy.DockerRepository + ":" + versions.Envoy,
-					Command: []string{"/usr/local/bin/envoy"},
-					Args: []string{
-						"-c",
-						"/etc/envoy/envoy.yaml",
-						"--service-cluster",
-						"cluster0",
-						"--service-node",
-						"kube",
+			managerContainer := corev1.Container{
+				Name:    "envoy-manager",
+				Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
+				Command: []string{"/envoy-manager"},
+				Args:    args,
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "grpc",
+						Protocol:      corev1.ProtocolTCP,
+						ContainerPort: 8001,
 					},
-					Ports: []corev1.ContainerPort{
-						{
-							Name:          "stats",
-							Protocol:      corev1.ProtocolTCP,
-							ContainerPort: EnvoyPort,
-						},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "envoy-config",
-							MountPath: "/etc/envoy",
-						},
-					},
-					LivenessProbe: &corev1.Probe{
-						FailureThreshold: 3,
-						SuccessThreshold: 1,
-						TimeoutSeconds:   1,
-						PeriodSeconds:    3,
-						ProbeHandler: corev1.ProbeHandler{
-							HTTPGet: &corev1.HTTPGetAction{
-								Port:   intstr.FromInt(EnvoyPort),
-								Scheme: corev1.URISchemeHTTP,
-								Path:   "/healthz",
-							},
-						},
-					},
-					Lifecycle: &corev1.Lifecycle{
-						PreStop: &corev1.LifecycleHandler{
-							Exec: &corev1.ExecAction{
-								Command: []string{
-									"wget",
-									"-qO-",
-									"http://127.0.0.1:9001/healthcheck/fail",
-								},
-							},
-						},
-					},
-					Resources: seed.Spec.NodeportProxy.Envoy.Resources,
 				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "envoy-config",
+						MountPath: "/etc/envoy",
+					},
+				},
+			}
+			if seed.Spec.NodeportProxy.EnvoyManager.Resources != nil {
+				managerContainer.Resources = *seed.Spec.NodeportProxy.EnvoyManager.Resources
+			}
+
+			envoyContainer := corev1.Container{
+				Name:    "envoy",
+				Image:   seed.Spec.NodeportProxy.Envoy.DockerRepository + ":" + versions.Envoy,
+				Command: []string{"/usr/local/bin/envoy"},
+				Args: []string{
+					"-c",
+					"/etc/envoy/envoy.yaml",
+					"--service-cluster",
+					"cluster0",
+					"--service-node",
+					"kube",
+				},
+				Ports: []corev1.ContainerPort{
+					{
+						Name:          "stats",
+						Protocol:      corev1.ProtocolTCP,
+						ContainerPort: EnvoyPort,
+					},
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						Name:      "envoy-config",
+						MountPath: "/etc/envoy",
+					},
+				},
+				LivenessProbe: &corev1.Probe{
+					FailureThreshold: 3,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   1,
+					PeriodSeconds:    3,
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Port:   intstr.FromInt(EnvoyPort),
+							Scheme: corev1.URISchemeHTTP,
+							Path:   "/healthz",
+						},
+					},
+				},
+				Lifecycle: &corev1.Lifecycle{
+					PreStop: &corev1.LifecycleHandler{
+						Exec: &corev1.ExecAction{
+							Command: []string{
+								"wget",
+								"-qO-",
+								"http://127.0.0.1:9001/healthcheck/fail",
+							},
+						},
+					},
+				},
+			}
+			if seed.Spec.NodeportProxy.Envoy.Resources != nil {
+				envoyContainer.Resources = *seed.Spec.NodeportProxy.Envoy.Resources
+			}
+
+			d.Spec.Template.Spec.Containers = []corev1.Container{
+				managerContainer,
+				envoyContainer,
 			}
 			d.Spec.Template.Spec.Affinity = HostnameAntiAffinity(EnvoyDeploymentName)
 			if supportsFailureDomainZoneAntiAffinity {
@@ -270,8 +278,11 @@ func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed
 							},
 						},
 					},
-					Resources: seed.Spec.NodeportProxy.Updater.Resources,
 				},
+			}
+
+			if seed.Spec.NodeportProxy.Updater.Resources != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *seed.Spec.NodeportProxy.Updater.Resources
 			}
 
 			return d, nil

@@ -19,25 +19,18 @@ package machine
 import (
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestCompleteCloudProviderSpecWithNoInputsAtAll(t *testing.T) {
 	excluded := sets.New(
-		// external providers
-		string(kubermaticv1.AKSCloudProvider),
-		string(kubermaticv1.EKSCloudProvider),
-		string(kubermaticv1.GKECloudProvider),
-
-		// dummies
-		string(kubermaticv1.FakeCloudProvider),
-		string(kubermaticv1.BringYourOwnCloudProvider),
+		string(kubermaticv1.CloudProviderFake),
+		string(kubermaticv1.CloudProviderBringYourOwn),
 	)
 
-	for _, provider := range kubermaticv1.SupportedProviders {
-		// skip external and fake providers
+	for _, provider := range sets.List(kubermaticv1.AllCloudProviders) {
 		if excluded.Has(string(provider)) {
 			continue
 		}

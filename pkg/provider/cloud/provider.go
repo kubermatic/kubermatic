@@ -20,7 +20,7 @@ import (
 	"crypto/x509"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
@@ -56,7 +56,7 @@ func Provider(
 	if datacenter.Spec.Azure != nil {
 		return azure.New(datacenter, secretKeyGetter)
 	}
-	if datacenter.Spec.Openstack != nil {
+	if datacenter.Spec.OpenStack != nil {
 		return openstack.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
 	}
 	if datacenter.Spec.Packet != nil {
@@ -77,7 +77,7 @@ func Provider(
 	if datacenter.Spec.Fake != nil {
 		return fake.NewCloudProvider(), nil
 	}
-	if datacenter.Spec.Kubevirt != nil {
+	if datacenter.Spec.KubeVirt != nil {
 		return kubevirt.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Alibaba != nil {

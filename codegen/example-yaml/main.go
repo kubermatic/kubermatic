@@ -28,9 +28,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 
@@ -38,6 +37,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/pointer"
 )
@@ -62,12 +62,12 @@ func main() {
 	}
 
 	// find all .go files in kubermatic/v1
-	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/kubermatic/v1/*.go"))
+	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/api/v2/pkg/apis/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
-	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/apps.kubermatic/v1/*.go"))
+	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/api/v2/pkg/apis/apps.kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find appsKubermatic go files: %v", err)
 	}
@@ -117,9 +117,9 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
 	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
-		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
+		OperatingSystems: map[kubermaticv1.OperatingSystem]kubermaticv1.OSVersions{},
 	}
-	for _, operatingSystem := range providerconfig.AllOperatingSystems {
+	for _, operatingSystem := range sets.List(kubermaticv1.AllOperatingSystems) {
 		imageList[operatingSystem] = ""
 		operatingSystemProfileList[operatingSystem] = ""
 	}
@@ -128,8 +128,8 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{
-		HTTPProxy: kubermaticv1.NewProxyValue(""),
-		NoProxy:   kubermaticv1.NewProxyValue(""),
+		HTTPProxy: pointer.String(""),
+		NoProxy:   pointer.String(""),
 	}
 
 	seed := &kubermaticv1.Seed{
@@ -166,7 +166,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							Images: imageList,
 						},
 						Azure: &kubermaticv1.DatacenterSpecAzure{},
-						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
 							Images:               imageList,
 							ManageSecurityGroups: pointer.Bool(true),
 							UseOctavia:           pointer.Bool(true),
@@ -174,7 +174,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							TrustDevicePath:      pointer.Bool(false),
 							EnabledFlavors:       []string{},
 							IPv6Enabled:          pointer.Bool(false),
-							NodeSizeRequirements: &kubermaticv1.OpenstackNodeSizeRequirements{
+							NodeSizeRequirements: &kubermaticv1.OpenStackNodeSizeRequirements{
 								MinimumVCPUs:  0,
 								MinimumMemory: 0,
 							},
@@ -192,10 +192,12 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						GCP: &kubermaticv1.DatacenterSpecGCP{
 							ZoneSuffixes: []string{},
 						},
-						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
+						KubeVirt: &kubermaticv1.DatacenterSpecKubeVirt{
 							DNSPolicy: "",
 							DNSConfig: &corev1.PodDNSConfig{},
-							Images:    kubermaticv1.KubeVirtImageSources{HTTP: &kubevirtHTTPSource},
+							Images: &kubermaticv1.KubeVirtImageSources{
+								HTTP: &kubevirtHTTPSource,
+							},
 							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
 								{
 									Name: "deny-ingress",
@@ -226,10 +228,10 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 				},
 			},
 			ProxySettings: &proxySettings,
-			NodeportProxy: kubermaticv1.NodeportProxyConfig{
+			NodeportProxy: &kubermaticv1.NodeportProxyConfig{
 				Annotations: map[string]string{},
-				Envoy: kubermaticv1.NodePortProxyComponentEnvoy{
-					LoadBalancerService: kubermaticv1.EnvoyLoadBalancerService{
+				Envoy: &kubermaticv1.NodePortProxyComponentEnvoy{
+					LoadBalancerService: &kubermaticv1.EnvoyLoadBalancerService{
 						SourceRanges: []kubermaticv1.CIDR{},
 					},
 				},
@@ -246,6 +248,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 				},
 			},
 			MLA: &kubermaticv1.SeedMLASettings{},
+			DefaultComponentSettings: &kubermaticv1.ComponentSettings{
+				KonnectivityProxy:  &kubermaticv1.KonnectivityProxySettings{},
+				NodePortProxyEnvoy: &kubermaticv1.NodeportProxyComponent{},
+				Prometheus:         &kubermaticv1.StatefulSetSettings{},
+			},
 		},
 	}
 
@@ -276,11 +283,19 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 				Domain: "example.com",
 			},
 			FeatureGates: map[string]bool{},
-			API:          kubermaticv1.KubermaticAPIConfiguration{},
-			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
+			Proxy:        &kubermaticv1.KubermaticProxyConfiguration{},
+			API:          &kubermaticv1.KubermaticAPIConfiguration{},
+			SeedController: &kubermaticv1.KubermaticSeedControllerConfiguration{
 				BackupStoreContainer:   defaulting.DefaultBackupStoreContainer,
 				BackupCleanupContainer: defaulting.DefaultBackupCleanupContainer,
 				BackupDeleteContainer:  defaulting.DefaultNewBackupDeleteContainer,
+			},
+			MasterController: &kubermaticv1.KubermaticMasterControllerConfiguration{
+				ProjectsMigrator: &kubermaticv1.KubermaticProjectsMigratorConfiguration{},
+			},
+			UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
+				MachineController:      &kubermaticv1.MachineControllerConfiguration{},
+				OperatingSystemManager: &kubermaticv1.OperatingSystemManager{},
 			},
 		},
 	}
