@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
