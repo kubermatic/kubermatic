@@ -29,7 +29,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
