@@ -25,7 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -174,7 +174,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		// Before the seed-init controller in the operator has initialized the seed with our
 		// CRDs, there is no point in trying to do anything useful with it, so to prevent
 		// controllers from running into errors, we skip uninitialized seeds.
-		if !seed.Status.IsInitialized() {
+		if seed.Status.Conditions[kubermaticv1.SeedConditionClusterInitialized].Status != corev1.ConditionTrue {
 			r.log.Debugw("Seed has not yet been initialized, skipping.", "seed", seed.Name)
 			delete(seeds, name)
 		}

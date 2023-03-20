@@ -27,9 +27,9 @@ import (
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -112,6 +112,9 @@ const (
 
 	// maximum number of simultaneously running backup delete jobs per BackupConfig.
 	maxSimultaneousDeleteJobsPerConfig = 3
+
+	defaultKeptBackupsCount = 20
+	maxKeptBackupsCount     = 50
 )
 
 // Reconciler stores necessary components that are required to create etcd backups.
@@ -230,7 +233,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	var suppressedError error
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -346,7 +349,7 @@ func (r *Reconciler) reconcile(
 
 func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
 	// a customized container is configured
-	if cfg.Spec.SeedController.BackupStoreContainer != "" {
+	if cfg.Spec.SeedController != nil && cfg.Spec.SeedController.BackupStoreContainer != "" {
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
 	}
 
@@ -355,7 +358,7 @@ func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *ku
 
 func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
 	// a customized container is configured
-	if cfg.Spec.SeedController.BackupDeleteContainer != "" {
+	if cfg.Spec.SeedController != nil && cfg.Spec.SeedController.BackupDeleteContainer != "" {
 		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
 	}
 
@@ -382,7 +385,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 
 	oldBackupConfig := backupConfig.DeepCopy()
 
-	if len(backupConfig.Status.CurrentBackups) > 2*backupConfig.GetKeptBackupsCount() {
+	if len(backupConfig.Status.CurrentBackups) > 2*GetKeptBackupsCount(backupConfig) {
 		// keeping track of many backups already, don't schedule new ones.
 		if r.setBackupConfigCondition(
 			backupConfig,
@@ -538,8 +541,8 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 
 	for i := range backupConfig.Status.CurrentBackups {
 		backup := &backupConfig.Status.CurrentBackups[i]
-		if backup.BackupPhase != kubermaticv1.BackupStatusPhaseCompleted && backup.BackupPhase != kubermaticv1.BackupStatusPhaseFailed {
-			if backup.BackupPhase == kubermaticv1.BackupStatusPhaseRunning {
+		if backup.BackupPhase != kubermaticv1.EtcdBackupPhaseCompleted && backup.BackupPhase != kubermaticv1.EtcdBackupPhaseFailed {
+			if backup.BackupPhase == kubermaticv1.EtcdBackupPhaseRunning {
 				job := &batchv1.Job{}
 				err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.JobName}, job)
 				if err != nil {
@@ -547,16 +550,16 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 						return nil, fmt.Errorf("error getting job for backup %s: %w", backup.BackupName, err)
 					}
 					// job not found. Apparently deleted externally.
-					backup.BackupPhase = kubermaticv1.BackupStatusPhaseFailed
+					backup.BackupPhase = kubermaticv1.EtcdBackupPhaseFailed
 					backup.BackupMessage = "backup job deleted externally"
 					backup.BackupFinishedTime = metav1.NewTime(r.clock.Now())
 				} else {
 					if cond := getJobConditionIfTrue(job, batchv1.JobComplete); cond != nil {
-						backup.BackupPhase = kubermaticv1.BackupStatusPhaseCompleted
+						backup.BackupPhase = kubermaticv1.EtcdBackupPhaseCompleted
 						backup.BackupMessage = cond.Message
 						backup.BackupFinishedTime = cond.LastTransitionTime
 					} else if cond := getJobConditionIfTrue(job, batchv1.JobFailed); cond != nil {
-						backup.BackupPhase = kubermaticv1.BackupStatusPhaseFailed
+						backup.BackupPhase = kubermaticv1.EtcdBackupPhaseFailed
 						backup.BackupMessage = cond.Message
 						backup.BackupFinishedTime = cond.LastTransitionTime
 					} else {
@@ -569,7 +572,7 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 				if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 					return nil, fmt.Errorf("error creating job for backup %s: %w", backup.BackupName, err)
 				}
-				backup.BackupPhase = kubermaticv1.BackupStatusPhaseRunning
+				backup.BackupPhase = kubermaticv1.EtcdBackupPhaseRunning
 				kuberneteshelper.AddFinalizer(backupConfig, DeleteAllBackupsFinalizer)
 				returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: assumedJobRuntime})
 			}
@@ -600,7 +603,7 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 	}
 
 	var backupsToDelete []*kubermaticv1.BackupStatus
-	keepCount := backupConfig.GetKeptBackupsCount()
+	keepCount := GetKeptBackupsCount(backupConfig)
 	if backupConfig.DeletionTimestamp != nil {
 		keepCount = 0
 	}
@@ -608,12 +611,12 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 	runningDeleteJobsCount := 0
 	for i := len(backupConfig.Status.CurrentBackups) - 1; i >= 0; i-- {
 		backup := &backupConfig.Status.CurrentBackups[i]
-		if backup.DeletePhase == kubermaticv1.BackupStatusPhaseRunning {
+		if backup.DeletePhase == kubermaticv1.EtcdBackupPhaseRunning {
 			runningDeleteJobsCount++
 		}
-		if backup.BackupPhase == kubermaticv1.BackupStatusPhaseFailed && backup.DeletePhase == "" {
+		if backup.BackupPhase == kubermaticv1.EtcdBackupPhaseFailed && backup.DeletePhase == "" {
 			backupsToDelete = append(backupsToDelete, backup)
-		} else if backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted {
+		} else if backup.BackupPhase == kubermaticv1.EtcdBackupPhaseCompleted {
 			kept++
 			if kept > keepCount && backup.DeletePhase == "" {
 				backupsToDelete = append(backupsToDelete, backup)
@@ -652,10 +655,10 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 		if err := r.Create(ctx, job); ctrlruntimeclient.IgnoreAlreadyExists(err) != nil {
 			return fmt.Errorf("error creating delete job for backup %s: %w", backup.BackupName, err)
 		}
-		backup.DeletePhase = kubermaticv1.BackupStatusPhaseRunning
+		backup.DeletePhase = kubermaticv1.EtcdBackupPhaseRunning
 	} else {
 		// no deleteContainer configured. Just mark deletion as finished immediately.
-		backup.DeletePhase = kubermaticv1.BackupStatusPhaseCompleted
+		backup.DeletePhase = kubermaticv1.EtcdBackupPhaseCompleted
 		backup.DeleteFinishedTime = metav1.NewTime(r.clock.Now())
 	}
 	return nil
@@ -677,7 +680,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 	runningDeleteJobsCount := 0
 	for i := range backupConfig.Status.CurrentBackups {
 		backup := &backupConfig.Status.CurrentBackups[i]
-		if backup.DeletePhase == kubermaticv1.BackupStatusPhaseRunning {
+		if backup.DeletePhase == kubermaticv1.EtcdBackupPhaseRunning {
 			job := &batchv1.Job{}
 			err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.DeleteJobName}, job)
 			if err != nil {
@@ -689,7 +692,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 				deleteJobsToRestart = append(deleteJobsToRestart, DeleteJobToRestart{backup, "job was deleted, restarted it"})
 			} else {
 				if cond := getJobConditionIfTrue(job, batchv1.JobComplete); cond != nil {
-					backup.DeletePhase = kubermaticv1.BackupStatusPhaseCompleted
+					backup.DeletePhase = kubermaticv1.EtcdBackupPhaseCompleted
 					backup.DeleteMessage = cond.Message
 					backup.DeleteFinishedTime = cond.LastTransitionTime
 					returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: succeededJobRetentionTime})
@@ -753,7 +756,7 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, log *zap.Suga
 			switch {
 			case !backupConfig.DeletionTimestamp.IsZero():
 				retentionTime = 0
-			case backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted:
+			case backup.BackupPhase == kubermaticv1.EtcdBackupPhaseCompleted:
 				retentionTime = succeededJobRetentionTime
 			default:
 				retentionTime = failedJobRetentionTime
@@ -912,7 +915,7 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 		},
 		corev1.EnvVar{
 			Name:  backupKeepCountEnvVarKey,
-			Value: strconv.Itoa(backupConfig.GetKeptBackupsCount()),
+			Value: strconv.Itoa(GetKeptBackupsCount(backupConfig)),
 		},
 		corev1.EnvVar{
 			Name:  backupConfigEnvVarKey,
@@ -1076,7 +1079,7 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 		},
 		corev1.EnvVar{
 			Name:  backupKeepCountEnvVarKey,
-			Value: strconv.Itoa(backupConfig.GetKeptBackupsCount()),
+			Value: strconv.Itoa(GetKeptBackupsCount(backupConfig)),
 		},
 		corev1.EnvVar{
 			Name:  backupConfigEnvVarKey,
@@ -1241,4 +1244,17 @@ func getJobConditionIfTrue(job *batchv1.Job, condType batchv1.JobConditionType) 
 		}
 	}
 	return nil
+}
+
+func GetKeptBackupsCount(bc *kubermaticv1.EtcdBackupConfig) int {
+	if bc.Spec.Keep == nil {
+		return defaultKeptBackupsCount
+	}
+	if *bc.Spec.Keep <= 0 {
+		return 1
+	}
+	if *bc.Spec.Keep > maxKeptBackupsCount {
+		return maxKeptBackupsCount
+	}
+	return *bc.Spec.Keep
 }

@@ -153,7 +153,7 @@ func (c *AzureCredentials) Parse() (err error) {
 	return nil
 }
 
-type OpenstackCredentials struct {
+type OpenStackCredentials struct {
 	CommonCredentials
 
 	Username       string
@@ -164,11 +164,11 @@ type OpenstackCredentials struct {
 	Network        string
 }
 
-func (c *OpenstackCredentials) AddFlags(fs *flag.FlagSet) {
+func (c *OpenStackCredentials) AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&c.KKPDatacenter, "openstack-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for Openstack clusters")
 }
 
-func (c *OpenstackCredentials) Parse() (err error) {
+func (c *OpenStackCredentials) Parse() (err error) {
 	if c.KKPDatacenter == "" {
 		return errors.New("no -openstack-kkp-datacenter flag given")
 	}

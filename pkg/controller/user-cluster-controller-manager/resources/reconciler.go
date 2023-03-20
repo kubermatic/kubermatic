@@ -24,8 +24,7 @@ import (
 	"strings"
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
@@ -58,6 +57,7 @@ import (
 	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/crd"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -97,7 +97,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
+	if r.cloudProvider == kubermaticv1.CloudProviderVSphere || r.cloudProvider == kubermaticv1.CloudProviderVMwareCloudDirector || (r.cloudProvider == kubermaticv1.CloudProviderNutanix && r.nutanixCSIEnabled) {
 		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigSecretName)
 		if err != nil {
 			return fmt.Errorf("failed to get csi config: %w", err)
@@ -713,8 +713,8 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
-		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
+	if r.cloudProvider == kubermaticv1.CloudProviderVSphere || r.cloudProvider == kubermaticv1.CloudProviderNutanix || r.cloudProvider == kubermaticv1.CloudProviderOpenStack ||
+		r.cloudProvider == kubermaticv1.CloudProviderDigitalocean {
 		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
 	}
 
@@ -840,7 +840,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	}
 
 	if data.csiCloudConfig != nil {
-		if r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider {
+		if r.cloudProvider == kubermaticv1.CloudProviderVMwareCloudDirector {
 			creators = append(creators, cloudcontroller.VMwareCloudDirectorCSIConfig(data.csiCloudConfig))
 		}
 	}
@@ -887,7 +887,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 
 	if data.csiCloudConfig != nil {
-		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
+		if r.cloudProvider == kubermaticv1.CloudProviderVSphere {
 			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName),
 				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
 			if data.ccmMigration {
@@ -895,13 +895,13 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 			}
 		}
 
-		if r.cloudProvider == kubermaticv1.NutanixCloudProvider {
+		if r.cloudProvider == kubermaticv1.CloudProviderNutanix {
 			creators = append(creators, cloudcontroller.NutanixCSIConfig(data.csiCloudConfig),
 				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
 		}
 	}
 
-	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
+	if r.cloudProvider == kubermaticv1.CloudProviderOpenStack || r.cloudProvider == kubermaticv1.CloudProviderDigitalocean {
 		creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
 	}
 
@@ -1238,7 +1238,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 		}
 	}
 
-	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		if r.opaIntegration {
 			c.Status.ExtendedHealth.GatekeeperController = &ctrlGatekeeperHealth
 			c.Status.ExtendedHealth.GatekeeperAudit = &auditGatekeeperHealth
@@ -1444,7 +1444,7 @@ func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) err
 	down := kubermaticv1.HealthStatusDown
 
 	// Ensure that health status in Cluster CR is removed
-	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.GatekeeperAudit = nil
 		c.Status.ExtendedHealth.GatekeeperController = nil
 		if errC != nil && !apierrors.IsNotFound(errC) {
@@ -1463,7 +1463,7 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 	down := kubermaticv1.HealthStatusDown
 
 	// Ensure that health status in Cluster CR is removed
-	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		if !r.userClusterMLA.Logging && logging {
 			c.Status.ExtendedHealth.Logging = nil
 			if errC != nil && !apierrors.IsNotFound(errC) {

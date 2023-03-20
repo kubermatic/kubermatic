@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestAzureConfigBuilder(t *testing.T) {
@@ -70,7 +70,7 @@ func TestCompleteAzureProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.AzureCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderAzure,
 		Azure: &kubermaticv1.AzureCloudSpec{
 			VNetName: "vnet",
 		},

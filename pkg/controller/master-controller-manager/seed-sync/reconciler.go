@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -63,7 +63,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// do nothing until the operator has prepared the seed cluster
-	if !seed.Status.IsInitialized() {
+	if seed.Status.Conditions[kubermaticv1.SeedConditionClusterInitialized].Status != corev1.ConditionTrue {
 		logger.Debug("Seed cluster has not yet been initialized, skipping.")
 		return reconcile.Result{}, nil
 	}

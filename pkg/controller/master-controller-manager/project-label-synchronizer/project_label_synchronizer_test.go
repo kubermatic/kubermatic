@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
@@ -94,8 +94,8 @@ func TestReconciliation(t *testing.T) {
 		{
 			name: "Protected labels are not applied",
 			masterClient: namedProjectClientWithLabels(projectName, map[string]string{
-				kubermaticv1.ProjectIDLabelKey:  "not-allowed",
-				kubermaticv1.WorkerNameLabelKey: "not-allowed",
+				kubermaticv1.ProjectIDLabelKey:          "not-allowed",
+				kubermaticv1.IsCredentialPresetLabelKey: "not-allowed",
 			}),
 			seedClient: namedClusterWithLabels("baz", map[string]string{
 				kubermaticv1.ProjectIDLabelKey: projectName,
@@ -159,7 +159,7 @@ func namedProjectClientWithLabels(name string, labels map[string]string) ctrlrun
 			Labels: labels,
 		},
 		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectActive,
+			Phase: kubermaticv1.ProjectPhaseActive,
 		},
 	}).Build()
 }

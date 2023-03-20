@@ -25,10 +25,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/clusterdeletion"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -249,7 +249,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -309,7 +309,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	res, err := r.reconcileCluster(ctx, cluster, namespace)
 	if err != nil {
-		updateErr := r.updateClusterError(ctx, cluster, kubermaticv1.ReconcileClusterError, err.Error())
+		updateErr := r.updateClusterError(ctx, cluster, kubermaticv1.ClusterStatusErrorReconcile, err.Error())
 		if updateErr != nil {
 			return nil, fmt.Errorf("failed to set the cluster error: %w", updateErr)
 		}
@@ -346,7 +346,7 @@ func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {
-	err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	err := kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ErrorMessage = &message
 		c.Status.ErrorReason = &reason
 	})
@@ -358,7 +358,7 @@ func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermatic
 }
 
 func (r *Reconciler) clearClusterError(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ErrorMessage = nil
 		c.Status.ErrorReason = nil
 	})

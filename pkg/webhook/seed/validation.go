@@ -23,8 +23,8 @@ import (
 	"regexp"
 	"sync"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/validation"
@@ -153,8 +153,8 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 			return fmt.Errorf("datacenter %q has no provider defined", dcName)
 		}
 
-		if dc.Spec.Kubevirt != nil {
-			if err := validateKubeVirtSupportedOS(dc.Spec.Kubevirt); err != nil {
+		if dc.Spec.KubeVirt != nil {
+			if err := validateKubeVirtSupportedOS(dc.Spec.KubeVirt); err != nil {
 				return err
 			}
 		}
@@ -254,7 +254,7 @@ func validateEtcdBackupConfiguration(ctx context.Context, seedClient ctrlruntime
 	return nil
 }
 
-func validateKubeVirtSupportedOS(datacenterSpec *kubermaticv1.DatacenterSpecKubevirt) error {
+func validateKubeVirtSupportedOS(datacenterSpec *kubermaticv1.DatacenterSpecKubeVirt) error {
 	if datacenterSpec != nil && datacenterSpec.Images.HTTP != nil {
 		for os := range datacenterSpec.Images.HTTP.OperatingSystems {
 			if _, exist := kubermaticv1.SupportedKubeVirtOS[os]; !exist {

@@ -20,12 +20,12 @@ import (
 	"testing"
 
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
-func TestKubevirtConfigBuilder(t *testing.T) {
+func TestKubeVirtConfigBuilder(t *testing.T) {
 	// call all With* functions once to ensure they all work...
-	config := NewKubevirtConfig().
+	config := NewKubeVirtConfig().
 		WithCPUs(2).
 		WithMemory("memory").
 		WithPrimaryDiskOSImage("image").
@@ -39,54 +39,54 @@ func TestKubevirtConfigBuilder(t *testing.T) {
 	}
 }
 
-type kubevirtTestcase struct {
-	baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubevirt]
+type kubeVirtTestcase struct {
+	baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubeVirt]
 }
 
-func (tt *kubevirtTestcase) Run(cluster *kubermaticv1.Cluster) (*kubevirt.RawConfig, error) {
+func (tt *kubeVirtTestcase) Run(cluster *kubermaticv1.Cluster) (*kubevirt.RawConfig, error) {
 	return CompleteKubevirtProviderSpec(tt.Input(), cluster, tt.datacenter)
 }
 
-var _ testcase[kubevirt.RawConfig] = &kubevirtTestcase{}
+var _ testcase[kubevirt.RawConfig] = &kubeVirtTestcase{}
 
 func TestCompleteKubevirtProviderSpec(t *testing.T) {
 	t.Run("should validate the cluster's cloud provider", func(t *testing.T) {
-		datacenter := &kubermaticv1.DatacenterSpecKubevirt{}
+		datacenter := &kubermaticv1.DatacenterSpecKubeVirt{}
 
 		cluster := &kubermaticv1.Cluster{}
 		if _, err := CompleteKubevirtProviderSpec(nil, cluster, datacenter); err == nil {
 			t.Error("Should have complained about invalid provider, but returned nil error.")
 		}
 
-		cluster.Spec.Cloud.Kubevirt = &kubermaticv1.KubevirtCloudSpec{}
+		cluster.Spec.Cloud.KubeVirt = &kubermaticv1.KubeVirtCloudSpec{}
 		if _, err := CompleteKubevirtProviderSpec(nil, cluster, datacenter); err != nil {
 			t.Errorf("Cluster is now matching Kubevirt, should not have returned an error, but got: %v", err)
 		}
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.KubevirtCloudProvider),
-		Kubevirt:     &kubermaticv1.KubevirtCloudSpec{},
+		ProviderName: kubermaticv1.CloudProviderKubeVirt,
+		KubeVirt:     &kubermaticv1.KubeVirtCloudSpec{},
 	})
 	goodCluster.Status.NamespaceName = "testns"
 
-	defaultMachine := NewKubevirtConfig()
+	defaultMachine := NewKubeVirtConfig()
 	goodMachine := cloneBuilder(defaultMachine).WithPrimaryDiskOSImage("testns/")
 
 	testcases := []testcase[kubevirt.RawConfig]{
-		&kubevirtTestcase{
-			baseTestcase: baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubevirt]{
+		&kubeVirtTestcase{
+			baseTestcase: baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubeVirt]{
 				name: "should apply the values from the datacenter",
-				datacenter: &kubermaticv1.DatacenterSpecKubevirt{
+				datacenter: &kubermaticv1.DatacenterSpecKubeVirt{
 					DNSPolicy: "test-dnspolicy",
 				},
 				expected: cloneBuilder(goodMachine).WithDNSPolicy("test-dnspolicy").WithClusterName(goodCluster.Name),
 			},
 		},
-		&kubevirtTestcase{
-			baseTestcase: baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubevirt]{
+		&kubeVirtTestcase{
+			baseTestcase: baseTestcase[kubevirt.RawConfig, kubermaticv1.DatacenterSpecKubeVirt]{
 				name: "should not overwrite values in an existing spec",
-				datacenter: &kubermaticv1.DatacenterSpecKubevirt{
+				datacenter: &kubermaticv1.DatacenterSpecKubeVirt{
 					DNSPolicy: "test-dnspolicy",
 				},
 				inputSpec: cloneBuilder(defaultMachine).WithDNSPolicy("keep-me-kubevirt"),

@@ -19,7 +19,7 @@ package kubermatic
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -65,7 +65,7 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 					Name:    "webserver",
 					Image:   cfg.Spec.UI.DockerRepository + ":" + tag,
 					Command: []string{"dashboard"},
-					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
+					Env:     common.KubermaticProxyEnvironmentVars(cfg.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
@@ -80,8 +80,11 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 							ReadOnly:  true,
 						},
 					},
-					Resources: cfg.Spec.UI.Resources,
 				},
+			}
+
+			if res := cfg.Spec.UI.Resources; res != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{

@@ -130,7 +130,7 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 				},
 			}
 
-			if data.Cluster().IsDualStack() {
+			if data.Cluster().Spec.ClusterNetwork.IsDualStack() {
 				dep.Spec.Template.Spec.Containers[0].Env = append(dep.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 					Name:  "HCLOUD_INSTANCES_ADDRESS_FAMILY",
 					Value: "dualstack",

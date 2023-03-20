@@ -25,11 +25,11 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
@@ -38,8 +38,8 @@ import (
 type Scenario interface {
 	// these are all satisfied by the baseScenario
 
-	CloudProvider() kubermaticv1.ProviderType
-	OperatingSystem() providerconfig.OperatingSystem
+	CloudProvider() kubermaticv1.CloudProvider
+	OperatingSystem() kubermaticv1.OperatingSystem
 	ContainerRuntime() string
 	ClusterVersion() semver.Semver
 	Datacenter() *kubermaticv1.Datacenter
@@ -53,19 +53,19 @@ type Scenario interface {
 }
 
 type baseScenario struct {
-	cloudProvider    kubermaticv1.ProviderType
-	operatingSystem  providerconfig.OperatingSystem
+	cloudProvider    kubermaticv1.CloudProvider
+	operatingSystem  kubermaticv1.OperatingSystem
 	clusterVersion   semver.Semver
 	containerRuntime string
 	dualstackEnabled bool
 	datacenter       *kubermaticv1.Datacenter
 }
 
-func (s *baseScenario) CloudProvider() kubermaticv1.ProviderType {
+func (s *baseScenario) CloudProvider() kubermaticv1.CloudProvider {
 	return s.cloudProvider
 }
 
-func (s *baseScenario) OperatingSystem() providerconfig.OperatingSystem {
+func (s *baseScenario) OperatingSystem() kubermaticv1.OperatingSystem {
 	return s.operatingSystem
 }
 

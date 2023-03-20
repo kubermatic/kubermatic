@@ -26,11 +26,12 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -151,7 +152,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	log = r.log.With("cluster", cluster.Name, "restore", restore.Name)
 
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName {
+	if cluster.Labels[workerlabel.LabelKey] != r.workerName {
 		return reconcile.Result{}, nil
 	}
 
@@ -302,10 +303,10 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	log.Info("Rebuilding Statefulset...")
 
 	if cluster.Spec.Pause {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		if err := kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
-				r.versions,
+				r.versions.KubermaticCommit,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,
 				corev1.ConditionFalse,
 				"",
@@ -323,7 +324,7 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	}
 
 	// wait until cluster controller has recreated the etcd cluster and etcd becomes healthy again
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
+	if cluster.Status.Conditions[kubermaticv1.ClusterConditionEtcdClusterInitialized].Status != corev1.ConditionTrue {
 		return &reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 

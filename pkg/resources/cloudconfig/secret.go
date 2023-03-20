@@ -19,8 +19,7 @@ package cloudconfig
 import (
 	"fmt"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -40,7 +39,7 @@ const (
 type creatorData interface {
 	DC() *kubermaticv1.Datacenter
 	Cluster() *kubermaticv1.Cluster
-	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 }
 
 // SecretReconciler returns a function to create the Secret containing the cloud-config.
@@ -80,7 +79,7 @@ func KubeVirtInfraSecretReconciler(data *resources.TemplateData) reconciling.Nam
 			if err != nil {
 				return nil, err
 			}
-			se.Data[resources.KubeVirtInfraSecretKey] = []byte(credentials.Kubevirt.KubeConfig)
+			se.Data[resources.KubeVirtInfraSecretKey] = []byte(credentials.KubeVirt.KubeConfig)
 			return se, nil
 		}
 	}

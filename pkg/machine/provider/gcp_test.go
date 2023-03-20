@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestGCPConfigBuilder(t *testing.T) {
@@ -71,7 +71,7 @@ func TestCompleteGCPProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.GCPCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderGCP,
 		GCP:          &kubermaticv1.GCPCloudSpec{},
 	})
 

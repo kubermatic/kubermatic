@@ -24,7 +24,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -143,9 +143,9 @@ func (m *Mutator) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, con
 	if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
 		oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
 		switch {
-		case newCluster.Spec.Cloud.Openstack != nil:
+		case newCluster.Spec.Cloud.OpenStack != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
-			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.Bool(true)
+			newCluster.Spec.Cloud.OpenStack.UseOctavia = pointer.Bool(true)
 
 		case newCluster.Spec.Cloud.VSphere != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
@@ -165,7 +165,7 @@ func (m *Mutator) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, con
 	// For KubeVirt, we want to mutate and always have ClusterFeatureCCMClusterName = true
 	// It's not handled by the previous loop for the migration 2.21 to 2.22
 	// as ExternalCloudProvider feature not is set for the first time.
-	if newCluster.Spec.Cloud.Kubevirt != nil {
+	if newCluster.Spec.Cloud.KubeVirt != nil {
 		newCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
 	}
 

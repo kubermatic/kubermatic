@@ -30,16 +30,16 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/clients"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/tests"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -218,7 +218,7 @@ func (r *TestRunner) isValidNewScenario(scenario scenarios.Scenario) error {
 	}
 
 	// check if the OS is enabled by the user
-	if !r.opts.Distributions.Has(string(scenario.OperatingSystem())) {
+	if !r.opts.Distributions.Has(scenario.OperatingSystem()) {
 		return fmt.Errorf("OS is not enabled")
 	}
 
@@ -377,7 +377,7 @@ func (r *TestRunner) executeTests(
 			versions := kubermatic.NewDefaultVersions()
 
 			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
-			missingConditions, _ := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
+			missingConditions, _ := clusterhelper.ClusterReconciliationSuccessful(cluster, versions, true)
 			if len(missingConditions) > 0 {
 				return fmt.Errorf("missing conditions: %v", missingConditions), nil
 			}

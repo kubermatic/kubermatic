@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -167,8 +167,8 @@ func createKubermaticConfiguration(addons kubermaticv1.AddonList) *kubermaticv1.
 
 	return &kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
-				Addons: kubermaticv1.KubermaticAddonsConfiguration{
+			UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
+				Addons: &kubermaticv1.KubermaticAddonsConfiguration{
 					DefaultManifests: string(encoded),
 				},
 			},

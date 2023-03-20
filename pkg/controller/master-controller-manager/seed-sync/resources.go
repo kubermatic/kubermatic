@@ -17,7 +17,7 @@ limitations under the License.
 package seedsync
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/reconciler/pkg/reconciling"
 

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -66,7 +66,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -102,7 +102,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -138,7 +138,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -177,7 +177,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -213,7 +213,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -245,7 +245,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -277,7 +277,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 			},

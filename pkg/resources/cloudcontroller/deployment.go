@@ -46,7 +46,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 	case data.Cluster().Spec.Cloud.Azure != nil:
 		creatorGetter = azureDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Openstack != nil:
+	case data.Cluster().Spec.Cloud.OpenStack != nil:
 		creatorGetter = openStackDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Hetzner != nil:
@@ -58,7 +58,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 	case data.Cluster().Spec.Cloud.VSphere != nil:
 		creatorGetter = vsphereDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Kubevirt != nil:
+	case data.Cluster().Spec.Cloud.KubeVirt != nil:
 		creatorGetter = kubevirtDeploymentReconciler(data)
 
 	case data.Cluster().Spec.Cloud.Digitalocean != nil:

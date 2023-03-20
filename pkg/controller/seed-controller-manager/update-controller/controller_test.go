@@ -23,10 +23,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -299,7 +299,7 @@ func TestGetNextApiServerVersion(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Version: tt.specVersion,
 					Cloud: kubermaticv1.CloudSpec{
-						ProviderName: string(kubermaticv1.AWSCloudProvider),
+						ProviderName: kubermaticv1.CloudProviderAWS,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -766,7 +766,7 @@ func TestReconcile(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Version: tt.specVersion,
 					Cloud: kubermaticv1.CloudSpec{
-						ProviderName: string(kubermaticv1.AWSCloudProvider),
+						ProviderName: kubermaticv1.CloudProviderAWS,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -775,6 +775,8 @@ func TestReconcile(t *testing.T) {
 			}
 
 			if tt.healthy {
+				up := kubermaticv1.HealthStatusUp
+
 				cluster.Status.ExtendedHealth = kubermaticv1.ExtendedClusterHealth{
 					Apiserver:                    kubermaticv1.HealthStatusUp,
 					ApplicationController:        kubermaticv1.HealthStatusUp,
@@ -782,7 +784,7 @@ func TestReconcile(t *testing.T) {
 					Controller:                   kubermaticv1.HealthStatusUp,
 					MachineController:            kubermaticv1.HealthStatusUp,
 					Etcd:                         kubermaticv1.HealthStatusUp,
-					OpenVPN:                      kubermaticv1.HealthStatusUp,
+					OpenVPN:                      &up,
 					CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 					UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 				}

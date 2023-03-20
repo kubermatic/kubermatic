@@ -27,8 +27,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -177,7 +177,7 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,

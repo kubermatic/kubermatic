@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
 
@@ -135,7 +135,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					object: &kubermaticv1.Cluster{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ClusterKindName,
+							Kind:       "Cluster",
 						},
 					},
 					destination: destinationSeed,
@@ -145,7 +145,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					object: &kubermaticv1.UserSSHKey{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.SSHKeyKind,
+							Kind:       "UserSSHKey",
 						},
 					},
 				},
@@ -240,7 +240,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					object: &kubermaticv1.Cluster{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ClusterKindName,
+							Kind:       "Cluster",
 						},
 					},
 					destination: destinationSeed,
@@ -249,7 +249,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					object: &kubermaticv1.UserSSHKey{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.SSHKeyKind,
+							Kind:       "UserSSHKey",
 						},
 					},
 				},
@@ -454,7 +454,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					object: &kubermaticv1.ExternalCluster{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ExternalClusterKind,
+							Kind:       "ExternalCluster",
 						},
 					},
 				},
@@ -625,7 +625,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					object: &kubermaticv1.Cluster{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ClusterKindName,
+							Kind:       "Cluster",
 						},
 					},
 					destination: destinationSeed,
@@ -634,7 +634,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					object: &kubermaticv1.UserSSHKey{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.SSHKeyKind,
+							Kind:       "UserSSHKey",
 						},
 					},
 				},
@@ -916,7 +916,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					object: &kubermaticv1.Cluster{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ClusterKindName,
+							Kind:       "Cluster",
 						},
 					},
 					destination: destinationSeed,
@@ -926,7 +926,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					object: &kubermaticv1.UserSSHKey{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.SSHKeyKind,
+							Kind:       "UserSSHKey",
 						},
 					},
 				},
@@ -1017,7 +1017,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					object: &kubermaticv1.UserProjectBinding{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.UserProjectBindingKind,
+							Kind:       "UserProjectBinding",
 						},
 					},
 				},
@@ -1071,7 +1071,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					object: &kubermaticv1.ExternalCluster{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ExternalClusterKind,
+							Kind:       "ExternalCluster",
 						},
 					},
 				},

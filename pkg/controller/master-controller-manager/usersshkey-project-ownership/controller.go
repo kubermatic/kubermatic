@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -149,7 +149,7 @@ func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.Su
 	oldKey := sshKey.DeepCopy()
 	kuberneteshelper.EnsureUniqueOwnerReference(sshKey, metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.ProjectKindName,
+		Kind:       "Project",
 		UID:        project.UID,
 		Name:       project.Name,
 	})

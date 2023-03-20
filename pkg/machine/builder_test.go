@@ -19,7 +19,7 @@ package machine
 import (
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 )
 
@@ -28,7 +28,7 @@ func TestDetermineDatacenter(t *testing.T) {
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "foo",
-				ProviderName:   string(kubermaticv1.AWSCloudProvider),
+				ProviderName:   kubermaticv1.CloudProviderAWS,
 				AWS:            &kubermaticv1.AWSCloudSpec{},
 			},
 		},

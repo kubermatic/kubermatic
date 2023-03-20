@@ -537,8 +537,8 @@ spec:
         condition: externalCloudProvider
         # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
         operation: SUPPORT
-        # Provider to which to apply the compatibility check.
-        # Empty string matches all providers
+        # Provider to which to apply the compatibility check. If this is not specified, the
+        # incompatibility is valid for all cloud providers.
         provider: aws
         # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
         version: < 1.24.0

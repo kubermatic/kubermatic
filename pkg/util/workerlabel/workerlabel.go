@@ -19,7 +19,6 @@ package workerlabel
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 
 	"k8s.io/apimachinery/pkg/labels"
@@ -28,14 +27,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
+const (
+	LabelKey = "worker-name"
+)
+
 // LabelSelector returns a label selector to only process clusters with a matching worker-name label.
 func LabelSelector(workerName string) (labels.Selector, error) {
 	var req *labels.Requirement
 	var err error
 	if workerName == "" {
-		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.DoesNotExist, nil)
+		req, err = labels.NewRequirement(LabelKey, selection.DoesNotExist, nil)
 	} else {
-		req, err = labels.NewRequirement(kubermaticv1.WorkerNameLabelKey, selection.Equals, []string{workerName})
+		req, err = labels.NewRequirement(LabelKey, selection.Equals, []string{workerName})
 	}
 
 	if err != nil {
@@ -51,6 +54,6 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 // need this anymore.
 func Predicates(workerName string) predicate.Funcs {
 	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
-		return o.GetLabels()[kubermaticv1.WorkerNameLabelKey] == workerName
+		return o.GetLabels()[LabelKey] == workerName
 	})
 }

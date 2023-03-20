@@ -3,7 +3,7 @@ type TemplateData struct {
 	SeedName       string
 	DatacenterName string
 	Cluster        ClusterData
-	Credentials    Credentials
+	Credentials    ClusterCredentials
 	Variables      map[string]interface{}
 }
 
@@ -130,15 +130,27 @@ type MLASettings struct {
 	LoggingEnabled bool
 }
 
+// This struct exists to keep BC compatibility between KKP 2.22 and 2.23,
+// where Openstack => OpenStack and Kubevirt => KubeVirt were renamed.
+type ClusterCredentials struct {
+	resources.Credentials
+
+	// Deprecated: Use OpenStack (capital S) instead.
+	Openstack resources.OpenStackCredentials
+
+	// Deprecated: Use KubeVirt (capital V) instead.
+	Kubevirt resources.KubeVirtCredentials
+}
+
 type Credentials struct {
 	AWS                 AWSCredentials
 	Azure               AzureCredentials
 	Digitalocean        DigitaloceanCredentials
 	GCP                 GCPCredentials
 	Hetzner             HetznerCredentials
-	Openstack           OpenstackCredentials
+	OpenStack           OpenStackCredentials
 	Packet              PacketCredentials
-	Kubevirt            KubevirtCredentials
+	KubeVirt            KubeVirtCredentials
 	VSphere             VSphereCredentials
 	Alibaba             AlibabaCredentials
 	Anexia              AnexiaCredentials
@@ -172,7 +184,7 @@ type HetznerCredentials struct {
 	Token string
 }
 
-type OpenstackCredentials struct {
+type OpenStackCredentials struct {
 	Username                    string
 	Password                    string
 	Project                     string
@@ -188,7 +200,7 @@ type PacketCredentials struct {
 	ProjectID string
 }
 
-type KubevirtCredentials struct {
+type KubeVirtCredentials struct {
 	// Admin kubeconfig for KubeVirt cluster
 	KubeConfig string
 }
@@ -220,4 +232,20 @@ type VMwareCloudDirectorCredentials struct {
 	Password     string
 	Organization string
 	VDC          string
+}
+
+type OpenStackCredentials struct {
+	Username                    string
+	Password                    string
+	Project                     string
+	ProjectID                   string
+	Domain                      string
+	ApplicationCredentialID     string
+	ApplicationCredentialSecret string
+	Token                       string
+}
+
+type KubeVirtCredentials struct {
+	// Admin kubeconfig for KubeVirt cluster
+	KubeConfig string
 }

@@ -22,7 +22,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
@@ -238,7 +238,7 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 		flags = append(flags, "--allocate-node-cidrs")
 		flags = append(flags, "--cluster-cidr", strings.Join(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks, ","))
 		flags = append(flags, "--service-cluster-ip-range", strings.Join(cluster.Spec.ClusterNetwork.Services.CIDRBlocks, ","))
-		if cluster.IsDualStack() {
+		if cluster.Spec.ClusterNetwork.IsDualStack() {
 			if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
 				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv4=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
 			}
@@ -246,10 +246,10 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size-ipv6=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
 			}
 		} else {
-			if cluster.IsIPv4Only() && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+			if cluster.Spec.ClusterNetwork.IsIPv4Only() && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
 				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4))
 			}
-			if cluster.IsIPv6Only() && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+			if cluster.Spec.ClusterNetwork.IsIPv6Only() && cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
 				flags = append(flags, fmt.Sprintf("--node-cidr-mask-size=%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6))
 			}
 		}
@@ -445,7 +445,7 @@ func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {
 	if cloudSpec.AWS != nil {
 		return utilpointer.Bool(false)
 	}
-	if cloudSpec.Openstack != nil {
+	if cloudSpec.OpenStack != nil {
 		return utilpointer.Bool(false)
 	}
 	if cloudSpec.VSphere != nil {

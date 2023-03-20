@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -45,17 +45,17 @@ const (
 
 type kubevirt struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
-	dc                *kubermaticv1.DatacenterSpecKubevirt
+	dc                *kubermaticv1.DatacenterSpecKubeVirt
 	log               *zap.SugaredLogger
 }
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
-	if dc.Spec.Kubevirt == nil {
+	if dc.Spec.KubeVirt == nil {
 		return nil, errors.New("datacenter is not an KubeVirt datacenter")
 	}
 	return &kubevirt{
 		secretKeySelector: secretKeyGetter,
-		dc:                dc.Spec.Kubevirt,
+		dc:                dc.Spec.KubeVirt,
 		log:               log.Logger,
 	}, nil
 }
@@ -63,7 +63,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 var _ provider.ReconcilingCloudProvider = &kubevirt{}
 
 func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
-	if spec.Cloud.Kubevirt == nil {
+	if spec.Cloud.KubeVirt == nil {
 		return errors.New("KubeVirt cloud provider spec is empty")
 	}
 
@@ -72,7 +72,7 @@ func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clus
 		return err
 	}
 
-	return updateInfraStorageClassesInfo(ctx, client, spec.Cloud.Kubevirt, k.dc)
+	return updateInfraStorageClassesInfo(ctx, client, spec.Cloud.KubeVirt, k.dc)
 }
 
 func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.CloudSpec) error {
@@ -95,7 +95,7 @@ func (k *kubevirt) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clou
 
 	// TODO: (mfranczy) this has to be changed
 	// it is wrong to mutate the value of kubeconfig in the validation method
-	spec.Kubevirt.Kubeconfig = string(config)
+	spec.KubeVirt.Kubeconfig = string(config)
 
 	return nil
 }
@@ -204,13 +204,13 @@ func (k *kubevirt) GetClientForCluster(spec kubermaticv1.CloudSpec) (*Client, er
 
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (kubeconfig string, err error) {
-	kubeconfig = cloud.Kubevirt.Kubeconfig
+	kubeconfig = cloud.KubeVirt.Kubeconfig
 
 	if kubeconfig == "" {
-		if cloud.Kubevirt.CredentialsReference == nil {
+		if cloud.KubeVirt.CredentialsReference == nil {
 			return "", errors.New("no credentials provided")
 		}
-		kubeconfig, err = secretKeySelector(cloud.Kubevirt.CredentialsReference, resources.KubeVirtKubeconfig)
+		kubeconfig, err = secretKeySelector(cloud.KubeVirt.CredentialsReference, resources.KubeVirtKubeconfig)
 		if err != nil {
 			return "", err
 		}

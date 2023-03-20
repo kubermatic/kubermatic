@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	networkingv1 "k8s.io/api/networking/v1"
@@ -71,7 +71,7 @@ func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kuberm
 	return nil
 }
 
-func reconcileCustomNetworkPolicies(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
+func reconcileCustomNetworkPolicies(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubeVirt, client ctrlruntimeclient.Client) error {
 	namedNetworkPolicyReconcilerFactorys := make([]reconciling.NamedNetworkPolicyReconcilerFactory, 0)
 	for _, netpol := range dc.CustomNetworkPolicies {
 		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, customNetworkPolicyReconciler(netpol))

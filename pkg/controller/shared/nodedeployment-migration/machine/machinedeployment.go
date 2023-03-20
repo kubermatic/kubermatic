@@ -27,7 +27,7 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/controller/shared/nodedeployment-migration/api"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
@@ -175,7 +175,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Openstack != nil && dc.Spec.Openstack != nil:
+	case nd.Spec.Template.Cloud.Openstack != nil && dc.Spec.OpenStack != nil:
 		config.CloudProvider = providerconfig.CloudProviderOpenstack
 		cloudExt, err = getOpenstackProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
@@ -205,7 +205,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
-	case nd.Spec.Template.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil:
+	case nd.Spec.Template.Cloud.Kubevirt != nil && dc.Spec.KubeVirt != nil:
 		config.CloudProvider = providerconfig.CloudProviderKubeVirt
 		cloudExt, err = getKubevirtProviderSpec(c, nd.Spec.Template, dc)
 		if err != nil {
@@ -245,11 +245,11 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 	}
 
 	switch {
-	case c.IsIPv4Only():
+	case c.Spec.ClusterNetwork.IsIPv4Only():
 		config.Network.IPFamily = util.IPFamilyIPv4
-	case c.IsIPv6Only():
+	case c.Spec.ClusterNetwork.IsIPv6Only():
 		config.Network.IPFamily = util.IPFamilyIPv6
-	case c.IsDualStack():
+	case c.Spec.ClusterNetwork.IsDualStack():
 		config.Network.IPFamily = util.IPFamilyIPv4IPv6
 	default:
 		config.Network.IPFamily = util.IPFamilyUnspecified
@@ -266,17 +266,17 @@ func getOperatingSystemProfile(nd *apiv1.NodeDeployment, dc *kubermaticv1.Datace
 	// OS specifics
 	switch {
 	case nd.Spec.Template.OperatingSystem.Ubuntu != nil:
-		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemUbuntu]
+		return dc.Spec.DefaultOperatingSystemProfiles[kubermaticv1.OperatingSystemUbuntu]
 	case nd.Spec.Template.OperatingSystem.CentOS != nil:
-		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemCentOS]
+		return dc.Spec.DefaultOperatingSystemProfiles[kubermaticv1.OperatingSystemCentOS]
 	case nd.Spec.Template.OperatingSystem.RHEL != nil:
-		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemRHEL]
+		return dc.Spec.DefaultOperatingSystemProfiles[kubermaticv1.OperatingSystemRHEL]
 	case nd.Spec.Template.OperatingSystem.Flatcar != nil:
-		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemFlatcar]
+		return dc.Spec.DefaultOperatingSystemProfiles[kubermaticv1.OperatingSystemFlatcar]
 	case nd.Spec.Template.OperatingSystem.RockyLinux != nil:
-		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemRockyLinux]
+		return dc.Spec.DefaultOperatingSystemProfiles[kubermaticv1.OperatingSystemRockyLinux]
 	case nd.Spec.Template.OperatingSystem.AmazonLinux != nil:
-		return dc.Spec.DefaultOperatingSystemProfiles[providerconfig.OperatingSystemAmazonLinux2]
+		return dc.Spec.DefaultOperatingSystemProfiles[kubermaticv1.OperatingSystemAmazonLinux2]
 	default:
 		return ""
 	}

@@ -23,9 +23,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -86,7 +87,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// if the seed kubeconfig is invalid, try again later in case a temporary problem occurred
-	if seed.Status.HasConditionValue(kubermaticv1.SeedConditionKubeconfigValid, corev1.ConditionFalse) {
+	if seed.Status.Conditions[kubermaticv1.SeedConditionKubeconfigValid].Status != corev1.ConditionTrue {
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 
@@ -97,12 +98,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) error {
 	if seed.DeletionTimestamp != nil {
-		return kubermaticv1helper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
-			s.Status.Phase = kubermaticv1.SeedTerminatingPhase
+		return kuberneteshelper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
+			s.Status.Phase = kubermaticv1.SeedPhaseTerminating
 		})
 	}
 
-	return kubermaticv1helper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
+	return kuberneteshelper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
 		r.updateKubeconfigValidCondition(ctx, log, s)
 		r.updateVersions(ctx, log, s)
 		r.updateClusters(ctx, log, s)
@@ -140,7 +141,7 @@ func (r *Reconciler) updateKubeconfigValidCondition(ctx context.Context, log *za
 }
 
 func (r *Reconciler) updateVersions(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) {
-	seed.SetKubermaticVersion(r.versions)
+	seed.Status.Versions.Kubermatic = r.versions.KubermaticCommit
 
 	kubeconfig, err := r.seedKubeconfigGetter(seed)
 	if err != nil {
@@ -182,24 +183,24 @@ func (r *Reconciler) updateClusters(ctx context.Context, log *zap.SugaredLogger,
 
 func getSeedPhase(seed *kubermaticv1.Seed) kubermaticv1.SeedPhase {
 	if _, ok := seed.Annotations[common.SkipReconcilingAnnotation]; ok {
-		return kubermaticv1.SeedPausedPhase
+		return kubermaticv1.SeedPhasePaused
 	}
 
 	KubeconfigValid := getConditionStatus(seed, kubermaticv1.SeedConditionKubeconfigValid)
 	resourcesReconciled := getConditionStatus(seed, kubermaticv1.SeedConditionResourcesReconciled)
 
 	if KubeconfigValid == corev1.ConditionTrue && resourcesReconciled == corev1.ConditionTrue {
-		return kubermaticv1.SeedHealthyPhase
+		return kubermaticv1.SeedPhaseHealthy
 	}
 
 	if KubeconfigValid == corev1.ConditionFalse {
-		return kubermaticv1.SeedInvalidPhase
+		return kubermaticv1.SeedPhaseInvalid
 	}
 
 	// KubeconfigValid=Unknown should never happen, as this controller just set it earlier
 
 	if resourcesReconciled == corev1.ConditionFalse {
-		return kubermaticv1.SeedUnhealthyPhase
+		return kubermaticv1.SeedPhaseUnhealthy
 	}
 
 	return ""

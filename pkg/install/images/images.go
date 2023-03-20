@@ -33,7 +33,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	ksemver "k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
@@ -52,7 +53,6 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -310,7 +310,7 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler("dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
+		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler("dummy", 0, resources.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
 	}
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
@@ -517,10 +517,10 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
 			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
-			Openstack:           &kubermaticv1.DatacenterSpecOpenstack{},
+			OpenStack:           &kubermaticv1.DatacenterSpecOpenStack{},
 			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
 			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
-			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
+			KubeVirt:            &kubermaticv1.DatacenterSpecKubeVirt{},
 			Azure:               &kubermaticv1.DatacenterSpecAzure{},
 			VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{},
 		},
@@ -541,7 +541,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(konnectivityEnabled)
 	fakeCluster.Spec.CNIPlugin = cniPlugin
 
-	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil {
+	if fakeCluster.Spec.Cloud.OpenStack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil {
 		if fakeCluster.Spec.Features == nil {
 			fakeCluster.Spec.Features = make(map[string]bool)
 		}
@@ -631,39 +631,39 @@ func GetVersions(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfigur
 func GetCloudSpecs() []kubermaticv1.CloudSpec {
 	return []kubermaticv1.CloudSpec{
 		{
-			ProviderName: string(kubermaticv1.VSphereCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderVSphere,
 			VSphere:      &kubermaticv1.VSphereCloudSpec{},
 		},
 		{
-			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
+			ProviderName: kubermaticv1.CloudProviderOpenStack,
+			OpenStack: &kubermaticv1.OpenStackCloudSpec{
 				Domain:   "fakeDomain",
 				Username: "fakeUsername",
 				Password: "fakePassword",
 			},
 		},
 		{
-			ProviderName: string(kubermaticv1.HetznerCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderHetzner,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{
 				Token:   "fakeToken",
 				Network: "fakeNetwork",
 			},
 		},
 		{
-			ProviderName: string(kubermaticv1.AnexiaCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderAnexia,
 			Anexia: &kubermaticv1.AnexiaCloudSpec{
 				Token: "fakeToken",
 			},
 		},
 		{
-			ProviderName: string(kubermaticv1.KubevirtCloudProvider),
-			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
+			ProviderName: kubermaticv1.CloudProviderKubeVirt,
+			KubeVirt: &kubermaticv1.KubeVirtCloudSpec{
 				Kubeconfig:    "fakeKubeconfig",
 				CSIKubeconfig: "fakeKubeconfig",
 			},
 		},
 		{
-			ProviderName: string(kubermaticv1.AzureCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderAzure,
 			Azure: &kubermaticv1.AzureCloudSpec{
 				TenantID:       "fakeTenantID",
 				SubscriptionID: "fakeSubscriptionID",
@@ -672,7 +672,7 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 			},
 		},
 		{
-			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderVMwareCloudDirector,
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
 				Username:     "fakeUsername",
 				Password:     "fakePassword",
@@ -713,7 +713,7 @@ func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []
 				log = log.WithField("gvk", gvk.String())
 			}
 
-			log.Debug("Skipping object because its not known")
+			log.Debug("Skipping object because it's not known")
 			return nil, nil
 		}
 		return nil, fmt.Errorf("unable to decode object: %w", err)

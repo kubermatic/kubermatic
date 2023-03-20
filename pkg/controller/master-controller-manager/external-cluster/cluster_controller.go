@@ -25,9 +25,8 @@ import (
 
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aks"
@@ -81,7 +80,7 @@ func Add(
 	// Watch for changes to ExternalCluster except KubeOne and generic clusters.
 	skipKubeOneClusters := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		externalCluster, ok := object.(*kubermaticv1.ExternalCluster)
-		return ok && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterKubeOneProvider && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterBringYourOwnProvider
+		return ok && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterProviderKubeOne && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterProviderBringYourOwn
 	})
 
 	return c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{}, skipKubeOneClusters, predicate.GenerationChangedPredicate{})
@@ -138,7 +137,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	cloud := cluster.Spec.CloudSpec
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
 
-	if cloud.ProviderName == kubermaticv1.ExternalClusterBringYourOwnProvider {
+	if cloud.ProviderName == kubermaticv1.ExternalClusterProviderBringYourOwn {
 		if cluster.Spec.KubeconfigReference != nil {
 			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer); err != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to add kubeconfig secret finalizer: %w", err)
@@ -332,7 +331,7 @@ func (r *Reconciler) ensureKubeconfigSecret(ctx context.Context, config *api.Con
 		return fmt.Errorf("failed to ensure Secret: %w", err)
 	}
 
-	cluster.Spec.KubeconfigReference = &providerconfig.GlobalSecretKeySelector{
+	cluster.Spec.KubeconfigReference = &kubermaticv1.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
 			Name:      cluster.GetKubeconfigSecretName(),
 			Namespace: resources.KubermaticNamespace,

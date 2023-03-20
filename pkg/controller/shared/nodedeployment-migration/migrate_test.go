@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 )
 
@@ -45,7 +45,7 @@ func TestParseNodeDeployment(t *testing.T) {
 	}
 
 	cluster := generator.GenCluster("test", "test", "projectName", time.Now(), func(c *kubermaticv1.Cluster) {
-		c.Spec.Cloud.ProviderName = string(kubermaticv1.AlibabaCloudProvider)
+		c.Spec.Cloud.ProviderName = kubermaticv1.CloudProviderAlibaba
 		c.Spec.Cloud.Fake = nil
 		c.Spec.Cloud.Alibaba = &kubermaticv1.AlibabaCloudSpec{}
 	})
@@ -71,7 +71,7 @@ func TestParseMachineDeployment(t *testing.T) {
 	}
 
 	cluster := generator.GenCluster("test", "test", "projectName", time.Now(), func(c *kubermaticv1.Cluster) {
-		c.Spec.Cloud.ProviderName = string(kubermaticv1.HetznerCloudProvider)
+		c.Spec.Cloud.ProviderName = kubermaticv1.CloudProviderHetzner
 		c.Spec.Cloud.Fake = nil
 		c.Spec.Cloud.Hetzner = &kubermaticv1.HetznerCloudSpec{}
 	})

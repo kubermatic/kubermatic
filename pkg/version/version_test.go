@@ -21,7 +21,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestAutomaticUpdate(t *testing.T) {
@@ -107,12 +107,12 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		name             string
 		manager          *Manager
 		conditions       []kubermaticv1.ConditionType
-		provider         kubermaticv1.ProviderType
+		provider         kubermaticv1.CloudProvider
 		expectedVersions []*Version
 	}{
 		{
 			name:     "No incompatibility for given provider",
-			provider: kubermaticv1.AWSCloudProvider,
+			provider: kubermaticv1.CloudProviderAWS,
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.21.0"),
@@ -125,9 +125,9 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.VSphereCloudProvider,
+						Provider:  kubermaticv1.CloudProviderVSphere,
 						Version:   "1.22.*",
-						Operation: kubermaticv1.CreateOperation,
+						Operation: kubermaticv1.OperationCreate,
 					},
 				}),
 			expectedVersions: []*Version{
@@ -141,7 +141,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		},
 		{
 			name:     "Always Incompatibility for given provider",
-			provider: kubermaticv1.VSphereCloudProvider,
+			provider: kubermaticv1.CloudProviderVSphere,
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.21.0"),
@@ -154,10 +154,10 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.VSphereCloudProvider,
+						Provider:  kubermaticv1.CloudProviderVSphere,
 						Version:   "1.22.*",
-						Operation: kubermaticv1.CreateOperation,
-						Condition: kubermaticv1.AlwaysCondition,
+						Operation: kubermaticv1.OperationCreate,
+						Condition: kubermaticv1.ConditionAlways,
 					},
 				}),
 			expectedVersions: []*Version{
@@ -168,8 +168,8 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		},
 		{
 			name:       "Matching Incompatibility for given provider",
-			provider:   kubermaticv1.VSphereCloudProvider,
-			conditions: []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
+			provider:   kubermaticv1.CloudProviderVSphere,
+			conditions: []kubermaticv1.ConditionType{kubermaticv1.ConditionExternalCloudProvider},
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.21.0"),
@@ -182,10 +182,10 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.VSphereCloudProvider,
+						Provider:  kubermaticv1.CloudProviderVSphere,
 						Version:   "1.22.*",
-						Operation: kubermaticv1.CreateOperation,
-						Condition: kubermaticv1.ExternalCloudProviderCondition,
+						Operation: kubermaticv1.OperationCreate,
+						Condition: kubermaticv1.ConditionExternalCloudProvider,
 					},
 				}),
 			expectedVersions: []*Version{
@@ -196,7 +196,7 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 		},
 		{
 			name:     "Multiple Incompatibilities for different providers",
-			provider: kubermaticv1.VSphereCloudProvider,
+			provider: kubermaticv1.CloudProviderVSphere,
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.21.0"),
@@ -209,16 +209,16 @@ func TestProviderIncompatibilitiesVersions(t *testing.T) {
 			}, nil,
 				[]*ProviderIncompatibility{
 					{
-						Provider:  kubermaticv1.VSphereCloudProvider,
+						Provider:  kubermaticv1.CloudProviderVSphere,
 						Version:   "1.21.*",
-						Operation: kubermaticv1.CreateOperation,
-						Condition: kubermaticv1.AlwaysCondition,
+						Operation: kubermaticv1.OperationCreate,
+						Condition: kubermaticv1.ConditionAlways,
 					},
 					{
-						Provider:  kubermaticv1.AWSCloudProvider,
+						Provider:  kubermaticv1.CloudProviderAWS,
 						Version:   "1.22.*",
-						Operation: kubermaticv1.CreateOperation,
-						Condition: kubermaticv1.AlwaysCondition,
+						Operation: kubermaticv1.OperationCreate,
+						Condition: kubermaticv1.ConditionAlways,
 					},
 				}),
 			expectedVersions: []*Version{
@@ -269,14 +269,14 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 	tests := []struct {
 		name             string
 		manager          *Manager
-		provider         kubermaticv1.ProviderType
+		provider         kubermaticv1.CloudProvider
 		fromVersion      string
 		conditions       []kubermaticv1.ConditionType
 		expectedVersions []*Version
 	}{
 		{
 			name:        "Check with no incompatibility for given provider",
-			provider:    kubermaticv1.AWSCloudProvider,
+			provider:    kubermaticv1.CloudProviderAWS,
 			fromVersion: "1.21.0",
 			manager: New([]*Version{
 				{
@@ -295,10 +295,10 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.VSphereCloudProvider,
+					Provider:  kubermaticv1.CloudProviderVSphere,
 					Version:   "1.22.*",
-					Condition: kubermaticv1.AlwaysCondition,
-					Operation: kubermaticv1.CreateOperation,
+					Condition: kubermaticv1.ConditionAlways,
+					Operation: kubermaticv1.OperationCreate,
 				},
 			}),
 			expectedVersions: []*Version{
@@ -309,9 +309,9 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 		},
 		{
 			name:        "Check with conditioned Incompatibility for given provider",
-			provider:    kubermaticv1.VSphereCloudProvider,
+			provider:    kubermaticv1.CloudProviderVSphere,
 			fromVersion: "1.21.0",
-			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ConditionExternalCloudProvider},
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.21.0"),
@@ -329,17 +329,17 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.VSphereCloudProvider,
+					Provider:  kubermaticv1.CloudProviderVSphere,
 					Version:   "1.22.*",
-					Operation: kubermaticv1.UpdateOperation,
-					Condition: kubermaticv1.ExternalCloudProviderCondition,
+					Operation: kubermaticv1.OperationUpdate,
+					Condition: kubermaticv1.ConditionExternalCloudProvider,
 				},
 			}),
 			expectedVersions: []*Version{},
 		},
 		{
 			name:        "Check with unconditioned Incompatibility for given provider",
-			provider:    kubermaticv1.VSphereCloudProvider,
+			provider:    kubermaticv1.CloudProviderVSphere,
 			fromVersion: "1.21.0",
 			manager: New([]*Version{
 				{
@@ -358,9 +358,9 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.VSphereCloudProvider,
+					Provider:  kubermaticv1.CloudProviderVSphere,
 					Version:   "1.22.*",
-					Condition: kubermaticv1.ExternalCloudProviderCondition,
+					Condition: kubermaticv1.ConditionExternalCloudProvider,
 				},
 			}),
 			expectedVersions: []*Version{
@@ -371,9 +371,9 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 		},
 		{
 			name:        "Check with InTreeCloudProvider Incompatibility for OpenStack 1.26",
-			provider:    kubermaticv1.OpenstackCloudProvider,
+			provider:    kubermaticv1.CloudProviderOpenStack,
 			fromVersion: "1.25.0",
-			conditions:  []kubermaticv1.ConditionType{kubermaticv1.InTreeCloudProviderCondition},
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ConditionInTreeCloudProvider},
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.25.0"),
@@ -391,19 +391,19 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.OpenstackCloudProvider,
+					Provider:  kubermaticv1.CloudProviderOpenStack,
 					Version:   "1.26.0",
-					Operation: kubermaticv1.UpdateOperation,
-					Condition: kubermaticv1.InTreeCloudProviderCondition,
+					Operation: kubermaticv1.OperationUpdate,
+					Condition: kubermaticv1.ConditionInTreeCloudProvider,
 				},
 			}),
 			expectedVersions: []*Version{},
 		},
 		{
 			name:        "Check with InTreeCloudProvider Incompatibility for OpenStack 1.26 with external CCM",
-			provider:    kubermaticv1.OpenstackCloudProvider,
+			provider:    kubermaticv1.CloudProviderOpenStack,
 			fromVersion: "1.25.0",
-			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ConditionExternalCloudProvider},
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.25.0"),
@@ -421,10 +421,10 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.OpenstackCloudProvider,
+					Provider:  kubermaticv1.CloudProviderOpenStack,
 					Version:   "1.26.0",
-					Operation: kubermaticv1.UpdateOperation,
-					Condition: kubermaticv1.InTreeCloudProviderCondition,
+					Operation: kubermaticv1.OperationUpdate,
+					Condition: kubermaticv1.ConditionInTreeCloudProvider,
 				},
 			}),
 			expectedVersions: []*Version{
@@ -435,9 +435,9 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 		},
 		{
 			name:        "Check with InTreeCloudProvider Incompatibility for vSphere 1.25 with external CCM",
-			provider:    kubermaticv1.VSphereCloudProvider,
+			provider:    kubermaticv1.CloudProviderVSphere,
 			fromVersion: "1.24.0",
-			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ExternalCloudProviderCondition},
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ConditionExternalCloudProvider},
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.24.0"),
@@ -455,10 +455,10 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.VSphereCloudProvider,
+					Provider:  kubermaticv1.CloudProviderVSphere,
 					Version:   "1.25.0",
-					Operation: kubermaticv1.UpdateOperation,
-					Condition: kubermaticv1.InTreeCloudProviderCondition,
+					Operation: kubermaticv1.OperationUpdate,
+					Condition: kubermaticv1.ConditionInTreeCloudProvider,
 				},
 			}),
 			expectedVersions: []*Version{
@@ -469,9 +469,9 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 		},
 		{
 			name:        "Check with InTreeCloudProvider Incompatibility for vSphere 1.25",
-			provider:    kubermaticv1.VSphereCloudProvider,
+			provider:    kubermaticv1.CloudProviderVSphere,
 			fromVersion: "1.24.0",
-			conditions:  []kubermaticv1.ConditionType{kubermaticv1.InTreeCloudProviderCondition},
+			conditions:  []kubermaticv1.ConditionType{kubermaticv1.ConditionInTreeCloudProvider},
 			manager: New([]*Version{
 				{
 					Version: semverlib.MustParse("1.24.0"),
@@ -489,10 +489,10 @@ func TestProviderIncompatibilitiesUpdate(t *testing.T) {
 				},
 			}, []*ProviderIncompatibility{
 				{
-					Provider:  kubermaticv1.VSphereCloudProvider,
+					Provider:  kubermaticv1.CloudProviderVSphere,
 					Version:   "1.25.0",
-					Operation: kubermaticv1.UpdateOperation,
-					Condition: kubermaticv1.InTreeCloudProviderCondition,
+					Operation: kubermaticv1.OperationUpdate,
+					Condition: kubermaticv1.ConditionInTreeCloudProvider,
 				},
 			}),
 			expectedVersions: []*Version{},

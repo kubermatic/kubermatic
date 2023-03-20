@@ -22,9 +22,11 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -106,7 +108,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	if r.workerName != cluster.Labels[kubermaticv1.WorkerNameLabelKey] {
+	if r.workerName != cluster.Labels[workerlabel.LabelKey] {
 		return nil
 	}
 
@@ -119,7 +121,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return err
 	}
 
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r.client, cluster, func(c *kubermaticv1.Cluster) {
+	return kuberneteshelper.UpdateClusterStatus(ctx, r.client, cluster, func(c *kubermaticv1.Cluster) {
 		conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
 		value := corev1.ConditionFalse
 		message := "Some control plane components did not finish updating"
@@ -129,7 +131,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			message = "All control plane components are up to date"
 		}
 
-		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, value, kubermaticv1.ReasonClusterUpdateSuccessful, message)
+		kubermaticv1helper.SetClusterCondition(c, r.versions.KubermaticCommit, conditionType, value, kubermaticv1.ReasonClusterUpdateSuccessful, message)
 	})
 }
 

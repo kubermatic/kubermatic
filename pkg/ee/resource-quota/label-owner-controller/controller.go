@@ -31,7 +31,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -93,7 +93,7 @@ func resourceQuotaLabelOwnerRefReconcilerFactory(rq *kubermaticv1.ResourceQuota)
 		return rq.Name, func(c *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error) {
 			// ensure labels and owner ref
 			kuberneteshelper.EnsureLabels(c, map[string]string{
-				kubermaticv1.ResourceQuotaSubjectKindLabelKey: rq.Spec.Subject.Kind,
+				kubermaticv1.ResourceQuotaSubjectKindLabelKey: string(rq.Spec.Subject.Kind),
 				kubermaticv1.ResourceQuotaSubjectNameLabelKey: rq.Spec.Subject.Name,
 			})
 			c.OwnerReferences = rq.OwnerReferences
@@ -128,7 +128,7 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 	}
 
 	// set master labels and owner ref
-	if strings.EqualFold(resourceQuota.Spec.Subject.Kind, kubermaticv1.ProjectSubjectKind) {
+	if resourceQuota.Spec.Subject.Kind == kubermaticv1.ResourceQuotaSubjectProject {
 		err := ensureProjectOwnershipRef(ctx, r.masterClient, resourceQuota)
 		if err != nil {
 			return err
@@ -147,7 +147,7 @@ func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Cli
 
 	// check if reference already exists
 	for _, owners := range ownRefs {
-		if owners.Kind == kubermaticv1.ProjectKindName && owners.Name == subjectName {
+		if owners.Kind == "Project" && owners.Name == subjectName {
 			return nil
 		}
 	}
@@ -178,7 +178,7 @@ func enqueueResourceQuotaForProject(client ctrlruntimeclient.Client) handler.Eve
 		}
 
 		for _, rq := range resourceQuotaList.Items {
-			if strings.EqualFold(rq.Spec.Subject.Name, name) && kubermaticv1.ProjectSubjectKind == rq.Spec.Subject.Kind {
+			if strings.EqualFold(rq.Spec.Subject.Name, name) && kubermaticv1.ResourceQuotaSubjectProject == rq.Spec.Subject.Kind {
 				requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
 					Name:      rq.Name,
 					Namespace: rq.Namespace,

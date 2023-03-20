@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -121,7 +121,7 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	// This check is only required for in-tree cloud provider that support LoadBalancers
 	// TODO once we start external cloud controllers for one of these three: Make this check
 	// a bit smarter, external cloud controllers will most likely not emit the event we wait for
-	if cluster.Spec.Cloud.AWS == nil && cluster.Spec.Cloud.Azure == nil && cluster.Spec.Cloud.Openstack == nil {
+	if cluster.Spec.Cloud.AWS == nil && cluster.Spec.Cloud.Azure == nil && cluster.Spec.Cloud.OpenStack == nil {
 		return true, nil
 	}
 

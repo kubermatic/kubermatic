@@ -30,7 +30,7 @@ import (
 	"testing"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/machine"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -92,8 +92,26 @@ func genFakeMachine(cpu, memory, storage string) *clusterv1alpha1.Machine {
 
 func genResourceQuota() *kubermaticv1.ResourceQuota {
 	rq := &kubermaticv1.ResourceQuota{}
-	rq.Spec.Quota = *kubermaticv1.NewResourceDetails(resource.MustParse("50"), resource.MustParse("50G"), resource.MustParse("1000G"))
-	rq.Status.GlobalUsage = *kubermaticv1.NewResourceDetails(resource.MustParse("3"), resource.MustParse("3G"), resource.MustParse("60G"))
+
+	cpuResources := resource.MustParse("50")
+	memResources := resource.MustParse("50G")
+	storageResources := resource.MustParse("1000G")
+
+	rq.Spec.Quota = kubermaticv1.ResourceDetails{
+		CPU:     &cpuResources,
+		Memory:  &memResources,
+		Storage: &storageResources,
+	}
+
+	globalCpuResources := resource.MustParse("30")
+	globalMemResources := resource.MustParse("30G")
+	globalStorageResources := resource.MustParse("60G")
+
+	rq.Status.GlobalUsage = &kubermaticv1.ResourceDetails{
+		CPU:     &globalCpuResources,
+		Memory:  &globalMemResources,
+		Storage: &globalStorageResources,
+	}
 
 	return rq
 }

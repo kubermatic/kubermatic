@@ -23,10 +23,10 @@ import (
 	"strconv"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	ksemver "k8c.io/api/v2/pkg/semver"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -90,10 +90,10 @@ type ClusterUpdater func(context.Context, string, func(*kubermaticv1.Cluster)) (
 
 // SecretKeySelectorValueFunc is used to fetch the value of a config var. Do not build your own
 // implementation, use SecretKeySelectorValueFuncFactory.
-type SecretKeySelectorValueFunc func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+type SecretKeySelectorValueFunc func(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 
 func SecretKeySelectorValueFuncFactory(ctx context.Context, client ctrlruntimeclient.Reader) SecretKeySelectorValueFunc {
-	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	return func(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
 		if configVar == nil {
 			return "", errors.New("configVar is nil")
 		}
@@ -161,7 +161,7 @@ type ExternalClusterProvider interface {
 
 	GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 
-	VersionsEndpoint(ctx context.Context, configGetter KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProviderType) ([]apiv1.MasterVersion, error)
+	VersionsEndpoint(ctx context.Context, configGetter KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProvider) ([]apiv1.MasterVersion, error)
 
 	ListNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
 

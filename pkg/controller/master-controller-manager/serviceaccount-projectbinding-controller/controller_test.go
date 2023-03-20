@@ -23,8 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
@@ -120,7 +120,7 @@ func genSABindingWithOwnerRefs(projectID, saName, email, group string) *kubermat
 	binding.OwnerReferences = []metav1.OwnerReference{
 		{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.UserKindName,
+			Kind:       "User",
 			Name:       saName,
 		},
 	}
@@ -131,7 +131,7 @@ func genProject(name string) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		Spec: kubermaticv1.ProjectSpec{Name: name},
 		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectActive,
+			Phase: kubermaticv1.ProjectPhaseActive,
 		},
 	}
 }

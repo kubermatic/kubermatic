@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	equinixmetal "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestEquinixMetalConfigBuilder(t *testing.T) {
@@ -70,7 +70,7 @@ func TestCompleteEquinixMetalProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.PacketCloudProvider),
+		ProviderName: kubermaticv1.CloudProviderPacket,
 		Packet:       &kubermaticv1.PacketCloudSpec{},
 	})
 

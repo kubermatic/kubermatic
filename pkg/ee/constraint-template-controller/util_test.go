@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	eectcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -57,8 +57,8 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 				LabelSelector: metav1.LabelSelector{},
 			}),
 			clusters: []ctrlruntimeclient.Object{
-				genCluster("cluster1", nil, false),
-				genCluster("cluster2", nil, false),
+				genCluster("cluster1", nil, kubermaticv1.CloudProviderAWS),
+				genCluster("cluster2", nil, kubermaticv1.CloudProviderAWS),
 			},
 			expectedClusters: sets.New("cluster1", "cluster2"),
 		},
@@ -71,35 +71,35 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 				},
 			}),
 			clusters: []ctrlruntimeclient.Object{
-				genCluster("cluster1", map[string]string{"test": "value"}, false),
-				genCluster("cluster2", nil, false),
+				genCluster("cluster1", map[string]string{"test": "value"}, kubermaticv1.CloudProviderAWS),
+				genCluster("cluster2", nil, kubermaticv1.CloudProviderAWS),
 			},
 			expectedClusters: sets.New("cluster1"),
 		},
 		{
 			name: "scenario 3: filter clusters with providers",
 			ct: genConstraintTemplateWithSelector(kubermaticv1.ConstraintTemplateSelector{
-				Providers:     []string{"fake"},
+				Providers:     []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS},
 				LabelSelector: metav1.LabelSelector{},
 			}),
 			clusters: []ctrlruntimeclient.Object{
-				genCluster("cluster1", nil, false),
-				genCluster("cluster2", nil, true),
+				genCluster("cluster1", nil, kubermaticv1.CloudProviderAWS),
+				genCluster("cluster2", nil, kubermaticv1.CloudProviderBringYourOwn),
 			},
 			expectedClusters: sets.New("cluster1"),
 		},
 		{
 			name: "scenario 4: filter clusters with providers and labels",
 			ct: genConstraintTemplateWithSelector(kubermaticv1.ConstraintTemplateSelector{
-				Providers: []string{"fake"},
+				Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS},
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{"test": "value"},
 				},
 			}),
 			clusters: []ctrlruntimeclient.Object{
-				genCluster("cluster1", nil, false),
-				genCluster("cluster2", map[string]string{"test": "value"}, true),
-				genCluster("cluster3", map[string]string{"test": "value"}, false),
+				genCluster("cluster1", nil, kubermaticv1.CloudProviderAWS),
+				genCluster("cluster2", map[string]string{"test": "value"}, kubermaticv1.CloudProviderBringYourOwn),
+				genCluster("cluster3", map[string]string{"test": "value"}, kubermaticv1.CloudProviderAWS),
 			},
 			expectedClusters: sets.New("cluster3"),
 		},
@@ -130,15 +130,21 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 	}
 }
 
-func genCluster(name string, labels map[string]string, bringYourOwnProvider bool) *kubermaticv1.Cluster {
+func genCluster(name string, labels map[string]string, cloudProvider kubermaticv1.CloudProvider) *kubermaticv1.Cluster {
 	cluster := generator.GenDefaultCluster()
 
 	cluster.Name = name
 	cluster.Labels = labels
+	cluster.Spec.Cloud.ProviderName = cloudProvider
+	cluster.Spec.Cloud.BringYourOwn = nil
 
-	if bringYourOwnProvider {
-		cluster.Spec.Cloud.Fake = nil
+	switch cloudProvider {
+	case kubermaticv1.CloudProviderBringYourOwn:
 		cluster.Spec.Cloud.BringYourOwn = &kubermaticv1.BringYourOwnCloudSpec{}
+	case kubermaticv1.CloudProviderAWS:
+		cluster.Spec.Cloud.AWS = &kubermaticv1.AWSCloudSpec{}
+	default:
+		panic("Only AWS and BYO are implemented for this test.")
 	}
 
 	return cluster

@@ -46,7 +46,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rockylinux"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/controller/shared/nodedeployment-migration/api"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
 
@@ -56,24 +56,24 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) {
+func getOsName(nodeSpec apiv1.NodeSpec) (kubermaticv1.OperatingSystem, error) {
 	if nodeSpec.OperatingSystem.CentOS != nil {
-		return providerconfig.OperatingSystemCentOS, nil
+		return kubermaticv1.OperatingSystemCentOS, nil
 	}
 	if nodeSpec.OperatingSystem.Ubuntu != nil {
-		return providerconfig.OperatingSystemUbuntu, nil
+		return kubermaticv1.OperatingSystemUbuntu, nil
 	}
 	if nodeSpec.OperatingSystem.RHEL != nil {
-		return providerconfig.OperatingSystemRHEL, nil
+		return kubermaticv1.OperatingSystemRHEL, nil
 	}
 	if nodeSpec.OperatingSystem.Flatcar != nil {
-		return providerconfig.OperatingSystemFlatcar, nil
+		return kubermaticv1.OperatingSystemFlatcar, nil
 	}
 	if nodeSpec.OperatingSystem.RockyLinux != nil {
-		return providerconfig.OperatingSystemRockyLinux, nil
+		return kubermaticv1.OperatingSystemRockyLinux, nil
 	}
 	if nodeSpec.OperatingSystem.AmazonLinux != nil {
-		return providerconfig.OperatingSystemAmazonLinux2, nil
+		return kubermaticv1.OperatingSystemAmazonLinux2, nil
 	}
 
 	return "", errors.New("unknown operating system")
@@ -204,7 +204,7 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 		return nil, err
 	}
 
-	if nodeSpec.Cloud.Azure.AssignPublicIP && c.Spec.Cloud.Azure.LoadBalancerSKU == kubermaticv1.AzureStandardLBSKU {
+	if nodeSpec.Cloud.Azure.AssignPublicIP && c.Spec.Cloud.Azure.LoadBalancerSKU == kubermaticv1.AzureLBSKUStandard {
 		config.PublicIPSKU = pointer.String("standard")
 	}
 
@@ -296,28 +296,28 @@ func GetOpenstackProviderConfig(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec
 	config := &openstack.RawConfig{
 		Image:                     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Image},
 		Flavor:                    providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.Flavor},
-		AvailabilityZone:          providerconfig.ConfigVarString{Value: dc.Spec.Openstack.AvailabilityZone},
-		Region:                    providerconfig.ConfigVarString{Value: dc.Spec.Openstack.Region},
-		IdentityEndpoint:          providerconfig.ConfigVarString{Value: dc.Spec.Openstack.AuthURL},
-		Network:                   providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.Network},
-		Subnet:                    providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.SubnetID},
-		SecurityGroups:            []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.Openstack.SecurityGroups}},
+		AvailabilityZone:          providerconfig.ConfigVarString{Value: dc.Spec.OpenStack.AvailabilityZone},
+		Region:                    providerconfig.ConfigVarString{Value: dc.Spec.OpenStack.Region},
+		IdentityEndpoint:          providerconfig.ConfigVarString{Value: dc.Spec.OpenStack.AuthURL},
+		Network:                   providerconfig.ConfigVarString{Value: c.Spec.Cloud.OpenStack.Network},
+		Subnet:                    providerconfig.ConfigVarString{Value: c.Spec.Cloud.OpenStack.SubnetID},
+		SecurityGroups:            []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.OpenStack.SecurityGroups}},
 		InstanceReadyCheckPeriod:  providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.InstanceReadyCheckPeriod},
 		InstanceReadyCheckTimeout: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.InstanceReadyCheckTimeout},
 		TrustDevicePath:           providerconfig.ConfigVarBool{Value: pointer.Bool(false)},
 		ServerGroup:               providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.ServerGroup},
 	}
 
-	if nodeSpec.Cloud.Openstack.UseFloatingIP || dc.Spec.Openstack.EnforceFloatingIP {
-		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.Openstack.FloatingIPPool}
+	if nodeSpec.Cloud.Openstack.UseFloatingIP || dc.Spec.OpenStack.EnforceFloatingIP {
+		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.OpenStack.FloatingIPPool}
 	}
 
 	if nodeSpec.Cloud.Openstack.RootDiskSizeGB != nil && *nodeSpec.Cloud.Openstack.RootDiskSizeGB > 0 {
 		config.RootDiskSizeGB = nodeSpec.Cloud.Openstack.RootDiskSizeGB
 	}
 
-	if dc.Spec.Openstack.TrustDevicePath != nil {
-		config.TrustDevicePath = providerconfig.ConfigVarBool{Value: dc.Spec.Openstack.TrustDevicePath}
+	if dc.Spec.OpenStack.TrustDevicePath != nil {
+		config.TrustDevicePath = providerconfig.ConfigVarBool{Value: dc.Spec.OpenStack.TrustDevicePath}
 	}
 
 	// Use the nodeDeployment spec AvailabilityZone if set, otherwise we stick to the default from the datacenter
@@ -518,8 +518,8 @@ func GetKubevirtProviderConfig(cluster *kubermaticv1.Cluster, nodeSpec apiv1.Nod
 					OsImage: providerconfig.ConfigVarString{Value: extractKubeVirtOsImageURLOrDataVolumeNsName(cluster.Status.NamespaceName, nodeSpec.Cloud.Kubevirt.PrimaryDiskOSImage)},
 				},
 			},
-			DNSPolicy: providerconfig.ConfigVarString{Value: dc.Spec.Kubevirt.DNSPolicy},
-			DNSConfig: dc.Spec.Kubevirt.DNSConfig.DeepCopy(),
+			DNSPolicy: providerconfig.ConfigVarString{Value: dc.Spec.KubeVirt.DNSPolicy},
+			DNSConfig: dc.Spec.KubeVirt.DNSConfig.DeepCopy(),
 		},
 		Affinity: kubevirt.Affinity{
 			NodeAffinityPreset: kubevirt.NodeAffinityPreset{

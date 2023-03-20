@@ -29,8 +29,8 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	ksemver "k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
@@ -38,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -83,7 +82,7 @@ var (
 
 	cloudProviders = map[string]kubermaticv1.CloudSpec{
 		"azure": {
-			ProviderName: string(kubermaticv1.AzureCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderAzure,
 			Azure: &kubermaticv1.AzureCloudSpec{
 				TenantID:        "az-tenant-id",
 				SubscriptionID:  "az-subscription-id",
@@ -95,24 +94,24 @@ var (
 				RouteTableName:  "az-route-table-name",
 				SecurityGroup:   "az-sec-group",
 				AvailabilitySet: "az-availability-set",
-				LoadBalancerSKU: kubermaticv1.AzureBasicLBSKU,
+				LoadBalancerSKU: kubermaticv1.AzureLBSKUBasic,
 			},
 		},
 		"vsphere": {
-			ProviderName: string(kubermaticv1.VSphereCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderVSphere,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				Username: "vs-username",
 				Password: "vs-password",
 			},
 		},
 		"digitalocean": {
-			ProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderDigitalocean,
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 				Token: "do-token",
 			},
 		},
 		"aws": {
-			ProviderName: string(kubermaticv1.AWSCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderAWS,
 			AWS: &kubermaticv1.AWSCloudSpec{
 				AccessKeyID:          "aws-access-key-id",
 				SecretAccessKey:      "aws-secret-access-key",
@@ -126,14 +125,14 @@ var (
 			},
 		},
 		"gcp": {
-			ProviderName: string(kubermaticv1.GCPCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderGCP,
 			GCP: &kubermaticv1.GCPCloudSpec{
 				ServiceAccount: "eyJ0aGlzaXMiOiJqc29uIn0=",
 			},
 		},
 		"openstack": {
-			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
+			ProviderName: kubermaticv1.CloudProviderOpenStack,
+			OpenStack: &kubermaticv1.OpenStackCloudSpec{
 				SubnetID:       "openstack-subnet-id",
 				Username:       "openstack-username",
 				Project:        "openstack-project",
@@ -146,15 +145,16 @@ var (
 			},
 		},
 		"bringyourown": {
-			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
+			ProviderName: kubermaticv1.CloudProviderBringYourOwn,
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
 	}
 
 	config = &kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
-			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
-				Monitoring: kubermaticv1.KubermaticUserClusterMonitoringConfiguration{
+			UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
+				OperatingSystemManager: &kubermaticv1.OperatingSystemManager{},
+				Monitoring: &kubermaticv1.KubermaticUserClusterMonitoringConfiguration{
 					ScrapeAnnotationPrefix: defaulting.DefaultUserClusterScrapeAnnotationPrefix,
 					CustomScrapingConfigs: `
 - job_name: custom-test-config
@@ -184,17 +184,17 @@ var (
 			},
 			AWS: &kubermaticv1.DatacenterSpecAWS{
 				Images: kubermaticv1.ImageList{
-					providerconfig.OperatingSystemUbuntu:  "ubuntu-ami",
-					providerconfig.OperatingSystemCentOS:  "centos-ami",
-					providerconfig.OperatingSystemRHEL:    "rhel-ami",
-					providerconfig.OperatingSystemFlatcar: "flatcar-ami",
+					kubermaticv1.OperatingSystemUbuntu:  "ubuntu-ami",
+					kubermaticv1.OperatingSystemCentOS:  "centos-ami",
+					kubermaticv1.OperatingSystemRHEL:    "rhel-ami",
+					kubermaticv1.OperatingSystemFlatcar: "flatcar-ami",
 				},
 				Region: "us-central1",
 			},
 			Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 				Region: "fra1",
 			},
-			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+			OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
 				AuthURL:          "https://example.com:8000/v3",
 				AvailabilityZone: "zone1",
 				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
@@ -727,10 +727,17 @@ func TestLoadFiles(t *testing.T) {
 							ObjectMeta: metav1.ObjectMeta{Name: "testdc"},
 							Spec: kubermaticv1.SeedSpec{
 								ProxySettings: &kubermaticv1.ProxySettings{
-									HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
+									HTTPProxy: pointer.String("http://my-corp"),
 								},
 								MLA: &kubermaticv1.SeedMLASettings{
 									UserClusterMLAEnabled: true,
+								},
+								NodeportProxy: &kubermaticv1.NodeportProxyConfig{
+									Envoy: &kubermaticv1.NodePortProxyComponentEnvoy{
+										LoadBalancerService: &kubermaticv1.EnvoyLoadBalancerService{},
+									},
+									EnvoyManager: &kubermaticv1.NodeportProxyComponent{},
+									Updater:      &kubermaticv1.NodeportProxyComponent{},
 								},
 							},
 						}).

@@ -24,8 +24,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/runtime"

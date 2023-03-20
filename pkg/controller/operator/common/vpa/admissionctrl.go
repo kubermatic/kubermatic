@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strconv"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -129,8 +129,11 @@ func AdmissionControllerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfigu
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: cfg.Spec.VerticalPodAutoscaler.AdmissionController.Resources,
 				},
+			}
+
+			if res := cfg.Spec.VerticalPodAutoscaler.AdmissionController.Resources; res != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
 			return d, nil

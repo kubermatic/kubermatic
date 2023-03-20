@@ -23,8 +23,7 @@ import (
 
 	"github.com/vmware/govmomi/simulator"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -145,7 +144,7 @@ func TestGetCredentialsForCluster(t *testing.T) {
 }
 
 func testSecretKeySelectorValueFuncFactory(values map[string]string) provider.SecretKeySelectorValueFunc {
-	return func(_ *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+	return func(_ *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
 		if val, ok := values[key]; ok {
 			return val, nil
 		}
@@ -154,9 +153,9 @@ func testSecretKeySelectorValueFuncFactory(values map[string]string) provider.Se
 }
 
 func testVsphereCloudSpec(user, password, infraManagementUser, infraManagementUserPass string, credRefSet bool) kubermaticv1.CloudSpec {
-	var credRef *providerconfig.GlobalSecretKeySelector
+	var credRef *kubermaticv1.GlobalSecretKeySelector
 	if credRefSet {
-		credRef = &providerconfig.GlobalSecretKeySelector{}
+		credRef = &kubermaticv1.GlobalSecretKeySelector{}
 	}
 	return kubermaticv1.CloudSpec{
 		VSphere: &kubermaticv1.VSphereCloudSpec{

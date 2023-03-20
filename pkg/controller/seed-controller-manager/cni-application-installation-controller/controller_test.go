@@ -27,7 +27,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -66,6 +66,8 @@ func init() {
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
+	up := kubermaticv1.HealthStatusUp
+
 	return kubermaticv1.ExtendedClusterHealth{
 		Apiserver:                    kubermaticv1.HealthStatusUp,
 		ApplicationController:        kubermaticv1.HealthStatusUp,
@@ -73,7 +75,7 @@ func healthy() kubermaticv1.ExtendedClusterHealth {
 		Controller:                   kubermaticv1.HealthStatusUp,
 		MachineController:            kubermaticv1.HealthStatusUp,
 		Etcd:                         kubermaticv1.HealthStatusUp,
-		OpenVPN:                      kubermaticv1.HealthStatusUp,
+		OpenVPN:                      &up,
 		CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 		UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 	}

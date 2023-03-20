@@ -31,7 +31,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
@@ -46,6 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,6 +55,8 @@ const (
 	APIServerSecurePort = 6443
 
 	NodeLocalDNSCacheAddress = "169.254.20.10"
+
+	updatedByVPALabelKey = "updated-by-vpa"
 )
 
 const (
@@ -399,6 +402,8 @@ const (
 
 	// DefaultAllReadOnlyMode represents file mode with read permissions for all.
 	DefaultAllReadOnlyMode = 0444
+
+	DefaultKonnectivityKeepaliveTime = "1m"
 
 	// AppLabelKey defines the label key app which should be used within resources.
 	AppLabelKey = "app"
@@ -1107,13 +1112,13 @@ func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 // GetProjectRef returns a metav1.OwnerReference for the given Project.
 func GetProjectRef(project *kubermaticv1.Project) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
-	return *metav1.NewControllerRef(project, gv.WithKind(kubermaticv1.ProjectKindName))
+	return *metav1.NewControllerRef(project, gv.WithKind("Project"))
 }
 
 // GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore.
 func GetEtcdRestoreRef(restore *kubermaticv1.EtcdRestore) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
-	return *metav1.NewControllerRef(restore, gv.WithKind(kubermaticv1.EtcdRestoreKindName))
+	return *metav1.NewControllerRef(restore, gv.WithKind("EtcdRestore"))
 }
 
 // Int32 returns a pointer to the int32 value passed in.
@@ -1501,31 +1506,30 @@ func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL 
 	}
 	var envVars []corev1.EnvVar
 
-	if !seed.Spec.ProxySettings.HTTPProxy.Empty() {
-		value := seed.Spec.ProxySettings.HTTPProxy.String()
+	if proxy := pointer.StringDeref(seed.Spec.ProxySettings.HTTPProxy, ""); proxy != "" {
 		envVars = []corev1.EnvVar{
 			{
 				Name:  "HTTP_PROXY",
-				Value: value,
+				Value: proxy,
 			},
 			{
 				Name:  "HTTPS_PROXY",
-				Value: value,
+				Value: proxy,
 			},
 			{
 				Name:  "http_proxy",
-				Value: value,
+				Value: proxy,
 			},
 			{
 				Name:  "https_proxy",
-				Value: value,
+				Value: proxy,
 			},
 		}
 	}
 
 	noProxyValue := inClusterAPIServerURL
-	if !seed.Spec.ProxySettings.NoProxy.Empty() {
-		noProxyValue += "," + seed.Spec.ProxySettings.NoProxy.String()
+	if noProxy := pointer.StringDeref(seed.Spec.ProxySettings.NoProxy, ""); noProxy != "" {
+		noProxyValue += "," + noProxy
 	}
 	envVars = append(envVars,
 		corev1.EnvVar{Name: "NO_PROXY", Value: noProxyValue},
@@ -1545,12 +1549,12 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 		requirements[k] = v.DeepCopy()
 	}
 
-	val, ok := annotations[kubermaticv1.UpdatedByVPALabelKey]
+	val, ok := annotations[updatedByVPALabelKey]
 	if ok && val != "" {
 		var req []Requirements
 		err := json.Unmarshal([]byte(val), &req)
 		if err != nil {
-			return fmt.Errorf("failed to unmarshal resource requirements provided by vpa from annotation %s: %w", kubermaticv1.UpdatedByVPALabelKey, err)
+			return fmt.Errorf("failed to unmarshal resource requirements provided by vpa from annotation %s: %w", updatedByVPALabelKey, err)
 		}
 		for _, r := range req {
 			requirements[r.Name] = r.Requires
@@ -1582,7 +1586,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
 	}
-	if componentSettings.KonnectivityProxy.Resources != nil {
+	if componentSettings.KonnectivityProxy != nil && componentSettings.KonnectivityProxy.Resources != nil {
 		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
 	}
 	if componentSettings.ControllerManager.Resources != nil {
@@ -1594,12 +1598,11 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Etcd.Resources != nil {
 		r[EtcdStatefulSetName] = componentSettings.Etcd.Resources.DeepCopy()
 	}
-	if componentSettings.Prometheus.Resources != nil {
+	if componentSettings.Prometheus != nil && componentSettings.Prometheus.Resources != nil {
 		r[PrometheusStatefulSetName] = componentSettings.Prometheus.Resources.DeepCopy()
 	}
-	if componentSettings.NodePortProxyEnvoy.Resources.Requests != nil ||
-		componentSettings.NodePortProxyEnvoy.Resources.Limits != nil {
-		r[NodePortProxyEnvoyContainerName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
+	if envoy := componentSettings.NodePortProxyEnvoy; envoy != nil && (envoy.Resources.Requests != nil || envoy.Resources.Limits != nil) {
+		r[NodePortProxyEnvoyContainerName] = envoy.Resources.DeepCopy()
 	}
 
 	return r
@@ -1756,11 +1759,11 @@ func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges 
 		res.CIDRBlocks = append(res.CIDRBlocks, allowedIPRange)
 	}
 
-	if len(res.CIDRBlocks) == 0 {
-		if cluster.IsIPv4Only() || cluster.IsDualStack() {
+	if network := cluster.Spec.ClusterNetwork; len(res.CIDRBlocks) == 0 {
+		if network.IsIPv4Only() || network.IsDualStack() {
 			res.CIDRBlocks = append(res.CIDRBlocks, IPv4MatchAnyCIDR)
 		}
-		if cluster.IsIPv6Only() || cluster.IsDualStack() {
+		if network.IsIPv6Only() || network.IsDualStack() {
 			res.CIDRBlocks = append(res.CIDRBlocks, IPv6MatchAnyCIDR)
 		}
 	}
@@ -1768,8 +1771,8 @@ func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges 
 }
 
 // GetDefaultPodCIDRIPv4 returns the default IPv4 pod CIDR for the given provider.
-func GetDefaultPodCIDRIPv4(provider kubermaticv1.ProviderType) string {
-	if provider == kubermaticv1.KubevirtCloudProvider {
+func GetDefaultPodCIDRIPv4(provider kubermaticv1.CloudProvider) string {
+	if provider == kubermaticv1.CloudProviderKubeVirt {
 		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
 		// thus we have to avoid network collision
 		return DefaultClusterPodsCIDRIPv4KubeVirt
@@ -1778,8 +1781,8 @@ func GetDefaultPodCIDRIPv4(provider kubermaticv1.ProviderType) string {
 }
 
 // GetDefaultServicesCIDRIPv4 returns the default IPv4 services CIDR for the given provider.
-func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
-	if provider == kubermaticv1.KubevirtCloudProvider {
+func GetDefaultServicesCIDRIPv4(provider kubermaticv1.CloudProvider) string {
+	if provider == kubermaticv1.CloudProviderKubeVirt {
 		// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
 		// thus we have to avoid network collision
 		return DefaultClusterServicesCIDRIPv4KubeVirt
@@ -1788,8 +1791,8 @@ func GetDefaultServicesCIDRIPv4(provider kubermaticv1.ProviderType) string {
 }
 
 // GetDefaultProxyMode returns the default proxy mode for the given provider.
-func GetDefaultProxyMode(provider kubermaticv1.ProviderType) string {
-	if provider == kubermaticv1.HetznerCloudProvider {
+func GetDefaultProxyMode(provider kubermaticv1.CloudProvider) string {
+	if provider == kubermaticv1.CloudProviderHetzner {
 		// IPVS causes issues with Hetzner's LoadBalancers, which should
 		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
 		return IPTablesProxyMode
@@ -1803,7 +1806,7 @@ func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivi
 	if cluster.Spec.Cloud.GCP != nil {
 		return "InternalIP"
 	}
-	if cluster.IsDualStack() && cluster.Spec.Cloud.Hetzner != nil {
+	if cluster.Spec.ClusterNetwork.IsDualStack() && cluster.Spec.Cloud.Hetzner != nil {
 		// Due to https://github.com/hetznercloud/hcloud-cloud-controller-manager/issues/305
 		// InternalIP needs to be preferred over ExternalIP in dual-stack Hetzner clusters
 		return "InternalIP,ExternalIP"

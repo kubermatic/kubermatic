@@ -22,10 +22,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -123,7 +123,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if cluster.Status.Versions.OldestNodeVersion != oldestVersion {
 		r.log.Infow("Determined new oldest node version", "version", oldestVersion)
 
-		return kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(cluster *kubermaticv1.Cluster) {
+		return kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(cluster *kubermaticv1.Cluster) {
 			cluster.Status.Versions.OldestNodeVersion = oldestVersion
 		})
 	}

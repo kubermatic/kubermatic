@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
@@ -202,7 +202,7 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 			// ensure that the 2 controllers will not overwrite each other (master-operator
 			// removing the -seed-name flag, seed-operator adding it again). Instead
 			// of fiddling with CLI flags, we just use an env variable to store the seed.
-			envVars := KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy)
+			envVars := KubermaticProxyEnvironmentVars(cfg.Spec.Proxy)
 
 			if !removeSeed {
 				seedName := ""
@@ -298,7 +298,6 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 						},
 					},
 					VolumeMounts: volumeMounts,
-					Resources:    cfg.Spec.Webhook.Resources,
 					ReadinessProbe: &corev1.Probe{
 						InitialDelaySeconds: 3,
 						TimeoutSeconds:      2,
@@ -312,6 +311,10 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 						},
 					},
 				},
+			}
+
+			if res := cfg.Spec.Webhook.Resources; res != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
 			return d, nil

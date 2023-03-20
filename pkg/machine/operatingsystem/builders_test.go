@@ -20,13 +20,14 @@ import (
 	"fmt"
 	"testing"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestDefaultSpec(t *testing.T) {
-	for _, os := range providerconfig.AllOperatingSystems {
-		for _, provider := range kubermaticv1.SupportedProviders {
+	for _, os := range sets.List(kubermaticv1.AllOperatingSystems) {
+		for _, provider := range sets.List(kubermaticv1.AllCloudProviders) {
 			t.Run(fmt.Sprintf("%s on %s", os, provider), func(t *testing.T) {
 				spec, err := DefaultSpec(os, provider)
 				if err != nil {
@@ -40,7 +41,7 @@ func TestDefaultSpec(t *testing.T) {
 	}
 
 	t.Run("does-not-exist", func(t *testing.T) {
-		spec, err := DefaultSpec(providerconfig.OperatingSystem("does-not-exist"), kubermaticv1.AWSCloudProvider)
+		spec, err := DefaultSpec(kubermaticv1.OperatingSystem("does-not-exist"), kubermaticv1.CloudProviderAWS)
 		if err == nil {
 			t.Fatal("Should not have been able to create an OS spec for a bogus OS.")
 		}

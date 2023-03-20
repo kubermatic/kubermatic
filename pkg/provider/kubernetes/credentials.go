@@ -20,8 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -53,14 +52,14 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Hetzner != nil {
 		return createOrUpdateHetznerSecret(ctx, seedClient, cluster)
 	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		return createOrUpdateOpenstackSecret(ctx, seedClient, cluster)
+	if cluster.Spec.Cloud.OpenStack != nil {
+		return createOrUpdateOpenStackSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return createOrUpdatePacketSecret(ctx, seedClient, cluster)
 	}
-	if cluster.Spec.Cloud.Kubevirt != nil {
-		return createOrUpdateKubevirtSecret(ctx, seedClient, cluster)
+	if cluster.Spec.Cloud.KubeVirt != nil {
+		return createOrUpdateKubeVirtSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
 		return createVSphereSecret(ctx, seedClient, cluster)
@@ -80,7 +79,7 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	return false, nil
 }
 
-func CreateOrUpdateSecretForCluster(ctx context.Context, client ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretData map[string][]byte, secretName, secretNamespace string) (*providerconfig.GlobalSecretKeySelector, error) {
+func CreateOrUpdateSecretForCluster(ctx context.Context, client ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretData map[string][]byte, secretName, secretNamespace string) (*kubermaticv1.GlobalSecretKeySelector, error) {
 	reconciler, err := credentialSecretReconcilerFactory(secretName, externalcluster.Labels, secretData)
 	if err != nil {
 		return nil, err
@@ -90,7 +89,7 @@ func CreateOrUpdateSecretForCluster(ctx context.Context, client ctrlruntimeclien
 		return nil, fmt.Errorf("failed to ensure Secret: %w", err)
 	}
 
-	return &providerconfig.GlobalSecretKeySelector{
+	return &kubermaticv1.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
 			Name:      secretName,
 			Namespace: secretNamespace,
@@ -98,7 +97,7 @@ func CreateOrUpdateSecretForCluster(ctx context.Context, client ctrlruntimeclien
 	}, nil
 }
 
-func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*kubermaticv1.GlobalSecretKeySelector, error) {
 	reconciler, err := credentialSecretReconcilerFactory(cluster.GetSecretName(), cluster.Labels, secretData)
 	if err != nil {
 		return nil, err
@@ -108,7 +107,7 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 		return nil, err
 	}
 
-	return &providerconfig.GlobalSecretKeySelector{
+	return &kubermaticv1.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
 			Name:      cluster.GetSecretName(),
 			Namespace: resources.KubermaticNamespace,
@@ -269,17 +268,17 @@ func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclie
 	return true, nil
 }
 
-func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
-	spec := cluster.Spec.Cloud.Openstack
+func createOrUpdateOpenStackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
+	spec := cluster.Spec.Cloud.OpenStack
 	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
 
 	// TenantID and Tenant fields are deprecated, if we find them in the credentials reference secret
 	// then we have to trigger the secret update.
 	tenantToProjectMigrated := true
-	if val, _ := secretKeySelector(cluster.Spec.Cloud.Openstack.CredentialsReference, resources.OpenstackTenant); val != "" {
+	if val, _ := secretKeySelector(cluster.Spec.Cloud.OpenStack.CredentialsReference, resources.OpenstackTenant); val != "" {
 		tenantToProjectMigrated = false
 	}
-	if val, _ := secretKeySelector(cluster.Spec.Cloud.Openstack.CredentialsReference, resources.OpenstackTenantID); val != "" {
+	if val, _ := secretKeySelector(cluster.Spec.Cloud.OpenStack.CredentialsReference, resources.OpenstackTenantID); val != "" {
 		tenantToProjectMigrated = false
 	}
 	clusterSpecMigrated := spec.Username == "" && spec.Password == "" && spec.Project == "" && spec.ProjectID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken
@@ -339,17 +338,17 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Openstack.CredentialsReference = credentialRef
+	cluster.Spec.Cloud.OpenStack.CredentialsReference = credentialRef
 
 	// clean old inline credentials
-	cluster.Spec.Cloud.Openstack.Username = ""
-	cluster.Spec.Cloud.Openstack.Password = ""
-	cluster.Spec.Cloud.Openstack.Project = ""
-	cluster.Spec.Cloud.Openstack.ProjectID = ""
-	cluster.Spec.Cloud.Openstack.Domain = ""
-	cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = ""
-	cluster.Spec.Cloud.Openstack.ApplicationCredentialID = ""
-	cluster.Spec.Cloud.Openstack.UseToken = false
+	cluster.Spec.Cloud.OpenStack.Username = ""
+	cluster.Spec.Cloud.OpenStack.Password = ""
+	cluster.Spec.Cloud.OpenStack.Project = ""
+	cluster.Spec.Cloud.OpenStack.ProjectID = ""
+	cluster.Spec.Cloud.OpenStack.Domain = ""
+	cluster.Spec.Cloud.OpenStack.ApplicationCredentialSecret = ""
+	cluster.Spec.Cloud.OpenStack.ApplicationCredentialID = ""
+	cluster.Spec.Cloud.OpenStack.UseToken = false
 
 	return true, nil
 }
@@ -381,8 +380,8 @@ func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclien
 	return true, nil
 }
 
-func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
-	spec := cluster.Spec.Cloud.Kubevirt
+func createOrUpdateKubeVirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
+	spec := cluster.Spec.Cloud.KubeVirt
 	// already migrated
 	if spec.Kubeconfig == "" {
 		return false, nil
@@ -397,10 +396,10 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Kubevirt.CredentialsReference = credentialRef
+	cluster.Spec.Cloud.KubeVirt.CredentialsReference = credentialRef
 
 	// clean old inline credentials
-	cluster.Spec.Cloud.Kubevirt.Kubeconfig = ""
+	cluster.Spec.Cloud.KubeVirt.Kubeconfig = ""
 
 	return true, nil
 }
