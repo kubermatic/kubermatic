@@ -33,7 +33,7 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/release"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -247,7 +247,7 @@ func TestHelmProvider(t *testing.T) {
 					t.Fatal("app.Status.HelmRelease should not be nil")
 				}
 
-				if app.Status.HelmRelease.Info.Status != release.StatusFailed {
+				if app.Status.HelmRelease.Info.Status != string(release.StatusFailed) {
 					t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, app.Status.HelmRelease.Info.Status)
 				}
 			},
@@ -284,7 +284,7 @@ func TestHelmProvider(t *testing.T) {
 					t.Fatal("app.Status.HelmRelease should not be nil")
 				}
 
-				if app.Status.HelmRelease.Info.Status != release.StatusFailed {
+				if app.Status.HelmRelease.Info.Status != string(release.StatusFailed) {
 					t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, app.Status.HelmRelease.Info.Status)
 				}
 			},
