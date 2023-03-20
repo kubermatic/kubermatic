@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/source"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/template"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
