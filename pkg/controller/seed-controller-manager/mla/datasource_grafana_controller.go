@@ -26,8 +26,8 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -124,7 +124,7 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -393,7 +393,7 @@ func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
 }
 
 func (r *datasourceGrafanaController) cleanUpMLAGatewayHealthStatus(ctx context.Context, cluster *kubermaticv1.Cluster, resourceDeletionErr error) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return kubernetes.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Remove the health status in Cluster CR
 		c.Status.ExtendedHealth.MLAGateway = nil
 		if resourceDeletionErr != nil && !apierrors.IsNotFound(resourceDeletionErr) {
@@ -444,7 +444,7 @@ func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, clus
 		return fmt.Errorf("failed to get dep health %s: %w", resources.MLAMonitoringAgentDeploymentName, err)
 	}
 
-	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	err = kubernetes.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.MLAGateway = &mlaGatewayHealth
 	})
 	if err != nil {

@@ -35,7 +35,8 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
 	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
@@ -60,15 +61,20 @@ func EncodeAsRawExtension(value interface{}) (runtime.RawExtension, error) {
 	return ext, nil
 }
 
-func CreateProviderConfig(cloudProvider kubermaticv1.ProviderType, cloudProviderSpec interface{}, osSpec interface{}, networkConfig *providerconfig.NetworkConfig, sshPubKeys []string) (*providerconfig.Config, error) {
-	mcCloudProvider, err := MachineControllerProviderName(cloudProvider)
+func CreateProviderConfig(cloudProvider kubermaticv1.CloudProvider, cloudProviderSpec interface{}, osSpec interface{}, networkConfig *providerconfig.NetworkConfig, sshPubKeys []string) (*providerconfig.Config, error) {
+	mcCloudProvider, err := kubermaticv1helper.CloudProviderToMachineController(cloudProvider)
 	if err != nil {
-		return nil, fmt.Errorf("failed to determine cloud provider from cluster: %w", err)
+		return nil, fmt.Errorf("failed to translate cloud provider %q: %w", cloudProvider, err)
 	}
 
 	operatingSystem, err := OperatingSystemFromSpec(osSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine operating system: %w", err)
+	}
+
+	mcOperatingSystem, err := kubermaticv1helper.OperatingSystemToMachineController(operatingSystem)
+	if err != nil {
+		return nil, fmt.Errorf("failed to translate operating system %q: %w", operatingSystem, err)
 	}
 
 	cloudProviderSpecExt, err := EncodeAsRawExtension(cloudProviderSpec)
@@ -82,9 +88,9 @@ func CreateProviderConfig(cloudProvider kubermaticv1.ProviderType, cloudProvider
 	}
 
 	return &providerconfig.Config{
-		CloudProvider:       mcCloudProvider,
+		CloudProvider:       providerconfig.CloudProvider(mcCloudProvider),
 		CloudProviderSpec:   cloudProviderSpecExt,
-		OperatingSystem:     operatingSystem,
+		OperatingSystem:     providerconfig.OperatingSystem(mcOperatingSystem),
 		OperatingSystemSpec: osSpecExt,
 		SSHPublicKeys:       sshPubKeys,
 		Network:             networkConfig,
@@ -102,128 +108,86 @@ func CreateProviderSpec(providerConfig *providerconfig.Config) (*clusterv1alpha1
 	}, nil
 }
 
-// MachineControllerProviderName translates the KKP cloud provider name into
-// the machine-controller's name. Most providers are named identically, but some
-// are different (like gcp vs. gce).
-func MachineControllerProviderName(kkpName kubermaticv1.ProviderType) (providerconfig.CloudProvider, error) {
-	provider := providerconfig.CloudProvider(kkpName)
-
-	switch kkpName {
-	case kubermaticv1.GCPCloudProvider:
-		provider = providerconfig.CloudProviderGoogle
-	case kubermaticv1.VMwareCloudDirectorCloudProvider:
-		provider = providerconfig.CloudProviderVMwareCloudDirector
-	}
-
-	for _, allowed := range providerconfig.AllCloudProviders {
-		if allowed == provider {
-			return provider, nil
-		}
-	}
-
-	return "", fmt.Errorf("unknown cloud provider %q given", kkpName)
-}
-
-// KubermaticProviderType is the inverse of MachineControllerProviderName.
-func KubermaticProviderType(mcName providerconfig.CloudProvider) (kubermaticv1.ProviderType, error) {
-	provider := kubermaticv1.ProviderType(mcName)
-
-	switch mcName {
-	case providerconfig.CloudProviderGoogle:
-		provider = kubermaticv1.GCPCloudProvider
-	case providerconfig.CloudProviderVMwareCloudDirector:
-		provider = kubermaticv1.VMwareCloudDirectorCloudProvider
-	}
-
-	for _, allowed := range kubermaticv1.SupportedProviders {
-		if allowed == provider {
-			return provider, nil
-		}
-	}
-
-	return "", fmt.Errorf("unknown/unsupported cloud provider %q given", mcName)
-}
-
 // OperatingSystemFromSpec returns the OS name for the given OS spec.
-func OperatingSystemFromSpec(osSpec interface{}) (providerconfig.OperatingSystem, error) {
+func OperatingSystemFromSpec(osSpec interface{}) (kubermaticv1.OperatingSystem, error) {
 	switch osSpec.(type) {
 	case centos.Config:
-		return providerconfig.OperatingSystemCentOS, nil
+		return kubermaticv1.OperatingSystemCentOS, nil
 	case rhel.Config:
-		return providerconfig.OperatingSystemRHEL, nil
+		return kubermaticv1.OperatingSystemRHEL, nil
 	case rockylinux.Config:
-		return providerconfig.OperatingSystemRockyLinux, nil
+		return kubermaticv1.OperatingSystemRockyLinux, nil
 	case ubuntu.Config:
-		return providerconfig.OperatingSystemUbuntu, nil
+		return kubermaticv1.OperatingSystemUbuntu, nil
 	case amzn2.Config:
-		return providerconfig.OperatingSystemAmazonLinux2, nil
+		return kubermaticv1.OperatingSystemAmazonLinux2, nil
 	case flatcar.Config:
-		return providerconfig.OperatingSystemFlatcar, nil
+		return kubermaticv1.OperatingSystemFlatcar, nil
 	}
 
 	return "", fmt.Errorf("cannot determine OS from the given osSpec (%T)", osSpec)
 }
 
-func ProviderTypeFromSpec(cloudProviderSpec interface{}) (kubermaticv1.ProviderType, error) {
+func CloudProviderFromSpec(cloudProviderSpec interface{}) (kubermaticv1.CloudProvider, error) {
 	switch cloudProviderSpec.(type) {
 	case alibaba.RawConfig:
-		return kubermaticv1.AlibabaCloudProvider, nil
+		return kubermaticv1.CloudProviderAlibaba, nil
 	case anexia.RawConfig:
-		return kubermaticv1.AnexiaCloudProvider, nil
+		return kubermaticv1.CloudProviderAnexia, nil
 	case aws.RawConfig:
-		return kubermaticv1.AWSCloudProvider, nil
+		return kubermaticv1.CloudProviderAWS, nil
 	case azure.RawConfig:
-		return kubermaticv1.AzureCloudProvider, nil
+		return kubermaticv1.CloudProviderAzure, nil
 	case digitalocean.RawConfig:
-		return kubermaticv1.DigitaloceanCloudProvider, nil
+		return kubermaticv1.CloudProviderDigitalocean, nil
 	case gce.RawConfig:
-		return kubermaticv1.GCPCloudProvider, nil
+		return kubermaticv1.CloudProviderGCP, nil
 	case hetzner.RawConfig:
-		return kubermaticv1.HetznerCloudProvider, nil
+		return kubermaticv1.CloudProviderHetzner, nil
 	case kubevirt.RawConfig:
-		return kubermaticv1.KubevirtCloudProvider, nil
+		return kubermaticv1.CloudProviderKubeVirt, nil
 	case nutanix.RawConfig:
-		return kubermaticv1.NutanixCloudProvider, nil
+		return kubermaticv1.CloudProviderNutanix, nil
 	case openstack.RawConfig:
-		return kubermaticv1.OpenstackCloudProvider, nil
+		return kubermaticv1.CloudProviderOpenStack, nil
 	case equinixmetal.RawConfig:
-		return kubermaticv1.PacketCloudProvider, nil
+		return kubermaticv1.CloudProviderPacket, nil
 	case vmwareclouddirector.RawConfig:
-		return kubermaticv1.VMwareCloudDirectorCloudProvider, nil
+		return kubermaticv1.CloudProviderVMwareCloudDirector, nil
 	case vsphere.RawConfig:
-		return kubermaticv1.VSphereCloudProvider, nil
+		return kubermaticv1.CloudProviderVSphere, nil
 	default:
 		return "", fmt.Errorf("cannot handle unknown cloud provider %T", cloudProviderSpec)
 	}
 }
 
-func DecodeCloudProviderSpec(cloudProvider kubermaticv1.ProviderType, pconfig providerconfig.Config) (interface{}, error) {
+func DecodeCloudProviderSpec(cloudProvider kubermaticv1.CloudProvider, pconfig providerconfig.Config) (interface{}, error) {
 	switch cloudProvider {
-	case kubermaticv1.AlibabaCloudProvider:
+	case kubermaticv1.CloudProviderAlibaba:
 		return alibaba.GetConfig(pconfig)
-	case kubermaticv1.AnexiaCloudProvider:
+	case kubermaticv1.CloudProviderAnexia:
 		return anexia.GetConfig(pconfig)
-	case kubermaticv1.AWSCloudProvider:
+	case kubermaticv1.CloudProviderAWS:
 		return aws.GetConfig(pconfig)
-	case kubermaticv1.AzureCloudProvider:
+	case kubermaticv1.CloudProviderAzure:
 		return azure.GetConfig(pconfig)
-	case kubermaticv1.DigitaloceanCloudProvider:
+	case kubermaticv1.CloudProviderDigitalocean:
 		return digitalocean.GetConfig(pconfig)
-	case kubermaticv1.GCPCloudProvider:
+	case kubermaticv1.CloudProviderGCP:
 		return gce.GetConfig(pconfig)
-	case kubermaticv1.HetznerCloudProvider:
+	case kubermaticv1.CloudProviderHetzner:
 		return hetzner.GetConfig(pconfig)
-	case kubermaticv1.KubevirtCloudProvider:
+	case kubermaticv1.CloudProviderKubeVirt:
 		return kubevirt.GetConfig(pconfig)
-	case kubermaticv1.NutanixCloudProvider:
+	case kubermaticv1.CloudProviderNutanix:
 		return nutanix.GetConfig(pconfig)
-	case kubermaticv1.OpenstackCloudProvider:
+	case kubermaticv1.CloudProviderOpenStack:
 		return openstack.GetConfig(pconfig)
-	case kubermaticv1.PacketCloudProvider:
+	case kubermaticv1.CloudProviderPacket:
 		return equinixmetal.GetConfig(pconfig)
-	case kubermaticv1.VMwareCloudDirectorCloudProvider:
+	case kubermaticv1.CloudProviderVMwareCloudDirector:
 		return vmwareclouddirector.GetConfig(pconfig)
-	case kubermaticv1.VSphereCloudProvider:
+	case kubermaticv1.CloudProviderVSphere:
 		return vsphere.GetConfig(pconfig)
 	default:
 		return nil, fmt.Errorf("cannot handle unknown cloud provider %q", cloudProvider)
@@ -255,38 +219,38 @@ func assert[T any](spec interface{}) *T {
 // and the cluster object (dynamic infos that some providers write into the spec).
 // The result is the cloudProviderSpec being ready to be marshalled into a MachineSpec to ultimately create
 // the MachineDeployment.
-func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kubermaticv1.ProviderType, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, os providerconfig.OperatingSystem) (interface{}, error) {
+func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kubermaticv1.CloudProvider, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, os kubermaticv1.OperatingSystem) (interface{}, error) {
 	// make it so that in the following lines we do not have to do one nil check per each provider
 	if datacenter == nil {
 		datacenter = &kubermaticv1.Datacenter{}
 	}
 
 	switch cloudProvider {
-	case kubermaticv1.AlibabaCloudProvider:
+	case kubermaticv1.CloudProviderAlibaba:
 		return provider.CompleteAlibabaProviderSpec(assert[alibaba.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Alibaba)
-	case kubermaticv1.AnexiaCloudProvider:
+	case kubermaticv1.CloudProviderAnexia:
 		return provider.CompleteAnexiaProviderSpec(assert[anexia.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Anexia)
-	case kubermaticv1.AWSCloudProvider:
+	case kubermaticv1.CloudProviderAWS:
 		return provider.CompleteAWSProviderSpec(assert[aws.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.AWS, os)
-	case kubermaticv1.AzureCloudProvider:
+	case kubermaticv1.CloudProviderAzure:
 		return provider.CompleteAzureProviderSpec(assert[azure.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Azure)
-	case kubermaticv1.DigitaloceanCloudProvider:
+	case kubermaticv1.CloudProviderDigitalocean:
 		return provider.CompleteDigitaloceanProviderSpec(assert[digitalocean.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Digitalocean)
-	case kubermaticv1.GCPCloudProvider:
+	case kubermaticv1.CloudProviderGCP:
 		return provider.CompleteGCPProviderSpec(assert[gce.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.GCP)
-	case kubermaticv1.HetznerCloudProvider:
+	case kubermaticv1.CloudProviderHetzner:
 		return provider.CompleteHetznerProviderSpec(assert[hetzner.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Hetzner)
-	case kubermaticv1.KubevirtCloudProvider:
-		return provider.CompleteKubevirtProviderSpec(assert[kubevirt.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Kubevirt)
-	case kubermaticv1.NutanixCloudProvider:
+	case kubermaticv1.CloudProviderKubeVirt:
+		return provider.CompleteKubevirtProviderSpec(assert[kubevirt.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.KubeVirt)
+	case kubermaticv1.CloudProviderNutanix:
 		return provider.CompleteNutanixProviderSpec(assert[nutanix.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Nutanix, os)
-	case kubermaticv1.OpenstackCloudProvider:
-		return provider.CompleteOpenstackProviderSpec(assert[openstack.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Openstack, os)
-	case kubermaticv1.PacketCloudProvider:
+	case kubermaticv1.CloudProviderOpenStack:
+		return provider.CompleteOpenStackProviderSpec(assert[openstack.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.OpenStack, os)
+	case kubermaticv1.CloudProviderPacket:
 		return provider.CompleteEquinixMetalProviderSpec(assert[equinixmetal.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Packet)
-	case kubermaticv1.VMwareCloudDirectorCloudProvider:
+	case kubermaticv1.CloudProviderVMwareCloudDirector:
 		return provider.CompleteVMwareCloudDirectorProviderSpec(assert[vmwareclouddirector.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VMwareCloudDirector, os)
-	case kubermaticv1.VSphereCloudProvider:
+	case kubermaticv1.CloudProviderVSphere:
 		return provider.CompleteVSphereProviderSpec(assert[vsphere.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VSphere, os)
 	default:
 		return nil, fmt.Errorf("cannot handle unknown cloud provider %q", cloudProvider)
@@ -302,11 +266,11 @@ func CompleteNetworkConfig(config *providerconfig.NetworkConfig, cluster *kuberm
 		var ipFamily util.IPFamily
 
 		switch {
-		case cluster.IsIPv4Only():
+		case cluster.Spec.ClusterNetwork.IsIPv4Only():
 			ipFamily = util.IPFamilyIPv4
-		case cluster.IsIPv6Only():
+		case cluster.Spec.ClusterNetwork.IsIPv6Only():
 			ipFamily = util.IPFamilyIPv6
-		case cluster.IsDualStack():
+		case cluster.Spec.ClusterNetwork.IsDualStack():
 			ipFamily = util.IPFamilyIPv4IPv6
 		default:
 			ipFamily = util.IPFamilyUnspecified

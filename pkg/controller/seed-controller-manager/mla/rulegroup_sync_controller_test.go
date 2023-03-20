@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
@@ -129,7 +129,7 @@ func generateMLARuleGroup(name, namespace string, ruleGroupType kubermaticv1.Rul
 			Namespace: namespace,
 		},
 		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.RuleGroupKindName,
+			Kind:       "RuleGroup",
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		Spec: kubermaticv1.RuleGroupSpec{

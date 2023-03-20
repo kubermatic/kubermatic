@@ -20,8 +20,7 @@ import (
 	"testing"
 
 	vmwareclouddirector "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 func TestVMwareCloudDirectorConfigBuilder(t *testing.T) {
@@ -44,7 +43,7 @@ func TestVMwareCloudDirectorConfigBuilder(t *testing.T) {
 type vmwareclouddirectorTestcase struct {
 	baseTestcase[vmwareclouddirector.RawConfig, kubermaticv1.DatacenterSpecVMwareCloudDirector]
 
-	os providerconfig.OperatingSystem
+	os kubermaticv1.OperatingSystem
 }
 
 func (tt *vmwareclouddirectorTestcase) Run(cluster *kubermaticv1.Cluster) (*vmwareclouddirector.RawConfig, error) {
@@ -69,7 +68,7 @@ func TestCompleteVMwareCloudDirectorProviderSpec(t *testing.T) {
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName:        string(kubermaticv1.VMwareCloudDirectorCloudProvider),
+		ProviderName:        kubermaticv1.CloudProviderVMwareCloudDirector,
 		VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{},
 	})
 
@@ -100,12 +99,12 @@ func TestCompleteVMwareCloudDirectorProviderSpec(t *testing.T) {
 				name: "should select the correct AMI based on the OS",
 				datacenter: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
 					Templates: kubermaticv1.ImageList{
-						providerconfig.OperatingSystemFlatcar: "testimage",
+						kubermaticv1.OperatingSystemFlatcar: "testimage",
 					},
 				},
 				expected: cloneBuilder(defaultMachine).WithTemplate("testimage"),
 			},
-			os: providerconfig.OperatingSystemFlatcar,
+			os: kubermaticv1.OperatingSystemFlatcar,
 		},
 	}
 

@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -256,20 +257,20 @@ func SeedProxyEnvironmentVars(p *kubermaticv1.ProxySettings) (result []corev1.En
 
 	result = append(result, corev1.EnvVar{
 		Name:  "HTTP_PROXY",
-		Value: p.HTTPProxy.String(),
+		Value: pointer.StringDeref(p.HTTPProxy, ""),
 	})
 
 	result = append(result, corev1.EnvVar{
 		Name:  "HTTPS_PROXY",
-		Value: p.HTTPProxy.String(),
+		Value: pointer.StringDeref(p.HTTPProxy, ""),
 	})
 
 	noProxy := []string{
 		defaulting.DefaultNoProxy,
 	}
 
-	if p.NoProxy.String() != "" {
-		noProxy = append(noProxy, p.NoProxy.String())
+	if noProxyValue := pointer.StringDeref(p.NoProxy, ""); noProxyValue != "" {
+		noProxy = append(noProxy, noProxyValue)
 	}
 
 	result = append(result, corev1.EnvVar{

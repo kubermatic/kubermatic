@@ -25,8 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -131,7 +130,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
@@ -282,7 +281,7 @@ func (r *Reconciler) addonReconciler(ctx context.Context, cluster *kubermaticv1.
 			existing.Spec.Name = addon.Name
 			existing.Spec.Cluster = corev1.ObjectReference{
 				APIVersion: cluster.APIVersion,
-				Kind:       kubermaticv1.ClusterKindName,
+				Kind:       "Cluster",
 				Name:       cluster.Name,
 			}
 

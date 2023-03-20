@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,7 +29,7 @@ import (
 func CreateProject(name string) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.ProjectKindName,
+			Kind:       "Project",
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -41,7 +41,7 @@ func CreateProject(name string) *kubermaticv1.Project {
 			Name: name,
 		},
 		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectInactive,
+			Phase: kubermaticv1.ProjectPhaseInactive,
 		},
 	}
 }
@@ -49,7 +49,7 @@ func CreateProject(name string) *kubermaticv1.Project {
 func CreateUser(name string) *kubermaticv1.User {
 	return &kubermaticv1.User{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.UserKindName,
+			Kind:       "User",
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{

@@ -28,7 +28,7 @@ import (
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
@@ -58,7 +58,7 @@ func CloudConfig(
 				RoleARN:                     cloud.AWS.ControlPlaneRoleARN,
 			},
 		}
-		if cluster.IsDualStack() {
+		if cluster.Spec.ClusterNetwork.IsDualStack() {
 			awsCloudConfig.Global.NodeIPFamilies = DualstackIPFamilies
 		}
 
@@ -90,29 +90,29 @@ func CloudConfig(
 			return cloudConfig, err
 		}
 
-	case cloud.Openstack != nil:
-		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
-		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
-		useOctavia := dc.Spec.Openstack.UseOctavia
-		if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
-			useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
+	case cloud.OpenStack != nil:
+		manageSecurityGroups := dc.Spec.OpenStack.ManageSecurityGroups
+		trustDevicePath := dc.Spec.OpenStack.TrustDevicePath
+		useOctavia := dc.Spec.OpenStack.UseOctavia
+		if cluster.Spec.Cloud.OpenStack.UseOctavia != nil {
+			useOctavia = cluster.Spec.Cloud.OpenStack.UseOctavia
 		}
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
-				AuthURL:                     dc.Spec.Openstack.AuthURL,
-				Username:                    credentials.Openstack.Username,
-				Password:                    credentials.Openstack.Password,
-				DomainName:                  credentials.Openstack.Domain,
-				ProjectName:                 credentials.Openstack.Project,
-				ProjectID:                   credentials.Openstack.ProjectID,
-				Region:                      dc.Spec.Openstack.Region,
-				ApplicationCredentialSecret: credentials.Openstack.ApplicationCredentialSecret,
-				ApplicationCredentialID:     credentials.Openstack.ApplicationCredentialID,
+				AuthURL:                     dc.Spec.OpenStack.AuthURL,
+				Username:                    credentials.OpenStack.Username,
+				Password:                    credentials.OpenStack.Password,
+				DomainName:                  credentials.OpenStack.Domain,
+				ProjectName:                 credentials.OpenStack.Project,
+				ProjectID:                   credentials.OpenStack.ProjectID,
+				Region:                      dc.Spec.OpenStack.Region,
+				ApplicationCredentialSecret: credentials.OpenStack.ApplicationCredentialSecret,
+				ApplicationCredentialID:     credentials.OpenStack.ApplicationCredentialID,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
 				BSVersion:       "auto",
 				TrustDevicePath: trustDevicePath != nil && *trustDevicePath,
-				IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
+				IgnoreVolumeAZ:  dc.Spec.OpenStack.IgnoreVolumeAZ,
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
@@ -121,12 +121,12 @@ func CloudConfig(
 			Version: cluster.Status.Versions.ControlPlane.String(),
 		}
 
-		if cluster.Spec.Cloud.Openstack.EnableIngressHostname != nil {
-			openstackCloudConfig.LoadBalancer.EnableIngressHostname = cluster.Spec.Cloud.Openstack.EnableIngressHostname
+		if cluster.Spec.Cloud.OpenStack.EnableIngressHostname != nil {
+			openstackCloudConfig.LoadBalancer.EnableIngressHostname = cluster.Spec.Cloud.OpenStack.EnableIngressHostname
 		}
 
-		if cluster.Spec.Cloud.Openstack.IngressHostnameSuffix != nil {
-			openstackCloudConfig.LoadBalancer.IngressHostnameSuffix = cluster.Spec.Cloud.Openstack.IngressHostnameSuffix
+		if cluster.Spec.Cloud.OpenStack.IngressHostnameSuffix != nil {
+			openstackCloudConfig.LoadBalancer.IngressHostnameSuffix = cluster.Spec.Cloud.OpenStack.IngressHostnameSuffix
 		}
 
 		cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)
@@ -210,7 +210,7 @@ func CloudConfig(
 			return cloudConfig, err
 		}
 
-	case cloud.Kubevirt != nil:
+	case cloud.KubeVirt != nil:
 		cc := kubevirt.CloudConfig{
 			Kubeconfig: "/etc/kubernetes/cloud/infra-kubeconfig",
 			Namespace:  cluster.Status.NamespaceName,
@@ -290,7 +290,7 @@ func GetVSphereCloudConfig(
 			},
 		},
 	}
-	if cluster.IsDualStack() && resources.ExternalCloudProviderEnabled(cluster) {
+	if cluster.Spec.ClusterNetwork.IsDualStack() && resources.ExternalCloudProviderEnabled(cluster) {
 		cc.Global.IPFamily = "ipv4,ipv6"
 	}
 	return cc, nil

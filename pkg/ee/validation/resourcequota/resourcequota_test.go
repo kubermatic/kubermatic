@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,9 +60,9 @@ func TestValidateCreate(t *testing.T) {
 						Name: "existing-quota",
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
-						Subject: kubermaticv1.Subject{
+						Subject: kubermaticv1.ResourceQuotaSubject{
 							Name: "wwqrvcccq5",
-							Kind: "project",
+							Kind: kubermaticv1.ResourceQuotaSubjectProject,
 						},
 						Quota: kubermaticv1.ResourceDetails{},
 					},
@@ -72,7 +72,7 @@ func TestValidateCreate(t *testing.T) {
 						Name: "existing-quota1",
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
-						Subject: kubermaticv1.Subject{
+						Subject: kubermaticv1.ResourceQuotaSubject{
 							Name: "wwqrvcccq6",
 							Kind: "seed",
 						},
@@ -85,9 +85,9 @@ func TestValidateCreate(t *testing.T) {
 					Name: "new-quota",
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{
+					Subject: kubermaticv1.ResourceQuotaSubject{
 						Name: "wwqrvcccq6",
-						Kind: "project",
+						Kind: kubermaticv1.ResourceQuotaSubjectProject,
 					},
 					Quota: kubermaticv1.ResourceDetails{},
 				},
@@ -101,9 +101,9 @@ func TestValidateCreate(t *testing.T) {
 						Name: "existing-quota",
 					},
 					Spec: kubermaticv1.ResourceQuotaSpec{
-						Subject: kubermaticv1.Subject{
+						Subject: kubermaticv1.ResourceQuotaSubject{
 							Name: "wwqrvcccq6",
-							Kind: "project",
+							Kind: kubermaticv1.ResourceQuotaSubjectProject,
 						},
 						Quota: kubermaticv1.ResourceDetails{},
 					},
@@ -114,9 +114,9 @@ func TestValidateCreate(t *testing.T) {
 					Name: "new-quota",
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{
+					Subject: kubermaticv1.ResourceQuotaSubject{
 						Name: "wwqrvcccq6",
-						Kind: "project",
+						Kind: kubermaticv1.ResourceQuotaSubjectProject,
 					},
 					Quota: kubermaticv1.ResourceDetails{},
 				},
@@ -164,9 +164,9 @@ func TestValidateUpdate(t *testing.T) {
 					Name: "existing-quota",
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{
+					Subject: kubermaticv1.ResourceQuotaSubject{
 						Name: "wwqrvcccq6",
-						Kind: "project",
+						Kind: kubermaticv1.ResourceQuotaSubjectProject,
 					},
 					Quota: kubermaticv1.ResourceDetails{},
 				},
@@ -176,9 +176,9 @@ func TestValidateUpdate(t *testing.T) {
 					Name: "existing-quota",
 				},
 				Spec: kubermaticv1.ResourceQuotaSpec{
-					Subject: kubermaticv1.Subject{
+					Subject: kubermaticv1.ResourceQuotaSubject{
 						Name: "wwqrvcccq7",
-						Kind: "project",
+						Kind: kubermaticv1.ResourceQuotaSubjectProject,
 					},
 					Quota: kubermaticv1.ResourceDetails{},
 				},

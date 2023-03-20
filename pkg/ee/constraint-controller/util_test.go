@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	eeconstraintcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-controller"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -87,7 +87,7 @@ func TestGetClustersForConstraint(t *testing.T) {
 		{
 			name: "scenario 3: filter clusters with providers",
 			constraint: genConstraintWithSelector(kubermaticv1.ConstraintSelector{
-				Providers:     []string{"fake"},
+				Providers:     []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderBringYourOwn},
 				LabelSelector: metav1.LabelSelector{},
 			}, seedNamespace),
 			clusters: []ctrlruntimeclient.Object{
@@ -100,7 +100,7 @@ func TestGetClustersForConstraint(t *testing.T) {
 		{
 			name: "scenario 4: filter clusters with providers and labels",
 			constraint: genConstraintWithSelector(kubermaticv1.ConstraintSelector{
-				Providers: []string{"fake"},
+				Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderBringYourOwn},
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{"test": "value"},
 				},
@@ -155,15 +155,15 @@ func TestGetClustersForConstraint(t *testing.T) {
 	}
 }
 
-func genCluster(name string, labels map[string]string, bringYourOwnProvider bool) *kubermaticv1.Cluster {
+func genCluster(name string, labels map[string]string, useAWSProvider bool) *kubermaticv1.Cluster {
 	cluster := generator.GenDefaultCluster()
 
 	cluster.Name = name
 	cluster.Labels = labels
 
-	if bringYourOwnProvider {
-		cluster.Spec.Cloud.Fake = nil
-		cluster.Spec.Cloud.BringYourOwn = &kubermaticv1.BringYourOwnCloudSpec{}
+	if useAWSProvider {
+		cluster.Spec.Cloud.BringYourOwn = nil
+		cluster.Spec.Cloud.AWS = &kubermaticv1.AWSCloudSpec{}
 	}
 
 	return cluster
@@ -171,6 +171,6 @@ func genCluster(name string, labels map[string]string, bringYourOwnProvider bool
 
 func genConstraintWithSelector(selector kubermaticv1.ConstraintSelector, namespace string) *kubermaticv1.Constraint {
 	ct := generator.GenConstraint(constraintName, namespace, kind)
-	ct.Spec.Selector = selector
+	ct.Spec.Selector = &selector
 	return ct
 }

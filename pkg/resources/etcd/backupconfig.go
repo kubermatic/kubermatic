@@ -22,7 +22,7 @@ import (
 
 	cron "github.com/robfig/cron/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -54,7 +54,7 @@ func BackupConfigReconciler(data etcdBackupConfigReconcilerData, seed *kubermati
 			keep := 20
 			config.Spec.Keep = &keep
 			config.Spec.Cluster = corev1.ObjectReference{
-				Kind:       kubermaticv1.ClusterKindName,
+				Kind:       "Cluster",
 				Name:       data.Cluster().Name,
 				UID:        data.Cluster().UID,
 				APIVersion: "kubermatic.k8c.io/v1",

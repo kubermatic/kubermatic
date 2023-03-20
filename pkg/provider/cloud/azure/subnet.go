@@ -25,7 +25,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -74,10 +74,10 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	}
 
 	var cidrs []string
-	if cluster.IsIPv4Only() || cluster.IsDualStack() {
+	if cluster.Spec.ClusterNetwork.IsIPv4Only() || cluster.Spec.ClusterNetwork.IsDualStack() {
 		cidrs = append(cidrs, defaultSubnetCIDRIPv4)
 	}
-	if cluster.IsIPv6Only() || cluster.IsDualStack() {
+	if cluster.Spec.ClusterNetwork.IsIPv6Only() || cluster.Spec.ClusterNetwork.IsDualStack() {
 		cidrs = append(cidrs, defaultSubnetCIDRIPv6)
 	}
 

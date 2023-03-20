@@ -23,7 +23,7 @@ import (
 
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/utils/pointer"
 )
@@ -135,7 +135,7 @@ func (b *awsConfig) WithSpotInstanceMaxPrice(maxPrice string) *awsConfig {
 	return b
 }
 
-func CompleteAWSProviderSpec(config *aws.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAWS, os providerconfig.OperatingSystem) (*aws.RawConfig, error) {
+func CompleteAWSProviderSpec(config *aws.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAWS, os kubermaticv1.OperatingSystem) (*aws.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.AWS == nil {
 		return nil, fmt.Errorf("cannot use cluster to create AWS cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
 	}

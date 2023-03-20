@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -51,7 +51,9 @@ const (
 	alertmanagerName                    = "alertmanager"
 	defaultAlertmanagerConfigSecretName = "alertmanager"
 
-	secretV1Kind = "Secret"
+	secretV1Kind           = "Secret"
+	userProjectBindingKind = "UserProjectBinding"
+	userKind               = "User"
 )
 
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
@@ -507,7 +509,7 @@ func generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount(cluster
 // generateVerbsForNamedResource generates a set of verbs for a named resource
 // for example a "cluster" named "beefy-john".
 func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, error) {
-	if resourceKind == kubermaticv1.ResourceQuotaKindName {
+	if resourceKind == "ResourceQuota" {
 		return []string{"get"}, nil
 	}
 	// verbs for owners
@@ -522,17 +524,17 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
 		// editors of a project
 		// special case - editors are not allowed to delete a project
-		if resourceKind == kubermaticv1.ProjectKindName {
+		if resourceKind == "Project" {
 			return []string{"get", "update", "patch"}, nil
 		}
 
 		// special case - editors are not allowed to interact with members of a project (UserProjectBinding, GroupProjectBinding)
-		if resourceKind == kubermaticv1.UserProjectBindingKind || resourceKind == kubermaticv1.GroupProjectBindingKind {
+		if resourceKind == userProjectBindingKind || resourceKind == "GroupProjectBinding" {
 			return nil, nil
 		}
 
 		// special case - editors are not allowed to interact with service accounts (User)
-		if resourceKind == kubermaticv1.UserKindName {
+		if resourceKind == userKind {
 			return nil, nil
 		}
 
@@ -545,12 +547,12 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
 		// viewers of a named resource
 		// special case - viewers are not allowed to interact with members of a project (UserProjectBinding, GroupProjectBinding)
-		if resourceKind == kubermaticv1.UserProjectBindingKind || resourceKind == kubermaticv1.GroupProjectBindingKind {
+		if resourceKind == userProjectBindingKind || resourceKind == "GroupProjectBinding" {
 			return nil, nil
 		}
 
 		// special case - viewers are not allowed to interact with service accounts (User)
-		if resourceKind == kubermaticv1.UserKindName {
+		if resourceKind == userKind {
 			return nil, nil
 		}
 
@@ -561,15 +563,15 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	//
 	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
 		// special cases - projectmanagers are not allowed to interact with clusters
-		if resourceKind == kubermaticv1.ClusterKindName {
+		if resourceKind == "Cluster" {
 			return nil, nil
 		}
 
-		if resourceKind == kubermaticv1.ExternalClusterKind {
+		if resourceKind == "ExternalCluster" {
 			return nil, nil
 		}
 
-		if resourceKind == kubermaticv1.ClusterTemplateInstanceKindName {
+		if resourceKind == "ClusterTemplateInstance" {
 			return nil, nil
 		}
 
@@ -586,22 +588,22 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 	// special case - only the owners and project managers of a project can manipulate members
 	//
 	switch {
-	case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind:
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == userProjectBindingKind:
 		return []string{"create"}, nil
-	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind:
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == userProjectBindingKind:
 		return []string{"create"}, nil
-	case resourceKind == kubermaticv1.UserProjectBindingKind:
+	case resourceKind == userProjectBindingKind:
 		return nil, nil
 	}
 
 	// special case - only the owners and project managers of a project can create service account (aka. users)
 	//
 	switch {
-	case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName:
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == userKind:
 		return []string{"create"}, nil
-	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName:
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == userKind:
 		return []string{"create"}, nil
-	case resourceKind == kubermaticv1.UserKindName:
+	case resourceKind == userKind:
 		return nil, nil
 	}
 
@@ -670,8 +672,7 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 
 func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) ([]string, error) {
 	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) &&
-		(kind == kubermaticv1.AddonKindName || kind == kubermaticv1.ConstraintKind || kind == kubermaticv1.RuleGroupKindName ||
-			kind == kubermaticv1.EtcdBackupConfigKindName || kind == kubermaticv1.EtcdRestoreKindName) {
+		(kind == "Addon" || kind == "Constraint" || kind == "RuleGroup" || kind == "EtcdBackupConfig" || kind == "EtcdRestore") {
 		return []string{"get", "list"}, nil
 	}
 
@@ -689,14 +690,14 @@ func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, gro
 
 func generateVerbsForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster, groupName, kind, name string) ([]string, error) {
 	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
-		if (kind == kubermaticv1.AlertmanagerKindName && name == alertmanagerName) ||
+		if (kind == "Alertmanager" && name == alertmanagerName) ||
 			(kind == secretV1Kind && name == defaultAlertmanagerConfigSecretName) {
 			return []string{"get"}, nil
 		}
 	}
 
 	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) || strings.HasPrefix(groupName, EditorGroupNamePrefix) {
-		if kind == kubermaticv1.AlertmanagerKindName && name == alertmanagerName {
+		if kind == "Alertmanager" && name == alertmanagerName {
 			return []string{"get", "update"}, nil
 		}
 		if kind == secretV1Kind && name == defaultAlertmanagerConfigSecretName {

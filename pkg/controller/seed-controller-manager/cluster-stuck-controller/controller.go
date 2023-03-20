@@ -23,7 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -103,12 +104,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// no worker name
-	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != "" {
+	if cluster.Labels[workerlabel.LabelKey] != "" {
 		// cluster seems stuck (we wait for a bit because we cannot easily
 		// tell if a seed-ctrl-mgr with the given worker-name is actually
 		// up and running right now)
 		if time.Since(cluster.DeletionTimestamp.Time) > 5*time.Minute {
-			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", kubermaticv1.WorkerNameLabelKey)
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", workerlabel.LabelKey)
 		}
 	}
 

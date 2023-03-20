@@ -21,7 +21,7 @@ import (
 	"sort"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -66,10 +66,10 @@ func TestReconcile(t *testing.T) {
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
-					generator.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, "bob@acme.com"),
-					generator.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
-					generator.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
-					generator.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+					generator.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.TemplateScopeUserCluster, "bob@acme.com"),
+					generator.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.TemplateScopeGlobalCluster, "john@acme.com"),
+					generator.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.TemplateScopeUserCluster, "john@acme.com"),
+					generator.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.TemplateScopeProjectCluster, "john@acme.com"),
 					generator.GenClusterTemplateInstance(projectName, "ctID1", "bob@acme.com", 2),
 					generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3),
 					generator.GenClusterTemplateInstance(projectName, "ctID3", "bob@acme.com", 10),

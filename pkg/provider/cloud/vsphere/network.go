@@ -26,7 +26,7 @@ import (
 
 	"github.com/vmware/govmomi/object"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/runtime"
 )

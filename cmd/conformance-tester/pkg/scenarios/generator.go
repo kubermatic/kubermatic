@@ -24,18 +24,17 @@ import (
 
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Generator struct {
-	cloudProviders    sets.Set[string]
-	operatingSystems  sets.Set[string]
+	cloudProviders    sets.Set[kubermaticv1.CloudProvider]
+	operatingSystems  sets.Set[kubermaticv1.OperatingSystem]
 	versions          sets.Set[string]
 	containerRuntimes sets.Set[string]
 	enableOSM         bool
@@ -44,21 +43,21 @@ type Generator struct {
 
 func NewGenerator() *Generator {
 	return &Generator{
-		cloudProviders:    sets.New[string](),
-		operatingSystems:  sets.New[string](),
+		cloudProviders:    sets.New[kubermaticv1.CloudProvider](),
+		operatingSystems:  sets.New[kubermaticv1.OperatingSystem](),
 		versions:          sets.New[string](),
 		containerRuntimes: sets.New[string](),
 	}
 }
 
-func (g *Generator) WithCloudProviders(providerNames ...string) *Generator {
+func (g *Generator) WithCloudProviders(providerNames ...kubermaticv1.CloudProvider) *Generator {
 	for _, provider := range providerNames {
 		g.cloudProviders.Insert(provider)
 	}
 	return g
 }
 
-func (g *Generator) WithOperatingSystems(operatingSystems ...string) *Generator {
+func (g *Generator) WithOperatingSystems(operatingSystems ...kubermaticv1.OperatingSystem) *Generator {
 	for _, os := range operatingSystems {
 		g.operatingSystems.Insert(os)
 	}
@@ -99,14 +98,14 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 		}
 
 		for _, providerName := range sets.List(g.cloudProviders) {
-			datacenter, err := g.datacenter(ctx, opts.SeedClusterClient, opts.Secrets, kubermaticv1.ProviderType(providerName))
+			datacenter, err := g.datacenter(ctx, opts.SeedClusterClient, opts.Secrets, providerName)
 			if err != nil {
 				return nil, fmt.Errorf("failed to determine target datacenter for provider %q: %w", providerName, err)
 			}
 
 			for _, operatingSystem := range sets.List(g.operatingSystems) {
 				for _, cri := range sets.List(g.containerRuntimes) {
-					scenario, err := providerScenario(opts, kubermaticv1.ProviderType(providerName), providerconfig.OperatingSystem(operatingSystem), *s, cri, datacenter)
+					scenario, err := providerScenario(opts, providerName, operatingSystem, *s, cri, datacenter)
 					if err != nil {
 						return nil, err
 					}
@@ -120,35 +119,35 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 	return shuffle(scenarios), nil
 }
 
-func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Client, secrets types.Secrets, provider kubermaticv1.ProviderType) (*kubermaticv1.Datacenter, error) {
+func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Client, secrets types.Secrets, provider kubermaticv1.CloudProvider) (*kubermaticv1.Datacenter, error) {
 	var datacenterName string
 
 	switch provider {
-	case kubermaticv1.AlibabaCloudProvider:
+	case kubermaticv1.CloudProviderAlibaba:
 		datacenterName = secrets.Alibaba.KKPDatacenter
-	case kubermaticv1.AnexiaCloudProvider:
+	case kubermaticv1.CloudProviderAnexia:
 		datacenterName = secrets.Anexia.KKPDatacenter
-	case kubermaticv1.AWSCloudProvider:
+	case kubermaticv1.CloudProviderAWS:
 		datacenterName = secrets.AWS.KKPDatacenter
-	case kubermaticv1.AzureCloudProvider:
+	case kubermaticv1.CloudProviderAzure:
 		datacenterName = secrets.Azure.KKPDatacenter
-	case kubermaticv1.DigitaloceanCloudProvider:
+	case kubermaticv1.CloudProviderDigitalocean:
 		datacenterName = secrets.Digitalocean.KKPDatacenter
-	case kubermaticv1.GCPCloudProvider:
+	case kubermaticv1.CloudProviderGCP:
 		datacenterName = secrets.GCP.KKPDatacenter
-	case kubermaticv1.HetznerCloudProvider:
+	case kubermaticv1.CloudProviderHetzner:
 		datacenterName = secrets.Hetzner.KKPDatacenter
-	case kubermaticv1.KubevirtCloudProvider:
+	case kubermaticv1.CloudProviderKubeVirt:
 		datacenterName = secrets.Kubevirt.KKPDatacenter
-	case kubermaticv1.NutanixCloudProvider:
+	case kubermaticv1.CloudProviderNutanix:
 		datacenterName = secrets.Nutanix.KKPDatacenter
-	case kubermaticv1.OpenstackCloudProvider:
+	case kubermaticv1.CloudProviderOpenStack:
 		datacenterName = secrets.OpenStack.KKPDatacenter
-	case kubermaticv1.PacketCloudProvider:
+	case kubermaticv1.CloudProviderPacket:
 		datacenterName = secrets.Packet.KKPDatacenter
-	case kubermaticv1.VMwareCloudDirectorCloudProvider:
+	case kubermaticv1.CloudProviderVMwareCloudDirector:
 		datacenterName = secrets.VMwareCloudDirector.KKPDatacenter
-	case kubermaticv1.VSphereCloudProvider:
+	case kubermaticv1.CloudProviderVSphere:
 		datacenterName = secrets.VSphere.KKPDatacenter
 	default:
 		return nil, fmt.Errorf("cloud provider %q is not supported yet in conformance-tester", provider)
@@ -159,8 +158,8 @@ func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Cli
 
 func providerScenario(
 	opts *types.Options,
-	provider kubermaticv1.ProviderType,
-	os providerconfig.OperatingSystem,
+	provider kubermaticv1.CloudProvider,
+	os kubermaticv1.OperatingSystem,
 	version semver.Semver,
 	containerRuntime string,
 	datacenter *kubermaticv1.Datacenter,
@@ -175,31 +174,31 @@ func providerScenario(
 	}
 
 	switch provider {
-	case kubermaticv1.AlibabaCloudProvider:
+	case kubermaticv1.CloudProviderAlibaba:
 		return &alibabaScenario{baseScenario: base}, nil
-	case kubermaticv1.AnexiaCloudProvider:
+	case kubermaticv1.CloudProviderAnexia:
 		return &anexiaScenario{baseScenario: base}, nil
-	case kubermaticv1.AWSCloudProvider:
+	case kubermaticv1.CloudProviderAWS:
 		return &awsScenario{baseScenario: base}, nil
-	case kubermaticv1.AzureCloudProvider:
+	case kubermaticv1.CloudProviderAzure:
 		return &azureScenario{baseScenario: base}, nil
-	case kubermaticv1.DigitaloceanCloudProvider:
+	case kubermaticv1.CloudProviderDigitalocean:
 		return &digitaloceanScenario{baseScenario: base}, nil
-	case kubermaticv1.GCPCloudProvider:
+	case kubermaticv1.CloudProviderGCP:
 		return &googleScenario{baseScenario: base}, nil
-	case kubermaticv1.HetznerCloudProvider:
+	case kubermaticv1.CloudProviderHetzner:
 		return &hetznerScenario{baseScenario: base}, nil
-	case kubermaticv1.KubevirtCloudProvider:
-		return &kubevirtScenario{baseScenario: base}, nil
-	case kubermaticv1.NutanixCloudProvider:
+	case kubermaticv1.CloudProviderKubeVirt:
+		return &kubeVirtScenario{baseScenario: base}, nil
+	case kubermaticv1.CloudProviderNutanix:
 		return &nutanixScenario{baseScenario: base}, nil
-	case kubermaticv1.OpenstackCloudProvider:
+	case kubermaticv1.CloudProviderOpenStack:
 		return &openStackScenario{baseScenario: base}, nil
-	case kubermaticv1.PacketCloudProvider:
+	case kubermaticv1.CloudProviderPacket:
 		return &packetScenario{baseScenario: base}, nil
-	case kubermaticv1.VMwareCloudDirectorCloudProvider:
+	case kubermaticv1.CloudProviderVMwareCloudDirector:
 		return &vmwareCloudDirectorScenario{baseScenario: base}, nil
-	case kubermaticv1.VSphereCloudProvider:
+	case kubermaticv1.CloudProviderVSphere:
 		scenario := &vSphereScenario{baseScenario: base}
 		scenario.customFolder = opts.ScenarioOptions.Has("custom-folder")
 		scenario.datastoreCluster = opts.ScenarioOptions.Has("datastore-cluster")

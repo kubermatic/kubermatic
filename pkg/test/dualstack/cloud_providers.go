@@ -27,7 +27,7 @@ import (
 	alibabatypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 
@@ -43,7 +43,7 @@ var (
 	equinixMetalCredentials jig.EquinixMetalCredentials
 	gcpCredentials          jig.GCPCredentials
 	hetznerCredentials      jig.HetznerCredentials
-	openstackCredentials    jig.OpenstackCredentials
+	openStackCredentials    jig.OpenStackCredentials
 	vsphereCredentials      jig.VSphereCredentials
 )
 
@@ -114,13 +114,13 @@ func newHetznerTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogg
 	return jig.NewHetznerCluster(seedClient, log, hetznerCredentials, 1)
 }
 
-func newOpenstackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
-	jig := jig.NewOpenstackCluster(seedClient, log, openstackCredentials, 1)
+func newOpenStackTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
+	jig := jig.NewOpenStackCluster(seedClient, log, openStackCredentials, 1)
 	jig.ClusterJig.WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-		c.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+		c.Cloud.OpenStack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
 			CIDRBlocks: []string{"0.0.0.0/0", "::/0"},
 		}
-		c.Cloud.Openstack.SecurityGroups = "default"
+		c.Cloud.OpenStack.SecurityGroups = "default"
 		return c
 	})
 

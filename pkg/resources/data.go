@@ -29,10 +29,9 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -348,10 +347,18 @@ func (d *TemplateData) MachineControllerImageRepository() string {
 }
 
 func (d *TemplateData) OperatingSystemManagerImageTag() string {
+	if d.config.Spec.UserCluster == nil || d.config.Spec.UserCluster.OperatingSystemManager == nil {
+		return ""
+	}
+
 	return d.config.Spec.UserCluster.OperatingSystemManager.ImageTag
 }
 
 func (d *TemplateData) OperatingSystemManagerImageRepository() string {
+	if d.config.Spec.UserCluster == nil || d.config.Spec.UserCluster.OperatingSystemManager == nil {
+		return ""
+	}
+
 	return d.config.Spec.UserCluster.OperatingSystemManager.ImageRepository
 }
 
@@ -373,7 +380,7 @@ func (d *TemplateData) ClusterIPByServiceName(name string) (string, error) {
 }
 
 // ProviderName returns the name of the clusters providerName.
-func (d *TemplateData) ProviderName() string {
+func (d *TemplateData) ProviderName() kubermaticv1.CloudProvider {
 	p, err := kubermaticv1helper.ClusterCloudProviderName(d.cluster.Spec.Cloud)
 	if err != nil {
 		kubermaticlog.Logger.Errorw("could not identify cloud provider", zap.Error(err))
@@ -454,10 +461,13 @@ func (d *TemplateData) GetKonnectivityServerPort() (int32, error) {
 }
 
 func (d *TemplateData) GetKonnectivityKeepAliveTime() string {
-	if t := d.Cluster().Spec.ComponentsOverride.KonnectivityProxy.KeepaliveTime; t != "" {
-		return t
+	konnectivity := d.Cluster().Spec.ComponentsOverride.KonnectivityProxy
+
+	if konnectivity != nil && konnectivity.KeepaliveTime != "" {
+		return konnectivity.KeepaliveTime
 	}
-	return kubermaticv1.DefaultKonnectivityKeepaliveTime
+
+	return DefaultKonnectivityKeepaliveTime
 }
 
 func (d *TemplateData) GetTunnelingAgentIP() string {
@@ -518,7 +528,7 @@ func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {
 	return d.supportsFailureDomainZoneAntiAffinity
 }
 
-func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
 	return provider.SecretKeySelectorValueFuncFactory(d.ctx, d.client)(configVar, key)
 }
 
@@ -536,7 +546,7 @@ func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte,
 	return val, nil
 }
 
-func (d *TemplateData) GetCloudProviderName() (string, error) {
+func (d *TemplateData) GetCloudProviderName() (kubermaticv1.CloudProvider, error) {
 	return kubermaticv1helper.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
 
@@ -639,7 +649,7 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 		return "azure"
 	case cluster.Spec.Cloud.GCP != nil:
 		return "gce"
-	case cluster.Spec.Cloud.Openstack != nil:
+	case cluster.Spec.Cloud.OpenStack != nil:
 		if externalCloudProvider {
 			return CloudProviderExternalFlag
 		}
@@ -691,7 +701,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 
 		// This flag is GA since 1.24 and enabled by default; it seems to be gone
 		// from Kubernetes 1.26, so we don't need to set it anymore.
-		if cluster.Spec.Cloud.Openstack != nil && lt25.Check(version) {
+		if cluster.Spec.Cloud.OpenStack != nil && lt25.Check(version) {
 			featureFlags = append(featureFlags, "CSIMigrationOpenStack=true")
 		}
 		if cluster.Spec.Cloud.VSphere != nil {
@@ -707,7 +717,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
-			if cluster.Spec.Cloud.Openstack != nil {
+			if cluster.Spec.Cloud.OpenStack != nil {
 				featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
 			}
 			if cluster.Spec.Cloud.VSphere != nil {
@@ -778,8 +788,8 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", ValueFrom: refTo(AzureTenantID)})
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", ValueFrom: refTo(AzureSubscriptionID)})
 	}
-	if cluster.Spec.Cloud.Openstack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: dc.Spec.Openstack.AuthURL})
+	if cluster.Spec.Cloud.OpenStack != nil {
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: dc.Spec.OpenStack.AuthURL})
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(OpenstackUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(OpenstackPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(OpenstackDomain)})
@@ -806,7 +816,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	if cluster.Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(GCPServiceAccount)})
 	}
-	if cluster.Spec.Cloud.Kubevirt != nil {
+	if cluster.Spec.Cloud.KubeVirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(KubeVirtKubeconfig)})
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {

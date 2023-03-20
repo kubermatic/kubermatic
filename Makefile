@@ -106,19 +106,11 @@ endif
 	done
 
 .PHONY: lint
-lint: lint-crds
+lint:
 	golangci-lint run \
 		--verbose \
 		--print-resources-usage \
-		./pkg/... ./cmd/... ./codegen/...
-
-.PHONY: lint-crds
-lint-crds:
-	@# we want tagliatelle to check only CRDs
-	golangci-lint run \
-		--verbose \
-		--config .golangci.apis.yml \
-		./pkg/apis/...
+		./...
 
 .PHONY: shellcheck
 shellcheck:

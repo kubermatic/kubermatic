@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -147,7 +147,7 @@ func (r *reconcileSyncProjectBinding) ensureBindingIsOwnedByProject(ctx context.
 
 	kuberneteshelper.EnsureUniqueOwnerReference(projectBinding, metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.ProjectKindName,
+		Kind:       "Project",
 		UID:        project.GetUID(),
 		Name:       project.Name,
 	})
@@ -162,7 +162,7 @@ func (r *reconcileSyncProjectBinding) ensureProjectOwnerForBinding(ctx context.C
 
 	kuberneteshelper.EnsureOwnerReference(project, metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.UserKindName,
+		Kind:       "User",
 		UID:        user.GetUID(),
 		Name:       user.Name,
 	})
@@ -181,7 +181,7 @@ func (r *reconcileSyncProjectBinding) ensureNotProjectOwnerForBinding(ctx contex
 
 	kuberneteshelper.RemoveOwnerReferences(project, metav1.OwnerReference{
 		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.UserKindName,
+		Kind:       "User",
 		UID:        user.GetUID(),
 		Name:       user.Name,
 	})
@@ -215,7 +215,7 @@ func (r *reconcileSyncProjectBinding) getUserForBinding(ctx context.Context, pro
 
 	return nil, apierrors.NewNotFound(schema.GroupResource{
 		Group:    kubermaticv1.GroupName,
-		Resource: kubermaticv1.UserResourceName,
+		Resource: "users",
 	}, projectBinding.Spec.UserEmail)
 }
 

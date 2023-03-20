@@ -34,6 +34,10 @@ git config --global user.name "Prow CI Robot"
 git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 ensure_github_host_pubkey
 
+# for documenting the k8c.io CRDs later, we need to download it;
+# this is easier than git-cloning the repository manually
+go mod vendor
+
 # create a fresh clone
 git clone git@github.com:kubermatic/docs.git $TARGET_DIR
 cd $TARGET_DIR

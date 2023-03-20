@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/utils/pointer"
 )
@@ -227,7 +227,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.spec.ClusterNetwork = DefaultClusterNetwork(tc.spec.ClusterNetwork, kubermaticv1.ProviderType(tc.spec.Cloud.ProviderName), tc.spec.ExposeStrategy)
+			tc.spec.ClusterNetwork = DefaultClusterNetwork(tc.spec.ClusterNetwork, tc.spec.Cloud.ProviderName, tc.spec.ExposeStrategy)
 			assert.Equal(t, tc.expectedChangedSpec, tc.spec)
 		})
 	}

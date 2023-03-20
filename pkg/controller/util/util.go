@@ -20,12 +20,17 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/util/workqueue"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -177,7 +182,7 @@ func EnqueueConst(queueKey string) handler.EventHandler {
 // controller is not yet reached. This ensures that not too many cluster updates are running at the same
 // time, but also makes sure that un-UpToDate clusters will continue to be reconciled.
 func ClusterAvailableForReconciling(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, concurrencyLimit int) (bool, error) {
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue) {
+	if cluster.Status.Conditions[kubermaticv1.ClusterConditionSeedResourcesUpToDate].Status != corev1.ConditionTrue {
 		return true, nil
 	}
 
@@ -196,7 +201,7 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 
 	finishedUpdatingClustersCount := 0
 	for _, cluster := range clusters.Items {
-		if cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue) {
+		if cluster.Status.Conditions[kubermaticv1.ClusterConditionSeedResourcesUpToDate].Status == corev1.ConditionTrue {
 			finishedUpdatingClustersCount++
 		}
 	}
@@ -204,4 +209,54 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
 
 	return clustersUpdatingInProgressCount >= limit, nil
+}
+
+// ClusterReconcileWrapper is a wrapper that should be used around
+// any cluster reconciliaton. It:
+//   - Checks if the cluster is paused
+//   - Checks if the worker-name matches
+//   - Sets the ReconcileSuccess condition for the controller by fetching
+//     the current Cluster object and patching its status.
+func ClusterReconcileWrapper(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	workerName string,
+	cluster *kubermaticv1.Cluster,
+	versions kubermatic.Versions,
+	conditionType kubermaticv1.ClusterConditionType,
+	reconcile func() (*reconcile.Result, error),
+) (*reconcile.Result, error) {
+	if cluster.Labels[workerlabel.LabelKey] != workerName {
+		return nil, nil
+	}
+	if cluster.Spec.Pause {
+		return nil, nil
+	}
+
+	reconcilingStatus := corev1.ConditionFalse
+	result, err := reconcile()
+
+	// Only set to true if we had no error and don't want to reqeue the cluster
+	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
+		reconcilingStatus = corev1.ConditionTrue
+	}
+
+	errs := []error{err}
+	if conditionType != kubermaticv1.ClusterConditionNone {
+		err = kuberneteshelper.UpdateClusterStatus(ctx, client, cluster, func(c *kubermaticv1.Cluster) {
+			kubermaticv1helper.SetClusterCondition(c, versions.KubermaticCommit, conditionType, reconcilingStatus, "", "")
+
+			// In KKP 2.21, the ClusterConditionCloudControllerReconcilingSuccess was renamed
+			// due to a typo; this code ensures that we remove the old condition so that in
+			// KKP 2.22, we can removed the misspelling from the ENUM in the CRD.
+			if conditionType == kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess {
+				delete(c.Status.Conditions, "CloudControllerReconcilledSuccessfully")
+			}
+		})
+		if ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return result, kerrors.NewAggregate(errs)
 }

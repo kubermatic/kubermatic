@@ -30,7 +30,7 @@ import (
 	"testing"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -64,7 +64,17 @@ func TestReconcile(t *testing.T) {
 			name: "scenario 2: set proper resource usage",
 			cluster: func() *kubermaticv1.Cluster {
 				c := generator.GenDefaultCluster()
-				c.Status.ResourceUsage = kubermaticv1.NewResourceDetails(resource.MustParse("2"), resource.MustParse("1G"), resource.MustParse("2G"))
+
+				cpuResources := resource.MustParse("2")
+				memResources := resource.MustParse("1G")
+				storageResources := resource.MustParse("2G")
+
+				c.Status.ResourceUsage = &kubermaticv1.ResourceDetails{
+					CPU:     &cpuResources,
+					Memory:  &memResources,
+					Storage: &storageResources,
+				}
+
 				return c
 			}(),
 			machines: []*clusterv1alpha1.Machine{genFakeMachine("m1", "5", "5G", "10G")},
@@ -90,7 +100,17 @@ func TestReconcile(t *testing.T) {
 			name: "scenario 4: set zero usage if no machines",
 			cluster: func() *kubermaticv1.Cluster {
 				c := generator.GenDefaultCluster()
-				c.Status.ResourceUsage = kubermaticv1.NewResourceDetails(resource.MustParse("2"), resource.MustParse("1G"), resource.MustParse("2G"))
+
+				cpuResources := resource.MustParse("2")
+				memResources := resource.MustParse("1G")
+				storageResources := resource.MustParse("2G")
+
+				c.Status.ResourceUsage = &kubermaticv1.ResourceDetails{
+					CPU:     &cpuResources,
+					Memory:  &memResources,
+					Storage: &storageResources,
+				}
+
 				return c
 			}(),
 			expectedResourceUsage: &kubermaticv1.ResourceDetails{

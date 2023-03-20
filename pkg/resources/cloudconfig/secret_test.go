@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -61,10 +61,12 @@ func createFakeTemplateData(kubeconfig string) *resources.TemplateData {
 			Name: "fake-Kubevirt-Cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			Cloud: kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-				Kubeconfig:    kubeconfig,
-				CSIKubeconfig: kubeconfig,
-			}},
+			Cloud: kubermaticv1.CloudSpec{
+				KubeVirt: &kubermaticv1.KubeVirtCloudSpec{
+					Kubeconfig:    kubeconfig,
+					CSIKubeconfig: kubeconfig,
+				},
+			},
 		},
 	}).Build()
 }

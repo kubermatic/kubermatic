@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -116,8 +116,8 @@ func TestReconcile(t *testing.T) {
 				if cluster.Annotations == nil {
 					t.Fatal("expected annotations for the cluster")
 				}
-				if cluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] != string(kubermaticv1.PresetDeleted) {
-					t.Fatalf("expected annotation %s with value %s", kubermaticv1.PresetInvalidatedAnnotation, kubermaticv1.PresetDeleted)
+				if cluster.Annotations[kubermaticv1.PresetInvalidatedAnnotation] != string(kubermaticv1.PresetInvalidationReasonDeleted) {
+					t.Fatalf("expected annotation %s with value %s", kubermaticv1.PresetInvalidatedAnnotation, kubermaticv1.PresetInvalidationReasonDeleted)
 				}
 			}
 		})

@@ -25,7 +25,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -80,8 +80,13 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 				KeyFile:  "/etc/kubernetes/prometheus-client.key",
 			}
 
+			monitoringConfig := &kubermaticv1.KubermaticUserClusterMonitoringConfiguration{}
+			if uc := kubermaticConfig.Spec.UserCluster; uc != nil && uc.Monitoring != nil {
+				monitoringConfig = uc.Monitoring
+			}
+
 			// normalize the custom scraping prefix to be a valid YAML identifier
-			scrapeAnnotationPrefix := strings.NewReplacer(".", "_", "/", "").Replace(kubermaticConfig.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix)
+			scrapeAnnotationPrefix := strings.NewReplacer(".", "_", "/", "").Replace(monitoringConfig.ScrapeAnnotationPrefix)
 
 			// get custom scraping configs and rules
 			customData := &CustomizationData{
@@ -92,12 +97,12 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 				ScrapingAnnotationPrefix: scrapeAnnotationPrefix,
 			}
 
-			customScrapingConfigs, err := renderTemplate(kubermaticConfig.Spec.UserCluster.Monitoring.CustomScrapingConfigs, customData)
+			customScrapingConfigs, err := renderTemplate(monitoringConfig.CustomScrapingConfigs, customData)
 			if err != nil {
 				return nil, fmt.Errorf("custom scraping configuration could not be parsed as a Go template: %w", err)
 			}
 
-			customRules, err := renderTemplate(kubermaticConfig.Spec.UserCluster.Monitoring.CustomRules, customData)
+			customRules, err := renderTemplate(monitoringConfig.CustomRules, customData)
 			if err != nil {
 				return nil, fmt.Errorf("custom scraping rules could not be parsed as a Go template: %w", err)
 			}
@@ -137,7 +142,7 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 
 			cm.Data["prometheus.yaml"] = config
 
-			if kubermaticConfig.Spec.UserCluster.Monitoring.DisableDefaultRules {
+			if monitoringConfig.DisableDefaultRules {
 				delete(cm.Data, "rules.yaml")
 			} else {
 				cm.Data["rules.yaml"] = prometheusRules

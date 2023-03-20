@@ -27,15 +27,14 @@ import (
 
 	"go.uber.org/zap"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	"k8c.io/kubeone/pkg/fail"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	reconcilerlog "k8c.io/reconciler/pkg/log"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -613,7 +612,7 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	desiredVersion := externalCluster.Spec.Version
 
 	desiredPhases := []string{
-		string(kubermaticv1.KubeOnePhaseReconcilingUpgrade),
+		string(kubermaticv1.KubeOneClusterPhaseReconcilingUpgrade),
 		string(kubermaticv1.ExternalClusterPhaseError),
 		string(kubermaticv1.ExternalClusterPhaseRunning),
 	}
@@ -633,7 +632,7 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	if err != nil {
 		return err
 	}
-	if externalCluster.Status.Condition.Phase == kubermaticv1.KubeOnePhaseReconcilingUpgrade && len(podList.Items) == 1 && desiredVersion.Equal(currentVersion) {
+	if externalCluster.Status.Condition.Phase == kubermaticv1.KubeOneClusterPhaseReconcilingUpgrade && len(podList.Items) == 1 && desiredVersion.Equal(currentVersion) {
 		log.Info("KubeOne Cluster Upgraded!")
 		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
 			Phase: kubermaticv1.ExternalClusterPhaseRunning,
@@ -692,7 +691,7 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	}
 
 	if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
-		Phase:   kubermaticv1.KubeOnePhaseReconcilingUpgrade,
+		Phase:   kubermaticv1.KubeOneClusterPhaseReconcilingUpgrade,
 		Message: fmt.Sprintf("upgrading cluster %v version from %v to %v", externalCluster, currentVersion, desiredVersion),
 	}); err != nil {
 		return err
@@ -781,7 +780,7 @@ func (r *reconciler) migrateAction(ctx context.Context,
 	desiredContainerRuntime := externalCluster.Spec.ContainerRuntime
 
 	// reached desired state
-	if currentContainerRuntime == desiredContainerRuntime && externalCluster.Status.Condition.Phase == kubermaticv1.KubeOnePhaseReconcilingMigrate {
+	if currentContainerRuntime == desiredContainerRuntime && externalCluster.Status.Condition.Phase == kubermaticv1.KubeOneClusterPhaseReconcilingMigrate {
 		log.Info("KubeOne Cluster Migrated!")
 		if err := r.updateClusterStatus(ctx, externalCluster, kubermaticv1.ExternalClusterCondition{
 			Phase: kubermaticv1.ExternalClusterPhaseRunning,
@@ -802,7 +801,7 @@ func (r *reconciler) migrateAction(ctx context.Context,
 	}
 
 	desiredPhases := []string{
-		string(kubermaticv1.KubeOnePhaseReconcilingMigrate),
+		string(kubermaticv1.KubeOneClusterPhaseReconcilingMigrate),
 		string(kubermaticv1.ExternalClusterPhaseError),
 		string(kubermaticv1.ExternalClusterPhaseRunning),
 	}
@@ -860,7 +859,7 @@ func (r *reconciler) initiateClusterMigration(ctx context.Context,
 	cluster *kubermaticv1.ExternalCluster) error {
 	log.Info("Migrating kubeone cluster...")
 	if err := r.updateClusterStatus(ctx, cluster, kubermaticv1.ExternalClusterCondition{
-		Phase:   kubermaticv1.KubeOnePhaseReconcilingMigrate,
+		Phase:   kubermaticv1.KubeOneClusterPhaseReconcilingMigrate,
 		Message: fmt.Sprintf("migrating cluster %s container runtime from %v to %v", cluster.Name, currentContainerRuntime, desiredContainerRuntime),
 	}); err != nil {
 		return err
@@ -1016,7 +1015,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 				{
 					Name:       externalCluster.Name,
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-					Kind:       kubermaticv1.ExternalClusterKind,
+					Kind:       "ExternalCluster",
 					Controller: pointer.Bool(true),
 					UID:        externalCluster.GetUID(),
 				},
@@ -1030,7 +1029,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 						{
 							Name:       externalCluster.Name,
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticv1.ExternalClusterKind,
+							Kind:       "ExternalCluster",
 							Controller: pointer.Bool(true),
 							UID:        externalCluster.GetUID(),
 						},
@@ -1485,7 +1484,7 @@ func (r *reconciler) updateClusterStatus(ctx context.Context,
 	return nil
 }
 
-func (r *reconciler) getKubeOneSecret(ctx context.Context, ref providerconfig.GlobalSecretKeySelector) (*corev1.Secret, error) {
+func (r *reconciler) getKubeOneSecret(ctx context.Context, ref kubermaticv1.GlobalSecretKeySelector) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
 	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: ref.Namespace, Name: ref.Name}, secret); err != nil {
 		return nil, err

@@ -22,8 +22,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -35,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -59,7 +59,7 @@ const (
 
 type machinecontrollerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
@@ -214,11 +214,11 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 		if len(nodeSettings.RegistryMirrors) > 0 {
 			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
 		}
-		if !nodeSettings.HTTPProxy.Empty() {
-			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
+		if val := pointer.StringDeref(nodeSettings.HTTPProxy, ""); val != "" {
+			flags = append(flags, "-node-http-proxy", val)
 		}
-		if !nodeSettings.NoProxy.Empty() {
-			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
+		if val := pointer.StringDeref(nodeSettings.NoProxy, ""); val != "" {
+			flags = append(flags, "-node-no-proxy", val)
 		}
 		if nodeSettings.PauseImage != "" {
 			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)

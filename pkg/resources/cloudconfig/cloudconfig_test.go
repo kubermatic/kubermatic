@@ -23,9 +23,9 @@ import (
 
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -246,7 +246,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{
 							UseOctavia: pointer.Bool(true),
 						},
 					},
@@ -259,7 +259,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
 				},
 			},
 			wantConfig: &openstack.CloudConfig{
@@ -279,7 +279,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -290,7 +290,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
 						UseOctavia: pointer.Bool(false),
 					},
 				},
@@ -312,7 +312,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{
 							UseOctavia: pointer.Bool(false),
 						},
 					},
@@ -325,7 +325,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
 						UseOctavia: pointer.Bool(true),
 					},
 				},
@@ -347,7 +347,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -358,7 +358,7 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
 				},
 			},
 			wantConfig: &openstack.CloudConfig{

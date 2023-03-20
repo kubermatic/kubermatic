@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
@@ -125,7 +125,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				},
 			},
 			annotations: map[string]string{
-				kubermaticv1.UpdatedByVPALabelKey: `[{"name":"test","requires":{"limits":{"cpu":"1","memory":"512Mi"},"requests":{"cpu":"20m","memory":"64Mi"}}}]`,
+				updatedByVPALabelKey: `[{"name":"test","requires":{"limits":{"cpu":"1","memory":"512Mi"},"requests":{"cpu":"20m","memory":"64Mi"}}}]`,
 			},
 			defaultRequirements: map[string]*corev1.ResourceRequirements{
 				"test": defaultResourceRequirements.DeepCopy(),
@@ -157,7 +157,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				},
 			},
 			annotations: map[string]string{
-				kubermaticv1.UpdatedByVPALabelKey: `[{"name":"test-1","requires":{"limits":{"cpu":"100m","memory":"32Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}},{"name":"test-2","requires":{"limits":{"cpu":"2","memory":"256Mi"},"requests":{"cpu":"20m","memory":"64Mi"}}},{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
+				updatedByVPALabelKey: `[{"name":"test-1","requires":{"limits":{"cpu":"100m","memory":"32Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}},{"name":"test-2","requires":{"limits":{"cpu":"2","memory":"256Mi"},"requests":{"cpu":"20m","memory":"64Mi"}}},{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
 			},
 			defaultRequirements: map[string]*corev1.ResourceRequirements{
 				"test-1": defaultResourceRequirements.DeepCopy(),
@@ -211,7 +211,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				},
 			},
 			annotations: map[string]string{
-				kubermaticv1.UpdatedByVPALabelKey: `[{"name":"test-1","requires":{"limits":{"cpu":"100m","memory":"32Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}},{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
+				updatedByVPALabelKey: `[{"name":"test-1","requires":{"limits":{"cpu":"100m","memory":"32Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}},{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
 			},
 			defaultRequirements: map[string]*corev1.ResourceRequirements{
 				"test-1": defaultResourceRequirements.DeepCopy(),
@@ -256,7 +256,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				},
 			},
 			annotations: map[string]string{
-				kubermaticv1.UpdatedByVPALabelKey: `[{"name":"test-1","requires":{"limits":{"cpu":"100m","memory":"32Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}},{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
+				updatedByVPALabelKey: `[{"name":"test-1","requires":{"limits":{"cpu":"100m","memory":"32Mi"},"requests":{"cpu":"10m","memory":"16Mi"}}},{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
 			},
 			overrides: map[string]*corev1.ResourceRequirements{
 				"test-2": {
@@ -322,7 +322,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				},
 			},
 			annotations: map[string]string{
-				kubermaticv1.UpdatedByVPALabelKey: `[{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
+				updatedByVPALabelKey: `[{"name":"test-3","requires":{"limits":{"cpu":"1","memory":"2Gi"},"requests":{"cpu":"500m","memory":"1Gi"}}}]`,
 			},
 			overrides: map[string]*corev1.ResourceRequirements{
 				"test-2": {
@@ -373,7 +373,7 @@ func TestSetResourceRequirements(t *testing.T) {
 				},
 			},
 			annotations: map[string]string{
-				kubermaticv1.UpdatedByVPALabelKey: "",
+				updatedByVPALabelKey: "",
 			},
 			defaultRequirements: map[string]*corev1.ResourceRequirements{
 				"test-1": defaultResourceRequirements.DeepCopy(),

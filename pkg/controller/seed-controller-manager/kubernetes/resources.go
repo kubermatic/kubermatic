@@ -27,8 +27,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -73,6 +73,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 	config, err := r.configGetter(ctx)
+	if err != nil {
+		return nil, err
+	}
+	seed, err = defaulting.DefaultSeed(seed, config, r.log)
 	if err != nil {
 		return nil, err
 	}
@@ -214,6 +218,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled
 
+	npr := ""
+	if uc := config.Spec.UserCluster; uc != nil {
+		npr = uc.NodePortRange
+	}
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -222,7 +231,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithSeed(seed.DeepCopy()).
 		WithKubermaticConfiguration(config.DeepCopy()).
 		WithOverwriteRegistry(r.overwriteRegistry).
-		WithNodePortRange(config.Spec.UserCluster.NodePortRange).
+		WithNodePortRange(npr).
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(r.etcdDiskSize).
 		WithUserClusterMLAEnabled(r.userClusterMLAEnabled).
@@ -254,7 +263,7 @@ func (r *Reconciler) reconcileClusterNamespace(ctx context.Context, log *zap.Sug
 		return nil, fmt.Errorf("failed to ensure cluster namespace: %w", err)
 	}
 
-	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	err = kuberneteshelper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		if c.Status.NamespaceName != namespace.Name {
 			c.Status.NamespaceName = namespace.Name
 		}
@@ -489,7 +498,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 			namespace, resources.CloudControllerManagerKubeconfigSecretName, resources.CloudControllerManagerCertUsername, nil, data, r.log,
 		))
 
-		if data.Cluster().Spec.Cloud.Kubevirt != nil {
+		if data.Cluster().Spec.Cloud.KubeVirt != nil {
 			creators = append(creators, cloudconfig.KubeVirtInfraSecretReconciler(data))
 		}
 	}
@@ -627,7 +636,10 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			)
 		}
 
-		issuerURL := c.Spec.OIDC.IssuerURL
+		issuerURL := ""
+		if c.Spec.OIDC != nil {
+			issuerURL = c.Spec.OIDC.IssuerURL
+		}
 		if issuerURL == "" && r.features.KubernetesOIDCAuthentication {
 			issuerURL = data.OIDCIssuerURL()
 		}

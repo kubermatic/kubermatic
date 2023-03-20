@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strconv"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -84,8 +84,11 @@ func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: cfg.Spec.VerticalPodAutoscaler.Updater.Resources,
 				},
+			}
+
+			if res := cfg.Spec.VerticalPodAutoscaler.Updater.Resources; res != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
 			return d, nil

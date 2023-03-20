@@ -26,7 +26,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -188,7 +188,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 			return fmt.Errorf("invalid --storageclass flag %q given", chosenProvider)
 		}
 
-		cloudProvider = kubermaticv1.ProviderType(chosenProvider)
+		cloudProvider = kubermaticv1.CloudProvider(chosenProvider)
 	} else if opt.StorageClassProvider == string(common.CopyDefaultCloudProvider) {
 		// Even if a CSI Driver was found, the user might not want us to blindly create our
 		// own StorageClass, but instead copy the default. So if --storageclass=copy-default,

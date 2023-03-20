@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -56,7 +56,7 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 
 	// set the initial phase for new projects
 	if project.Status.Phase == "" {
-		if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectInactive); err != nil {
+		if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectPhaseInactive); err != nil {
 			return fmt.Errorf("failed to set initial project phase: %w", err)
 		}
 	}
@@ -64,10 +64,10 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %w", err)
 	}
-	if err := ensureClusterRBACRoleForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err := ensureClusterRBACRoleForNamedResource(ctx, c.log, c.client, project.Name, "projects", "Project", project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %w", err)
 	}
-	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.log, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.log, c.client, project.Name, "projects", "Project", project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %w", err)
 	}
 	if err := c.ensureClusterRBACRoleForResources(ctx); err != nil {
@@ -82,7 +82,7 @@ func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.Obje
 	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %w", err)
 	}
-	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectActive); err != nil {
+	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectPhaseActive); err != nil {
 		return fmt.Errorf("failed to set project phase to active: %w", err)
 	}
 
@@ -413,7 +413,7 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.C
 // - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cleanupFinalizer.
 func (c *projectController) ensureProjectCleanup(ctx context.Context, project *kubermaticv1.Project) error {
-	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectTerminating); err != nil {
+	if err := c.ensureProjectPhase(ctx, project, kubermaticv1.ProjectPhaseTerminating); err != nil {
 		return fmt.Errorf("failed to set project phase: %w", err)
 	}
 

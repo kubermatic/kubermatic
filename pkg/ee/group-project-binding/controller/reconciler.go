@@ -30,7 +30,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -82,7 +82,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if err := updateGroupProjectBinding(ctx, r.Client, binding, func(binding *kubermaticv1.GroupProjectBinding) {
 			kuberneteshelper.EnsureOwnerReference(binding, metav1.OwnerReference{
 				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-				Kind:       kubermaticv1.ProjectKindName,
+				Kind:       "Project",
 				Name:       project.Name,
 				UID:        project.UID,
 			})

@@ -19,8 +19,8 @@ package resources
 import (
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +45,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -71,7 +71,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -97,7 +97,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
 					Cloud: kubermaticv1.CloudSpec{
-						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+						OpenStack: &kubermaticv1.OpenStackCloudSpec{},
 					},
 					Version: *semver.NewSemverOrDie("1.23.5"),
 				},

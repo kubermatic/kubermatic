@@ -21,13 +21,12 @@ import (
 	"time"
 
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
-func TestOpenstackConfigBuilder(t *testing.T) {
+func TestOpenStackConfigBuilder(t *testing.T) {
 	// call all With* functions once to ensure they all work...
-	config := NewOpenstackConfig().
+	config := NewOpenStackConfig().
 		WithImage("image").
 		WithFlavor("flavor").
 		WithRegion("region").
@@ -42,75 +41,75 @@ func TestOpenstackConfigBuilder(t *testing.T) {
 	}
 }
 
-type openstackTestcase struct {
-	baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenstack]
+type openStackTestcase struct {
+	baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenStack]
 
-	os providerconfig.OperatingSystem
+	os kubermaticv1.OperatingSystem
 }
 
-func (tt *openstackTestcase) Run(cluster *kubermaticv1.Cluster) (*openstack.RawConfig, error) {
-	return CompleteOpenstackProviderSpec(tt.Input(), cluster, tt.datacenter, tt.os)
+func (tt *openStackTestcase) Run(cluster *kubermaticv1.Cluster) (*openstack.RawConfig, error) {
+	return CompleteOpenStackProviderSpec(tt.Input(), cluster, tt.datacenter, tt.os)
 }
 
-var _ testcase[openstack.RawConfig] = &openstackTestcase{}
+var _ testcase[openstack.RawConfig] = &openStackTestcase{}
 
-func TestCompleteOpenstackProviderSpec(t *testing.T) {
+func TestCompleteOpenStackProviderSpec(t *testing.T) {
 	t.Run("should validate the cluster's cloud provider", func(t *testing.T) {
-		datacenter := &kubermaticv1.DatacenterSpecOpenstack{}
+		datacenter := &kubermaticv1.DatacenterSpecOpenStack{}
 
 		cluster := &kubermaticv1.Cluster{}
-		if _, err := CompleteOpenstackProviderSpec(nil, cluster, datacenter, ""); err == nil {
+		if _, err := CompleteOpenStackProviderSpec(nil, cluster, datacenter, ""); err == nil {
 			t.Error("Should have complained about invalid provider, but returned nil error.")
 		}
 
-		cluster.Spec.Cloud.Openstack = &kubermaticv1.OpenstackCloudSpec{}
-		if _, err := CompleteOpenstackProviderSpec(nil, cluster, datacenter, ""); err != nil {
+		cluster.Spec.Cloud.OpenStack = &kubermaticv1.OpenStackCloudSpec{}
+		if _, err := CompleteOpenStackProviderSpec(nil, cluster, datacenter, ""); err != nil {
 			t.Errorf("Cluster is now matching Openstack, should not have returned an error, but got: %v", err)
 		}
 	})
 
 	goodCluster := genCluster(kubermaticv1.CloudSpec{
-		ProviderName: string(kubermaticv1.OpenstackCloudProvider),
-		Openstack:    &kubermaticv1.OpenstackCloudSpec{},
+		ProviderName: kubermaticv1.CloudProviderOpenStack,
+		OpenStack:    &kubermaticv1.OpenStackCloudSpec{},
 	})
 
-	defaultMachine := NewOpenstackConfig().
+	defaultMachine := NewOpenStackConfig().
 		WithTrustDevicePath(false).
 		WithTag("kubernetes-cluster", goodCluster.Name).
 		WithTag("system-cluster", goodCluster.Name).
 		WithTag("system-project", goodCluster.Labels[kubermaticv1.ProjectIDLabelKey])
 
 	testcases := []testcase[openstack.RawConfig]{
-		&openstackTestcase{
-			baseTestcase: baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenstack]{
+		&openStackTestcase{
+			baseTestcase: baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenStack]{
 				name: "should apply the values from the datacenter",
-				datacenter: &kubermaticv1.DatacenterSpecOpenstack{
+				datacenter: &kubermaticv1.DatacenterSpecOpenStack{
 					Region: "testregion-openstack",
 				},
 				expected: cloneBuilder(defaultMachine).WithRegion("testregion-openstack"),
 			},
 		},
-		&openstackTestcase{
-			baseTestcase: baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenstack]{
+		&openStackTestcase{
+			baseTestcase: baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenStack]{
 				name: "should not overwrite values in an existing spec",
-				datacenter: &kubermaticv1.DatacenterSpecOpenstack{
+				datacenter: &kubermaticv1.DatacenterSpecOpenStack{
 					Region: "testregion-openstack",
 				},
 				inputSpec: cloneBuilder(defaultMachine).WithRegion("keep-me-openstack"),
 				expected:  cloneBuilder(defaultMachine).WithRegion("keep-me-openstack"),
 			},
 		},
-		&openstackTestcase{
-			baseTestcase: baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenstack]{
+		&openStackTestcase{
+			baseTestcase: baseTestcase[openstack.RawConfig, kubermaticv1.DatacenterSpecOpenStack]{
 				name: "should select the correct AMI based on the OS",
-				datacenter: &kubermaticv1.DatacenterSpecOpenstack{
+				datacenter: &kubermaticv1.DatacenterSpecOpenStack{
 					Images: kubermaticv1.ImageList{
-						providerconfig.OperatingSystemFlatcar: "testimage",
+						kubermaticv1.OperatingSystemFlatcar: "testimage",
 					},
 				},
 				expected: cloneBuilder(defaultMachine).WithImage("testimage"),
 			},
-			os: providerconfig.OperatingSystemFlatcar,
+			os: kubermaticv1.OperatingSystemFlatcar,
 		},
 	}
 

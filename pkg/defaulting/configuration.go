@@ -26,10 +26,10 @@ import (
 	"github.com/distribution/distribution/v3/reference"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/api/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -304,53 +304,53 @@ var (
 			// we are still going to have 1.23 clusters temporarily during an upgrade,
 			// so let's keep this just to make sure.
 			{
-				Provider:  string(kubermaticv1.AWSCloudProvider),
+				Provider:  kubermaticv1.CloudProviderAWS,
 				Version:   "< 1.24.0",
-				Condition: kubermaticv1.ExternalCloudProviderCondition,
-				Operation: kubermaticv1.SupportOperation,
+				Condition: kubermaticv1.ConditionExternalCloudProvider,
+				Operation: kubermaticv1.OperationSupport,
 			},
 			{
-				Provider:  string(kubermaticv1.AWSCloudProvider),
+				Provider:  kubermaticv1.CloudProviderAWS,
 				Version:   "< 1.24.0",
-				Condition: kubermaticv1.ExternalCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
+				Condition: kubermaticv1.ConditionExternalCloudProvider,
+				Operation: kubermaticv1.OperationCreate,
 			},
 			{
-				Provider:  string(kubermaticv1.AWSCloudProvider),
+				Provider:  kubermaticv1.CloudProviderAWS,
 				Version:   "< 1.24.0",
-				Condition: kubermaticv1.ExternalCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
+				Condition: kubermaticv1.ConditionExternalCloudProvider,
+				Operation: kubermaticv1.OperationUpdate,
 			},
 			// In-tree cloud provider for OpenStack is not supported starting with Kubernetes 1.26.
 			// This can be removed once we drop support for Kubernetes 1.26 (note: not for 1.25, because
 			// at that point we still might have clusters that needs to be upgraded from 1.25 to 1.26).
 			{
-				Provider:  string(kubermaticv1.OpenstackCloudProvider),
+				Provider:  kubermaticv1.CloudProviderOpenStack,
 				Version:   ">= 1.26.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
+				Condition: kubermaticv1.ConditionInTreeCloudProvider,
+				Operation: kubermaticv1.OperationCreate,
 			},
 			{
-				Provider:  string(kubermaticv1.OpenstackCloudProvider),
+				Provider:  kubermaticv1.CloudProviderOpenStack,
 				Version:   ">= 1.26.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
+				Condition: kubermaticv1.ConditionInTreeCloudProvider,
+				Operation: kubermaticv1.OperationUpdate,
 			},
 			// In-tree cloud provider for vSphere is not supported by KKP 2.22.0 since CSI
 			// migration is on by default for Kubernetes 1.25. We want to make sure that
 			// migrations happen before upgrading to that version, so we are enforcing it.
 			// This can be removed once we drop support for Kubernetes 1.25.
 			{
-				Provider:  string(kubermaticv1.VSphereCloudProvider),
+				Provider:  kubermaticv1.CloudProviderVSphere,
 				Version:   ">= 1.25.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
+				Condition: kubermaticv1.ConditionInTreeCloudProvider,
+				Operation: kubermaticv1.OperationCreate,
 			},
 			{
-				Provider:  string(kubermaticv1.VSphereCloudProvider),
+				Provider:  kubermaticv1.CloudProviderVSphere,
 				Version:   ">= 1.25.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
+				Condition: kubermaticv1.ConditionInTreeCloudProvider,
+				Operation: kubermaticv1.OperationUpdate,
 			},
 		},
 	}
@@ -378,9 +378,9 @@ var (
 		},
 	}
 
-	ExternalClusterDefaultKubernetesVersioning = map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration{
-		kubermaticv1.EKSProviderType: eksProviderVersioningConfiguration,
-		kubermaticv1.AKSProviderType: aksProviderVersioningConfiguration,
+	ExternalClusterDefaultKubernetesVersioning = map[kubermaticv1.ExternalClusterProvider]kubermaticv1.ExternalClusterProviderVersioningConfiguration{
+		kubermaticv1.ExternalClusterProviderEKS: eksProviderVersioningConfiguration,
+		kubermaticv1.ExternalClusterProviderAKS: aksProviderVersioningConfiguration,
 	}
 )
 
@@ -403,6 +403,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "caBundle.name", "value", configCopy.Spec.CABundle.Name)
 	}
 
+	if configCopy.Spec.SeedController == nil {
+		configCopy.Spec.SeedController = &kubermaticv1.KubermaticSeedControllerConfiguration{}
+	}
+
 	if configCopy.Spec.SeedController.MaximumParallelReconciles == 0 {
 		configCopy.Spec.SeedController.MaximumParallelReconciles = DefaultMaximumParallelReconciles
 		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", configCopy.Spec.SeedController.MaximumParallelReconciles)
@@ -411,6 +415,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if configCopy.Spec.SeedController.Replicas == nil {
 		configCopy.Spec.SeedController.Replicas = pointer.Int32(DefaultSeedControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)
+	}
+
+	if configCopy.Spec.Webhook == nil {
+		configCopy.Spec.Webhook = &kubermaticv1.KubermaticWebhookConfiguration{}
 	}
 
 	if configCopy.Spec.Webhook.Replicas == nil {
@@ -423,6 +431,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "webhook.pprofEndpoint", "value", *configCopy.Spec.Webhook.PProfEndpoint)
 	}
 
+	if configCopy.Spec.API == nil {
+		configCopy.Spec.API = &kubermaticv1.KubermaticAPIConfiguration{}
+	}
+
 	if configCopy.Spec.API.PProfEndpoint == nil {
 		configCopy.Spec.API.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *configCopy.Spec.API.PProfEndpoint)
@@ -433,6 +445,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "seedController.pprofEndpoint", "value", *configCopy.Spec.SeedController.PProfEndpoint)
 	}
 
+	if configCopy.Spec.MasterController == nil {
+		configCopy.Spec.MasterController = &kubermaticv1.KubermaticMasterControllerConfiguration{}
+	}
+
 	if configCopy.Spec.MasterController.PProfEndpoint == nil {
 		configCopy.Spec.MasterController.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *configCopy.Spec.MasterController.PProfEndpoint)
@@ -441,6 +457,14 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if configCopy.Spec.MasterController.Replicas == nil {
 		configCopy.Spec.MasterController.Replicas = pointer.Int32(DefaultMasterControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *configCopy.Spec.MasterController.Replicas)
+	}
+
+	if configCopy.Spec.UserCluster == nil {
+		configCopy.Spec.UserCluster = &kubermaticv1.KubermaticUserClusterConfiguration{}
+	}
+
+	if configCopy.Spec.UserCluster.Addons == nil {
+		configCopy.Spec.UserCluster.Addons = &kubermaticv1.KubermaticAddonsConfiguration{}
 	}
 
 	if len(configCopy.Spec.UserCluster.Addons.Default) == 0 && configCopy.Spec.UserCluster.Addons.DefaultManifests == "" {
@@ -479,9 +503,17 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
 	}
 
+	if configCopy.Spec.UserCluster.Monitoring == nil {
+		configCopy.Spec.UserCluster.Monitoring = &kubermaticv1.KubermaticUserClusterMonitoringConfiguration{}
+	}
+
 	if configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix == "" {
 		configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix = DefaultUserClusterScrapeAnnotationPrefix
 		logger.Debugw("Defaulting field", "field", "userCluster.monitoring.scrapeAnnotationPrefix", "value", configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix)
+	}
+
+	if configCopy.Spec.Ingress.CertificateIssuer == nil {
+		configCopy.Spec.Ingress.CertificateIssuer = &corev1.TypedLocalObjectReference{}
 	}
 
 	// cert-manager's default is Issuer, but since we do not create an Issuer,
@@ -490,6 +522,10 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if configCopy.Spec.Ingress.CertificateIssuer.Kind == "" {
 		configCopy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1.ClusterIssuerKind
 		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", configCopy.Spec.Ingress.CertificateIssuer.Kind)
+	}
+
+	if configCopy.Spec.UI == nil {
+		configCopy.Spec.UI = &kubermaticv1.KubermaticUIConfiguration{}
 	}
 
 	if configCopy.Spec.UI.Replicas == nil {
@@ -506,6 +542,9 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	auth := configCopy.Spec.Auth
+	if auth == nil {
+		auth = &kubermaticv1.KubermaticAuthConfiguration{}
+	}
 
 	if auth.ClientID == "" {
 		auth.ClientID = DefaultAuthClientID
@@ -574,8 +613,28 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
+	if configCopy.Spec.UserCluster.SystemApplications == nil {
+		configCopy.Spec.UserCluster.SystemApplications = &kubermaticv1.SystemApplicationsConfiguration{}
+	}
+
 	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.SystemApplications.HelmRepository, DefaultSystemApplicationsHelmRepository, "userCluster.systemApplications.helmRepository", logger); err != nil {
 		return configCopy, err
+	}
+
+	if configCopy.Spec.VerticalPodAutoscaler == nil {
+		configCopy.Spec.VerticalPodAutoscaler = &kubermaticv1.KubermaticVPAConfiguration{}
+	}
+
+	if configCopy.Spec.VerticalPodAutoscaler.Recommender == nil {
+		configCopy.Spec.VerticalPodAutoscaler.Recommender = &kubermaticv1.KubermaticVPAComponent{}
+	}
+
+	if configCopy.Spec.VerticalPodAutoscaler.Updater == nil {
+		configCopy.Spec.VerticalPodAutoscaler.Updater = &kubermaticv1.KubermaticVPAComponent{}
+	}
+
+	if configCopy.Spec.VerticalPodAutoscaler.AdmissionController == nil {
+		configCopy.Spec.VerticalPodAutoscaler.AdmissionController = &kubermaticv1.KubermaticVPAComponent{}
 	}
 
 	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
@@ -645,17 +704,16 @@ func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap
 	return nil
 }
 
-func defaultResources(settings *corev1.ResourceRequirements, defaults corev1.ResourceRequirements, key string, logger *zap.SugaredLogger) error {
-	// this should never happen as the resources are not pointers in a KubermaticConfiguration
-	if settings == nil {
-		return nil
+func defaultResources(settings **corev1.ResourceRequirements, defaults corev1.ResourceRequirements, key string, logger *zap.SugaredLogger) error {
+	if *settings == nil {
+		*settings = &corev1.ResourceRequirements{}
 	}
 
-	if err := defaultResourceList(&settings.Requests, defaults.Requests, key+".requests", logger); err != nil {
+	if err := defaultResourceList(&(*settings).Requests, defaults.Requests, key+".requests", logger); err != nil {
 		return fmt.Errorf("failed to default requests: %w", err)
 	}
 
-	if err := defaultResourceList(&settings.Limits, defaults.Limits, key+".limits", logger); err != nil {
+	if err := defaultResourceList(&(*settings).Limits, defaults.Limits, key+".limits", logger); err != nil {
 		return fmt.Errorf("failed to default limits: %w", err)
 	}
 
@@ -707,7 +765,7 @@ func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration,
 	return nil
 }
 
-func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration) error {
+func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults map[kubermaticv1.ExternalClusterProvider]kubermaticv1.ExternalClusterProviderVersioningConfiguration) error {
 	// this should never happen as the resources are not pointers in a KubermaticConfiguration
 	if settings == nil {
 		return nil
@@ -729,7 +787,7 @@ func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersionin
 		}
 
 		if settings.ExternalClusters == nil {
-			settings.ExternalClusters = map[kubermaticv1.ExternalClusterProviderType]kubermaticv1.ExternalClusterProviderVersioningConfiguration{}
+			settings.ExternalClusters = map[kubermaticv1.ExternalClusterProvider]kubermaticv1.ExternalClusterProviderVersioningConfiguration{}
 		}
 
 		settings.ExternalClusters[provider] = curSettings

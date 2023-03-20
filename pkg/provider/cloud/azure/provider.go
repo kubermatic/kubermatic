@@ -24,7 +24,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -288,7 +288,7 @@ func (a *Azure) DefaultCloudSpec(ctx context.Context, clusterSpec *kubermaticv1.
 	}
 
 	if clusterSpec.Cloud.Azure.LoadBalancerSKU == "" {
-		clusterSpec.Cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureBasicLBSKU
+		clusterSpec.Cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureLBSKUBasic
 	}
 
 	switch clusterSpec.ClusterNetwork.IPFamily {

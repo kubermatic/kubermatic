@@ -70,7 +70,7 @@ const (
 	envAzureClientSecret   = "AZURE_CLIENT_SECRET"
 	envAzureTenantID       = "AZURE_TENANT_ID"
 	envAzureSubscriptionID = "AZURE_SUBSCRIPTION_ID"
-	// Openstack credential env.
+	// OpenStack credential env.
 	envOSUsername                    = "OS_USER_NAME"
 	envOSPassword                    = "OS_PASSWORD"
 	envOSDomain                      = "OS_DOMAIN_NAME"
@@ -114,7 +114,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	case types.CloudProviderVsphere:
 		quotaUsage, err = getVsphereResourceRequirements(config)
 	case types.CloudProviderOpenstack:
-		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
+		quotaUsage, err = getOpenStackResourceRequirements(ctx, userClient, config, caBundle)
 	case types.CloudProviderAlibaba:
 		quotaUsage, err = getAlibabaResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderHetzner:
@@ -349,7 +349,7 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+func getOpenStackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := openstacktypes.GetConfig(*config)
@@ -357,7 +357,7 @@ func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntim
 		return nil, fmt.Errorf("failed to get openstack raw config: %w", err)
 	}
 
-	creds := &resources.OpenstackCredentials{}
+	creds := &resources.OpenStackCredentials{}
 
 	creds.Username, err = configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Username, envOSUsername)
 	if err != nil {

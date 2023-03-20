@@ -19,19 +19,19 @@ package test
 import (
 	"fmt"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 )
 
 // mock that raises an error when try to read secret.
-func ShouldNotBeCalled(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+func ShouldNotBeCalled(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
 	return "", fmt.Errorf("'GetGlobalSecretKeySelectorValue' should not be called")
 }
 
 // mock that returns default value when reading secret or value specify in generator map.
 // Default value is key + "-value"
 // generator is map of key (of GlobalSecretKeySelector) and value to return for this key. Value can be an error or a string.
-func DefaultOrOverride(generator map[string]interface{}) func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
-	return func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
+func DefaultOrOverride(generator map[string]interface{}) func(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
+	return func(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error) {
 		if val, ok := generator[key]; ok {
 			if err, ok := val.(error); ok {
 				return "", err
