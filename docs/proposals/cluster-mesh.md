@@ -37,33 +37,52 @@ The `ClusterMesh` CRD will be defined as follows:
 ```go
 // ClusterMesh is the object representing a mesh of multiple KKP user clusters.
 type ClusterMesh struct {
-  metav1.TypeMeta   `json:",inline"`
-  metav1.ObjectMeta `json:"metadata,omitempty"`
+    metav1.TypeMeta   `json:",inline"`
+    metav1.ObjectMeta `json:"metadata,omitempty"`
 
-  Spec ClusterMeshSpec `json:"spec,omitempty"`
+    // Spec describes the desired cluster mesh state.
+    Spec ClusterMeshSpec `json:"spec,omitempty"`
+
+    // Status contains reconciliation information for the cluster mesh.
+    Status ClusterMeshStatus `json:"status,omitempty"`
 }
 
 // ClusterMeshSpec specifies the mesh of KKP user clusters.
 type ClusterMeshSpec struct {
-  // Clusters is a list of clusters connected in the ClusterMesh.
-  Clusters []ClusterMeshCluster `json:"clusters,omitempty"`
+    // Clusters is a list of clusters connected in the ClusterMesh, indexed by the KKP cluster name.s
+    Clusters map[string]ClusterMeshCluster `json:"clusters,omitempty"`
 }
 
 // ClusterMeshCluster contains mesh configuration for a cluster.
 type ClusterMeshCluster struct {
-  // ID an internal identifier of the cluster in the ClusterMesh.
-  // Must be unique across clusters in a ClusterMesh.
-  ID int `json:"ID,omitempty"`
+    // +kubebuilder:validation:Enum=NodePort;LoadBalancer
+    // +kubebuilder:default=NodePort
+    // APIServerServiceType defines the k8s service type used to expose the clustermesh apiserver the other clusters.
+    APIServerServiceType v1.ServiceType `json:"apiServerServiceType,omitempty"`
+}
 
-  // APIServerServiceType defines the k8s service type used to expose the clustermesh apiserver the other clusters.
-  APIServerServiceType v1.ServiceType `json:"apiServerServiceType,omitempty"`
+// ClusterMeshStatus stores status information about a cluster mesh.
+type ClusterMeshStatus struct {
+    // Clusters contains a map of cluster mesh status information per each cluster, indexed by the KKP cluster name.
+    // +optional
+    Clusters map[string]ClusterMeshClusterStatus `json:"address,omitempty"`
 
-  // APIServerIPs contains a list of IPs on which the clustermesh apiserver of this cluster is exposed to the other clusters.
-  // It can be a single IP if APIServerServiceType == LoadBalancer, or multiple IPs if APIServerServiceType == NodePort.
-  APIServerIPs []string `json:"apiServerIPs,omitempty"`
+    // TODO: mesh status conditions etc.
+}
 
-  // APIServerPort defines the port on which the clustermesh apiserver of this cluster is exposed to the other clusters.
-  APIServerPort int `json:"apiServerPort,omitempty"`
+// ClusterMeshClusterStatus contains mesh status information for a cluster.
+    type ClusterMeshClusterStatus struct {
+    // +kubebuilder:validation:Minimum:=1
+    // +kubebuilder:validation:Maximum:=255
+    // ID is an internal identifier of the cluster in the ClusterMesh as it was assigned by the KKP controller.
+    ID int `json:"ID,omitempty"`
+
+    // APIServerIPs contains a list of IPs on which the clustermesh apiserver of this cluster is exposed to the other clusters.
+    // It can be a single IP if APIServerServiceType == LoadBalancer, or multiple IPs if APIServerServiceType == NodePort.
+    APIServerIPs []string `json:"apiServerIPs,omitempty"`
+
+    // APIServerPort defines the port on which the clustermesh apiserver of this cluster is exposed to the other clusters.
+    APIServerPort int `json:"apiServerPort,omitempty"`
 }
 ```
 
