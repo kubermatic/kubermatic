@@ -210,7 +210,6 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 				envVars = append(envVars, SeedProxyEnvironmentVars(seed.Spec.ProxySettings)...)
 				withSeed = true
 			} else if d != nil && len(d.Spec.Template.Spec.Containers) > 0 {
-
 				// check if the old Deployment had a seed env var and is deployed on a Seed or Master+Seed combination.
 				withSeed = false
 				for _, e := range d.Spec.Template.Spec.Containers[0].Env {
@@ -220,13 +219,13 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 					}
 				}
 
-				// If the webhook is deployed without a Seed it will use the Kubermatic Configuration Proxy settings.
-				// Otherwise, we reuse the existing env to copy seedNameEnvVariable and Proxy Settings that where set
-				// before based on the Seed Proxy Settings.
-				if !withSeed {
-					envVars = KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy)
-				} else {
+				if withSeed {
+					// The webhook is deployed with a Seed, so it reuses the existing env to keep
+					// seedNameEnvVariable and Proxy Settings that where set before based on the actual Seed.
 					envVars = d.Spec.Template.Spec.Containers[0].Env
+				} else {
+					// The webhook is deployed without a Seed and will use the Kubermatic Configuration Proxy settings.
+					envVars = KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy)
 				}
 			}
 
