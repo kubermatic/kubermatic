@@ -9,7 +9,6 @@ aliases:
   sig-app-management:
     - ahmedwaleedmalik
     - hdurand0710
-    - rastislavs
     - simontheleg
     - vgramer
     - wurbanski
@@ -27,7 +26,6 @@ aliases:
   sig-networking:
     - moadqassem
     - moelsayed
-    - rastislavs
     - weirdmachine
   sig-ui:
     - ahmadhamzh
