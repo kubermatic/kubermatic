@@ -301,8 +301,8 @@ groups:
     labels:
       kubermatic: federate
 
-  - record: job:machine_controller_machines_total:rate5m
-    expr: rate(machine_controller_machines_total[5m])
+  - record: job:machine_controller_machines_total:sum
+    expr: sum(machine_controller_machines_total) by (kubelet_version, os, provider, size)
     labels:
       kubermatic: federate
 
