@@ -1230,10 +1230,9 @@ type KubevirtCloudSpec struct {
 	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig    string `json:"kubeconfig,omitempty"`
 	CSIKubeconfig string `json:"csiKubeconfig,omitempty"`
-	// PreAllocatedDataVolumes represents a list of DataVolumes that are tied to cluster lifecycle and can be referenced by machines.
 	// Custom Images are a good example of this use case.
 	PreAllocatedDataVolumes []PreAllocatedDataVolume `json:"preAllocatedDataVolumes,omitempty"`
-	// Deprecated: in favor of InfraStorageClasses.
+	// Deprecated: in favor of StorageClasses.
 	// InfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
 	InfraStorageClasses []string `json:"infraStorageClasses,omitempty"`

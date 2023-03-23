@@ -37,8 +37,6 @@ import (
 const (
 	// FinalizerNamespace will ensure the deletion of the dedicated namespace.
 	FinalizerNamespace = "kubermatic.k8c.io/cleanup-kubevirt-namespace"
-	// KubeVirtImagesNamespace namespace contains globally available custom images and cached standard images.
-	KubeVirtImagesNamespace = "kubevirt-images"
 	// FinalizerClonerRoleBinding will ensure the deletion of the DataVolume cloner role-binding.
 	FinalizerClonerRoleBinding = "kubermatic.k8c.io/cleanup-kubevirt-cloner-rbac"
 )
@@ -51,7 +49,7 @@ type kubevirt struct {
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
 	if dc.Spec.Kubevirt == nil {
-		return nil, errors.New("datacenter is not an KubeVirt datacenter")
+		return nil, errors.New("datacenter is not a KubeVirt datacenter")
 	}
 	return &kubevirt{
 		secretKeySelector: secretKeyGetter,
@@ -145,9 +143,15 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, client)
-	if err != nil {
-		return cluster, err
+	enableDefaultNetworkPolices := true
+	if k.dc.EnableDefaultNetworkPolicies != nil {
+		enableDefaultNetworkPolices = *k.dc.EnableDefaultNetworkPolicies
+	}
+	if enableDefaultNetworkPolices {
+		err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, client)
+		if err != nil {
+			return cluster, err
+		}
 	}
 
 	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client)

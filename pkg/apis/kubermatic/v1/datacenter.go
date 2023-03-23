@@ -704,14 +704,18 @@ type DatacenterSpecKubevirt struct {
 	// configuration based on DNSPolicy.
 	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
 
-	// CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
+	// Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
+	// Defaults to true.
+	EnableDefaultNetworkPolicies *bool `json:"enableDefaultNetworkPolicies,omitempty"`
+
+	// Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
 	// in the dedicated infra KubeVirt cluster. They are added to the defaults.
 	CustomNetworkPolicies []*CustomNetworkPolicy `json:"customNetworkPolicies,omitempty"`
 
 	// Images represents standard VM Image sources.
 	Images KubeVirtImageSources `json:"images,omitempty"`
 
-	// InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
+	// Optional: InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
 	// that will be used to initialise StorageClasses in the tenant cluster.
 	// In the tenant cluster, the created StorageClass name will have as name:
 	// kubevirt-<infra-storageClass-name>

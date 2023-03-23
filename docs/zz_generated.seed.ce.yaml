@@ -113,7 +113,7 @@ spec:
           network: ""
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
-          # CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
+          # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
           # in the dedicated infra KubeVirt cluster. They are added to the defaults.
           customNetworkPolicies:
             - # Name is the name of the Custom Network Policy.
@@ -143,6 +143,9 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
+          # Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
+          # Defaults to true.
+          enableDefaultNetworkPolicies: true
           # Images represents standard VM Image sources.
           images:
             # HTTP represents a http source.
@@ -159,7 +162,7 @@ spec:
                   <<version>>: <<url>>
                 ubuntu:
                   <<version>>: <<url>>
-          # InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
+          # Optional: InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
           # that will be used to initialise StorageClasses in the tenant cluster.
           # In the tenant cluster, the created StorageClass name will have as name:
           # kubevirt-<infra-storageClass-name>
