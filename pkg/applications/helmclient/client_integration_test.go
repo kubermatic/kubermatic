@@ -670,7 +670,7 @@ func checkServiceDeployed(t *testing.T, ctx context.Context, client ctrlruntimec
 	}
 }
 
-// checkExpectedReleases checks that only expected releases are stored on the clusters.
+// checkExpectedReleases checks that only expected releases are stored on the cluster.
 // Helm releases are stored in secrets (because we use the secret driver) labeled with name=<the name of the release>, version=<the version of the release> and owner=helm.
 func checkExpectedReleases(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, expectedReleases []test.ReleaseStorageInfo) {
 	t.Helper()
