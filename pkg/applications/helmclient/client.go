@@ -286,6 +286,9 @@ func (h HelmClient) Upgrade(chartLoc, releaseName string, values map[string]inte
 	upgradeClient.Atomic = deployOpts.atomic
 	upgradeClient.EnableDNS = deployOpts.enableDNS
 
+	// restrict history to avoid OOM kill
+	upgradeClient.MaxHistory = 1
+
 	// Don't reuse values from the previous release.
 	// By default, Helm will merge values with the ones of the last release. This behavior may be helpful to for CLI but
 	// as CR is the source of truth, we don't want that.
