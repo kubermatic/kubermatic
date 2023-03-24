@@ -194,7 +194,7 @@ func WebhookDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, version
 
 			var envVars []corev1.EnvVar
 
-			// The information weather a Seed is present or not is stored in the seedNameEnvVariable.
+			// The information if a Seed is present or not is stored in the seedNameEnvVariable.
 			// This impacts the -seed-name flag and proxy settings.
 			withSeed := false
 			if seed != nil {
@@ -206,7 +206,6 @@ func WebhookDeploymentCreator(cfg *kubermaticv1.KubermaticConfiguration, version
 				withSeed = true
 			} else if d != nil && len(d.Spec.Template.Spec.Containers) > 0 {
 				// check if the old Deployment had a seed env var and is deployed on a Seed or Master+Seed combination.
-				withSeed = false
 				for _, e := range d.Spec.Template.Spec.Containers[0].Env {
 					if e.Name == seedNameEnvVariable {
 						withSeed = true
