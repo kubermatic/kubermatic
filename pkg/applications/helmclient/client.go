@@ -286,6 +286,22 @@ func (h HelmClient) Upgrade(chartLoc, releaseName string, values map[string]inte
 	upgradeClient.Atomic = deployOpts.atomic
 	upgradeClient.EnableDNS = deployOpts.enableDNS
 
+	// Restrict history to avoid OOM kill
+	// If upgrade fails, Helm always keep the last successful release.
+	// Example:
+	// with the following actions:
+	// 	* revision 1: successful install
+	// 	* revision 2: fail upgrade
+	// 	* revision 3: fail upgrade
+	//
+	// History will look like this:
+	// REVISION	UPDATED                 	STATUS  	CHART             	APP VERSION	DESCRIPTION
+	// 1       	Fri Mar 24 11:16:29 2023	deployed	examplechart-0.2.0	           	Install complete
+	// 3       	Fri Mar 24 11:17:14 2023	failed  	examplechart-0.2.0	           	Upgrade "testchart" failed: timed out waiting for the condition
+	//
+	// The revision 2 has been purged.
+	upgradeClient.MaxHistory = 1
+
 	// Don't reuse values from the previous release.
 	// By default, Helm will merge values with the ones of the last release. This behavior may be helpful to for CLI but
 	// as CR is the source of truth, we don't want that.
