@@ -25,6 +25,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -44,9 +45,15 @@ import (
 	"helm.sh/helm/v3/pkg/repo/repotest"
 	"helm.sh/helm/v3/pkg/uploader"
 
+	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	cmdtesting "k8s.io/kubectl/pkg/cmd/testing"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
 )
 
@@ -504,6 +511,103 @@ func TestBuildDependencies(t *testing.T) {
 			}()
 		})
 	}
+}
+
+func TestPurgeOldReleases(t *testing.T) {
+	testCases := []struct {
+		name            string
+		historyToClean  []ctrlruntimeclient.Object
+		expectedHsitory []test.ReleaseStorageInfo
+	}{
+		{
+			name:            "when release history is greater than 3 then only 3 most recent release should be keep",
+			historyToClean:  genReleaseHistory("history-to-clean", 10),
+			expectedHsitory: []test.ReleaseStorageInfo{{Name: "history-to-clean-9", Version: "9"}, {Name: "history-to-clean-8", Version: "8"}, {Name: "history-to-clean-7", Version: "7"}},
+		},
+		{
+			name:            "when release history  is 3, it should be keep intact",
+			historyToClean:  genReleaseHistory("history-to-clean", 3),
+			expectedHsitory: []test.ReleaseStorageInfo{{Name: "history-to-clean-0", Version: "0"}, {Name: "history-to-clean-1", Version: "1"}, {Name: "history-to-clean-2", Version: "2"}},
+		},
+		{
+			name:            "when release history is 2, it should be keep intact",
+			historyToClean:  genReleaseHistory("history-to-clean", 2),
+			expectedHsitory: []test.ReleaseStorageInfo{{Name: "history-to-clean-0", Version: "0"}, {Name: "history-to-clean-1", Version: "1"}},
+		},
+		{
+			name:            "when release history is 1, it should be keep intact",
+			historyToClean:  genReleaseHistory("history-to-clean", 1),
+			expectedHsitory: []test.ReleaseStorageInfo{{Name: "history-to-clean-0", Version: "0"}},
+		},
+		{
+			name:            "when release history empty, nothing should happen",
+			historyToClean:  genReleaseHistory("history-to-clean", 0),
+			expectedHsitory: []test.ReleaseStorageInfo{},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(tc.historyToClean...).
+				WithObjects(genReleaseHistory("another-release-history", 5)...).
+				WithObjects(&corev1.Secret{TypeMeta: metav1.TypeMeta{Kind: "Secret", APIVersion: "v1"}, ObjectMeta: metav1.ObjectMeta{Name: "not-a-helm-secret", Namespace: "default"}}).
+				Build()
+
+			anotherReleaseHistory := []test.ReleaseStorageInfo{
+				{Name: "another-release-history-0", Version: "0"},
+				{Name: "another-release-history-1", Version: "1"},
+				{Name: "another-release-history-2", Version: "2"},
+				{Name: "another-release-history-3", Version: "3"},
+				{Name: "another-release-history-4", Version: "4"},
+			}
+
+			if err := purgeOldReleases(ctx, kubermaticlog.Logger, client, "default", "history-to-clean"); err != nil {
+				t.Fatalf("Error should not happens: %s", err)
+			}
+
+			// check secret no related to helm has not been removed
+			secret := &corev1.Secret{}
+			if err := client.Get(ctx, types.NamespacedName{Namespace: "default", Name: "not-a-helm-secret"}, secret); err != nil {
+				t.Fatalf("secret 'not-a-helm-secret' should not be removed: %s", err)
+			}
+
+			// check history of other release is still the same
+			anotherReleaseHistorySecrets := &corev1.SecretList{}
+			if err := client.List(ctx, anotherReleaseHistorySecrets, &ctrlruntimeclient.ListOptions{Namespace: "default"}, &ctrlruntimeclient.MatchingLabels{"name": "another-release-history", "owner": "helm"}); err != nil {
+				t.Fatalf("failed to list anotherReleaseHistorySecrets: %s", err)
+			}
+			test.AssertContainsExactly(t, "Another release should not have been purge", test.MapToReleaseStorageInfo(anotherReleaseHistorySecrets.Items), anotherReleaseHistory)
+
+			// check history of the release has been purged
+			historyToCleanSecrets := &corev1.SecretList{}
+			if err := client.List(ctx, historyToCleanSecrets, &ctrlruntimeclient.ListOptions{Namespace: "default"}, &ctrlruntimeclient.MatchingLabels{"name": "history-to-clean", "owner": "helm"}); err != nil {
+				t.Fatalf("failed to list historyToCleanSecrets: %s", err)
+			}
+			test.AssertContainsExactly(t, "Release history has not been purged correctly", test.MapToReleaseStorageInfo(historyToCleanSecrets.Items), tc.expectedHsitory)
+		})
+	}
+}
+
+func genReleaseHistory(releaseName string, numberOfVersion int) []ctrlruntimeclient.Object {
+	history := []ctrlruntimeclient.Object{}
+	for i := 0; i < numberOfVersion; i++ {
+		version := strconv.Itoa(i)
+		history = append(history, &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      releaseName + "-" + version,
+				Namespace: "default",
+				Labels:    map[string]string{"name": releaseName, "version": version, "owner": "helm"},
+			},
+		})
+	}
+	return history
 }
 
 // assertDependencyLoaded checks that the given dependency has been loaded into the chart.
