@@ -23,11 +23,14 @@ spec:
     spec:
       template:
         spec:
+          {{- if .Values.lifecycleMgr.imagePullSecrets }}
+          imagePullSecrets: {{ toYaml .Values.lifecycleMgr.imagePullSecrets | nindent 8 }}
+          {{- end }}
           restartPolicy: OnFailure
           containers:
             - name: minio
-              image: docker.io/minio/mc:latest
-              imagePullPolicy: IfNotPresent
+              image: '{{ .Values.lifecycleMgr.image.repository }}:{{ .Values.lifecycleMgr.image.tag }}'
+              imagePullPolicy: '{{ .Values.lifecycleMgr.image.pullPolicy }}'
               command:
                 - /bin/sh
                 - -ec

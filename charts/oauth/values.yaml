@@ -16,6 +16,10 @@ dex:
   image:
     repository: "ghcr.io/dexidp/dex"
     tag: "v2.35.3"
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: gchr-io-pull-secret
+  imagePullSecrets: []
   replicas: 2
   # this options allows setting custom envvars in the dex container
   # this list is directly handed to the container spec

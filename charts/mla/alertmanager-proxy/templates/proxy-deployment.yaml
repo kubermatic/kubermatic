@@ -37,6 +37,9 @@ spec:
       labels:
         app.kubernetes.io/name: alertmanager-proxy
     spec:
+      {{- if .Values.alertmanagerProxy.proxy.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.alertmanagerProxy.proxy.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
         - name: envoy
           image: '{{ .Values.alertmanagerProxy.proxy.image.repository }}:{{ .Values.alertmanagerProxy.proxy.image.tag }}'

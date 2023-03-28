@@ -18,6 +18,12 @@ iap:
     tag: v7.3.0
     pullPolicy: IfNotPresent
 
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: quay-io-pull-secret
+  imagePullSecrets: []
+
+
   # secret which holds the CA certificates that should be used when connecting to the provider
   # custom_provider_ca_secret: provider-ca-secret
 

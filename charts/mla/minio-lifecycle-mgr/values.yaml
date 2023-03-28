@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 lifecycleMgr:
+  image:
+    repository: docker.io/minio/mc
+    tag: latest
+    pullPolicy: IfNotPresent
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: quay-io-pull-secret
+  imagePullSecrets: []
   minio:
     endpoint: http://minio:9000
     secretName: minio
