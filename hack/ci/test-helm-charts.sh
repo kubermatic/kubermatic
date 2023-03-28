@@ -35,8 +35,8 @@ for chartDirectory in $charts; do
     $chartDirectory/test/test.sh
     echodate "$chartName tests completed successfully."
   else
-    echodate "$chartName chart was changed, but does not have any tests."
+    echodate "$chartName does not have any tests."
   fi
 done
 
-echodate "All charts with tests have been tested successfully."
+echodate "All charts have been tested successfully."
