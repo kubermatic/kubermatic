@@ -61,9 +61,8 @@ try() {
 charts=$(find charts -type f -name 'Chart.yaml' | xargs -r dirname | sort -u)
 
 for chartDirectory in $charts; do
-  chartName="$(basename "$chartDirectory")"
   if [ -x "$chartDirectory/test/test.sh" ]; then
-    try "Testing $(chartName) ($chartDirectory) chart" $chartDirectory/test/test.sh
+    try "Testing ${chartDirectory//\//_}" $chartDirectory/test/test.sh
   else
     echodate "$chartDirectory does not have any tests."
   fi
