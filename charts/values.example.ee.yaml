@@ -14,6 +14,9 @@
 
 # Dex Is the OpenID Provider for Kubermatic.
 dex:
+  imagePullSecrets:
+    - name: quay-io-pull-secret
+
   ingress:
     # configure your base domain, under which the Kubermatic dashboard shall be available
     host: cluster.example.dev
