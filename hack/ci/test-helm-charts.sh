@@ -72,7 +72,7 @@ done
 if [[ $EXIT_CODE -eq 0 ]]; then
   echodate "All charts have been tested successfully."
 else
-  echodate "Tests for some charts have failed."
+  echodate "Tests for some charts have failed. Please run their individual test.sh scripts to update them."
 fi
 
 exit $EXIT_CODE
