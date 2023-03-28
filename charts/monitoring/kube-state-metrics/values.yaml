@@ -16,6 +16,10 @@ kubeStateMetrics:
   image:
     repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
     tag: v2.8.2
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: registry-k8s-io-pull-secret
+  imagePullSecrets: []
   resources:
     requests:
       # Rationalized based on real world usage

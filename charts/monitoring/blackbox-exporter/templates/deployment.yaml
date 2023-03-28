@@ -33,6 +33,9 @@ spec:
         kubermatic.io/chart: blackbox-exporter
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.blackboxExporter.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.blackboxExporter.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
       - name: exporter
         image: '{{ .Values.blackboxExporter.image.repository }}:{{ .Values.blackboxExporter.image.tag }}'

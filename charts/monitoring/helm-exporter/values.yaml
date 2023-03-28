@@ -24,6 +24,11 @@ helmExporter:
     repository: docker.io/sstarcher/helm-exporter
     tag: 1.2.2
     pullPolicy: IfNotPresent
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: docker-io-pull-secret
+  imagePullSecrets: []
+
   nameOverride: ''
 
   resources:

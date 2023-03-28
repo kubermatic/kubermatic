@@ -30,6 +30,9 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
     spec:
+      {{- if .Values.grafana.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.grafana.imagePullSecrets | nindent 8 }}
+      {{- end }}
       initContainers:
       {{- if .Values.grafana.provisioning.datasources.paths }}
       - image: '{{ .Values.grafana.utilImage.repository }}:{{ .Values.grafana.utilImage.tag }}'

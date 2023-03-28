@@ -36,6 +36,9 @@ spec:
     spec:
       serviceAccountName: kube-state-metrics
       automountServiceAccountToken: true
+      {{- if .Values.kubeStateMetrics.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.kubeStateMetrics.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
       - name: kube-state-metrics
         image: '{{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}'

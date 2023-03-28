@@ -17,6 +17,11 @@ blackboxExporter:
     repository: quay.io/prometheus/blackbox-exporter
     tag: v0.21.1
     pullPolicy: IfNotPresent
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: quay-io-pull-secret
+  #   - name: docker-io-pull-secret
+  imagePullSecrets: []
 
   containers:
     blackboxExporter:

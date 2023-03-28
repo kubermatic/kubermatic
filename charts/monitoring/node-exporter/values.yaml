@@ -16,6 +16,10 @@ nodeExporter:
   image:
     repository: quay.io/prometheus/node-exporter
     tag: v1.5.0
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: quay-io-pull-secret
+  imagePullSecrets: []
   resources:
     requests:
       cpu: 50m

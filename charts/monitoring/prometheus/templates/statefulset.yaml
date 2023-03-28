@@ -42,6 +42,9 @@ spec:
         pre.hook.backup.velero.io/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -s -XPOST \"http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot?skip_head=true\" && rsync --archive /prometheus/snapshots/*/ /backup"]'
         {{- end }}
     spec:
+      {{- if .Values.prometheus.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.prometheus.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
       - name: prometheus
         image: '{{ .Values.prometheus.image.repository }}:{{ .Values.prometheus.version | default .Values.prometheus.image.tag }}'
