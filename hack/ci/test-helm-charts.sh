@@ -26,7 +26,7 @@ cd $(dirname $0)/../..
 source hack/lib.sh
 
 # find all charts
-charts=$(ls 'charts/**/Chart.yaml' | xargs -r dirname | sort -u)
+charts=$(find charts -type f -name 'Chart.yaml'  | xargs -r dirname | sort -u)
 
 for chartDirectory in $charts; do
   chartName="$(basename "$chartDirectory")"
