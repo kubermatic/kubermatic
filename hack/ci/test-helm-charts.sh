@@ -25,10 +25,10 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-# find all changed charts
-changedCharts=$(git diff --name-only "${PULL_BASE_SHA}..${PULL_PULL_SHA:-}" 'charts/**/Chart.yaml' | xargs -r dirname | sort -u)
+# find all charts
+charts=$(ls 'charts/**/Chart.yaml' | xargs -r dirname | sort -u)
 
-for chartDirectory in $changedCharts; do
+for chartDirectory in $charts; do
   chartName="$(basename "$chartDirectory")"
   if [ -x "$chartDirectory/test/test.sh" ]; then
     echodate "Testing $chartName chart..."
@@ -39,4 +39,4 @@ for chartDirectory in $changedCharts; do
   fi
 done
 
-echodate "All changed charts with tests have been tested successfully."
+echodate "All charts with tests have been tested successfully."
