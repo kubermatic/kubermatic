@@ -25,18 +25,54 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+EXIT_CODE=0
+
+try() {
+  local title="$1"
+  shift
+
+  heading "$title"
+  echo -e "$@\n"
+
+  start_time=$(date +%s)
+
+  set +e
+  $@
+  exitCode=$?
+  set -e
+
+  elapsed_time=$(($(date +%s) - $start_time))
+  TEST_NAME="$title" write_junit $exitCode "$elapsed_time"
+
+  if [[ $exitCode -eq 0 ]]; then
+    echo -e "\n[${elapsed_time}s] SUCCESS :)"
+  else
+    echo -e "\n[${elapsed_time}s] FAILED."
+    EXIT_CODE=1
+  fi
+
+  git reset --hard --quiet
+  git clean --force
+
+  echo
+}
+
 # find all charts
 charts=$(find charts -type f -name 'Chart.yaml' | xargs -r dirname | sort -u)
 
 for chartDirectory in $charts; do
   chartName="$(basename "$chartDirectory")"
   if [ -x "$chartDirectory/test/test.sh" ]; then
-    echodate "Testing $chartName chart..."
-    $chartDirectory/test/test.sh
-    echodate "$chartName tests completed successfully."
+    try "Testing $chartName chart" $chartDirectory/test/test.sh
   else
     echodate "$chartName does not have any tests."
   fi
 done
 
-echodate "All charts have been tested successfully."
+if [[ $EXIT_CODE -eq 0 ]]; then
+  echodate "All charts have been tested successfully."
+else
+  echodate "Tests for some charts have failed."
+fi
+
+exit $EXIT_CODE
