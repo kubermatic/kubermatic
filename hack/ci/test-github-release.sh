@@ -26,7 +26,7 @@ source hack/lib.sh
 
 export DRY_RUN=true
 export GITHUB_TOKEN="none"
-export GIT_TAG="v2.99.99"
+export GIT_TAG="v3.99.99"
 export RELEASE_PLATFORMS="linux-amd64 windows-amd64"
 
 echodate "Simulating GitHub release..."

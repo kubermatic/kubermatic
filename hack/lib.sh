@@ -575,13 +575,13 @@ provider_disabled() {
 }
 
 kkp_api_dependency() {
-  # in most cases this gives us something like "v2.21.1-0.20221111113237-e6c193aeffb0",
+  # in most cases this gives us something like "v3.21.1-0.20221111113237-e6c193aeffb0",
   # but this can also be a tagged release
   selector="$(go list -json -m k8c.io/api/v3 | jq -r '.Replace.Version // .Version')"
 
   # parse Go's pseudo version and extract git hash if possible
   if ! [[ "$selector" =~ ^v.+-.+-([a-f0-9]+)$ ]]; then
-    # seems like we have a fixed tag like "v2.20.7"
+    # seems like we have a fixed tag like "v3.20.7"
     echo "$selector"
     return
   fi
