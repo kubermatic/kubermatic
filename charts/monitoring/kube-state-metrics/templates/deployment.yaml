@@ -85,7 +85,7 @@ spec:
           - --deployment=kube-state-metrics
           - --pod=$(MY_POD_NAME)
           - --namespace=$(MY_POD_NAMESPACE)
-          - --healthcheck-address=":8088"
+          - --healthcheck-address=:8088
         env:
         - name: MY_POD_NAME
           valueFrom:
