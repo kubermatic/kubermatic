@@ -33,7 +33,7 @@ if [ "$GIT_BRANCH" == "main" ]; then
   TAGS="$TAGS latest"
 elif [[ "$GIT_BRANCH" =~ release/v[0-9]+.* ]]; then
   # the dashboard e2e jobs in a release branch rely on a "latest" tag being
-  # available for KKP, so we turn "release/v2.21" into "v2.21-latest"
+  # available for KKP, so we turn "release/v3.21" into "v3.21-latest"
   RELEASE_LATEST="${GIT_BRANCH#release/}"
   RELEASE_LATEST="${RELEASE_LATEST//\//-}-latest"
 
