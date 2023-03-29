@@ -5853,11 +5853,7 @@ metadata:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
-rules:
-  - apiGroups:      ['extensions']
-    resources:      ['podsecuritypolicies']
-    verbs:          ['use']
-    resourceNames:  [release-name-grafana]
+rules: []
 ---
 # Source: grafana/charts/grafana/templates/rolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
