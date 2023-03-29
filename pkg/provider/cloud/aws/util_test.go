@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	utilcluster "k8c.io/kubermatic/v3/pkg/util/cluster"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

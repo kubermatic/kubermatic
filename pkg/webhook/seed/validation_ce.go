@@ -24,8 +24,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/features"
+	"k8c.io/kubermatic/v3/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"

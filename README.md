@@ -6,12 +6,12 @@
 <p align="center">
   <img src="https://img.shields.io/github/v/release/kubermatic/kubermatic" alt="last stable release">
 
-  <a href="https://goreportcard.com/report/k8c.io/kubermatic/v2">
-    <img src="https://goreportcard.com/badge/k8c.io/kubermatic/v2" alt="go report card">
+  <a href="https://goreportcard.com/report/k8c.io/kubermatic/v3">
+    <img src="https://goreportcard.com/badge/k8c.io/kubermatic/v3" alt="go report card">
   </a>
 
-  <a href="https://pkg.go.dev/k8c.io/kubermatic/v2">
-    <img src="https://pkg.go.dev/badge/k8c.io/kubermatic/v2" alt="godoc">
+  <a href="https://pkg.go.dev/k8c.io/kubermatic/v3">
+    <img src="https://pkg.go.dev/badge/k8c.io/kubermatic/v3" alt="godoc">
   </a>
 </p>
 

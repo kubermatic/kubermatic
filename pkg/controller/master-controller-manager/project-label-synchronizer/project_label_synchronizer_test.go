@@ -21,8 +21,8 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"

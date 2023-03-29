@@ -22,7 +22,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/log"
 )
 
 var once = &sync.Once{}

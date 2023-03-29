@@ -29,9 +29,9 @@ KUBERMATICCOMMIT ?= $(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG ?= $(KUBERMATICCOMMIT)
 UIDOCKERTAG ?= NA
 LDFLAGS += -extldflags '-static' \
-  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.gitVersion=$(GIT_VERSION) \
-  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.kubermaticDockerTag=$(KUBERMATICDOCKERTAG) \
-  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.uiDockerTag=$(UIDOCKERTAG)
+  -X k8c.io/kubermatic/v3/pkg/version/kubermatic.gitVersion=$(GIT_VERSION) \
+  -X k8c.io/kubermatic/v3/pkg/version/kubermatic.kubermaticDockerTag=$(KUBERMATICDOCKERTAG) \
+  -X k8c.io/kubermatic/v3/pkg/version/kubermatic.uiDockerTag=$(UIDOCKERTAG)
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)

@@ -31,7 +31,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
+	"k8c.io/kubermatic/v3/pkg/applications/providers/util"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

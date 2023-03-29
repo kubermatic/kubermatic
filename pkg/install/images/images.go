@@ -35,28 +35,27 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/api/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/cni"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
-	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
-	seedoperatorkubermatic "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
-	seedoperatornodeportproxy "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
-	k8sdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
-	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
-	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
-	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/version"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/cni"
+	"k8c.io/kubermatic/v3/pkg/controller/operator/common/vpa"
+	masteroperator "k8c.io/kubermatic/v3/pkg/controller/operator/master/resources/kubermatic"
+	seedoperatorkubermatic "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/kubermatic"
+	seedoperatornodeportproxy "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
+	kubernetescontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring"
+	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
+	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
+	k8sdashboard "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
+	nodelocaldns "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
+	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/cloudcontroller"
+	metricsserver "k8c.io/kubermatic/v3/pkg/resources/metrics-server"
+	"k8c.io/kubermatic/v3/pkg/resources/operatingsystemmanager"
+	"k8c.io/kubermatic/v3/pkg/resources/registry"
+	"k8c.io/kubermatic/v3/pkg/version"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -317,9 +316,6 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	}
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
-	if mcjr := metering.CronJobReconciler("reportName", &kubermaticv1.MeteringReportConfiguration{}, "caBundleName", templateData.RewriteImage, mockNamespaceName); mcjr != nil {
-		cronjobReconcilers = append(cronjobReconcilers, mcjr)
-	}
 
 	var daemonsetReconcilers []reconciling.NamedDaemonSetReconcilerFactory
 	daemonsetReconcilers = append(daemonsetReconcilers, usersshkeys.DaemonSetReconciler(

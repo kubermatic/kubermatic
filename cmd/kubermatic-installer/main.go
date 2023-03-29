@@ -25,8 +25,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"k8c.io/kubermatic/v2/pkg/log"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/log"
+	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 )
 
 type Options struct {

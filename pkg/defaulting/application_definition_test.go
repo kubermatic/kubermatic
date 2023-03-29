@@ -20,9 +20,9 @@ import (
 	"testing"
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
-	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/validation"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

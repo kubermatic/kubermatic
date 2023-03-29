@@ -21,9 +21,9 @@ package main
 import (
 	"go.uber.org/zap"
 
-	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	resourceusagecontroller "k8c.io/kubermatic/v2/pkg/ee/resource-usage-controller"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
+	resourceusagecontroller "k8c.io/kubermatic/v3/pkg/ee/resource-usage-controller"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )

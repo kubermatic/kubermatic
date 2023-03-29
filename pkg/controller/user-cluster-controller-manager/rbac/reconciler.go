@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

@@ -33,8 +33,8 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	openpolicyagent "k8c.io/api/v2/pkg/apis/open-policy-agent"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"

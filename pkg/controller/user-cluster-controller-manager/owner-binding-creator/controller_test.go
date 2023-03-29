@@ -20,9 +20,9 @@ import (
 	"context"
 	"testing"
 
-	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

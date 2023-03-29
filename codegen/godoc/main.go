@@ -30,8 +30,8 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"k8c.io/kubermatic/v2/pkg/addon"
-	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
+	"k8c.io/kubermatic/v3/pkg/addon"
+	"k8c.io/kubermatic/v3/pkg/resources/prometheus"
 )
 
 var packageCache = map[string]*packages.Package{}

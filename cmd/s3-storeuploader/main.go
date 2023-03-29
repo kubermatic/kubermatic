@@ -25,9 +25,9 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/storeuploader"
+	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates"
+	"k8c.io/kubermatic/v3/pkg/storeuploader"
 )
 
 type options struct {

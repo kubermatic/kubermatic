@@ -25,9 +25,9 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 	kvinstancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
 
-	"k8c.io/kubermatic/v2/pkg/provider"
-	kvmanifests "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt/manifests"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	kvmanifests "k8c.io/kubermatic/v3/pkg/provider/cloud/kubevirt/manifests"
+	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

@@ -23,9 +23,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/install/stack"
-	"k8c.io/kubermatic/v2/pkg/install/stack/common"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	"k8c.io/kubermatic/v3/pkg/install/stack"
+	"k8c.io/kubermatic/v3/pkg/install/stack/common"
+	"k8c.io/kubermatic/v3/pkg/util/yamled"
 )
 
 func (m *SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {

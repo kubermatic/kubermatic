@@ -18,7 +18,7 @@ package csi
 
 import (
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
+	"k8c.io/kubermatic/v3/pkg/resources/csi/kubevirt"
 	"k8c.io/reconciler/pkg/reconciling"
 )
 

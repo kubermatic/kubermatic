@@ -24,8 +24,8 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
+	kubermaticpred "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

@@ -30,11 +30,11 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermativsemver "k8c.io/api/v2/pkg/semver"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/test"
-	"k8c.io/kubermatic/v2/pkg/util/flagopts"
+	clusterclient "k8c.io/kubermatic/v3/pkg/cluster/client"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/test"
+	"k8c.io/kubermatic/v3/pkg/util/flagopts"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"

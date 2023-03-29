@@ -27,9 +27,9 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/api/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	"k8c.io/kubermatic/v2/pkg/machine"
-	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
+	"k8c.io/kubermatic/v3/cmd/conformance-tester/pkg/types"
+	"k8c.io/kubermatic/v3/pkg/machine"
+	"k8c.io/kubermatic/v3/pkg/machine/operatingsystem"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"

@@ -24,7 +24,7 @@ import (
 	"strings"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates"
 )
 
 func TestVSphereCA(t *testing.T) {

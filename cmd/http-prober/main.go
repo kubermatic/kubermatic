@@ -34,8 +34,8 @@ import (
 
 	"go.uber.org/zap"
 
-	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	httpproberapi "k8c.io/kubermatic/v3/cmd/http-prober/api"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

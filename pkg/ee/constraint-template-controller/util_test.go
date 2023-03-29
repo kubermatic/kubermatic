@@ -29,10 +29,10 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	eectcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
-	"k8c.io/kubermatic/v2/pkg/test/generator"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	eectcontroller "k8c.io/kubermatic/v3/pkg/ee/constraint-template-controller"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/test/generator"
+	"k8c.io/kubermatic/v3/pkg/util/workerlabel"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"

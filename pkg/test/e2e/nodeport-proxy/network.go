@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

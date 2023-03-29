@@ -21,7 +21,7 @@ package validation
 import (
 	"context"
 
-	eeresourcequotavalidation "k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
+	eeresourcequotavalidation "k8c.io/kubermatic/v3/pkg/ee/validation/resourcequota"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

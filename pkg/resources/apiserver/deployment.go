@@ -24,12 +24,12 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/etcd"
-	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
-	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/etcd"
+	"k8c.io/kubermatic/v3/pkg/resources/etcd/etcdrunning"
+	"k8c.io/kubermatic/v3/pkg/resources/konnectivity"
+	"k8c.io/kubermatic/v3/pkg/resources/registry"
+	"k8c.io/kubermatic/v3/pkg/resources/vpnsidecar"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"

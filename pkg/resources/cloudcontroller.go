@@ -21,7 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/api/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v3/pkg/version"
 )
 
 // ExternalCloudControllerFeatureSupported checks if the cloud provider supports

@@ -22,7 +22,7 @@ import (
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 )
 
 // SemanticallyEqual is like reflect.DeepEqual, but focused on semantic equality instead of memory equality.

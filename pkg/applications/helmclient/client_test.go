@@ -28,7 +28,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/provenance"
 
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 
 	cmdtesting "k8s.io/kubectl/pkg/cmd/testing"
 )

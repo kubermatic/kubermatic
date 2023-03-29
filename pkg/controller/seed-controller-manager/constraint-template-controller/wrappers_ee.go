@@ -22,7 +22,7 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	eeutil "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
+	eeutil "k8c.io/kubermatic/v3/pkg/ee/constraint-template-controller"
 )
 
 func (r *reconciler) getClustersForConstraintTemplate(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ClusterList, error) {

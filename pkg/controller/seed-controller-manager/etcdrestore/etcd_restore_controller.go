@@ -28,11 +28,11 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/util/workerlabel"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

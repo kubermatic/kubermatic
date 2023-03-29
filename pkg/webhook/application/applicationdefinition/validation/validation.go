@@ -24,7 +24,7 @@ import (
 	"github.com/go-logr/logr"
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v3/pkg/validation"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/util/validation/field"

@@ -19,7 +19,7 @@ package machinecontroller
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"

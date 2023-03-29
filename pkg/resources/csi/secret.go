@@ -19,11 +19,11 @@ package csi
 import (
 	"context"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/resources/csi/nutanix"
-	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
-	"k8c.io/kubermatic/v2/pkg/resources/csi/vsphere"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/csi/kubevirt"
+	"k8c.io/kubermatic/v3/pkg/resources/csi/nutanix"
+	"k8c.io/kubermatic/v3/pkg/resources/csi/vmwareclouddirector"
+	"k8c.io/kubermatic/v3/pkg/resources/csi/vsphere"
 	"k8c.io/reconciler/pkg/reconciling"
 )
 

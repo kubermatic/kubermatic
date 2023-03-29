@@ -19,7 +19,7 @@ package helm
 import (
 	semverlib "github.com/Masterminds/semver/v3"
 
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	"k8c.io/kubermatic/v3/pkg/util/yamled"
 )
 
 // Client describes the operations that the Helm client is providing to

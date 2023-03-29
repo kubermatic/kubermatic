@@ -17,9 +17,9 @@ limitations under the License.
 package apiserver
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates/triple"
 	"k8c.io/reconciler/pkg/reconciling"
 )
 

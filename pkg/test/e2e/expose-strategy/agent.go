@@ -25,11 +25,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
+	envoyagent "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
+	"k8c.io/kubermatic/v3/pkg/resources/registry"
+	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

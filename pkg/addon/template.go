@@ -31,10 +31,10 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
-	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/util/yaml"
+	clusterhelper "k8c.io/kubermatic/v3/pkg/cluster"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/registry"
+	"k8c.io/kubermatic/v3/pkg/util/yaml"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

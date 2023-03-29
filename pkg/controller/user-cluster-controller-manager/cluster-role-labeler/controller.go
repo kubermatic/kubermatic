@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
-	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
+	predicateutil "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
