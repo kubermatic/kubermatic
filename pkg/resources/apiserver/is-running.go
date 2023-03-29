@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	httpproberapi "k8c.io/kubermatic/v3/cmd/http-prober/api"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/registry"

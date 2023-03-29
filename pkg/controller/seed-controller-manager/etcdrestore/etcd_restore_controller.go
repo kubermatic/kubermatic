@@ -26,8 +26,8 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v3/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/provider"
 	"k8c.io/kubermatic/v3/pkg/resources"

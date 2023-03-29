@@ -32,7 +32,7 @@ import (
 	authv3 "github.com/envoyproxy/go-control-plane/envoy/service/auth/v3"
 	typeV3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"

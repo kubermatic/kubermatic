@@ -22,7 +22,7 @@ import (
 	anexiaprovider "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia"
 	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 )
 
 type anexiaConfig struct {

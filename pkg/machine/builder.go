@@ -22,8 +22,8 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v3/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v3/pkg/machine/operatingsystem"
 
 	"k8s.io/apimachinery/pkg/util/sets"

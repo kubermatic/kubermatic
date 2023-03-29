@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/install/helm"
 	"k8c.io/kubermatic/v3/pkg/install/images"

@@ -23,7 +23,7 @@ import (
 
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 
 	"k8s.io/utils/pointer"
 )

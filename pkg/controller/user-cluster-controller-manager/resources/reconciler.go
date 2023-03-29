@@ -23,8 +23,8 @@ import (
 	"net"
 	"strings"
 
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	cabundle "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"

@@ -19,7 +19,7 @@ package kubevirt
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	apiv2 "k8c.io/kubermatic/v3/pkg/api/v2"
 
 	storagev1 "k8s.io/api/storage/v1"

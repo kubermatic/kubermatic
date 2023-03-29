@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v3/pkg/apis/kubermatic/v1/helper"
 	clusterhelper "k8c.io/kubermatic/v3/pkg/cluster"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"

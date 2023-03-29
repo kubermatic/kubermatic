@@ -22,7 +22,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/strings/slices"

@@ -28,8 +28,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v3/pkg/apis/kubermatic/v1/helper"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"

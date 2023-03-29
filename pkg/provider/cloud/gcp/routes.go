@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/api/compute/v1"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 )
 
 // cleanUnusedRoutes finds and remove unused gcp routes.

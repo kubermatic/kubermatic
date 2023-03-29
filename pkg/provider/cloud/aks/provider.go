@@ -32,8 +32,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/api/v2/pkg/semver"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	ksemver "k8c.io/api/v3/pkg/semver"
 	apiv1 "k8c.io/kubermatic/v3/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v3/pkg/api/v2"
 	"k8c.io/kubermatic/v3/pkg/provider"

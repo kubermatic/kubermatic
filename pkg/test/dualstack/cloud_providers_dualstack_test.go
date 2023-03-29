@@ -30,7 +30,7 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"

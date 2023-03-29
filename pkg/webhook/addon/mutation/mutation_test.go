@@ -26,7 +26,7 @@ import (
 	"github.com/go-test/deep"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/test"
 
 	admissionv1 "k8s.io/api/admission/v1"
