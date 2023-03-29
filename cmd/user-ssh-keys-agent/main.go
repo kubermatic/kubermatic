@@ -28,10 +28,10 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	usersshkeys "k8c.io/kubermatic/v2/pkg/controller/usersshkeysagent"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/util/cli"
+	usersshkeys "k8c.io/kubermatic/v3/pkg/controller/usersshkeysagent"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/util/cli"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"

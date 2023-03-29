@@ -25,11 +25,11 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	opa "k8c.io/api/v2/pkg/apis/open-policy-agent"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	clusterclient "k8c.io/kubermatic/v3/pkg/cluster/client"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/util/workerlabel"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

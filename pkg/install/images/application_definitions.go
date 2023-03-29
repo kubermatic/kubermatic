@@ -27,11 +27,11 @@ import (
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/applications/providers"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
-	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/applications/providers"
+	"k8c.io/kubermatic/v3/pkg/cni/cilium"
+	"k8c.io/kubermatic/v3/pkg/install/helm"
+	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 )
 
 func GetImagesFromSystemApplicationDefinitions(logger logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, helmTimeout time.Duration, registryPrefix string) ([]string, error) {

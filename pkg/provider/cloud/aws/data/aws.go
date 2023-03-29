@@ -22,7 +22,7 @@ import (
 
 	ec2 "github.com/LeanerCloud/ec2-instances-info"
 
-	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider"
 )
 
 var data *ec2.InstanceData

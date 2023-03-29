@@ -23,9 +23,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/crd"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/util/crd"
+	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

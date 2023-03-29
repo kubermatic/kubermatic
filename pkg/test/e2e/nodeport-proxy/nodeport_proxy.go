@@ -26,10 +26,10 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	npptest "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy/test"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
+	npptest "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy/test"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

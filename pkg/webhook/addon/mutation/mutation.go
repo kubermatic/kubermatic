@@ -26,8 +26,8 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -17,7 +17,7 @@ limitations under the License.
 package kubermatic
 
 import (
-	"k8c.io/kubermatic/v2/pkg/util/edition"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 )
 
 // These variables get fed by ldflags during compilation.

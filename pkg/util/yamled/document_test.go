@@ -24,7 +24,7 @@ import (
 
 	yaml "gopkg.in/yaml.v3"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 )
 
 func getTestcaseYAML(t *testing.T, filename string) string {

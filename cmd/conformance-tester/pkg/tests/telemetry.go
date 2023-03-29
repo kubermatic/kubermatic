@@ -27,8 +27,8 @@ import (
 
 	"go.uber.org/zap"
 
-	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	ctypes "k8c.io/kubermatic/v3/cmd/conformance-tester/pkg/types"
+	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"

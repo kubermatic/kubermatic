@@ -22,7 +22,7 @@ import (
 	"sort"
 	"strings"
 
-	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+	"k8c.io/kubermatic/v3/pkg/resources/nodeportproxy"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

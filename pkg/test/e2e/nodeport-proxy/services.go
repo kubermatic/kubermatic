@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

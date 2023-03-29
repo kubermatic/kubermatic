@@ -24,7 +24,7 @@ import (
 	configv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v3/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"

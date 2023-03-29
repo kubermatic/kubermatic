@@ -25,7 +25,7 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"

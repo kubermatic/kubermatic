@@ -20,8 +20,8 @@ import (
 	"context"
 	"encoding/base64"
 
-	kubevirt "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	kubevirt "k8c.io/kubermatic/v3/pkg/provider/cloud/kubevirt"
+	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"

@@ -30,7 +30,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/util/s3"
+	"k8c.io/kubermatic/v3/pkg/util/s3"
 )
 
 // prefix separator separates the prefix

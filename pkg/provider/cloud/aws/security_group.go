@@ -26,8 +26,8 @@ import (
 	"github.com/aws/smithy-go"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	kubermaticresources "k8c.io/kubermatic/v3/pkg/resources"
 
 	"k8s.io/utils/pointer"
 )

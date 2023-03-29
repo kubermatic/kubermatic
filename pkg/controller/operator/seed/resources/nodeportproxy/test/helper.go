@@ -26,10 +26,10 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/wait"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/util/wait"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"

@@ -24,8 +24,8 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/provider"
 )
 
 const (

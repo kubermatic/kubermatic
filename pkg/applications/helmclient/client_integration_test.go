@@ -31,9 +31,9 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/release"
 
-	"k8c.io/kubermatic/v2/pkg/applications/test"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/applications/test"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

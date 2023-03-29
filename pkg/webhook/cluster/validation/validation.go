@@ -24,12 +24,12 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/validation"
-	"k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/features"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider/cloud"
+	"k8c.io/kubermatic/v3/pkg/validation"
+	"k8c.io/kubermatic/v3/pkg/version"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

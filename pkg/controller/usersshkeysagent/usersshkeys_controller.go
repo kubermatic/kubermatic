@@ -28,8 +28,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/fsnotify.v1"
 
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	predicateutil "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v3/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

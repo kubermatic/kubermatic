@@ -29,8 +29,8 @@ import (
 	nutanixv3 "github.com/nutanix-cloud-native/prism-go-client/v3"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/resources"
 )
 
 type ClientSet struct {

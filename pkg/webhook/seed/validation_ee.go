@@ -19,8 +19,8 @@ limitations under the License.
 package seed
 
 import (
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/features"
+	"k8c.io/kubermatic/v3/pkg/provider"
 )
 
 func NewValidator(

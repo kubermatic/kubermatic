@@ -21,8 +21,8 @@ import (
 	"encoding/base64"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 )
 
 var (

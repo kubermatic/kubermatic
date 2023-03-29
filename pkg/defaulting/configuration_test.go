@@ -22,8 +22,8 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/validation"
 )
 
 func TestDefaultConfigurationIsValid(t *testing.T) {

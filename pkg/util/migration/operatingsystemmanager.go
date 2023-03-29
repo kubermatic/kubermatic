@@ -22,7 +22,7 @@ import (
 	"context"
 	"fmt"
 
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"

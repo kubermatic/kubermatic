@@ -22,7 +22,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 )
 
 func TestGetObjectsToDelete(t *testing.T) {

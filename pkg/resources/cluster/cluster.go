@@ -23,8 +23,8 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider/cloud"
 )
 
 func CloudProviderForCluster(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (provider.CloudProvider, error) {

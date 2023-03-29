@@ -25,9 +25,9 @@ import (
 	"time"
 
 	"k8c.io/api/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/util/wait"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

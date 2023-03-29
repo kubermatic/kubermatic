@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"

@@ -35,7 +35,7 @@ Use "s3-storeuploader [command] --help" for more information about a command.
 # Building the docker image
 
 ```bash
-CGO_ENABLED=0 go build -ldflags '-w -extldflags "-static"' -o s3-storeuploader k8c.io/kubermatic/v2/cmd/s3-storeuploader
+CGO_ENABLED=0 go build -ldflags '-w -extldflags "-static"' -o s3-storeuploader k8c.io/kubermatic/v3/cmd/s3-storeuploader
 docker build -t quay.io/kubermatic/s3-storer:v0.1.6 .
 docker push quay.io/kubermatic/s3-storer:v0.1.6
 ```

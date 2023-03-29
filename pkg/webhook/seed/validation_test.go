@@ -22,9 +22,9 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/crd"
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v3/pkg/crd"
+	"k8c.io/kubermatic/v3/pkg/features"
+	"k8c.io/kubermatic/v3/pkg/test"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

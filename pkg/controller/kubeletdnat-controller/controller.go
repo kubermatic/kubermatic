@@ -29,7 +29,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"

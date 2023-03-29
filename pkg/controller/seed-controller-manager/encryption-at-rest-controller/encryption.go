@@ -24,9 +24,9 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	encryptionresources "k8c.io/kubermatic/v3/pkg/resources/encryption"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"

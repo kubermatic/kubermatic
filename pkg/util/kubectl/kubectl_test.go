@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"k8c.io/api/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
 )
 
 func TestKubectlForAllSupportedVersions(t *testing.T) {

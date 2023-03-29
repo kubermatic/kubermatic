@@ -23,7 +23,7 @@ import (
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -22,11 +22,11 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/resources/kubestatemetrics"
-	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
-	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates"
+	"k8c.io/kubermatic/v3/pkg/resources/kubestatemetrics"
+	"k8c.io/kubermatic/v3/pkg/resources/prometheus"
+	kkpreconciling "k8c.io/kubermatic/v3/pkg/resources/reconciling"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	"k8s.io/apimachinery/pkg/api/resource"

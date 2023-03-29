@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
