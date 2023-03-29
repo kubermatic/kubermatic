@@ -24,7 +24,7 @@ This section covers the process to create a new Kubermatic release. Reflects the
     - Ensure end-of-life Kubernetes has been disabled
 1. Ensure all providers' conformance tests run
 1. Branching out
-    - A release branch(example: `release/v2.15`) has been created in:
+    - A release branch(example: `release/v3.15`) has been created in:
       - https://github.com/kubermatic/kubermatic
       - https://github.com/kubermatic/dashboard
 1. Duplicate the `main` documentation for KKP in https://github.com/kubermatic/docs
