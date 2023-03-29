@@ -36,7 +36,7 @@ spec:
     spec:
       serviceAccountName: dex
       {{- if .Values.dex.imagePullSecrets }}
-      imagePullSecrets:{{ toYaml .Values.dex.imagePullSecrets | nindent 8 }}
+      imagePullSecrets: {{- toYaml .Values.dex.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
       - image: {{ .Values.dex.image.repository }}:{{ .Values.dex.image.tag }}

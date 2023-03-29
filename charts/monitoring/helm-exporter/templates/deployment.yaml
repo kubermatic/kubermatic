@@ -37,7 +37,7 @@ spec:
         kubermatic.io/chart: helm-exporter
     spec:
       {{- if .Values.helmExporter.imagePullSecrets }}
-      imagePullSecrets: {{ toYaml .Values.helmExporter.imagePullSecrets | nindent 8 }}
+      imagePullSecrets: {{- toYaml .Values.helmExporter.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
       - name: '{{ .Chart.Name }}'

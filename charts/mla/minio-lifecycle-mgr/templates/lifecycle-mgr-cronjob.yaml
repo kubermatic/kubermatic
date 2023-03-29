@@ -24,7 +24,7 @@ spec:
       template:
         spec:
           {{- if .Values.lifecycleMgr.imagePullSecrets }}
-          imagePullSecrets: {{ toYaml .Values.lifecycleMgr.imagePullSecrets | nindent 8 }}
+          imagePullSecrets: {{- toYaml .Values.lifecycleMgr.imagePullSecrets | nindent 12 }}
           {{- end }}
           restartPolicy: OnFailure
           containers:

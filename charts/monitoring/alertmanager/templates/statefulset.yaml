@@ -31,7 +31,7 @@ spec:
         app: {{ template "name" . }}
     spec:
       {{- if .Values.alertmanager.imagePullSecrets }}
-      imagePullSecrets: {{ toYaml .Values.alertmanager.imagePullSecrets | nindent 8 }}
+      imagePullSecrets: {{- toYaml .Values.alertmanager.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
   {{- if .Values.alertmanager.sidecarContainers }}

@@ -40,7 +40,7 @@ spec:
       hostPID: true
       serviceAccountName: node-exporter
       {{- if .Values.nodeExporter.imagePullSecrets }}
-      imagePullSecrets: {{ toYaml .Values.nodeExporter.imagePullSecrets | nindent 8 }}
+      imagePullSecrets: {{- toYaml .Values.nodeExporter.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
       - name: node-exporter
