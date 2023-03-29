@@ -17,7 +17,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
-    dockerRepository: quay.io/kubermatic/kubermatic
+    dockerRepository: quay.io/kubermatic/dashboard-ee
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
@@ -25,6 +25,14 @@ spec:
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -66,7 +74,8 @@ spec:
   # if this is set to LoadBalancerStrategy.
   exposeStrategy: NodePort
   # FeatureGates are used to optionally enable certain features.
-  featureGates: {}
+  featureGates:
+    EtcdLauncher: true
   # ImagePullSecret is used to authenticate against Docker registries.
   imagePullSecret: ""
   # Ingress contains settings for making the API and UI accessible remotely.
@@ -101,7 +110,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic master-controller-manager image.
-    dockerRepository: quay.io/kubermatic/kubermatic
+    dockerRepository: quay.io/kubermatic/kubermatic-ee
     # PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
@@ -113,6 +122,14 @@ spec:
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -260,7 +277,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
-    dockerRepository: quay.io/kubermatic/kubermatic
+    dockerRepository: quay.io/kubermatic/kubermatic-ee
     # MaximumParallelReconciles limits the number of cluster reconciliations
     # that are active at any given time.
     maximumParallelReconciles: 10
@@ -271,6 +288,14 @@ spec:
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -286,12 +311,13 @@ spec:
   # UI configures the dashboard.
   ui:
     # Config sets flags for various dashboard features.
-    config: |-
-      {
-        "share_kubeconfig": false
-      }
+    config: ""
     # DockerRepository is the repository containing the Kubermatic dashboard image.
-    dockerRepository: quay.io/kubermatic/dashboard
+    dockerRepository: quay.io/kubermatic/dashboard-ee
+    # DockerTagSuffix is appended to the KKP version used for referring to the custom dashboard image.
+    # If left empty, either the `DockerTag` if specified or the original dashboard Docker image tag will be used.
+    # With DockerTagSuffix the tag becomes <KKP_VERSION:SUFFIX> i.e. "v2.15.0-SUFFIX".
+    dockerTagSuffix: ""
     # ExtraVolumeMounts allows to mount additional volumes into the UI container.
     extraVolumeMounts: null
     # ExtraVolumes allows to mount additional volumes into the UI container.
@@ -300,6 +326,14 @@ spec:
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
@@ -416,7 +450,7 @@ spec:
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
-    kubermaticDockerRepository: quay.io/kubermatic/kubermatic
+    kubermaticDockerRepository: quay.io/kubermatic/kubermatic-ee
     # MachineController configures the Machine Controller
     machineController:
       # ImageRepository is used to override the Machine Controller image repository.
@@ -465,15 +499,34 @@ spec:
     # used for user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
     overwriteRegistry: ""
+    # SystemApplications contains configuration for system Applications (such as CNI).
+    systemApplications:
+      # HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
+      # The value is dockercfg file that follows the same format rules as ~/.docker/config.json
+      # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+      # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+      helmRegistryConfigFile: null
+      # HelmRepository specifies OCI repository containing Helm charts of system Applications.
+      helmRepository: quay.io/kubermatic/helm-charts
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.23.15
+    default: v1.25.6
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
         # Default is the default version to offer users.
-        default: v1.22
+        default: v1.24
+        # Updates is a list of available upgrades.
+        updates: null
+        # Versions lists the available versions.
+        versions:
+          - v1.25
+          - v1.24
+          - v1.23
+      eks:
+        # Default is the default version to offer users.
+        default: v1.24
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
@@ -481,32 +534,42 @@ spec:
           - v1.24
           - v1.23
           - v1.22
-      eks:
-        # Default is the default version to offer users.
-        default: v1.22
-        # Updates is a list of available upgrades.
-        updates: null
-        # Versions lists the available versions.
-        versions:
-          - v1.23
-          - v1.22
           - v1.21
-          - v1.20
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
-        condition: nonAMD64WithCanalAndIPVS
+        condition: externalCloudProvider
         # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-        operation: UPGRADE
+        operation: SUPPORT
         # Provider to which to apply the compatibility check.
         # Empty string matches all providers
-        provider: ""
-        # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.22.*".
-        version: 1.23.*
-      - condition: nonAMD64WithCanalAndIPVS
+        provider: aws
+        # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
+        version: < 1.24.0
+      - condition: externalCloudProvider
+        operation: CREATE
+        provider: aws
+        version: < 1.24.0
+      - condition: externalCloudProvider
         operation: UPGRADE
-        provider: ""
-        version: 1.24.*
+        provider: aws
+        version: < 1.24.0
+      - condition: inTreeProvider
+        operation: CREATE
+        provider: openstack
+        version: '>= 1.26.0'
+      - condition: inTreeProvider
+        operation: UPGRADE
+        provider: openstack
+        version: '>= 1.26.0'
+      - condition: inTreeProvider
+        operation: CREATE
+        provider: vsphere
+        version: '>= 1.25.0'
+      - condition: inTreeProvider
+        operation: UPGRADE
+        provider: vsphere
+        version: '>= 1.25.0'
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
     # Each update may optionally be configured to be 'automatic: true', in which case the
@@ -524,47 +587,39 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.21.*
+        from: 1.23.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.22.12
-      - from: 1.22.*
-        to: 1.22.*
-      - automatic: true
-        from: '>= 1.22.0, < 1.22.16'
-        to: 1.22.16
-      - from: 1.22.*
-        to: 1.23.*
-      - from: 1.23.*
-        to: 1.23.*
-      - automatic: true
-        from: '>= 1.23.0, < 1.23.14'
-        to: 1.23.14
-      - from: 1.23.*
-        to: 1.24.*
+        to: 1.24.10
       - from: 1.24.*
         to: 1.24.*
       - automatic: true
         from: '>= 1.24.0, < 1.24.8'
         to: 1.24.8
+      - from: 1.24.*
+        to: 1.25.*
+      - from: 1.25.*
+        to: 1.25.*
+      - automatic: true
+        from: '>= 1.25.0, < 1.25.4'
+        to: 1.25.4
+      - from: 1.25.*
+        to: 1.26.*
+      - from: 1.26.*
+        to: 1.26.*
     # Versions lists the available versions.
     versions:
-      - v1.22.5
-      - v1.22.9
-      - v1.22.12
-      - v1.22.15
-      - v1.22.16
-      - v1.22.17
-      - v1.23.6
-      - v1.23.9
-      - v1.23.12
-      - v1.23.14
-      - v1.23.15
       - v1.24.3
       - v1.24.6
       - v1.24.8
       - v1.24.9
+      - v1.24.10
+      - v1.25.2
+      - v1.25.4
+      - v1.25.5
+      - v1.25.6
+      - v1.26.1
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
@@ -572,6 +627,14 @@ spec:
       dockerRepository: registry.k8s.io/autoscaling/vpa-admission-controller
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -589,6 +652,14 @@ spec:
       dockerRepository: registry.k8s.io/autoscaling/vpa-recommender
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -606,6 +677,14 @@ spec:
       dockerRepository: registry.k8s.io/autoscaling/vpa-updater
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable.
+        claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
@@ -623,7 +702,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic webhook image.
-    dockerRepository: quay.io/kubermatic/kubermatic
+    dockerRepository: quay.io/kubermatic/kubermatic-ee
     # PProfEndpoint controls the port the webhook should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
@@ -631,6 +710,14 @@ spec:
     replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
+      # Claims lists the names of resources, defined in spec.resourceClaims,
+      # that are used by this container.
+
+      # This is an alpha field and requires enabling the
+      # DynamicResourceAllocation feature gate.
+
+      # This field is immutable.
+      claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
