@@ -26,12 +26,12 @@ import (
 	"testing"
 	"time"
 
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
-	"k8c.io/kubermatic/v2/pkg/test"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/util/wait"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/resources/nodeportproxy"
+	"k8c.io/kubermatic/v3/pkg/test"
+	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/util/wait"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

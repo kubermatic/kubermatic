@@ -25,9 +25,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	kubermaticresources "k8c.io/kubermatic/v3/pkg/resources"
 
 	"k8s.io/utils/pointer"
 )

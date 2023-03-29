@@ -28,8 +28,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/install/helm"
-	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
+	"k8c.io/kubermatic/v3/pkg/install/helm"
+	yamlutil "k8c.io/kubermatic/v3/pkg/util/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"

@@ -20,10 +20,10 @@ import (
 	"flag"
 	"fmt"
 
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/pprof"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	"k8c.io/kubermatic/v2/pkg/webhook"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/pprof"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates"
+	"k8c.io/kubermatic/v3/pkg/webhook"
 
 	"k8s.io/klog/v2"
 )

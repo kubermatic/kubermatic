@@ -24,10 +24,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
+	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

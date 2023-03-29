@@ -17,8 +17,8 @@ limitations under the License.
 package csi
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/csi/kubevirt"
 	"k8c.io/reconciler/pkg/reconciling"
 )
 

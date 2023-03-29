@@ -32,11 +32,11 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	machinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v3/pkg/controller/util/predicate"
+	machinevalidation "k8c.io/kubermatic/v3/pkg/ee/validation/machine"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/resources/certificates"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

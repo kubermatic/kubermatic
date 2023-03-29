@@ -17,7 +17,7 @@ limitations under the License.
 package operatingsystemmanager
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 )

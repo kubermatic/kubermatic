@@ -27,8 +27,8 @@ import (
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
 	machinecontroller "k8c.io/api/v2/pkg/apis/machine-controller"
-	"k8c.io/kubermatic/v2/pkg/machine"
-	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
+	"k8c.io/kubermatic/v3/pkg/machine"
+	"k8c.io/kubermatic/v3/pkg/validation/nodeupdate"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
 
 	corev1 "k8s.io/api/core/v1"

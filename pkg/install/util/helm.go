@@ -24,8 +24,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 
-	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	"k8c.io/kubermatic/v3/pkg/install/helm"
+	"k8c.io/kubermatic/v3/pkg/util/yamled"
 )
 
 // CheckHelmRelease tries to find an existing Helm release in the cluster

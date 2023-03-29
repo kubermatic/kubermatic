@@ -17,7 +17,7 @@ limitations under the License.
 package operatingsystemmanager
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

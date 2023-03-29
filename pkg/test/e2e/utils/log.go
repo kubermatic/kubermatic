@@ -17,7 +17,7 @@ limitations under the License.
 package utils
 
 import (
-	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/log"
 )
 
 var DefaultLogOptions = log.Options{

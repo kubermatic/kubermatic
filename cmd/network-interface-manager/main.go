@@ -30,7 +30,7 @@ import (
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 )
 
 func main() {

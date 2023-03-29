@@ -22,8 +22,8 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

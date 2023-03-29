@@ -40,7 +40,7 @@ import (
 	"helm.sh/helm/v3/pkg/repo/repotest"
 	"helm.sh/helm/v3/pkg/uploader"
 
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"
 )
 
 // Const relative to pkg/applications/helmclient/testdata/examplechart chart.

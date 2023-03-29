@@ -26,11 +26,11 @@ import (
 	"github.com/gophercloud/gophercloud"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	ostesting "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack/internal/testing"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/test"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	ostesting "k8c.io/kubermatic/v3/pkg/provider/cloud/openstack/internal/testing"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/resources/test"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

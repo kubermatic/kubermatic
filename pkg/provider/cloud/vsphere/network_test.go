@@ -24,7 +24,7 @@ import (
 	"sort"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v3/pkg/test/diff"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {

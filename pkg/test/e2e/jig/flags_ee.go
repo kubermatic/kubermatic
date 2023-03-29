@@ -21,8 +21,8 @@ package jig
 import (
 	"context"
 
-	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	eeprovider "k8c.io/kubermatic/v3/pkg/ee/provider"
+	"k8c.io/kubermatic/v3/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

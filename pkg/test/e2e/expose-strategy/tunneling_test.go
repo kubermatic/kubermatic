@@ -24,12 +24,12 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	"k8s.io/utils/pointer"
 )

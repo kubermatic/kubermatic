@@ -24,8 +24,8 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/api/v2/pkg/semver"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	controllerutil "k8c.io/kubermatic/v3/pkg/controller/util"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

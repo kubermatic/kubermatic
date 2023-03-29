@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv1 "k8c.io/kubermatic/v3/pkg/api/v1"
 )
 
 type TimeHolder struct {

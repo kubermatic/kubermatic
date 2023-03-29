@@ -22,8 +22,8 @@ import (
 	"sort"
 	"testing"
 
-	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

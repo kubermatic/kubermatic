@@ -26,7 +26,7 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/api/v2/pkg/apis/kubermatic/v1/helper"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

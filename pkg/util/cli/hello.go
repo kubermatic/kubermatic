@@ -19,7 +19,7 @@ package cli
 import (
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 )
 
 func Hello(log *zap.SugaredLogger, app string, verbose bool, versions *kubermatic.Versions) {

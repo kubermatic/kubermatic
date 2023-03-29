@@ -24,7 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
+	"k8c.io/kubermatic/v3/cmd/conformance-tester/pkg/metrics"
 )
 
 func RetryN(delay time.Duration, maxAttempts int, f func(attempt int) error) error {

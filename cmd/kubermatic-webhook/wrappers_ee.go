@@ -21,8 +21,8 @@ package main
 import (
 	"context"
 
-	eewebhook "k8c.io/kubermatic/v2/pkg/ee/cmd/webhook"
-	"k8c.io/kubermatic/v2/pkg/provider"
+	eewebhook "k8c.io/kubermatic/v3/pkg/ee/cmd/webhook"
+	"k8c.io/kubermatic/v3/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

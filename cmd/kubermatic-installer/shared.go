@@ -26,8 +26,8 @@ import (
 	"github.com/spf13/cobra"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	kubernetesprovider "k8c.io/kubermatic/v3/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/util/yamled"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"

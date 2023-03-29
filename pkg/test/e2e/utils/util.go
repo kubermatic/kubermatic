@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"k8c.io/api/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 )

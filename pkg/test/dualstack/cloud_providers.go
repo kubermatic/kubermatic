@@ -28,7 +28,7 @@ import (
 	awstypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 
 	"k8s.io/utils/pointer"

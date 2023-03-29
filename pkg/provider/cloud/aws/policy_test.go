@@ -24,7 +24,7 @@ import (
 	"flag"
 	"testing"
 
-	testhelper "k8c.io/kubermatic/v2/pkg/test"
+	testhelper "k8c.io/kubermatic/v3/pkg/test"
 )
 
 var (

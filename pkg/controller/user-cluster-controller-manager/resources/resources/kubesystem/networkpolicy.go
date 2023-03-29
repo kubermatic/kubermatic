@@ -19,7 +19,7 @@ package kubesystem
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"

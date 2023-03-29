@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	predicateutil "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"

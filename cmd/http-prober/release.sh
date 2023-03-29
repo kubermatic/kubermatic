@@ -18,7 +18,7 @@ ver=v0.3.3
 
 set -euox pipefail
 
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags="-w -s" k8c.io/kubermatic/v2/cmd/http-prober
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -ldflags="-w -s" k8c.io/kubermatic/v3/cmd/http-prober
 
 docker build --no-cache --pull -t quay.io/kubermatic/http-prober:$ver .
 docker push quay.io/kubermatic/http-prober:$ver

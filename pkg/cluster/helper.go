@@ -18,7 +18,7 @@ package cluster
 
 import (
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 )

@@ -24,10 +24,10 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	kubermaticpred "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

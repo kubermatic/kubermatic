@@ -17,7 +17,7 @@ limitations under the License.
 package etcd
 
 import (
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v3/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"

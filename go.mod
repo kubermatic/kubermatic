@@ -1,4 +1,4 @@
-module k8c.io/kubermatic/v2
+module k8c.io/kubermatic/v3
 
 go 1.19
 

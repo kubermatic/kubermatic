@@ -25,8 +25,8 @@ import (
 	"github.com/Masterminds/sprig/v3"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/vmwareclouddirector"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/provider/cloud/vmwareclouddirector"
+	"k8c.io/kubermatic/v3/pkg/resources"
 )
 
 // Sourced from: https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.2.0/manifests/vcloud-csi-config.yaml

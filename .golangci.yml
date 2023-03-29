@@ -103,11 +103,11 @@ linters-settings:
         alias: appskubermaticv1
       - pkg: k8c.io/api/v2/pkg/apis/kubermatic/v1
         alias: kubermaticv1
-      - pkg: k8c.io/kubermatic/v2/pkg/api/v1
+      - pkg: k8c.io/kubermatic/v3/pkg/api/v1
         alias: apiv1
-      - pkg: k8c.io/kubermatic/v2/pkg/api/v2
+      - pkg: k8c.io/kubermatic/v3/pkg/api/v2
         alias: apiv2
-      - pkg: k8c.io/kubermatic/v2/pkg/util/errors
+      - pkg: k8c.io/kubermatic/v3/pkg/util/errors
         alias: utilerrors
       # Kubernetes
       - pkg: k8s.io/api/(\w+)/(v[\w\d]+)

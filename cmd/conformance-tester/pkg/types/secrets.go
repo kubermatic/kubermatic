@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"os"
 
-	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v3/pkg/test"
 )
 
 type Secrets struct {

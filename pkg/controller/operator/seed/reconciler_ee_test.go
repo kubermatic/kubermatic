@@ -26,7 +26,7 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/ee/metering"
+	"k8c.io/kubermatic/v3/pkg/ee/metering"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"

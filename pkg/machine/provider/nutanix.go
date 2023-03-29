@@ -22,7 +22,7 @@ import (
 	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
+	nutanixprovider "k8c.io/kubermatic/v3/pkg/provider/cloud/nutanix"
 
 	"k8s.io/utils/pointer"
 )

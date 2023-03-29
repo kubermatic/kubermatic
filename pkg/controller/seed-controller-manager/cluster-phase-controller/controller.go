@@ -23,10 +23,10 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	clusterhelper "k8c.io/kubermatic/v2/pkg/cluster"
-	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	clusterhelper "k8c.io/kubermatic/v3/pkg/cluster"
+	updatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/update-controller"
+	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

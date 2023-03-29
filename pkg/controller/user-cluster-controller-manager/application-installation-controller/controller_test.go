@@ -26,10 +26,10 @@ import (
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/applications"
-	"k8c.io/kubermatic/v2/pkg/applications/fake"
-	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/applications"
+	"k8c.io/kubermatic/v3/pkg/applications/fake"
+	"k8c.io/kubermatic/v3/pkg/applications/providers/util"
+	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -25,11 +25,11 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/install/stack"
-	"k8c.io/kubermatic/v2/pkg/install/util"
-	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/features"
+	"k8c.io/kubermatic/v3/pkg/install/helm"
+	"k8c.io/kubermatic/v3/pkg/install/stack"
+	"k8c.io/kubermatic/v3/pkg/install/util"
+	"k8c.io/kubermatic/v3/pkg/log"
 
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

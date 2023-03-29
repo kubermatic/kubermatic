@@ -22,7 +22,7 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	eeutil "k8c.io/kubermatic/v2/pkg/ee/constraint-controller"
+	eeutil "k8c.io/kubermatic/v3/pkg/ee/constraint-controller"
 )
 
 func (r *reconciler) filterClustersForConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {

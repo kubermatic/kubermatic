@@ -29,14 +29,14 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	k8csemver "k8c.io/api/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/install/stack"
-	"k8c.io/kubermatic/v2/pkg/install/util"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/edition"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/features"
+	"k8c.io/kubermatic/v3/pkg/install/stack"
+	"k8c.io/kubermatic/v3/pkg/install/util"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
+	"k8c.io/kubermatic/v3/pkg/util/yamled"
 
 	corev1 "k8s.io/api/core/v1"
 )

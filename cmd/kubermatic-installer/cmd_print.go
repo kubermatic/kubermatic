@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"k8c.io/kubermatic/v2/docs"
+	"k8c.io/kubermatic/v3/docs"
 )
 
 func PrintCommand() *cobra.Command {

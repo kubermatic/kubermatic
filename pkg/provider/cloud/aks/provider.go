@@ -34,11 +34,11 @@ import (
 
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/api/v2/pkg/semver"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	apiv1 "k8c.io/kubermatic/v3/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v3/pkg/api/v2"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	utilerrors "k8c.io/kubermatic/v3/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"

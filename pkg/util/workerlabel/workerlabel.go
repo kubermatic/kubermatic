@@ -19,7 +19,7 @@ package workerlabel
 import (
 	"fmt"
 
-	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubermaticpred "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"

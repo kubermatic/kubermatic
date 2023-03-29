@@ -31,11 +31,11 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/cloudprovider/util"
 	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	"k8c.io/kubermatic/v2/pkg/util/flagopts"
-	"k8c.io/kubermatic/v2/pkg/util/wait"
+	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"
+	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/util/flagopts"
+	"k8c.io/kubermatic/v3/pkg/util/wait"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
