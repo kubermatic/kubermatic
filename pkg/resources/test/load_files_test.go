@@ -29,8 +29,8 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/api/v2/pkg/semver"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	ksemver "k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/cni"
 	kubernetescontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring"

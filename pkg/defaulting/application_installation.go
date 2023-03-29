@@ -19,7 +19,7 @@ package defaulting
 import (
 	"time"
 
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
 )
 
 // DefaultHelmTimeout is the default time to wait for any individual Kubernetes operation.

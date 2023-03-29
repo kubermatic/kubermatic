@@ -22,7 +22,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/install/stack"
 	"k8c.io/kubermatic/v3/pkg/install/stack/common"
 	"k8c.io/kubermatic/v3/pkg/util/yamled"

@@ -19,8 +19,8 @@ package constrainttemplatecontroller
 import (
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	openpolicyagent "k8c.io/api/v2/pkg/apis/open-policy-agent"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	openpolicyagent "k8c.io/api/v3/pkg/apis/open-policy-agent"
 )
 
 func convertConstraintTemplateSpec(kkpSpec *kubermaticv1.ConstraintTemplateSpec) (*constrainttemplatev1.ConstraintTemplateSpec, error) {

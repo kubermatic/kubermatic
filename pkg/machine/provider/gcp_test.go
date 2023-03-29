@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 )
 
 func TestGCPConfigBuilder(t *testing.T) {

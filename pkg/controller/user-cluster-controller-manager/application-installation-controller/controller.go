@@ -23,8 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/api/v2/pkg/apis/equality"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/api/v3/pkg/apis/equality"
 	"k8c.io/kubermatic/v3/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager"
 	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
