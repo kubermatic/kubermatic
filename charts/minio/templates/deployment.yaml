@@ -39,7 +39,7 @@ spec:
         {{- end }}
     spec:
       {{- if .Values.minio.imagePullSecrets }}
-      imagePullSecrets: {{ toYaml .Values.minio.imagePullSecrets | nindent 8 }}
+      imagePullSecrets:{{ toYaml .Values.minio.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
       - name: minio
