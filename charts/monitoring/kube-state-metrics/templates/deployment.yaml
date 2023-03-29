@@ -85,6 +85,7 @@ spec:
           - --deployment=kube-state-metrics
           - --pod=$(MY_POD_NAME)
           - --namespace=$(MY_POD_NAMESPACE)
+          - --healthcheck-address=":8088"
         env:
         - name: MY_POD_NAME
           valueFrom:
@@ -97,7 +98,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health-check
-            port: 8080
+            port: 8088
           initialDelaySeconds: 10
           periodSeconds: 10
         resources:
