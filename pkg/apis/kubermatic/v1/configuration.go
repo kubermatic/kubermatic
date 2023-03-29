@@ -164,6 +164,10 @@ type KubermaticUIConfiguration struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// Replicas sets the number of pod replicas for the UI deployment.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// ExtraVolumeMounts allows to mount additional volumes into the UI container.
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
+	// ExtraVolumes allows to mount additional volumes into the UI container.
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
 }
 
 // KubermaticSeedControllerConfiguration configures the Kubermatic seed controller-manager.
