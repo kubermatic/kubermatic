@@ -65,6 +65,12 @@ spec:
       spec:
         aws:
           region: eu-central-1
+    aws-eu-central-1b:
+      location: EU (Frankfurt)
+      country: DE
+      spec:
+        aws:
+          region: eu-central-1
     hetzner-hel1:
       location: Helsinki 1 DC 6
       country: DE
