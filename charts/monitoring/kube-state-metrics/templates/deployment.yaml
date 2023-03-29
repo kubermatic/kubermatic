@@ -19,12 +19,16 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: kube-state-metrics
+      app.kubernetes.io/component: exporter
+      app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/version: 2.8.2
   replicas: 1
   template:
     metadata:
       labels:
-        app: kube-state-metrics
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/name: kube-state-metrics
+        app.kubernetes.io/version: 2.8.2
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8080'
@@ -32,6 +36,7 @@ spec:
         fluentbit.io/parser: glog
     spec:
       serviceAccountName: kube-state-metrics
+      automountServiceAccountToken: true
       containers:
       - name: kube-state-metrics
         image: '{{ .Values.kubeStateMetrics.image.repository }}:{{ .Values.kubeStateMetrics.image.tag }}'
@@ -41,16 +46,29 @@ spec:
         args:
         - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance]
         ports:
-        - name: http-metrics
-          containerPort: 8080
-        - name: telemetry
-          containerPort: 8081
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 8081
+          name: telemetry
         readinessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        livenessProbe:
           httpGet:
             path: /healthz
             port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsUser: 65534
         resources:
 {{ toYaml .Values.kubeStateMetrics.resources | indent 10 }}
 
