@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	opa "k8c.io/api/v2/pkg/apis/open-policy-agent"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	opa "k8c.io/api/v3/pkg/apis/open-policy-agent"
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/test/diff"
 	"k8c.io/kubermatic/v3/pkg/test/generator"

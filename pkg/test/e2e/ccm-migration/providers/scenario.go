@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

@@ -24,7 +24,7 @@ if [ -z "${NO_UPDATE:-}" ]; then
 
   echodate "Updating Go dependency to $VERSION (set \$NO_UPDATE=1 to skip)…"
 
-  go get -v "k8c.io/api/v2@$VERSION"
+  go get -v "k8c.io/api/v3@$VERSION"
   go mod tidy
 fi
 

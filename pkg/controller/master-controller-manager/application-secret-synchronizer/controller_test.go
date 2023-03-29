@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"

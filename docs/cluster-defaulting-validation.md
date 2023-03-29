@@ -67,7 +67,7 @@ The openapi package can be easily integrated into your custom validation funcs. 
 
 ```Go
 import (
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/validation/openapi"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"

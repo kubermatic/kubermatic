@@ -23,8 +23,8 @@ import (
 	"strconv"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/api/v2/pkg/semver"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	ksemver "k8c.io/api/v3/pkg/semver"
 	apiv1 "k8c.io/kubermatic/v3/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v3/pkg/api/v2"
 

@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"k8c.io/api/v2/pkg/semver"
+	"k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v3/pkg/util/wait"

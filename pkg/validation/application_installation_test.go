@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

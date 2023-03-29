@@ -20,8 +20,8 @@ import (
 	"strings"
 	"testing"
 
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/api/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"

@@ -99,9 +99,9 @@ linters-settings:
     no-unaliased: true
     alias:
       # KKP
-      - pkg: k8c.io/api/v2/pkg/apis/apps.kubermatic/v1
+      - pkg: k8c.io/api/v3/pkg/apis/apps.kubermatic/v1
         alias: appskubermaticv1
-      - pkg: k8c.io/api/v2/pkg/apis/kubermatic/v1
+      - pkg: k8c.io/api/v3/pkg/apis/kubermatic/v1
         alias: kubermaticv1
       - pkg: k8c.io/kubermatic/v3/pkg/api/v1
         alias: apiv1

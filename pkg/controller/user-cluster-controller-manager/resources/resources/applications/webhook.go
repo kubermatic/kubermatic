@@ -20,7 +20,7 @@ import (
 	"crypto/x509"
 	"fmt"
 
-	appskubermaticv1 "k8c.io/api/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/certificates/triple"
 	"k8c.io/reconciler/pkg/reconciling"
