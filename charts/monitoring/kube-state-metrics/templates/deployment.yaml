@@ -19,13 +19,12 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: exporter
-      app.kubernetes.io/name: kube-state-metrics
-      app.kubernetes.io/version: 2.8.2
+      app: kube-state-metrics
   replicas: 1
   template:
     metadata:
       labels:
+        app: kube-state-metrics
         app.kubernetes.io/component: exporter
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/version: 2.8.2
