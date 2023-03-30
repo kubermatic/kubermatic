@@ -21,8 +21,8 @@ rules:
   resources:
   - pods
   verbs: ["get"]
-- apiGroups: ["extensions"]
+- apiGroups: ["apps"]
   resources:
   - deployments
   resourceNames: ["kube-state-metrics"]
-  verbs: ["get", "update"]
+  verbs: ["get", "update", "patch"]
