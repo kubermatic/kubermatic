@@ -111,13 +111,12 @@ roleRef:
   name: csi-provisioner-role
   apiGroup: rbac.authorization.k8s.io
 ---
-kind: StatefulSet
+kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: csi-vcd-controllerplugin
   namespace: kube-system
 spec:
-  serviceName: csi-vcd-controller-service
   replicas: 1
   selector:
     matchLabels:
@@ -151,6 +150,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=$(ADDRESS)
+            - --default-fstype=ext4
             - --timeout=300s
             - --v=5
           env:
@@ -165,12 +165,13 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image:  {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.2.0.latest" }}
+          image:  {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.3.2" }}
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-director-named-disk-csi-driver
             - --cloud-config=/etc/kubernetes/vcloud/vcloud-csi-config.yaml
             - --endpoint=$(CSI_ENDPOINT)
+            - --upgrade-rde
             - --v=5
           env:
             - name: NODE_ID
@@ -192,6 +193,11 @@ spec:
               mountPath: /etc/kubernetes/vcloud
             - name: vcloud-basic-auth-volume
               mountPath: /etc/kubernetes/vcloud/basic-auth
+      tolerations:
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
       volumes:
         - name: socket-dir
           emptyDir: {}
