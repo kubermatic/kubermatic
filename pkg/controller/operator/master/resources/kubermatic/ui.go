@@ -56,6 +56,18 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 				tag = cfg.Spec.UI.DockerTag
 			}
 
+			volumeMounts := []corev1.VolumeMount{
+				{
+					MountPath: "/dist/config/",
+					Name:      "config",
+					ReadOnly:  true,
+				},
+			}
+
+			if cfg.Spec.UI.ExtraVolumeMounts != nil {
+				volumeMounts = append(volumeMounts, cfg.Spec.UI.ExtraVolumeMounts...)
+			}
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "webserver",
@@ -69,14 +81,8 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							MountPath: "/dist/config/",
-							Name:      "config",
-							ReadOnly:  true,
-						},
-					},
-					Resources: cfg.Spec.UI.Resources,
+					VolumeMounts: volumeMounts,
+					Resources:    cfg.Spec.UI.Resources,
 				},
 			}
 
@@ -89,6 +95,10 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 						},
 					},
 				},
+			}
+
+			if cfg.Spec.UI.ExtraVolumes != nil {
+				d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, cfg.Spec.UI.ExtraVolumes...)
 			}
 
 			return d, nil
