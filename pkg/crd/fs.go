@@ -128,7 +128,7 @@ func CRDsForGroup(apiGroup string) ([]apiextensionsv1.CustomResourceDefinition, 
 			continue
 		}
 
-		crd, err := loadCRD(k8cDir, filename)
+		crd, err := loadCRD(dir, filename)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open CRD: %w", err)
 		}
