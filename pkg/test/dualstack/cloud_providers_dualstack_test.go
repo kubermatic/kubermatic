@@ -448,7 +448,7 @@ func TestNewClusters(t *testing.T) {
 			log.Infow("Checking pod readiness...", "namespace", metav1.NamespaceSystem)
 			err = waitForPods(t, ctx, log, userclusterClient, metav1.NamespaceSystem, "app", []string{
 				"coredns", "konnectivity-agent", "kube-proxy", "metrics-server",
-				"node-local-dns", "user-ssh-keys-agent",
+				"node-local-dns",
 			})
 			if err != nil {
 				t.Fatalf("Pods never became ready: %v", err)

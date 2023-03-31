@@ -54,7 +54,6 @@ import (
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/scheduler"
 	systembasicuser "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
-	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v3/pkg/crd"
 	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
@@ -80,10 +79,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get caCert: %w", err)
 	}
-	userSSHKeys, err := r.userSSHKeys(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get userSSHKeys: %w", err)
-	}
 	cloudConfig, err := r.cloudConfig(ctx, resources.CloudConfigSeedSecretName)
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %w", err)
@@ -91,7 +86,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 	data := reconcileData{
 		caCert:       caCert,
-		userSSHKeys:  userSSHKeys,
 		cloudConfig:  cloudConfig,
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
@@ -311,16 +305,11 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedServiceAccountReconcilerFactory{
 		userauth.ServiceAccountReconciler(),
-		usersshkeys.ServiceAccountReconciler(),
 		coredns.ServiceAccountReconciler(),
 	}
 
 	if r.nodeLocalDNSCache {
 		creators = append(creators, nodelocaldns.ServiceAccountReconciler())
-	}
-
-	if r.userSSHKeyAgent {
-		creators = append(creators, usersshkeys.ServiceAccountReconciler())
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -390,10 +379,6 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	creators := []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.KubeSystemRoleReconciler(),
 		clusterautoscaler.KubeSystemRoleReconciler(),
-	}
-
-	if r.userSSHKeyAgent {
-		creators = append(creators, usersshkeys.RoleReconciler())
 	}
 
 	if data.operatingSystemManagerEnabled {
@@ -476,10 +461,6 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingReconciler(),
-	}
-
-	if r.userSSHKeyAgent {
-		creators = append(creators, usersshkeys.RoleBindingReconciler())
 	}
 
 	if data.operatingSystemManagerEnabled {
@@ -903,10 +884,6 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
 	}
 
-	if r.userSSHKeyAgent {
-		creators = append(creators, usersshkeys.SecretReconciler(data.userSSHKeys))
-	}
-
 	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets in kube-system Namespace: %w", err)
 	}
@@ -975,10 +952,6 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 
 	if r.nodeLocalDNSCache {
 		dsReconcilers = append(dsReconcilers, nodelocaldns.DaemonSetReconciler(r.imageRewriter))
-	}
-
-	if r.userSSHKeyAgent {
-		dsReconcilers = append(dsReconcilers, usersshkeys.DaemonSetReconciler(r.versions, r.imageRewriter))
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
@@ -1102,11 +1075,6 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()),
 	}
 
-	if r.userSSHKeyAgent {
-		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys,
-			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()))
-	}
-
 	if r.isKonnectivityEnabled {
 		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, metricsserver.NetworkPolicyReconciler(), konnectivity.NetworkPolicyReconciler())
 	}
@@ -1147,7 +1115,6 @@ type reconcileData struct {
 	caCert           *triple.KeyPair
 	openVPNCACert    *resources.ECDSAKeyPair
 	mlaGatewayCACert *resources.ECDSAKeyPair
-	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
 	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
 	csiCloudConfig                []byte

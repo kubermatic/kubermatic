@@ -45,7 +45,6 @@ Builds and pushes all KKP Docker images:
 * quay.io/kubermatic/addons
 * quay.io/kubermatic/nodeport-proxy
 * quay.io/kubermatic/kubeletdnat-controller
-* quay.io/kubermatic/user-ssh-keys-agent
 * quay.io/kubermatic/etcd-launcher
 * quay.io/kubermatic/network-interface-manager
 

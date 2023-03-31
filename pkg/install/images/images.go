@@ -43,7 +43,6 @@ import (
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	nodelocaldns "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
-	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/cloudcontroller"
@@ -305,10 +304,6 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	cronjobReconcilers := controlplanecontroller.GetCronJobReconcilers(templateData)
 
 	var daemonsetReconcilers []reconciling.NamedDaemonSetReconcilerFactory
-	daemonsetReconcilers = append(daemonsetReconcilers, usersshkeys.DaemonSetReconciler(
-		kubermaticVersions,
-		templateData.RewriteImage,
-	))
 	daemonsetReconcilers = append(daemonsetReconcilers, nodelocaldns.DaemonSetReconciler(templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetReconcilers {
