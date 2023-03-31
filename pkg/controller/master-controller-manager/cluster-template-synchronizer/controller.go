@@ -18,13 +18,11 @@ package clustertemplatesynchronizer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	nodedeploymentmigration "k8c.io/kubermatic/v2/pkg/controller/shared/nodedeployment-migration"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -123,14 +121,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	// In KKP 2.22, initial-machinedeployments were changed from NodeDeployments to actual
-	// MachineDeployments; in order to eventually be able to remove the NodeDedeployment codebase,
-	// existing annotations need to be migrated.
-	// This code can be removed in KKP 2.23+.
-	if err := r.migrateInitialMachineDeployment(ctx, log, clusterTemplate); err != nil {
-		return fmt.Errorf("failed to migrate initial-machinedeployment annotation: %w", err)
-	}
-
 	clusterTemplateReconcilerFactorys := []reconciling.NamedClusterTemplateReconcilerFactory{
 		clusterTemplateReconcilerFactory(clusterTemplate),
 	}
@@ -152,40 +142,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return fmt.Errorf("reconciled cluster template: %s: %w", clusterTemplate.Name, err)
 	}
 	return nil
-}
-
-func (r *reconciler) migrateInitialMachineDeployment(ctx context.Context, log *zap.SugaredLogger, clusterTemplate *kubermaticv1.ClusterTemplate) error {
-	request := clusterTemplate.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation]
-	if request == "" {
-		return nil
-	}
-
-	datacenter, err := r.getTargetDatacenter(clusterTemplate)
-	if err != nil {
-		return err
-	}
-
-	cluster := &kubermaticv1.Cluster{
-		ObjectMeta: clusterTemplate.ObjectMeta,
-		Spec:       clusterTemplate.Spec,
-	}
-
-	machineDeployment, migrated, err := nodedeploymentmigration.ParseNodeOrMachineDeployment(cluster, datacenter, request)
-	if err != nil {
-		return err
-	}
-
-	if !migrated {
-		return nil
-	}
-
-	encoded, err := json.Marshal(machineDeployment)
-	if err != nil {
-		return fmt.Errorf("cannot marshal initial machine deployment: %w", err)
-	}
-	clusterTemplate.Annotations[kubermaticv1.InitialMachineDeploymentRequestAnnotation] = string(encoded)
-
-	return r.masterClient.Update(ctx, clusterTemplate)
 }
 
 func (r *reconciler) getTargetDatacenter(clusterTemplate *kubermaticv1.ClusterTemplate) (*kubermaticv1.Datacenter, error) {
