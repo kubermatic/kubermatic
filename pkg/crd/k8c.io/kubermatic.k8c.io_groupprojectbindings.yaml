@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.3
-    kubermatic.k8c.io/location: master
+    kubermatic.k8c.io/location: master,seed
   creationTimestamp: null
   name: groupprojectbindings.kubermatic.k8c.io
 spec:

@@ -38,14 +38,23 @@ import (
 var embeddedFS embed.FS
 
 const (
-	rootDir = "k8c.io"
+	k8cDir = "k8c.io"
+	k8sDir = "k8s.io"
 )
 
 // Groups returns a list of all known API groups for which CRDs are available.
 func Groups() ([]string, error) {
-	entries, err := embeddedFS.ReadDir(rootDir)
-	if err != nil {
-		return nil, err
+	dirs := []string{k8cDir, k8sDir}
+
+	entries := []fs.DirEntry{}
+
+	for _, dir := range dirs {
+		dirEntries, err := embeddedFS.ReadDir(dir)
+		if err != nil {
+			return nil, err
+		}
+
+		entries = append(entries, dirEntries...)
 	}
 
 	groups := sets.New[string]()
@@ -72,7 +81,12 @@ func CRDForGVK(gvk schema.GroupVersionKind) (*apiextensionsv1.CustomResourceDefi
 	kindPlural := strings.ToLower(flect.Pluralize(gvk.Kind))
 	filename := gvk.Group + "_" + kindPlural + ".yaml"
 
-	crd, err := loadCRD(filename)
+	dir, err := getDirForGroup(gvk.Group)
+	if err != nil {
+		return nil, fmt.Errorf("no CRD available \"%s_%s\": %w", gvk.Group, kindPlural, err)
+	}
+
+	crd, err := loadCRD(dir, filename)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, fmt.Errorf("no CRD available for \"%s_%s\"", gvk.Group, kindPlural)
@@ -86,7 +100,12 @@ func CRDForGVK(gvk schema.GroupVersionKind) (*apiextensionsv1.CustomResourceDefi
 
 // CRDsForGroup returns all CRDs for the given API group (e.g. "kubermatic.k8c.io").
 func CRDsForGroup(apiGroup string) ([]apiextensionsv1.CustomResourceDefinition, error) {
-	files, err := embeddedFS.ReadDir(rootDir)
+	dir, err := getDirForGroup(apiGroup)
+	if err != nil {
+		return nil, fmt.Errorf("no CRDs available: %w", err)
+	}
+
+	files, err := embeddedFS.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("x: %w", err)
 	}
@@ -100,7 +119,7 @@ func CRDsForGroup(apiGroup string) ([]apiextensionsv1.CustomResourceDefinition, 
 			continue
 		}
 
-		crd, err := loadCRD(filename)
+		crd, err := loadCRD(dir, filename)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open CRD: %w", err)
 		}
@@ -111,8 +130,19 @@ func CRDsForGroup(apiGroup string) ([]apiextensionsv1.CustomResourceDefinition, 
 	return result, nil
 }
 
-func loadCRD(filename string) (*apiextensionsv1.CustomResourceDefinition, error) {
-	f, err := embeddedFS.Open(rootDir + "/" + filename)
+func getDirForGroup(group string) (string, error) {
+	switch {
+	case strings.HasSuffix(group, k8cDir):
+		return k8cDir, nil
+	case strings.HasSuffix(group, k8sDir):
+		return k8sDir, nil
+	}
+
+	return "", fmt.Errorf("no directory exists for \"%s\"", group)
+}
+
+func loadCRD(directory string, filename string) (*apiextensionsv1.CustomResourceDefinition, error) {
+	f, err := embeddedFS.Open(directory + "/" + filename)
 	if err != nil {
 		return nil, err
 	}

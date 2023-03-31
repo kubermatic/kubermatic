@@ -33,6 +33,7 @@ boilerplate \
   -exclude pkg/ee \
   -exclude charts/kubermatic-operator/crd \
   -exclude pkg/crd/k8c.io \
+  -exclude pkg/crd/k8s.io \
   -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
   -exclude pkg/provider/cloud/eks/authenticator \
   -exclude .github
