@@ -18,6 +18,7 @@ package initialmachinedeployment
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -26,7 +27,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	nodedeploymentmigration "k8c.io/kubermatic/v2/pkg/controller/shared/nodedeployment-migration"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -165,13 +165,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to get target datacenter: %w", err)
 	}
 
-	machineDeployment, err := r.parseMachineDeployment(cluster, datacenter, request)
-	if err != nil {
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	if err := json.Unmarshal([]byte(request), machineDeployment); err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
 			return nil, fmt.Errorf("failed to remove invalid (%w) initial MachineDeployment annotation: %w", err, removeErr)
 		}
 
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal string as MachineDeployment: %w", err)
+	}
+
+	if err := ValidateMachineDeployment(machineDeployment, cluster.Spec.Version.Semver()); err != nil {
+		return nil, fmt.Errorf("initial MachineDeployment is invalid: %w", err)
 	}
 
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
@@ -188,19 +192,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	return nil, nil
-}
-
-func (r *Reconciler) parseMachineDeployment(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, request string) (*clusterv1alpha1.MachineDeployment, error) {
-	machineDeployment, _, err := nodedeploymentmigration.ParseNodeOrMachineDeployment(cluster, datacenter, request)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := ValidateMachineDeployment(machineDeployment, cluster.Spec.Version.Semver()); err != nil {
-		return nil, fmt.Errorf("initial MachineDeployment is invalid: %w", err)
-	}
-
-	return machineDeployment, nil
 }
 
 // createInitialMachineDeployment takes the MD from the annotation and applies the current system
