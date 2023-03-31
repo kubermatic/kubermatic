@@ -39,6 +39,9 @@ spec:
       hostNetwork: true
       hostPID: true
       serviceAccountName: node-exporter
+      {{- if .Values.nodeExporter.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.nodeExporter.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
       - name: node-exporter
         image: "{{ .Values.nodeExporter.image.repository }}:{{ .Values.nodeExporter.image.tag }}"

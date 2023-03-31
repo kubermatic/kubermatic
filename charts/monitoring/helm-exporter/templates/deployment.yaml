@@ -36,6 +36,9 @@ spec:
         prometheus.io/port: '9571'
         kubermatic.io/chart: helm-exporter
     spec:
+      {{- if .Values.helmExporter.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.helmExporter.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
       - name: '{{ .Chart.Name }}'
         image: '{{ .Values.helmExporter.image.repository }}:{{ .Values.helmExporter.image.tag }}'

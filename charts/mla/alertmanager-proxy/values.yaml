@@ -19,6 +19,10 @@ alertmanagerProxy:
     image:
       repository: "docker.io/envoyproxy/envoy"
       tag: "v1.18.3"
+    # list of image pull secret references, e.g.
+    # imagePullSecrets:
+    #   - name: docker-io-pull-secret
+    imagePullSecrets: []
     replicas: 1
     resources:
       requests:
@@ -43,6 +47,10 @@ alertmanagerProxy:
     image:
       repository: "quay.io/kubermatic/alertmanager-authorization-server"
       tag: "0.2.1"
+    # list of image pull secret references, e.g.
+    # imagePullSecrets:
+    #   - name: quay-io-pull-secret
+    imagePullSecrets: []
     replicas: 1
     resources:
       requests:

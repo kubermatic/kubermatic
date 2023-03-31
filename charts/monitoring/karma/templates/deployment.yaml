@@ -36,6 +36,9 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha1sum }}
     spec:
       serviceAccountName: '{{ template "name" .}}'
+      {{- if .Values.karma.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.karma.imagePullSecrets | nindent 8 }}
+      {{- end }}
       initContainers:
       - name: init-seeds
         image: '{{ .Values.karma.images.initContainer.repository }}:{{ .Values.karma.images.initContainer.tag }}'

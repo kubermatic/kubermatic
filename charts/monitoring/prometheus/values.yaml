@@ -18,6 +18,10 @@ prometheus:
     repository: quay.io/prometheus/prometheus
     tag: v2.40.2
     pullPolicy: IfNotPresent
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: quay-io-pull-secret
+  imagePullSecrets: []
 
   host: ''
   storageSize: 100Gi

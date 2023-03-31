@@ -33,6 +33,9 @@ spec:
         fluentbit.io/parser: json_iso
     spec:
       serviceAccountName: s3-exporter
+      {{- if .Values.s3Exporter.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.s3Exporter.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
         - name: s3-exporter
           image: '{{ .Values.s3Exporter.image.repository }}:{{ .Values.s3Exporter.image.tag }}'

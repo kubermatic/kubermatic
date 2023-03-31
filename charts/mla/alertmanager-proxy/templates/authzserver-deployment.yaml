@@ -33,6 +33,9 @@ spec:
       labels:
         app.kubernetes.io/name: alertmanager-authz-server
     spec:
+      {{- if .Values.alertmanagerProxy.authz.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.alertmanagerProxy.authz.imagePullSecrets | nindent 8 }}
+      {{- end }}
       serviceAccountName: alertmanager-authz-server
       containers:
         - name: authz-server

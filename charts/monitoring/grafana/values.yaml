@@ -29,6 +29,13 @@ grafana:
   pluginImage:
     repository: quay.io/kubermatic/grafana-plugins
     tag: 1.3.2
+
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: quay-io-pull-secret
+  #   - name: docker-io-pull-secret
+  imagePullSecrets: []
+
   resources:
     requests:
       # Rationalized based on real world usage

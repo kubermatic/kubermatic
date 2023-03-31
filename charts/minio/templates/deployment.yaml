@@ -38,6 +38,9 @@ spec:
         pre.hook.backup.velero.io/command: '["mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
         {{- end }}
     spec:
+      {{- if .Values.minio.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.minio.imagePullSecrets | nindent 8 }}
+      {{- end }}
       containers:
       - name: minio
         image: '{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}'

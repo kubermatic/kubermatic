@@ -13,6 +13,12 @@
 # limitations under the License.
 
 minio:
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: docker-io-pull-secret
+  #   - name: quay-io-pull-secret
+  imagePullSecrets: []
+
   image:
     repository: docker.io/minio/minio
     tag: RELEASE.2022-06-25T15-50-16Z

@@ -57,6 +57,11 @@ karma:
       repository: quay.io/kubermatic/util
       tag: 2.3.0
       pullPolicy: IfNotPresent
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: docker-io-pull-secret
+  #   - name: quay-io-pull-secret
+  imagePullSecrets: []
   resources:
     karma:
       requests:

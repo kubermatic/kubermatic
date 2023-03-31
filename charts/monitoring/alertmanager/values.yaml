@@ -21,6 +21,12 @@ alertmanager:
     repository: docker.io/jimmidyson/configmap-reload
     tag: v0.7.1
     pullPolicy: IfNotPresent
+  # list of image pull secret references, e.g.
+  # imagePullSecrets:
+  #   - name: quay-io-pull-secret
+  #   - name: docker-io-pull-secret
+  imagePullSecrets: []
+
   host: ""
   replicas: 3
   storageSize: 100Mi
