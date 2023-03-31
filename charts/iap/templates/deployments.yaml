@@ -36,8 +36,8 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") $ | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") $ | sha256sum }}
     spec:
-      {{- if .Values.iap.imagePullSecrets }}
-      imagePullSecrets: {{- toYaml .Values.iap.imagePullSecrets | nindent 8 }}
+      {{- if $.Values.iap.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml $.Values.iap.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
       - name: oauth2-proxy
