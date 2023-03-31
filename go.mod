@@ -25,7 +25,6 @@ require (
 	github.com/aws/smithy-go v1.13.5
 	github.com/cert-manager/cert-manager v1.11.0
 	github.com/cilium/cilium v1.13.1
-	github.com/coreos/locksmith v0.6.2
 	github.com/digitalocean/godo v1.97.0
 	github.com/distribution/distribution/v3 v3.0.0-20230223072852-e5d5810851d1
 	github.com/envoyproxy/go-control-plane v0.11.0

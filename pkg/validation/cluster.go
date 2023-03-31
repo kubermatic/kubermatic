@@ -23,10 +23,9 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/coreos/locksmith/pkg/timeutil"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cni"
@@ -220,14 +219,14 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	// Validate ExternalCloudProvider feature flag immutability.
 	// Once the feature flag is enabled, it must not be disabled.
 	if vOld, v := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
-		newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
+			newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
 		allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
 	}
 
 	// Validate EtcdLauncher feature flag immutability.
 	// Once the feature flag is enabled, it must not be disabled.
 	if vOld, v := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher],
-		newCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; vOld && !v {
+			newCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; vOld && !v {
 		allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureEtcdLauncher), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureEtcdLauncher)))
 	}
 
@@ -504,13 +503,13 @@ func validateEncryptionUpdate(oldCluster *kubermaticv1.Cluster, newCluster *kube
 			}
 
 			encryptionConfigExists :=
-				oldCluster.Spec.EncryptionConfiguration != nil &&
-					newCluster.Spec.EncryptionConfiguration != nil
+					oldCluster.Spec.EncryptionConfiguration != nil &&
+							newCluster.Spec.EncryptionConfiguration != nil
 
 			if encryptionConfigExists {
 				encryptionConfigEnabled :=
-					oldCluster.Spec.EncryptionConfiguration.Enabled &&
-						newCluster.Spec.EncryptionConfiguration.Enabled
+						oldCluster.Spec.EncryptionConfiguration.Enabled &&
+								newCluster.Spec.EncryptionConfiguration.Enabled
 
 				if encryptionConfigEnabled && !equality.Semantic.DeepEqual(oldCluster.Spec.EncryptionConfiguration.Resources, newCluster.Spec.EncryptionConfiguration.Resources) {
 					allErrs = append(
@@ -1084,10 +1083,11 @@ func validateNutanixCloudSpec(spec *kubermaticv1.NutanixCloudSpec) error {
 
 func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 	if updateWindow != nil && updateWindow.Start != "" && updateWindow.Length != "" {
-		_, err := timeutil.ParsePeriodic(updateWindow.Start, updateWindow.Length)
+		_, err := time.ParseDuration(updateWindow.Length)
 		if err != nil {
-			return fmt.Errorf("error parsing update window: %w", err)
+			return fmt.Errorf("error parsing update Length: %w", err)
 		}
+
 	}
 	return nil
 }
@@ -1242,8 +1242,8 @@ func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermati
 			allowedTransitions := cni.GetAllowedCNIVersionTransitions(newCni.Type)
 			for _, t := range allowedTransitions {
 				if checkVersionConstraint(k8sVersion.Semver(), t.K8sVersion) &&
-					checkVersionConstraint(oldV, t.OldCNIVersion) &&
-					checkVersionConstraint(newV, t.NewCNIVersion) {
+						checkVersionConstraint(oldV, t.OldCNIVersion) &&
+						checkVersionConstraint(newV, t.NewCNIVersion) {
 					return nil
 				}
 			}
