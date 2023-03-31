@@ -1357,24 +1357,24 @@ type ExtendedClusterHealth struct {
 // ControlPlaneHealthy returns if all Kubernetes control plane components are healthy.
 func (h *ExtendedClusterHealth) ControlPlaneHealthy() bool {
 	return h.Etcd == HealthStatusUp &&
-			h.Controller == HealthStatusUp &&
-			h.Apiserver == HealthStatusUp &&
-			h.Scheduler == HealthStatusUp
+		h.Controller == HealthStatusUp &&
+		h.Apiserver == HealthStatusUp &&
+		h.Scheduler == HealthStatusUp
 }
 
 // AllHealthy returns true if all components are healthy. Gatekeeper components not included as they are optional and not
 // crucial for cluster functioning.
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.ControlPlaneHealthy() &&
-			h.MachineController == HealthStatusUp &&
-			h.CloudProviderInfrastructure == HealthStatusUp &&
-			h.UserClusterControllerManager == HealthStatusUp
+		h.MachineController == HealthStatusUp &&
+		h.CloudProviderInfrastructure == HealthStatusUp &&
+		h.UserClusterControllerManager == HealthStatusUp
 }
 
 // ApplicationControllerHealthy checks for health of all essential components and the ApplicationController.
 func (h *ExtendedClusterHealth) ApplicationControllerHealthy() bool {
 	return h.AllHealthy() &&
-			h.ApplicationController == HealthStatusUp
+		h.ApplicationController == HealthStatusUp
 }
 
 type Bytes []byte
