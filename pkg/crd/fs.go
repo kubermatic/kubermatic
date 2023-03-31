@@ -39,6 +39,7 @@ var embeddedFS embed.FS
 
 const (
 	rootDir = "k8c.io"
+	k8sDir  = "k8s.io"
 )
 
 // Groups returns a list of all known API groups for which CRDs are available.
@@ -47,6 +48,13 @@ func Groups() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	k8sEntries, err := embeddedFS.ReadDir(k8sDir)
+	if err != nil {
+		return nil, err
+	}
+
+	entries = append(entries, k8sEntries...)
 
 	groups := sets.New[string]()
 
