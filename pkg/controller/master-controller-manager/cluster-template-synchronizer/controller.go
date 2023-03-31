@@ -144,23 +144,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return nil
 }
 
-func (r *reconciler) getTargetDatacenter(clusterTemplate *kubermaticv1.ClusterTemplate) (*kubermaticv1.Datacenter, error) {
-	seeds, err := r.seedsGetter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list seeds: %w", err)
-	}
-
-	for _, seed := range seeds {
-		for key, dc := range seed.Spec.Datacenters {
-			if key == clusterTemplate.Spec.Cloud.DatacenterName {
-				return &dc, nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("there is no datacenter named %q", clusterTemplate.Spec.Cloud.DatacenterName)
-}
-
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate) error {
 	if kuberneteshelper.HasFinalizer(template, cleanupFinalizer) {
 		if err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, _ *zap.SugaredLogger) error {
