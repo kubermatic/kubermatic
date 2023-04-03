@@ -197,34 +197,42 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 				args = append(args, "-v=2")
 			}
 
-			// This Deployment lives on master and seed clusters. On seed clusters
-			// we need to add -seed-name. On a shared master+seed cluster, we must
-			// ensure that the 2 controllers will not overwrite each other (master-operator
-			// removing the -seed-name flag, seed-operator adding it again). Instead
-			// of fiddling with CLI flags, we just use an env variable to store the seed.
-			envVars := KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy)
+			var envVars []corev1.EnvVar
 
-			if !removeSeed {
-				seedName := ""
-				if seed != nil {
-					seedName = seed.Name
-				} else if d != nil && len(d.Spec.Template.Spec.Containers) > 0 {
-					// check if the old Deployment had a seed env var
-					for _, e := range d.Spec.Template.Spec.Containers[0].Env {
-						if e.Name == seedNameEnvVariable {
-							seedName = e.Value
-							break
-						}
+			// The information if a Seed is present or not is stored in the seedNameEnvVariable.
+			// This impacts the -seed-name flag and proxy settings.
+			withSeed := false
+			if seed != nil {
+				envVars = append(envVars, corev1.EnvVar{
+					Name:  seedNameEnvVariable,
+					Value: seed.Name,
+				})
+				envVars = append(envVars, SeedProxyEnvironmentVars(seed.Spec.ProxySettings)...)
+				withSeed = true
+			} else if d != nil && len(d.Spec.Template.Spec.Containers) > 0 {
+				// check if the old Deployment had a seed env var and is deployed on a Seed or Master+Seed combination.
+				for _, e := range d.Spec.Template.Spec.Containers[0].Env {
+					if e.Name == seedNameEnvVariable {
+						withSeed = true
+						break
 					}
 				}
 
-				if seedName != "" {
-					args = append(args, "-seed-name=$(SEED_NAME)")
-					envVars = append(envVars, corev1.EnvVar{
-						Name:  seedNameEnvVariable,
-						Value: seedName,
-					})
+				if withSeed {
+					// The webhook is deployed with a Seed, so it reuses the existing env to keep
+					// seedNameEnvVariable and Proxy Settings that where set before based on the actual Seed.
+					envVars = d.Spec.Template.Spec.Containers[0].Env
+				} else {
+					// The webhook is deployed without a Seed and will use the Kubermatic Configuration Proxy settings.
+					envVars = KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy)
 				}
+			}
+
+			// On seed clusters we need to add -seed-name flag. On a shared master+seed cluster,
+			// we must ensure that the 2 controllers will not overwrite each other (master-operator
+			// removing the -seed-name flag, seed-operator adding it again).
+			if !removeSeed && withSeed {
+				args = append(args, "-seed-name=$(SEED_NAME)")
 			}
 
 			volumes := []corev1.Volume{
