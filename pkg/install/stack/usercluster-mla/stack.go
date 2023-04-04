@@ -103,8 +103,10 @@ func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) er
 		return fmt.Errorf("failed to deploy Consul: %w", err)
 	}
 
-	if err := deployMinio(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Minio: %w", err)
+	if !opt.MLASkipMinio {
+		if err := deployMinio(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+			return fmt.Errorf("failed to deploy Minio: %w", err)
+		}
 	}
 
 	if err := deployCortex(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -119,8 +121,10 @@ func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) er
 		return fmt.Errorf("failed to deploy Loki: %w", err)
 	}
 
-	if err := deployMinioLifecycleMgr(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Minio Bucket Lifecycle Manager: %w", err)
+	if !opt.MLASkipMinioLifecycleMgr {
+		if err := deployMinioLifecycleMgr(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+			return fmt.Errorf("failed to deploy Minio Bucket Lifecycle Manager: %w", err)
+		}
 	}
 
 	if opt.MLAIncludeIap {
