@@ -1100,7 +1100,6 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 		if err != nil {
 			return fmt.Errorf("error parsing start day: %w", err)
 		}
-
 	}
 	return nil
 }
