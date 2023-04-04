@@ -266,7 +266,7 @@ func TestValidateUpdateWindow(t *testing.T) {
 				Start:  "invalid",
 				Length: "1h",
 			},
-			err: errors.New("invalid time of day"),
+			err: errors.New("cannot parse \"invalid\" as \"15\""),
 		},
 		{
 			name: "invalid length",

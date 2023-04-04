@@ -1088,6 +1088,19 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 		if err != nil {
 			return fmt.Errorf("error parsing update Length: %w", err)
 		}
+
+		var layout string
+		if strings.Contains(updateWindow.Start, " ") {
+			layout = "Mon 15:04"
+		} else {
+			layout = "15:04"
+		}
+
+		_, err = time.Parse(layout, updateWindow.Start)
+		if err != nil {
+			return fmt.Errorf("error parsing start day: %w", err)
+		}
+
 	}
 	return nil
 }
