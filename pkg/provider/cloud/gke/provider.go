@@ -108,7 +108,7 @@ func ConnectToContainerService(ctx context.Context, serviceAccount string) (*con
 	return svc, projectID, nil
 }
 
-func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterGKECloudSpec) (*apiv2.ExternalClusterStatus, error) {
+func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterGKECloudSpec) (*kubermaticv1.ExternalClusterCondition, error) {
 	sa, err := secretKeySelector(cloudSpec.CredentialsReference, resources.GCPServiceAccount)
 	if err != nil {
 		return nil, err
@@ -124,9 +124,9 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 		return nil, DecodeError(err)
 	}
 
-	return &apiv2.ExternalClusterStatus{
-		State:         ConvertStatus(gkeCluster.Status),
-		StatusMessage: GetStatusMessage(gkeCluster),
+	return &kubermaticv1.ExternalClusterCondition{
+		Phase:   ConvertStatus(gkeCluster.Status),
+		Message: GetStatusMessage(gkeCluster),
 	}, nil
 }
 
@@ -307,35 +307,35 @@ func ValidateCredentials(ctx context.Context, sa string) error {
 	return DecodeError(err)
 }
 
-func ConvertStatus(status string) apiv2.ExternalClusterState {
+func ConvertStatus(status string) kubermaticv1.ExternalClusterPhase {
 	switch status {
 	// The PROVISIONING state indicates the cluster is being created.
 	case string(resources.ProvisioningGKEState):
-		return apiv2.ProvisioningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseProvisioning
 	// The RUNNING state indicates the cluster has been created and is fully usable.
 	case string(resources.RunningGKEState):
-		return apiv2.RunningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseRunning
 	// The RECONCILING state indicates that some work is
 	// actively being done on the cluster, such as upgrading the master or
 	// node software.
 	case string(resources.ReconcilingGKEState):
-		return apiv2.ReconcilingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseReconciling
 	// The STOPPING state indicates the cluster is being deleted.
 	case string(resources.StoppingGKEState):
-		return apiv2.DeletingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseDeleting
 	// The ERROR state indicates the cluster is unusable. It
 	// will be automatically deleted.
 	case string(resources.ErrorGKEState):
-		return apiv2.ErrorExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseError
 	// The DEGRADED state indicates the cluster requires user
 	// action to restore full functionality.
 	case string(resources.DegradedGKEState):
-		return apiv2.ErrorExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseError
 	// "STATUS_UNSPECIFIED" - Not set.
 	case string(resources.UnspecifiedGKEState):
-		return apiv2.UnknownExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseUnknown
 	default:
-		return apiv2.UnknownExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseUnknown
 	}
 }
 

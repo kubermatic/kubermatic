@@ -200,7 +200,7 @@ func GetCluster(ctx context.Context, client *awsprovider.ClientSet, eksClusterNa
 	return clusterOutput.Cluster, nil
 }
 
-func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*apiv2.ExternalClusterStatus, error) {
+func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeySelectorValueFunc, cloudSpec *kubermaticv1.ExternalClusterEKSCloudSpec) (*kubermaticv1.ExternalClusterCondition, error) {
 	creds, err := GetCredentialsForCluster(cloudSpec, secretKeySelector)
 	if err != nil {
 		return nil, err
@@ -216,8 +216,8 @@ func GetClusterStatus(ctx context.Context, secretKeySelector provider.SecretKeyS
 		return nil, err
 	}
 	// check nil
-	return &apiv2.ExternalClusterStatus{
-		State: ConvertStatus(eksCluster.Status),
+	return &kubermaticv1.ExternalClusterCondition{
+		Phase: ConvertStatus(eksCluster.Status),
 	}, nil
 }
 
@@ -472,22 +472,22 @@ func ListUpgrades(ctx context.Context,
 	return upgradeVersions, nil
 }
 
-func ConvertStatus(status ekstypes.ClusterStatus) apiv2.ExternalClusterState {
+func ConvertStatus(status ekstypes.ClusterStatus) kubermaticv1.ExternalClusterPhase {
 	switch status {
 	case ekstypes.ClusterStatusCreating:
-		return apiv2.ProvisioningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseProvisioning
 	case ekstypes.ClusterStatusPending:
-		return apiv2.ProvisioningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseProvisioning
 	case ekstypes.ClusterStatusActive:
-		return apiv2.RunningExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseRunning
 	case ekstypes.ClusterStatusUpdating:
-		return apiv2.ReconcilingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseReconciling
 	case ekstypes.ClusterStatusDeleting:
-		return apiv2.DeletingExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseDeleting
 	case ekstypes.ClusterStatusFailed:
-		return apiv2.ErrorExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseError
 	default:
-		return apiv2.UnknownExternalClusterState
+		return kubermaticv1.ExternalClusterPhaseUnknown
 	}
 }
 

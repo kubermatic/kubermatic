@@ -26,7 +26,6 @@ import (
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -154,18 +153,44 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud.GKE)
+		condition, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud.GKE)
 		if err != nil {
-			return reconcile.Result{}, err
+			if isHttpError(err, http.StatusNotFound) {
+				condition := &kubermaticv1.ExternalClusterCondition{
+					Phase:   kubermaticv1.ExternalClusterPhaseError,
+					Message: err.Error(),
+				}
+				return reconcile.Result{}, r.updateStatus(ctx, *condition, cluster)
+			} else {
+				return reconcile.Result{}, err
+			}
 		}
-		if status.State == apiv2.ProvisioningExternalClusterState {
+		if condition.Phase == kubermaticv1.ExternalClusterPhaseProvisioning {
+			if cluster.Status.Condition.Phase != condition.Phase {
+				if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+					return reconcile.Result{}, err
+				}
+			}
 			// repeat after some time to get/store kubeconfig
 			return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
-		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
-			// the kubeconfig token is valid 1h, it will update token every 30min
-			return reconcile.Result{RequeueAfter: time.Minute * 30}, r.ensureGKEKubeconfig(ctx, cluster)
+		if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+			return reconcile.Result{}, err
 		}
+		if condition.Phase == kubermaticv1.ExternalClusterPhaseRunning || condition.Phase == kubermaticv1.ExternalClusterPhaseReconciling {
+			if err := r.ensureGKEKubeconfig(ctx, cluster); err != nil {
+				condition := &kubermaticv1.ExternalClusterCondition{
+					Phase:   kubermaticv1.ExternalClusterPhaseError,
+					Message: err.Error(),
+				}
+				if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, err
+			}
+		}
+		// updating status every 5 minutes
+		return reconcile.Result{RequeueAfter: time.Minute * 5}, r.updateStatus(ctx, *condition, cluster)
 	}
 
 	if cloud.EKS != nil {
@@ -175,18 +200,44 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := eks.GetClusterStatus(ctx, secretKeySelector, cloud.EKS)
+		condition, err := eks.GetClusterStatus(ctx, secretKeySelector, cloud.EKS)
 		if err != nil {
-			return reconcile.Result{}, err
+			if isHttpError(err, http.StatusNotFound) {
+				condition := &kubermaticv1.ExternalClusterCondition{
+					Phase:   kubermaticv1.ExternalClusterPhaseError,
+					Message: err.Error(),
+				}
+				return reconcile.Result{}, r.updateStatus(ctx, *condition, cluster)
+			} else {
+				return reconcile.Result{}, err
+			}
 		}
-		if status.State == apiv2.ProvisioningExternalClusterState {
+		if condition.Phase == kubermaticv1.ExternalClusterPhaseProvisioning {
+			if cluster.Status.Condition.Phase != condition.Phase {
+				if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+					return reconcile.Result{}, err
+				}
+			}
 			// repeat after some time to get/store kubeconfig
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
 		}
-		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
-			// the kubeconfig token is valid 14min, it will update token every 10min
-			return reconcile.Result{RequeueAfter: time.Minute * 10}, r.ensureEKSKubeconfig(ctx, cluster)
+		if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+			return reconcile.Result{}, err
 		}
+		if condition.Phase == kubermaticv1.ExternalClusterPhaseRunning || condition.Phase == kubermaticv1.ExternalClusterPhaseReconciling {
+			if err := r.ensureEKSKubeconfig(ctx, cluster); err != nil {
+				condition := &kubermaticv1.ExternalClusterCondition{
+					Phase:   kubermaticv1.ExternalClusterPhaseError,
+					Message: err.Error(),
+				}
+				if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, err
+			}
+		}
+		// updating status every 5 minutes
+		return reconcile.Result{RequeueAfter: time.Minute * 5}, nil
 	}
 
 	if cloud.AKS != nil {
@@ -196,18 +247,44 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
-		status, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud.AKS)
+		condition, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud.AKS)
 		if err != nil {
-			return reconcile.Result{}, err
+			if isHttpError(err, http.StatusNotFound) {
+				condition := &kubermaticv1.ExternalClusterCondition{
+					Phase:   kubermaticv1.ExternalClusterPhaseError,
+					Message: err.Error(),
+				}
+				return reconcile.Result{}, r.updateStatus(ctx, *condition, cluster)
+			} else {
+				return reconcile.Result{}, err
+			}
 		}
-		if status.State == apiv2.ProvisioningExternalClusterState {
+		if condition.Phase == kubermaticv1.ExternalClusterPhaseProvisioning {
+			if cluster.Status.Condition.Phase != condition.Phase {
+				if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+					return reconcile.Result{}, err
+				}
+			}
 			// repeat after some time to get/store kubeconfig
 			return reconcile.Result{RequeueAfter: time.Second * 10}, nil
 		}
-		if status.State == apiv2.RunningExternalClusterState || status.State == apiv2.ReconcilingExternalClusterState {
-			// reconcile to update kubeconfig for cases like starting a stopped cluster
-			return reconcile.Result{RequeueAfter: time.Minute * 2}, r.ensureAKSKubeconfig(ctx, cluster)
+		if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+			return reconcile.Result{}, err
 		}
+		if condition.Phase == kubermaticv1.ExternalClusterPhaseRunning || condition.Phase == kubermaticv1.ExternalClusterPhaseReconciling {
+			if err := r.ensureAKSKubeconfig(ctx, cluster); err != nil {
+				condition := &kubermaticv1.ExternalClusterCondition{
+					Phase:   kubermaticv1.ExternalClusterPhaseError,
+					Message: err.Error(),
+				}
+				if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+					return reconcile.Result{}, err
+				}
+				return reconcile.Result{}, err
+			}
+		}
+		// reconcile to update kubeconfig for cases like starting a stopped cluster
+		return reconcile.Result{RequeueAfter: time.Minute * 2}, nil
 	}
 
 	return reconcile.Result{}, nil
@@ -265,6 +342,15 @@ func (r *Reconciler) deleteSecret(ctx context.Context, secretName string) error 
 	}
 
 	// We successfully deleted the secret
+	return nil
+}
+
+func (r *Reconciler) updateStatus(ctx context.Context, condition kubermaticv1.ExternalClusterCondition, cluster *kubermaticv1.ExternalCluster) error {
+	oldCluster := cluster.DeepCopy()
+	cluster.Status.Condition = condition
+	if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return fmt.Errorf("failed to patch cluster with new phase %q: %w", condition, err)
+	}
 	return nil
 }
 
