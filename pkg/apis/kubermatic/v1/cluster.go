@@ -1064,9 +1064,14 @@ type VMwareCloudDirectorCloudSpec struct {
 	// Username is the VMware Cloud Director user name.
 	// +optional
 	Username string `json:"username,omitempty"`
+
 	// Password is the VMware Cloud Director user password.
 	// +optional
 	Password string `json:"password,omitempty"`
+
+	// APIToken is the VMware Cloud Director API token.
+	// +optional
+	APIToken string `json:"apiToken,omitempty"`
 
 	// Organization is the name of organization to use.
 	// +optional

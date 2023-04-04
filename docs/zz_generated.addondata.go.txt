@@ -218,6 +218,7 @@ type NutanixCredentials struct {
 type VMwareCloudDirectorCredentials struct {
 	Username     string
 	Password     string
+	APIToken     string
 	Organization string
 	VDC          string
 }

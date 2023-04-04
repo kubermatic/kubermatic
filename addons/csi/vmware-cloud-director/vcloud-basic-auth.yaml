@@ -25,5 +25,6 @@ metadata:
 data:
   username: {{ .Credentials.VMwareCloudDirector.Username | b64enc }}
   password: {{ .Credentials.VMwareCloudDirector.Password | b64enc }}
+  refreshToken: {{ .Credentials.VMwareCloudDirector.APIToken | b64enc }}
 
 {{ end }}
