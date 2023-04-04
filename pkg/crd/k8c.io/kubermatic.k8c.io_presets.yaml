@@ -401,11 +401,8 @@ spec:
                     vdc:
                       type: string
                   required:
-                    - apiToken
                     - organization
                     - ovdcNetwork
-                    - password
-                    - username
                     - vdc
                   type: object
                 vsphere:

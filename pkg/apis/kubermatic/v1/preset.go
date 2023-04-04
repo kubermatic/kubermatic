@@ -181,9 +181,9 @@ func (s VSphere) IsValid() bool {
 type VMwareCloudDirector struct {
 	ProviderPreset `json:",inline"`
 
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	APIToken     string `json:"apiToken"`
+	Username     string `json:"username,omitempty"`
+	Password     string `json:"password,omitempty"`
+	APIToken     string `json:"apiToken,omitempty"`
 	VDC          string `json:"vdc"`
 	Organization string `json:"organization"`
 	OVDCNetwork  string `json:"ovdcNetwork"`
