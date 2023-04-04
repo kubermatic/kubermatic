@@ -58,6 +58,8 @@ func cronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 
 			job.Spec.Schedule = mrc.Schedule
 			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32(1)
+			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = ""
+			job.Spec.JobTemplate.Spec.Template.Spec.DeprecatedServiceAccount = ""
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 			job.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
