@@ -764,6 +764,24 @@ func (r *testRunner) testCluster(
 		log.Errorf("failed to verify that pods have a seccomp profile: %v", err)
 	}
 
+	// Check for Pods with k8s.gcr.io images on user cluster
+	if err := junitReporterWrapper("[KKP] Test container images not containing k8s.gcr.io on user cluster", report, func() error {
+		return retryNAttempts(maxTestAttempts, func(attempt int) error {
+			return r.testUserClusterNoK8sGcrImages(ctx, log, cluster, userClusterClient)
+		})
+	}); err != nil {
+		log.Errorf("failed to verify that no seed cluster containers has k8s.gcr.io image: %v", err)
+	}
+
+	// Check for Pods with k8s.gcr.io images on user cluster
+	if err := junitReporterWrapper("[KKP] Test container images not containing k8s.gcr.io on seed cluster", report, func() error {
+		return retryNAttempts(maxTestAttempts, func(attempt int) error {
+			return r.testNoK8sGcrImages(ctx, log, cluster)
+		})
+	}); err != nil {
+		log.Errorf("failed to verify that no seed cluster containers has k8s.gcr.io image: %v", err)
+	}
+
 	return nil
 }
 
