@@ -382,6 +382,8 @@ spec:
                   type: array
                 vmwareclouddirector:
                   properties:
+                    apiToken:
+                      type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
                       type: string
@@ -399,6 +401,7 @@ spec:
                     vdc:
                       type: string
                   required:
+                    - apiToken
                     - organization
                     - ovdcNetwork
                     - password

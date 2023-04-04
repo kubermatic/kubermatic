@@ -183,14 +183,16 @@ type VMwareCloudDirector struct {
 
 	Username     string `json:"username"`
 	Password     string `json:"password"`
+	APIToken     string `json:"apiToken"`
 	VDC          string `json:"vdc"`
 	Organization string `json:"organization"`
 	OVDCNetwork  string `json:"ovdcNetwork"`
 }
 
 func (s VMwareCloudDirector) IsValid() bool {
-	return len(s.Username) > 0 &&
-		len(s.Password) > 0 &&
+	return ((len(s.Username) > 0 &&
+		len(s.Password) > 0) ||
+		len(s.APIToken) > 0) &&
 		len(s.VDC) > 0 &&
 		len(s.Organization) > 0 &&
 		len(s.OVDCNetwork) > 0
