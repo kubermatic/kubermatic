@@ -911,7 +911,7 @@ func validateVMwareCloudDirectorCloudSpec(spec *kubermaticv1.VMwareCloudDirector
 		}
 	}
 
-	if spec.APIToken != "" || kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VMwareCloudDirectorUsername) == nil {
+	if spec.APIToken != "" || kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.VMwareCloudDirectorAPIToken) == nil {
 		return nil
 	}
 
