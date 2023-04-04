@@ -835,6 +835,9 @@ spec:
                     vmwareclouddirector:
                       description: VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.
                       properties:
+                        apiToken:
+                          description: APIToken is the VMware Cloud Director API token.
+                          type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
                           properties:

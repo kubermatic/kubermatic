@@ -118,6 +118,7 @@ type KubevirtCredentials struct {
 type VMwareCloudDirectorCredentials struct {
 	Username     string
 	Password     string
+	APIToken     string
 	Organization string
 	VDC          string
 }
@@ -774,6 +775,28 @@ func GetVMwareCloudDirectorCredentials(data CredentialsData) (VMwareCloudDirecto
 	credentials := VMwareCloudDirectorCredentials{}
 	var err error
 
+	if spec.Organization != "" {
+		credentials.Organization = spec.Organization
+	} else if credentials.Organization, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorOrganization); err != nil {
+		return VMwareCloudDirectorCredentials{}, err
+	}
+
+	if spec.VDC != "" {
+		credentials.VDC = spec.VDC
+	} else if credentials.VDC, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorVDC); err != nil {
+		return VMwareCloudDirectorCredentials{}, err
+	}
+
+	if spec.APIToken != "" {
+		credentials.APIToken = spec.APIToken
+	} else {
+		credentials.APIToken, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorAPIToken)
+	}
+
+	if credentials.APIToken != "" {
+		return credentials, nil
+	}
+
 	if spec.Username != "" {
 		credentials.Username = spec.Username
 	} else if credentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorUsername); err != nil {
@@ -786,16 +809,5 @@ func GetVMwareCloudDirectorCredentials(data CredentialsData) (VMwareCloudDirecto
 		return VMwareCloudDirectorCredentials{}, err
 	}
 
-	if spec.Organization != "" {
-		credentials.Organization = spec.Organization
-	} else if credentials.Organization, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorOrganization); err != nil {
-		return VMwareCloudDirectorCredentials{}, err
-	}
-
-	if spec.VDC != "" {
-		credentials.VDC = spec.VDC
-	} else if credentials.VDC, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VMwareCloudDirectorVDC); err != nil {
-		return VMwareCloudDirectorCredentials{}, err
-	}
 	return credentials, nil
 }

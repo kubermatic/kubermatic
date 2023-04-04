@@ -32,6 +32,7 @@ import (
 type Auth struct {
 	Username      string
 	Password      string
+	APIToken      string
 	Organization  string
 	URL           string
 	VDC           string
@@ -49,18 +50,19 @@ func NewClient(spec kubermaticv1.CloudSpec, secretKeySelector provider.SecretKey
 		return nil, err
 	}
 
-	client, err := NewClientWithCreds(creds.Username, creds.Password, creds.Organization, creds.VDC, dc.URL, dc.AllowInsecure)
+	client, err := NewClientWithCreds(creds.Username, creds.Password, creds.APIToken, creds.Organization, creds.VDC, dc.URL, dc.AllowInsecure)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create VMware Cloud Director client: %w", err)
 	}
 	return client, err
 }
 
-func NewClientWithCreds(username, password, org, vdc, url string, allowInsecure bool) (*Client, error) {
+func NewClientWithCreds(username, password, apiToken, org, vdc, url string, allowInsecure bool) (*Client, error) {
 	client := Client{
 		Auth: &Auth{
 			Username:      username,
 			Password:      password,
+			APIToken:      apiToken,
 			Organization:  org,
 			URL:           url,
 			AllowInsecure: allowInsecure,
@@ -100,6 +102,7 @@ func GetAuthInfo(spec kubermaticv1.CloudSpec, secretKeySelector provider.SecretK
 	return &Auth{
 		Username:      creds.Username,
 		Password:      creds.Password,
+		APIToken:      creds.APIToken,
 		Organization:  creds.Organization,
 		URL:           dc.URL,
 		AllowInsecure: dc.AllowInsecure,
@@ -113,11 +116,14 @@ func (c *Client) GetAuthenticatedClient() (*govcd.VCDClient, error) {
 	if c.Auth == nil {
 		return nil, fmt.Errorf("authentication configuration not provided")
 	}
-	if c.Auth.Username == "" {
-		return nil, fmt.Errorf("username not provided")
-	}
-	if c.Auth.Password == "" {
-		return nil, fmt.Errorf("password not provided")
+	// If API token is provided, use it for authentication.
+	if c.Auth.APIToken == "" {
+		if c.Auth.Username == "" {
+			return nil, fmt.Errorf("username not provided")
+		}
+		if c.Auth.Password == "" {
+			return nil, fmt.Errorf("password not provided")
+		}
 	}
 	if c.Auth.URL == "" {
 		return nil, fmt.Errorf("URL not provided")
@@ -139,6 +145,14 @@ func (c *Client) GetAuthenticatedClient() (*govcd.VCDClient, error) {
 	}
 
 	vcdClient := govcd.NewVCDClient(*apiEndpoint, c.Auth.AllowInsecure)
+
+	if c.Auth.APIToken != "" {
+		err = vcdClient.SetToken(c.Auth.Organization, govcd.ApiTokenHeader, c.Auth.APIToken)
+		if err != nil {
+			return nil, fmt.Errorf("failed to authenticate with VMware Cloud Director using API Token: %w", err)
+		}
+		return vcdClient, nil
+	}
 
 	err = vcdClient.Authenticate(c.Auth.Username, c.Auth.Password, c.Auth.Organization)
 	if err != nil {

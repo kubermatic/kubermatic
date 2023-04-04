@@ -719,6 +719,7 @@ const (
 
 	// VMware Cloud Director provider constants.
 	VMwareCloudDirectorUsername     = "username"
+	VMwareCloudDirectorAPIToken     = "apiToken"
 	VMwareCloudDirectorPassword     = "password"
 	VMwareCloudDirectorOrganization = "organization"
 	VMwareCloudDirectorVDC          = "vdc"
