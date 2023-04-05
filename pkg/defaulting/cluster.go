@@ -21,13 +21,13 @@ import (
 	"fmt"
 
 	"github.com/imdario/mergo"
-
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/api/v3/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v3/pkg/cni"
 	"k8c.io/kubermatic/v3/pkg/provider"
 	"k8c.io/kubermatic/v3/pkg/resources"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
@@ -43,6 +43,39 @@ const (
 	// transit network through which we route the ControlPlane -> Node/Pod traffic.
 	DefaultNodeAccessNetwork = "10.254.0.0/16"
 )
+
+var (
+	// DefaultClusterComponentSettings are default values that are applied to new clusters
+	// upon creation. This is the last source of default values, other mechanisms like the
+	// default cluster templates are used earlier.
+	DefaultClusterComponentSettings = kubermaticv1.ComponentSettings{
+		Apiserver: kubermaticv1.APIServerSettings{
+			NodePortRange: resources.DefaultNodePortRange,
+			DeploymentSettings: kubermaticv1.DeploymentSettings{
+				Replicas: pointer.Int32(DefaultKubernetesApiserverReplicas),
+			},
+		},
+		ControllerManager: kubermaticv1.ControllerSettings{
+			DeploymentSettings: kubermaticv1.DeploymentSettings{
+				Replicas: pointer.Int32(DefaultKubernetesControllerManagerReplicas),
+			},
+		},
+		Scheduler: kubermaticv1.ControllerSettings{
+			DeploymentSettings: kubermaticv1.DeploymentSettings{
+				Replicas: pointer.Int32(DefaultKubernetesSchedulerReplicas),
+			},
+		},
+		Etcd: kubermaticv1.EtcdStatefulSetSettings{
+			ClusterSize: pointer.Int32(DefaultEtcdClusterSize),
+			DiskSize:    mustParseQuantity(DefaultEtcdVolumeSize),
+		},
+	}
+)
+
+func mustParseQuantity(q string) *resource.Quantity {
+	parsed := resource.MustParse(q)
+	return &parsed
+}
 
 // DefaultClusterSpec defaults the cluster spec when creating a new cluster.
 // Defaults are taken from, in order:
@@ -62,6 +95,14 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		if err := mergo.Merge(spec, template.Spec); err != nil {
 			return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
 		}
+	}
+
+	// Checking and applying each field of the ComponentSettings is tedious,
+	// so we re-use mergo as well. The default template can be unconfigured (i.e. nil)
+	// and we still want sensible defaults persisted in the Cluster object,
+	// so we resort to hardcoded defaults here.
+	if err := mergo.Merge(&spec.ComponentsOverride, DefaultClusterComponentSettings); err != nil {
+		return fmt.Errorf("failed to apply defaulting template to Cluster spec: %w", err)
 	}
 
 	// Give cloud providers a chance to default their spec.

@@ -79,7 +79,6 @@ type Reconciler struct {
 	userClusterConnProvider userClusterConnectionProvider
 	workerName              string
 
-	externalURL      string
 	datacenterGetter provider.DatacenterGetter
 	configGetter     provider.KubermaticConfigurationGetter
 
@@ -114,7 +113,6 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 	workerName string,
-	externalURL string,
 	datacenterGetter provider.DatacenterGetter,
 	configGetter provider.KubermaticConfigurationGetter,
 	userClusterConnProvider userClusterConnectionProvider,
@@ -160,7 +158,6 @@ func Add(
 		concurrentClusterUpdates:         concurrentClusterUpdates,
 		backupSchedule:                   backupSchedule,
 
-		externalURL:      externalURL,
 		datacenterGetter: datacenterGetter,
 		configGetter:     configGetter,
 

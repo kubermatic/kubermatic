@@ -131,6 +131,10 @@ func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguratio
 		failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
 	}
 
+	if config.Spec.UserCluster.BaseDomain == "" {
+		failures = append(failures, errors.New("spec.userCluster.baseDomain cannot be left empty"))
+	}
+
 	// only validate auth-related keys if we are not setting up a headless system
 	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
 		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)

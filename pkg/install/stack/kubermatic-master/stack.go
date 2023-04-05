@@ -467,6 +467,7 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 	}
 
 	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
+	userClusterBaseDomain := opt.KubermaticConfiguration.Spec.UserCluster.BaseDomain
 	rand := targets[rand.Intn(len(targets))]
 
 	logger.Info("")
@@ -479,9 +480,11 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 	if rand.dns != "" {
 		logger.Infof("   %s.    IN  CNAME  %s.", domain, rand.dns)
 		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, rand.dns)
+		logger.Infof("   *.%s.  IN  CNAME  %s.", userClusterBaseDomain, rand.dns)
 	} else {
 		logger.Infof("   %s.    IN  A  %s", domain, rand.ip)
 		logger.Infof("   *.%s.  IN  A  %s", domain, rand.ip)
+		logger.Infof("   *.%s.  IN  A  %s", userClusterBaseDomain, rand.ip)
 	}
 
 	logger.Info("")

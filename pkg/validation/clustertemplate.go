@@ -43,18 +43,6 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 		return allErrs
 	}
 
-	// ensure that a ClusterTemplate has a project reference
-	if scope == kubermaticv1.TemplateScopeProjectCluster {
-		projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
-		if !ok || projectId == "" {
-			allErrs = append(allErrs, field.Required(
-				parentFieldPath.Child("metadata", "labels", kubermaticv1.ClusterTemplateProjectLabelKey),
-				fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateProjectLabelKey),
-			))
-			return allErrs
-		}
-	}
-
 	// validate SSH keys having an ID that is not empty
 	if template.UserSSHKeys != nil {
 		for i, key := range template.UserSSHKeys {
@@ -71,7 +59,7 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 		if template.Spec.Cloud.ProviderName != "" {
 			allErrs = append(allErrs, field.Required(
 				cloudSpecPath.Child("providerName"),
-				"should be empty for default(seed scoped) Cluster Templates",
+				"should be empty for seed-scoped Cluster Templates",
 			))
 		}
 
@@ -82,7 +70,7 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 		if providerName != "" {
 			allErrs = append(allErrs, field.Required(
 				cloudSpecPath,
-				"cloud provider configuration is not allowed for default(seed scoped) Cluster Templates",
+				"cloud provider configuration is not allowed for seed-scoped Cluster Templates",
 			))
 		}
 		// Seed ClusterTemplates are special cases which are omitted from validations for Cluster Spec apart from the Cloud Spec, for now.

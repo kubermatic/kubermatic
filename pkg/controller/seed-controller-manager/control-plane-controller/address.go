@@ -45,7 +45,6 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 	modifiers, err := b.
 		Cluster(cluster).
 		Client(r.Client).
-		ExternalURL(r.externalURL).
 		KubermaticConfiguration(config).
 		Build(ctx)
 	if err != nil {
