@@ -145,7 +145,6 @@ func Add(
 	sourceChannel := make(chan event.GenericEvent)
 	reconciler.enqueue = func() {
 		sourceChannel <- event.GenericEvent{
-			// TODO: Is it needed to fill this?
 			Object: &kubermaticv1.Seed{},
 		}
 	}
