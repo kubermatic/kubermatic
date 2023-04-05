@@ -245,7 +245,7 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	logger.Info("")
 	logger.Infof("  Service             : %s / %s", svcName.Namespace, svcName.Name)
 
-	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
+	domain := opt.KubermaticConfiguration.Spec.UserCluster.BaseDomain
 
 	if hostname := ingresses[0].Hostname; hostname != "" {
 		logger.Infof("  Ingress via hostname: %s", hostname)

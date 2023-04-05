@@ -89,13 +89,13 @@ func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermatic
 }
 
 func (m *Mutator) determineCloudProvider(ctx context.Context, c *kubermaticv1.Cluster) (provider.CloudProvider, *kubermaticv1.Datacenter, *field.Error) {
-	if m.disableProviderMutation {
-		return nil, nil, nil
-	}
-
 	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(ctx, &c.Spec, m.datacenterGetter)
 	if fieldErr != nil {
 		return nil, nil, fieldErr
+	}
+
+	if m.disableProviderMutation {
+		return nil, datacenter, nil
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, m.seedClient)

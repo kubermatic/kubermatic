@@ -139,7 +139,6 @@ func createControlPlaneController(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.datacenterGetter,
 		ctrlCtx.configGetter,
 		ctrlCtx.clientProvider,

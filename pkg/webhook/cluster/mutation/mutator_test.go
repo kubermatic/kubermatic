@@ -938,6 +938,10 @@ func TestMutator(t *testing.T) {
 
 			builder := fake.NewClientBuilder()
 			if tt.defaultClusterTemplate != nil {
+				if testConfig.Spec.UserCluster == nil {
+					testConfig.Spec.UserCluster = &kubermaticv1.KubermaticUserClusterConfiguration{}
+				}
+
 				testConfig.Spec.UserCluster.DefaultTemplate = defaultingTemplateName
 				tt.defaultClusterTemplate.Name = defaultingTemplateName
 

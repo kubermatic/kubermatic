@@ -152,6 +152,10 @@ var (
 	}
 
 	config = &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testdc",
+			Namespace: "kubermatic",
+		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
 				OperatingSystemManager: &kubermaticv1.OperatingSystemManager{},
