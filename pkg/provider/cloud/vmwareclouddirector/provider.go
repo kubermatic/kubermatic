@@ -194,13 +194,13 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	// Check if API Token exists.
 	if apiToken == "" && cloud.VMwareCloudDirector.CredentialsReference != nil {
 		apiToken, _ = secretKeySelector(cloud.VMwareCloudDirector.CredentialsReference, resources.VMwareCloudDirectorAPIToken)
-		if apiToken != "" {
-			return &resources.VMwareCloudDirectorCredentials{
-				Organization: organization,
-				APIToken:     apiToken,
-				VDC:          vdc,
-			}, nil
-		}
+	}
+	if apiToken != "" {
+		return &resources.VMwareCloudDirectorCredentials{
+			Organization: organization,
+			APIToken:     apiToken,
+			VDC:          vdc,
+		}, nil
 	}
 
 	// Check for Username/password since API token doesn't exist.
