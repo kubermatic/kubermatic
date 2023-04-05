@@ -411,8 +411,7 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 				s.Annotations = make(map[string]string)
 			}
 
-			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
-			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
+			// Copy custom annotations specified for the loadBalancer Service.
 			if cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
 				for k, v := range cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
 					s.Annotations[k] = v

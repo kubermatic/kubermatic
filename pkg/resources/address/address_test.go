@@ -34,8 +34,7 @@ import (
 
 const (
 	fakeClusterName          = "fake-cluster"
-	fakeDCName               = "europe-west3-c"
-	fakeExternalURL          = "dev.kubermatic.io"
+	fakeClusterBaseDomain    = "europe-west3-c.dev.kubermatic.io"
 	fakeClusterNamespaceName = "cluster-ns"
 	externalIP               = "34.89.181.151"
 	loadbBalancerHostName    = "xyz.eu-central-1.cloudprovider.test"
@@ -246,31 +245,10 @@ func TestSyncClusterAddress(t *testing.T) {
 				},
 			},
 			exposeStrategy:       kubermaticv1.ExposeStrategyNodePort,
-			expectedExternalName: fmt.Sprintf("%s.%s.%s", fakeClusterName, fakeDCName, fakeExternalURL),
+			expectedExternalName: fmt.Sprintf("%s.%s", fakeClusterName, fakeClusterBaseDomain),
 			expectedIP:           externalIP,
 			expectedPort:         int32(32000),
-			expectedURL:          fmt.Sprintf("https://%s.%s.%s:32000", fakeClusterName, fakeDCName, fakeExternalURL),
-		},
-		{
-			name: "Verify properties for service type NodePort with domain",
-			apiserverService: corev1.Service{
-				Spec: corev1.ServiceSpec{
-					Type: corev1.ServiceTypeNodePort,
-					Ports: []corev1.ServicePort{
-						{
-							Port:       int32(32000),
-							TargetPort: intstr.FromInt(32000),
-							NodePort:   32000,
-						},
-					},
-				},
-			},
-			exposeStrategy:       kubermaticv1.ExposeStrategyNodePort,
-			domain:               "alias-europe-west3-c",
-			expectedExternalName: fmt.Sprintf("%s.alias-europe-west3-c.%s", fakeClusterName, fakeExternalURL),
-			expectedIP:           externalIP,
-			expectedPort:         int32(32000),
-			expectedURL:          fmt.Sprintf("https://%s.alias-europe-west3-c.%s:32000", fakeClusterName, fakeExternalURL),
+			expectedURL:          fmt.Sprintf("https://%s.%s:32000", fakeClusterName, fakeClusterBaseDomain),
 		},
 		{
 			name: "Verify properties for Tunneling expose strategy",
@@ -287,10 +265,10 @@ func TestSyncClusterAddress(t *testing.T) {
 				},
 			},
 			exposeStrategy:       kubermaticv1.ExposeStrategyTunneling,
-			expectedExternalName: fmt.Sprintf("%s.%s.%s", fakeClusterName, fakeDCName, fakeExternalURL),
+			expectedExternalName: fmt.Sprintf("%s.%s", fakeClusterName, fakeClusterBaseDomain),
 			expectedIP:           externalIP,
 			expectedPort:         int32(6443),
-			expectedURL:          fmt.Sprintf("https://%s.%s.%s:6443", fakeClusterName, fakeDCName, fakeExternalURL),
+			expectedURL:          fmt.Sprintf("https://%s.%s:6443", fakeClusterName, fakeClusterBaseDomain),
 		},
 		{
 			name: "Verify error when service has less than one ports",
@@ -311,7 +289,7 @@ func TestSyncClusterAddress(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						DatacenterName: fakeDCName,
+						DatacenterName: "dummy",
 					},
 					ExposeStrategy: tc.exposeStrategy,
 				},
@@ -330,20 +308,26 @@ func TestSyncClusterAddress(t *testing.T) {
 
 			config := &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: fakeDCName,
+					Name: "kubermatic",
 				},
 				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					Ingress: kubermaticv1.KubermaticIngressConfiguration{
-						Domain: tc.domain,
+						Domain: "example.com",
+					},
+					UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
+						BaseDomain: tc.domain,
 					},
 				},
+			}
+
+			if tc.domain == "" {
+				config.Spec.UserCluster.BaseDomain = fakeClusterBaseDomain
 			}
 
 			modifiers, err := NewModifiersBuilder(kubermaticlog.Logger).
 				Client(client).
 				Cluster(cluster).
 				KubermaticConfiguration(config).
-				ExternalURL(fakeExternalURL).
 				lookupFunc(testLookupFunction).
 				Build(context.Background())
 			if err != nil {

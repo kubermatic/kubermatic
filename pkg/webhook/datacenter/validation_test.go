@@ -215,9 +215,6 @@ func TestValidate(t *testing.T) {
 				obj = append(obj, tc.oldDatacenter)
 				existingDatacenters = append(existingDatacenters, tc.oldDatacenter)
 			}
-			if tc.newDatacenter != nil {
-				obj = append(obj, tc.newDatacenter)
-			}
 
 			client := fakectrlruntimeclient.
 				NewClientBuilder().

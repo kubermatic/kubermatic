@@ -61,7 +61,6 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				"-worker-count=4",
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-namespace=%s", config.Namespace),
-				fmt.Sprintf("-external-url=%s", config.Spec.Ingress.Domain),
 				fmt.Sprintf("-etcd-disk-size=%s", config.Spec.UserCluster.EtcdVolumeSize),
 				fmt.Sprintf("-feature-gates=%s", operatorresources.StringifyFeatureGates(config)),
 				fmt.Sprintf("-worker-name=%s", workerName),

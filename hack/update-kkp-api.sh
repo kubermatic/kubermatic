@@ -37,8 +37,8 @@ tmpFile=k8c-io-api.tar.gz
 curl -fLo "$tmpFile" "https://github.com/kubermatic/api/archive/$apiGitVersion.tar.gz"
 
 echodate "Updating CRDs…"
-rm pkg/crd/k8c.io/apps.kubermatic.k8c.io_*.yaml
-rm pkg/crd/k8c.io/kubermatic.k8c.io_*.yaml
+rm -f pkg/crd/k8c.io/apps.kubermatic.k8c.io_*.yaml
+rm -f pkg/crd/k8c.io/kubermatic.k8c.io_*.yaml
 
-tar xzf "$tmpFile" --wildcards -C pkg/crd/k8c.io/ --strip-components=3 '*/crd/k8c.io/*'
+tar xzf "$tmpFile" --wildcards -C pkg/crd/k8c.io/ --strip-components=3 '*/crd/community/*'
 rm "$tmpFile"

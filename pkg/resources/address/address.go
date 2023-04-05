@@ -37,11 +37,11 @@ import (
 type lookupFunction func(host string) ([]net.IP, error)
 
 type ModifiersBuilder struct {
-	log         *zap.SugaredLogger
-	client      ctrlruntimeclient.Client
-	cluster     *kubermaticv1.Cluster
-	config      *kubermaticv1.KubermaticConfiguration
-	externalURL string
+	log     *zap.SugaredLogger
+	client  ctrlruntimeclient.Client
+	cluster *kubermaticv1.Cluster
+	config  *kubermaticv1.KubermaticConfiguration
+
 	// used to ease unit tests
 	lookupFunction lookupFunction
 }
@@ -68,11 +68,6 @@ func (m *ModifiersBuilder) KubermaticConfiguration(c *kubermaticv1.KubermaticCon
 	return m
 }
 
-func (m *ModifiersBuilder) ExternalURL(e string) *ModifiersBuilder {
-	m.externalURL = e
-	return m
-}
-
 func (m *ModifiersBuilder) lookupFunc(l lookupFunction) *ModifiersBuilder {
 	m.lookupFunction = l
 	return m
@@ -89,8 +84,6 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	if m.client == nil {
 		return modifiers, errors.New("providing client is mandatory for building address modifiers")
 	}
-
-	subdomain := m.config.Spec.Ingress.Domain
 
 	frontProxyLBServiceIP := ""
 	frontProxyLBServiceHostname := ""
@@ -112,7 +105,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 			externalName = frontProxyLBServiceHostname
 		}
 	} else {
-		externalName = fmt.Sprintf("%s.%s.%s", m.cluster.Name, subdomain, m.externalURL)
+		externalName = fmt.Sprintf("%s.%s", m.cluster.Name, m.config.Spec.UserCluster.BaseDomain)
 	}
 
 	if m.cluster.Status.Address.ExternalName != externalName {

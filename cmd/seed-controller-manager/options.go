@@ -48,8 +48,6 @@ type controllerRunOptions struct {
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 
-	externalURL              string
-	seedName                 string
 	workerName               string
 	workerCount              int
 	overwriteRegistry        string
@@ -113,8 +111,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&c.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.StringVar(&c.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
-	flag.StringVar(&c.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
-	flag.StringVar(&c.seedName, "seed-name", "", "The name of the seed this controller is running in. It will be used to build the absolute url for a user cluster.")
 	flag.StringVar(&c.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&c.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
@@ -192,14 +188,6 @@ func (o controllerRunOptions) validate() error {
 		if len(o.oidcIssuerClientSecret) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-client-secret\" flag was not specified", features.OpenIDAuthPlugin)
 		}
-	}
-
-	if o.externalURL == "" {
-		return fmt.Errorf("external-url is undefined")
-	}
-
-	if o.seedName == "" {
-		return fmt.Errorf("seed-name is undefined")
 	}
 
 	return nil

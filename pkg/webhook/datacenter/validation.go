@@ -68,7 +68,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 }
 
 func (v *validator) validate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	newDatacenter, ok := oldObj.(*kubermaticv1.Datacenter)
+	newDatacenter, ok := newObj.(*kubermaticv1.Datacenter)
 	if !ok {
 		return errors.New("given new object is not a *Datacenter")
 	}
