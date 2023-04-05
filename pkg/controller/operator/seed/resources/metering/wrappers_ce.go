@@ -22,6 +22,8 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,5 +31,10 @@ import (
 
 // ReconcileMeteringResources reconciles the metering related resources.
 func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _ *runtime.Scheme, _ *kubermaticv1.KubermaticConfiguration, _ *kubermaticv1.Seed) error {
+	return nil
+}
+
+// CronJobReconciler returns the func to create/update the metering report cronjob. Available only for ee.
+func CronJobReconciler(_ string, _ *kubermaticv1.MeteringReportConfiguration, _ string, _ registry.ImageRewriter, _ string) reconciling.NamedCronJobReconcilerFactory {
 	return nil
 }

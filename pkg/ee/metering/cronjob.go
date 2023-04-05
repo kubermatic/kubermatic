@@ -39,8 +39,8 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-// cronJobReconciler returns the func to create/update the metering report cronjob.
-func cronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, getRegistry registry.ImageRewriter, namespace string) reconciling.NamedCronJobReconcilerFactory {
+// CronJobReconciler returns the func to create/update the metering report cronjob.
+func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, getRegistry registry.ImageRewriter, namespace string) reconciling.NamedCronJobReconcilerFactory {
 	return func() (string, reconciling.CronJobReconciler) {
 		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			var args []string
