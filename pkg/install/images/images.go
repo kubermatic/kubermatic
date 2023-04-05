@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	seedoperatorkubermatic "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	seedoperatornodeportproxy "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
@@ -314,6 +315,9 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	}
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
+	if mcjr := metering.CronJobReconciler("reportName", &kubermaticv1.MeteringReportConfiguration{}, "caBundleName", templateData.RewriteImage, mockNamespaceName); mcjr != nil {
+		cronjobReconcilers = append(cronjobReconcilers, mcjr)
+	}
 
 	var daemonsetReconcilers []reconciling.NamedDaemonSetReconcilerFactory
 	daemonsetReconcilers = append(daemonsetReconcilers, usersshkeys.DaemonSetReconciler(
