@@ -772,7 +772,6 @@ func TestValidateCNIUpdate(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestValidateGCPCloudSpec(t *testing.T) {

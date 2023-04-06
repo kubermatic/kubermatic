@@ -1248,7 +1248,7 @@ func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermati
 		oneMinorVersionDowngrade := oldV.Minor()-newV.Minor() == 1
 
 		// Major version changes and minor version changes greater than 1 version needs to be explicitly
-		// allow via AllowedCNIVersionTransition
+		// allowed via AllowedCNIVersionTransition entries.
 		if majorVersionChange || (minorVersionChange && !oneMinorVersionUpgrade && !oneMinorVersionDowngrade) {
 			// allow explicitly defined version transitions
 			allowedTransitions := cni.GetAllowedCNIVersionTransitions(newCni.Type)
