@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/coreos/locksmith/pkg/timeutil"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -1089,9 +1089,21 @@ func validateNutanixCloudSpec(spec *kubermaticv1.NutanixCloudSpec) error {
 
 func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 	if updateWindow != nil && updateWindow.Start != "" && updateWindow.Length != "" {
-		_, err := timeutil.ParsePeriodic(updateWindow.Start, updateWindow.Length)
+		_, err := time.ParseDuration(updateWindow.Length)
 		if err != nil {
-			return fmt.Errorf("error parsing update window: %w", err)
+			return fmt.Errorf("error parsing update Length: %w", err)
+		}
+
+		var layout string
+		if strings.Contains(updateWindow.Start, " ") {
+			layout = "Mon 15:04"
+		} else {
+			layout = "15:04"
+		}
+
+		_, err = time.Parse(layout, updateWindow.Start)
+		if err != nil {
+			return fmt.Errorf("error parsing start day: %w", err)
 		}
 	}
 	return nil
