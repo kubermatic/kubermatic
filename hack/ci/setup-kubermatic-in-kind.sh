@@ -205,8 +205,6 @@ if [[ ! -z "${VCD_URL:-}" ]]; then
   sed -i "s#__VCD_URL__#$VCD_URL#g" $DATACENTERS_MANIFEST
 fi
 
-kubectl apply --filename hack/ci/testdata/metering_s3_creds.yaml
-
 retry 8 kubectl apply --filename $DATACENTERS_MANIFEST
 echodate "Finished installing Seed"
 
