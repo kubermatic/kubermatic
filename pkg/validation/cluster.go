@@ -1242,7 +1242,14 @@ func validateCNIUpdate(newCni *kubermaticv1.CNIPluginSettings, oldCni *kubermati
 			return field.Invalid(basePath.Child("version"), oldCni.Version, fmt.Sprintf("couldn't parse CNI version `%s`: %v", oldCni.Version, err))
 		}
 
-		if newV.Major() != oldV.Major() || (newV.Minor() != oldV.Minor()+1 && oldV.Minor() != newV.Minor()+1) {
+		majorVersionChange := newV.Major() != oldV.Major()
+		minorVersionChange := newV.Minor() != oldV.Minor()
+		oneMinorVersionUpgrade := newV.Minor()-oldV.Minor() == 1
+		oneMinorVersionDowngrade := oldV.Minor()-newV.Minor() == 1
+
+		// Major version changes and minor version changes greater than 1 version needs to be explicitly
+		// allow via AllowedCNIVersionTransition
+		if majorVersionChange || (minorVersionChange && !oneMinorVersionUpgrade && !oneMinorVersionDowngrade) {
 			// allow explicitly defined version transitions
 			allowedTransitions := cni.GetAllowedCNIVersionTransitions(newCni.Type)
 			for _, t := range allowedTransitions {
