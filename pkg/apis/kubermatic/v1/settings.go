@@ -94,6 +94,9 @@ type SettingSpec struct {
 	// +optional
 	DefaultProjectResourceQuota *DefaultProjectResourceQuota `json:"defaultQuota,omitempty"`
 
+	// +optional
+	MachineDeploymentOptions MachineDeploymentOptions `json:"machineDeploymentOptions,omitempty"`
+
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
 
@@ -146,6 +149,17 @@ type ProviderConfiguration struct {
 type OpenStack struct {
 	// EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
 	EnforceCustomDisk bool `json:"enforceCustomDisk,omitempty"`
+}
+
+type MachineDeploymentOptions struct {
+	// AutoUpdatesEnabled enables the auto updates option for machine deployments on the dashboard.
+	// In case of flatcar linux, this will enable automatic updates through update engine and for other operating systems,
+	// this will enable package updates on boot for the machines.
+	AutoUpdatesEnabled bool `json:"autoUpdatesEnabled,omitempty"`
+	// AutoUpdatesEnforced enforces the auto updates option for machine deployments on the dashboard.
+	// In case of flatcar linux, this will enable automatic updates through update engine and for other operating systems,
+	// this will enable package updates on boot for the machines.
+	AutoUpdatesEnforced bool `json:"autoUpdatesEnforced,omitempty"`
 }
 
 // DefaultProjectResourceQuota contains the default resource quota which will be set for all
