@@ -120,6 +120,15 @@ spec:
                   default: false
                   description: EnableWebTerminal enables the Web Terminal feature for the user clusters.
                   type: boolean
+                machineDeploymentOptions:
+                  properties:
+                    autoUpdatesEnabled:
+                      description: AutoUpdatesEnabled enables the auto updates option for machine deployments on the dashboard. In case of flatcar linux, this will enable automatic updates through update engine and for other operating systems, this will enable package updates on boot for the machines.
+                      type: boolean
+                    autoUpdatesEnforced:
+                      description: AutoUpdatesEnforced enforces the auto updates option for machine deployments on the dashboard. In case of flatcar linux, this will enable automatic updates through update engine and for other operating systems, this will enable package updates on boot for the machines.
+                      type: boolean
+                  type: object
                 machineDeploymentVMResourceQuota:
                   description: MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
                   properties:
