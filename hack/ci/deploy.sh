@@ -119,7 +119,8 @@ logging)
 
 usercluster-mla)
   echodate "Running Kubermatic Installer for UserCluster MLA..."
-  if [[ $VALUES_FILE == *"europe"* ]]; then
+  # deploy iap only for hamburg seed
+  if [[ $VALUES_FILE == *"hamburg"* ]]; then
     ./_build/kubermatic-installer deploy usercluster-mla \
       --config "$KUBERMATIC_CONFIG" \
       --helm-values "$VALUES_FILE" \
