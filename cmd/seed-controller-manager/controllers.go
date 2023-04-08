@@ -41,6 +41,7 @@ import (
 	initialmachinedeploymentcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/initial-machinedeployment-controller"
 	ipamcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/ipam-controller"
 	kcstatuscontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/kc-status-controller"
+	mlacontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller"
 	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring-controller"
 	operatingsystemprofilesynchronizer "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/operating-system-profile-synchronizer"
 	presetcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/preset-controller"
@@ -71,11 +72,11 @@ var AllControllers = map[string]controllerCreator{
 	initialmachinedeploymentcontroller.ControllerName:       createInitialMachineDeploymentController,
 	ipamcontroller.ControllerName:                           createIPAMController,
 	kcstatuscontroller.ControllerName:                       createKcStatusController,
-	// mla.ControllerName:                                      createMLAController,
-	monitoringcontroller.ControllerName:               createMonitoringController,
-	operatingsystemprofilesynchronizer.ControllerName: createOperatingSystemProfileController,
-	presetcontroller.ControllerName:                   createPresetController,
-	pvwatchercontroller.ControllerName:                createPvWatcherController,
+	mlacontroller.ControllerName:                            createMLAController,
+	monitoringcontroller.ControllerName:                     createMonitoringController,
+	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
+	presetcontroller.ControllerName:                         createPresetController,
+	pvwatchercontroller.ControllerName:                      createPvWatcherController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -294,28 +295,28 @@ func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error 
 	)
 }
 
-// func createMLAController(ctrlCtx *controllerContext) error {
-// 	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
-// 		return nil
-// 	}
-// 	return mla.Add(
-// 		ctrlCtx.ctx,
-// 		ctrlCtx.mgr,
-// 		ctrlCtx.log,
-// 		ctrlCtx.runOptions.workerCount,
-// 		ctrlCtx.runOptions.workerName,
-// 		ctrlCtx.versions,
-// 		ctrlCtx.runOptions.mlaNamespace,
-// 		ctrlCtx.runOptions.grafanaURL,
-// 		ctrlCtx.runOptions.grafanaHeaderName,
-// 		ctrlCtx.runOptions.grafanaSecret,
-// 		ctrlCtx.runOptions.overwriteRegistry,
-// 		ctrlCtx.runOptions.cortexAlertmanagerURL,
-// 		ctrlCtx.runOptions.cortexRulerURL,
-// 		ctrlCtx.runOptions.lokiRulerURL,
-// 		ctrlCtx.runOptions.enableUserClusterMLA,
-// 	)
-// }
+func createMLAController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
+		return nil
+	}
+	return mlacontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.versions,
+		ctrlCtx.runOptions.mlaNamespace,
+		ctrlCtx.runOptions.grafanaURL,
+		ctrlCtx.runOptions.grafanaHeaderName,
+		ctrlCtx.runOptions.grafanaSecret,
+		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.cortexAlertmanagerURL,
+		ctrlCtx.runOptions.cortexRulerURL,
+		ctrlCtx.runOptions.lokiRulerURL,
+		ctrlCtx.runOptions.enableUserClusterMLA,
+	)
+}
 
 func userClusterMLAEnabled(ctrlCtx *controllerContext) bool {
 	return ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) && ctrlCtx.runOptions.enableUserClusterMLA

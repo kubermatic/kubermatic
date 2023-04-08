@@ -72,7 +72,6 @@ presubmits:
       containers:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           env:
-        - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-3
             - name: RELEASES_TO_TEST
               value: "1.25"
             - name: DISTRIBUTIONS
