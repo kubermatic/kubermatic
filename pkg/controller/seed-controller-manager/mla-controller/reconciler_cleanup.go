@@ -14,18 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mla
+package mlacontroller
 
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
-
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -36,29 +34,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+type cleaner interface {
+	Cleanup(context.Context) error
+}
+
+// cleanupReconciler is a "meta" reconciler which is used when MLA is globally disabled;
+// it will re-use all the other reconcilers and call their .Cleanup() function exactly
+// once during application startup (i.e. it does not permanently watch any resources).
+type cleanupReconciler struct {
+	seedClient ctrlruntimeclient.Client
+	log        *zap.SugaredLogger
+	cleaners   []cleaner
+}
+
 func newCleanupReconciler(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	numWorkers int,
-	workerName string,
-	versions kubermatic.Versions,
-	cleanupController *cleanupController,
-) error {
-	log = log.Named(ControllerName)
-	client := mgr.GetClient()
-
-	reconciler := &cleanupReconciler{
-		Client:            client,
-		log:               log.Named("cleanup"),
-		workerName:        workerName,
-		recorder:          mgr.GetEventRecorderFor(ControllerName),
-		versions:          versions,
-		cleanupController: cleanupController,
+	cleaners ...cleaner,
+) *cleanupReconciler {
+	return &cleanupReconciler{
+		seedClient: mgr.GetClient(),
+		log:        log.Named("cleanup"),
+		cleaners:   cleaners,
 	}
+}
 
+func (r *cleanupReconciler) Start(ctx context.Context, mgr manager.Manager, workers int) error {
 	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
+		Reconciler:              r,
+		MaxConcurrentReconciles: workers,
 	}
 	c, err := controller.New(ControllerName, mgr, ctrlOptions)
 	if err != nil {
@@ -77,49 +81,22 @@ func newCleanupReconciler(
 	return nil
 }
 
-type cleanupReconciler struct {
-	ctrlruntimeclient.Client
-	log               *zap.SugaredLogger
-	workerName        string
-	recorder          record.EventRecorder
-	versions          kubermatic.Versions
-	cleanupController *cleanupController
-}
-
 func (r *cleanupReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+	r.log.Debug("Processing")
 
-	if err := r.cleanupController.Cleanup(ctx); err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to cleanup: %w", err)
+	if err := r.reconcile(ctx); err != nil {
+		return reconcile.Result{RequeueAfter: 1 * time.Minute}, fmt.Errorf("unable to cleanup: %w", err)
 	}
 
 	return reconcile.Result{}, nil
 }
 
-type cleanupController struct {
-	ctrlruntimeclient.Client
-	log      *zap.SugaredLogger
-	cleaners []cleaner
-}
-
-func newCleanupController(
-	client ctrlruntimeclient.Client,
-	log *zap.SugaredLogger,
-	cleaners ...cleaner,
-) *cleanupController {
-	return &cleanupController{
-		Client:   client,
-		log:      log,
-		cleaners: cleaners,
-	}
-}
-
-func (r *cleanupController) Cleanup(ctx context.Context) error {
+func (r *cleanupReconciler) reconcile(ctx context.Context) error {
 	for _, cleaner := range r.cleaners {
-		if err := cleaner.CleanUp(ctx); err != nil {
+		if err := cleaner.Cleanup(ctx); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }

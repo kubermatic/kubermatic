@@ -27,6 +27,10 @@ spec:
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
     apiserverReplicas: 1
+    # For legacy reasons, we have a DNS record for *.kubermatic.ci.kubermatic.io
+    # from KKP 2, so to keep usercluster tests working in KKP 3 we simply continue
+    # to use that domain name.
+    baseDomain: 'kubermatic.__KUBERMATIC_DOMAIN__'
   featureGates:
     HeadlessInstallation: true
     EtcdLauncher: true

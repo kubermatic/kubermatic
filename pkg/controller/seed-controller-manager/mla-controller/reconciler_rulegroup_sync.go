@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mla
+package mlacontroller
 
 import (
 	"context"
@@ -42,37 +42,37 @@ import (
 )
 
 type ruleGroupSyncReconciler struct {
-	ctrlruntimeclient.Client
-	log                     *zap.SugaredLogger
-	workerName              string
-	recorder                record.EventRecorder
-	versions                kubermatic.Versions
-	ruleGroupSyncController *ruleGroupSyncController
+	seedClient   ctrlruntimeclient.Client
+	log          *zap.SugaredLogger
+	workerName   string
+	recorder     record.EventRecorder
+	versions     kubermatic.Versions
+	mlaNamespace string
 }
+
+var _ cleaner = &ruleGroupSyncReconciler{}
 
 func newRuleGroupSyncReconciler(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
-	ruleGroupSyncController *ruleGroupSyncController,
-) error {
-	log = log.Named(ControllerName)
-	client := mgr.GetClient()
-
-	reconciler := &ruleGroupSyncReconciler{
-		Client:                  client,
-		log:                     log.Named("rulegroup-sync"),
-		workerName:              workerName,
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
-		versions:                versions,
-		ruleGroupSyncController: ruleGroupSyncController,
+	mlaNamespace string,
+) *ruleGroupSyncReconciler {
+	return &ruleGroupSyncReconciler{
+		seedClient:   mgr.GetClient(),
+		log:          log.Named("rulegroup-sync"),
+		workerName:   workerName,
+		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		versions:     versions,
+		mlaNamespace: mlaNamespace,
 	}
+}
 
+func (r *ruleGroupSyncReconciler) Start(ctx context.Context, mgr manager.Manager, workers int) error {
 	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
+		Reconciler:              r,
+		MaxConcurrentReconciles: workers,
 	}
 	c, err := controller.New(ControllerName, mgr, ctrlOptions)
 	if err != nil {
@@ -83,9 +83,9 @@ func newRuleGroupSyncReconciler(
 		ruleGroup := &kubermaticv1.RuleGroup{}
 		nn := types.NamespacedName{
 			Name:      object.GetName(),
-			Namespace: reconciler.ruleGroupSyncController.mlaNamespace,
+			Namespace: r.mlaNamespace,
 		}
-		err = client.Get(context.Background(), nn, ruleGroup)
+		err = r.seedClient.Get(ctx, nn, ruleGroup)
 		if apierrors.IsNotFound(err) {
 			return []reconcile.Request{}
 		}
@@ -94,33 +94,32 @@ func newRuleGroupSyncReconciler(
 		}
 		return []reconcile.Request{{NamespacedName: nn}}
 	})
+
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, enqueueRuleGroup); err != nil {
-		return fmt.Errorf("failed to watch RuleGroup: %w", err)
+		return fmt.Errorf("failed to watch RuleGroups: %w", err)
 	}
+
 	return nil
 }
 
 func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+	log := r.log.With("rulegroup", request.NamespacedName)
 	log.Debug("Processing")
 
 	ruleGroup := &kubermaticv1.RuleGroup{}
-	if err := r.Get(ctx, request.NamespacedName, ruleGroup); err != nil {
+	if err := r.seedClient.Get(ctx, request.NamespacedName, ruleGroup); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	if !ruleGroup.DeletionTimestamp.IsZero() {
-		if err := r.ruleGroupSyncController.handleDeletion(ctx, log, ruleGroup); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to delete ruleGroup: %w", err)
-		}
-		return reconcile.Result{}, nil
+		return reconcile.Result{}, r.handleDeletion(ctx, log, ruleGroup)
 	}
 
-	if err := kubernetes.TryAddFinalizer(ctx, r, ruleGroup, ruleGroupFinalizer); err != nil {
+	if err := kubernetes.TryAddFinalizer(ctx, r.seedClient, ruleGroup, ruleGroupFinalizer); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if err := r.ruleGroupSyncController.syncClusterNS(ctx, log, ruleGroup, func(seedClient ctrlruntimeclient.Client, ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) error {
+	if err := r.syncClusterNamespaces(ctx, log, ruleGroup, func(seedClient ctrlruntimeclient.Client, ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) error {
 		ruleGroupReconcilerFactory := []reconciling.NamedRuleGroupReconcilerFactory{
 			ruleGroupReconcilerFactory(ruleGroup, cluster),
 		}
@@ -129,42 +128,27 @@ func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconci
 		r.recorder.Event(ruleGroup, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcle rulegroup %s: %w", ruleGroup.Name, err)
 	}
+
 	return reconcile.Result{}, nil
 }
 
-type ruleGroupSyncController struct {
-	ctrlruntimeclient.Client
-	mlaNamespace string
-	log          *zap.SugaredLogger
-}
-
-func newRuleGroupSyncController(
-	client ctrlruntimeclient.Client,
-	log *zap.SugaredLogger,
-	mlaNamespace string,
-) *ruleGroupSyncController {
-	return &ruleGroupSyncController{
-		Client:       client,
-		mlaNamespace: mlaNamespace,
-		log:          log,
-	}
-}
-
-func (r *ruleGroupSyncController) CleanUp(ctx context.Context) error {
+func (r *ruleGroupSyncReconciler) Cleanup(ctx context.Context) error {
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
-	if err := r.List(ctx, ruleGroupList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
+	if err := r.seedClient.List(ctx, ruleGroupList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return err
 	}
+
 	for _, ruleGroup := range ruleGroupList.Items {
 		if err := r.handleDeletion(ctx, r.log, &ruleGroup); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
-func (r *ruleGroupSyncController) handleDeletion(ctx context.Context, log *zap.SugaredLogger, ruleGroup *kubermaticv1.RuleGroup) error {
-	if err := r.syncClusterNS(ctx, log, ruleGroup, func(seedClient ctrlruntimeclient.Client, ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) error {
+func (r *ruleGroupSyncReconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, ruleGroup *kubermaticv1.RuleGroup) error {
+	if err := r.syncClusterNamespaces(ctx, log, ruleGroup, func(seedClient ctrlruntimeclient.Client, ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) error {
 		ruleGroup = &kubermaticv1.RuleGroup{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      ruleGroup.Name,
@@ -179,18 +163,20 @@ func (r *ruleGroupSyncController) handleDeletion(ctx context.Context, log *zap.S
 		return err
 	}
 
-	return kubernetes.TryRemoveFinalizer(ctx, r, ruleGroup, ruleGroupFinalizer)
+	return kubernetes.TryRemoveFinalizer(ctx, r.seedClient, ruleGroup, ruleGroupFinalizer)
 }
 
-func (r *ruleGroupSyncController) syncClusterNS(
+func (r *ruleGroupSyncReconciler) syncClusterNamespaces(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	ruleGroup *kubermaticv1.RuleGroup,
-	action func(seedClient ctrlruntimeclient.Client, ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) error) error {
+	action func(ctrlruntimeclient.Client, *kubermaticv1.RuleGroup, *kubermaticv1.Cluster) error,
+) error {
 	clusterList := &kubermaticv1.ClusterList{}
-	if err := r.List(ctx, clusterList); err != nil {
+	if err := r.seedClient.List(ctx, clusterList); err != nil {
 		return fmt.Errorf("failed to list clusters: %w", err)
 	}
+
 	for _, cluster := range clusterList.Items {
 		if cluster.Spec.Pause {
 			log.Debugw("cluster paused, skipping", "cluster", cluster.Name)
@@ -205,20 +191,20 @@ func (r *ruleGroupSyncController) syncClusterNS(
 			continue
 		}
 		if !mlaEnabled(cluster) {
-			log.Debugw("cluster have mla disabled, skipping", "cluster", cluster.Name)
+			log.Debugw("cluster has MLA disabled, skipping", "cluster", cluster.Name)
 			continue
 		}
-		if err := action(r.Client, ruleGroup, &cluster); err != nil {
+		if err := action(r.seedClient, ruleGroup, &cluster); err != nil {
 			return fmt.Errorf("failed to sync rulegroup for cluster %s: %w", cluster.Name, err)
 		}
 	}
+
 	return nil
 }
 
 func ruleGroupReconcilerFactory(ruleGroup *kubermaticv1.RuleGroup, cluster *kubermaticv1.Cluster) reconciling.NamedRuleGroupReconcilerFactory {
 	return func() (string, reconciling.RuleGroupReconciler) {
 		return ruleGroup.Name, func(r *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error) {
-			r.Name = ruleGroup.Name
 			r.Spec = kubermaticv1.RuleGroupSpec{
 				RuleGroupType: ruleGroup.Spec.RuleGroupType,
 				Cluster: corev1.ObjectReference{
@@ -226,6 +212,7 @@ func ruleGroupReconcilerFactory(ruleGroup *kubermaticv1.RuleGroup, cluster *kube
 				},
 				Data: ruleGroup.Spec.Data,
 			}
+
 			return r, nil
 		}
 	}

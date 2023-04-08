@@ -346,21 +346,6 @@ func (r *reconciler) mlaGatewayCA(ctx context.Context) (*resources.ECDSAKeyPair,
 	return resources.GetMLAGatewayCA(ctx, r.namespace, r.seedClient)
 }
 
-func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error) {
-	secret := &corev1.Secret{}
-	if err := r.seedClient.Get(
-		ctx,
-		types.NamespacedName{Namespace: r.namespace, Name: resources.UserSSHKeys},
-		secret,
-	); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return secret.Data, nil
-}
-
 // During the release of KKP 2.23, this was migrated from ConfigMaps to Secrets.
 // To ensure a smooth transition, this function first checks for the Secret and then
 // falls back to the ConfigMap.

@@ -105,3 +105,28 @@ groups:
           severity: informational
           resource: "{{ $labels.name }}"
           service: kubermatic-seed
+      - alert: KubermaticAPIDown
+        annotations:
+          message: KubermaticAPI has disappeared from Prometheus target discovery.
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticapidown
+        expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-api"} == 1)
+        for: 15m
+        labels:
+          severity: critical
+          service: kubermatic-master
+      - alert: KubermaticAPITooManyErrors
+        annotations:
+          message: Kubermatic API is returning a high rate of HTTP 5xx responses.
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticapitoomanyerrors
+        expr: sum(rate(http_requests_total{app_kubernetes_io_name="kubermatic-api",code=~"5.."}[5m])) > 0.1
+        for: 15m
+        labels:
+          severity: warning
+          service: kubermatic-master
+      - alert: KubermaticAPITooManyInitNodeDeloymentFailures
+        annotations:
+          message: Kubermatic API is failing to create too many initial node deployments.
+        expr: sum(rate(kubermatic_api_failed_init_node_deployment_total[5m])) > 0.01
+        for: 15m
+        labels:
+          severity: warning

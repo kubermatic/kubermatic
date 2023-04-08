@@ -25,7 +25,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller"
+	mlacontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller"
 	"k8c.io/kubermatic/v3/pkg/install/helm"
 	"k8c.io/kubermatic/v3/pkg/install/stack"
 	"k8c.io/kubermatic/v3/pkg/install/util"
@@ -263,9 +263,9 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	}
 
 	runtimeConfigMap := &corev1.ConfigMap{
-		Data: map[string]string{mla.RuntimeConfigFileName: "overrides:\n"},
+		Data: map[string]string{mlacontroller.RuntimeConfigFileName: "overrides:\n"},
 	}
-	runtimeConfigMap.Name = mla.RuntimeConfigMap
+	runtimeConfigMap.Name = mlacontroller.RuntimeConfigMap
 	runtimeConfigMap.Namespace = CortexNamespace
 
 	if err := ctrlruntimeclient.IgnoreAlreadyExists(kubeClient.Create(ctx, runtimeConfigMap)); err != nil {

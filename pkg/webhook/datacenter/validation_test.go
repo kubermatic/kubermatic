@@ -227,13 +227,14 @@ func TestValidate(t *testing.T) {
 				datacentersGetter: test.NewDatacentersGetter(existingDatacenters...),
 			}
 
-			if tc.oldDatacenter != nil && tc.newDatacenter != nil {
+			switch {
+			case tc.oldDatacenter != nil && tc.newDatacenter != nil:
 				err = sv.ValidateUpdate(context.Background(), tc.oldDatacenter, tc.newDatacenter)
-			} else if tc.oldDatacenter != nil {
+			case tc.oldDatacenter != nil:
 				err = sv.ValidateDelete(context.Background(), tc.oldDatacenter)
-			} else if tc.newDatacenter != nil {
+			case tc.newDatacenter != nil:
 				err = sv.ValidateCreate(context.Background(), tc.newDatacenter)
-			} else {
+			default:
 				t.Fatal("invalid test case: either old or new or both datacenters must be set")
 			}
 

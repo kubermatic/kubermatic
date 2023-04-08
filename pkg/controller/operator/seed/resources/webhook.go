@@ -194,12 +194,11 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 
 			var envVars []corev1.EnvVar
 
-			withSeed := false
 			if uc := cfg.Spec.UserCluster; uc != nil && uc.ProxySettings != nil {
 				envVars = append(envVars, ProxyEnvironmentVars(uc.ProxySettings)...)
-				withSeed = true
 			} else if d != nil && len(d.Spec.Template.Spec.Containers) > 0 {
 				// check if the old Deployment had a seed env var and is deployed on a Seed or Master+Seed combination.
+				withSeed := false
 				for _, e := range d.Spec.Template.Spec.Containers[0].Env {
 					if e.Name == seedNameEnvVariable {
 						withSeed = true

@@ -14,83 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mla
+package mlacontroller
 
 import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"go.uber.org/zap"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller/cortex"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller/grafana"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-type cleaner interface {
-	CleanUp(context.Context) error
-}
-
 const (
-	ControllerName     = "kkp-mla-controller"
-	mlaFinalizer       = "kubermatic.k8c.io/mla"
-	defaultOrgID       = 1
-	GrafanaUserKey     = "admin-user"
-	GrafanaPasswordKey = "admin-password"
+	ControllerName = "kkp-mla-controller"
+	mlaFinalizer   = "kubermatic.k8c.io/mla"
 )
 
-type grafanaClientProvider func(ctx context.Context) (*grafanasdk.Client, error)
-
-func newGrafanaClientProvider(client ctrlruntimeclient.Client, httpClient *http.Client, secretName string, grafanaURL string, enabled bool) (grafanaClientProvider, error) {
-	split := strings.Split(secretName, "/")
-	if n := len(split); n != 2 {
-		return nil, fmt.Errorf("splitting value of %q didn't yield two but %d results", secretName, n)
-	}
-
-	return func(ctx context.Context) (*grafanasdk.Client, error) {
-		secret := corev1.Secret{}
-		if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
-			if !enabled {
-				return nil, nil
-			}
-
-			return nil, fmt.Errorf("failed to get Grafana Secret: %w", err)
-		}
-
-		adminName, ok := secret.Data[GrafanaUserKey]
-		if !ok {
-			return nil, fmt.Errorf("Grafana Secret %q does not contain %s key", secretName, GrafanaUserKey)
-		}
-
-		adminPass, ok := secret.Data[GrafanaPasswordKey]
-		if !ok {
-			return nil, fmt.Errorf("Grafana Secret %q does not contain %s key", secretName, GrafanaPasswordKey)
-		}
-
-		grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
-
-		return grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
-	}, nil
-}
-
-// Add creates a new MLA controller that is responsible for
-// managing Monitoring, Logging and Alerting for user clusters.
-// * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
-// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User and its Group/UserProjectBindings
-// * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
-// * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
-// * rule group controller - manager rule groups that will be used to generate alerts.
-// * dashboard grafana controller - create/delete Grafana dashboards based on configmaps with prefix `grafana-dashboards`
-// * ratelimit cortex controller - updates Cortex runtime configuration with rate limits based on kubermatic MLAAdminSetting
-// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller.
+// Add creates a new MLA controller that is responsible for managing Monitoring, Logging and Alerting for user clusters.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -111,65 +58,71 @@ func Add(
 	log = log.Named(ControllerName)
 
 	httpClient := &http.Client{Timeout: 15 * time.Second}
-	clientProvider, err := newGrafanaClientProvider(mgr.GetClient(), httpClient, grafanaSecret, grafanaURL, mlaEnabled)
+	clientProvider, err := grafana.NewClientProvider(mgr.GetClient(), httpClient, grafanaSecret, grafanaURL, mlaEnabled)
 	if err != nil {
-		return fmt.Errorf("failed to prepare Grafana client: %w", err)
+		return fmt.Errorf("failed to prepare Grafana client provider: %w", err)
 	}
 
-	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
-	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
-	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), clientProvider, mlaNamespace, log, overwriteRegistry)
-	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, clientProvider, httpClient, grafanaURL, grafanaHeader)
-	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL, mlaNamespace)
-	dashboardGrafanaController := newDashboardGrafanaController(mgr.GetClient(), log, mlaNamespace, clientProvider)
-	ratelimitCortexController := newRatelimitCortexController(mgr.GetClient(), log, mlaNamespace)
-	ruleGroupSyncController := newRuleGroupSyncController(mgr.GetClient(), log, mlaNamespace)
+	cClient := cortex.NewClient(httpClient, cortexAlertmanagerURL, cortexRulerURL, lokiRulerURL)
+	cortexClientProvider := func() cortex.Client {
+		return cClient
+	}
+
+	grafanaOrgReconciler := newGrafanaOrgReconciler(mgr, log, workerName, clientProvider, mlaNamespace)
+	grafanaUserReconciler := newGrafanaUserReconciler(ctx, mgr, log, workerName, clientProvider)
+	grafanaDatasourceReconciler := newGrafanaDatasourceReconciler(mgr, log, workerName, versions, clientProvider, overwriteRegistry, mlaNamespace)
+	grafanaDashboardReconciler := newGrafanaDashboardReconciler(mgr, log, workerName, clientProvider, mlaNamespace)
+	alertmanagerReconciler := newAlertmanagerReconciler(mgr, log, workerName, versions, cortexClientProvider)
+	cortexRatelimitReconciler := newCortexRatelimitReconciler(mgr, log, workerName, mlaNamespace)
+	ruleGroupReconciler := newRuleGroupReconciler(mgr, log, workerName, versions, mlaNamespace, cortexClientProvider)
+	ruleGroupSyncReconciler := newRuleGroupSyncReconciler(mgr, log, workerName, versions, mlaNamespace)
+
+	// if MLA is enabled, start the controllers the usual way
 	if mlaEnabled {
+		if err := grafanaOrgReconciler.Start(ctx, mgr, numWorkers); err != nil {
+			return fmt.Errorf("failed to create Grafana organization controller: %w", err)
+		}
+		if err := grafanaUserReconciler.Start(ctx, mgr, numWorkers); err != nil {
+			return fmt.Errorf("failed to create Grafana user controller: %w", err)
+		}
+		if err := grafanaDatasourceReconciler.Start(ctx, mgr, numWorkers); err != nil {
+			return fmt.Errorf("failed to create Grafana datasource controller: %w", err)
+		}
+		if err := grafanaDashboardReconciler.Start(ctx, mgr, numWorkers); err != nil {
+			return fmt.Errorf("failed to create Grafana dashboard controller: %w", err)
+		}
+		if err := alertmanagerReconciler.Start(ctx, mgr, numWorkers); err != nil {
+			return fmt.Errorf("failed to create Alertmanager controller: %w", err)
+		}
 		// ratelimit cortex controller update 1 configmap, so we better to have only one worker
-		if err := newRatelimitCortexReconciler(mgr, log, 1, workerName, versions, ratelimitCortexController); err != nil {
-			return fmt.Errorf("failed to create mla ratelimit cortex controller: %w", err)
+		if err := cortexRatelimitReconciler.Start(ctx, mgr, 1); err != nil {
+			return fmt.Errorf("failed to create Cortex rate limiting controller: %w", err)
 		}
-		if err := newDashboardGrafanaReconciler(mgr, log, numWorkers, workerName, versions, dashboardGrafanaController); err != nil {
-			return fmt.Errorf("failed to create mla dashboard grafana controller: %w", err)
+		if err := ruleGroupReconciler.Start(ctx, mgr, numWorkers); err != nil {
+			return fmt.Errorf("failed to create rule group controller: %w", err)
 		}
-		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
-			return fmt.Errorf("failed to create mla org grafana controller: %w", err)
-		}
-		if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, datasourceGrafanaController); err != nil {
-			return fmt.Errorf("failed to create mla datasource grafana controller: %w", err)
-		}
-		if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, alertmanagerController); err != nil {
-			return fmt.Errorf("failed to create mla alertmanager configuration controller: %w", err)
-		}
-		if err := newUserGrafanaReconciler(ctx, mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
-			return fmt.Errorf("failed to create mla user grafana controller: %w", err)
-		}
-		if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupController); err != nil {
-			return fmt.Errorf("failed to create rule group controller %w", err)
-		}
-		if err := newRuleGroupSyncReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupSyncController); err != nil {
-			return fmt.Errorf("failed to create rule group controller %w", err)
-		}
-		if err := newUserProjectBindingReconciler(mgr, log, numWorkers); err != nil {
-			return fmt.Errorf("failed to create user project binding controller")
+		if err := ruleGroupSyncReconciler.Start(ctx, mgr, numWorkers); err != nil {
+			return fmt.Errorf("failed to create rule group sync controller: %w", err)
 		}
 	} else {
-		cleanupController := newCleanupController(
-			mgr.GetClient(),
+		// ... if MLA is disabled however, re/mis-use the reconcilers to perform a one-time cleanup.
+		cleanupController := newCleanupReconciler(
+			mgr,
 			log,
-			datasourceGrafanaController,
-			dashboardGrafanaController,
-			alertmanagerController,
-			orgGrafanaController,
-			userGrafanaController,
-			ruleGroupController,
-			ratelimitCortexController,
-			ruleGroupSyncController,
+			// no need to cleanup the Grafana organization itself
+			grafanaUserReconciler,
+			grafanaDatasourceReconciler,
+			grafanaDashboardReconciler,
+			alertmanagerReconciler,
+			ruleGroupReconciler,
+			ruleGroupSyncReconciler,
+			cortexRatelimitReconciler,
 		)
-		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
-			return fmt.Errorf("failed to create mla cleanup controller: %w", err)
+		if err := cleanupController.Start(ctx, mgr, 1); err != nil {
+			return fmt.Errorf("failed to create cleanup controller: %w", err)
 		}
 	}
+
 	return nil
 }
 

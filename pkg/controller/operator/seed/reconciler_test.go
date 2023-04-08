@@ -155,7 +155,9 @@ func TestBasicReconciling(t *testing.T) {
 				}
 
 				// and now delete the configuration
-				reconciler.seedClient.Delete(ctx, newConfig)
+				if err := reconciler.seedClient.Delete(ctx, newConfig); err != nil {
+					return fmt.Errorf("failed to delete config: %w", err)
+				}
 
 				// let the controller clean up
 				if err := reconciler.reconcile(ctx, reconciler.log); err != nil {

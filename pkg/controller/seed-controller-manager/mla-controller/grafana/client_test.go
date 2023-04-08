@@ -14,8 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-Package mlacontroller contains controllers that are responsible for configuring MLA (Monitoring, Logging, and Alerting)
-for user clusters.
-*/
-package mlacontroller
+package grafana
+
+import "testing"
+
+func TestDefaultOrgID(t *testing.T) {
+	// If Grafana ever changes its internal ID for the default org from 1 to
+	// anything else, the ID computation magic (len(orgs)+1) in the fake
+	// grafana client will not work anymore (if the default is now 3, the
+	// computed ID will not match DefaultOrgID anymore).
+	// Please adjust the unit tests as needed.
+	if DefaultOrgID != 1 {
+		t.Fatal("If the default ID is not 1 anymore, the assumptions in fakeGrafana.createDefaultOrg do not work anymore.")
+	}
+}
