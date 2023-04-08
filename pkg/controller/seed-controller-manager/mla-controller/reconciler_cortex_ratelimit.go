@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mla
+package mlacontroller
 
 import (
 	"context"
@@ -29,7 +29,6 @@ import (
 	predicateutil "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v3/pkg/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/resources"
-	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -60,42 +59,36 @@ type Overrides struct {
 	Overrides map[string]TenantOverride `yaml:"overrides"`
 }
 
-// ratelimitCortexReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
-type ratelimitCortexReconciler struct {
-	ctrlruntimeclient.Client
-
-	log                       *zap.SugaredLogger
-	workerName                string
-	recorder                  record.EventRecorder
-	versions                  kubermatic.Versions
-	ratelimitCortexController *ratelimitCortexController
+// Updates Cortex runtime configuration with rate limits based on MLAAdminSetting.
+type cortexRatelimitReconciler struct {
+	seedClient   ctrlruntimeclient.Client
+	log          *zap.SugaredLogger
+	workerName   string
+	recorder     record.EventRecorder
+	mlaNamespace string
 }
 
-// Add creates a new MLA controller that is responsible for
-// managing Monitoring, Logging and Alerting for user clusters.
-func newRatelimitCortexReconciler(
+var _ cleaner = &cortexRatelimitReconciler{}
+
+func newCortexRatelimitReconciler(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	numWorkers int,
 	workerName string,
-	versions kubermatic.Versions,
-	ratelimitCortexController *ratelimitCortexController,
-) error {
-	client := mgr.GetClient()
-
-	reconciler := &ratelimitCortexReconciler{
-		Client: client,
-
-		log:                       log.Named("cortex-ratelimit"),
-		workerName:                workerName,
-		recorder:                  mgr.GetEventRecorderFor(ControllerName),
-		versions:                  versions,
-		ratelimitCortexController: ratelimitCortexController,
+	mlaNamespace string,
+) *cortexRatelimitReconciler {
+	return &cortexRatelimitReconciler{
+		seedClient:   mgr.GetClient(),
+		log:          log.Named("cortex-ratelimit"),
+		workerName:   workerName,
+		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		mlaNamespace: mlaNamespace,
 	}
+}
 
+func (r *cortexRatelimitReconciler) Start(ctx context.Context, mgr manager.Manager, workers int) error {
 	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
+		Reconciler:              r,
+		MaxConcurrentReconciles: workers,
 	}
 	c, err := controller.New(ControllerName, mgr, ctrlOptions)
 	if err != nil {
@@ -103,62 +96,42 @@ func newRatelimitCortexReconciler(
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
-		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
+		return fmt.Errorf("failed to watch MLAAdminSettings: %w", err)
 	}
 
-	return err
+	return nil
 }
 
-func (r *ratelimitCortexReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
+func (r *cortexRatelimitReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("settings", request.NamespacedName)
 	log.Debug("Processing")
 
 	mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
-	if err := r.Get(ctx, request.NamespacedName, mlaAdminSetting); err != nil {
+	if err := r.seedClient.Get(ctx, request.NamespacedName, mlaAdminSetting); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	if !mlaAdminSetting.DeletionTimestamp.IsZero() {
-		if err := r.ratelimitCortexController.handleDeletion(ctx, log, mlaAdminSetting); err != nil {
+		if err := r.handleDeletion(ctx, log, mlaAdminSetting); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if err := kubernetes.TryAddFinalizer(ctx, r, mlaAdminSetting, mlaFinalizer); err != nil {
+	if err := kubernetes.TryAddFinalizer(ctx, r.seedClient, mlaAdminSetting, mlaFinalizer); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if err := r.ratelimitCortexController.ensureLimits(ctx, mlaAdminSetting); err != nil {
+	if err := r.ensureLimits(ctx, mlaAdminSetting); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure limits: %w", err)
 	}
 
 	return reconcile.Result{}, nil
 }
 
-type ratelimitCortexController struct {
-	ctrlruntimeclient.Client
-	mlaNamespace string
-
-	log *zap.SugaredLogger
-}
-
-func newRatelimitCortexController(
-	client ctrlruntimeclient.Client,
-	log *zap.SugaredLogger,
-	mlaNamespace string,
-) *ratelimitCortexController {
-	return &ratelimitCortexController{
-		Client:       client,
-		mlaNamespace: mlaNamespace,
-
-		log: log,
-	}
-}
-
-func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSetting *kubermaticv1.MLAAdminSetting) error {
+func (r *cortexRatelimitReconciler) ensureLimits(ctx context.Context, mlaAdminSetting *kubermaticv1.MLAAdminSetting) error {
 	configMap := &corev1.ConfigMap{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: RuntimeConfigMap}, configMap); err != nil {
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: RuntimeConfigMap}, configMap); err != nil {
 		return fmt.Errorf("unable to get cortex runtime config map: %w", err)
 	}
 	config, ok := configMap.Data[RuntimeConfigFileName]
@@ -205,12 +178,12 @@ func (r *ratelimitCortexController) ensureLimits(ctx context.Context, mlaAdminSe
 		return fmt.Errorf("unable to marshal runtime config[%+v]: %w", or, err)
 	}
 	configMap.Data[RuntimeConfigFileName] = string(data)
-	return r.Update(ctx, configMap)
+	return r.seedClient.Update(ctx, configMap)
 }
 
-func (r *ratelimitCortexController) CleanUp(ctx context.Context) error {
+func (r *cortexRatelimitReconciler) Cleanup(ctx context.Context) error {
 	mlaAdminSettingList := &kubermaticv1.MLAAdminSettingList{}
-	if err := r.List(ctx, mlaAdminSettingList); err != nil {
+	if err := r.seedClient.List(ctx, mlaAdminSettingList); err != nil {
 		return fmt.Errorf("Failed to list mlaAdminSetting: %w", err)
 	}
 	for _, mlaAdminSetting := range mlaAdminSettingList.Items {
@@ -221,9 +194,9 @@ func (r *ratelimitCortexController) CleanUp(ctx context.Context) error {
 	return nil
 }
 
-func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap.SugaredLogger, mlaAdminSetting *kubermaticv1.MLAAdminSetting) error {
+func (r *cortexRatelimitReconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, mlaAdminSetting *kubermaticv1.MLAAdminSetting) error {
 	configMap := &corev1.ConfigMap{}
-	if err := r.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: RuntimeConfigMap}, configMap); err != nil {
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Namespace: r.mlaNamespace, Name: RuntimeConfigMap}, configMap); err != nil {
 		return fmt.Errorf("unable to get cortex runtime config map: %w", err)
 	}
 	config, ok := configMap.Data[RuntimeConfigFileName]
@@ -246,10 +219,10 @@ func (r *ratelimitCortexController) handleDeletion(ctx context.Context, log *zap
 			return fmt.Errorf("unable to marshal runtime config[%+v]: %w", or, err)
 		}
 		configMap.Data[RuntimeConfigFileName] = string(data)
-		if err := r.Update(ctx, configMap); err != nil {
+		if err := r.seedClient.Update(ctx, configMap); err != nil {
 			return fmt.Errorf("unable to update configmap: %w", err)
 		}
 	}
 
-	return kubernetes.TryRemoveFinalizer(ctx, r, mlaAdminSetting, mlaFinalizer)
+	return kubernetes.TryRemoveFinalizer(ctx, r.seedClient, mlaAdminSetting, mlaFinalizer)
 }

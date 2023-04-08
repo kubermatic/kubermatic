@@ -46,10 +46,6 @@ const (
 	// ManagedByLabel is the label used to identify the resources
 	// created by this controller.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// helmReleaseAnnotation is the indicator for the ownership modifier to
-	// not touch the object.
-	helmReleaseAnnotation = "meta.helm.sh/release-name"
 )
 
 var (

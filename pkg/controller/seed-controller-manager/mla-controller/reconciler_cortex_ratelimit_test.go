@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mla
+package mlacontroller
 
 import (
 	"context"
@@ -23,11 +23,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/kubernetes"
-	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,22 +40,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func newTestRatelimitCortexReconciler(t *testing.T, objects []ctrlruntimeclient.Object) *ratelimitCortexReconciler {
+func newTestCortexRatelimitReconciler(objects []ctrlruntimeclient.Object) *cortexRatelimitReconciler {
 	dynamicClient := ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithObjects(objects...).
 		Build()
-	ratelimitCortexController := newRatelimitCortexController(dynamicClient, kubermaticlog.Logger, "mla")
-	reconciler := ratelimitCortexReconciler{
-		Client:                    dynamicClient,
-		log:                       kubermaticlog.Logger,
-		recorder:                  record.NewFakeRecorder(10),
-		ratelimitCortexController: ratelimitCortexController,
+
+	return &cortexRatelimitReconciler{
+		seedClient:   dynamicClient,
+		log:          zap.NewNop().Sugar(),
+		recorder:     record.NewFakeRecorder(10),
+		mlaNamespace: "mla",
 	}
-	return &reconciler
 }
 
-func TestRatelimitCortexReconcile(t *testing.T) {
+func TestCortexRatelimitReconcile(t *testing.T) {
+	ctx := context.Background()
+
 	oldTenantOverride := TenantOverride{
 		IngestionRate:      utilpointer.Int32(1),
 		MaxSeriesPerMetric: utilpointer.Int32(1),
@@ -68,6 +69,7 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 	data, err := yaml.Marshal(oldRatelimitConfig)
 	assert.Nil(t, err)
 	oldRatelimitConfigData := string(data)
+
 	testCases := []struct {
 		name              string
 		request           types.NamespacedName
@@ -277,19 +279,20 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 	}
 	for idx := range testCases {
 		tc := testCases[idx]
+
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := context.Background()
-			controller := newTestRatelimitCortexReconciler(t, tc.objects)
+
+			reconciler := newTestCortexRatelimitReconciler(tc.objects)
 			request := reconcile.Request{NamespacedName: tc.request}
-			_, err := controller.Reconcile(ctx, request)
+			_, err := reconciler.Reconcile(ctx, request)
 			if err != nil && !tc.err {
 				assert.Nil(t, err)
 			}
 			assert.Equal(t, tc.err, err != nil)
 			configMap := &corev1.ConfigMap{}
-			if err := controller.Get(ctx, types.NamespacedName{Namespace: "mla", Name: RuntimeConfigMap}, configMap); err != nil {
-				t.Fatalf("unable to get configMap: %v", err)
+			if err := reconciler.seedClient.Get(ctx, types.NamespacedName{Namespace: "mla", Name: RuntimeConfigMap}, configMap); err != nil {
+				t.Fatalf("Failed to get configMap: %v", err)
 			}
 			actualOverrides := &Overrides{}
 			decoder := yaml.NewDecoder(strings.NewReader(configMap.Data[RuntimeConfigFileName]))
@@ -298,8 +301,8 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, tc.expectedOverrides, *actualOverrides)
 			mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
-			if err := controller.Get(ctx, tc.request, mlaAdminSetting); err != nil {
-				t.Fatalf("unable to get mlaAdminSetting: %v", err)
+			if err := reconciler.seedClient.Get(ctx, tc.request, mlaAdminSetting); err != nil {
+				t.Fatalf("Failed to get mlaAdminSetting: %v", err)
 			}
 			assert.Equal(t, tc.hasFinalizer, kubernetes.HasFinalizer(mlaAdminSetting, mlaFinalizer))
 		})

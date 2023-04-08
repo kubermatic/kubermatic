@@ -514,6 +514,13 @@ spec:
       dockerTagSuffix: ""
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
+    # This configures the base domain for all userclusters. Each usercluster will get a subdomain
+    # (named <clustername>.<basedomain>) to allow access to the cluster's controlplane. This
+    # domain should be different from the main ingress (which makes the KKP dashboard available),
+    # as cluster names might collide with other, well-known names and could interfere with the
+    # dashboard. If your dashboard is using "example.com", you could configure the usercluster
+    # base domain as "clusters.example.com".
+    baseDomain: ""
     # DefaultCTemplate is the name of a cluster template that is used to default a new user cluster.
     defaultTemplate: ""
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
