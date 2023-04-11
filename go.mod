@@ -39,7 +39,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.39.0
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.56.1
+	github.com/kubermatic/machine-controller v1.56.2
 	github.com/minio/minio-go/v7 v7.0.45
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
@@ -77,7 +77,7 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.11.1
-	k8c.io/operating-system-manager v1.2.0
+	k8c.io/operating-system-manager v1.2.2
 	k8c.io/reconciler v0.3.1
 	k8s.io/api v0.26.1
 	k8s.io/apiextensions-apiserver v0.26.1
