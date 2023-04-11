@@ -19,13 +19,13 @@
 
 ## [v2.20.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.15)
 
+### Action Required
+
+- [User Cluster MLA 0.2.6](https://github.com/kubermatic/mla/releases/tag/v0.2.6) has been released and requires manual updating by re-running [User Cluster MLA Installation](https://docs.kubermatic.com/kubermatic/v2.20/tutorials-howtos/monitoring-logging-alerting/user-cluster/admin-guide/#installation) ([#12106](https://github.com/kubermatic/kubermatic/pull/12106))
+
 ### Bugfixes
 
 - Fix calculation of node CPU utilisation in Grafana dashboards for multi-core nodes ([#12081](https://github.com/kubermatic/kubermatic/pull/12081))
-
-### Updates
-
-- [User Cluster MLA 0.2.6](https://github.com/kubermatic/mla/releases/tag/v0.2.6) has been released and requires manual updating by re-running [User Cluster MLA Installation](https://docs.kubermatic.com/kubermatic/v2.20/tutorials-howtos/monitoring-logging-alerting/user-cluster/admin-guide/#installation) ([#12106](https://github.com/kubermatic/kubermatic/pull/12106))
 
 ### Misc
 

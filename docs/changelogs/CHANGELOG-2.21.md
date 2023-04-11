@@ -12,6 +12,10 @@
 
 ## [v2.21.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.8)
 
+### Action Required
+
+- [User Cluster MLA 0.2.6](https://github.com/kubermatic/mla/releases/tag/v0.2.6) has been released and requires manual updating by re-running [User Cluster MLA Installation](https://docs.kubermatic.com/kubermatic/v2.21/tutorials-howtos/monitoring-logging-alerting/user-cluster/admin-guide/#installation) ([#12105](https://github.com/kubermatic/kubermatic/pull/12105))
+
 ### Bugfixes
 
 - Fix calculation of node CPU utilisation in Grafana dashboards for multi-core nodes ([#12080](https://github.com/kubermatic/kubermatic/pull/12080))
@@ -19,7 +23,6 @@
 
 ### Updates
 
-- [User Cluster MLA 0.2.6](https://github.com/kubermatic/mla/releases/tag/v0.2.6) has been released and requires manual updating by re-running [User Cluster MLA Installation](https://docs.kubermatic.com/kubermatic/v2.21/tutorials-howtos/monitoring-logging-alerting/user-cluster/admin-guide/#installation) ([#12105](https://github.com/kubermatic/kubermatic/pull/12105))
 - Update Anexia CCM (cloud-controller-manager) to version 1.5.3 ([#12132](https://github.com/kubermatic/kubermatic/pull/12132))
 - Update machine-controller to v1.54.6 ([#12146](https://github.com/kubermatic/kubermatic/pull/12146))
 
