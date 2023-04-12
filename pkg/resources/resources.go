@@ -357,32 +357,6 @@ const (
 	KubermaticNamespace = "kubermatic"
 	// KubermaticWebhookServiceName is the name of the kuberamtic webhook service in seed cluster.
 	KubermaticWebhookServiceName = "kubermatic-webhook"
-	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment.
-	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
-	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment.
-	GatekeeperAuditDeploymentName = "gatekeeper-audit"
-	// GatekeeperWebhookServiceName is the name of the gatekeeper webhook service.
-	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
-	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name.
-	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
-	// GatekeeperPodDisruptionBudgetName is the name of the PDB for the gatekeeper controller manager.
-	GatekeeperPodDisruptionBudgetName = "gatekeeper-controller-manager"
-	// GatekeeperRoleName is the name for the Gatekeeper role.
-	GatekeeperRoleName = "gatekeeper-manager-role"
-	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding.
-	GatekeeperRoleBindingName = "gatekeeper-manager-rolebinding"
-	// GatekeeperServiceAccountName is the name for the Gatekeeper service account.
-	GatekeeperServiceAccountName = "gatekeeper-admin"
-	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored.
-	GatekeeperNamespace = "gatekeeper-system"
-	// ExperimentalEnableMutation enables gatekeeper to validate created kubernetes resources and also modify them based on defined mutation policies.
-	ExperimentalEnableMutation = false
-	// AuditMatchKindOnly enables gatekeeper to only audit resources in OPA cache.
-	AuditMatchKindOnly = false
-	// ConstraintViolationsLimit defines the maximum number of audit violations reported on a constraint.
-	ConstraintViolationsLimit = 20
-	// GatekeeperExemptNamespaceLabel label key for exempting namespaces from Gatekeeper checks.
-	GatekeeperExemptNamespaceLabel = "admission.gatekeeper.sh/ignore"
 	// ClusterCloudCredentialsSecretName is the name the Secret in the cluster namespace that contains
 	// the cloud provider credentials. This Secret is a copy of the credentials secret from the KKP
 	// namespace (which has a dynamic name).
@@ -441,24 +415,6 @@ const (
 	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
 	// ClusterCRDName defines the CRD name for cluster objects.
 	ClusterCRDName = "clusters.cluster.k8s.io"
-	// GatekeeperConfigCRDName defines the CRD name for gatekeeper config objects.
-	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
-	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects.
-	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
-	// GatekeeperMutatorPodStatusCRDName defines the CRD name for gatekeeper MutatorPodStatus objects.
-	GatekeeperMutatorPodStatusCRDName = "mutatorpodstatuses.status.gatekeeper.sh"
-	// GatekeeperAssignCRDName defines the CRD name for gatekeeper assign objects.
-	GatekeeperAssignCRDName = "assign.mutations.gatekeeper.sh"
-	// GatekeeperAssignMetadataCRDName defines the CRD name for gatekeeper assign metadata objects.
-	GatekeeperAssignMetadataCRDName = "assignmetadata.mutations.gatekeeper.sh"
-	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects.
-	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
-	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects.
-	GatekeeperConstraintTemplatePodStatusCRDName = "constrainttemplatepodstatuses.status.gatekeeper.sh"
-	// GatekeeperModifySetCRDName defines the CRD name for gatekeeper modify set objects.
-	GatekeeperModifySetCRDName = "modifyset.mutations.gatekeeper.sh"
-	// GatekeeperProviderCRDName defines the CRD name for gatekeeper provider objects.
-	GatekeeperProviderCRDName = "providers.externaldata.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.
@@ -473,10 +429,6 @@ const (
 	// OperatingSystemManagerValidatingWebhookConfigurationName is the name of OSM's validating webhook configuration.
 	OperatingSystemManagerValidatingWebhookConfigurationName = "operating-system-manager.kubermatic.io"
 
-	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
-	// configuration.
-	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
-	GatekeeperMutatingWebhookConfigurationName   = "gatekeeper-mutating-webhook-configuration"
 	// InternalUserClusterAdminKubeconfigSecretName is the name of the secret containing an admin kubeconfig that can only be used from
 	// within the seed cluster.
 	InternalUserClusterAdminKubeconfigSecretName = "internal-admin-kubeconfig"

@@ -36,7 +36,6 @@ import (
 	csisnapshotter "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/csi-snapshotter"
 	dnatcontroller "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
-	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	kubestatemetrics "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesresources "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
@@ -63,7 +62,6 @@ import (
 	osmmigration "k8c.io/kubermatic/v3/pkg/util/migration"
 	"k8c.io/reconciler/pkg/reconciling"
 
-	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -117,13 +115,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		data.monitoringRequirements, data.loggingRequirements, data.monitoringReplicas, err = r.mlaReconcileData(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get MLA resource requirements: %w", err)
-		}
-	}
-
-	if r.opaIntegration {
-		data.gatekeeperCtrlRequirements, data.gatekeeperAuditRequirements, err = r.opaReconcileData(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get OPA resource requirements: %w", err)
 		}
 	}
 
@@ -216,19 +207,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	// Try to delete OPA integration deployment if its present
-	if !r.opaIntegration {
-		if err := r.ensureOPAIntegrationIsRemoved(ctx); err != nil {
-			return err
-		}
-	}
-
-	if r.opaIntegration && !r.opaEnableMutation {
-		if err := r.ensureOPAExperimentalMutationWebhookIsRemoved(ctx); err != nil {
-			return err
-		}
-	}
-
 	if !r.userClusterMLA.Logging {
 		if err := r.ensureLoggingAgentIsRemoved(ctx); err != nil {
 			return err
@@ -250,7 +228,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if r.opaIntegration || r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
+	if r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
 		if err := r.healthCheck(ctx); err != nil {
 			return err
 		}
@@ -331,16 +309,6 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, cloudInitSAReconciler, resources.CloudInitSettingsNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile cloud-init-getter in the namespace %s: %w", resources.CloudInitSettingsNamespace, err)
-	}
-
-	// OPA related resources
-	if r.opaIntegration {
-		creators = []reconciling.NamedServiceAccountReconcilerFactory{
-			gatekeeper.ServiceAccountReconciler(),
-		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", resources.GatekeeperNamespace, err)
-		}
 	}
 
 	if r.isKonnectivityEnabled {
@@ -440,16 +408,6 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		return fmt.Errorf("failed to reconcile cloud-init-getter role in the namespace %s: %w", resources.CloudInitSettingsNamespace, err)
 	}
 
-	// OPA relate resources
-	if r.opaIntegration {
-		creators = []reconciling.NamedRoleReconcilerFactory{
-			gatekeeper.RoleReconciler(),
-		}
-		if err := reconciling.ReconcileRoles(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", resources.GatekeeperNamespace, err)
-		}
-	}
-
 	return nil
 }
 
@@ -519,16 +477,6 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		return fmt.Errorf("failed to reconcile cloud-init-getter RoleBindings in the namespace: %s: %w", resources.CloudInitSettingsNamespace, err)
 	}
 
-	// OPA relate resources
-	if r.opaIntegration {
-		creators = []reconciling.NamedRoleBindingReconcilerFactory{
-			gatekeeper.RoleBindingReconciler(),
-		}
-		if err := reconciling.ReconcileRoleBindings(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile RoleBindings in namespace %s: %w", resources.GatekeeperNamespace, err)
-		}
-	}
-
 	return nil
 }
 
@@ -545,10 +493,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 
 	if data.kubernetesDashboardEnabled {
 		creators = append(creators, kubernetesdashboard.ClusterRoleReconciler())
-	}
-
-	if r.opaIntegration {
-		creators = append(creators, gatekeeper.ClusterRoleReconciler())
 	}
 
 	if r.userClusterMLA.Logging {
@@ -590,10 +534,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 
 	if data.kubernetesDashboardEnabled {
 		creators = append(creators, kubernetesdashboard.ClusterRoleBindingReconciler())
-	}
-
-	if r.opaIntegration {
-		creators = append(creators, gatekeeper.ClusterRoleBindingReconciler())
 	}
 
 	if r.userClusterMLA.Logging {
@@ -643,19 +583,6 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 			operatingsystemmanager.OperatingSystemProfileCRDReconciler())
 	}
 
-	if r.opaIntegration {
-		creators = append(creators,
-			gatekeeper.ConfigCRDReconciler(),
-			gatekeeper.ConstraintTemplateCRDReconciler(),
-			gatekeeper.ConstraintPodStatusCRDReconciler(),
-			gatekeeper.ConstraintTemplatePodStatusCRDReconciler(),
-			gatekeeper.MutatorPodStatusCRDReconciler(),
-			gatekeeper.AssignCRDReconciler(),
-			gatekeeper.AssignMetadataCRDReconciler(),
-			gatekeeper.ModifySetCRDReconciler(),
-			gatekeeper.ProviderCRDReconciler())
-	}
-
 	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %w", err)
 	}
@@ -666,9 +593,6 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	creators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		machinecontroller.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 		applications.ApplicationInstallationMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
-	}
-	if r.opaIntegration && r.opaEnableMutation {
-		creators = append(creators, gatekeeper.MutatingWebhookConfigurationReconciler(r.opaWebhookTimeout))
 	}
 	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
@@ -683,9 +607,6 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		applications.ApplicationInstallationValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
-	}
-	if r.opaIntegration {
-		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationReconciler(r.opaWebhookTimeout))
 	}
 
 	if data.ccmMigration && data.csiCloudConfig != nil {
@@ -730,16 +651,6 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 		}
 		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Services in namespace %s: %w", kubernetesdashboard.Namespace, err)
-		}
-	}
-
-	// OPA related resources
-	if r.opaIntegration {
-		creators := []reconciling.NamedServiceReconcilerFactory{
-			gatekeeper.ServiceReconciler(),
-		}
-		if err := reconciling.ReconcileServices(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Services in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
 
@@ -900,16 +811,6 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
-	// OPA relate resources
-	if r.opaIntegration {
-		creators = []reconciling.NamedSecretReconcilerFactory{
-			gatekeeper.SecretReconciler(),
-		}
-		if err := reconciling.ReconcileSecrets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.GatekeeperNamespace, err)
-		}
-	}
-
 	if r.userClusterMLA.Monitoring {
 		creators = []reconciling.NamedSecretReconcilerFactory{
 			mlamonitoringagent.ClientCertificateReconciler(data.mlaGatewayCACert),
@@ -985,10 +886,6 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 		creators = append(creators, kubernetesdashboard.NamespaceReconciler)
 	}
 
-	if r.opaIntegration {
-		creators = append(creators, gatekeeper.NamespaceReconciler)
-		creators = append(creators, gatekeeper.KubeSystemLabeler)
-	}
 	if r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
 		creators = append(creators, mla.NamespaceReconciler)
 	}
@@ -1035,18 +932,6 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
 	}
 
-	// OPA related resources
-	if r.opaIntegration {
-		creators := []reconciling.NamedDeploymentReconcilerFactory{
-			gatekeeper.ControllerDeploymentReconciler(r.opaEnableMutation, r.imageRewriter, data.gatekeeperCtrlRequirements),
-			gatekeeper.AuditDeploymentReconciler(r.imageRewriter, data.gatekeeperAuditRequirements),
-		}
-
-		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.GatekeeperNamespace, err)
-		}
-	}
-
 	if r.userClusterMLA.Monitoring {
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			mlamonitoringagent.DeploymentReconciler(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
@@ -1090,15 +975,6 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		coredns.PodDisruptionBudgetReconciler(),
 	}
-	// OPA relate resources
-	if r.opaIntegration {
-		creators = []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
-			gatekeeper.PodDisruptionBudgetReconciler(),
-		}
-		if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile PodDisruptionBudgets in namespace %s: %w", resources.GatekeeperNamespace, err)
-		}
-	}
 	if r.isKonnectivityEnabled {
 		creators = append(creators,
 			konnectivity.PodDisruptionBudgetReconciler(),
@@ -1121,8 +997,6 @@ type reconcileData struct {
 	ccmMigration                  bool
 	monitoringRequirements        *corev1.ResourceRequirements
 	loggingRequirements           *corev1.ResourceRequirements
-	gatekeeperCtrlRequirements    *corev1.ResourceRequirements
-	gatekeeperAuditRequirements   *corev1.ResourceRequirements
 	monitoringReplicas            *int32
 	ipFamily                      kubermaticv1.IPFamily
 	k8sServiceApiIP               *net.IP
@@ -1132,29 +1006,6 @@ type reconcileData struct {
 	kubernetesDashboardEnabled    bool
 	operatingSystemManagerEnabled bool
 	coreDNSReplicas               *int32
-}
-
-func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
-	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete() {
-		err := r.Client.Delete(ctx, resource)
-		if errC := r.cleanUpOPAHealthStatus(ctx, err); errC != nil {
-			return fmt.Errorf("failed to update OPA health status in cluster: %w", errC)
-		}
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure OPA integration is removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *reconciler) ensureOPAExperimentalMutationWebhookIsRemoved(ctx context.Context) error {
-	if err := r.Client.Delete(ctx, &admissionregistrationv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperMutatingWebhookConfigurationName,
-		}}); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to remove Mutation Webhook: %w", err)
-	}
-	return nil
 }
 
 func (r *reconciler) getCluster(ctx context.Context) (*kubermaticv1.Cluster, error) {
@@ -1176,18 +1027,9 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	}
 
 	var (
-		ctrlGatekeeperHealth  kubermaticv1.HealthStatus
-		auditGatekeeperHealth kubermaticv1.HealthStatus
-		monitoringHealth      kubermaticv1.HealthStatus
-		loggingHealth         kubermaticv1.HealthStatus
+		monitoringHealth kubermaticv1.HealthStatus
+		loggingHealth    kubermaticv1.HealthStatus
 	)
-
-	if r.opaIntegration {
-		ctrlGatekeeperHealth, auditGatekeeperHealth, err = r.getGatekeeperHealth(ctx)
-		if err != nil {
-			return err
-		}
-	}
 
 	if r.userClusterMLA.Monitoring {
 		monitoringHealth, err = r.getMLAMonitoringHealth(ctx)
@@ -1204,11 +1046,6 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	}
 
 	return kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
-		if r.opaIntegration {
-			c.Status.ExtendedHealth.GatekeeperController = &ctrlGatekeeperHealth
-			c.Status.ExtendedHealth.GatekeeperAudit = &auditGatekeeperHealth
-		}
-
 		if r.userClusterMLA.Monitoring {
 			c.Status.ExtendedHealth.Monitoring = &monitoringHealth
 		}
@@ -1217,27 +1054,6 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 			c.Status.ExtendedHealth.Logging = &loggingHealth
 		}
 	})
-}
-
-func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
-	ctlrHealth, err = resources.HealthyDeployment(ctx,
-		r.Client,
-		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperControllerDeploymentName},
-		1)
-	if err != nil {
-		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %s: %w", resources.GatekeeperControllerDeploymentName, err)
-	}
-
-	auditHealth, err = resources.HealthyDeployment(ctx,
-		r.Client,
-		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperAuditDeploymentName},
-		1)
-	if err != nil {
-		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %s: %w", resources.GatekeeperAuditDeploymentName, err)
-	}
-	return ctlrHealth, auditHealth, nil
 }
 
 func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (health kubermaticv1.HealthStatus, err error) {
@@ -1398,25 +1214,6 @@ func (r *reconciler) getEnvoyAgentConfigHash(ctx context.Context) (string, error
 	configHash := sha1.New()
 	configHash.Write([]byte(cm.Data[resources.EnvoyAgentConfigFileName]))
 	return fmt.Sprintf("%x", configHash.Sum(nil)), nil
-}
-
-func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) error {
-	cluster, err := r.getCluster(ctx)
-	if err != nil {
-		return fmt.Errorf("failed getting cluster for cluster health check: %w", err)
-	}
-
-	down := kubermaticv1.HealthStatusDown
-
-	// Ensure that health status in Cluster CR is removed
-	return kuberneteshelper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
-		c.Status.ExtendedHealth.GatekeeperAudit = nil
-		c.Status.ExtendedHealth.GatekeeperController = nil
-		if errC != nil && !apierrors.IsNotFound(errC) {
-			c.Status.ExtendedHealth.GatekeeperAudit = &down
-			c.Status.ExtendedHealth.GatekeeperController = &down
-		}
-	})
 }
 
 func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monitoring bool, errC error) error {

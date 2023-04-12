@@ -147,7 +147,6 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
 				"-application-cache", resources.ApplicationCacheMountPath,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
-				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
 			}, getNetworkArgs(data)...)
@@ -203,14 +202,6 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			if data.Cluster().Spec.UpdateWindow != nil && data.Cluster().Spec.UpdateWindow.Length != "" && data.Cluster().Spec.UpdateWindow.Start != "" {
 				args = append(args, "-update-window-start", data.Cluster().Spec.UpdateWindow.Start, "-update-window-length", data.Cluster().Spec.UpdateWindow.Length)
-			}
-
-			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds != nil {
-				args = append(args, "-opa-webhook-timeout", fmt.Sprint(*data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
-			}
-
-			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled {
-				args = append(args, fmt.Sprintf("-enable-mutation=%t", data.Cluster().Spec.OPAIntegration.ExperimentalEnableMutation))
 			}
 
 			if data.Cluster().Spec.Cloud.KubeVirt != nil {

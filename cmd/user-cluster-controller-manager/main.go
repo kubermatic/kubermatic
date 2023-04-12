@@ -86,9 +86,6 @@ type controllerRunOptions struct {
 	updateWindowLength                string
 	dnsClusterIP                      string
 	nodeLocalDNSCache                 bool
-	opaIntegration                    bool
-	opaEnableMutation                 bool
-	opaWebhookTimeout                 int
 	useSSHKeyAgent                    bool
 	networkPolicies                   bool
 	caBundleFile                      string
@@ -135,9 +132,6 @@ func main() {
 	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used as default subject for the admin cluster role binding")
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
-	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
-	flag.BoolVar(&runOp.opaEnableMutation, "enable-mutation", false, "Enable OPA experimental mutation in user cluster")
-	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 1, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.BoolVar(&runOp.networkPolicies, "enable-network-policies", false, "Enable deployment of network policies to kube-system namespace in user cluster")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
@@ -299,12 +293,9 @@ func main() {
 		mgr.AddReadyzCheck,
 		runOp.dnsClusterIP,
 		runOp.nodeLocalDNSCache,
-		runOp.opaIntegration,
-		runOp.opaEnableMutation,
 		versions,
 		runOp.useSSHKeyAgent,
 		runOp.networkPolicies,
-		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{
 			Logging:                           runOp.userClusterLogging,

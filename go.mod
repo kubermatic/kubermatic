@@ -41,8 +41,6 @@ require (
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.4
-	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230201235642-777dc99a6669 // v0.5.1
-	github.com/open-policy-agent/gatekeeper v0.0.0-20220504234711-ecf609290e2e // v3.8.1
 	github.com/packethost/packngo v0.29.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pmezard/go-difflib v1.0.0
@@ -109,17 +107,6 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.26.1
 )
 
-// overrides required for OPA constraints
-replace (
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.20.0
-	go.opentelemetry.io/otel => go.opentelemetry.io/otel v0.20.0
-	go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v0.20.0
-	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v0.20.0
-	go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v0.20.0
-	go.opentelemetry.io/proto/otlp => go.opentelemetry.io/proto/otlp v0.7.0
-)
-
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
 
 // make `go list` work
@@ -143,10 +130,10 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4 // indirect
 	github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
+	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/ajeddeloh/go-json v0.0.0-20230208213736-66dc7bb0d143 // indirect
 	github.com/ajeddeloh/yaml v0.0.0-20170912190910-6b94386aeefd // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
-	github.com/antlr/antlr4/runtime/Go/antlr v1.4.10 // indirect
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.23 // indirect
@@ -215,7 +202,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/cel-go v0.12.6 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -291,7 +277,6 @@ require (
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
-	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect

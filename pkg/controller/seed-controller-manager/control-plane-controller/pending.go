@@ -65,10 +65,6 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		}
 	}
 
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.KubermaticConstraintCleanupFinalizer) {
-		finalizers = append(finalizers, kubermaticv1.KubermaticConstraintCleanupFinalizer)
-	}
-
 	if len(finalizers) > 0 {
 		return r.AddFinalizers(ctx, cluster, finalizers...)
 	}

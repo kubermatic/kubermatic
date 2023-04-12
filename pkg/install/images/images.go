@@ -39,7 +39,6 @@ import (
 	seedoperatornodeportproxy "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
 	controlplanecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/control-plane-controller"
 	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring-controller"
-	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	nodelocaldns "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
@@ -291,7 +290,6 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	// deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
 	deploymentReconcilers = append(deploymentReconcilers, operatingsystemmanager.DeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
-	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
@@ -489,7 +487,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		metricsserver.ServingCertSecretName,
 		resources.UserSSHKeys,
 		resources.AdminKubeconfigSecretName,
-		resources.GatekeeperWebhookServerCertSecretName,
 		resources.OperatingSystemManagerKubeconfigSecretName,
 		resources.KonnectivityKubeconfigSecretName,
 		resources.KonnectivityProxyTLSSecretName,

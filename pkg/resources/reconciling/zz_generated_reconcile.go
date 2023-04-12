@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
@@ -546,43 +545,6 @@ func ReconcileApplicationInstallations(ctx context.Context, namedFactories []Nam
 
 		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &appskubermaticv1.ApplicationInstallation{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ApplicationInstallation %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// GatekeeperConstraintTemplateReconciler defines an interface to create/update ConstraintTemplates.
-type GatekeeperConstraintTemplateReconciler = func(existing *gatekeeperv1.ConstraintTemplate) (*gatekeeperv1.ConstraintTemplate, error)
-
-// NamedGatekeeperConstraintTemplateReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedGatekeeperConstraintTemplateReconcilerFactory = func() (name string, reconciler GatekeeperConstraintTemplateReconciler)
-
-// GatekeeperConstraintTemplateObjectWrapper adds a wrapper so the GatekeeperConstraintTemplateReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func GatekeeperConstraintTemplateObjectWrapper(reconciler GatekeeperConstraintTemplateReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*gatekeeperv1.ConstraintTemplate))
-		}
-		return reconciler(&gatekeeperv1.ConstraintTemplate{})
-	}
-}
-
-// ReconcileGatekeeperConstraintTemplates will create and update the GatekeeperConstraintTemplates coming from the passed GatekeeperConstraintTemplateReconciler slice.
-func ReconcileGatekeeperConstraintTemplates(ctx context.Context, namedFactories []NamedGatekeeperConstraintTemplateReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := GatekeeperConstraintTemplateObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &gatekeeperv1.ConstraintTemplate{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %w", namespace, name, err)
 		}
 	}
 
