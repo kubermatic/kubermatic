@@ -18,6 +18,7 @@
 - Support for configuring additional volumes for the UI ([#12107](https://github.com/kubermatic/kubermatic/pull/12107))
 - Update external-snapshotter validation webhook server to v6.0.1 ([#12120](https://github.com/kubermatic/kubermatic/pull/12120))
 - Use seed proxy configuration for seed deployed webhook ([#12070](https://github.com/kubermatic/kubermatic/pull/12070))
+- Installer: mla: --mla-skip-minio and --mla-skip-minio-lifecycle-mgr work properly now ([#12140](https://github.com/kubermatic/kubermatic/pull/12140))
 
 ### Updates
 
@@ -28,6 +29,7 @@
 ### Misc
 
 - Pull `kas-network-proxy/proxy-server:v0.0.35` and `kas-network-proxy/proxy-agent:v0.0.35` image from `registry.k8s.io` instead of legacy GCR registry (`eu.gcr.io/k8s-artifacts-prod`) ([#12067](https://github.com/kubermatic/kubermatic/pull/12067))
+- Disable PodSecurityPolicy in MLA Grafana deployment ([#12101](https://github.com/kubermatic/kubermatic/pull/12101))
 
 ### Dashboard & API
 

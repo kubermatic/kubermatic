@@ -20,6 +20,7 @@
 
 - Fix calculation of node CPU utilisation in Grafana dashboards for multi-core nodes ([#12080](https://github.com/kubermatic/kubermatic/pull/12080))
 - Use seed proxy configuration for seed deployed webhook ([#12070](https://github.com/kubermatic/kubermatic/pull/12070))
+- Fix metering CronJobs after KKP upgrades ([#12139](https://github.com/kubermatic/kubermatic/pull/12139))
 
 ### Updates
 
