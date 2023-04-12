@@ -119,8 +119,8 @@ logging)
 
 usercluster-mla)
   echodate "Running Kubermatic Installer for UserCluster MLA..."
-  # deploy iap only for hamburg seed
-  if [[ $VALUES_FILE == *"hamburg"* ]]; then
+  # deploy iap only when it is set in values file
+  if $(yq '.iap.deployments != null' ${VALUES_FILE}); then
     ./_build/kubermatic-installer deploy usercluster-mla \
       --config "$KUBERMATIC_CONFIG" \
       --helm-values "$VALUES_FILE" \
