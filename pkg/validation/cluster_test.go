@@ -683,6 +683,97 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 	}
 }
 
+func TestValidateCNIUpdate(t *testing.T) {
+	tests := []struct {
+		name    string
+		old     *kubermaticv1.CNIPluginSettings
+		new     *kubermaticv1.CNIPluginSettings
+		wantErr bool
+	}{
+		{
+			name: "allow minor version upgrade",
+			old: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.11.0",
+			},
+			new: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.12.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "allow minor version downgrade",
+			old: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.12.0",
+			},
+			new: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.11.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "allow patch version upgrade",
+			old: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.13.0",
+			},
+			new: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.13.1",
+			},
+			wantErr: false,
+		},
+		{
+			name: "allow patch version downgrade",
+			old: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.13.1",
+			},
+			new: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.13.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid version upgrade",
+			old: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.11.0",
+			},
+			new: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.13.0",
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid version downgrade",
+			old: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.14.0",
+			},
+			new: &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: "1.12.1",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			errs := validateCNIUpdate(test.new, test.old, nil, *semver.NewSemverOrDie("v2.22"))
+			if test.wantErr == (errs == nil) {
+				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)
+			}
+		})
+	}
+}
+
 func TestValidateGCPCloudSpec(t *testing.T) {
 	testCases := []struct {
 		name              string
