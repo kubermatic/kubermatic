@@ -260,7 +260,6 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 	if len(workerName) > 0 {
 		newCluster.Labels[workerlabel.LabelKey] = workerName
 	}
-	newCluster.Labels[kubermaticv1.ProjectIDLabelKey] = instance.Spec.ProjectID
 	newCluster.Labels[kubermaticv1.ClusterTemplateInstanceLabelKey] = instance.Name
 	newCluster.Spec = template.Spec
 

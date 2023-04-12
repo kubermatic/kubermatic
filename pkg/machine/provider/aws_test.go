@@ -90,7 +90,6 @@ func TestCompleteAWSProviderSpec(t *testing.T) {
 		WithDiskSize(awsDefaultDiskSize).
 		WithEBSVolumeEncrypted(awsDefaultEBSVolumeEncrypted).
 		WithTag("system/cluster", goodCluster.Name).
-		WithTag("system/project", goodCluster.Labels[kubermaticv1.ProjectIDLabelKey]).
 		WithTag("kubernetes.io/cluster/"+goodCluster.Name, "")
 
 	// good machine is the base machine, but with values from the cluster already applied

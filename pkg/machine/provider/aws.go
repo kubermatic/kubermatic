@@ -202,10 +202,6 @@ func CompleteAWSProviderSpec(config *aws.RawConfig, cluster *kubermaticv1.Cluste
 
 		config.Tags["system/cluster"] = cluster.Name
 		config.Tags["kubernetes.io/cluster/"+cluster.Name] = ""
-
-		if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
-			config.Tags["system/project"] = projectID
-		}
 	}
 
 	return config, nil

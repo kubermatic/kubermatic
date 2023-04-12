@@ -301,8 +301,7 @@ func createClusterObject(version semverlib.Version, cloudSpec kubermaticv1.Cloud
 			Name: "de-test-01",
 			UID:  types.UID("1234567890"),
 			Labels: map[string]string{
-				"my-label":                     "my-value",
-				kubermaticv1.ProjectIDLabelKey: "my-project",
+				"my-label": "my-value",
 			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
