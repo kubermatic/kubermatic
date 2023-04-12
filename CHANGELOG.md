@@ -8,6 +8,39 @@
 - [v2.21.5](#v2215)
 - [v2.21.6](#v2216)
 - [v2.21.7](#v2217)
+- [v2.21.8](#v2218)
+
+## [v2.21.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.8)
+
+### Action Required
+
+- [User Cluster MLA 0.2.6](https://github.com/kubermatic/mla/releases/tag/v0.2.6) has been released and requires manual updating by re-running [User Cluster MLA Installation](https://docs.kubermatic.com/kubermatic/v2.21/tutorials-howtos/monitoring-logging-alerting/user-cluster/admin-guide/#installation) ([#12105](https://github.com/kubermatic/kubermatic/pull/12105))
+
+### Bugfixes
+
+- Fix calculation of node CPU utilisation in Grafana dashboards for multi-core nodes ([#12080](https://github.com/kubermatic/kubermatic/pull/12080))
+- Use seed proxy configuration for seed deployed webhook ([#12070](https://github.com/kubermatic/kubermatic/pull/12070))
+- Fix metering CronJobs after KKP upgrades ([#12139](https://github.com/kubermatic/kubermatic/pull/12139))
+
+### Updates
+
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.3 ([#12132](https://github.com/kubermatic/kubermatic/pull/12132))
+- Update machine-controller to v1.54.6 ([#12146](https://github.com/kubermatic/kubermatic/pull/12146))
+
+### Misc
+
+- Pull `kas-network-proxy/proxy-server:v0.0.33` and `kas-network-proxy/proxy-agent:v0.0.33` image from `registry.k8s.io` instead of legacy GCR registry (`eu.gcr.io/k8s-artifacts-prod`) ([#12069](https://github.com/kubermatic/kubermatic/pull/12069))
+- Support for configuring additional volumes for the UI ([#12108](https://github.com/kubermatic/kubermatic/pull/12108))
+
+### Dashboard & API
+
+#### Bugfixes
+
+- Show correct health information for Machine Deployments with no replicas ([#5840](https://github.com/kubermatic/dashboard/pull/5840))
+
+#### New Feature
+
+- Configure Ingress Hostname cluster settings of OpenStack provider ([#5865](https://github.com/kubermatic/dashboard/pull/5865))
 
 ## [v2.21.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.7)
 
@@ -688,6 +721,21 @@ Note that in the current state, declarative working skips KKP authentication and
 - [v2.20.12](#v22012)
 - [v2.20.13](#v22013)
 - [v2.20.14](#v22014)
+- [v2.20.15](#v22015)
+
+## [v2.20.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.15)
+
+### Action Required
+
+- [User Cluster MLA 0.2.6](https://github.com/kubermatic/mla/releases/tag/v0.2.6) has been released and requires manual updating by re-running [User Cluster MLA Installation](https://docs.kubermatic.com/kubermatic/v2.20/tutorials-howtos/monitoring-logging-alerting/user-cluster/admin-guide/#installation) ([#12106](https://github.com/kubermatic/kubermatic/pull/12106))
+
+### Bugfixes
+
+- Fix calculation of node CPU utilisation in Grafana dashboards for multi-core nodes ([#12081](https://github.com/kubermatic/kubermatic/pull/12081))
+
+### Misc
+
+- Pull `kas-network-proxy/proxy-server:v0.0.33` and `kas-network-proxy/proxy-agent:v0.0.33` image from `registry.k8s.io` instead of legacy GCR registry (`eu.gcr.io/k8s-artifacts-prod`) ([#12135](https://github.com/kubermatic/kubermatic/pull/12135))
 
 ## [v2.20.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.14)
 
