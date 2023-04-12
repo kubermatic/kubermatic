@@ -130,7 +130,6 @@ appendTrap copy_junit EXIT
 timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -name-prefix="kkp-$BUILD_ID" \
   -kubeconfig=$KUBECONFIG \
-  -kubermatic-seed-cluster="$SEED_NAME" \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
   -reports-root="$ARTIFACTS/conformance" \
