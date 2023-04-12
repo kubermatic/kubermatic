@@ -45,8 +45,8 @@ type Reconciler struct {
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	logger := r.log.With("datacenter", request.Name)
-	logger.Debug("Reconciling")
+	log := r.log.With("datacenter", request.Name)
+	log.Debug("Reconciling")
 
 	datacenter := &kubermaticv1.Datacenter{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, datacenter); err != nil {
@@ -57,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get datacenter: %w", err)
 	}
 
-	if err := r.reconcile(ctx, logger, datacenter); err != nil {
+	if err := r.reconcile(ctx, log, datacenter); err != nil {
 		r.recorder.Event(datacenter, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile datacenter %s: %w", datacenter.Name, err)
 	}
@@ -79,7 +79,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, data
 		return fmt.Errorf("failed to count users clusters: %w", err)
 	}
 
-	return kuberneteshelper.UpdateDatacenterStatus(ctx, r.seedClient, datacenter, func(s *kubermaticv1.Datacenter) {
-		datacenter.Status.Clusters = len(clusters.Items)
+	return kuberneteshelper.UpdateDatacenterStatus(ctx, r.seedClient, datacenter, func(d *kubermaticv1.Datacenter) {
+		d.Status.Clusters = len(clusters.Items)
 	})
 }

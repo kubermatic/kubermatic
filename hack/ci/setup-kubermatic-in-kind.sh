@@ -190,31 +190,24 @@ echodate "Installing Seed..."
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE"
 
-SEED_MANIFEST="$(mktemp)"
-SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
-
-cp hack/ci/testdata/seed.yaml $SEED_MANIFEST
-
-sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
-sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
-sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
+DATACENTERS_MANIFEST="$(mktemp)"
+cp hack/ci/testdata/datacenters.yaml $DATACENTERS_MANIFEST
 
 if [[ ! -z "${NUTANIX_E2E_ENDPOINT:-}" ]]; then
-  sed -i "s/__NUTANIX_ENDPOINT__/$NUTANIX_E2E_ENDPOINT/g" $SEED_MANIFEST
+  sed -i "s/__NUTANIX_ENDPOINT__/$NUTANIX_E2E_ENDPOINT/g" $DATACENTERS_MANIFEST
 fi
 
 if [[ ! -z "${ANEXIA_LOCATION_ID:-}" ]]; then
-  sed -i "s/__ANEXIA_LOCATION_ID__/$ANEXIA_LOCATION_ID/g" $SEED_MANIFEST
+  sed -i "s/__ANEXIA_LOCATION_ID__/$ANEXIA_LOCATION_ID/g" $DATACENTERS_MANIFEST
 fi
 
 if [[ ! -z "${VCD_URL:-}" ]]; then
-  sed -i "s#__VCD_URL__#$VCD_URL#g" $SEED_MANIFEST
+  sed -i "s#__VCD_URL__#$VCD_URL#g" $DATACENTERS_MANIFEST
 fi
 
 kubectl apply --filename hack/ci/testdata/metering_s3_creds.yaml
 
-retry 8 kubectl apply --filename $SEED_MANIFEST
-retry 8 check_seed_ready kubermatic "$SEED_NAME"
+retry 8 kubectl apply --filename $DATACENTERS_MANIFEST
 echodate "Finished installing Seed"
 
 sleep 5

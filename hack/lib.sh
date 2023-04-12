@@ -358,16 +358,6 @@ check_all_deployments_ready() {
   return 0
 }
 
-check_seed_ready() {
-  status="$(kubectl --namespace "$1" get seed "$2" --output json | jq -r '.status.conditions.ResourcesReconciled.status')"
-  if [ "$status" != "True" ]; then
-    echodate "Seed does not yet have ResourcesReconciled=True condition."
-    return 1
-  fi
-
-  return 0
-}
-
 cleanup_kubermatic_clusters_in_kind() {
   # Tolerate errors and just continue
   set +e

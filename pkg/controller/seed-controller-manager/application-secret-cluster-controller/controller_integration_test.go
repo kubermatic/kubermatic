@@ -449,6 +449,10 @@ func createCluster(t *testing.T, ctx context.Context, client ctrlruntimeclient.C
 	cluster := generator.GenCluster(clusterName, clusterName, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
 		cluster.Namespace = kubermaticNS.Name
 		if workerLabel != "" {
+			if cluster.Labels == nil {
+				cluster.Labels = map[string]string{}
+			}
+
 			cluster.Labels[workerlabel.LabelKey] = workerLabel
 		}
 

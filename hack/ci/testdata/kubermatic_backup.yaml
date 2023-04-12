@@ -31,5 +31,14 @@ spec:
     # from KKP 2, so to keep usercluster tests working in KKP 3 we simply continue
     # to use that domain name.
     baseDomain: 'kubermatic.__KUBERMATIC_DOMAIN__'
+    etcdBackupRestore:
+      defaultDestination: minio
+      destinations:
+        minio:
+          bucketName: kkpbackupe2e
+          endpoint: minio.minio.svc.cluster.local:9000
+          credentials:
+            namespace: kube-system
+            name: backup-s3
   featureGates:
     HeadlessInstallation: true

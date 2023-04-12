@@ -42,7 +42,6 @@ import (
 	kubernetesresources "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
-	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/machine"
 	machinecontroller "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/mla"
@@ -703,7 +702,6 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		applications.ApplicationInstallationValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
-		machine.ValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 	}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationReconciler(r.opaWebhookTimeout))

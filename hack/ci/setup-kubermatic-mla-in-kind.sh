@@ -143,17 +143,7 @@ echodate "Finished installing Kubermatic"
 
 TEST_NAME="Setup KKP Seed"
 echodate "Installing Seed..."
-SEED_MANIFEST="$(mktemp)"
-SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
-
-cp hack/ci/testdata/seed.yaml $SEED_MANIFEST
-
-sed -i "s/__SEED_NAME__/$SEED_NAME/g" $SEED_MANIFEST
-sed -i "s/__BUILD_ID__/$BUILD_ID/g" $SEED_MANIFEST
-sed -i "s/__KUBECONFIG__/$SEED_KUBECONFIG/g" $SEED_MANIFEST
-
-retry 8 kubectl apply --filename $SEED_MANIFEST
-retry 8 check_seed_ready kubermatic "$SEED_NAME"
+retry 8 kubectl apply --filename hack/ci/testdata/datacenters.yaml
 echodate "Finished installing Seed"
 
 sleep 5
