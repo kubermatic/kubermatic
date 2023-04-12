@@ -26,6 +26,7 @@
 
 - Update Anexia CCM (cloud-controller-manager) to version 1.5.3 ([#12132](https://github.com/kubermatic/kubermatic/pull/12132))
 - Update machine-controller to v1.54.6 ([#12146](https://github.com/kubermatic/kubermatic/pull/12146))
+- Add support for Kubernetes 1.24.13 ([#12167](https://github.com/kubermatic/kubermatic/pull/12167))
 
 ### Misc
 

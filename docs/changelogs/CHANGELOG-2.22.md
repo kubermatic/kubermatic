@@ -25,6 +25,7 @@
 - Update Go version to 1.19.8 ([#12143](https://github.com/kubermatic/kubermatic/pull/12143))
 - Update Anexia CCM (cloud-controller-manager) to version 1.5.3 ([#12133](https://github.com/kubermatic/kubermatic/pull/12133))
 - Update OSM to 1.2.2 and machine-controller to 1.56.2 ([#12157](https://github.com/kubermatic/kubermatic/pull/12157))
+- Add support for Kubernetes 1.24.13, 1.25.9 and 1.26.4 ([#12166](https://github.com/kubermatic/kubermatic/pull/12166))
 
 ### Misc
 
