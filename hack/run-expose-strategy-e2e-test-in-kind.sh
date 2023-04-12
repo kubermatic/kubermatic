@@ -29,10 +29,15 @@ source hack/lib.sh
 # TODO Find another solution in case nip.io does not result to be
 # available enough for our own CI usage.
 function patch_kubermatic_domain {
-  local ip="$(kubectl get service nodeport-proxy -n kubermatic -otemplate --template='{{ .spec.clusterIP }}')"
+  local ip="$(kubectl get service nodeport-proxy -n kubermatic -o template --template='{{ .spec.clusterIP }}')"
   [ -z "${ip}" ] && return 1
-  kubectl patch kubermaticconfigurations.kubermatic.k8c.io -n kubermatic e2e \
-    --type="json" -p='[{"op": "replace", "path": "/spec/ingress/domain", "value": "'${ip}.nip.io'"}]'
+
+  echodate "Replacing ingress domain with ${ip}.nip.io ..."
+  kubectl patch kubermaticconfigurations -n kubermatic e2e \
+    --type="json" -p='[
+      {"op": "replace", "path": "/spec/ingress/domain", "value": "'${ip}.nip.io'"},
+      {"op": "replace", "path": "/spec/userCluster/baseDomain", "value": "'kubermatic.${ip}.nip.io'"}
+    ]'
 }
 
 DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
@@ -134,6 +139,8 @@ spec:
   ingress:
     domain: 127.0.0.1.nip.io
     disable: true
+  userCluster:
+    baseDomain: kubermatic.127.0.0.1.nip.io
   featureGates:
     HeadlessInstallation: true
 EOF
@@ -167,42 +174,20 @@ retry 10 check_all_deployments_ready kubermatic
 echodate "Finished installing Kubermatic"
 
 echodate "Installing Seed..."
-SEED_MANIFEST="${TMPDIR}/seed.yaml"
+DATACENTER_MANIFEST="${TMPDIR}/datacenter.yaml"
 
-SEED_KUBECONFIG="$(cat ${KUBECONFIG} | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
-
-cat << EOF > ${SEED_MANIFEST}
-kind: Secret
-apiVersion: v1
-metadata:
-  name: "${SEED_NAME}-kubeconfig"
-  namespace: kubermatic
-data:
-  kubeconfig: "${SEED_KUBECONFIG}"
-
----
-kind: Seed
+cat << EOF > ${DATACENTER_MANIFEST}
+kind: Datacenter
 apiVersion: kubermatic.k8c.io/v1
 metadata:
-  name: "${SEED_NAME}"
-  namespace: kubermatic
+  name: byo-kubernetes
 spec:
-  country: Germany
-  location: Hamburg
-  kubeconfig:
-    name: "${SEED_NAME}-kubeconfig"
-    fieldPath: kubeconfig
-  datacenters:
-    byo-kubernetes:
-      location: Frankfurt
-      country: DE
-      spec:
-        bringyourown: {}
-  exposeStrategy: Tunneling
+  provider:
+    providerName: bringyourown
+    bringyourown: {}
 EOF
 
-retry 3 kubectl apply --filename $SEED_MANIFEST
-retry 5 check_seed_ready kubermatic "$SEED_NAME"
+retry 3 kubectl apply --filename $DATACENTER_MANIFEST
 echodate "Finished installing Seed"
 
 sleep 5

@@ -155,10 +155,6 @@ if [ -n "${VERSIONS:-}" ]; then
   extraArgs="$extraArgs -versions=$VERSIONS"
 fi
 
-if [ -n "${SEED_NAME:-}" ]; then
-  extraArgs="$extraArgs -kubermatic-seed-cluster=$SEED_NAME"
-fi
-
 # allow to transport additional env variables into the container
 # to not reveal credentials as CLI flags; set a dummy value to
 # keep the `docker run` command easier to write
