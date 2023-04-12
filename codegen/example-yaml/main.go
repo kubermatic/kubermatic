@@ -257,10 +257,7 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 			Proxy:        &kubermaticv1.KubermaticProxyConfiguration{},
 			API:          &kubermaticv1.KubermaticAPIConfiguration{},
 			ControllerManager: &kubermaticv1.KubermaticControllerManagerConfiguration{
-				BackupStoreContainer:   defaulting.DefaultBackupStoreContainer,
-				BackupCleanupContainer: defaulting.DefaultBackupCleanupContainer,
-				BackupDeleteContainer:  defaulting.DefaultNewBackupDeleteContainer,
-				ProjectsMigrator:       &kubermaticv1.KubermaticProjectsMigratorConfiguration{},
+				ProjectsMigrator: &kubermaticv1.KubermaticProjectsMigratorConfiguration{},
 			},
 			UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
 				MachineController:      &kubermaticv1.MachineControllerConfiguration{},

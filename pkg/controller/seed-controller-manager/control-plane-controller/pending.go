@@ -32,16 +32,6 @@ const (
 )
 
 func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) (*reconcile.Result, error) {
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer) {
-		res, err := r.AddFinalizers(ctx, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
-		if err != nil {
-			return nil, err
-		}
-		if !res.IsZero() {
-			return res, nil
-		}
-	}
-
 	// Apply etcdLauncher flag
 	if err := r.ensureEtcdLauncherFeatureFlag(ctx, cluster); err != nil {
 		return nil, err
