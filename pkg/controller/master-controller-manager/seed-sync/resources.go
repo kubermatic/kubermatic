@@ -76,8 +76,6 @@ func configReconciler(config *kubermaticv1.KubermaticConfiguration) kkpreconcili
 			c.Labels[ManagedByLabel] = ControllerName
 
 			c.Annotations = config.Annotations
-			c.Finalizers = nil
-
 			c.Spec = config.Spec
 
 			return c, nil
