@@ -1730,10 +1730,8 @@ honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.1-2019.2.3/go.mod h1:a3bituU0lyd329TUQxRnasdCoJDkEUEAqEt0JzvZhAg=
 honnef.co/go/tools v0.0.1-2020.1.3/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
 honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
-k8c.io/api/v3 v3.0.0-20230412191015-4c0b6c6a89ca h1:FyhIJxD/9FJrlvegGpM5gViaPjhEZBITFba/lR6U0QQ=
-k8c.io/api/v3 v3.0.0-20230412191015-4c0b6c6a89ca/go.mod h1:hJr4TAByAq2FnWPi5e21cJ1+c7S/dj18OrABmnMdD0E=
-k8c.io/kubeone v1.6.0-rc.2.0.20230530130148-0536063ab064 h1:8zsRDtmiv8SOG1nwWQ+cRs8eaRvvyTN1ZhfkPqvas3Q=
-k8c.io/kubeone v1.6.0-rc.2.0.20230530130148-0536063ab064/go.mod h1:9k1qwGwRbjzqFusiQuinNhFw0gXrxbIcF1coVsCxhI8=
+k8c.io/api/v3 v3.0.0-20230614091820-bbb3aca35b70 h1:FRqKUKZzDCbGJn/WfcVVTLFAHhoH0L1XWv8nDh+eOQk=
+k8c.io/api/v3 v3.0.0-20230614091820-bbb3aca35b70/go.mod h1:hJr4TAByAq2FnWPi5e21cJ1+c7S/dj18OrABmnMdD0E=
 k8c.io/operating-system-manager v1.3.0 h1:YU5DnFgDLnuHUqGo7un7wlfgY+6aWH5FAJkJwl3s3T8=
 k8c.io/operating-system-manager v1.3.0/go.mod h1:kKDzXLWrC5BLpDbgXQFRpTVa5Fjru2S3ylxX5hZMRKA=
 k8c.io/reconciler v0.3.1 h1:fZ8gFvrDxjsJ6jdKogZVX9Er980EDUYnVPuOna32d0k=
@@ -1785,8 +1783,8 @@ k8s.io/test-infra v0.0.0-20230224035733-afa88634622b h1:iU2683z58+FjRzCwNioKrfng
 k8s.io/test-infra v0.0.0-20230224035733-afa88634622b/go.mod h1:a6zj8l2OE8pfLoWWUP4ypEtM32nDOIlNhaUyfjaUTBY=
 k8s.io/utils v0.0.0-20210802155522-efc7438f0176/go.mod h1:jPW/WVKK9YHAvNhRxK0md/EJ228hCsBRufyofKtW8HA=
 k8s.io/utils v0.0.0-20221107191617-1a15be271d1d/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
-k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 h1:kmDqav+P+/5e1i9tFfHq1qcF3sOrDp+YEkVDAHu7Jwk=
-k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
+k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 h1:qY1Ad8PODbnymg2pRbkyMT/ylpTrCM8P2RJ0yroCyIk=
+k8s.io/utils v0.0.0-20230406110748-d93618cff8a2/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 kubevirt.io/api v0.58.1 h1:+b9fydWSMD4SCOr1VHTEgXOmy5JzYU62ddSuQSWggys=
 kubevirt.io/api v0.58.1/go.mod h1:U0CQlZR0JoJCaC+Va0wz4dMOtYDdVywJ98OT1KmOkzI=
 kubevirt.io/containerized-data-importer-api v1.55.2 h1:AzYnKIUFkKwO6c0uCQZYlAIxfzbiPkJXP29hFhauaQ8=
