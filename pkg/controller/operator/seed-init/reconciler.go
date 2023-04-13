@@ -206,6 +206,11 @@ func (r *Reconciler) createOnSeed(ctx context.Context, obj ctrlruntimeclient.Obj
 	objCopy.SetUID("")
 	objCopy.SetGeneration(0)
 
+	// Never duplicate finalizers, as we cannot ensure that a finalizer on an object gets
+	// actually processed on a different cluster, as the component that owns the finalizer
+	// might only run on the master cluster.
+	objCopy.SetFinalizers(nil)
+
 	err := client.Create(ctx, objCopy)
 
 	// An AlreadyExists error can occur on shared master/seed systems.
