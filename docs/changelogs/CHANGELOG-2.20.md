@@ -15,6 +15,21 @@
 - [v2.20.12](#v22012)
 - [v2.20.13](#v22013)
 - [v2.20.14](#v22014)
+- [v2.20.15](#v22015)
+
+## [v2.20.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.15)
+
+### Action Required
+
+- [User Cluster MLA 0.2.6](https://github.com/kubermatic/mla/releases/tag/v0.2.6) has been released and requires manual updating by re-running [User Cluster MLA Installation](https://docs.kubermatic.com/kubermatic/v2.20/tutorials-howtos/monitoring-logging-alerting/user-cluster/admin-guide/#installation) ([#12106](https://github.com/kubermatic/kubermatic/pull/12106))
+
+### Bugfixes
+
+- Fix calculation of node CPU utilisation in Grafana dashboards for multi-core nodes ([#12081](https://github.com/kubermatic/kubermatic/pull/12081))
+
+### Misc
+
+- Pull `kas-network-proxy/proxy-server:v0.0.33` and `kas-network-proxy/proxy-agent:v0.0.33` image from `registry.k8s.io` instead of legacy GCR registry (`eu.gcr.io/k8s-artifacts-prod`) ([#12135](https://github.com/kubermatic/kubermatic/pull/12135))
 
 ## [v2.20.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.14)
 
