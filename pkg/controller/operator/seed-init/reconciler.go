@@ -110,9 +110,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
-	// Deleting the KubermaticConfiguration inside a Seed does not trigger nor require any finalizer cleanup
-	config.Finalizers = nil
-
 	if err := r.createInitialCRDs(ctx, seed, seedClient, log); err != nil {
 		return fmt.Errorf("failed to create CRDs: %w", err)
 	}
@@ -208,6 +205,11 @@ func (r *Reconciler) createOnSeed(ctx context.Context, obj ctrlruntimeclient.Obj
 	objCopy.SetResourceVersion("")
 	objCopy.SetUID("")
 	objCopy.SetGeneration(0)
+
+	// Never duplicate finalizers, as we cannot ensure that a finalizer on an object gets
+	// actually processed on a different cluster, as the component that owns the finalizer
+	// might only run on the master cluster.
+	objCopy.SetFinalizers(nil)
 
 	err := client.Create(ctx, objCopy)
 
