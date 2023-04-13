@@ -18,6 +18,8 @@ package seedsync
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -66,21 +68,28 @@ func seedReconciler(seed *kubermaticv1.Seed) kkpreconciling.NamedSeedReconcilerF
 	}
 }
 
-func configReconciler(config *kubermaticv1.KubermaticConfiguration) kkpreconciling.NamedKubermaticConfigurationReconcilerFactory {
+func configReconciler(configOnMaster *kubermaticv1.KubermaticConfiguration) kkpreconciling.NamedKubermaticConfigurationReconcilerFactory {
 	return func() (string, kkpreconciling.KubermaticConfigurationReconciler) {
-		return config.Name, func(c *kubermaticv1.KubermaticConfiguration) (*kubermaticv1.KubermaticConfiguration, error) {
-			c.Labels = config.Labels
-			if c.Labels == nil {
-				c.Labels = make(map[string]string)
+		return configOnMaster.Name, func(configOnSeed *kubermaticv1.KubermaticConfiguration) (*kubermaticv1.KubermaticConfiguration, error) {
+			configOnSeed.Labels = configOnMaster.Labels
+			if configOnSeed.Labels == nil {
+				configOnSeed.Labels = make(map[string]string)
 			}
-			c.Labels[ManagedByLabel] = ControllerName
+			configOnSeed.Labels[ManagedByLabel] = ControllerName
 
-			c.Annotations = config.Annotations
-			c.Finalizers = nil
+			configOnSeed.Annotations = configOnMaster.Annotations
+			configOnSeed.Spec = configOnMaster.Spec
 
-			c.Spec = config.Spec
+			// Fix KKP 2.22 finalizers: In previous KKP releases we accidentally synchronized the
+			// cleanup finalizer down from the master to the seed clusters, but never cared to
+			// clean it up upon deletion, making the seed being stuck.
+			// This snippet of code will remove a stray cleanup finalizer, but ONLY if it's actually
+			// a copy of the config (i.e. a dedicated seed cluster, not a shared master/seed system).
+			if configOnMaster.UID != configOnSeed.UID {
+				kubernetes.RemoveFinalizer(configOnSeed, common.CleanupFinalizer)
+			}
 
-			return c, nil
+			return configOnSeed, nil
 		}
 	}
 }
