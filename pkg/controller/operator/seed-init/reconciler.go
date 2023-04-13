@@ -110,9 +110,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
-	// Deleting the KubermaticConfiguration inside a Seed does not trigger nor require any finalizer cleanup
-	config.Finalizers = nil
-
 	if err := r.createInitialCRDs(ctx, seed, seedClient, log); err != nil {
 		return fmt.Errorf("failed to create CRDs: %w", err)
 	}
