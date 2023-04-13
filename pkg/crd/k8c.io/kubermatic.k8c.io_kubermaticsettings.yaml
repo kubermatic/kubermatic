@@ -96,6 +96,9 @@ spec:
                           x-kubernetes-int-or-string: true
                       type: object
                   type: object
+                disableChangelogPopup:
+                  description: DisableChangelogPopup disables the changelog popup in KKP dashboard.
+                  type: boolean
                 displayAPIDocs:
                   description: DisplayDemoInfo controls whether a a link to the KKP API documentation is shown in the footer.
                   type: boolean
