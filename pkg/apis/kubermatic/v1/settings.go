@@ -97,6 +97,9 @@ type SettingSpec struct {
 	// +optional
 	MachineDeploymentOptions MachineDeploymentOptions `json:"machineDeploymentOptions,omitempty"`
 
+	// DisableChangelogPopup disables the changelog popup in KKP dashboard.
+	DisableChangelogPopup bool `json:"disableChangelogPopup,omitempty"`
+
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
 
