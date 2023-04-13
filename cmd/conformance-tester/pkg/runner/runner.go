@@ -600,13 +600,14 @@ func (r *TestRunner) testCluster(
 	}
 
 	// Check telemetry is working
-	if err := util.JUnitWrapper("[KKP] Test telemetry", report, func() error {
-		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
-			return tests.TestTelemetry(ctx, log, r.opts)
-		})
-	}); err != nil {
-		log.Errorf("failed to verify telemetry is working: %v", err)
-	}
+	// if err := util.JUnitWrapper("[KKP] Test telemetry", report, func() error {
+	// 	return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
+	// 		return tests.TestTelemetry(ctx, log, r.opts)
+	// 	})
+	// }); err != nil {
+	// 	log.Errorf("failed to verify telemetry is working: %v", err)
+	// }
+	log.Error("Telemetry tests are disabled until we figure out where to put them in KKP 3.")
 
 	log.Info("All tests completed.")
 
