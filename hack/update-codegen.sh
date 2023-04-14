@@ -68,7 +68,7 @@ locationMap='{
   "presets.kubermatic.k8c.io": "master,seed",
   "projects.kubermatic.k8c.io": "master,seed",
   "resourcequotas.kubermatic.k8c.io": "master,seed",
-  "rulegroups.kubermatic.k8c.io": "master",
+  "rulegroups.kubermatic.k8c.io": "master,seed",
   "seeds.kubermatic.k8c.io": "master,seed",
   "userprojectbindings.kubermatic.k8c.io": "master,seed",
   "usersshkeys.kubermatic.k8c.io": "master,seed",
