@@ -40,9 +40,6 @@ resourceTypes:
   - { package: k8c.io/api/v3/pkg/apis/apps.kubermatic/v1, resourceName: ApplicationDefinition }
   - { package: k8c.io/api/v3/pkg/apis/apps.kubermatic/v1, resourceName: ApplicationInstallation }
 
-  # gatekeeper/v1
-  - { package: github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1, resourceName: ConstraintTemplate, importAlias: gatekeeperv1, apiVersionPrefix: Gatekeeper }
-
   # osm/v1alpha1
   - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemProfile }
   - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemConfig }

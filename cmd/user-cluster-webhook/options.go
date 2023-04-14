@@ -34,7 +34,6 @@ type appOptions struct {
 	pprof       pprof.Opts
 	log         kubermaticlog.Options
 	caBundle    *certificates.CABundle
-	projectID   string
 }
 
 func initApplicationOptions() (appOptions, error) {
@@ -51,11 +50,8 @@ func initApplicationOptions() (appOptions, error) {
 	c.log.AddFlags(flag.CommandLine)
 
 	var caBundleFile string
-	var projectID string
 
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
-	flag.StringVar(&projectID, "project-id", "", "Project ID in which cluster the webhook is running in")
-
 	flag.Parse()
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
@@ -63,7 +59,6 @@ func initApplicationOptions() (appOptions, error) {
 		return c, fmt.Errorf("invalid CA bundle file (%q): %w", caBundleFile, err)
 	}
 	c.caBundle = caBundle
-	c.projectID = projectID
 
 	if err := c.userWebhook.Validate(); err != nil {
 		return c, fmt.Errorf("invalid user cluster webhook configuration: %w", err)

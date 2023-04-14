@@ -76,8 +76,7 @@ func TestCompleteOpenStackProviderSpec(t *testing.T) {
 	defaultMachine := NewOpenStackConfig().
 		WithTrustDevicePath(false).
 		WithTag("kubernetes-cluster", goodCluster.Name).
-		WithTag("system-cluster", goodCluster.Name).
-		WithTag("system-project", goodCluster.Labels[kubermaticv1.ProjectIDLabelKey])
+		WithTag("system-cluster", goodCluster.Name)
 
 	testcases := []testcase[openstack.RawConfig]{
 		&openStackTestcase{

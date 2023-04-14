@@ -109,10 +109,6 @@ func CompleteNutanixProviderSpec(config *nutanix.RawConfig, cluster *kubermaticv
 		}
 
 		config.Categories[nutanixprovider.ClusterCategoryName] = nutanixprovider.CategoryValue(cluster.Name)
-
-		if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
-			config.Categories[nutanixprovider.ProjectCategoryName] = projectID
-		}
 	}
 
 	if datacenter != nil {

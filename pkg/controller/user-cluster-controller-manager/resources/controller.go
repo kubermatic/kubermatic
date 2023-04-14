@@ -87,12 +87,9 @@ func Add(
 	registerReconciledCheck func(name string, check healthz.Checker) error,
 	dnsClusterIP string,
 	nodeLocalDNSCache bool,
-	opaIntegration bool,
-	opaEnableMutation bool,
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
 	networkPolices bool,
-	opaWebhookTimeout int,
 	caBundle resources.CABundle,
 	userClusterMLA UserClusterMLA,
 	clusterName string,
@@ -117,9 +114,6 @@ func Add(
 		log:                       log,
 		dnsClusterIP:              dnsClusterIP,
 		nodeLocalDNSCache:         nodeLocalDNSCache,
-		opaIntegration:            opaIntegration,
-		opaEnableMutation:         opaEnableMutation,
-		opaWebhookTimeout:         opaWebhookTimeout,
 		userSSHKeyAgent:           userSSHKeyAgent,
 		networkPolices:            networkPolices,
 		versions:                  versions,
@@ -239,27 +233,6 @@ func Add(
 		}
 	}
 
-	// Watch cluster if user cluster OPA is enabled so that controller can get resource requirements for user cluster OPA components.
-	if r.opaIntegration {
-		seedWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache in seed cluster watch for cluster: %w", err)
-		}
-		clusterPredicate := predicate.Funcs{
-			// For Update event, only trigger reconciliation when Resource Requirements change.
-			UpdateFunc: func(event event.UpdateEvent) bool {
-				oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
-				newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
-				oldResourceRequirements := getClusterOPAResourceRequirements(oldCluster)
-				newResourceRequirements := getClusterOPAResourceRequirements(newCluster)
-				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
-			},
-		}
-		if err := c.Watch(seedWatch, mapFn, clusterPredicate); err != nil {
-			return fmt.Errorf("failed to watch cluster in seed: %w", err)
-		}
-	}
-
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
 	return registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func(_ *http.Request) error {
 		r.rLock.Lock()
@@ -288,9 +261,6 @@ type reconciler struct {
 	tunnelingAgentIP          net.IP
 	dnsClusterIP              string
 	nodeLocalDNSCache         bool
-	opaIntegration            bool
-	opaEnableMutation         bool
-	opaWebhookTimeout         int
 	userSSHKeyAgent           bool
 	networkPolices            bool
 	versions                  kubermatic.Versions
@@ -444,16 +414,6 @@ func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespa
 	return r.Update(ctx, &serviceAccount)
 }
 
-func (r *reconciler) opaReconcileData(ctx context.Context) (controller, audit *corev1.ResourceRequirements, err error) {
-	cluster := &kubermaticv1.Cluster{}
-	if err = r.seedClient.Get(ctx, types.NamespacedName{
-		Name: r.clusterName,
-	}, cluster); err != nil {
-		return nil, nil, fmt.Errorf("failed to get cluster: %w", err)
-	}
-	return cluster.Spec.OPAIntegration.ControllerResources, cluster.Spec.OPAIntegration.AuditResources, nil
-}
-
 func getClusterMLAResourceRequirements(cluster *kubermaticv1.Cluster) map[string]*corev1.ResourceRequirements {
 	if cluster.Spec.MLA == nil {
 		return nil
@@ -462,16 +422,5 @@ func getClusterMLAResourceRequirements(cluster *kubermaticv1.Cluster) map[string
 	return map[string]*corev1.ResourceRequirements{
 		"monitoring": cluster.Spec.MLA.MonitoringResources,
 		"logging":    cluster.Spec.MLA.LoggingResources,
-	}
-}
-
-func getClusterOPAResourceRequirements(cluster *kubermaticv1.Cluster) map[string]*corev1.ResourceRequirements {
-	if cluster.Spec.OPAIntegration == nil {
-		return nil
-	}
-
-	return map[string]*corev1.ResourceRequirements{
-		"controller": cluster.Spec.OPAIntegration.ControllerResources,
-		"audit":      cluster.Spec.OPAIntegration.AuditResources,
 	}
 }

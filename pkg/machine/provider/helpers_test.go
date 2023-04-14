@@ -31,9 +31,6 @@ func genCluster(cloudSpec kubermaticv1.CloudSpec) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: "testproject",
-			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: cloudSpec,

@@ -19,7 +19,6 @@ package validation
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -37,12 +36,6 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 
 	if errs := ValidateKubermaticVersioningConfiguration(spec.Versions, field.NewPath("spec", "versions")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
-	}
-
-	if spec.UserCluster != nil {
-		if errs := ValidateEtcdBackupRestoreConfiguration(spec.UserCluster.EtcdBackupRestore, field.NewPath("spec", "userCluster", "etcdBackupRestore")); len(errs) > 0 {
-			allErrs = append(allErrs, errs...)
-		}
 	}
 
 	return allErrs
@@ -146,35 +139,6 @@ func validateAutomaticUpdateRulesOnlyPointToValidVersions(config kubermaticv1.Ku
 		if !found {
 			err := errors.New("this update rule points to a version which is not configured as allowed or for which another update rule also exists")
 			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("updates", is), update, err.Error()))
-		}
-	}
-
-	return allErrs
-}
-
-// thrown over from the seed webhook
-
-var resourceNameValidator = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
-
-func ValidateEtcdBackupRestoreConfiguration(config *kubermaticv1.EtcdBackupRestore, parentFieldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-	if config == nil {
-		return allErrs
-	}
-
-	if len(config.Destinations) == 0 {
-		allErrs = append(allErrs, field.Required(parentFieldPath.Child("destinations"), "must define at least one backup destination"))
-	}
-
-	if config.DefaultDestination != "" {
-		if _, exists := config.Destinations[config.DefaultDestination]; !exists {
-			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("defaultDestination"), config.DefaultDestination, "default destination does not exist"))
-		}
-	}
-
-	for name := range config.Destinations {
-		if !resourceNameValidator.MatchString(name) {
-			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("destinations"), name, fmt.Sprintf("destination name is invalid, must match %s", resourceNameValidator.String())))
 		}
 	}
 

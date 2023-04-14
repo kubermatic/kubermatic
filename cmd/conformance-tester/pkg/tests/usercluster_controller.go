@@ -48,7 +48,7 @@ func TestUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger,
 
 	for _, pod := range pods.Items {
 		// we only check for a couple of namespaces
-		if pod.Namespace != "kube-system" && pod.Namespace != "mla-system" && pod.Namespace != "gatekeeper-system" && pod.Namespace != "kubernetes-dashboard" {
+		if pod.Namespace != "kube-system" && pod.Namespace != "mla-system" && pod.Namespace != "kubernetes-dashboard" {
 			continue
 		}
 

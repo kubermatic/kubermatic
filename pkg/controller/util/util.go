@@ -100,26 +100,6 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandle
 	})
 }
 
-// EnqueueProjectForCluster returns an event handler that creates a reconcile
-// request for the project of a cluster, based on the ProjectIDLabelKey label.
-func EnqueueProjectForCluster() handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		cluster, ok := a.(*kubermaticv1.Cluster)
-		if !ok {
-			return nil
-		}
-
-		projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-		if projectID == "" {
-			return nil // should never happen, a webhook ensures a proper label
-		}
-
-		return []reconcile.Request{{NamespacedName: types.NamespacedName{
-			Name: projectID,
-		}}}
-	})
-}
-
 const (
 	CreateOperation = "create"
 	UpdateOperation = "update"

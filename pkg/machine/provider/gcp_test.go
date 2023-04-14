@@ -80,8 +80,7 @@ func TestCompleteGCPProviderSpec(t *testing.T) {
 		WithMultiZone(false).
 		WithAssignPublicIPAddress(true).
 		WithTag(fmt.Sprintf("kubernetes-cluster-%s", goodCluster.Name)).
-		WithTag(fmt.Sprintf("system-cluster-%s", goodCluster.Name)).
-		WithTag(fmt.Sprintf("system-project-%s", goodCluster.Labels[kubermaticv1.ProjectIDLabelKey]))
+		WithTag(fmt.Sprintf("system-cluster-%s", goodCluster.Name))
 
 	testcases := []testcase[gce.RawConfig]{
 		&gcpTestcase{

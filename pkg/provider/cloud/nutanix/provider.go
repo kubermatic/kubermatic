@@ -35,7 +35,6 @@ import (
 
 const (
 	ClusterCategoryName = "KKPCluster"
-	ProjectCategoryName = "KKPProject"
 	categoryDescription = "automatically created by KKP"
 	categoryValuePrefix = "kubernetes-"
 
@@ -172,63 +171,6 @@ func (n *Nutanix) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 func deleteCategoryValues(ctx context.Context, client *ClientSet, cluster *kubermaticv1.Cluster) error {
-	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if ok {
-		_, err := client.Prism.V3.GetCategoryValue(ctx, ProjectCategoryName, projectID)
-		if err != nil {
-			nutanixError, parseErr := ParseNutanixError(err)
-
-			// failed to parse nutanix error? likely auth issues
-			if parseErr != nil {
-				return parseErr
-			}
-
-			if nutanixError.Code != http.StatusNotFound {
-				return err
-			}
-		} else {
-			// we need to make sure that no resources are attached
-			// to the project category before trying to delete it.
-			query, err := client.Prism.V3.GetCategoryQuery(ctx, &nutanixv3.CategoryQueryInput{
-				UsageType:        pointer.String("APPLIED_TO"),
-				GroupMemberCount: pointer.Int64(0),
-				CategoryFilter: &nutanixv3.CategoryFilter{
-					Type:     pointer.String("CATEGORIES_MATCH_ANY"),
-					KindList: []*string{},
-					Params: map[string][]string{
-						ProjectCategoryName: {projectID},
-					},
-				},
-			})
-
-			if err != nil {
-				return err
-			}
-
-			// no results mean it is safe to clean up this category value.
-			if len(query.Results) == 0 {
-				if err = client.Prism.V3.DeleteCategoryValue(ctx, ProjectCategoryName, projectID); err != nil {
-					return err
-				}
-			} else {
-				// we will loop over the results and see if any of them match our category for the cluster.
-				// if we hit a matching resource, an error is returned, as there is some leftover resource.
-				// other entities not linked to our cluster are fine and can be ignored.
-				for _, result := range query.Results {
-					if result != nil {
-						for _, entity := range result.EntityAnyReferenceList {
-							if entity != nil {
-								if val, ok := entity.Categories[ClusterCategoryName]; ok && val == CategoryValue(cluster.Name) {
-									return fmt.Errorf("entities associated with category '%s=%s' still exist", ClusterCategoryName, CategoryValue(cluster.Name))
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
 	_, err := client.Prism.V3.GetCategoryValue(ctx, ClusterCategoryName, CategoryValue(cluster.Name))
 	if err != nil {
 		nutanixError, parseErr := ParseNutanixError(err)
@@ -293,54 +235,6 @@ func reconcileCategoryAndValue(ctx context.Context, client *ClientSet, cluster *
 			}
 		} else {
 			return err
-		}
-	}
-
-	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if ok {
-		_, err = client.Prism.V3.GetCategoryKey(ctx, ProjectCategoryName)
-		if err != nil {
-			nutanixError, err := ParseNutanixError(err)
-
-			// failed to parse nutanix error? likely auth issues
-			if err != nil {
-				return err
-			}
-
-			if nutanixError.Code == http.StatusNotFound {
-				_, err := client.Prism.V3.CreateOrUpdateCategoryKey(ctx, &nutanixv3.CategoryKey{
-					Name:        pointer.String(ProjectCategoryName),
-					Description: pointer.String(categoryDescription),
-				})
-
-				if err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
-		}
-
-		_, err = client.Prism.V3.GetCategoryValue(ctx, ProjectCategoryName, projectID)
-		if err != nil {
-			nutanixError, err := ParseNutanixError(err)
-
-			// failed to parse nutanix error? likely auth issues
-			if err != nil {
-				return err
-			}
-
-			if nutanixError.Code == http.StatusNotFound {
-				_, err := client.Prism.V3.CreateOrUpdateCategoryValue(ctx, ProjectCategoryName, &nutanixv3.CategoryValue{
-					Value:       pointer.String(projectID),
-					Description: pointer.String(fmt.Sprintf("value for KKP project %s", projectID)),
-				})
-				if err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
 		}
 	}
 

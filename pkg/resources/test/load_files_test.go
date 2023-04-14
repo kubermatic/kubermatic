@@ -301,8 +301,7 @@ func createClusterObject(version semverlib.Version, cloudSpec kubermaticv1.Cloud
 			Name: "de-test-01",
 			UID:  types.UID("1234567890"),
 			Labels: map[string]string{
-				"my-label":                     "my-value",
-				kubermaticv1.ProjectIDLabelKey: "my-project",
+				"my-label": "my-value",
 			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
@@ -609,13 +608,6 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.UserSSHKeys,
-									Namespace:       cluster.Status.NamespaceName,
-								},
-							},
-							&corev1.Secret{
-								ObjectMeta: metav1.ObjectMeta{
-									ResourceVersion: "123456",
-									Name:            resources.GatekeeperWebhookServerCertSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},

@@ -28,21 +28,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v3/pkg/util/s3"
-	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -104,8 +100,6 @@ const (
 	PrometheusStatefulSetName = "prometheus"
 	// EtcdStatefulSetName is the name for the etcd StatefulSet.
 	EtcdStatefulSetName = "etcd"
-	// EtcdDefaultBackupConfigName is the name for the default (preinstalled) EtcdBackupConfig of a cluster.
-	EtcdDefaultBackupConfigName = "default-backups"
 	// EtcdTLSEnabledAnnotation is the annotation assigned to etcd Pods that run with a TLS peer endpoint.
 	EtcdTLSEnabledAnnotation = "etcd.kubermatic.k8c.io/tls-peer-enabled"
 	// EncryptionConfigurationSecretName is the name of secret storing the API server's EncryptionConfiguration.
@@ -363,32 +357,6 @@ const (
 	KubermaticNamespace = "kubermatic"
 	// KubermaticWebhookServiceName is the name of the kuberamtic webhook service in seed cluster.
 	KubermaticWebhookServiceName = "kubermatic-webhook"
-	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment.
-	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
-	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment.
-	GatekeeperAuditDeploymentName = "gatekeeper-audit"
-	// GatekeeperWebhookServiceName is the name of the gatekeeper webhook service.
-	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
-	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name.
-	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
-	// GatekeeperPodDisruptionBudgetName is the name of the PDB for the gatekeeper controller manager.
-	GatekeeperPodDisruptionBudgetName = "gatekeeper-controller-manager"
-	// GatekeeperRoleName is the name for the Gatekeeper role.
-	GatekeeperRoleName = "gatekeeper-manager-role"
-	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding.
-	GatekeeperRoleBindingName = "gatekeeper-manager-rolebinding"
-	// GatekeeperServiceAccountName is the name for the Gatekeeper service account.
-	GatekeeperServiceAccountName = "gatekeeper-admin"
-	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored.
-	GatekeeperNamespace = "gatekeeper-system"
-	// ExperimentalEnableMutation enables gatekeeper to validate created kubernetes resources and also modify them based on defined mutation policies.
-	ExperimentalEnableMutation = false
-	// AuditMatchKindOnly enables gatekeeper to only audit resources in OPA cache.
-	AuditMatchKindOnly = false
-	// ConstraintViolationsLimit defines the maximum number of audit violations reported on a constraint.
-	ConstraintViolationsLimit = 20
-	// GatekeeperExemptNamespaceLabel label key for exempting namespaces from Gatekeeper checks.
-	GatekeeperExemptNamespaceLabel = "admission.gatekeeper.sh/ignore"
 	// ClusterCloudCredentialsSecretName is the name the Secret in the cluster namespace that contains
 	// the cloud provider credentials. This Secret is a copy of the credentials secret from the KKP
 	// namespace (which has a dynamic name).
@@ -447,24 +415,6 @@ const (
 	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
 	// ClusterCRDName defines the CRD name for cluster objects.
 	ClusterCRDName = "clusters.cluster.k8s.io"
-	// GatekeeperConfigCRDName defines the CRD name for gatekeeper config objects.
-	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
-	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects.
-	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
-	// GatekeeperMutatorPodStatusCRDName defines the CRD name for gatekeeper MutatorPodStatus objects.
-	GatekeeperMutatorPodStatusCRDName = "mutatorpodstatuses.status.gatekeeper.sh"
-	// GatekeeperAssignCRDName defines the CRD name for gatekeeper assign objects.
-	GatekeeperAssignCRDName = "assign.mutations.gatekeeper.sh"
-	// GatekeeperAssignMetadataCRDName defines the CRD name for gatekeeper assign metadata objects.
-	GatekeeperAssignMetadataCRDName = "assignmetadata.mutations.gatekeeper.sh"
-	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects.
-	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
-	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects.
-	GatekeeperConstraintTemplatePodStatusCRDName = "constrainttemplatepodstatuses.status.gatekeeper.sh"
-	// GatekeeperModifySetCRDName defines the CRD name for gatekeeper modify set objects.
-	GatekeeperModifySetCRDName = "modifyset.mutations.gatekeeper.sh"
-	// GatekeeperProviderCRDName defines the CRD name for gatekeeper provider objects.
-	GatekeeperProviderCRDName = "providers.externaldata.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.
@@ -479,10 +429,6 @@ const (
 	// OperatingSystemManagerValidatingWebhookConfigurationName is the name of OSM's validating webhook configuration.
 	OperatingSystemManagerValidatingWebhookConfigurationName = "operating-system-manager.kubermatic.io"
 
-	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
-	// configuration.
-	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
-	GatekeeperMutatingWebhookConfigurationName   = "gatekeeper-mutating-webhook-configuration"
 	// InternalUserClusterAdminKubeconfigSecretName is the name of the secret containing an admin kubeconfig that can only be used from
 	// within the seed cluster.
 	InternalUserClusterAdminKubeconfigSecretName = "internal-admin-kubeconfig"
@@ -571,13 +517,6 @@ const (
 	// EtcdTLSKeySecretKey etcd-tls.key.
 	EtcdTLSKeySecretKey = "etcd-tls.key"
 
-	EtcdBackupAndRestoreS3AccessKeyIDKey        = "ACCESS_KEY_ID"
-	EtcdBackupAndRestoreS3SecretKeyAccessKeyKey = "SECRET_ACCESS_KEY"
-
-	EtcdRestoreS3BucketNameKey    = "BUCKET_NAME"
-	EtcdRestoreS3EndpointKey      = "ENDPOINT"
-	EtcdRestoreDefaultS3SEndpoint = "s3.amazonaws.com"
-
 	// ApiserverEtcdClientCertificateCertSecretKey apiserver-etcd-client.crt.
 	ApiserverEtcdClientCertificateCertSecretKey = "apiserver-etcd-client.crt"
 	// ApiserverEtcdClientCertificateKeySecretKey apiserver-etcd-client.key.
@@ -587,11 +526,6 @@ const (
 	ApiserverProxyClientCertificateCertSecretKey = "apiserver-proxy-client.crt"
 	// ApiserverProxyClientCertificateKeySecretKey apiserver-proxy-client.key.
 	ApiserverProxyClientCertificateKeySecretKey = "apiserver-proxy-client.key"
-
-	// BackupEtcdClientCertificateCertSecretKey backup-etcd-client.crt.
-	BackupEtcdClientCertificateCertSecretKey = "backup-etcd-client.crt"
-	// BackupEtcdClientCertificateKeySecretKey backup-etcd-client.key.
-	BackupEtcdClientCertificateKeySecretKey = "backup-etcd-client.key"
 
 	// PrometheusClientCertificateCertSecretKey prometheus-client.crt.
 	PrometheusClientCertificateCertSecretKey = "prometheus-client.crt"
@@ -1110,12 +1044,6 @@ func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 	return *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
 }
 
-// GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore.
-func GetEtcdRestoreRef(restore *kubermaticv1.EtcdRestore) metav1.OwnerReference {
-	gv := kubermaticv1.SchemeGroupVersion
-	return *metav1.NewControllerRef(restore, gv.WithKind("EtcdRestore"))
-}
-
 // Int32 returns a pointer to the int32 value passed in.
 func Int32(v int32) *int32 {
 	return &v
@@ -1624,109 +1552,6 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 	}
 
 	return len(nodeList.Items) != 0, nil
-}
-
-// BackupCABundleConfigMapName returns the name of the ConfigMap in the kube-system namespace
-// that holds the CA bundle for a given cluster. As the CA bundle technically can be different
-// per usercluster, this is not a constant.
-func BackupCABundleConfigMapName(cluster *kubermaticv1.Cluster) string {
-	return fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name)
-}
-
-// GetEtcdRestoreS3Client returns an S3 client for downloading the backup for a given EtcdRestore.
-// If the EtcdRestore doesn't reference a secret containing the credentials and endpoint and bucket name data,
-// one can optionally be created from a well-known secret and configmap in kube-system, or from a specified backup destination.
-func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster,
-	destination *kubermaticv1.EtcdBackupDestination) (*minio.Client, string, error) {
-	secretData := make(map[string]string)
-
-	if restore.Spec.BackupDownloadCredentialsSecret != "" {
-		secret := &corev1.Secret{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: restore.Spec.BackupDownloadCredentialsSecret}, secret); err != nil {
-			return nil, "", fmt.Errorf("failed to get BackupDownloadCredentialsSecret credentials secret %v: %w", restore.Spec.BackupDownloadCredentialsSecret, err)
-		}
-
-		for k, v := range secret.Data {
-			secretData[k] = string(v)
-		}
-	} else {
-		if !createSecretIfMissing {
-			return nil, "", fmt.Errorf("BackupDownloadCredentialsSecret not set")
-		}
-
-		credsSecret := &corev1.Secret{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: destination.Credentials.Namespace, Name: destination.Credentials.Name}, credsSecret); err != nil {
-			return nil, "", fmt.Errorf("failed to get s3 credentials secret %v/%v: %w", destination.Credentials.Namespace, destination.Credentials.Name, err)
-		}
-		for k, v := range credsSecret.Data {
-			secretData[k] = string(v)
-		}
-		secretData[EtcdRestoreS3BucketNameKey] = destination.BucketName
-		secretData[EtcdRestoreS3EndpointKey] = destination.Endpoint
-
-		creator := func(se *corev1.Secret) (*corev1.Secret, error) {
-			if se.Data == nil {
-				se.Data = map[string][]byte{}
-			}
-			for k, v := range secretData {
-				se.Data[k] = []byte(v)
-			}
-			return se, nil
-		}
-
-		wrappedCreator := reconciling.SecretObjectWrapper(creator)
-		wrappedCreator = reconciling.OwnerRefWrapper(GetEtcdRestoreRef(restore))(wrappedCreator)
-
-		secretName := fmt.Sprintf("%s-backupdownload-%s", restore.Name, rand.String(10))
-
-		if err := reconciling.EnsureNamedObject(
-			ctx,
-			types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: secretName},
-			wrappedCreator, client, &corev1.Secret{}, false); err != nil {
-			return nil, "", fmt.Errorf("failed to ensure Secret %s: %w", secretName, err)
-		}
-
-		oldRestore := restore.DeepCopy()
-		restore.Spec.BackupDownloadCredentialsSecret = secretName
-		if err := client.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
-			return nil, "", fmt.Errorf("failed to write etcdrestore.backupDownloadCredentialsSecret: %w", err)
-		}
-	}
-
-	accessKeyID := secretData[EtcdBackupAndRestoreS3AccessKeyIDKey]
-	secretAccessKey := secretData[EtcdBackupAndRestoreS3SecretKeyAccessKeyKey]
-	bucketName := secretData[EtcdRestoreS3BucketNameKey]
-	endpoint := secretData[EtcdRestoreS3EndpointKey]
-
-	if bucketName == "" {
-		return nil, "", fmt.Errorf("s3 bucket name not set")
-	}
-	if endpoint == "" {
-		endpoint = EtcdRestoreDefaultS3SEndpoint
-	}
-
-	caBundleConfigMap := &corev1.ConfigMap{}
-	caBundleKey := types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: BackupCABundleConfigMapName(cluster)}
-	if err := client.Get(ctx, caBundleKey, caBundleConfigMap); err != nil {
-		return nil, "", fmt.Errorf("failed to get CA bundle ConfigMap: %w", err)
-	}
-	bundle, ok := caBundleConfigMap.Data[CABundleConfigMapKey]
-	if !ok {
-		return nil, "", fmt.Errorf("ConfigMap does not contain key %q", CABundleConfigMapKey)
-	}
-
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM([]byte(bundle)) {
-		return nil, "", errors.New("CA bundle does not contain any valid certificates")
-	}
-
-	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, pool)
-	if err != nil {
-		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
-	}
-	s3Client.SetAppInfo("kubermatic", "v0.2")
-
-	return s3Client, bucketName, nil
 }
 
 // GetClusterNodeCIDRMaskSizeIPv4 returns effective mask size used to address the nodes within provided IPv4 Pods CIDR.

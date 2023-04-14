@@ -51,13 +51,6 @@ rules:
       # log all changes to machines and higher level machine objects
       - group: "cluster.k8s.io"
         resources: ["machines", "machinesets", "machinedeployments"]
-      # log all changes to Gatekeeper templates
-      - group: "templates.gatekeeper.sh"
-      # this secret controls SSH access to nodes if user-ssh-keys-agent is enabled
-      # and it is included in audit logging because of that
-      - group: ""
-        resources: ["secrets"]
-        resourceNames: ["usersshkeys"]
   # log extended information for requests that access pods via shell or network proxying
   - level: RequestResponse
     resources:
@@ -85,13 +78,6 @@ rules:
       # log all changes to machines and higher level machine objects
       - group: "cluster.k8s.io"
         resources: ["machines", "machinesets", "machinedeployments"]
-      # log all changes to Gatekeeper templates
-      - group: "templates.gatekeeper.sh"
-      # this secret controls SSH access to nodes if user-ssh-keys-agent is enabled
-      # and it is included in audit logging because of that
-      - group: ""
-        resources: ["secrets"]
-        resourceNames: ["usersshkeys"]
   # log extended information for requests that access pods in an way (shell or network)
   - level: Request
     resources:

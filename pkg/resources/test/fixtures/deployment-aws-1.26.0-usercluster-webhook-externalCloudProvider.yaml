@@ -32,7 +32,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"user-cluster-webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-seed-webhook-listen-port=9443","-seed-webhook-cert-dir=/opt/webhook-serving-cert/","-seed-webhook-cert-name=serving.crt","-seed-webhook-key-name=serving.key","-user-webhook-listen-port=19443","-user-webhook-cert-dir=/opt/webhook-serving-cert/","-user-webhook-cert-name=serving.crt","-user-webhook-key-name=serving.key","-ca-bundle=/opt/ca-bundle/ca-bundle.pem","-project-id=my-project","-v=2"]}'
+        - '{"command":"user-cluster-webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-seed-webhook-listen-port=9443","-seed-webhook-cert-dir=/opt/webhook-serving-cert/","-seed-webhook-cert-name=serving.crt","-seed-webhook-key-name=serving.key","-user-webhook-listen-port=19443","-user-webhook-cert-dir=/opt/webhook-serving-cert/","-user-webhook-cert-name=serving.crt","-user-webhook-key-name=serving.key","-ca-bundle=/opt/ca-bundle/ca-bundle.pem","-v=2"]}'
         command:
         - /http-prober-bin/http-prober
         env:
