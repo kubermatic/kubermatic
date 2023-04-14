@@ -50,12 +50,12 @@ type kubevirt struct {
 }
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
-	if dc.Spec.KubeVirt == nil {
+	if dc.Spec.Provider.KubeVirt == nil {
 		return nil, errors.New("datacenter is not an KubeVirt datacenter")
 	}
 	return &kubevirt{
 		secretKeySelector: secretKeyGetter,
-		dc:                dc.Spec.KubeVirt,
+		dc:                dc.Spec.Provider.KubeVirt,
 		log:               log.Logger,
 	}, nil
 }

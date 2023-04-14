@@ -80,11 +80,11 @@ func NewCloudProvider(
 	secretKeyGetter provider.SecretKeySelectorValueFunc,
 	caBundle *x509.CertPool,
 ) (*Provider, error) {
-	if dc.Spec.OpenStack == nil {
+	if dc.Spec.Provider.OpenStack == nil {
 		return nil, errors.New("datacenter is not an Openstack datacenter")
 	}
 	return &Provider{
-		dc:                dc.Spec.OpenStack,
+		dc:                dc.Spec.Provider.OpenStack,
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,
 		getClientFunc:     getNetClientForCluster,

@@ -54,8 +54,7 @@ var (
 type webhookData interface {
 	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
-	DC() *kubermaticv1.Datacenter
-	KubermaticAPIImage() string
+	KubermaticImage() string
 	KubermaticDockerTag() string
 	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
@@ -167,7 +166,7 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.UserClusterControllerDeploymentName,
-					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
+					Image:   data.KubermaticImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"user-cluster-webhook"},
 					Args:    args,
 					Env:     envVars,

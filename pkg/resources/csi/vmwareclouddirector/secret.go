@@ -44,7 +44,7 @@ func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 				return nil, err
 			}
 
-			vcdCloudConfig, err := GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.DC(), credentials)
+			vcdCloudConfig, err := GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.Datacenter(), credentials)
 			if err != nil {
 				return nil, err
 			}

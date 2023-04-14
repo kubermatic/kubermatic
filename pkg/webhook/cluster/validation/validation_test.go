@@ -59,52 +59,23 @@ func init() {
 // ensures that an empty nodeport range fails, but in reality, this never happens
 // because of the mutating webhook.
 func TestHandle(t *testing.T) {
-	seed := kubermaticv1.Seed{
+	datacenter := &kubermaticv1.Datacenter{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kubermatic",
-			Namespace: "kubermatic",
+			Namespace: "my-hetzner-datacenter",
 		},
-		Spec: kubermaticv1.SeedSpec{
-			Datacenters: map[string]kubermaticv1.Datacenter{
-				datacenterName: {
-					Spec: kubermaticv1.DatacenterSpec{
-						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
-					},
-				},
+		Spec: kubermaticv1.DatacenterSpec{
+			Provider: kubermaticv1.DatacenterProviderSpec{
+				Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
 			},
 		},
 	}
 
-	config := kubermaticv1.KubermaticConfiguration{
+	config := &kubermaticv1.KubermaticConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: "kubermatic",
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{},
-	}
-
-	project1 := kubermaticv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "abcd1234",
-		},
-		Spec: kubermaticv1.ProjectSpec{
-			Name: "my project",
-		},
-		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectPhaseActive,
-		},
-	}
-
-	project2 := kubermaticv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "wxyz0987",
-		},
-		Spec: kubermaticv1.ProjectSpec{
-			Name: "my other project",
-		},
-		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectPhaseActive,
-		},
 	}
 
 	tests := []struct {
@@ -120,11 +91,8 @@ func TestHandle(t *testing.T) {
 			name: "Delete cluster success",
 			op:   admissionv1.Delete,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: "Tunneling",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -145,11 +113,8 @@ func TestHandle(t *testing.T) {
 			name: "Create cluster with Tunneling expose strategy succeeds when the FeatureGate is enabled",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: "Tunneling",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -170,11 +135,8 @@ func TestHandle(t *testing.T) {
 			name: "Create cluster with invalid provider name",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:              "foo",
+				Namespace:         "kubermatic",
 				ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 				CloudProviderName: kubermaticv1.CloudProviderDigitalocean,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -196,11 +158,8 @@ func TestHandle(t *testing.T) {
 			name: "Create cluster expose strategy different from Tunneling should succeed",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -221,11 +180,8 @@ func TestHandle(t *testing.T) {
 			name: "Unknown expose strategy",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: "ciao",
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -246,11 +202,8 @@ func TestHandle(t *testing.T) {
 			name: "Unsupported CNIPlugin type",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -275,11 +228,8 @@ func TestHandle(t *testing.T) {
 			name: "Unsupported CNIPlugin version",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -304,11 +254,8 @@ func TestHandle(t *testing.T) {
 			name: "Supported CNIPlugin",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -333,11 +280,8 @@ func TestHandle(t *testing.T) {
 			name: "Supported CNIPlugin none",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -362,11 +306,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject unsupported ebpf proxy mode (wrong CNI)",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -392,11 +333,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject unsupported ebpf proxy mode (Konnectivity not enabled)",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -422,11 +360,8 @@ func TestHandle(t *testing.T) {
 			name: "Supported ebpf proxy mode",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -452,11 +387,8 @@ func TestHandle(t *testing.T) {
 			name: "Supported CNI for dual-stack",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					IPFamily:                 kubermaticv1.IPFamilyDualStack,
@@ -483,11 +415,8 @@ func TestHandle(t *testing.T) {
 			name: "Unsupported CNI for dual-stack",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					IPFamily:                 kubermaticv1.IPFamilyDualStack,
@@ -514,11 +443,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject EnableUserSSHKey agent update",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:             "foo",
+				Namespace:        "kubermatic",
 				ExposeStrategy:   kubermaticv1.ExposeStrategyNodePort,
 				EnableUserSSHKey: pointer.Bool(true),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -535,11 +461,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:             "foo",
+				Namespace:        "kubermatic",
 				ExposeStrategy:   kubermaticv1.ExposeStrategyNodePort,
 				EnableUserSSHKey: pointer.Bool(false),
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -560,11 +483,8 @@ func TestHandle(t *testing.T) {
 			name: "Accept a cluster create request with externalCloudProvider disabled",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:                  "foo",
+				Namespace:             "kubermatic",
 				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: false,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -586,11 +506,8 @@ func TestHandle(t *testing.T) {
 			name: "Accept a cluster create request with externalCloudProvider enabled",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:                  "foo",
+				Namespace:             "kubermatic",
 				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -612,11 +529,8 @@ func TestHandle(t *testing.T) {
 			name: "Accept enabling the externalCloudProvider feature",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:                  "foo",
+				Namespace:             "kubermatic",
 				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -633,11 +547,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:                  "foo",
+				Namespace:             "kubermatic",
 				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: false,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -659,11 +570,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject disabling the externalCloudProvider feature",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:                  "foo",
+				Namespace:             "kubermatic",
 				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: false,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -680,11 +588,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:                  "foo",
+				Namespace:             "kubermatic",
 				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				ExternalCloudProvider: true,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -706,11 +611,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject updating the pods CIDR",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -726,11 +628,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
@@ -751,11 +650,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject updating the nodeport range",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -771,11 +667,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -796,11 +689,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject empty nodeport range",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -821,11 +711,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject malformed nodeport range",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -846,11 +733,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject empty nodeport range update",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -866,11 +750,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -891,11 +772,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject CNIPlugin version update (more than one minor version)",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -915,11 +793,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -944,11 +819,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject CNIPlugin version update (major version change)",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -968,11 +840,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -997,11 +866,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject CNIPlugin version update (invalid semver)",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1021,11 +887,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1050,11 +913,8 @@ func TestHandle(t *testing.T) {
 			name: "Allow CNIPlugin version update (one minor version)",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1074,11 +934,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1103,11 +960,8 @@ func TestHandle(t *testing.T) {
 			name: "Allow CNIPlugin version update (downgrade one minor version)",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1127,11 +981,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1159,7 +1010,6 @@ func TestHandle(t *testing.T) {
 				Name:      "foo",
 				Namespace: "kubermatic",
 				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey:   project1.Name,
 					validation.UnsafeCNIUpgradeLabel: "true",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
@@ -1181,11 +1031,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1210,11 +1057,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject CNIPlugin type change",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1234,11 +1078,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1266,7 +1107,6 @@ func TestHandle(t *testing.T) {
 				Name:      "foo",
 				Namespace: "kubermatic",
 				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey:     project1.Name,
 					validation.UnsafeCNIMigrationLabel: "true",
 				},
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
@@ -1288,11 +1128,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1317,11 +1154,8 @@ func TestHandle(t *testing.T) {
 			name: "Allow CNIPlugin upgrade from deprecated version (v3.8)",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1341,11 +1175,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1370,11 +1201,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject remove CNIPlugin settings",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1390,11 +1218,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1419,11 +1244,8 @@ func TestHandle(t *testing.T) {
 			name: "Allow add CNIPlugin settings",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1443,11 +1265,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1494,11 +1313,8 @@ func TestHandle(t *testing.T) {
 			name: "Project label is immutable",
 			op:   admissionv1.Update,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1518,11 +1334,8 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1547,11 +1360,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject unsupported Kubernetes version",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1573,11 +1383,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject invalid rfc1035 name",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "4foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "4foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1599,11 +1406,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject unsupported Kubernetes version update",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1620,11 +1424,8 @@ func TestHandle(t *testing.T) {
 				Version: semver.NewSemverOrDie("1.99.99"),
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1650,11 +1451,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject UsePodSecurityPolicyAdmissionPlugin for Version >= 1.25",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1677,11 +1475,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject PodSecurityPolicy admission plugin for Version >= 1.25",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1704,11 +1499,8 @@ func TestHandle(t *testing.T) {
 			name: "Allow old Kubernetes version update with PodSecurityPolicy admission plugin",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1726,11 +1518,8 @@ func TestHandle(t *testing.T) {
 				Version:          semver.NewSemverOrDie("1.24.9"),
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1757,11 +1546,8 @@ func TestHandle(t *testing.T) {
 			name: "Reject unsupported Kubernetes version update with PodSecurityPolicy admission plugin",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1779,11 +1565,8 @@ func TestHandle(t *testing.T) {
 				Version:          semver.NewSemverOrDie("1.26.0"),
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1810,11 +1593,8 @@ func TestHandle(t *testing.T) {
 			name: "Allow Kubernetes version update removing the PodSecurityPolicy admission plugin",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1831,11 +1611,8 @@ func TestHandle(t *testing.T) {
 				Version: semver.NewSemverOrDie("1.25.5"),
 			}.Build(),
 			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
+				Name:           "foo",
+				Namespace:      "kubermatic",
 				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
@@ -1863,16 +1640,15 @@ func TestHandle(t *testing.T) {
 			op:   admissionv1.Update,
 			datacenter: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{},
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{},
+					},
 				}},
 			cluster: rawClusterGen{
 				Name:              "foo",
 				Namespace:         "kubermatic",
 				CloudProviderName: kubermaticv1.CloudProviderVSphere,
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+				ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1895,10 +1671,7 @@ func TestHandle(t *testing.T) {
 				Name:              "foo",
 				Namespace:         "kubermatic",
 				CloudProviderName: kubermaticv1.CloudProviderVSphere,
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+				ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1924,17 +1697,16 @@ func TestHandle(t *testing.T) {
 			op:   admissionv1.Update,
 			datacenter: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{},
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{},
+					},
 				}},
 			cluster: rawClusterGen{
 				Name:                  "foo",
 				Namespace:             "kubermatic",
 				CloudProviderName:     kubermaticv1.CloudProviderVSphere,
 				ExternalCloudProvider: true,
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1957,10 +1729,7 @@ func TestHandle(t *testing.T) {
 				Name:              "foo",
 				Namespace:         "kubermatic",
 				CloudProviderName: kubermaticv1.CloudProviderVSphere,
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+				ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -1985,27 +1754,25 @@ func TestHandle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testSeed := seed.DeepCopy()
+			testDatacenter := datacenter.DeepCopy()
 
 			if tt.datacenter != nil {
-				testSeed.Spec.Datacenters = map[string]kubermaticv1.Datacenter{
-					datacenterName: *tt.datacenter,
-				}
+				testDatacenter = tt.datacenter
 			}
 
 			seedClient := ctrlruntimefakeclient.
 				NewClientBuilder().
 				WithScheme(testScheme).
-				WithObjects(testSeed, &project1, &project2).
+				WithObjects(testDatacenter).
 				Build()
 
-			seedGetter := test.NewSeedGetter(testSeed)
-			configGetter := test.NewConfigGetter(&config)
+			datacenterGetter := test.NewDatacenterGetter(testDatacenter)
+			configGetter := test.NewConfigGetter(config)
 
 			clusterValidator := validator{
 				features:                  tt.features,
-				client:                    seedClient,
-				seedGetter:                seedGetter,
+				seedClient:                seedClient,
+				datacenterGetter:          datacenterGetter,
 				configGetter:              configGetter,
 				disableProviderValidation: true,
 			}

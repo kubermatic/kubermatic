@@ -84,7 +84,7 @@ func TestOPAIntegration(t *testing.T) {
 	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
 	testJig.ClusterJig.WithTestName("opa")
 
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	defer testJig.Cleanup(ctx, t, true)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)

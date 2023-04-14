@@ -49,7 +49,7 @@ func CloudConfig(
 			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1199
 			// https://github.com/kubernetes/kubernetes/blob/v1.15.0/staging/src/k8s.io/legacy-cloud-providers/aws/aws.go#L1174
 			Global: aws.GlobalOpts{
-				Zone:                        dc.Spec.AWS.Region + "x",
+				Zone:                        dc.Spec.Provider.AWS.Region + "x",
 				VPC:                         cloud.AWS.VPCID,
 				KubernetesClusterID:         cluster.Name,
 				DisableSecurityGroupIngress: false,
@@ -75,7 +75,7 @@ func CloudConfig(
 			AADClientID:                credentials.Azure.ClientID,
 			AADClientSecret:            credentials.Azure.ClientSecret,
 			ResourceGroup:              cloud.Azure.ResourceGroup,
-			Location:                   dc.Spec.Azure.Location,
+			Location:                   dc.Spec.Provider.Azure.Location,
 			VNetName:                   cloud.Azure.VNetName,
 			SubnetName:                 cloud.Azure.SubnetName,
 			RouteTableName:             cloud.Azure.RouteTableName,
@@ -91,28 +91,28 @@ func CloudConfig(
 		}
 
 	case cloud.OpenStack != nil:
-		manageSecurityGroups := dc.Spec.OpenStack.ManageSecurityGroups
-		trustDevicePath := dc.Spec.OpenStack.TrustDevicePath
-		useOctavia := dc.Spec.OpenStack.UseOctavia
+		manageSecurityGroups := dc.Spec.Provider.OpenStack.ManageSecurityGroups
+		trustDevicePath := dc.Spec.Provider.OpenStack.TrustDevicePath
+		useOctavia := dc.Spec.Provider.OpenStack.UseOctavia
 		if cluster.Spec.Cloud.OpenStack.UseOctavia != nil {
 			useOctavia = cluster.Spec.Cloud.OpenStack.UseOctavia
 		}
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
-				AuthURL:                     dc.Spec.OpenStack.AuthURL,
+				AuthURL:                     dc.Spec.Provider.OpenStack.AuthURL,
 				Username:                    credentials.OpenStack.Username,
 				Password:                    credentials.OpenStack.Password,
 				DomainName:                  credentials.OpenStack.Domain,
 				ProjectName:                 credentials.OpenStack.Project,
 				ProjectID:                   credentials.OpenStack.ProjectID,
-				Region:                      dc.Spec.OpenStack.Region,
+				Region:                      dc.Spec.Provider.OpenStack.Region,
 				ApplicationCredentialSecret: credentials.OpenStack.ApplicationCredentialSecret,
 				ApplicationCredentialID:     credentials.OpenStack.ApplicationCredentialID,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
 				BSVersion:       "auto",
 				TrustDevicePath: trustDevicePath != nil && *trustDevicePath,
-				IgnoreVolumeAZ:  dc.Spec.OpenStack.IgnoreVolumeAZ,
+				IgnoreVolumeAZ:  dc.Spec.Provider.OpenStack.IgnoreVolumeAZ,
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
@@ -161,11 +161,11 @@ func CloudConfig(
 
 		tag := fmt.Sprintf("kubernetes-cluster-%s", cluster.Name)
 
-		if len(dc.Spec.GCP.ZoneSuffixes) == 0 {
+		if len(dc.Spec.Provider.GCP.ZoneSuffixes) == 0 {
 			return "", errors.New("empty zoneSuffixes")
 		}
 
-		localZone := dc.Spec.GCP.Region + "-" + dc.Spec.GCP.ZoneSuffixes[0]
+		localZone := dc.Spec.Provider.GCP.Region + "-" + dc.Spec.Provider.GCP.ZoneSuffixes[0]
 
 		// By default, all GCP clusters are assumed to be the in the same zone. If the control plane
 		// and worker nodes are not it the same zone (localZone), the GCP cloud controller fails
@@ -198,7 +198,7 @@ func CloudConfig(
 				ProjectID:      projectID,
 				LocalZone:      localZone,
 				MultiZone:      multizone,
-				Regional:       dc.Spec.GCP.Regional,
+				Regional:       dc.Spec.Provider.GCP.Regional,
 				NetworkName:    cloud.GCP.Network,
 				SubnetworkName: cloud.GCP.Subnetwork,
 				TokenURL:       "nil",
@@ -226,7 +226,7 @@ func GetVSphereCloudConfig(
 	dc *kubermaticv1.Datacenter,
 	credentials resources.Credentials,
 ) (*vsphere.CloudConfig, error) {
-	vsphereURL, err := url.Parse(dc.Spec.VSphere.Endpoint)
+	vsphereURL, err := url.Parse(dc.Spec.Provider.VSphere.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse vsphere endpoint: %w", err)
 	}
@@ -234,7 +234,7 @@ func GetVSphereCloudConfig(
 	if urlPort := vsphereURL.Port(); urlPort != "" {
 		port = urlPort
 	}
-	datastore := dc.Spec.VSphere.DefaultDatastore
+	datastore := dc.Spec.Provider.VSphere.DefaultDatastore
 	// if a datastore is provided at cluster level override the default
 	// datastore provided at datacenter level.
 	// Note that in case a DatastoreCluster is provided at cluster level we
@@ -249,7 +249,7 @@ func GetVSphereCloudConfig(
 	// default for new vSphere clusters, while existing vSphere clusters must be
 	// migrated manually (preferably by following advice here:
 	// https://kb.vmware.com/s/article/84446).
-	clusterID := dc.Spec.VSphere.Cluster
+	clusterID := dc.Spec.Provider.VSphere.Cluster
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureVsphereCSIClusterID] {
 		clusterID = cluster.Name
 	}
@@ -260,8 +260,8 @@ func GetVSphereCloudConfig(
 			Password:         credentials.VSphere.Password,
 			VCenterIP:        vsphereURL.Hostname(),
 			VCenterPort:      port,
-			InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
-			Datacenter:       dc.Spec.VSphere.Datacenter,
+			InsecureFlag:     dc.Spec.Provider.VSphere.AllowInsecure,
+			Datacenter:       dc.Spec.Provider.VSphere.Datacenter,
 			DefaultDatastore: datastore,
 			WorkingDir:       cluster.Name,
 			ClusterID:        clusterID,
@@ -274,7 +274,7 @@ func GetVSphereCloudConfig(
 			// if they are set and will make the controller-manager crash
 			// if they are not - But maybe that will change at some point
 			VCenterIP:        vsphereURL.Hostname(),
-			Datacenter:       dc.Spec.VSphere.Datacenter,
+			Datacenter:       dc.Spec.Provider.VSphere.Datacenter,
 			Folder:           cluster.Spec.Cloud.VSphere.Folder,
 			DefaultDatastore: datastore,
 		},
@@ -286,7 +286,7 @@ func GetVSphereCloudConfig(
 				User:        credentials.VSphere.Username,
 				Password:    credentials.VSphere.Password,
 				VCenterPort: port,
-				Datacenters: dc.Spec.VSphere.Datacenter,
+				Datacenters: dc.Spec.Provider.VSphere.Datacenter,
 			},
 		},
 	}

@@ -60,12 +60,6 @@ func CompareOutput(t *testing.T, name, output string, update bool, suffix string
 	}
 }
 
-func NewSeedGetter(seed *kubermaticv1.Seed) provider.SeedGetter {
-	return func() (*kubermaticv1.Seed, error) {
-		return seed, nil
-	}
-}
-
 func NewConfigGetter(config *kubermaticv1.KubermaticConfiguration) provider.KubermaticConfigurationGetter {
 	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	return func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
@@ -73,14 +67,20 @@ func NewConfigGetter(config *kubermaticv1.KubermaticConfiguration) provider.Kube
 	}
 }
 
-func NewSeedsGetter(seeds ...*kubermaticv1.Seed) provider.SeedsGetter {
-	result := map[string]*kubermaticv1.Seed{}
+func NewDatacenterGetter(datacenter *kubermaticv1.Datacenter) provider.DatacenterGetter {
+	return func(context.Context, string) (*kubermaticv1.Datacenter, error) {
+		return datacenter, nil
+	}
+}
 
-	for i, seed := range seeds {
-		result[seed.Name] = seeds[i]
+func NewDatacentersGetter(datacenters ...*kubermaticv1.Datacenter) provider.DatacentersGetter {
+	result := map[string]*kubermaticv1.Datacenter{}
+
+	for i, dc := range datacenters {
+		result[dc.Name] = datacenters[i]
 	}
 
-	return func() (map[string]*kubermaticv1.Seed, error) {
+	return func(context.Context) (map[string]*kubermaticv1.Datacenter, error) {
 		return result, nil
 	}
 }

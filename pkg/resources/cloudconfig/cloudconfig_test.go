@@ -50,8 +50,10 @@ func TestVSphereCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						Endpoint: "https://vsphere.com",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
+							Endpoint: "https://vsphere.com",
+						},
 					},
 				},
 			},
@@ -84,8 +86,10 @@ func TestVSphereCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						Endpoint: "https://vsphere.com:9443",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
+							Endpoint: "https://vsphere.com:9443",
+						},
 					},
 				},
 			},
@@ -120,9 +124,11 @@ func TestVSphereCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						Endpoint:         "https://vsphere.com:9443",
-						DefaultDatastore: "less-cool-datastore",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
+							Endpoint:         "https://vsphere.com:9443",
+							DefaultDatastore: "less-cool-datastore",
+						},
 					},
 				},
 			},
@@ -183,9 +189,11 @@ func TestVSphereCloudConfigClusterID(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						Endpoint: "https://vsphere.com",
-						Cluster:  "cl-1",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
+							Endpoint: "https://vsphere.com",
+							Cluster:  "cl-1",
+						},
 					},
 				},
 			},
@@ -209,9 +217,11 @@ func TestVSphereCloudConfigClusterID(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						Endpoint: "https://vsphere.com",
-						Cluster:  "cl-1",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
+							Endpoint: "https://vsphere.com",
+							Cluster:  "cl-1",
+						},
 					},
 				},
 			},
@@ -259,7 +269,9 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
+					},
 				},
 			},
 			wantConfig: &openstack.CloudConfig{
@@ -290,8 +302,10 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
-						UseOctavia: pointer.Bool(false),
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
+							UseOctavia: pointer.Bool(false),
+						},
 					},
 				},
 			},
@@ -325,8 +339,10 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
-						UseOctavia: pointer.Bool(true),
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
+							UseOctavia: pointer.Bool(true),
+						},
 					},
 				},
 			},
@@ -358,7 +374,9 @@ func TestOpenStackCloudConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
+					},
 				},
 			},
 			wantConfig: &openstack.CloudConfig{

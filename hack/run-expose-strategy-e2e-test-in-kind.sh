@@ -41,12 +41,6 @@ TAG="$(git rev-parse HEAD)"
 FAKE_TAG="v0.0.0-test"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
-KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
-
-REPOSUFFIX=""
-if [ "$KUBERMATIC_EDITION" == "ee" ]; then
-  REPOSUFFIX="-$KUBERMATIC_EDITION"
-fi
 
 type kind > /dev/null || fatal \
   "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
@@ -109,7 +103,7 @@ kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 time kind load docker-image "${DOCKER_REPO}/etcd-launcher:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time kind load docker-image "${DOCKER_REPO}/kubermatic:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time kind load docker-image "${DOCKER_REPO}/network-interface-manager:${TAG}" --name "${KIND_CLUSTER_NAME}"
 # load network-interface-manager with FAKE TAG 'v0.0.0-test' which is used in ExposeStrategyTunneling test case
@@ -148,7 +142,7 @@ HELM_VALUES_FILE="${TMPDIR}/values.yaml"
 cat << EOF > ${HELM_VALUES_FILE}
 kubermaticOperator:
   image:
-    repository: "quay.io/kubermatic/kubermatic${REPOSUFFIX}"
+    repository: "quay.io/kubermatic/kubermatic"
     tag: "${TAG}"
 EOF
 
@@ -222,7 +216,7 @@ echodate "Kubermatic ingress domain patched."
 
 echodate "Running tests..."
 
-go_test expose_strategy_e2e -tags "$KUBERMATIC_EDITION,e2e" -v ./pkg/test/e2e/expose-strategy \
+go_test expose_strategy_e2e -tags "e2e" -v ./pkg/test/e2e/expose-strategy \
   -cluster-version "${USER_CLUSTER_KUBERNETES_VERSION:-}" \
   -byo-kkp-datacenter byo-kubernetes
 

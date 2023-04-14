@@ -27,9 +27,9 @@ import (
 
 func PrintCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "print [config | kubermaticconfiguration]",
+		Use:   "print [config | kubermaticconfiguration | datacenter]",
 		Short: "Print example configuration manifest",
-		Long:  "Prints an example configuration manifest with defaults for the given resource.\n   Supported resources are \"seed\" and \"kubermaticconfiguration\".",
+		Long:  "Prints an example configuration manifest with defaults for the given resource.\n   Supported resources are \"datacenter\" and \"kubermaticconfiguration\".",
 		RunE:  PrintFunc(),
 	}
 
@@ -46,8 +46,8 @@ func PrintFunc() cobraFuncE {
 		switch arg {
 		case "", "config", "kubermaticconfiguration":
 			fmt.Println(docs.ExampleKubermaticConfiguration)
-		case "seed":
-			fmt.Println(docs.ExampleSeedConfiguration)
+		case "datacenter":
+			fmt.Println(docs.ExampleDatacenterConfiguration)
 		default:
 			return cmd.Usage()
 		}

@@ -26,11 +26,12 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	k8csemver "k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/install/stack"
 )
 
-func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv1.Seed, opt *stack.DeployOptions) []error {
+func ValidateAllUserClustersAreCompatible(ctx context.Context, opt *stack.DeployOptions) []error {
 	var errs []error
 
 	// we need the actual, effective versioning configuration, which most users will
@@ -40,23 +41,35 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
 	}
 
-	// create client into seed
-	seedClient, err := opt.SeedClientGetter(seed)
-	if err != nil {
-		return append(errs, fmt.Errorf("failed to create client for Seed cluster %q: %w", seed.Name, err))
-	}
-
 	// list all userclusters
 	clusters := kubermaticv1.ClusterList{}
-	if err := seedClient.List(ctx, &clusters); err != nil {
-		return append(errs, fmt.Errorf("failed to list user clusters on Seed %q: %w", seed.Name, err))
+	if err := opt.KubeClient.List(ctx, &clusters); err != nil {
+		return append(errs, fmt.Errorf("failed to list user clusters: %w", err))
 	}
 
-	configuredVersions := defaulted.Spec.Versions
+	upgradeConstraints, constraintErrs := getAutoUpdateConstraints(defaulted)
+	if len(constraintErrs) > 0 {
+		return constraintErrs
+	}
+
+	// check that each cluster still matches the configured versions
+	for _, cluster := range clusters.Items {
+		clusterVersion := cluster.Spec.Version
+
+		if !clusterVersionIsConfigured(clusterVersion, defaulted, upgradeConstraints) {
+			errs = append(errs, fmt.Errorf("cluster %s (version %s) would not be supported anymore", cluster.Name, clusterVersion))
+		}
+	}
+
+	return errs
+}
+
+func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfiguration) ([]*semverlib.Constraints, []error) {
+	var errs []error
+
 	upgradeConstraints := []*semverlib.Constraints{}
 
-	// do not parse and check the validity of constraints for each usercluster, but just once
-	for i, update := range configuredVersions.Updates {
+	for i, update := range defaultedConfig.Spec.Versions.Updates {
 		// only consider automated updates, otherwise we might accept an unsupported
 		// cluster that is never manually updated
 		if update.Automatic == nil || !*update.Automatic {
@@ -72,43 +85,27 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 		upgradeConstraints = append(upgradeConstraints, from)
 	}
 
-	if len(errs) > 0 {
-		return errs
-	}
+	return upgradeConstraints, errs
+}
 
-	// check that each cluster still matches the configured versions
-	for _, cluster := range clusters.Items {
-		clusterVersion := cluster.Spec.Version
-		validVersion := false
-
-		// is this version still straight up supported?
-		for _, configured := range configuredVersions.Versions {
-			if configured.Equal(&clusterVersion) {
-				validVersion = true
-				break
-			}
-		}
-
-		if validVersion {
-			continue
-		}
-
-		sclusterVersion := clusterVersion.Semver()
-
-		// is an upgrade path defined from the current version to something else?
-		for _, update := range upgradeConstraints {
-			if update.Check(sclusterVersion) {
-				validVersion = true
-				break
-			}
-		}
-
-		if !validVersion {
-			errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seed.Name))
+func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semverlib.Constraints) bool {
+	// is this version still straight up supported?
+	for _, configured := range defaultedConfig.Spec.Versions.Versions {
+		if configured.Equal(&version) {
+			return true
 		}
 	}
 
-	return errs
+	sversion := version.Semver()
+
+	// is an upgrade path defined from the current version to something else?
+	for _, update := range constraints {
+		if update.Check(sversion) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func ValidateRandomSecret(value string, path string) error {

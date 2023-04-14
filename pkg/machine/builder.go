@@ -17,7 +17,6 @@ limitations under the License.
 package machine
 
 import (
-	"errors"
 	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -30,18 +29,11 @@ import (
 )
 
 type MachineBuilder struct {
-	// specify either seed+datacenterName or the datacenter directly;
-	// when the datacenter is given, it takes priority and the caller
-	// is responsible for making sure it's the correct datacenter
-	// matching the cluster (if any).
-	// If a complete cloudProviderSpec is provided, neither seed nor
-	// datacenter need to be configured at all.
-
-	seed           *kubermaticv1.Seed
-	datacenterName string
-	sshPubKeys     sets.Set[string]
+	// If a complete cloudProviderSpec is provided,
+	// datacenter does not need to be configured at all.
 
 	datacenter *kubermaticv1.Datacenter
+	sshPubKeys sets.Set[string]
 
 	cluster             *kubermaticv1.Cluster
 	cloudProvider       kubermaticv1.CloudProvider
@@ -56,13 +48,6 @@ func NewBuilder() *MachineBuilder {
 	}
 }
 
-// WithSeed should only be used in conjunction with WithDatacenterName().
-// Alternatively, use WithDatacenter() to specify the datacenter directly.
-func (b *MachineBuilder) WithSeed(seed *kubermaticv1.Seed) *MachineBuilder {
-	b.seed = seed
-	return b
-}
-
 func (b *MachineBuilder) WithCluster(cluster *kubermaticv1.Cluster) *MachineBuilder {
 	b.cluster = cluster
 	return b
@@ -70,11 +55,6 @@ func (b *MachineBuilder) WithCluster(cluster *kubermaticv1.Cluster) *MachineBuil
 
 func (b *MachineBuilder) WithDatacenter(datacenter *kubermaticv1.Datacenter) *MachineBuilder {
 	b.datacenter = datacenter
-	return b
-}
-
-func (b *MachineBuilder) WithDatacenterName(datacenterName string) *MachineBuilder {
-	b.datacenterName = datacenterName
 	return b
 }
 
@@ -120,14 +100,7 @@ func (b *MachineBuilder) BuildCloudProviderSpec() (interface{}, error) {
 		return nil, fmt.Errorf("failed to determine cloud provider: %w", err)
 	}
 
-	// try to determine the target datacenter (it's optional as the caller is free to provide
-	// a full providerspec themselves)
-	datacenter, err := b.determineDatacenter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine datacenter: %w", err)
-	}
-
-	return CompleteCloudProviderSpec(b.cloudProviderSpec, cloudProvider, b.cluster, datacenter, operatingSystem)
+	return CompleteCloudProviderSpec(b.cloudProviderSpec, cloudProvider, b.cluster, b.datacenter, operatingSystem)
 }
 
 func (b *MachineBuilder) BuildProviderConfig() (*providerconfig.Config, error) {
@@ -141,12 +114,7 @@ func (b *MachineBuilder) BuildProviderConfig() (*providerconfig.Config, error) {
 		return nil, fmt.Errorf("failed to determine operating system: %w", err)
 	}
 
-	datacenter, err := b.determineDatacenter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine datacenter: %w", err)
-	}
-
-	cloudProviderSpec, err := CompleteCloudProviderSpec(b.cloudProviderSpec, cloudProvider, b.cluster, datacenter, operatingSystem)
+	cloudProviderSpec, err := CompleteCloudProviderSpec(b.cloudProviderSpec, cloudProvider, b.cluster, b.datacenter, operatingSystem)
 	if err != nil {
 		return nil, fmt.Errorf("failed to apply cluster information to the provider spec: %w", err)
 	}
@@ -209,46 +177,6 @@ func (b *MachineBuilder) determineCloudProvider() (kubermaticv1.CloudProvider, e
 	}
 
 	return provider, nil
-}
-
-func (b *MachineBuilder) determineDatacenter() (*kubermaticv1.Datacenter, error) {
-	if b.datacenter != nil {
-		return b.datacenter, nil
-	}
-
-	// sanity check: do not silently ignore misconfigurations where only a seed, but
-	// no datacenter is specified accidentally; note that the datacenter name can be
-	// taken from the cluster, if given
-	seedSpecified := b.seed != nil
-	dcSpecified := b.datacenterName != "" || (b.cluster != nil && b.cluster.Spec.Cloud.DatacenterName != "")
-
-	if seedSpecified != dcSpecified {
-		return nil, errors.New("invalid builder configuration, must specify either both seed and datacenter name or nothing at all; datacenter name can be deduced from a Cluster object")
-	}
-
-	// it's valid to not specify if the cloud provider spec needs no further fields added to it
-	if !seedSpecified && !dcSpecified {
-		return nil, nil
-	}
-
-	// sanity check: make sure cluster and explicit datacenter name do not contradict each other
-	if b.datacenterName != "" && b.cluster != nil && b.cluster.Spec.Cloud.DatacenterName != b.datacenterName {
-		return nil, fmt.Errorf("explicit datacenter %q does not match cluster's datacenter %q", b.datacenterName, b.cluster.Spec.Cloud.DatacenterName)
-	}
-
-	datacenterName := b.datacenterName
-	if datacenterName == "" && b.cluster != nil {
-		datacenterName = b.cluster.Spec.Cloud.DatacenterName
-	}
-	// due to the checks for dcSpecified it's now guaranteed that datacenterName is not empty
-
-	for name, dc := range b.seed.Spec.Datacenters {
-		if name == datacenterName {
-			return &dc, nil
-		}
-	}
-
-	return nil, fmt.Errorf("unknown datacenter %q in seed %q", datacenterName, b.seed.Name)
 }
 
 func (b *MachineBuilder) completeOperatingSystemSpec(os kubermaticv1.OperatingSystem, cloudProvider kubermaticv1.CloudProvider) (interface{}, error) {

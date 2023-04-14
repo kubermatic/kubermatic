@@ -31,6 +31,8 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v3/pkg/util/cli"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -75,7 +77,8 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
-	cli.Hello(log, "LoadBalancer Updater", logOpts.Debug, nil)
+	version := kubermatic.NewDefaultVersions(edition.CommunityEdition)
+	cli.Hello(log, "LoadBalancer Updater", logOpts.Debug, version)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {

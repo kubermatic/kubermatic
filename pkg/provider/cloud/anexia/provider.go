@@ -36,11 +36,11 @@ type Anexia struct {
 var _ provider.CloudProvider = &Anexia{}
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Anexia, error) {
-	if dc.Spec.Anexia == nil {
+	if dc.Spec.Provider.Anexia == nil {
 		return nil, errors.New("datacenter is not an Anexia datacenter")
 	}
 	return &Anexia{
-		dc:                dc.Spec.Anexia,
+		dc:                dc.Spec.Provider.Anexia,
 		secretKeySelector: secretKeyGetter,
 	}, nil
 }

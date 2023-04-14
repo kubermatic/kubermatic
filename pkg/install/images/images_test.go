@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/install/helm"
 	"k8c.io/kubermatic/v3/pkg/resources/certificates"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -48,7 +49,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		t.Errorf("failed to determine versions: %v", err)
 	}
 
-	kubermaticVersions := kubermatic.NewFakeVersions()
+	kubermaticVersions := kubermatic.NewFakeVersions(edition.CommunityEdition)
 	clusterVersions := getVersionsFromKubermaticConfiguration(config)
 	addonPath := "../../../addons"
 

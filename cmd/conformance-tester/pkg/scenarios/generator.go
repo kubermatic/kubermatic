@@ -26,8 +26,9 @@ import (
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/api/v3/pkg/semver"
-	"k8c.io/kubermatic/v3/cmd/conformance-tester/pkg/types"
+	ctypes "k8c.io/kubermatic/v3/cmd/conformance-tester/pkg/types"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -88,7 +89,7 @@ func (g *Generator) WithDualstack(enable bool) *Generator {
 	return g
 }
 
-func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap.SugaredLogger) ([]Scenario, error) {
+func (g *Generator) Scenarios(ctx context.Context, opts *ctypes.Options, log *zap.SugaredLogger) ([]Scenario, error) {
 	scenarios := []Scenario{}
 
 	for _, version := range sets.List(g.versions) {
@@ -119,7 +120,7 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 	return shuffle(scenarios), nil
 }
 
-func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Client, secrets types.Secrets, provider kubermaticv1.CloudProvider) (*kubermaticv1.Datacenter, error) {
+func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Client, secrets ctypes.Secrets, provider kubermaticv1.CloudProvider) (*kubermaticv1.Datacenter, error) {
 	var datacenterName string
 
 	switch provider {
@@ -157,7 +158,7 @@ func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Cli
 }
 
 func providerScenario(
-	opts *types.Options,
+	opts *ctypes.Options,
 	provider kubermaticv1.CloudProvider,
 	os kubermaticv1.OperatingSystem,
 	version semver.Semver,
@@ -221,19 +222,13 @@ func shuffle(vals []Scenario) []Scenario {
 	return ret
 }
 
-func getDatacenter(ctx context.Context, client ctrlruntimeclient.Client, datacenter string) (*kubermaticv1.Datacenter, error) {
-	seeds := &kubermaticv1.SeedList{}
-	if err := client.List(ctx, seeds); err != nil {
-		return nil, fmt.Errorf("failed to list seeds: %w", err)
+func getDatacenter(ctx context.Context, client ctrlruntimeclient.Client, name string) (*kubermaticv1.Datacenter, error) {
+	datacenter := &kubermaticv1.Datacenter{}
+	key := types.NamespacedName{Name: name}
+
+	if err := client.Get(ctx, key, datacenter); err != nil {
+		return nil, fmt.Errorf("failed to get Datacenter: %w", err)
 	}
 
-	for _, seed := range seeds.Items {
-		for name, dc := range seed.Spec.Datacenters {
-			if name == datacenter {
-				return &dc, nil
-			}
-		}
-	}
-
-	return nil, fmt.Errorf("no Seed contains datacenter %q", datacenter)
+	return datacenter, nil
 }

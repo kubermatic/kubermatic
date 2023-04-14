@@ -33,8 +33,10 @@ func newCloudProvider(t *testing.T) *AmazonEC2 {
 
 	provider, err := NewCloudProvider(&kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			AWS: &kubermaticv1.DatacenterSpecAWS{
-				Region: os.Getenv(awsRegionEnvName),
+			Provider: kubermaticv1.DatacenterProviderSpec{
+				AWS: &kubermaticv1.DatacenterSpecAWS{
+					Region: os.Getenv(awsRegionEnvName),
+				},
 			},
 		},
 	}, nil)

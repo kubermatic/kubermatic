@@ -297,11 +297,6 @@ func (*MasterStack) InstallKubermaticCRDs(ctx context.Context, client ctrlruntim
 		return err
 	}
 
-	// install VPA CRDs
-	if err := util.DeployCRDs(ctx, client, logger, filepath.Join(crdDirectory, "k8s.io"), nil, crd.MasterCluster); err != nil {
-		return err
-	}
-
 	return nil
 }
 

@@ -42,6 +42,8 @@ import (
 	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v3/pkg/util/cli"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
@@ -52,6 +54,7 @@ import (
 )
 
 func main() {
+	version := kubermatic.NewDefaultVersions(edition.CommunityEdition)
 	rootCtx := signals.SetupSignalHandler()
 
 	// setup flags
@@ -80,7 +83,7 @@ func main() {
 	defer metrics.UpdateMetrics(log)
 
 	// say hello
-	cli.Hello(log, "Conformance Tests", true, nil)
+	cli.Hello(log, "Conformance Tests", true, version)
 	log.Infow("Runner configuration",
 		"providers", sets.List(opts.Providers),
 		"operatingsystems", sets.List(opts.Distributions),
@@ -93,7 +96,7 @@ func main() {
 		"updates", opts.TestClusterUpdate,
 	)
 
-	// setup kube client, ctrl-runtime client, clientgetter, seedgetter etc.
+	// setup kube client, ctrl-runtime client, clientgetter etc.
 	if err := setupKubeClients(rootCtx, opts); err != nil {
 		log.Fatalw("Failed to setup kube clients", zap.Error(err))
 	}
@@ -107,8 +110,8 @@ func main() {
 	opts.HomeDir = homeDir
 
 	// setup runner and KKP clients
-	log.Info("Preparing project...")
-	testRunner := runner.NewKubeRunner(opts, log)
+	log.Info("Preparing environment...")
+	testRunner := runner.NewKubeRunner(opts, log, version)
 	if err := testRunner.Setup(rootCtx); err != nil {
 		log.Fatalw("Failed to setup runner", zap.Error(err))
 	}
@@ -141,12 +144,6 @@ func main() {
 
 		scenarios = keepOnlyFailedScenarios(log, scenarios, previousResults, *opts)
 	}
-
-	if err := testRunner.SetupProject(rootCtx); err != nil {
-		log.Fatalw("Failed to setup project", zap.Error(err))
-	}
-
-	log.Infow("Using project", "project", opts.KubermaticProject)
 
 	// let the magic happen!
 	log.Info("Running E2E tests...")
@@ -213,15 +210,6 @@ func setupKubeClients(ctx context.Context, opts *types.Options) error {
 		return err
 	}
 	opts.SeedGeneratedClient = seedGeneratedClient
-
-	seedGetter, err := kubernetesprovider.SeedGetterFactory(ctx, seedClusterClient, opts.KubermaticSeedName, opts.KubermaticNamespace)
-	if err != nil {
-		return fmt.Errorf("failed to construct seedGetter: %w", err)
-	}
-	opts.Seed, err = seedGetter()
-	if err != nil {
-		return fmt.Errorf("failed to get seed: %w", err)
-	}
 
 	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(opts.SeedClusterClient, opts.KubermaticNamespace)
 	if err != nil {

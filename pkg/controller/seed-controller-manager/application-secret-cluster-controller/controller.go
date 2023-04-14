@@ -24,7 +24,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	applicationsecretsynchronizer "k8c.io/kubermatic/v3/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	predicateutil "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/util/workerlabel"
@@ -54,6 +53,8 @@ const (
 
 	// applicationSecretCleanupFinalizer indicates that secret synced from kubermatic namespace to cluster namespace need cleanup.
 	applicationSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-application-secret"
+
+	SecretTypeAnnotation = "apps.kubermatic.k8c.io/secret-type"
 )
 
 type reconciler struct {
@@ -69,11 +70,9 @@ func Add(
 	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-
 	numWorkers int,
 	workerName string,
 	namespace string,
-
 ) error {
 	workerlabelSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -94,7 +93,7 @@ func Add(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(applicationsecretsynchronizer.SecretTypeAnnotation, "", false), predicateutil.ByNamespace(r.namespace)); err != nil {
+	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(SecretTypeAnnotation, "", false), predicateutil.ByNamespace(r.namespace)); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
@@ -114,7 +113,7 @@ func Add(
 		if secret.Annotations == nil {
 			return nil
 		}
-		_, isAppSecret := secret.Annotations[applicationsecretsynchronizer.SecretTypeAnnotation]
+		_, isAppSecret := secret.Annotations[SecretTypeAnnotation]
 		return []string{strconv.FormatBool(isAppSecret)}
 	}); err != nil {
 		return fmt.Errorf("failed to add index on Secret.metadata.annotation: %w", err)

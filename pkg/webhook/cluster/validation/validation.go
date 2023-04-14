@@ -31,9 +31,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/validation"
 	"k8c.io/kubermatic/v3/pkg/version"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,11 +40,11 @@ import (
 
 // validator for validating Kubermatic Cluster CRD.
 type validator struct {
-	features     features.FeatureGate
-	client       ctrlruntimeclient.Client
-	seedGetter   provider.SeedGetter
-	configGetter provider.KubermaticConfigurationGetter
-	caBundle     *x509.CertPool
+	features         features.FeatureGate
+	seedClient       ctrlruntimeclient.Client
+	datacenterGetter provider.DatacenterGetter
+	configGetter     provider.KubermaticConfigurationGetter
+	caBundle         *x509.CertPool
 
 	// disableProviderValidation is only for unit tests, to ensure no
 	// provider would phone home to validate dummy test credentials
@@ -54,13 +52,13 @@ type validator struct {
 }
 
 // NewValidator returns a new cluster validator.
-func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
+func NewValidator(seedClient ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, datacenterGetter provider.DatacenterGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
 	return &validator{
-		client:       client,
-		features:     features,
-		seedGetter:   seedGetter,
-		configGetter: configGetter,
-		caBundle:     caBundle,
+		seedClient:       seedClient,
+		features:         features,
+		configGetter:     configGetter,
+		datacenterGetter: datacenterGetter,
+		caBundle:         caBundle,
 	}
 }
 
@@ -92,12 +90,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 	}
 
 	versionManager := version.NewFromConfiguration(config)
-
 	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, versionManager, v.features, nil)
-
-	if err := v.validateProjectRelation(ctx, cluster, nil); err != nil {
-		errs = append(errs, err)
-	}
 
 	return errs.ToAggregate()
 }
@@ -124,12 +117,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	}
 
 	updateManager := version.NewFromConfiguration(config)
-
 	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, updateManager, v.features)
-
-	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
-		errs = append(errs, err)
-	}
 
 	return errs.ToAggregate()
 }
@@ -139,15 +127,7 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) erro
 }
 
 func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
-	seed, err := v.seedGetter()
-	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
-	}
-	if seed == nil {
-		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
-	}
-
-	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(ctx, &c.Spec, v.datacenterGetter)
 	if fieldErr != nil {
 		return nil, nil, fieldErr
 	}
@@ -156,55 +136,11 @@ func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermat
 		return datacenter, nil, nil
 	}
 
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.client)
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.seedClient)
 	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, v.caBundle)
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)
 	}
 
 	return datacenter, cloudProvider, nil
-}
-
-func (v *validator) validateProjectRelation(ctx context.Context, cluster *kubermaticv1.Cluster, oldCluster *kubermaticv1.Cluster) *field.Error {
-	label := kubermaticv1.ProjectIDLabelKey
-	fieldPath := field.NewPath("metadata", "labels")
-	isUpdate := oldCluster != nil
-
-	if isUpdate && cluster.Labels[label] != oldCluster.Labels[label] {
-		return field.Invalid(fieldPath, cluster.Labels[label], fmt.Sprintf("the %s label is immutable", label))
-	}
-
-	projectID := cluster.Labels[label]
-	if projectID == "" {
-		return field.Required(fieldPath, fmt.Sprintf("Cluster resources must have a %q label", label))
-	}
-
-	project := &kubermaticv1.Project{}
-	if err := v.client.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
-		if apierrors.IsNotFound(err) {
-			// during cluster creation, we enforce the project label;
-			// during updates we are more relaxed and only require that the label isn't changed,
-			// so that if a project gets removed before the cluster (for whatever reason), then
-			// the cluster cleanup can still progress and is not blocked by the webhook rejecting
-			// the stale label
-			if isUpdate {
-				return nil
-			}
-
-			return field.Invalid(fieldPath, projectID, "no such project exists")
-		}
-
-		return field.InternalError(fieldPath, fmt.Errorf("failed to get project: %w", err))
-	}
-
-	// Do not check the project phase, as projects only get Active after being successfully
-	// reconciled. This requires the owner user to be setup properly as well, which in turn
-	// requires owner references to be setup. All of this is super annoying when doing
-	// GitOps. Instead we rely on _eventual_ consistency and only check that the project
-	// exists and is not being deleted.
-	if !isUpdate && project.DeletionTimestamp != nil {
-		return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
-	}
-
-	return nil
 }

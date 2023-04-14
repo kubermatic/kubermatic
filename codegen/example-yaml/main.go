@@ -49,8 +49,7 @@ func main() {
 		log.Fatal("Usage: go run main.go SRC_ROOT TARGET")
 	}
 
-	ed := edition.KubermaticEdition
-	log.Printf("Generating for %s", ed)
+	log.Printf("Generating for %s", edition.CommunityEdition)
 
 	root := flag.Arg(0)
 	target := flag.Arg(1)
@@ -86,7 +85,7 @@ func main() {
 
 	examples := map[string]runtime.Object{
 		"kubermaticConfiguration": config,
-		"seed":                    createExampleSeed(config),
+		"datacenter":              createExampleDatacenter(config),
 		"applicationDefinition":   createExampleApplicationDefinition(),
 		"applicationInstallation": createExampleApplicationInstallation(),
 	}
@@ -94,7 +93,7 @@ func main() {
 	for name, data := range examples {
 		log.Printf("Creating example YAML for %s resources...", name)
 
-		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.%s.yaml", name, strings.ToLower(ed.ShortString())))
+		filename := filepath.Join(target, fmt.Sprintf("zz_generated.%s.yaml", name))
 
 		f, err := os.Create(filename)
 		if err != nil {
@@ -113,7 +112,7 @@ func main() {
 	}
 }
 
-func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
+func createExampleDatacenter(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Datacenter {
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
 	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
@@ -132,143 +131,115 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 		NoProxy:   pointer.String(""),
 	}
 
-	seed := &kubermaticv1.Seed{
+	datacenter := &kubermaticv1.Datacenter{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kubermatic.k8c.io/v1",
-			Kind:       "Seed",
+			Kind:       "Datacenter",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "<<exampleseed>>",
+			Name:      "<<example-datacenter>>",
 			Namespace: "kubermatic",
 		},
-		Spec: kubermaticv1.SeedSpec{
-			Datacenters: map[string]kubermaticv1.Datacenter{
-				"<<exampledc>>": {
-					Node: &kubermaticv1.NodeSettings{
-						ProxySettings:      proxySettings,
-						InsecureRegistries: []string{},
-						RegistryMirrors:    []string{},
+		Spec: kubermaticv1.DatacenterSpec{
+			Node: &kubermaticv1.NodeSettings{
+				ProxySettings:      proxySettings,
+				InsecureRegistries: []string{},
+				RegistryMirrors:    []string{},
+			},
+			ProviderReconciliationInterval: &metav1.Duration{
+				Duration: defaulting.DefaultCloudProviderReconciliationInterval,
+			},
+			RequiredEmails:                 []string{},
+			DefaultOperatingSystemProfiles: operatingSystemProfileList,
+			MachineFlavorFilter: &kubermaticv1.MachineFlavorFilter{
+				MinCPU:    0,
+				MaxCPU:    0,
+				MinRAM:    0,
+				MaxRAM:    0,
+				EnableGPU: false,
+			},
+			Provider: kubermaticv1.DatacenterProviderSpec{
+				Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
+				Anexia:  &kubermaticv1.DatacenterSpecAnexia{},
+				AWS: &kubermaticv1.DatacenterSpecAWS{
+					Images: imageList,
+				},
+				Azure:        &kubermaticv1.DatacenterSpecAzure{},
+				BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+				GCP: &kubermaticv1.DatacenterSpecGCP{
+					ZoneSuffixes: []string{},
+				},
+				Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
+				KubeVirt: &kubermaticv1.DatacenterSpecKubeVirt{
+					DNSPolicy: "",
+					DNSConfig: &corev1.PodDNSConfig{},
+					Images: &kubermaticv1.KubeVirtImageSources{
+						HTTP: &kubevirtHTTPSource,
 					},
-					Spec: kubermaticv1.DatacenterSpec{
-						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
-						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
-						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
-						RequiredEmails:                 []string{},
-						DefaultOperatingSystemProfiles: operatingSystemProfileList,
-						MachineFlavorFilter: &kubermaticv1.MachineFlavorFilter{
-							MinCPU:    0,
-							MaxCPU:    0,
-							MinRAM:    0,
-							MaxRAM:    0,
-							EnableGPU: false,
-						},
-						AWS: &kubermaticv1.DatacenterSpecAWS{
-							Images: imageList,
-						},
-						Azure: &kubermaticv1.DatacenterSpecAzure{},
-						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
-							Images:               imageList,
-							ManageSecurityGroups: pointer.Bool(true),
-							UseOctavia:           pointer.Bool(true),
-							DNSServers:           []string{},
-							TrustDevicePath:      pointer.Bool(false),
-							EnabledFlavors:       []string{},
-							IPv6Enabled:          pointer.Bool(false),
-							NodeSizeRequirements: &kubermaticv1.OpenStackNodeSizeRequirements{
-								MinimumVCPUs:  0,
-								MinimumMemory: 0,
-							},
-						},
-						Packet: &kubermaticv1.DatacenterSpecPacket{
-							Facilities: []string{},
-							Metro:      "",
-						},
-						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
-						VSphere: &kubermaticv1.DatacenterSpecVSphere{
-							Templates:           imageList,
-							InfraManagementUser: &kubermaticv1.VSphereCredentials{},
-							IPv6Enabled:         pointer.Bool(false),
-						},
-						GCP: &kubermaticv1.DatacenterSpecGCP{
-							ZoneSuffixes: []string{},
-						},
-						KubeVirt: &kubermaticv1.DatacenterSpecKubeVirt{
-							DNSPolicy: "",
-							DNSConfig: &corev1.PodDNSConfig{},
-							Images: &kubermaticv1.KubeVirtImageSources{
-								HTTP: &kubevirtHTTPSource,
-							},
-							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
-								{
-									Name: "deny-ingress",
-									Spec: networkingv1.NetworkPolicySpec{
-										PodSelector: metav1.LabelSelector{},
-										PolicyTypes: []networkingv1.PolicyType{
-											networkingv1.PolicyTypeIngress,
-										},
-									},
+					CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
+						{
+							Name: "deny-ingress",
+							Spec: networkingv1.NetworkPolicySpec{
+								PodSelector: metav1.LabelSelector{},
+								PolicyTypes: []networkingv1.PolicyType{
+									networkingv1.PolicyTypeIngress,
 								},
 							},
-							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
-								Name:           "px-csi-db",
-								IsDefaultClass: pointer.Bool(true),
-							},
-							},
-						},
-						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
-						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},
-						Nutanix: &kubermaticv1.DatacenterSpecNutanix{
-							Images: imageList,
-							Port:   pointer.Int32(9440),
-						},
-						VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
-							Templates: imageList,
 						},
 					},
-				},
-			},
-			ProxySettings: &proxySettings,
-			NodeportProxy: &kubermaticv1.NodeportProxyConfig{
-				Annotations: map[string]string{},
-				Envoy: &kubermaticv1.NodePortProxyComponentEnvoy{
-					LoadBalancerService: &kubermaticv1.EnvoyLoadBalancerService{
-						SourceRanges: []kubermaticv1.CIDR{},
+					InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
+						Name:           "px-csi-db",
+						IsDefaultClass: pointer.Bool(true),
+					},
 					},
 				},
-			},
-			Metering: &kubermaticv1.MeteringConfiguration{
-				Enabled:          false,
-				StorageClassName: "kubermatic-fast",
-				StorageSize:      "100Gi",
-				ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
-					"weekly": {
-						Schedule: "0 1 * * 6",
-						Interval: 7,
+				Nutanix: &kubermaticv1.DatacenterSpecNutanix{
+					Images: imageList,
+					Port:   pointer.Int32(9440),
+				},
+				OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
+					Images:               imageList,
+					ManageSecurityGroups: pointer.Bool(true),
+					UseOctavia:           pointer.Bool(true),
+					DNSServers:           []string{},
+					TrustDevicePath:      pointer.Bool(false),
+					EnabledFlavors:       []string{},
+					IPv6Enabled:          pointer.Bool(false),
+					NodeSizeRequirements: &kubermaticv1.OpenStackNodeSizeRequirements{
+						MinimumVCPUs:  0,
+						MinimumMemory: 0,
 					},
 				},
-			},
-			MLA: &kubermaticv1.SeedMLASettings{},
-			DefaultComponentSettings: &kubermaticv1.ComponentSettings{
-				KonnectivityProxy:  &kubermaticv1.KonnectivityProxySettings{},
-				NodePortProxyEnvoy: &kubermaticv1.NodeportProxyComponent{},
-				Prometheus:         &kubermaticv1.StatefulSetSettings{},
+				Packet: &kubermaticv1.DatacenterSpecPacket{
+					Facilities: []string{},
+					Metro:      "",
+				},
+				VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
+					Templates: imageList,
+				},
+				VSphere: &kubermaticv1.DatacenterSpecVSphere{
+					Templates:           imageList,
+					InfraManagementUser: &kubermaticv1.VSphereCredentials{},
+					IPv6Enabled:         pointer.Bool(false),
+				},
 			},
 		},
 	}
 
-	defaulted, err := defaulting.DefaultSeed(seed, config, zap.NewNop().Sugar())
-	if err != nil {
-		log.Fatalf("Failed to default Seed: %v", err)
-	}
-
-	if err := validateAllFieldsAreDefined(&defaulted.Spec); err != nil {
+	if err := validateAllFieldsAreDefined(&datacenter.Spec); err != nil {
 		log.Fatalf("Seed struct is incomplete: %v", err)
 	}
 
-	return defaulted
+	return datacenter
 }
 
 func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguration {
+	proxySettings := kubermaticv1.ProxySettings{
+		HTTPProxy: pointer.String(""),
+		NoProxy:   pointer.String(""),
+	}
+
 	cfg := &kubermaticv1.KubermaticConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -285,17 +256,25 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 			FeatureGates: map[string]bool{},
 			Proxy:        &kubermaticv1.KubermaticProxyConfiguration{},
 			API:          &kubermaticv1.KubermaticAPIConfiguration{},
-			SeedController: &kubermaticv1.KubermaticSeedControllerConfiguration{
+			ControllerManager: &kubermaticv1.KubermaticControllerManagerConfiguration{
 				BackupStoreContainer:   defaulting.DefaultBackupStoreContainer,
 				BackupCleanupContainer: defaulting.DefaultBackupCleanupContainer,
 				BackupDeleteContainer:  defaulting.DefaultNewBackupDeleteContainer,
-			},
-			MasterController: &kubermaticv1.KubermaticMasterControllerConfiguration{
-				ProjectsMigrator: &kubermaticv1.KubermaticProjectsMigratorConfiguration{},
+				ProjectsMigrator:       &kubermaticv1.KubermaticProjectsMigratorConfiguration{},
 			},
 			UserCluster: &kubermaticv1.KubermaticUserClusterConfiguration{
 				MachineController:      &kubermaticv1.MachineControllerConfiguration{},
 				OperatingSystemManager: &kubermaticv1.OperatingSystemManager{},
+				ProxySettings:          &proxySettings,
+				MLA:                    &kubermaticv1.KubermaticUserClusterMLAConfiguration{},
+			},
+			NodeportProxy: &kubermaticv1.NodeportProxyConfig{
+				Annotations: map[string]string{},
+				Envoy: &kubermaticv1.NodePortProxyComponentEnvoy{
+					LoadBalancerService: &kubermaticv1.EnvoyLoadBalancerService{
+						SourceRanges: []kubermaticv1.CIDR{},
+					},
+				},
 			},
 		},
 	}

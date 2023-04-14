@@ -41,13 +41,13 @@ type Provider struct {
 
 // NewCloudProvider creates a new VMware Cloud Director provider.
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Provider, error) {
-	if dc.Spec.VMwareCloudDirector == nil {
+	if dc.Spec.Provider.VMwareCloudDirector == nil {
 		return nil, errors.New("datacenter is not a VMware Cloud Director datacenter")
 	}
 
 	return &Provider{
 		secretKeySelector: secretKeyGetter,
-		dc:                dc.Spec.VMwareCloudDirector,
+		dc:                dc.Spec.Provider.VMwareCloudDirector,
 	}, nil
 }
 

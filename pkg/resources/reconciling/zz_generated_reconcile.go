@@ -29,48 +29,10 @@ import (
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	autoscalingk8siov1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	instancetypev1alpha1 "kubevirt.io/api/instancetype/v1alpha1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 )
-
-// VerticalPodAutoscalerReconciler defines an interface to create/update VerticalPodAutoscalers.
-type VerticalPodAutoscalerReconciler = func(existing *autoscalingk8siov1.VerticalPodAutoscaler) (*autoscalingk8siov1.VerticalPodAutoscaler, error)
-
-// NamedVerticalPodAutoscalerReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedVerticalPodAutoscalerReconcilerFactory = func() (name string, reconciler VerticalPodAutoscalerReconciler)
-
-// VerticalPodAutoscalerObjectWrapper adds a wrapper so the VerticalPodAutoscalerReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func VerticalPodAutoscalerObjectWrapper(reconciler VerticalPodAutoscalerReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*autoscalingk8siov1.VerticalPodAutoscaler))
-		}
-		return reconciler(&autoscalingk8siov1.VerticalPodAutoscaler{})
-	}
-}
-
-// ReconcileVerticalPodAutoscalers will create and update the VerticalPodAutoscalers coming from the passed VerticalPodAutoscalerReconciler slice.
-func ReconcileVerticalPodAutoscalers(ctx context.Context, namedFactories []NamedVerticalPodAutoscalerReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := VerticalPodAutoscalerObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &autoscalingk8siov1.VerticalPodAutoscaler{}, false); err != nil {
-			return fmt.Errorf("failed to ensure VerticalPodAutoscaler %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
 
 // CustomResourceDefinitionReconciler defines an interface to create/update CustomResourceDefinitions.
 type CustomResourceDefinitionReconciler = func(existing *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error)
@@ -294,28 +256,28 @@ func ReconcileClusterTemplates(ctx context.Context, namedFactories []NamedCluste
 	return nil
 }
 
-// ConstraintReconciler defines an interface to create/update Constraints.
-type ConstraintReconciler = func(existing *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+// DatacenterReconciler defines an interface to create/update Datacenters.
+type DatacenterReconciler = func(existing *kubermaticv1.Datacenter) (*kubermaticv1.Datacenter, error)
 
-// NamedConstraintReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedConstraintReconcilerFactory = func() (name string, reconciler ConstraintReconciler)
+// NamedDatacenterReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedDatacenterReconcilerFactory = func() (name string, reconciler DatacenterReconciler)
 
-// ConstraintObjectWrapper adds a wrapper so the ConstraintReconciler matches ObjectReconciler.
+// DatacenterObjectWrapper adds a wrapper so the DatacenterReconciler matches ObjectReconciler.
 // This is needed as Go does not support function interface matching.
-func ConstraintObjectWrapper(reconciler ConstraintReconciler) reconciling.ObjectReconciler {
+func DatacenterObjectWrapper(reconciler DatacenterReconciler) reconciling.ObjectReconciler {
 	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.Constraint))
+			return reconciler(existing.(*kubermaticv1.Datacenter))
 		}
-		return reconciler(&kubermaticv1.Constraint{})
+		return reconciler(&kubermaticv1.Datacenter{})
 	}
 }
 
-// ReconcileConstraints will create and update the Constraints coming from the passed ConstraintReconciler slice.
-func ReconcileConstraints(ctx context.Context, namedFactories []NamedConstraintReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+// ReconcileDatacenters will create and update the Datacenters coming from the passed DatacenterReconciler slice.
+func ReconcileDatacenters(ctx context.Context, namedFactories []NamedDatacenterReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
 	for _, factory := range namedFactories {
 		name, reconciler := factory()
-		reconcileObject := ConstraintObjectWrapper(reconciler)
+		reconcileObject := DatacenterObjectWrapper(reconciler)
 		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
 		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
 
@@ -323,119 +285,8 @@ func ReconcileConstraints(ctx context.Context, namedFactories []NamedConstraintR
 			reconcileObject = objectModifier(reconcileObject)
 		}
 
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.Constraint{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Constraint %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// ConstraintTemplateReconciler defines an interface to create/update ConstraintTemplates.
-type ConstraintTemplateReconciler = func(existing *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
-
-// NamedConstraintTemplateReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedConstraintTemplateReconcilerFactory = func() (name string, reconciler ConstraintTemplateReconciler)
-
-// ConstraintTemplateObjectWrapper adds a wrapper so the ConstraintTemplateReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func ConstraintTemplateObjectWrapper(reconciler ConstraintTemplateReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.ConstraintTemplate))
-		}
-		return reconciler(&kubermaticv1.ConstraintTemplate{})
-	}
-}
-
-// ReconcileConstraintTemplates will create and update the ConstraintTemplates coming from the passed ConstraintTemplateReconciler slice.
-func ReconcileConstraintTemplates(ctx context.Context, namedFactories []NamedConstraintTemplateReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := ConstraintTemplateObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.ConstraintTemplate{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// EtcdBackupConfigReconciler defines an interface to create/update EtcdBackupConfigs.
-type EtcdBackupConfigReconciler = func(existing *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
-
-// NamedEtcdBackupConfigReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedEtcdBackupConfigReconcilerFactory = func() (name string, reconciler EtcdBackupConfigReconciler)
-
-// EtcdBackupConfigObjectWrapper adds a wrapper so the EtcdBackupConfigReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func EtcdBackupConfigObjectWrapper(reconciler EtcdBackupConfigReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.EtcdBackupConfig))
-		}
-		return reconciler(&kubermaticv1.EtcdBackupConfig{})
-	}
-}
-
-// ReconcileEtcdBackupConfigs will create and update the EtcdBackupConfigs coming from the passed EtcdBackupConfigReconciler slice.
-func ReconcileEtcdBackupConfigs(ctx context.Context, namedFactories []NamedEtcdBackupConfigReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := EtcdBackupConfigObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.EtcdBackupConfig{}, false); err != nil {
-			return fmt.Errorf("failed to ensure EtcdBackupConfig %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// GroupProjectBindingReconciler defines an interface to create/update GroupProjectBindings.
-type GroupProjectBindingReconciler = func(existing *kubermaticv1.GroupProjectBinding) (*kubermaticv1.GroupProjectBinding, error)
-
-// NamedGroupProjectBindingReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedGroupProjectBindingReconcilerFactory = func() (name string, reconciler GroupProjectBindingReconciler)
-
-// GroupProjectBindingObjectWrapper adds a wrapper so the GroupProjectBindingReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func GroupProjectBindingObjectWrapper(reconciler GroupProjectBindingReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.GroupProjectBinding))
-		}
-		return reconciler(&kubermaticv1.GroupProjectBinding{})
-	}
-}
-
-// ReconcileGroupProjectBindings will create and update the GroupProjectBindings coming from the passed GroupProjectBindingReconciler slice.
-func ReconcileGroupProjectBindings(ctx context.Context, namedFactories []NamedGroupProjectBindingReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := GroupProjectBindingObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.GroupProjectBinding{}, false); err != nil {
-			return fmt.Errorf("failed to ensure GroupProjectBinding %s/%s: %w", namespace, name, err)
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.Datacenter{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Datacenter %s/%s: %w", namespace, name, err)
 		}
 	}
 
@@ -516,80 +367,6 @@ func ReconcilePresets(ctx context.Context, namedFactories []NamedPresetReconcile
 	return nil
 }
 
-// ProjectReconciler defines an interface to create/update Projects.
-type ProjectReconciler = func(existing *kubermaticv1.Project) (*kubermaticv1.Project, error)
-
-// NamedProjectReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedProjectReconcilerFactory = func() (name string, reconciler ProjectReconciler)
-
-// ProjectObjectWrapper adds a wrapper so the ProjectReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func ProjectObjectWrapper(reconciler ProjectReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.Project))
-		}
-		return reconciler(&kubermaticv1.Project{})
-	}
-}
-
-// ReconcileProjects will create and update the Projects coming from the passed ProjectReconciler slice.
-func ReconcileProjects(ctx context.Context, namedFactories []NamedProjectReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := ProjectObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.Project{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Project %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// ResourceQuotaReconciler defines an interface to create/update ResourceQuotas.
-type ResourceQuotaReconciler = func(existing *kubermaticv1.ResourceQuota) (*kubermaticv1.ResourceQuota, error)
-
-// NamedResourceQuotaReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedResourceQuotaReconcilerFactory = func() (name string, reconciler ResourceQuotaReconciler)
-
-// ResourceQuotaObjectWrapper adds a wrapper so the ResourceQuotaReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func ResourceQuotaObjectWrapper(reconciler ResourceQuotaReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.ResourceQuota))
-		}
-		return reconciler(&kubermaticv1.ResourceQuota{})
-	}
-}
-
-// ReconcileResourceQuotas will create and update the ResourceQuotas coming from the passed ResourceQuotaReconciler slice.
-func ReconcileResourceQuotas(ctx context.Context, namedFactories []NamedResourceQuotaReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := ResourceQuotaObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.ResourceQuota{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ResourceQuota %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
 // RuleGroupReconciler defines an interface to create/update RuleGroups.
 type RuleGroupReconciler = func(existing *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
 
@@ -627,43 +404,6 @@ func ReconcileRuleGroups(ctx context.Context, namedFactories []NamedRuleGroupRec
 	return nil
 }
 
-// SeedReconciler defines an interface to create/update Seeds.
-type SeedReconciler = func(existing *kubermaticv1.Seed) (*kubermaticv1.Seed, error)
-
-// NamedSeedReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedSeedReconcilerFactory = func() (name string, reconciler SeedReconciler)
-
-// SeedObjectWrapper adds a wrapper so the SeedReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func SeedObjectWrapper(reconciler SeedReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.Seed))
-		}
-		return reconciler(&kubermaticv1.Seed{})
-	}
-}
-
-// ReconcileSeeds will create and update the Seeds coming from the passed SeedReconciler slice.
-func ReconcileSeeds(ctx context.Context, namedFactories []NamedSeedReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := SeedObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.Seed{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Seed %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
 // UserReconciler defines an interface to create/update Users.
 type UserReconciler = func(existing *kubermaticv1.User) (*kubermaticv1.User, error)
 
@@ -695,43 +435,6 @@ func ReconcileUsers(ctx context.Context, namedFactories []NamedUserReconcilerFac
 
 		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.User{}, false); err != nil {
 			return fmt.Errorf("failed to ensure User %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// UserProjectBindingReconciler defines an interface to create/update UserProjectBindings.
-type UserProjectBindingReconciler = func(existing *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
-
-// NamedUserProjectBindingReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedUserProjectBindingReconcilerFactory = func() (name string, reconciler UserProjectBindingReconciler)
-
-// UserProjectBindingObjectWrapper adds a wrapper so the UserProjectBindingReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func UserProjectBindingObjectWrapper(reconciler UserProjectBindingReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubermaticv1.UserProjectBinding))
-		}
-		return reconciler(&kubermaticv1.UserProjectBinding{})
-	}
-}
-
-// ReconcileUserProjectBindings will create and update the UserProjectBindings coming from the passed UserProjectBindingReconciler slice.
-func ReconcileUserProjectBindings(ctx context.Context, namedFactories []NamedUserProjectBindingReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := UserProjectBindingObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.UserProjectBinding{}, false); err != nil {
-			return fmt.Errorf("failed to ensure UserProjectBinding %s/%s: %w", namespace, name, err)
 		}
 	}
 

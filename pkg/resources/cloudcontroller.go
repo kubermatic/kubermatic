@@ -41,10 +41,10 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudS
 		// TODO This is a dirty hack to temporarily support OTC using
 		// OpenStack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.OpenStack)
+		return !isOTC(dc.Spec.Provider.OpenStack)
 
 	case kubermaticv1.CloudProviderHetzner:
-		if cloudSpec.Hetzner.Network == "" && dc.Spec.Hetzner.Network == "" {
+		if cloudSpec.Hetzner.Network == "" && dc.Spec.Provider.Hetzner.Network == "" {
 			return false
 		}
 
@@ -89,7 +89,7 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 		// TODO This is a dirty hack to temporarily support OTC using
 		// OpenStack provider, remove this when dedicated OTC support is
 		// introduced in Kubermatic.
-		return !isOTC(dc.Spec.OpenStack)
+		return !isOTC(dc.Spec.Provider.OpenStack)
 
 	case kubermaticv1.CloudProviderAWS,
 		kubermaticv1.CloudProviderVSphere,

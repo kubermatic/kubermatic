@@ -26,30 +26,28 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/provider"
 	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // AdmissionHandler for mutating Kubermatic Addon CRD.
 type AdmissionHandler struct {
-	log              logr.Logger
-	decoder          *admission.Decoder
-	seedGetter       provider.SeedGetter
-	seedClientGetter provider.SeedClientGetter
+	log        logr.Logger
+	decoder    *admission.Decoder
+	seedClient ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new Addon AdmissionHandler.
-func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *AdmissionHandler {
+func NewAdmissionHandler(seedClient ctrlruntimeclient.Client) *AdmissionHandler {
 	return &AdmissionHandler{
-		seedGetter:       seedGetter,
-		seedClientGetter: seedClientGetter,
+		seedClient: seedClient,
 	}
 }
 
@@ -116,20 +114,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 }
 
 func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *kubermaticv1.Addon) error {
-	seed, err := h.seedGetter()
-	if err != nil {
-		return fmt.Errorf("failed to get current Seed: %w", err)
-	}
-	if seed == nil {
-		return errors.New("webhook not configured for a Seed cluster, cannot validate Addon resources")
-	}
-
-	client, err := h.seedClientGetter(seed)
-	if err != nil {
-		return fmt.Errorf("failed to get Seed client: %w", err)
-	}
-
-	cluster, err := kubernetes.ClusterFromNamespace(ctx, client, addon.Namespace)
+	cluster, err := kubernetes.ClusterFromNamespace(ctx, h.seedClient, addon.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to list Cluster objects: %w", err)
 	}

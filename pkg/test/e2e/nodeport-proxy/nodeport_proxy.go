@@ -61,16 +61,13 @@ func (d *NodeportProxy) Setup(ctx context.Context) error {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
-	cfg := d.getConfig()
-
-	// for this test, the seed is meaningless
-	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, cfg, d.Log)
+	cfg, err := defaulting.DefaultConfiguration(d.getConfig(), zap.NewNop().Sugar())
 	if err != nil {
-		return fmt.Errorf("failed to default seed: %w", err)
+		return fmt.Errorf("failed to default empty config: %w", err)
 	}
 
 	d.Log.Infow("Setting up nodeport-proxy…", "version", d.Versions.Kubermatic)
-	if err = npptest.Deploy(ctx, d.Client, d.Log, d.Namespace, cfg, seed, d.Versions, 5*time.Minute); err != nil {
+	if err := npptest.Deploy(ctx, d.Client, d.Log, d.Namespace, cfg, d.Versions, 5*time.Minute); err != nil {
 		if cleanuperr := npptest.Cleanup(ctx, d.Client, d.Log, cfg, 1*time.Minute); cleanuperr != nil {
 			d.Log.Errorw("Failed to cleanup", zap.Error(cleanuperr))
 		}

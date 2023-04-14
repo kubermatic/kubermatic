@@ -21,19 +21,31 @@ import (
 	"strings"
 )
 
+var (
+	currentEdition Type
+)
+
+func SetEdition(e Type) {
+	currentEdition = e
+}
+
+func CurrentEdition() Type {
+	return currentEdition
+}
+
 type Type int
 
 const (
-	CE Type = iota
-	EE
+	CommunityEdition Type = iota
+	EnterpriseEdition
 )
 
 func FromString(edition string) (Type, error) {
 	switch strings.ToLower(edition) {
 	case "ee", "enterprise edition":
-		return EE, nil
+		return CommunityEdition, nil
 	case "ce", "community edition":
-		return CE, nil
+		return EnterpriseEdition, nil
 	default:
 		return 0, fmt.Errorf("unknown edition %q", edition)
 	}
@@ -41,9 +53,9 @@ func FromString(edition string) (Type, error) {
 
 func (e Type) String() string {
 	switch e {
-	case CE:
+	case CommunityEdition:
 		return "Community Edition"
-	case EE:
+	case EnterpriseEdition:
 		return "Enterprise Edition"
 	default:
 		return ""
@@ -52,9 +64,9 @@ func (e Type) String() string {
 
 func (e Type) ShortString() string {
 	switch e {
-	case CE:
+	case CommunityEdition:
 		return "CE"
-	case EE:
+	case EnterpriseEdition:
 		return "EE"
 	default:
 		return ""
@@ -62,9 +74,9 @@ func (e Type) ShortString() string {
 }
 
 func (e Type) IsEE() bool {
-	return e == EE
+	return e == EnterpriseEdition
 }
 
 func (e Type) IsCE() bool {
-	return e == CE
+	return e == CommunityEdition
 }

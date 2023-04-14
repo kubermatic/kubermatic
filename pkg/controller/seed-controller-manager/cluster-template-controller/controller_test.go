@@ -43,7 +43,6 @@ func TestReconcile(t *testing.T) {
 		t.Fatalf("failed to build worker-name selector: %v", err)
 	}
 	seedNamespace := "namespace"
-	projectName := generator.GenDefaultProject().Name
 
 	testCases := []struct {
 		name                 string
@@ -55,24 +54,24 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "scenario 1: generates new clusters according to the template instance object",
 			namespacedName: types.NamespacedName{
-				Name: "my-first-project-ID-ctID2",
+				Name: "ctID2",
 			},
 			expectedClusters: []*kubermaticv1.Cluster{
-				genCluster("ct2-0", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
-				genCluster("ct2-1", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
-				genCluster("ct2-2", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-0", "bob@acme.com", *generator.GenClusterTemplateInstance("ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-1", "bob@acme.com", *generator.GenClusterTemplateInstance("ctID2", "bob@acme.com", 3)),
+				genCluster("ct2-2", "bob@acme.com", *generator.GenClusterTemplateInstance("ctID2", "bob@acme.com", 3)),
 			},
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(
-					generator.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.TemplateScopeUserCluster, "bob@acme.com"),
-					generator.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.TemplateScopeGlobalCluster, "john@acme.com"),
-					generator.GenClusterTemplate("ct3", "ctID3", projectName, kubermaticv1.TemplateScopeUserCluster, "john@acme.com"),
-					generator.GenClusterTemplate("ct4", "ctID4", projectName, kubermaticv1.TemplateScopeProjectCluster, "john@acme.com"),
-					generator.GenClusterTemplateInstance(projectName, "ctID1", "bob@acme.com", 2),
-					generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3),
-					generator.GenClusterTemplateInstance(projectName, "ctID3", "bob@acme.com", 10),
+					generator.GenClusterTemplate("ct1", "ctID1", kubermaticv1.TemplateScopeUserCluster, "bob@acme.com"),
+					generator.GenClusterTemplate("ct2", "ctID2", kubermaticv1.TemplateScopeGlobalCluster, "john@acme.com"),
+					generator.GenClusterTemplate("ct3", "ctID3", kubermaticv1.TemplateScopeUserCluster, "john@acme.com"),
+					generator.GenClusterTemplate("ct4", "ctID4", kubermaticv1.TemplateScopeProjectCluster, "john@acme.com"),
+					generator.GenClusterTemplateInstance("ctID1", "bob@acme.com", 2),
+					generator.GenClusterTemplateInstance("ctID2", "bob@acme.com", 3),
+					generator.GenClusterTemplateInstance("ctID3", "bob@acme.com", 10),
 				).
 				Build(),
 		},

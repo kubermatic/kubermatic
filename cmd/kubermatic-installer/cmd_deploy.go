@@ -35,10 +35,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-seed"
-	userclustermla "k8c.io/kubermatic/v3/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v3/pkg/log"
-	kubernetesprovider "k8c.io/kubermatic/v3/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/util/flagopts"
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
@@ -151,7 +148,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		fields := logrus.Fields{
 			"version": versions.Kubermatic,
-			"edition": edition.KubermaticEdition,
+			"edition": versions.KubermaticEdition,
 		}
 		if opt.Verbose {
 			fields["git"] = versions.KubermaticCommit
@@ -188,8 +185,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		var kubermaticStack stack.Stack
 		switch stackName {
-		case "usercluster-mla":
-			kubermaticStack = userclustermla.NewStack()
+		// case "usercluster-mla":
+		// 	kubermaticStack = userclustermla.NewStack()
 		case "kubermatic-seed":
 			kubermaticStack = kubermaticseed.NewStack()
 		case "kubermatic-master", "":
@@ -309,23 +306,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			return fmt.Errorf("failed to add scheme: %w", err)
 		}
 
-		// prepare seed access components
-		seedsGetter, err := seedsGetterFactory(appContext, kubeClient)
-		if err != nil {
-			return fmt.Errorf("failed to create Seeds getter: %w", err)
-		}
-
-		seedKubeconfigGetter, err := seedKubeconfigGetterFactory(appContext, kubeClient)
-		if err != nil {
-			return fmt.Errorf("failed to create Seed kubeconfig getter: %w", err)
-		}
-
 		deployOptions.KubermaticConfiguration = kubermaticConfig
 		deployOptions.HelmValues = helmValues
 		deployOptions.KubeClient = kubeClient
 		deployOptions.Logger = subLogger
-		deployOptions.SeedsGetter = seedsGetter
-		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("🚦 Validating existing installation…")
 

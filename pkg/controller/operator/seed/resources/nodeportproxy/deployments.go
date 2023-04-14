@@ -21,7 +21,7 @@ import (
 	"strconv"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
+	operatorresources "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -43,13 +43,13 @@ const (
 	EnvoyTunnelingPort    = 8088
 )
 
-func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
+func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(3)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					common.NameLabel: EnvoyDeploymentName,
+					operatorresources.NameLabel: EnvoyDeploymentName,
 				},
 			}
 
@@ -76,7 +76,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:    "copy-envoy-config",
-					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"/bin/cp"},
 					Args:    []string{"/envoy.yaml", "/etc/envoy/envoy.yaml"},
 					VolumeMounts: []corev1.VolumeMount{
@@ -99,7 +99,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 
 			managerContainer := corev1.Container{
 				Name:    "envoy-manager",
-				Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
+				Image:   cfg.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
 				Command: []string{"/envoy-manager"},
 				Args:    args,
 				Ports: []corev1.ContainerPort{
@@ -116,13 +116,13 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 					},
 				},
 			}
-			if seed.Spec.NodeportProxy.EnvoyManager.Resources != nil {
-				managerContainer.Resources = *seed.Spec.NodeportProxy.EnvoyManager.Resources
+			if cfg.Spec.NodeportProxy.EnvoyManager.Resources != nil {
+				managerContainer.Resources = *cfg.Spec.NodeportProxy.EnvoyManager.Resources
 			}
 
 			envoyContainer := corev1.Container{
 				Name:    "envoy",
-				Image:   seed.Spec.NodeportProxy.Envoy.DockerRepository + ":" + versions.Envoy,
+				Image:   cfg.Spec.NodeportProxy.Envoy.DockerRepository + ":" + versions.Envoy,
 				Command: []string{"/usr/local/bin/envoy"},
 				Args: []string{
 					"-c",
@@ -170,8 +170,8 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 					},
 				},
 			}
-			if seed.Spec.NodeportProxy.Envoy.Resources != nil {
-				envoyContainer.Resources = *seed.Spec.NodeportProxy.Envoy.Resources
+			if cfg.Spec.NodeportProxy.Envoy.Resources != nil {
+				envoyContainer.Resources = *cfg.Spec.NodeportProxy.Envoy.Resources
 			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
@@ -231,7 +231,7 @@ func EnvoyPDBReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory 
 			pdb.Spec.MaxUnavailable = &maxUnavailable
 			pdb.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					common.NameLabel: EnvoyDeploymentName,
+					operatorresources.NameLabel: EnvoyDeploymentName,
 				},
 			}
 			return pdb, nil
@@ -239,13 +239,13 @@ func EnvoyPDBReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory 
 	}
 }
 
-func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
+func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return UpdaterDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					common.NameLabel: UpdaterDeploymentName,
+					operatorresources.NameLabel: UpdaterDeploymentName,
 				},
 			}
 
@@ -265,7 +265,7 @@ func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "lb-updater",
-					Image:   seed.Spec.NodeportProxy.Updater.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.NodeportProxy.Updater.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"/lb-updater"},
 					Args:    args,
 					Env: []corev1.EnvVar{
@@ -281,8 +281,8 @@ func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed
 				},
 			}
 
-			if seed.Spec.NodeportProxy.Updater.Resources != nil {
-				d.Spec.Template.Spec.Containers[0].Resources = *seed.Spec.NodeportProxy.Updater.Resources
+			if cfg.Spec.NodeportProxy.Updater.Resources != nil {
+				d.Spec.Template.Spec.Containers[0].Resources = *cfg.Spec.NodeportProxy.Updater.Resources
 			}
 
 			return d, nil

@@ -19,7 +19,6 @@ package generator
 import (
 	"crypto/sha256"
 	"crypto/sha512"
-	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -30,20 +29,15 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	appskubermaticv1 "k8c.io/api/v3/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	openpolicyagent "k8c.io/api/v3/pkg/apis/open-policy-agent"
 	"k8c.io/api/v3/pkg/semver"
-	apiv2 "k8c.io/kubermatic/v3/pkg/api/v2"
 	"k8c.io/kubermatic/v3/pkg/cni"
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v3/pkg/resources"
-	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -76,20 +70,10 @@ func init() {
 }
 
 const (
-	// UserID holds a test user ID.
-	UserID = "1233"
-	// UserName holds a test user name.
-	UserName = "user1"
-	// UserEmail holds a test user email.
-	UserEmail = "john@acme.com"
-	// ClusterID holds the test cluster ID.
-	ClusterID = "AbcClusterID"
 	// DefaultClusterID holds the test default cluster ID.
 	DefaultClusterID = "defClusterID"
 	// DefaultClusterName holds the test default cluster name.
 	DefaultClusterName = "defClusterName"
-	// ProjectName holds the test project ID.
-	ProjectName = "my-first-project-ID"
 	// TestOSdomain OpenStack domain.
 	TestOSdomain = "OSdomain"
 	// TestOSuserPass OpenStack user password.
@@ -104,102 +88,6 @@ var (
 	// UserLastSeen hold a time the user was last seen.
 	UserLastSeen = time.Date(2020, time.December, 31, 23, 0, 0, 0, time.UTC)
 )
-
-func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed {
-	seed := &kubermaticv1.Seed{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "us-central1",
-			Namespace: "kubermatic",
-		},
-		Spec: kubermaticv1.SeedSpec{
-			Location: "us-central",
-			Country:  "US",
-			Datacenters: map[string]kubermaticv1.Datacenter{
-				"private-do1": {
-					Country:  "NL",
-					Location: "US ",
-					Spec: kubermaticv1.DatacenterSpec{
-						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-							Region: "ams2",
-						},
-						EnforcePodSecurityPolicy: true,
-					},
-					Node: &kubermaticv1.NodeSettings{
-						PauseImage: "image-pause",
-					},
-				},
-				"regular-do1": {
-					Country:  "NL",
-					Location: "Amsterdam",
-					Spec: kubermaticv1.DatacenterSpec{
-						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-							Region: "ams2",
-						},
-					},
-				},
-				"restricted-fake-dc": {
-					Country:  "NL",
-					Location: "Amsterdam",
-					Spec: kubermaticv1.DatacenterSpec{
-						Fake:           &kubermaticv1.DatacenterSpecFake{},
-						RequiredEmails: []string{"example.com"},
-					},
-				},
-				"restricted-fake-dc2": {
-					Country:  "NL",
-					Location: "Amsterdam",
-					Spec: kubermaticv1.DatacenterSpec{
-						Fake:           &kubermaticv1.DatacenterSpecFake{},
-						RequiredEmails: []string{"23f67weuc.com", "example.com", "12noifsdsd.org"},
-					},
-				},
-				"fake-dc": {
-					Location: "Henrik's basement",
-					Country:  "Germany",
-					Spec: kubermaticv1.DatacenterSpec{
-						Fake: &kubermaticv1.DatacenterSpecFake{},
-					},
-				},
-				"audited-dc": {
-					Location: "Finanzamt Castle",
-					Country:  "Germany",
-					Spec: kubermaticv1.DatacenterSpec{
-						Fake:                &kubermaticv1.DatacenterSpecFake{},
-						EnforceAuditLogging: true,
-					},
-				},
-				"psp-dc": {
-					Location: "Alexandria",
-					Country:  "Egypt",
-					Spec: kubermaticv1.DatacenterSpec{
-						Fake:                     &kubermaticv1.DatacenterSpecFake{},
-						EnforcePodSecurityPolicy: true,
-					},
-				},
-				"node-dc": {
-					Location: "Santiago",
-					Country:  "Chile",
-					Spec: kubermaticv1.DatacenterSpec{
-						Fake: &kubermaticv1.DatacenterSpecFake{},
-					},
-					Node: &kubermaticv1.NodeSettings{
-						ProxySettings: kubermaticv1.ProxySettings{
-							HTTPProxy: pointer.String("HTTPProxy"),
-						},
-						InsecureRegistries: []string{"incsecure-registry"},
-						RegistryMirrors:    []string{"http://127.0.0.1:5001"},
-						PauseImage:         "pause-image",
-					},
-				},
-			},
-		},
-	}
-	seed.Status.Versions.Kubermatic = kubermatic.NewFakeVersions().KubermaticCommit
-	for _, modifier := range modifiers {
-		modifier(seed)
-	}
-	return seed
-}
 
 // GenUser generates a User resource
 // note if the id is empty then it will be auto generated.
@@ -230,91 +118,17 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 	}
 }
 
-// GenUserWithGroups generates a User resource
-// note if the id is empty then it will be auto generated.
-func GenUserWithGroups(id, name, email string, groups []string) *kubermaticv1.User {
-	user := GenUser(id, name, email)
-	user.Spec.Groups = groups
-	return user
-}
-
-// DefaultCreationTimestamp returns default test timestamp.
-func DefaultCreationTimestamp() time.Time {
-	return time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)
-}
-
 // GenDefaultUser generates a default user.
 func GenDefaultUser() *kubermaticv1.User {
 	userEmail := "bob@acme.com"
 	return GenUser("", "Bob", userEmail)
 }
 
-// GenProject generates new empty project.
-func GenProject(name string, phase kubermaticv1.ProjectPhase, creationTime time.Time) *kubermaticv1.Project {
-	return &kubermaticv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              fmt.Sprintf("%s-%s", name, "ID"),
-			CreationTimestamp: metav1.NewTime(creationTime),
-		},
-		Spec: kubermaticv1.ProjectSpec{
-			Name: name,
-		},
-		Status: kubermaticv1.ProjectStatus{
-			Phase: phase,
-		},
-	}
-}
-
-// GenDefaultProject generates a default project.
-func GenDefaultProject() *kubermaticv1.Project {
-	return GenProject("my-first-project", kubermaticv1.ProjectPhaseActive, DefaultCreationTimestamp())
-}
-
-// GenBinding generates a binding.
-func GenBinding(projectID, email, group string) *kubermaticv1.UserProjectBinding {
-	return &kubermaticv1.UserProjectBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-%s-%s", projectID, email, group),
-		},
-		Spec: kubermaticv1.UserProjectBindingSpec{
-			UserEmail: email,
-			ProjectID: projectID,
-			Group:     fmt.Sprintf("%s-%s", group, projectID),
-		},
-	}
-}
-
-// GenGroupBinding generates a binding.
-func GenGroupBinding(projectID, groupName, role string) *kubermaticv1.GroupProjectBinding {
-	return &kubermaticv1.GroupProjectBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-xxxxxxxxxx", projectID),
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-			},
-		},
-		Spec: kubermaticv1.GroupProjectBindingSpec{
-			Role:      role,
-			ProjectID: projectID,
-			Group:     groupName,
-		},
-	}
-}
-
-// GenDefaultOwnerBinding generates default owner binding.
-func GenDefaultOwnerBinding() *kubermaticv1.UserProjectBinding {
-	return GenBinding(GenDefaultProject().Name, GenDefaultUser().Spec.Email, "owners")
-}
-
 // GenDefaultKubermaticObjects generates default kubermatic object.
 func GenDefaultKubermaticObjects(objs ...ctrlruntimeclient.Object) []ctrlruntimeclient.Object {
 	defaultsObjs := []ctrlruntimeclient.Object{
-		// add a project
-		GenDefaultProject(),
 		// add a user
 		GenDefaultUser(),
-		// make a user the owner of the default project
-		GenDefaultOwnerBinding(),
 		// add presets
 		GenDefaultPreset(),
 	}
@@ -322,12 +136,11 @@ func GenDefaultKubermaticObjects(objs ...ctrlruntimeclient.Object) []ctrlruntime
 	return append(defaultsObjs, objs...)
 }
 
-func GenCluster(id string, name string, projectID string, creationTime time.Time, modifiers ...func(*kubermaticv1.Cluster)) *kubermaticv1.Cluster {
+func GenCluster(id string, name string, creationTime time.Time, modifiers ...func(*kubermaticv1.Cluster)) *kubermaticv1.Cluster {
 	version := *semver.NewSemverOrDie("9.9.9") // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   id,
-			Labels: map[string]string{"project-id": projectID},
+			Name: id,
 			CreationTimestamp: func() metav1.Time {
 				return metav1.NewTime(creationTime)
 			}(),
@@ -397,32 +210,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 }
 
 func GenDefaultCluster() *kubermaticv1.Cluster {
-	return GenCluster(DefaultClusterID, DefaultClusterName, GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
-}
-
-func GenTestMachine(name, rawProviderSpec string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
-	return &clusterv1alpha1.Machine{
-		ObjectMeta: metav1.ObjectMeta{
-			UID:             types.UID(name + "-machine"),
-			Name:            name,
-			Namespace:       metav1.NamespaceSystem,
-			Labels:          labels,
-			OwnerReferences: ownerRef,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Machine",
-		},
-		Spec: clusterv1alpha1.MachineSpec{
-			ProviderSpec: clusterv1alpha1.ProviderSpec{
-				Value: &runtime.RawExtension{
-					Raw: []byte(rawProviderSpec),
-				},
-			},
-			Versions: clusterv1alpha1.MachineVersionInfo{
-				Kubelet: "v9.9.9", // initTestEndpoint() configures KKP to know 8.8.8 and 9.9.9
-			},
-		},
-	}
+	return GenCluster(DefaultClusterID, DefaultClusterName, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 }
 
 func GenDefaultPreset() *kubermaticv1.Preset {
@@ -439,186 +227,17 @@ func GenDefaultPreset() *kubermaticv1.Preset {
 	}
 }
 
-func GenBlacklistTokenSecret(name string, tokens []byte) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.TokenBlacklist: tokens,
-		},
-	}
-}
-
 func GenAdminUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user := GenUser("", name, email)
 	user.Spec.IsAdmin = isAdmin
 	return user
 }
 
-func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
-	ct := &kubermaticv1.ConstraintTemplate{}
-	ct.Name = name
-	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: openpolicyagent.CRD{
-			Spec: openpolicyagent.CRDSpec{
-				Names: openpolicyagent.Names{
-					Kind:       "labelconstraint",
-					ShortNames: []string{"lc"},
-				},
-				Validation: &openpolicyagent.Validation{
-					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-						Properties: map[string]apiextensionsv1.JSONSchemaProps{
-							"labels": {
-								Type: "array",
-								Items: &apiextensionsv1.JSONSchemaPropsOrArray{
-									Schema: &apiextensionsv1.JSONSchemaProps{
-										Type: "string",
-									},
-								},
-							},
-						},
-						Required: []string{"labels"},
-					},
-				},
-			},
-		},
-		Targets: []openpolicyagent.Target{
-			{
-				Target: "admission.k8s.gatekeeper.sh",
-				Rego: `
-		package k8srequiredlabels
-
-        deny[{"msg": msg, "details": {"missing_labels": missing}}] {
-          provided := {label | input.review.object.metadata.labels[label]}
-          required := {label | label := input.parameters.labels[_]}
-          missing := required - provided
-          count(missing) > 0
-          msg := sprintf("you must provide labels: %v", [missing])
-        }`,
-			},
-		},
-		Selector: kubermaticv1.ConstraintTemplateSelector{
-			Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS, kubermaticv1.CloudProviderGCP},
-			LabelSelector: metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "cluster",
-						Operator: metav1.LabelSelectorOpExists,
-					},
-				},
-				MatchLabels: map[string]string{
-					"deployment": "prod",
-					"domain":     "sales",
-				},
-			},
-		},
-	}
-
-	return ct
-}
-
-func RegisterScheme(builder runtime.SchemeBuilder) error {
-	return builder.AddToScheme(scheme.Scheme)
-}
-
-func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
-	ct := &kubermaticv1.Constraint{}
-	ct.Kind = "Constraint"
-	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
-	ct.Name = name
-	ct.Namespace = namespace
-	ct.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: kind,
-		Match: kubermaticv1.ConstraintMatch{
-			Kinds: []kubermaticv1.ConstraintMatchKind{
-				{
-					Kinds:     []string{"namespace"},
-					APIGroups: []string{""},
-				},
-			},
-		},
-		Parameters: map[string]json.RawMessage{
-			"labels": []byte(`["gatekeeper","opa"]`),
-		},
-		Selector: &kubermaticv1.ConstraintSelector{
-			Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS, kubermaticv1.CloudProviderGCP, kubermaticv1.CloudProviderBringYourOwn},
-			LabelSelector: metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{
-					{
-						Key:      "cluster",
-						Operator: metav1.LabelSelectorOpExists,
-					},
-				},
-				MatchLabels: map[string]string{
-					"deployment": "prod",
-					"domain":     "sales",
-				},
-			},
-		},
-	}
-
-	return ct
-}
-
-func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
-	return apiv2.Constraint{
-		Name: name,
-		Spec: kubermaticv1.ConstraintSpec{
-			ConstraintType: kind,
-			Match: kubermaticv1.ConstraintMatch{
-				Kinds: []kubermaticv1.ConstraintMatchKind{
-					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
-				},
-			},
-			Parameters: map[string]json.RawMessage{
-				"labels": []byte(`["gatekeeper","opa"]`),
-			},
-			Selector: &kubermaticv1.ConstraintSelector{
-				Providers: []kubermaticv1.CloudProvider{kubermaticv1.CloudProviderAWS, kubermaticv1.CloudProviderGCP},
-				LabelSelector: metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
-						{
-							Key:      "cluster",
-							Operator: metav1.LabelSelectorOpExists,
-						},
-					},
-					MatchLabels: map[string]string{
-						"deployment": "prod",
-						"domain":     "sales",
-					},
-				},
-			},
-		},
-		Status: &apiv2.ConstraintStatus{
-			Enforcement:    "true",
-			AuditTimestamp: "2019-05-11T01:46:13Z",
-			Violations: []apiv2.Violation{
-				{
-					EnforcementAction: "deny",
-					Kind:              "Namespace",
-					Message:           "'you must provide labels: {\"gatekeeper\"}'",
-					Name:              "default",
-				},
-				{
-					EnforcementAction: "deny",
-					Kind:              "Namespace",
-					Message:           "'you must provide labels: {\"gatekeeper\"}'",
-					Name:              "gatekeeper",
-				},
-			},
-			Synced: pointer.Bool(true),
-		},
-	}
-}
-
-func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermaticv1.ClusterTemplate {
+func GenClusterTemplate(name, id, scope, userEmail string) *kubermaticv1.ClusterTemplate {
 	return &kubermaticv1.ClusterTemplate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        id,
-			Labels:      map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: scope, kubermaticv1.ProjectIDLabelKey: projectID, kubermaticv1.ClusterTemplateHumanReadableNameLabelKey: name},
+			Labels:      map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: scope, kubermaticv1.ClusterTemplateHumanReadableNameLabelKey: name},
 			Annotations: map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},
 		ClusterLabels:          nil,
@@ -634,15 +253,14 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 	}
 }
 
-func GenClusterTemplateInstance(projectID, templateID, owner string, replicas int64) *kubermaticv1.ClusterTemplateInstance {
+func GenClusterTemplateInstance(templateID, owner string, replicas int64) *kubermaticv1.ClusterTemplateInstance {
 	return &kubermaticv1.ClusterTemplateInstance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-%s", projectID, templateID),
-			Labels:      map[string]string{kubermaticv1.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
+			Name:        templateID,
+			Labels:      map[string]string{kubermaticv1.ClusterTemplateLabelKey: templateID},
 			Annotations: map[string]string{kubermaticv1.ClusterTemplateInstanceOwnerAnnotationKey: owner},
 		},
 		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
-			ProjectID:         projectID,
 			ClusterTemplateID: templateID,
 			Replicas:          replicas,
 		},
@@ -683,38 +301,6 @@ rules:
   annotations:
     summary: "Instance  down"
 `, ruleGroupName))
-}
-
-func GenMLAAdminSetting(name, clusterName string, value int32) *kubermaticv1.MLAAdminSetting {
-	return &kubermaticv1.MLAAdminSetting{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: kubernetes.NamespaceName(clusterName),
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "MLAAdminSetting",
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		},
-		Spec: kubermaticv1.MLAAdminSettingSpec{
-			ClusterName: clusterName,
-			MonitoringRateLimits: &kubermaticv1.MonitoringRateLimitSettings{
-				IngestionRate:      value,
-				IngestionBurstSize: value,
-				MaxSeriesPerMetric: value,
-				MaxSeriesTotal:     value,
-				QueryRate:          value,
-				QueryBurstSize:     value,
-				MaxSamplesPerQuery: value,
-				MaxSeriesPerQuery:  value,
-			},
-			LoggingRateLimits: &kubermaticv1.LoggingRateLimitSettings{
-				IngestionRate:      value,
-				IngestionBurstSize: value,
-				QueryRate:          value,
-				QueryBurstSize:     value,
-			},
-		},
-	}
 }
 
 func GenApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {

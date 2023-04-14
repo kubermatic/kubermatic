@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package initialmachinedeployment
+package initialmachinedeploymentcontroller
 
 import (
 	"context"
@@ -26,7 +26,6 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v3/pkg/cluster/client"
-	nodedeploymentmigration "k8c.io/kubermatic/v3/pkg/controller/shared/nodedeployment-migration"
 	"k8c.io/kubermatic/v3/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v3/pkg/provider"
@@ -60,20 +59,20 @@ type Reconciler struct {
 
 	workerName                    string
 	recorder                      record.EventRecorder
-	seedGetter                    provider.SeedGetter
+	datacenterGetter              provider.DatacenterGetter
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
 }
 
 // Add creates a new initialmachinedeployment controller.
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, datacenterGetter provider.DatacenterGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
 
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
-		seedGetter:                    seedGetter,
+		datacenterGetter:              datacenterGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,
@@ -161,7 +160,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, nil
 	}
 
-	datacenter, err := r.getTargetDatacenter(cluster)
+	datacenter, err := r.datacenterGetter(ctx, cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get target datacenter: %w", err)
 	}
@@ -222,27 +221,7 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, log *za
 	return nil
 }
 
-func (r *Reconciler) getTargetDatacenter(cluster *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, error) {
-	seed, err := r.seedGetter()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get current Seed cluster: %w", err)
-	}
-
-	for key, dc := range seed.Spec.Datacenters {
-		if key == cluster.Spec.Cloud.DatacenterName {
-			return &dc, nil
-		}
-	}
-
-	return nil, fmt.Errorf("there is no datacenter named %q in Seed %q", cluster.Spec.Cloud.DatacenterName, seed.Name)
-}
-
 func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.UserSSHKey, error) {
-	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if projectID == "" {
-		return nil, fmt.Errorf("cluster does not have a %q label", kubermaticv1.ProjectIDLabelKey)
-	}
-
 	allKeys := &kubermaticv1.UserSSHKeyList{}
 	if err := r.List(ctx, allKeys); err != nil {
 		return nil, fmt.Errorf("failed to list UserSSHKeys: %w", err)
@@ -250,10 +229,6 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 
 	keys := []*kubermaticv1.UserSSHKey{}
 	for i, key := range allKeys.Items {
-		if key.Spec.Project != projectID {
-			continue
-		}
-
 		if !sets.New(key.Spec.Clusters...).Has(cluster.Name) {
 			continue
 		}

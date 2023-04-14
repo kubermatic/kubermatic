@@ -18,9 +18,10 @@ package cloud
 
 import (
 	"crypto/x509"
-	"errors"
+	"fmt"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/api/v3/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v3/pkg/provider"
 	"k8c.io/kubermatic/v3/pkg/provider/cloud/alibaba"
 	"k8c.io/kubermatic/v3/pkg/provider/cloud/anexia"
@@ -39,55 +40,44 @@ import (
 	"k8c.io/kubermatic/v3/pkg/provider/cloud/vsphere"
 )
 
-func Provider(
-	datacenter *kubermaticv1.Datacenter,
-	secretKeyGetter provider.SecretKeySelectorValueFunc,
-	caBundle *x509.CertPool,
-) (provider.CloudProvider, error) {
-	if datacenter.Spec.Digitalocean != nil {
+func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (provider.CloudProvider, error) {
+	providerName, err := kubermaticv1helper.DatacenterCloudProviderName(&datacenter.Spec.Provider)
+	if err != nil {
+		return nil, err
+	}
+
+	switch providerName {
+	case kubermaticv1.CloudProviderDigitalocean:
 		return digitalocean.NewCloudProvider(secretKeyGetter), nil
-	}
-	if datacenter.Spec.BringYourOwn != nil {
+	case kubermaticv1.CloudProviderBringYourOwn:
 		return bringyourown.NewCloudProvider(), nil
-	}
-	if datacenter.Spec.AWS != nil {
+	case kubermaticv1.CloudProviderAWS:
 		return aws.NewCloudProvider(datacenter, secretKeyGetter)
-	}
-	if datacenter.Spec.Azure != nil {
+	case kubermaticv1.CloudProviderAzure:
 		return azure.New(datacenter, secretKeyGetter)
-	}
-	if datacenter.Spec.OpenStack != nil {
+	case kubermaticv1.CloudProviderOpenStack:
 		return openstack.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
-	}
-	if datacenter.Spec.Packet != nil {
+	case kubermaticv1.CloudProviderPacket:
 		return packet.NewCloudProvider(secretKeyGetter), nil
-	}
-	if datacenter.Spec.Hetzner != nil {
+	case kubermaticv1.CloudProviderHetzner:
 		return hetzner.NewCloudProvider(secretKeyGetter), nil
-	}
-	if datacenter.Spec.VMwareCloudDirector != nil {
+	case kubermaticv1.CloudProviderVMwareCloudDirector:
 		return vmwareclouddirector.NewCloudProvider(datacenter, secretKeyGetter)
-	}
-	if datacenter.Spec.VSphere != nil {
+	case kubermaticv1.CloudProviderVSphere:
 		return vsphere.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
-	}
-	if datacenter.Spec.GCP != nil {
+	case kubermaticv1.CloudProviderGCP:
 		return gcp.NewCloudProvider(secretKeyGetter), nil
-	}
-	if datacenter.Spec.Fake != nil {
+	case kubermaticv1.CloudProviderFake:
 		return fake.NewCloudProvider(), nil
-	}
-	if datacenter.Spec.KubeVirt != nil {
+	case kubermaticv1.CloudProviderKubeVirt:
 		return kubevirt.NewCloudProvider(datacenter, secretKeyGetter)
-	}
-	if datacenter.Spec.Alibaba != nil {
+	case kubermaticv1.CloudProviderAlibaba:
 		return alibaba.NewCloudProvider(datacenter, secretKeyGetter)
-	}
-	if datacenter.Spec.Anexia != nil {
+	case kubermaticv1.CloudProviderAnexia:
 		return anexia.NewCloudProvider(datacenter, secretKeyGetter)
-	}
-	if datacenter.Spec.Nutanix != nil {
+	case kubermaticv1.CloudProviderNutanix:
 		return nutanix.NewCloudProvider(datacenter, secretKeyGetter)
 	}
-	return nil, errors.New("no cloudprovider found")
+
+	return nil, fmt.Errorf("unknown cloud provider %s", providerName)
 }

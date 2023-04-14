@@ -20,8 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v3/pkg/features"
+	operatorresources "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -35,14 +34,14 @@ import (
 
 func seedControllerManagerPodLabels() map[string]string {
 	return map[string]string{
-		common.NameLabel: common.SeedControllerManagerDeploymentName,
+		operatorresources.NameLabel: operatorresources.SeedControllerManagerDeploymentName,
 	}
 }
 
-func SeedControllerManagerDeploymentReconciler(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentReconcilerFactory {
+func SeedControllerManagerDeploymentReconciler(workerName string, versions kubermatic.Versions, config *kubermaticv1.KubermaticConfiguration) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = cfg.Spec.SeedController.Replicas
+		return operatorresources.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			d.Spec.Replicas = config.Spec.ControllerManager.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: seedControllerManagerPodLabels(),
 			}
@@ -61,35 +60,34 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				"-internal-address=0.0.0.0:8085",
 				"-worker-count=4",
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
-				fmt.Sprintf("-namespace=%s", cfg.Namespace),
-				fmt.Sprintf("-external-url=%s", cfg.Spec.Ingress.Domain),
-				fmt.Sprintf("-seed-name=%s", seed.Name),
-				fmt.Sprintf("-etcd-disk-size=%s", cfg.Spec.UserCluster.EtcdVolumeSize),
-				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
+				fmt.Sprintf("-namespace=%s", config.Namespace),
+				fmt.Sprintf("-external-url=%s", config.Spec.Ingress.Domain),
+				fmt.Sprintf("-etcd-disk-size=%s", config.Spec.UserCluster.EtcdVolumeSize),
+				fmt.Sprintf("-feature-gates=%s", operatorresources.StringifyFeatureGates(config)),
 				fmt.Sprintf("-worker-name=%s", workerName),
-				fmt.Sprintf("-kubermatic-image=%s", cfg.Spec.UserCluster.KubermaticDockerRepository),
-				fmt.Sprintf("-dnatcontroller-image=%s", cfg.Spec.UserCluster.DNATControllerDockerRepository),
-				fmt.Sprintf("-etcd-launcher-image=%s", cfg.Spec.UserCluster.EtcdLauncherDockerRepository),
-				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
-				fmt.Sprintf("-max-parallel-reconcile=%d", cfg.Spec.SeedController.MaximumParallelReconciles),
-				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
+				fmt.Sprintf("-kubermatic-image=%s", config.Spec.UserCluster.KubermaticDockerRepository),
+				fmt.Sprintf("-dnatcontroller-image=%s", config.Spec.UserCluster.DNATControllerDockerRepository),
+				fmt.Sprintf("-etcd-launcher-image=%s", config.Spec.UserCluster.EtcdLauncherDockerRepository),
+				fmt.Sprintf("-overwrite-registry=%s", config.Spec.UserCluster.OverwriteRegistry),
+				fmt.Sprintf("-max-parallel-reconcile=%d", config.Spec.ControllerManager.MaximumParallelReconciles),
+				fmt.Sprintf("-pprof-listen-address=%s", *config.Spec.ControllerManager.PProfEndpoint),
 			}
 
-			if cfg.Spec.ImagePullSecret != "" {
+			if config.Spec.ImagePullSecret != "" {
 				args = append(args, fmt.Sprintf("-docker-pull-config-json-file=/opt/docker/%s", corev1.DockerConfigJsonKey))
 			}
 
-			if seed.Spec.MLA != nil && seed.Spec.MLA.UserClusterMLAEnabled {
+			if mla := config.Spec.UserCluster.MLA; mla != nil && mla.Enabled {
 				args = append(args, "-enable-user-cluster-mla")
 			}
 
-			if cfg.Spec.SeedController.DebugLog {
+			if config.Spec.ControllerManager.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {
 				args = append(args, "-v=2")
 			}
 
-			if uCfg := cfg.Spec.UserCluster; uCfg != nil {
+			if uCfg := config.Spec.UserCluster; uCfg != nil {
 				if mcCfg := uCfg.MachineController; mcCfg != nil {
 					if mcCfg.ImageTag != "" {
 						args = append(args, fmt.Sprintf("-machine-controller-image-tag=%s", mcCfg.ImageTag))
@@ -113,7 +111,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: cfg.Spec.CABundle.Name,
+								Name: config.Spec.CABundle.Name,
 							},
 						},
 					},
@@ -133,12 +131,12 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				},
 			}
 
-			if cfg.Spec.ImagePullSecret != "" {
+			if config.Spec.ImagePullSecret != "" {
 				volumes = append(volumes, corev1.Volume{
 					Name: "dockercfg",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.DockercfgSecretName,
+							SecretName: operatorresources.DockercfgSecretName,
 						},
 					},
 				})
@@ -149,36 +147,25 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				})
 			}
 
-			configureSeedLevelOIDCProvider := seed.Spec.OIDCProviderConfiguration != nil
-
-			if configureSeedLevelOIDCProvider {
+			if auth := config.Spec.Auth; auth != nil {
 				args = append(args,
-					fmt.Sprintf("-oidc-issuer-url=%s", seed.Spec.OIDCProviderConfiguration.IssuerURL),
-					fmt.Sprintf("-oidc-issuer-client-id=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientID),
-					fmt.Sprintf("-oidc-issuer-client-secret=%s", seed.Spec.OIDCProviderConfiguration.IssuerClientSecret),
-				)
-			}
-
-			// Use settings from KubermaticConfiguration only if was not configured for on seed level before.
-			if _, fgSet := cfg.Spec.FeatureGates[features.OpenIDAuthPlugin]; !configureSeedLevelOIDCProvider && fgSet {
-				args = append(args,
-					fmt.Sprintf("-oidc-issuer-url=%s", cfg.Spec.Auth.TokenIssuer),
-					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
-					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
+					fmt.Sprintf("-oidc-issuer-url=%s", auth.TokenIssuer),
+					fmt.Sprintf("-oidc-issuer-client-id=%s", auth.IssuerClientID),
+					fmt.Sprintf("-oidc-issuer-client-secret=%s", auth.IssuerClientSecret),
 				)
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				createAddonsInitContainer(cfg.Spec.UserCluster.Addons, sharedAddonVolume, versions.Kubermatic),
+				createAddonsInitContainer(config.Spec.UserCluster.Addons, sharedAddonVolume, versions.Kubermatic),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",
-					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.Kubermatic,
+					Image:   config.Spec.ControllerManager.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"seed-controller-manager"},
 					Args:    args,
-					Env:     common.SeedProxyEnvironmentVars(seed.Spec.ProxySettings),
+					Env:     operatorresources.KubermaticProxyEnvironmentVars(config.Spec.Proxy),
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",
@@ -190,7 +177,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				},
 			}
 
-			if res := cfg.Spec.SeedController.Resources; res != nil {
+			if res := config.Spec.ControllerManager.Resources; res != nil {
 				d.Spec.Template.Spec.Containers[0].Resources = *res
 			}
 
@@ -234,7 +221,7 @@ func SeedControllerManagerPDBReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 			// 0 minAvailable if the replica count is only 1.
 			// NB: The cfg is defaulted, so Replicas==nil cannot happen.
 			min := intstr.FromInt(1)
-			if cfg.Spec.SeedController.Replicas != nil && *cfg.Spec.SeedController.Replicas < 2 {
+			if cfg.Spec.ControllerManager.Replicas != nil && *cfg.Spec.ControllerManager.Replicas < 2 {
 				min = intstr.FromInt(0)
 			}
 

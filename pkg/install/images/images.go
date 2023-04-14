@@ -31,18 +31,14 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/sirupsen/logrus"
-	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/cni"
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common/vpa"
-	masteroperator "k8c.io/kubermatic/v3/pkg/controller/operator/master/resources/kubermatic"
 	seedoperatorkubermatic "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/kubermatic"
 	seedoperatornodeportproxy "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubernetescontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/kubernetes"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring"
+	controlplanecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/control-plane-controller"
+	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring-controller"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
@@ -283,26 +279,17 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 }
 
 func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
-	if err != nil {
-		return nil, fmt.Errorf("failed to default Seed: %w", err)
-	}
+	statefulsetReconcilers := controlplanecontroller.GetStatefulSetReconcilers(templateData, false, false)
+	statefulsetReconcilers = append(statefulsetReconcilers, monitoringcontroller.GetStatefulSetReconcilers(templateData)...)
 
-	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
-	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
-
-	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false)
-	deploymentReconcilers = append(deploymentReconcilers, monitoring.GetDeploymentReconcilers(templateData)...)
-	deploymentReconcilers = append(deploymentReconcilers, masteroperator.APIDeploymentReconciler(config, "", kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, masteroperator.MasterControllerManagerDeploymentReconciler(config, "", kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, masteroperator.UIDeploymentReconciler(config, kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, seedoperatorkubermatic.SeedControllerManagerDeploymentReconciler("", kubermaticVersions, config, seed))
-	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.EnvoyDeploymentReconciler(config, seed, false, kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.UpdaterDeploymentReconciler(config, seed, kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, vpa.AdmissionControllerDeploymentReconciler(config, kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, vpa.RecommenderDeploymentReconciler(config, kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, vpa.UpdaterDeploymentReconciler(config, kubermaticVersions))
-	deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
+	deploymentReconcilers := controlplanecontroller.GetDeploymentReconcilers(templateData, false)
+	deploymentReconcilers = append(deploymentReconcilers, monitoringcontroller.GetDeploymentReconcilers(templateData)...)
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatorkubermatic.APIDeploymentReconciler(config, "", kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatorkubermatic.UIDeploymentReconciler(config, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatorkubermatic.SeedControllerManagerDeploymentReconciler("", kubermaticVersions, config))
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.EnvoyDeploymentReconciler(config, false, kubermaticVersions))
+	deploymentReconcilers = append(deploymentReconcilers, seedoperatornodeportproxy.UpdaterDeploymentReconciler(config, kubermaticVersions))
+	// deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
 	deploymentReconcilers = append(deploymentReconcilers, operatingsystemmanager.DeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
@@ -315,7 +302,7 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler("dummy", 0, resources.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
 	}
 
-	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
+	cronjobReconcilers := controlplanecontroller.GetCronJobReconcilers(templateData)
 
 	var daemonsetReconcilers []reconciling.NamedDaemonSetReconcilerFactory
 	daemonsetReconcilers = append(daemonsetReconcilers, usersshkeys.DaemonSetReconciler(
@@ -518,13 +505,15 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
-			OpenStack:           &kubermaticv1.DatacenterSpecOpenStack{},
-			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
-			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
-			KubeVirt:            &kubermaticv1.DatacenterSpecKubeVirt{},
-			Azure:               &kubermaticv1.DatacenterSpecAzure{},
-			VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{},
+			Provider: kubermaticv1.DatacenterProviderSpec{
+				VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
+				OpenStack:           &kubermaticv1.DatacenterSpecOpenStack{},
+				Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
+				Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
+				KubeVirt:            &kubermaticv1.DatacenterSpecKubeVirt{},
+				Azure:               &kubermaticv1.DatacenterSpecAzure{},
+				VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{},
+			},
 		},
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
@@ -574,7 +563,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithClient(fakeDynamicClient).
 		WithCluster(fakeCluster).
 		WithDatacenter(datacenter).
-		WithSeed(&kubermaticv1.Seed{}).
 		WithNodeAccessNetwork("192.0.2.0/24").
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithKubermaticImage(defaulting.DefaultKubermaticImage).

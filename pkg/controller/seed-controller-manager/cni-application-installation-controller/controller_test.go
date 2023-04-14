@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/cni"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -254,12 +255,6 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	project := &kubermaticv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: projectID,
-		},
-	}
-
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			appDef := &appskubermaticv1.ApplicationDefinition{
@@ -278,7 +273,7 @@ func TestReconcile(t *testing.T) {
 			seedClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(test.cluster, project, appDef).
+				WithObjects(test.cluster, appDef).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
@@ -307,7 +302,7 @@ func TestReconcile(t *testing.T) {
 				Client:                        seedClient,
 				recorder:                      &record.FakeRecorder{},
 				log:                           log,
-				versions:                      kubermatic.NewFakeVersions(),
+				versions:                      kubermatic.NewFakeVersions(edition.CommunityEdition),
 				userClusterConnectionProvider: newFakeClientProvider(userClusterClient),
 			}
 

@@ -32,8 +32,6 @@ presubmits:
           command:
             - "./hack/ci/run-mla-e2e-tests.sh"
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -66,8 +64,6 @@ presubmits:
           command:
             - "./hack/ci/run-konnectivity-e2e-test.sh"
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -100,8 +96,6 @@ presubmits:
           command:
             - "./hack/ci/run-cilium-e2e-test.sh"
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -134,8 +128,6 @@ presubmits:
           command:
             - "./hack/ci/run-etcd-launcher-tests.sh"
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -194,8 +186,6 @@ presubmits:
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -227,8 +217,6 @@ presubmits:
           command:
             - ./hack/run-expose-strategy-e2e-test-in-kind.sh
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
           securityContext:
             privileged: true
           resources:
@@ -257,8 +245,6 @@ presubmits:
           command:
             - "./hack/ci/run-ipam-e2e-tests.sh"
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -291,8 +277,6 @@ presubmits:
       containers:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: RELEASES_TO_TEST
               value: "1.24"
             - name: DISTRIBUTIONS

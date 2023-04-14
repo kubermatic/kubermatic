@@ -28,7 +28,6 @@ trap cleanup EXIT SIGINT SIGTERM
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_dualstack.yaml
-export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export WITH_WORKERS=1
 source hack/ci/setup-kind-cluster.sh
 
@@ -93,7 +92,7 @@ fi
 echodate "Successfully got secrets from Vault"
 echodate "Running dualstack tests..."
 
-go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -v ./pkg/test/dualstack \
+go_test dualstack_e2e -race -timeout 90m -tags "dualstack" -v ./pkg/test/dualstack \
   -cni "${CNI:-}" \
   -provider "${PROVIDER:-}" \
   -os "${OSNAMES:-all}" \

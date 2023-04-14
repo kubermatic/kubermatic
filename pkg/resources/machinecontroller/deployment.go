@@ -63,9 +63,9 @@ type machinecontrollerData interface {
 	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(string) (string, error)
-	DC() *kubermaticv1.Datacenter
+	Datacenter() *kubermaticv1.Datacenter
 	NodeLocalDNSCacheEnabled() bool
-	Seed() *kubermaticv1.Seed
+	KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration
 	GetCSIMigrationFeatureGates(version *semverlib.Version) []string
 	MachineControllerImageTag() string
 	MachineControllerImageRepository() string
@@ -151,7 +151,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.IsOperatingSystemManagerEnabled(), data.Cluster().Spec.Features),
+					Args:    getFlags(clusterDNSIP, data.Datacenter().Spec.Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.IsOperatingSystemManagerEnabled(), data.Cluster().Spec.Features),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",

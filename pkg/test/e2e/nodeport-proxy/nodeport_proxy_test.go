@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v3/pkg/test"
 	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/util/wait"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
@@ -61,7 +62,7 @@ type testcase struct {
 }
 
 var (
-	versions   = kubermatic.NewDefaultVersions()
+	versions   = kubermatic.NewDefaultVersions(edition.CommunityEdition)
 	logOptions = e2eutils.DefaultLogOptions
 	testcases  = []testcase{
 		{

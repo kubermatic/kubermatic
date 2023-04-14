@@ -32,8 +32,6 @@ presubmits:
       containers:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: RELEASES_TO_TEST
               value: "1.26"
             - name: PROVIDER

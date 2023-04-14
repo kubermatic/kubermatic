@@ -24,7 +24,6 @@ source hack/lib.sh
 
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 export GOOS="${GOOS:-linux}"
-export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export ARCHITECTURES=${ARCHITECTURES:-amd64 arm64}
 export TAG_NAME=test
 
@@ -50,7 +49,6 @@ for ARCH in ${ARCHITECTURES}; do
   time buildah bud \
     --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${TAG_NAME}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --build-arg "GOCACHE=/gocache" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \

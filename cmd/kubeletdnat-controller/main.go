@@ -29,6 +29,8 @@ import (
 	"k8c.io/kubermatic/v3/pkg/pprof"
 	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v3/pkg/util/cli"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -57,7 +59,8 @@ func main() {
 
 	reconciling.Configure(log)
 
-	cli.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug, nil)
+	version := kubermatic.NewDefaultVersions(edition.CommunityEdition)
+	cli.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug, version)
 
 	_, network, err := net.ParseCIDR(*networkFlag)
 	if err != nil {

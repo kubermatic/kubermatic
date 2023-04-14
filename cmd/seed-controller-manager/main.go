@@ -38,13 +38,14 @@ import (
 	metricserver "k8c.io/kubermatic/v3/pkg/metrics/server"
 	"k8c.io/kubermatic/v3/pkg/pprof"
 	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v3/pkg/util/cli"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
@@ -91,8 +92,8 @@ func main() {
 	// make sure the logging flags actually affect the global (deprecated) logger instance
 	kubermaticlog.Logger = log
 
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, &versions)
+	versions := kubermatic.NewDefaultVersions(edition.CommunityEdition)
+	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, versions)
 
 	electionName := controllerName + "-leader-election"
 	if options.workerName != "" {
@@ -156,15 +157,6 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", appskubermaticv1.SchemeGroupVersion), zap.Error(err))
 	}
 
-	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
-	if err := mgr.GetAPIReader().List(rootCtx, &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
-		if meta.IsNoMatchError(err) {
-			log.Fatal(`
-The VerticalPodAutoscaler is not installed in this seed cluster.
-Please install the VerticalPodAutoscaler according to the documentation: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler#installation`)
-		}
-	}
-
 	// Register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
@@ -182,9 +174,14 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 	}
 
-	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
+	datacenterGetter, err := kubernetes.DatacenterGetterFactory(mgr.GetClient())
 	if err != nil {
-		log.Fatalw("Unable to create the seed getter", zap.Error(err))
+		log.Fatalw("Unable to create the datacenter getter", zap.Error(err))
+	}
+
+	datacentersGetter, err := kubernetes.DatacentersGetterFactory(mgr.GetClient())
+	if err != nil {
+		log.Fatalw("Unable to create the datacenters getter", zap.Error(err))
 	}
 
 	var configGetter provider.KubermaticConfigurationGetter
@@ -212,7 +209,8 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		runOptions:           options,
 		mgr:                  mgr,
 		clientProvider:       clientProvider,
-		seedGetter:           seedGetter,
+		datacenterGetter:     datacenterGetter,
+		datacentersGetter:    datacentersGetter,
 		configGetter:         configGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,
@@ -223,20 +221,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Could not create all controllers", zap.Error(err))
 	}
 
-	// Use the API reader as the cache-backed reader will only contain data when we are leader
-	// and return errors otherwise.
-	// Ideally, the cache wouldn't require the leader lease:
-	// https://github.com/kubernetes-sigs/controller-runtime/issues/677
-	log.Debug("Starting cluster backup collector")
-	collectors.MustRegisterClusterBackupCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader(), log, options.caBundle, seedGetter)
 	log.Debug("Starting clusters collector")
-	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, mgr.GetClient())
 	log.Debug("Starting addons collector")
-	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
-	// The canonical source of projects is the master cluster, but since they are replicated onto
-	// seeds, we start the project collctor on seed clusters as well, just for convenience for the admin.
-	log.Debug("Starting projects collector")
-	collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, mgr.GetClient())
 
 	if err := mgr.Add(metricserver.New(options.internalAddr)); err != nil {
 		log.Fatalw("failed to add metrics server", zap.Error(err))

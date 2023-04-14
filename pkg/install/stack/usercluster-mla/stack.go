@@ -25,7 +25,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller"
 	"k8c.io/kubermatic/v3/pkg/install/helm"
 	"k8c.io/kubermatic/v3/pkg/install/stack"
 	"k8c.io/kubermatic/v3/pkg/install/util"

@@ -34,14 +34,12 @@ import (
 	applicationinstallationcontroller "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/application-installation-controller"
 	ccmcsimigrator "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	clusterrolelabeler "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
-	constraintsyncer "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/constraint-syncer"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/flatcar"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/ipam"
 	kvvmieviction "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/kubevirt-vmi-eviction"
 	nodelabeler "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/node-labeler"
 	nodeversioncontroller "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/node-version-controller"
 	ownerbindingcreator "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
-	rbacusercluster "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrollerresources "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	roleclonercontroller "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
@@ -51,6 +49,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/resources/certificates"
 	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v3/pkg/util/cli"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/util/flagopts"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
@@ -166,8 +165,8 @@ func main() {
 	kubermaticlog.Logger = log
 	reconciling.Configure(log)
 
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
+	versions := kubermatic.NewDefaultVersions(edition.CommunityEdition)
+	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, versions)
 
 	kubeconfigFlag := flag.Lookup("kubeconfig")
 	if kubeconfigFlag == nil { // Should not be possible.
@@ -348,11 +347,6 @@ func main() {
 		log.Infof("Added IPAM controller to mgr")
 	}
 
-	if err := rbacusercluster.Add(mgr, log, mgr.AddReadyzCheck, isPausedChecker); err != nil {
-		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
-	}
-	log.Info("Registered user RBAC controller")
-
 	updateWindow := kubermaticv1.UpdateWindow{
 		Start:  runOp.updateWindowStart,
 		Length: runOp.updateWindowLength,
@@ -400,22 +394,10 @@ func main() {
 		log.Info("registered ccm-csi-migrator controller")
 	}
 
-	if runOp.opaIntegration {
-		if err := constraintsyncer.Add(rootCtx, log, seedMgr, mgr, runOp.namespace, isPausedChecker); err != nil {
-			log.Fatalw("Failed to register constraintsyncer controller", zap.Error(err))
-		}
-		log.Info("Registered constraintsyncer controller")
-	}
-
 	if err := applicationinstallationcontroller.Add(rootCtx, log, seedMgr, mgr, isPausedChecker, &applications.ApplicationManager{ApplicationCache: runOp.applicationCache, Kubeconfig: kubeconfigFlag.Value.String(), SecretNamespace: runOp.namespace}); err != nil {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")
-
-	if err := addResourceUsageController(log, seedMgr, mgr, runOp.clusterName, caBundle, isPausedChecker); err != nil {
-		log.Fatalw("Failed to add user Resource Usage controller to mgr", zap.Error(err))
-	}
-	log.Info("Registered Resource Usage controller")
 
 	// KubeVirt infra
 	if runOp.kubeVirtVMIEvictionController {

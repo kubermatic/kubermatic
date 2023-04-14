@@ -36,11 +36,11 @@ type Alibaba struct {
 var _ provider.CloudProvider = &Alibaba{}
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Alibaba, error) {
-	if dc.Spec.Alibaba == nil {
+	if dc.Spec.Provider.Alibaba == nil {
 		return nil, errors.New("datacenter is not an Alibaba datacenter")
 	}
 	return &Alibaba{
-		dc:                dc.Spec.Alibaba,
+		dc:                dc.Spec.Provider.Alibaba,
 		secretKeySelector: secretKeyGetter,
 	}, nil
 }
