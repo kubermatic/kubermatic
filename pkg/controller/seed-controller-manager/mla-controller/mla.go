@@ -126,7 +126,7 @@ func Add(
 	return nil
 }
 
-func getDatasourceUIDForCluster(datasourceType string, cluster *kubermaticv1.Cluster) string {
+func DatasourceUIDForCluster(datasourceType grafana.DatasourceType, cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("%s-%s", datasourceType, cluster.Name)
 }
 

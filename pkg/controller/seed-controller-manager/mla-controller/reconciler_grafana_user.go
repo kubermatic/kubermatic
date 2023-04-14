@@ -196,24 +196,9 @@ func getRoleForUser(user *kubermaticv1.User) grafanasdk.RoleType {
 	return grafanasdk.ROLE_EDITOR
 }
 
-func getGrafanaOrgUser(ctx context.Context, gClient grafana.Client, orgID, userID uint) (*grafanasdk.OrgUser, error) {
-	users, err := gClient.GetOrgUsers(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, user := range users {
-		if user.ID == userID {
-			return &user, nil
-		}
-	}
-
-	return nil, nil
-}
-
 func ensureUserInOrgWithRole(ctx context.Context, gClient grafana.Client, org grafanasdk.Org, user *grafanasdk.User, role grafanasdk.RoleType) error {
 	// check if user already exists in the corresponding organization
-	orgUser, err := getGrafanaOrgUser(ctx, gClient, org.ID, user.ID)
+	orgUser, err := gClient.GetOrgUser(ctx, org.ID, user.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
 	}

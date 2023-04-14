@@ -50,9 +50,6 @@ import (
 )
 
 const (
-	PrometheusType             = "prometheus"
-	lokiType                   = "loki"
-	alertmanagerType           = "alertmanager"
 	datasourceCleanupFinalizer = "kubermatic.k8c.io/mla-cleanup-datasources"
 )
 
@@ -231,9 +228,9 @@ func (r *grafanaDatasourceReconciler) reconcile(ctx context.Context, cluster *ku
 func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, gClient grafana.Client, cluster *kubermaticv1.Cluster, org grafanasdk.Org) error {
 	alertmanagerDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
-		UID:    getDatasourceUIDForCluster(alertmanagerType, cluster),
+		UID:    DatasourceUIDForCluster(grafana.DatasourceTypeAlertmanager, cluster),
 		Name:   getAlertmanagerDatasourceNameForCluster(cluster),
-		Type:   alertmanagerType,
+		Type:   string(grafana.DatasourceTypeAlertmanager),
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 		JSONData: map[string]interface{}{
@@ -247,13 +244,13 @@ func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, gCl
 
 	lokiDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
-		UID:    getDatasourceUIDForCluster(lokiType, cluster),
+		UID:    DatasourceUIDForCluster(grafana.DatasourceTypeLoki, cluster),
 		Name:   getLokiDatasourceNameForCluster(cluster),
-		Type:   lokiType,
+		Type:   string(grafana.DatasourceTypeLoki),
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
 		JSONData: map[string]interface{}{
-			"alertmanagerUid": getDatasourceUIDForCluster(alertmanagerType, cluster),
+			"alertmanagerUid": DatasourceUIDForCluster(grafana.DatasourceTypeAlertmanager, cluster),
 		},
 	}
 	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS, gClient); err != nil {
@@ -262,13 +259,13 @@ func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, gCl
 
 	prometheusDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
-		UID:    getDatasourceUIDForCluster(PrometheusType, cluster),
+		UID:    DatasourceUIDForCluster(grafana.DatasourceTypePrometheus, cluster),
 		Name:   getPrometheusDatasourceNameForCluster(cluster),
-		Type:   PrometheusType,
+		Type:   string(grafana.DatasourceTypePrometheus),
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 		JSONData: map[string]interface{}{
-			"alertmanagerUid": getDatasourceUIDForCluster(alertmanagerType, cluster),
+			"alertmanagerUid": DatasourceUIDForCluster(grafana.DatasourceTypeAlertmanager, cluster),
 			"httpMethod":      "POST",
 		},
 	}
@@ -361,9 +358,9 @@ func (r *grafanaDatasourceReconciler) Cleanup(ctx context.Context) error {
 func (r *grafanaDatasourceReconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster, gClient grafana.Client) error {
 	if gClient != nil {
 		datasources := []string{
-			getDatasourceUIDForCluster(alertmanagerType, cluster),
-			getDatasourceUIDForCluster(lokiType, cluster),
-			getDatasourceUIDForCluster(PrometheusType, cluster),
+			DatasourceUIDForCluster(grafana.DatasourceTypeAlertmanager, cluster),
+			DatasourceUIDForCluster(grafana.DatasourceTypeLoki, cluster),
+			DatasourceUIDForCluster(grafana.DatasourceTypePrometheus, cluster),
 		}
 
 		for _, ds := range datasources {

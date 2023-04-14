@@ -40,6 +40,14 @@ const (
 	DefaultOrgID = 1
 )
 
+type DatasourceType string
+
+const (
+	DatasourceTypePrometheus   DatasourceType = "prometheus"
+	DatasourceTypeLoki         DatasourceType = "loki"
+	DatasourceTypeAlertmanager DatasourceType = "alertmanager"
+)
+
 type Client interface {
 	CreateOrg(ctx context.Context, org grafanasdk.Org) (grafanasdk.StatusMessage, error)
 	GetOrgByOrgName(ctx context.Context, orgName string) (grafanasdk.Org, error)
@@ -49,6 +57,7 @@ type Client interface {
 	CreateOAuthUser(ctx context.Context, email string) (*grafanasdk.User, error)
 	LookupUser(ctx context.Context, loginOrEmail string) (grafanasdk.User, error)
 	GetOrgUsers(ctx context.Context, orgID uint) ([]grafanasdk.OrgUser, error)
+	GetOrgUser(ctx context.Context, orgID, userID uint) (*grafanasdk.OrgUser, error)
 	AddOrgUser(ctx context.Context, userRole grafanasdk.UserRole, orgID uint) (grafanasdk.StatusMessage, error)
 	UpdateOrgUser(ctx context.Context, userRole grafanasdk.UserRole, orgID uint, userID uint) (grafanasdk.StatusMessage, error)
 	DeleteOrgUser(ctx context.Context, orgID uint, userID uint) (grafanasdk.StatusMessage, error)
@@ -86,7 +95,7 @@ func (w *clientWrapper) WithOrgIDHeader(orgID uint) Client {
 	}
 }
 
-// ensureGrafanaOAuthUser ensures a Grafana user exists for the given email
+// CreateOAuthUser ensures a Grafana user exists for the given email
 // address. Note that creation for OAuth users happens implicitly by
 // GET-ing the endpoint for the actual (current) user.
 func (r *clientWrapper) CreateOAuthUser(ctx context.Context, email string) (*grafanasdk.User, error) {
@@ -113,6 +122,21 @@ func (r *clientWrapper) CreateOAuthUser(ctx context.Context, email string) (*gra
 	}
 
 	return grafanaUser, nil
+}
+
+func (r *clientWrapper) GetOrgUser(ctx context.Context, orgID, userID uint) (*grafanasdk.OrgUser, error) {
+	users, err := r.GetOrgUsers(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if user.ID == userID {
+			return &user, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func NewClient(httpClient *http.Client, url, username, password string) (Client, error) {

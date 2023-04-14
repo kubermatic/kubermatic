@@ -147,6 +147,21 @@ func (f *FakeGrafana) GetOrgUsers(_ context.Context, orgID uint) ([]grafanasdk.O
 	return result, nil
 }
 
+func (f *FakeGrafana) GetOrgUser(ctx context.Context, orgID, userID uint) (*grafanasdk.OrgUser, error) {
+	users, err := f.GetOrgUsers(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if user.ID == userID {
+			return &user, nil
+		}
+	}
+
+	return nil, nil
+}
+
 func (f *FakeGrafana) getUserByID(userID uint) *grafanasdk.User {
 	for _, user := range f.Database.Users {
 		if user.ID == userID {
