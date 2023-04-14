@@ -30,42 +30,52 @@ import (
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/resources"
-	"k8c.io/kubermatic/v3/pkg/test"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
-	config = kubermaticv1.KubermaticConfiguration{}
-	seed   = kubermaticv1.Seed{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-seed",
-			Namespace: "kubermatic",
+	config      = kubermaticv1.KubermaticConfiguration{}
+	datacenters = []ctrlruntimeclient.Object{
+		&kubermaticv1.Datacenter{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "openstack-dc",
+			},
+			Spec: kubermaticv1.DatacenterSpec{
+				Provider: kubermaticv1.DatacenterProviderSpec{
+					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
+				},
+			},
 		},
-		Spec: kubermaticv1.SeedSpec{
-			Datacenters: map[string]kubermaticv1.Datacenter{
-				"openstack-dc": {
-					Spec: kubermaticv1.DatacenterSpec{
-						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{},
-					},
+
+		&kubermaticv1.Datacenter{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kubevirt-dc",
+			},
+			Spec: kubermaticv1.DatacenterSpec{
+				Provider: kubermaticv1.DatacenterProviderSpec{
+					KubeVirt: &kubermaticv1.DatacenterSpecKubeVirt{},
 				},
-				"hetzner-dc": {
-					Spec: kubermaticv1.DatacenterSpec{
-						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
-					},
-				},
-				"kubevirt-dc": {
-					Spec: kubermaticv1.DatacenterSpec{
-						KubeVirt: &kubermaticv1.DatacenterSpecKubeVirt{},
-					},
+			},
+		},
+
+		&kubermaticv1.Datacenter{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "hetzner-dc",
+			},
+			Spec: kubermaticv1.DatacenterSpec{
+				Provider: kubermaticv1.DatacenterProviderSpec{
+					Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
 				},
 			},
 		},
 	}
+
 	defaultingTemplateName = "my-default-template"
 
 	// defaultPatches are the patches that occur in every mutation because of the
@@ -75,10 +85,10 @@ var (
 		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(defaulting.DefaultEtcdClusterSize)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaulting.DefaultEtcdVolumeSize),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaulting.DefaultAPIServerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaulting.DefaultKubernetesApiserverReplicas)),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", resources.DefaultNodePortRange),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaulting.DefaultControllerManagerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaulting.DefaultSchedulerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaulting.DefaultSeedControllerManagerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaulting.DefaultKubernetesSchedulerReplicas)),
 		jsonpatch.NewOperation("add", "/spec/enableOperatingSystemManager", true),
 		jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 	}
@@ -924,27 +934,30 @@ func TestMutator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testSeed := seed.DeepCopy()
+			testConfig := config.DeepCopy()
 
 			builder := fake.NewClientBuilder()
 			if tt.defaultClusterTemplate != nil {
-				testSeed.Spec.DefaultClusterTemplate = defaultingTemplateName
-
-				tt.defaultClusterTemplate.Labels = map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: kubermaticv1.TemplateScopeSeed}
+				testConfig.Spec.UserCluster.DefaultTemplate = defaultingTemplateName
 				tt.defaultClusterTemplate.Name = defaultingTemplateName
-				tt.defaultClusterTemplate.Namespace = testSeed.Namespace
 
 				builder.WithObjects(tt.defaultClusterTemplate)
 			}
-			dummySeedClient := builder.Build()
+
+			dummySeedClient := builder.WithObjects(datacenters...).Build()
 
 			// this getter, as do all KubermaticConfigurationGetters, performs defaulting on the config
-			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(&config)
+			configGetter, err := kubernetes.StaticKubermaticConfigurationGetterFactory(testConfig)
 			if err != nil {
 				t.Fatalf("Failed to create KubermaticConfigurationGetter: %v", err)
 			}
 
-			mutator := NewMutator(dummySeedClient, configGetter, test.NewSeedGetter(testSeed), nil)
+			datacenterGetter, err := kubernetes.DatacenterGetterFactory(dummySeedClient)
+			if err != nil {
+				t.Fatalf("Failed to create DatacenterGetter: %v", err)
+			}
+
+			mutator := NewMutator(dummySeedClient, configGetter, datacenterGetter, nil)
 			mutator.disableProviderMutation = true
 
 			// marshal this before running the mutator, as it might be mutating the same memory

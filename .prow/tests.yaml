@@ -30,9 +30,6 @@ presubmits:
             requests:
               memory: 7Gi
               cpu: 2
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
 
   - name: pre-kubermatic-test-integration
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
@@ -58,9 +55,6 @@ presubmits:
             limits:
               memory: 6Gi
               cpu: 2
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
 
   - name: pre-kubermatic-verify
     always_run: true
@@ -78,9 +72,6 @@ presubmits:
             requests:
               memory: 2Gi
               cpu: 2
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
 
   - name: pre-kubermatic-lint
     run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
@@ -98,9 +89,6 @@ presubmits:
             requests:
               memory: 10Gi
               cpu: 3
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
 
   - name: pre-kubermatic-shellcheck
     decorate: true
@@ -119,9 +107,6 @@ presubmits:
             requests:
               memory: 1Gi
               cpu: 0.5
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
 
   - name: pre-kubermatic-simulate-github-release
     run_if_changed: "hack/ci/github-release.sh"
@@ -154,9 +139,6 @@ presubmits:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           command:
             - "./hack/ci/test-helm-charts.sh"
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
           securityContext:
             privileged: true
           resources:
@@ -165,30 +147,3 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
-
-  - name: pre-kubermatic-test-user-ssh-key-agent-multiarch
-    decorate: true
-    always_run: false
-    run_if_changed: "cmd/user-ssh-keys-agent/"
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-docker-mirror: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-          command:
-            - "./hack/ci/run-user-ssh-key-agent-tests.sh"
-          # docker-in-docker needs privileged mode
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 3
-            limits:
-              memory: 4Gi
-              cpu: 3

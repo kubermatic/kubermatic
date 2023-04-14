@@ -51,10 +51,6 @@ GIT_BRANCH="$(echo "$GIT_BRANCH" | sed 's#/#-#g')"
 
 echodate "Creating cache for revision ${GIT_BRANCH}/${GIT_HEAD_HASH} / Go ${GO_VERSION}/${GOARCH} ..."
 
-# Go does not distinguish compiled files based on
-# tags, so we cannot cache CE *and* EE.
-export KUBERMATIC_EDITION=ee
-
 echodate "Building binaries"
 
 (
@@ -78,7 +74,7 @@ echodate "Building binaries"
 (
   TEST_NAME="Building clusterexposer"
   cd pkg/test/clusterexposer/cmd
-  go build --tags "$KUBERMATIC_EDITION" -v .
+  go build -v .
 )
 (
   TEST_NAME="Building network interface manager"

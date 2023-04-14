@@ -190,7 +190,7 @@ global:
   scrape_interval: 30s
   external_labels:
     cluster: "{{ .TemplateData.Cluster.Name }}"
-    seed_cluster: "{{ .TemplateData.Seed.Name }}"
+    seed_cluster: "{{ .TemplateData.KubermaticConfiguration.Name }}"
 
 rule_files:
 - "/etc/prometheus/config/rules*.yaml"

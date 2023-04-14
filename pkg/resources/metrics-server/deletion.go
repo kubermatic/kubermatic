@@ -24,7 +24,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -57,12 +56,6 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 		&policyv1.PodDisruptionBudget{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.MetricsServerPodDisruptionBudgetName,
-				Namespace: namespace,
-			},
-		},
-		&autoscalingv1.VerticalPodAutoscaler{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.MetricsServerDeploymentName,
 				Namespace: namespace,
 			},
 		},

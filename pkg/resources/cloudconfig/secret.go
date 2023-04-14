@@ -37,7 +37,7 @@ const (
 )
 
 type creatorData interface {
-	DC() *kubermaticv1.Datacenter
+	Datacenter() *kubermaticv1.Datacenter
 	Cluster() *kubermaticv1.Cluster
 	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 }
@@ -55,7 +55,7 @@ func SecretReconciler(data creatorData) reconciling.NamedSecretReconcilerFactory
 				return nil, err
 			}
 
-			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
+			cloudConfig, err := CloudConfig(data.Cluster(), data.Datacenter(), credentials)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create cloud-config: %w", err)
 			}

@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"
 	e2eutils "k8c.io/kubermatic/v3/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	"k8s.io/utils/pointer"
@@ -76,7 +77,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 			return cs
 		})
 
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
@@ -86,7 +87,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		Log:       logger,
 		Client:    seedClient,
 		Namespace: cluster.Status.NamespaceName,
-		Versions:  kubermatic.NewFakeVersions(),
+		Versions:  kubermatic.NewFakeVersions(edition.CommunityEdition),
 	}
 	if err := agentConfig.DeployAgentPod(ctx); err != nil {
 		t.Fatalf("Failed to deploy agent: %v", err)

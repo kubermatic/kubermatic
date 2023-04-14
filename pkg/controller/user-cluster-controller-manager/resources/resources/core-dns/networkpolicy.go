@@ -19,7 +19,6 @@ package coredns
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -42,7 +41,7 @@ func KubeDNSNetworkPolicyReconciler(k8sApiIP string, k8sApiPort int, k8sServiceA
 		return "kube-dns", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
-					MatchLabels: map[string]string{common.NameLabel: "kube-dns"},
+					MatchLabels: map[string]string{"app.kubernetes.io/name": "kube-dns"},
 				},
 
 				PolicyTypes: []networkingv1.PolicyType{
@@ -90,10 +89,10 @@ func KubeDNSNetworkPolicyReconciler(k8sApiIP string, k8sApiPort int, k8sServiceA
 						From: []networkingv1.NetworkPolicyPeer{
 							{
 								NamespaceSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{common.ComponentLabel: resources.MLAComponentName},
+									MatchLabels: map[string]string{"app.kubernetes.io/component": resources.MLAComponentName},
 								},
 								PodSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{common.ComponentLabel: resources.MLAComponentName},
+									MatchLabels: map[string]string{"app.kubernetes.io/component": resources.MLAComponentName},
 								},
 							},
 						},

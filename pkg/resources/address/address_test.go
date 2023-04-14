@@ -76,7 +76,7 @@ func TestSyncClusterAddress(t *testing.T) {
 		apiserverService     corev1.Service
 		frontproxyService    corev1.Service
 		exposeStrategy       kubermaticv1.ExposeStrategy
-		seedDNSOverwrite     string
+		domain               string
 		expectedExternalName string
 		expectedIP           string
 		expectedPort         int32
@@ -104,13 +104,14 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedURL:          "https://1.2.3.4:443",
 		},
 		{
-			name: "Verify properties for service type LoadBalancer dont change when seedDNSOverwrite is set",
+			name: "Verify properties for service type LoadBalancer dont change when domain is set",
 			apiserverService: corev1.Service{
 				Spec: corev1.ServiceSpec{
 					Ports: []corev1.ServicePort{
 						{NodePort: int32(443)},
 					},
-				}},
+				},
+			},
 			frontproxyService: corev1.Service{
 				Status: corev1.ServiceStatus{
 					LoadBalancer: corev1.LoadBalancerStatus{
@@ -119,7 +120,7 @@ func TestSyncClusterAddress(t *testing.T) {
 				},
 			},
 			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
-			seedDNSOverwrite:     "alias-europe-west3-c",
+			domain:               "alias-europe-west3-c",
 			expectedExternalName: "1.2.3.4",
 			expectedIP:           "1.2.3.4",
 			expectedPort:         int32(443),
@@ -132,7 +133,8 @@ func TestSyncClusterAddress(t *testing.T) {
 					Ports: []corev1.ServicePort{
 						{NodePort: int32(443)},
 					},
-				}},
+				},
+			},
 			frontproxyService: corev1.Service{
 				Status: corev1.ServiceStatus{
 					LoadBalancer: corev1.LoadBalancerStatus{
@@ -239,7 +241,8 @@ func TestSyncClusterAddress(t *testing.T) {
 							Port:       int32(32000),
 							TargetPort: intstr.FromInt(32000),
 							NodePort:   32000,
-						}},
+						},
+					},
 				},
 			},
 			exposeStrategy:       kubermaticv1.ExposeStrategyNodePort,
@@ -249,7 +252,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedURL:          fmt.Sprintf("https://%s.%s.%s:32000", fakeClusterName, fakeDCName, fakeExternalURL),
 		},
 		{
-			name: "Verify properties for service type NodePort with seedDNSOverwrite",
+			name: "Verify properties for service type NodePort with domain",
 			apiserverService: corev1.Service{
 				Spec: corev1.ServiceSpec{
 					Type: corev1.ServiceTypeNodePort,
@@ -260,9 +263,10 @@ func TestSyncClusterAddress(t *testing.T) {
 							NodePort:   32000,
 						},
 					},
-				}},
+				},
+			},
 			exposeStrategy:       kubermaticv1.ExposeStrategyNodePort,
-			seedDNSOverwrite:     "alias-europe-west3-c",
+			domain:               "alias-europe-west3-c",
 			expectedExternalName: fmt.Sprintf("%s.alias-europe-west3-c.%s", fakeClusterName, fakeExternalURL),
 			expectedIP:           externalIP,
 			expectedPort:         int32(32000),
@@ -278,7 +282,8 @@ func TestSyncClusterAddress(t *testing.T) {
 							Port:       int32(6443),
 							TargetPort: intstr.FromInt(6443),
 							NodePort:   32000,
-						}},
+						},
+					},
 				},
 			},
 			exposeStrategy:       kubermaticv1.ExposeStrategyTunneling,
@@ -292,7 +297,8 @@ func TestSyncClusterAddress(t *testing.T) {
 			apiserverService: corev1.Service{
 				Spec: corev1.ServiceSpec{
 					Type: corev1.ServiceTypeLoadBalancer,
-				}},
+				},
+			},
 			errExpected: true,
 		},
 	}
@@ -322,19 +328,21 @@ func TestSyncClusterAddress(t *testing.T) {
 			lbService.Namespace = fakeClusterNamespaceName
 			client := fakectrlruntimeclient.NewClientBuilder().WithObjects(apiserverService, lbService).Build()
 
-			seed := &kubermaticv1.Seed{
+			config := &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fakeDCName,
 				},
-				Spec: kubermaticv1.SeedSpec{
-					SeedDNSOverwrite: tc.seedDNSOverwrite,
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					Ingress: kubermaticv1.KubermaticIngressConfiguration{
+						Domain: tc.domain,
+					},
 				},
 			}
 
 			modifiers, err := NewModifiersBuilder(kubermaticlog.Logger).
 				Client(client).
 				Cluster(cluster).
-				Seed(seed).
+				KubermaticConfiguration(config).
 				ExternalURL(fakeExternalURL).
 				lookupFunc(testLookupFunction).
 				Build(context.Background())
@@ -342,7 +350,7 @@ func TestSyncClusterAddress(t *testing.T) {
 				if tc.errExpected {
 					return
 				}
-				t.Fatalf("got unexpected error %v", err)
+				t.Fatalf("got unexpected error: %v", err)
 			}
 
 			for _, modifier := range modifiers {

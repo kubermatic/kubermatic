@@ -41,14 +41,14 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 			VSphere: &kubermaticv1.VSphereCloudSpec{
 				Username:  secrets.VSphere.Username,
 				Password:  secrets.VSphere.Password,
-				Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
+				Datastore: s.datacenter.Spec.Provider.VSphere.DefaultDatastore,
 			},
 		},
 		Version: s.clusterVersion,
 	}
 
 	if s.customFolder {
-		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.VSphere.RootPath)
+		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.Provider.VSphere.RootPath)
 	}
 
 	if s.datastoreCluster {

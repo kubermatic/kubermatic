@@ -29,14 +29,6 @@ func ValidateUserSSHKey(key *kubermaticv1.UserSSHKey) field.ErrorList {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "publicKey"), "no public key specified"))
 	}
 
-	if key.Spec.Fingerprint == "" {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "fingerprint"), "no fingerprint specified"))
-	}
-
-	if key.Spec.Project == "" {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "project"), "no project specified"))
-	}
-
 	return allErrs
 }
 
@@ -45,11 +37,5 @@ func ValidateUserSSHKeyCreate(key *kubermaticv1.UserSSHKey) field.ErrorList {
 }
 
 func ValidateUserSSHKeyUpdate(oldKey, newKey *kubermaticv1.UserSSHKey) field.ErrorList {
-	allErrs := ValidateUserSSHKey(newKey)
-
-	if oldKey.Spec.Project != newKey.Spec.Project {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "project"), newKey.Spec.Project, "this field is immutable"))
-	}
-
-	return allErrs
+	return ValidateUserSSHKey(newKey)
 }

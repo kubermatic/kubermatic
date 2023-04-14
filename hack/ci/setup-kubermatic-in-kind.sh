@@ -32,11 +32,6 @@ fi
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 KUBERMATIC_OSM_ENABLED="${KUBERMATIC_OSM_ENABLED:-true}"
 
-REPOSUFFIX=""
-if [ "$KUBERMATIC_EDITION" != "ce" ]; then
-  REPOSUFFIX="-$KUBERMATIC_EDITION"
-fi
-
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way
 export SEED_NAME=kubermatic
@@ -58,7 +53,7 @@ beforeDockerBuild=$(nowms)
 (
   echodate "Building Kubermatic Docker image"
   TEST_NAME="Build Kubermatic Docker image"
-  IMAGE_NAME="quay.io/kubermatic/kubermatic$REPOSUFFIX:$KUBERMATIC_VERSION"
+  IMAGE_NAME="quay.io/kubermatic/kubermatic:$KUBERMATIC_VERSION"
   time retry 5 docker build -t "$IMAGE_NAME" .
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
@@ -135,7 +130,7 @@ HELM_VALUES_FILE="$(mktemp)"
 cat << EOF > $HELM_VALUES_FILE
 kubermaticOperator:
   image:
-    repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
+    repository: "quay.io/kubermatic/kubermatic"
     tag: "$KUBERMATIC_VERSION"
 
 minio:
@@ -226,9 +221,5 @@ sleep 5
 echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
-
-echodate "Waiting for VPA to be ready..."
-retry 9 check_all_deployments_ready kube-system
-echodate "VPA is ready."
 
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT

@@ -28,7 +28,6 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	k8csemver "k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/features"
 	"k8c.io/kubermatic/v3/pkg/install/stack"
@@ -37,8 +36,6 @@ import (
 	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/util/yamled"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
@@ -106,132 +103,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 		}
 	}
 
-	// we need the actual, effective versioning configuration, which most users will
-	// probably not override
-	defaulted, err := defaulting.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
-	if err != nil {
-		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
-	}
-
-	allSeeds, err := opt.SeedsGetter()
-	if err != nil {
-		return append(errs, fmt.Errorf("failed to list Seeds: %w", err))
-	}
-
-	upgradeConstraints, constraintErrs := getAutoUpdateConstraints(defaulted)
-	if len(constraintErrs) > 0 {
-		return constraintErrs
-	}
-
-	for seedName, seed := range allSeeds {
-		seedLog := opt.Logger.WithField("seed", seedName)
-
-		if opt.SkipSeedValidation.Has(seedName) {
-			seedLog.Info("Seed validation was skipped.")
-			continue
-		}
-
-		seedLog.Info("Checking seed cluster…")
-
-		// ensure seeds are also up-to-date before we continue
-		seedVersion := seed.Status.Versions.Kubermatic
-		if seedVersion != "" {
-			seedSemver, err := semverlib.NewVersion(seedVersion)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("Seed cluster %q version %q is invalid: %w", seedName, seedVersion, err))
-				continue
-			}
-
-			if seedSemver.Minor() < minMinorRequired {
-				errs = append(errs, fmt.Errorf("Seed cluster %q is on version %s and must be updated first", seedName, seedVersion))
-				continue
-			}
-		}
-
-		// if the operator has the chance to reconcile the seed...
-		if conditions := seed.Status.Conditions; conditions[kubermaticv1.SeedConditionKubeconfigValid].Status == corev1.ConditionTrue {
-			// ... it should be healthy
-			if conditions[kubermaticv1.SeedConditionResourcesReconciled].Status != corev1.ConditionTrue {
-				errs = append(errs, fmt.Errorf("Seed cluster %q is not healthy, please verify the operator logs or events on the Seed object", seedName))
-				continue
-			}
-		}
-
-		// create client into seed
-		seedClient, err := opt.SeedClientGetter(seed)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to create client for Seed cluster %q: %w", seedName, err))
-			continue
-		}
-
-		// list all userclusters
-		clusters := kubermaticv1.ClusterList{}
-		if err := seedClient.List(ctx, &clusters); err != nil {
-			errs = append(errs, fmt.Errorf("failed to list user clusters on Seed %q: %w", seedName, err))
-			continue
-		}
-
-		// check that each cluster still matches the configured versions
-		for _, cluster := range clusters.Items {
-			clusterVersion := cluster.Spec.Version
-
-			if !clusterVersionIsConfigured(clusterVersion, defaulted, upgradeConstraints) {
-				errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seedName))
-			}
-
-			// we effectively don't support docker in KKP 2.22; Kubernetes 1.23 clusters that are
-			// still running it need to be upgraded before proceeding with the KKP upgrade.
-			if cluster.Spec.ContainerRuntime == "docker" {
-				errs = append(errs, fmt.Errorf("cluster %s on Seed %s is running 'docker' as container runtime; please upgrade it to 'containerd' before proceeding", cluster.Name, seedName))
-			}
-		}
-	}
-
 	return errs
-}
-
-func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfiguration) ([]*semverlib.Constraints, []error) {
-	var errs []error
-
-	upgradeConstraints := []*semverlib.Constraints{}
-
-	for i, update := range defaultedConfig.Spec.Versions.Updates {
-		// only consider automated updates, otherwise we might accept an unsupported
-		// cluster that is never manually updated
-		if update.Automatic == nil || !*update.Automatic {
-			continue
-		}
-
-		from, err := semverlib.NewConstraint(update.From)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
-			continue
-		}
-
-		upgradeConstraints = append(upgradeConstraints, from)
-	}
-
-	return upgradeConstraints, errs
-}
-
-func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semverlib.Constraints) bool {
-	// is this version still straight up supported?
-	for _, configured := range defaultedConfig.Spec.Versions.Versions {
-		if configured.Equal(&version) {
-			return true
-		}
-	}
-
-	sversion := version.Semver()
-
-	// is an upgrade path defined from the current version to something else?
-	for _, update := range constraints {
-		if update.Check(sversion) {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (*MasterStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {

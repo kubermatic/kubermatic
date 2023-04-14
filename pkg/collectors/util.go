@@ -20,6 +20,9 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
+
+	"github.com/minio/minio-go/v7"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -49,4 +52,24 @@ func caseInsensitiveSort(values []string) []string {
 		return strings.ToLower(values[i]) < strings.ToLower(values[j])
 	})
 	return values
+}
+
+func getLastModifiedTimestamp(objects []minio.ObjectInfo) (lastmodifiedTimestamp time.Time) {
+	for _, object := range objects {
+		if object.LastModified.After(lastmodifiedTimestamp) {
+			lastmodifiedTimestamp = object.LastModified
+		}
+	}
+
+	return lastmodifiedTimestamp
+}
+
+func getEmptyObjectCount(objects []minio.ObjectInfo) (emptyObjects int) {
+	for _, object := range objects {
+		if object.Size == 0 {
+			emptyObjects++
+		}
+	}
+
+	return emptyObjects
 }

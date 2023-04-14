@@ -25,7 +25,6 @@ import (
 	"time"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	applicationsecretsynchronizer "k8c.io/kubermatic/v3/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/test/diff"
@@ -91,7 +90,7 @@ func Test_reconciler_reconcile(t *testing.T) {
 			testFunc: secretNotSyncWhenClusterBeingDeletedTest,
 		},
 		{
-			name:     "non application secret (i.e. without annotation applicationsecretsynchronizer.SecretTypeAnnotatio) should not be synced",
+			name:     "non application secret (i.e. without annotation SecretTypeAnnotatio) should not be synced",
 			testFunc: nonApplicationSecretShouldNotBeSyncedTest,
 		},
 		{
@@ -108,7 +107,7 @@ func secretCreationTest(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
-			Annotations:  map[string]string{applicationsecretsynchronizer.SecretTypeAnnotation: ""},
+			Annotations:  map[string]string{SecretTypeAnnotation: ""},
 			Namespace:    kubermaticNS.Name,
 		},
 		Data: map[string][]byte{"pass": []byte("a3ViZXJtYXRpYwo=")},
@@ -131,7 +130,7 @@ func secretUpdatedTest(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
-			Annotations:  map[string]string{applicationsecretsynchronizer.SecretTypeAnnotation: ""},
+			Annotations:  map[string]string{SecretTypeAnnotation: ""},
 			Labels:       map[string]string{"foo": "bar"},
 			Namespace:    kubermaticNS.Name,
 		},
@@ -166,7 +165,7 @@ func secretIsDeletedTest(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
-			Annotations:  map[string]string{applicationsecretsynchronizer.SecretTypeAnnotation: ""},
+			Annotations:  map[string]string{SecretTypeAnnotation: ""},
 			Labels:       map[string]string{"foo": "bar"},
 			Namespace:    kubermaticNS.Name,
 		},
@@ -227,7 +226,7 @@ func secretNotSyncWhenClusterBeingDeletedTest(t *testing.T) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
-			Annotations:  map[string]string{applicationsecretsynchronizer.SecretTypeAnnotation: ""},
+			Annotations:  map[string]string{SecretTypeAnnotation: ""},
 			Labels:       map[string]string{"foo": "bar"},
 			Namespace:    kubermaticNS.Name,
 		},
@@ -262,7 +261,7 @@ func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "a-secret",
 			Namespace:    "default",
-			Annotations:  map[string]string{applicationsecretsynchronizer.SecretTypeAnnotation: ""},
+			Annotations:  map[string]string{SecretTypeAnnotation: ""},
 		},
 		Data: map[string][]byte{"pass": []byte("a3ViZXJtYXRpYwo=")},
 	}
@@ -447,7 +446,7 @@ func cleanupNamespace(t *testing.T, name string) {
 
 func createCluster(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterName string, workerLabel string, isPause bool, finalizers []string) *kubermaticv1.Cluster {
 	t.Helper()
-	cluster := generator.GenCluster(clusterName, clusterName, "projectName", time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
+	cluster := generator.GenCluster(clusterName, clusterName, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
 		cluster.Namespace = kubermaticNS.Name
 		if workerLabel != "" {
 			cluster.Labels[workerlabel.LabelKey] = workerLabel

@@ -29,7 +29,6 @@ import (
 	clusterclient "k8c.io/kubermatic/v3/pkg/cluster/client"
 	"k8c.io/kubermatic/v3/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v3/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v3/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v3/pkg/util/errors"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
@@ -60,19 +59,17 @@ type Reconciler struct {
 
 	workerName                    string
 	recorder                      record.EventRecorder
-	seedGetter                    provider.SeedGetter
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
 }
 
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
 
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
-		seedGetter:                    seedGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,

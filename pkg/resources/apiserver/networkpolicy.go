@@ -21,7 +21,6 @@ import (
 	"net"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v3/pkg/resources"
@@ -329,7 +328,7 @@ func ClusterExternalAddrAllowReconciler(egressIPs []net.IP, exposeStrategy kuber
 					},
 					PodSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
-							common.NameLabel: nodeportproxy.EnvoyDeploymentName,
+							"app.kubernetes.io/name": nodeportproxy.EnvoyDeploymentName,
 						},
 					},
 				})

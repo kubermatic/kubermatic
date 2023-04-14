@@ -215,23 +215,7 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	logger = log.Prefix(logger, "   ")
 	ns := kubermaticmaster.KubermaticOperatorNamespace
 
-	// step 1: to ensure that a Seed has been created on the master, we check
-	// if the Seed's copy has already been created in this cluster (by the KKP
-	// seed-sync controller). Besides checking its existence, we also need to
-	// know the Seed's name to construct the FQDN for the DNS settings.
-	seedList := kubermaticv1.SeedList{}
-	err := kubeClient.List(ctx, &seedList, &ctrlruntimeclient.ListOptions{Namespace: ns})
-	if err != nil || len(seedList.Items) == 0 {
-		logger.Warnf("No Seed resource was found in the %s namespace.", ns)
-		logger.Warn("Make sure to create the Seed resource on the *master* cluster, from where KKP")
-		logger.Warn("will automatically synchronize it to the seed cluster. Once this is done, re-run")
-		logger.Warn("the installer to determine the DNS settings automatically.")
-		logger.Warn("If you already created the Seed resource and its copy is not present on the")
-		logger.Warn("seed cluster, check the KKP Master Controller's logs.")
-		return
-	}
-
-	// step 2: find the nodeport-proxy Service
+	// step 1: find the nodeport-proxy Service
 	svcName := types.NamespacedName{
 		Namespace: ns,
 		Name:      kubermaticmaster.NodePortProxyService,
@@ -240,7 +224,7 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	logger.Debugf("Waiting for %q to be ready…", svcName)
 
 	var ingresses []corev1.LoadBalancerIngress
-	err = wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
+	err := wait.PollImmediate(1*time.Second, 3*time.Minute, func() (bool, error) {
 		svc := corev1.Service{}
 		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
 			return false, err
@@ -252,9 +236,8 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	})
 	if err != nil {
 		logger.Warnf("Timed out waiting for the LoadBalancer service %q to become ready.", svcName)
-		logger.Warn("Note that the LoadBalancer is created by the KKP Operator after the Seed")
-		logger.Warn("resource is created on the *master* cluster. If the Seed is installed and")
-		logger.Warn("no LoadBalancer is provisioned, check the KKP Operator's logs.")
+		logger.Warn("Note that the LoadBalancer is created by the KKP Operator; if no LoadBalancer")
+		logger.Warn("is provisioned, check the KKP Operator's logs.")
 		return
 	}
 
@@ -262,7 +245,6 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	logger.Info("")
 	logger.Infof("  Service             : %s / %s", svcName.Namespace, svcName.Name)
 
-	seed := seedList.Items[0]
 	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
 
 	if hostname := ingresses[0].Hostname; hostname != "" {
@@ -270,13 +252,13 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		logger.Info("")
 		logger.Infof("Please ensure your DNS settings for %q includes the following record:", domain)
 		logger.Info("")
-		logger.Infof("   *.%s.%s.  IN  CNAME  %s.", seed.Name, domain, hostname)
+		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
 	} else if ip := ingresses[0].IP; ip != "" {
 		logger.Infof("  Ingress via IP      : %s", ip)
 		logger.Info("")
 		logger.Infof("Please ensure your DNS settings for %q includes the following record:", domain)
 		logger.Info("")
-		logger.Infof("   *.%s.%s.  IN  A  %s", seed.Name, domain, ip)
+		logger.Infof("   *.%s.  IN  A  %s", domain, ip)
 	}
 
 	logger.Info("")

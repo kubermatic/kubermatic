@@ -64,8 +64,7 @@ type TemplateData struct {
 	ctx                              context.Context
 	client                           ctrlruntimeclient.Client
 	cluster                          *kubermaticv1.Cluster
-	dc                               *kubermaticv1.Datacenter
-	seed                             *kubermaticv1.Seed
+	datacenter                       *kubermaticv1.Datacenter
 	config                           *kubermaticv1.KubermaticConfiguration
 	OverwriteRegistry                string
 	nodePortRange                    string
@@ -115,12 +114,7 @@ func (td *TemplateDataBuilder) WithCluster(cluster *kubermaticv1.Cluster) *Templ
 }
 
 func (td *TemplateDataBuilder) WithDatacenter(dc *kubermaticv1.Datacenter) *TemplateDataBuilder {
-	td.data.dc = dc
-	return td
-}
-
-func (td *TemplateDataBuilder) WithSeed(s *kubermaticv1.Seed) *TemplateDataBuilder {
-	td.data.seed = s
+	td.data.datacenter = dc
 	return td
 }
 
@@ -254,14 +248,18 @@ func (d *TemplateData) OIDCIssuerClientID() string {
 	return d.oidcIssuerClientID
 }
 
+func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration {
+	return d.config
+}
+
 // Cluster returns the cluster.
 func (d *TemplateData) Cluster() *kubermaticv1.Cluster {
 	return d.cluster
 }
 
-// DC returns the dc.
-func (d *TemplateData) DC() *kubermaticv1.Datacenter {
-	return d.dc
+// Datacenter returns the datacenter.
+func (d *TemplateData) Datacenter() *kubermaticv1.Datacenter {
+	return d.datacenter
 }
 
 // EtcdDiskSize returns the etcd disk size.
@@ -500,7 +498,7 @@ func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 	return d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil || *d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled
 }
 
-func (d *TemplateData) KubermaticAPIImage() string {
+func (d *TemplateData) KubermaticImage() string {
 	return registry.Must(d.RewriteImage(d.kubermaticImage))
 }
 
@@ -745,17 +743,9 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 	return featureFlags
 }
 
-func (d *TemplateData) Seed() *kubermaticv1.Seed {
-	return d.seed
-}
-
-func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration {
-	return d.config
-}
-
 func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	cluster := data.Cluster()
-	dc := data.DC()
+	dc := data.Datacenter()
 
 	refTo := func(key string) *corev1.EnvVarSource {
 		return &corev1.EnvVarSource{
@@ -789,7 +779,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", ValueFrom: refTo(AzureSubscriptionID)})
 	}
 	if cluster.Spec.Cloud.OpenStack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: dc.Spec.OpenStack.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: dc.Spec.Provider.OpenStack.AuthURL})
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(OpenstackUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(OpenstackPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(OpenstackDomain)})
@@ -805,7 +795,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", ValueFrom: refTo(DigitaloceanToken)})
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.Provider.VSphere.Endpoint})
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VspherePassword)})
 	}
@@ -828,12 +818,12 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	}
 	if cluster.Spec.Cloud.Nutanix != nil {
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_CLUSTER_NAME", Value: cluster.Spec.Cloud.Nutanix.ClusterName})
-		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: dc.Spec.Nutanix.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_ENDPOINT", Value: dc.Spec.Provider.Nutanix.Endpoint})
 
-		if port := dc.Spec.Nutanix.Port; port != nil {
+		if port := dc.Spec.Provider.Nutanix.Port; port != nil {
 			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PORT", Value: strconv.Itoa(int(*port))})
 		}
-		if dc.Spec.Nutanix.AllowInsecure {
+		if dc.Spec.Provider.Nutanix.AllowInsecure {
 			vars = append(vars, corev1.EnvVar{Name: "NUTANIX_INSECURE", Value: "true"})
 		}
 
@@ -842,17 +832,17 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "NUTANIX_PROXY_URL", ValueFrom: optionalRefTo(NutanixProxyURL)}) // proxy URL can be empty
 	}
 	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
-		vars = append(vars, corev1.EnvVar{Name: "VCD_URL", Value: dc.Spec.VMwareCloudDirector.URL})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_URL", Value: dc.Spec.Provider.VMwareCloudDirector.URL})
 		vars = append(vars, corev1.EnvVar{Name: "VCD_USER", ValueFrom: refTo(VMwareCloudDirectorUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "VCD_PASSWORD", ValueFrom: refTo(VMwareCloudDirectorPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "VCD_ORG", ValueFrom: refTo(VMwareCloudDirectorOrganization)})
 		vars = append(vars, corev1.EnvVar{Name: "VCD_VDC", ValueFrom: refTo(VMwareCloudDirectorVDC)})
 
-		if dc.Spec.VMwareCloudDirector.AllowInsecure {
+		if dc.Spec.Provider.VMwareCloudDirector.AllowInsecure {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
 		}
 	}
-	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
+	vars = append(vars, GetHTTPProxyEnvVars(data.KubermaticConfiguration(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
 	vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})

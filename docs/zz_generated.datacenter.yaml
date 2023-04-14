@@ -1,0 +1,325 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: Datacenter
+metadata:
+  name: <<example-datacenter>>
+  namespace: kubermatic
+spec:
+  # Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
+  # ignoring cluster-specific settings.
+  enforceAuditLogging: false
+  # Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
+  # ignoring cluster-specific settings.
+  enforcePodSecurityPolicy: false
+  # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
+  machineFlavorFilter:
+    # Include VMs with GPU
+    enableGPU: false
+    # Maximum number of vCPU
+    maxCPU: 0
+    # Maximum RAM size in GB
+    maxRAM: 0
+    # Minimum number of vCPU
+    minCPU: 0
+    # Minimum RAM size in GB
+    minRAM: 0
+  # Node holds node-specific settings, like e.g. HTTP proxy, Docker
+  # registries and the like. Proxy settings are inherited from the seed if
+  # not specified here.
+  node:
+    # Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
+    containerdRegistryMirrors: null
+    # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
+    httpProxy: ""
+    # Optional: These image registries will be configured as insecure
+    # on the container runtime.
+    insecureRegistries: []
+    # Optional: If set this will be set as NO_PROXY environment variable on the node;
+    # The value must be a comma-separated list of domains for which no proxy
+    # should be used, e.g. "*.example.com,internal.dev".
+    # Note that the in-cluster apiserver URL will be automatically prepended
+    # to this value.
+    noProxy: ""
+    # Optional: Translates to --pod-infra-container-image on the kubelet.
+    # If not set, the kubelet will default it.
+    pauseImage: ""
+    # Optional: These image registries will be configured as registry mirrors
+    # on the container runtime.
+    registryMirrors: []
+  # Optional: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
+  operatingSystemProfiles:
+    amzn2: ""
+    centos: ""
+    flatcar: ""
+    rhel: ""
+    rockylinux: ""
+    ubuntu: ""
+  # Provider contains cloud-provider related configuration.
+  provider:
+    # Alibaba configures an Alibaba Cloud datacenter.
+    alibaba:
+      # Region to use, for a full list of regions see
+      # https://www.alibabacloud.com/help/doc-detail/40654.htm
+      region: ""
+    # Anexia configures an Anexia datacenter.
+    anexia:
+      # LocationID the location of the region
+      locationID: ""
+    # AWS configures an Amazon Web Services (AWS) datacenter.
+    aws:
+      # List of AMIs to use for a given operating system.
+      # This gets defaulted by querying for the latest AMI for the given distribution
+      # when machines are created, so under normal circumstances it is not necessary
+      # to define the AMIs statically.
+      images:
+        amzn2: ""
+        centos: ""
+        flatcar: ""
+        rhel: ""
+        rockylinux: ""
+        ubuntu: ""
+      # The AWS region to use, e.g. "us-east-1". For a list of available regions, see
+      # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+      region: ""
+    # Azure configures an Azure datacenter.
+    azure:
+      # Region to use, for example "westeurope". A list of available regions can be
+      # found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
+      location: ""
+    # BringYourOwn contains settings for clusters using manually created
+    # nodes via kubeadm.
+    bringyourown: {}
+    # Digitalocean contains settings for Digitalocean (DO).
+    digitalocean:
+      # Datacenter location, e.g. "ams3". A list of existing datacenters can be found
+      # at https://www.digitalocean.com/docs/platform/availability-matrix/
+      region: ""
+    # GCP configures a Google Cloud Platform (GCP) datacenter.
+    gcp:
+      # Region to use, for example "europe-west3", for a full list of regions see
+      # https://cloud.google.com/compute/docs/regions-zones/
+      region: ""
+      # Optional: Regional clusters spread their resources across multiple availability zones.
+      # Refer to the official documentation for more details on this:
+      # https://cloud.google.com/kubernetes-engine/docs/concepts/regional-clusters
+      regional: false
+      # List of enabled zones, for example [a, c]. See the link above for the available
+      # zones in your chosen region.
+      zoneSuffixes: []
+    # Hetzner configures a Hetzner datacenter.
+    hetzner:
+      # Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
+      # at https://docs.hetzner.com/general/others/data-centers-and-connection/
+      datacenter: ""
+      # Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
+      # For informational purposes only.
+      location: ""
+      # Network is the pre-existing Hetzner network in which the machines are running.
+      # While machines can be in multiple networks, a single one must be chosen for the
+      # HCloud CCM to work.
+      network: ""
+    # KubeVirt configures a KubeVirt datacenter.
+    kubevirt:
+      # CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed
+      # in the dedicated infra KubeVirt cluster. They are added to the defaults.
+      customNetworkPolicies:
+        - # Name is the name of the Custom Network Policy.
+          name: deny-ingress
+          # Spec is the Spec of the NetworkPolicy, using the standard type.
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Ingress
+      # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
+      # configuration based on DNSPolicy.
+      dnsConfig:
+        # A list of DNS name server IP addresses.
+        # This will be appended to the base nameservers generated from DNSPolicy.
+        # Duplicated nameservers will be removed.
+        nameservers: null
+        # A list of DNS resolver options.
+        # This will be merged with the base options generated from DNSPolicy.
+        # Duplicated entries will be removed. Resolution options given in Options
+        # will override those that appear in the base DNSPolicy.
+        options: null
+        # A list of DNS search domains for host-name lookup.
+        # This will be appended to the base search paths generated from DNSPolicy.
+        # Duplicated search paths will be removed.
+        searches: null
+      # DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
+      # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
+      # policy selected with DNSPolicy.
+      dnsPolicy: ""
+      # Images represents standard VM Image sources.
+      images:
+        # HTTP represents a http source.
+        http:
+          # OperatingSystems represents list of supported operating-systems with their URLs.
+          operatingSystems:
+            centos:
+              <<version>>: <<url>>
+            flatcar:
+              <<version>>: <<url>>
+            rhel:
+              <<version>>: <<url>>
+            rockylinux:
+              <<version>>: <<url>>
+            ubuntu:
+              <<version>>: <<url>>
+      # InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
+      # that will be used to initialise StorageClasses in the tenant cluster.
+      # In the tenant cluster, the created StorageClass name will have as name:
+      # kubevirt-<infra-storageClass-name>
+      infraStorageClasses:
+        - # Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
+          # storageclass.kubernetes.io/is-default-class : true
+          # If missing or false, annotation will be:
+          # storageclass.kubernetes.io/is-default-class : false
+          isDefaultClass: true
+          name: px-csi-db
+    # Nutanix configures a Nutanix HCI datacenter.
+    nutanix:
+      # Optional: AllowInsecure allows to disable the TLS certificate check against the endpoint (defaults to false)
+      allowInsecure: false
+      # Endpoint to use for accessing Nutanix Prism Central. No protocol or port should be passed,
+      # for example "nutanix.example.com" or "10.0.0.1"
+      endpoint: ""
+      # Images to use for each supported operating system
+      images:
+        amzn2: ""
+        centos: ""
+        flatcar: ""
+        rhel: ""
+        rockylinux: ""
+        ubuntu: ""
+      # Optional: Port to use when connecting to the Nutanix Prism Central endpoint (defaults to 9440)
+      port: 9440
+    # OpenStack configures an OpenStack datacenter.
+    openstack:
+      authURL: ""
+      availabilityZone: ""
+      # Used for automatic network creation
+      dnsServers: []
+      # Optional: List of enabled flavors for the given datacenter
+      enabledFlavors: []
+      # Optional
+      enforceFloatingIP: false
+      # Optional
+      ignoreVolumeAZ: false
+      # Images to use for each supported operating system.
+      images:
+        amzn2: ""
+        centos: ""
+        flatcar: ""
+        rhel: ""
+        rockylinux: ""
+        ubuntu: ""
+      # Optional: defines if the IPv6 is enabled for the datacenter
+      ipv6Enabled: false
+      # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
+      # This setting defaults to true.
+      manageSecurityGroups: true
+      # Optional: Restrict the allowed VM configurations that can be chosen in
+      # the KKP dashboard. This setting does not affect the validation webhook for
+      # MachineDeployments.
+      nodeSizeRequirements:
+        # MinimumMemory is the minimum required amount of memory, measured in MB
+        minimumMemory: 0
+        # VCPUs is the minimum required amount of (virtual) CPUs
+        minimumVCPUs: 0
+      region: ""
+      # Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
+      # This setting defaults to false.
+      trustDevicePath: false
+      # Optional: Gets mapped to the "use-octavia" setting in the cloud config.
+      # use-octavia is enabled by default in CCM since v1.17.0, and disabled by
+      # default with the in-tree cloud provider.
+      useOctavia: true
+    # Packet configures an Equinix Metal datacenter.
+    packet:
+      # The list of enabled facilities, for example "ams1", for a full list of available
+      # facilities see https://metal.equinix.com/developers/docs/locations/facilities/
+      facilities: []
+      # Metros are facilities that are grouped together geographically and share capacity
+      # and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
+      metro: ""
+    # ProviderName is the name of the cloud provider used for this datacenter.
+    # This must match the given provider spec (e.g. if the providerName is
+    # "aws", then the `aws` field must be set).
+    providerName: ""
+    # VMwareCloudDirector configures a VMware Cloud Director datacenter.
+    vmwareclouddirector:
+      # If set to true, disables the TLS certificate check against the endpoint.
+      allowInsecure: false
+      # The default catalog which contains the VM templates.
+      catalog: ""
+      # The name of the storage profile to use for disks attached to the VMs.
+      storageProfile: ""
+      # A list of VM templates to use for a given operating system. You must
+      # define at least one template.
+      templates:
+        amzn2: ""
+        centos: ""
+        flatcar: ""
+        rhel: ""
+        rockylinux: ""
+        ubuntu: ""
+      # Endpoint URL to use, including protocol, for example "https://vclouddirector.example.com".
+      url: ""
+    # VSphere configures a VMware vSphere datacenter.
+    vsphere:
+      # If set to true, disables the TLS certificate check against the endpoint.
+      allowInsecure: false
+      # The name of the vSphere cluster to use. Used for out-of-tree CSI Driver.
+      cluster: ""
+      # The name of the datacenter to use.
+      datacenter: ""
+      # The default Datastore to be used for provisioning volumes using storage
+      # classes/dynamic provisioning and for storing virtual machine files in
+      # case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
+      datastore: ""
+      # DefaultTagCategoryID is the tag category id that will be used as default, if users don't specify it on a cluster level,
+      # and they don't wish KKP to create default generated tag category, upon cluster creation.
+      defaultTagCategoryID: ""
+      # Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
+      endpoint: ""
+      # Optional: Infra management user is the user that will be used for everything
+      # except the cloud provider functionality, which will still use the credentials
+      # passed in via the Kubermatic dashboard/API.
+      infraManagementUser:
+        password: ""
+        username: ""
+      # Optional: defines if the IPv6 is enabled for the datacenter
+      ipv6Enabled: false
+      # Optional: The root path for cluster specific VM folders. Each cluster gets its own
+      # folder below the root folder. Must be the FQDN (for example
+      # "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
+      # folder: "/datacenter-1/vm"
+      rootPath: ""
+      # The name of the storage policy to use for the storage class created in the user cluster.
+      storagePolicy: ""
+      # A list of VM templates to use for a given operating system. You must
+      # define at least one template.
+      # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
+      templates:
+        amzn2: ""
+        centos: ""
+        flatcar: ""
+        rhel: ""
+        rockylinux: ""
+        ubuntu: ""
+  # Optional: ProviderReconciliationInterval is the time that must have passed since a
+  # Cluster's status.lastProviderReconciliation to make the cliuster controller
+  # perform an in-depth provider reconciliation, where for example missing security
+  # groups will be reconciled.
+  # Setting this too low can cause rate limits by the cloud provider, setting this
+  # too high means that *if* a resource at a cloud provider is removed/changed outside
+  # of KKP, it will take this long to fix it.
+  providerReconciliationInterval: 6h0m0s
+  # Optional: When defined, only users with an e-mail address on the
+  # given domains can make use of this datacenter. You can define multiple
+  # domains, e.g. "example.com", one of which must match the email domain
+  # exactly (i.e. "example.com" will not match "user@test.example.com").
+  requiredEmails: []
+status:
+  # Clusters is the total number of user clusters that exist on this seed.
+  clusters: 0

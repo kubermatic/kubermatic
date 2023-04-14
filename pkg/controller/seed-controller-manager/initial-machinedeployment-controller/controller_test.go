@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package initialmachinedeployment
+package initialmachinedeploymentcontroller
 
 import (
 	"context"
@@ -33,6 +33,8 @@ import (
 	"k8c.io/kubermatic/v3/pkg/machine/operatingsystem"
 	"k8c.io/kubermatic/v3/pkg/machine/provider"
 	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/test"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -227,20 +229,14 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	project := &kubermaticv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: projectID,
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			webhook := &appsv1.Deployment{}
 			webhook.Name = resources.MachineControllerWebhookDeploymentName
-			webhook.Namespace = test.cluster.Status.NamespaceName
+			webhook.Namespace = tc.cluster.Status.NamespaceName
 			webhook.Spec.Replicas = pointer.Int32(1)
 
-			if test.mcHealthy {
+			if tc.mcHealthy {
 				webhook.Status.Replicas = *webhook.Spec.Replicas
 				webhook.Status.AvailableReplicas = *webhook.Spec.Replicas
 				webhook.Status.ReadyReplicas = *webhook.Spec.Replicas
@@ -250,7 +246,7 @@ func TestReconcile(t *testing.T) {
 			seedClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(test.cluster, project, webhook).
+				WithObjects(tc.cluster, webhook).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
@@ -265,30 +261,24 @@ func TestReconcile(t *testing.T) {
 				Client:   seedClient,
 				recorder: &record.FakeRecorder{},
 				log:      logger,
-				versions: kubermatic.NewFakeVersions(),
+				versions: kubermatic.NewFakeVersions(edition.CommunityEdition),
 
 				userClusterConnectionProvider: newFakeClientProvider(userClusterClient),
 
-				// this dummy seedGetter returns the same dummy hetzner DC for all tests
-				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return &kubermaticv1.Seed{
-						Spec: kubermaticv1.SeedSpec{
-							Datacenters: map[string]kubermaticv1.Datacenter{
-								datacenterName: {
-									Spec: kubermaticv1.DatacenterSpec{
-										Hetzner: &kubermaticv1.DatacenterSpecHetzner{
-											Datacenter: "hel1",
-											Network:    "default",
-										},
-									},
-								},
+				// this dummy datacenterGetter returns the same dummy hetzner DC for all tests
+				datacenterGetter: test.NewDatacenterGetter(&kubermaticv1.Datacenter{
+					Spec: kubermaticv1.DatacenterSpec{
+						Provider: kubermaticv1.DatacenterProviderSpec{
+							Hetzner: &kubermaticv1.DatacenterSpecHetzner{
+								Datacenter: "hel1",
+								Network:    "default",
 							},
 						},
-					}, nil
-				},
+					},
+				}),
 			}
 
-			nName := types.NamespacedName{Name: test.cluster.Name}
+			nName := types.NamespacedName{Name: tc.cluster.Name}
 
 			// let the magic happen
 			_, reconcileErr := r.Reconcile(ctx, reconcile.Request{NamespacedName: nName})
@@ -300,7 +290,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// validate the result
-			if err := test.validate(newCluster, userClusterClient, reconcileErr); err != nil {
+			if err := tc.validate(newCluster, userClusterClient, reconcileErr); err != nil {
 				t.Fatalf("Test failed: %v", err)
 			}
 		})

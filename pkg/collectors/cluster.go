@@ -70,7 +70,6 @@ func newClusterCollector(client ctrlruntimeclient.Reader) *ClusterCollector {
 				"cloud_provider",
 				"datacenter",
 				"pause",
-				"project",
 				"phase",
 			},
 			nil,
@@ -178,7 +177,6 @@ func (cc *ClusterCollector) clusterInfoLabels(cluster *kubermaticv1.Cluster) ([]
 		string(provider),
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
-		cluster.Labels[kubermaticv1.ProjectIDLabelKey],
 		string(cluster.Status.Phase),
 	}, nil
 }

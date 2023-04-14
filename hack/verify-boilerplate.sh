@@ -21,24 +21,17 @@ source hack/lib.sh
 
 CONTAINERIZE_IMAGE=quay.io/kubermatic-labs/boilerplate:v0.2.0 containerize hack/verify-boilerplate.sh
 
-echodate "Checking Kubermatic CE licenses..."
+echodate "Checking Kubermatic licenses..."
 boilerplate \
-  -boilerplates hack/boilerplate/ce \
+  -boilerplates hack/boilerplate \
   -exclude addons/canal/canal.yaml \
-  -exclude pkg/controller/seed-controller-manager/addon/testdata/istio \
+  -exclude pkg/controller/seed-controller-manager/addon-controller/testdata/istio \
   -exclude hack/ci/testdata/crdmigration \
   -exclude hack/images/startup-script/manage-startup-script.sh \
   -exclude pkg/resources/certificates/triple/triple.go \
   -exclude pkg/resources/etcd/testdata \
-  -exclude pkg/ee \
   -exclude charts/kubermatic-operator/crd \
   -exclude pkg/crd/k8c.io \
   -exclude pkg/crd/k8s.io \
   -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
-  -exclude pkg/provider/cloud/eks/authenticator \
   -exclude .github
-
-echodate "Checking Kubermatic EE licenses..."
-boilerplate \
-  -boilerplates hack/boilerplate/ee \
-  pkg/ee

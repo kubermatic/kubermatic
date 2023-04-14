@@ -48,13 +48,7 @@ source hack/lib.sh
 
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 export GOOS="${GOOS:-linux}"
-export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export ARCHITECTURES=${ARCHITECTURES:-amd64 arm64}
-
-REPOSUFFIX=""
-if [ "$KUBERMATIC_EDITION" != "ce" ]; then
-  REPOSUFFIX="-$KUBERMATIC_EDITION"
-fi
 
 # build Docker images
 PRIMARY_TAG="${1}"
@@ -87,7 +81,6 @@ for ARCH in ${ARCHITECTURES}; do
   buildah bud \
     --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --build-arg "GOCACHE=/gocache" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
@@ -105,7 +98,6 @@ for ARCH in ${ARCHITECTURES}; do
   buildah bud \
     --tag "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --build-arg "GOCACHE=/gocache" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
@@ -123,7 +115,6 @@ for ARCH in ${ARCHITECTURES}; do
   buildah bud \
     --tag "${DOCKER_REPO}/network-interface-manager-${ARCH}:${PRIMARY_TAG}" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --build-arg "GOCACHE=/gocache" \
     --arch "$ARCH" \
     --override-arch "$ARCH" \
@@ -143,7 +134,7 @@ for TAG in "$@"; do
   fi
 
   echodate "Tagging as ${TAG}"
-  docker tag "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${PRIMARY_TAG}" "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
+  docker tag "${DOCKER_REPO}/kubermatic:${PRIMARY_TAG}" "${DOCKER_REPO}/kubermatic:${TAG}"
   docker tag "${DOCKER_REPO}/nodeport-proxy:${PRIMARY_TAG}" "${DOCKER_REPO}/nodeport-proxy:${TAG}"
   docker tag "${DOCKER_REPO}/addons:${PRIMARY_TAG}" "${DOCKER_REPO}/addons:${TAG}"
   docker tag "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" "${DOCKER_REPO}/etcd-launcher:${TAG}"
@@ -152,7 +143,7 @@ for TAG in "$@"; do
   buildah tag "${DOCKER_REPO}/network-interface-manager:${PRIMARY_TAG}" "${DOCKER_REPO}/network-interface-manager:${TAG}"
 
   echodate "Pushing images"
-  docker push "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
+  docker push "${DOCKER_REPO}/kubermatic:${TAG}"
   docker push "${DOCKER_REPO}/nodeport-proxy:${TAG}"
   docker push "${DOCKER_REPO}/addons:${TAG}"
   docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"

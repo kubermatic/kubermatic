@@ -69,12 +69,11 @@ type userclusterControllerData interface {
 	GetKonnectivityKeepAliveTime() string
 	GetTunnelingAgentIP() string
 	GetMLAGatewayPort() (int32, error)
-	KubermaticAPIImage() string
+	KubermaticImage() string
 	KubermaticDockerTag() string
 	GetCloudProviderName() (kubermaticv1.CloudProvider, error)
 	UserClusterMLAEnabled() bool
 	IsKonnectivityEnabled() bool
-	DC() *kubermaticv1.Datacenter
 	GetGlobalSecretKeySelectorValue(configVar *kubermaticv1.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
 }
@@ -261,7 +260,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
+					Image:   data.KubermaticImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args:    args,
 					Env: append(envVars, corev1.EnvVar{

@@ -45,7 +45,7 @@ func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 				return nil, err
 			}
 
-			vsphereCloudConfig, err := cloudconfig.GetVSphereCloudConfig(data.Cluster(), data.DC(), credentials)
+			vsphereCloudConfig, err := cloudconfig.GetVSphereCloudConfig(data.Cluster(), data.Datacenter(), credentials)
 			if err != nil {
 				return nil, err
 			}

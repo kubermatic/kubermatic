@@ -65,7 +65,7 @@ type operatingSystemManagerData interface {
 	RewriteImage(string) (string, error)
 	NodeLocalDNSCacheEnabled() bool
 	GetCSIMigrationFeatureGates(version *semverlib.Version) []string
-	DC() *kubermaticv1.Datacenter
+	Datacenter() *kubermaticv1.Datacenter
 	ComputedNodePortRange() string
 	OperatingSystemManagerImageTag() string
 	OperatingSystemManagerImageRepository() string
@@ -170,7 +170,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
-					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(nil), data.Cluster().Spec.ImagePullSecret),
+					Args:    getFlags(data.Datacenter().Spec.Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(nil), data.Cluster().Spec.ImagePullSecret),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -307,7 +307,7 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", ValueFrom: refTo(resources.AzureSubscriptionID)})
 	}
 	if data.Cluster().Spec.Cloud.OpenStack != nil {
-		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.OpenStack.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.Datacenter().Spec.Provider.OpenStack.AuthURL})
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(resources.OpenstackUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", ValueFrom: refTo(resources.OpenstackPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", ValueFrom: refTo(resources.OpenstackDomain)})
@@ -317,7 +317,7 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "OS_APPLICATION_CREDENTIAL_SECRET", ValueFrom: optionalRefTo(resources.OpenstackApplicationCredentialSecret)})
 	}
 	if data.Cluster().Spec.Cloud.VSphere != nil {
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.DC().Spec.VSphere.Endpoint})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: data.Datacenter().Spec.Provider.VSphere.Endpoint})
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(resources.VsphereUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(resources.VspherePassword)})
 	}

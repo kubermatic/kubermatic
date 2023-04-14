@@ -359,14 +359,13 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, *rest.Config, func(), *zap.SugaredLogger, error) {
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 1, nil)
-	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.WithKonnectivity(true).WithTestName("konnectivity")
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)
 	}
 
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	if err != nil {
 		return nil, nil, nil, cleanup, log, fmt.Errorf("failed to setup test environment: %w", err)
 	}

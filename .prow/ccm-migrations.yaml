@@ -31,8 +31,6 @@ presubmits:
       containers:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: PROVIDER
               value: openstack
             - name: VERSION_TO_TEST
@@ -72,8 +70,6 @@ presubmits:
       containers:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: PROVIDER
               value: vsphere
             # KKP 2.22+ does not support Kubernetes >= 1.25 with in-tree, so we only
@@ -116,8 +112,6 @@ presubmits:
       containers:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: PROVIDER
               value: azure
             - name: VERSION_TO_TEST
@@ -157,8 +151,6 @@ presubmits:
       containers:
         - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.17-4
           env:
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: PROVIDER
               value: aws
             - name: VERSION_TO_TEST

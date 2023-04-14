@@ -21,19 +21,18 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni"
-	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/version"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v3/pkg/cni"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/resources"
+	"k8c.io/kubermatic/v3/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 )
 
 // MutateCreate is an addition to regular defaulting for new clusters.
-func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, cloudProvider provider.CloudProvider) *field.Error {
+func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.KubermaticConfiguration, datacenter *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider) *field.Error {
 	if newCluster.Spec.Features == nil {
 		newCluster.Spec.Features = map[string]bool{}
 	}
@@ -41,11 +40,6 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 	// Network policies for Apiserver are deployed by default
 	if _, ok := newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy]; !ok {
 		newCluster.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] = true
-	}
-
-	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&newCluster.Spec, seed)
-	if fieldErr != nil {
-		return fieldErr
 	}
 
 	// Always enable external CCM for supported providers in new clusters unless the user
@@ -72,7 +66,7 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 	return nil
 }
 
-func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, cloudProvider provider.CloudProvider) *field.Error {
+func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermaticv1.KubermaticConfiguration, datacenter *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider) *field.Error {
 	// If the ExternalCloudProvider feature is enabled for the first time, mark the occasion
 	// by adding annotations to keep track of the required migration. This is only required for
 	// some providers that have more complex migration procedures; providers like Hetzner for
@@ -80,9 +74,9 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 	if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
 		oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
 		switch {
-		case newCluster.Spec.Cloud.Openstack != nil:
+		case newCluster.Spec.Cloud.OpenStack != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
-			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.Bool(true)
+			newCluster.Spec.Cloud.OpenStack.UseOctavia = pointer.Bool(true)
 
 		case newCluster.Spec.Cloud.VSphere != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
@@ -102,7 +96,7 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 	// For KubeVirt, we want to mutate and always have ClusterFeatureCCMClusterName = true
 	// It's not handled by the previous loop for the migration 2.21 to 2.22
 	// as ExternalCloudProvider feature not is set for the first time.
-	if newCluster.Spec.Cloud.Kubevirt != nil {
+	if newCluster.Spec.Cloud.KubeVirt != nil {
 		newCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
 	}
 

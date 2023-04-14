@@ -19,7 +19,6 @@ package monitoringagent
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -52,9 +51,9 @@ const (
 
 var (
 	controllerLabels = map[string]string{
-		common.NameLabel:      resources.MLAMonitoringAgentDeploymentName,
-		common.InstanceLabel:  resources.MLAMonitoringAgentDeploymentName,
-		common.ComponentLabel: resources.MLAComponentName,
+		"app.kubernetes.io/name":      resources.MLAMonitoringAgentDeploymentName,
+		"app.kubernetes.io/instance":  resources.MLAMonitoringAgentDeploymentName,
+		"app.kubernetes.io/component": resources.MLAComponentName,
 	}
 
 	defaultResourceRequirements = corev1.ResourceRequirements{

@@ -27,7 +27,6 @@ import (
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/test"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -264,15 +263,11 @@ func TestHandle(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			seedClient := fake.NewClientBuilder().WithObjects(tt.clusters...).Build()
-			seed := &kubermaticv1.Seed{}
 
 			handler := AdmissionHandler{
 				log:        logr.Discard(),
 				decoder:    d,
-				seedGetter: test.NewSeedGetter(seed),
-				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-					return seedClient, nil
-				},
+				seedClient: seedClient,
 			}
 			res := handler.Handle(context.Background(), tt.req)
 			if res.AdmissionResponse.Result != nil && res.AdmissionResponse.Result.Code == http.StatusInternalServerError {

@@ -17,7 +17,6 @@ limitations under the License.
 package metricsserver
 
 import (
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -48,10 +47,10 @@ func NetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
 						From: []networkingv1.NetworkPolicyPeer{
 							{
 								NamespaceSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{common.ComponentLabel: resources.MLAComponentName},
+									MatchLabels: map[string]string{"app.kubernetes.io/component": resources.MLAComponentName},
 								},
 								PodSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{common.ComponentLabel: resources.MLAComponentName},
+									MatchLabels: map[string]string{"app.kubernetes.io/component": resources.MLAComponentName},
 								},
 							},
 						},

@@ -15,11 +15,11 @@ limitations under the License.
 */
 
 /*
-Package initialmachinedeployment contains a controller that watches Cluster
+Package initialmachinedeploymentcontroller contains a controller that watches Cluster
 resources and will transform the InitialMachineDeployment annotation into
 an actual MachineDeployment once the cluster has become ready.
 
 The annotation for the initial Machine Deployment is put there by the
 REST API's create-cluster endpoint.
 */
-package initialmachinedeployment
+package initialmachinedeploymentcontroller

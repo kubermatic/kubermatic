@@ -230,15 +230,12 @@ for buildTarget in $RELEASE_PLATFORMS; do
   export GOOS="$(echo "$buildTarget" | cut -d- -f1)"
   export GOARCH="$(echo "$buildTarget" | cut -d- -f2)"
 
-  echodate "Compiling CE installer ($buildTarget)..."
-  KUBERMATIC_EDITION=ce build_installer
+  echodate "Compiling installer ($buildTarget)..."
+  build_installer
 
-  echodate "Creating CE archive..."
+  echodate "Creating archive..."
 
-  # switch Docker repository used by the operator to the CE repository
-  yq --inplace '.kubermaticOperator.image.repository = "quay.io/kubermatic/kubermatic"' charts/kubermatic-operator/values.yaml
-
-  archive="_dist/kubermatic-ce-$RELEASE_NAME-$buildTarget.tar.gz"
+  archive="_dist/kubermatic-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
@@ -264,46 +261,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/kubermatic.example.ce.yaml \
     charts/seed.example.yaml \
     LICENSE \
-    CHANGELOG.md
-
-  ship_archive "$archive" "$buildTarget"
-
-  echodate "Compiling EE installer ($buildTarget)..."
-  KUBERMATIC_EDITION=ee build_installer
-
-  echodate "Creating EE archive..."
-
-  # switch Docker repository used by the operator to the EE repository
-  yq --inplace '.kubermaticOperator.image.repository = "quay.io/kubermatic/kubermatic-ee"' charts/kubermatic-operator/values.yaml
-
-  archive="_dist/kubermatic-ee-$RELEASE_NAME-$buildTarget.tar.gz"
-  # GNU tar is required
-  tar czf "$archive" \
-    --transform='flags=r;s|_build/||' \
-    --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
-    --transform='flags=r;s|charts/values.example.mla.yaml|examples/values.example.mla.yaml|' \
-    --transform='flags=r;s|charts/kubermatic.example.ee.yaml|examples/kubermatic.example.yaml|' \
-    --transform='flags=r;s|charts/seed.example.yaml|examples/seed.example.yaml|' \
-    --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
-    _build/kubermatic-installer* \
-    charts/backup \
-    charts/cert-manager \
-    charts/iap \
-    charts/kubermatic-operator \
-    charts/logging \
-    charts/minio \
-    charts/mla \
-    charts/monitoring \
-    charts/nginx-ingress-controller \
-    charts/oauth \
-    charts/s3-exporter \
-    charts/telemetry \
-    charts/values.example.ee.yaml \
-    charts/values.example.mla.yaml \
-    charts/kubermatic.example.ee.yaml \
-    charts/seed.example.yaml \
-    LICENSE \
-    pkg/ee/LICENSE \
     CHANGELOG.md
 
   ship_archive "$archive" "$buildTarget"

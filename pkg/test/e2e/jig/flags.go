@@ -31,6 +31,7 @@ import (
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,7 +40,6 @@ import (
 var (
 	kkpNamespace = "kubermatic"
 	buildID      string
-	project      string
 	version      string
 	sshPubKey    string
 
@@ -50,7 +50,6 @@ var (
 func AddFlags(fs *flag.FlagSet) {
 	flag.StringVar(&buildID, "build-id", buildID, "unique identifier for this test (defaults to $BUILD_ID)")
 	flag.StringVar(&kkpNamespace, "namespace", kkpNamespace, "namespace where KKP is installed into")
-	flag.StringVar(&project, "project", project, "KKP project to use (if not given, a new project might be created)")
 	flag.StringVar(&version, "cluster-version", version, "Kubernetes version of the new user cluster (defaults to $VERSION_TO_TEST or the default version compiled into KKP)")
 	flag.StringVar(&sshPubKey, "ssh-pub-key", sshPubKey, "Optional SSH public key to assign to the Machine objects (requires user-ssh-key-agent to be disabled)")
 }
@@ -114,28 +113,15 @@ func ClusterSemver(log *zap.SugaredLogger) semver.Semver {
 	return *semver.NewSemverOrDie(ClusterVersion(log))
 }
 
-func Seed(ctx context.Context, client ctrlruntimeclient.Client, datacenter string) (*kubermaticv1.Seed, *kubermaticv1.Datacenter, error) {
+func Datacenter(ctx context.Context, client ctrlruntimeclient.Client, datacenter string) (*kubermaticv1.Datacenter, error) {
 	if datacenter == "" {
-		return nil, nil, errors.New("no datacenter given, cannot determine Seed")
+		return nil, errors.New("no datacenter given, cannot determine Seed")
 	}
 
-	seedsGetter, err := seedsGetterFactory(ctx, client, kkpNamespace)
+	datacenterGetter, err := kubernetes.DatacenterGetterFactory(client)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create Seeds getter: %w", err)
+		return nil, fmt.Errorf("failed to create datacenters getter: %w", err)
 	}
 
-	seeds, err := seedsGetter()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to list Seeds: %w", err)
-	}
-
-	for _, seed := range seeds {
-		for name, dc := range seed.Spec.Datacenters {
-			if name == datacenter {
-				return seed, &dc, nil
-			}
-		}
-	}
-
-	return nil, nil, fmt.Errorf("no Seed contains a datacenter %q", datacenter)
+	return datacenterGetter(ctx, datacenter)
 }

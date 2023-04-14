@@ -80,7 +80,7 @@ func TestBackup(t *testing.T) {
 	testJig := jig.NewBYOCluster(client, logger, credentials)
 	testJig.ClusterJig.WithTestName("etcd-backup")
 
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
@@ -158,7 +158,7 @@ func TestScaling(t *testing.T) {
 		kubermaticv1.ClusterFeatureEtcdLauncher: true,
 	})
 
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
@@ -204,7 +204,7 @@ func TestRecovery(t *testing.T) {
 		kubermaticv1.ClusterFeatureEtcdLauncher: true,
 	})
 
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+	cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)

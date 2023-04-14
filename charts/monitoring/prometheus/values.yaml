@@ -99,9 +99,6 @@ prometheus:
   ruleFiles:
   - /etc/prometheus/rules/general-*.yaml
   - /etc/prometheus/rules/kubermatic-seed-*.yaml
-  # If you are running a non-master cluster, you should comment the
-  # following line to disable master components alerts.
-  - /etc/prometheus/rules/kubermatic-master-*.yaml
   # If you run in an environment where access to Kubernetes
   # scheduler and controller-manager is not possible (like GKE),
   # disable the expression below to not create false alerts

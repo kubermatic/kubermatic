@@ -17,6 +17,7 @@ limitations under the License.
 package cloudcontroller
 
 import (
+	"errors"
 	"fmt"
 
 	"k8c.io/kubermatic/v3/pkg/resources"
@@ -74,6 +75,10 @@ func digitalOceanDeploymentReconciler(data *resources.TemplateData) reconciling.
 				return nil, err
 			}
 
+			if do := data.Datacenter().Spec.Provider.Digitalocean; do == nil || do.Region == "" {
+				return nil, errors.New("no digitalocean region configured in datacenter")
+			}
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
@@ -96,7 +101,7 @@ func digitalOceanDeploymentReconciler(data *resources.TemplateData) reconciling.
 						},
 						{
 							Name:  "REGION",
-							Value: data.DC().Spec.Digitalocean.Region,
+							Value: data.Datacenter().Spec.Provider.Digitalocean.Region,
 						},
 					},
 					VolumeMounts: getVolumeMounts(true),

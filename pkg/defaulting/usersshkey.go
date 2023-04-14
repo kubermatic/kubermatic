@@ -30,7 +30,7 @@ func DefaultUserSSHKey(key *kubermaticv1.UserSSHKey, oldKey *kubermaticv1.UserSS
 		return nil, errors.New("spec.publicKey cannot be empty")
 	}
 
-	if oldKey == nil || (oldKey.Spec.PublicKey != key.Spec.PublicKey) || (oldKey.Spec.Fingerprint != key.Spec.Fingerprint) {
+	if oldKey == nil || (oldKey.Spec.PublicKey != key.Spec.PublicKey) || (oldKey.Status.Fingerprint != key.Status.Fingerprint) {
 		// parse the key
 		pubKeyParsed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(key.Spec.PublicKey))
 		if err != nil {
@@ -38,7 +38,7 @@ func DefaultUserSSHKey(key *kubermaticv1.UserSSHKey, oldKey *kubermaticv1.UserSS
 		}
 
 		// calculate the fingerprint
-		key.Spec.Fingerprint = ssh.FingerprintLegacyMD5(pubKeyParsed)
+		key.Status.Fingerprint = ssh.FingerprintLegacyMD5(pubKeyParsed)
 	}
 
 	return key, nil

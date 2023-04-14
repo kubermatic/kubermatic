@@ -28,18 +28,19 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	ksemver "k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/cni"
-	kubernetescontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/kubernetes"
-	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring"
+	controlplanecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/control-plane-controller"
+	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring-controller"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/certificates"
 	metricsserver "k8c.io/kubermatic/v3/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v3/pkg/test/diff"
-	"k8c.io/kubermatic/v3/pkg/test/generator"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -165,41 +166,56 @@ var (
     - 'foo.bar:12345'
 `,
 				},
+				ProxySettings: &kubermaticv1.ProxySettings{
+					HTTPProxy: pointer.String("http://my-corp"),
+				},
+				MLA: &kubermaticv1.KubermaticUserClusterMLAConfiguration{
+					Enabled: true,
+				},
+			},
+			NodeportProxy: &kubermaticv1.NodeportProxyConfig{
+				Envoy: &kubermaticv1.NodePortProxyComponentEnvoy{
+					LoadBalancerService: &kubermaticv1.EnvoyLoadBalancerService{},
+				},
+				EnvoyManager: &kubermaticv1.NodeportProxyComponent{},
+				Updater:      &kubermaticv1.NodeportProxyComponent{},
 			},
 		},
 	}
 
 	datacenter = &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			Azure: &kubermaticv1.DatacenterSpecAzure{
-				Location: "az-location",
-			},
-			VSphere: &kubermaticv1.DatacenterSpecVSphere{
-				Endpoint:         "https://vs-endpoint.io",
-				AllowInsecure:    false,
-				DefaultDatastore: "vs-datastore",
-				Datacenter:       "vs-datacenter",
-				Cluster:          "vs-cluster",
-				RootPath:         "vs-cluster",
-			},
-			AWS: &kubermaticv1.DatacenterSpecAWS{
-				Images: kubermaticv1.ImageList{
-					kubermaticv1.OperatingSystemUbuntu:  "ubuntu-ami",
-					kubermaticv1.OperatingSystemCentOS:  "centos-ami",
-					kubermaticv1.OperatingSystemRHEL:    "rhel-ami",
-					kubermaticv1.OperatingSystemFlatcar: "flatcar-ami",
+			Provider: kubermaticv1.DatacenterProviderSpec{
+				Azure: &kubermaticv1.DatacenterSpecAzure{
+					Location: "az-location",
 				},
-				Region: "us-central1",
-			},
-			Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
-				Region: "fra1",
-			},
-			OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
-				AuthURL:          "https://example.com:8000/v3",
-				AvailabilityZone: "zone1",
-				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
-				IgnoreVolumeAZ:   true,
-				Region:           "cbk",
+				VSphere: &kubermaticv1.DatacenterSpecVSphere{
+					Endpoint:         "https://vs-endpoint.io",
+					AllowInsecure:    false,
+					DefaultDatastore: "vs-datastore",
+					Datacenter:       "vs-datacenter",
+					Cluster:          "vs-cluster",
+					RootPath:         "vs-cluster",
+				},
+				AWS: &kubermaticv1.DatacenterSpecAWS{
+					Images: kubermaticv1.ImageList{
+						kubermaticv1.OperatingSystemUbuntu:  "ubuntu-ami",
+						kubermaticv1.OperatingSystemCentOS:  "centos-ami",
+						kubermaticv1.OperatingSystemRHEL:    "rhel-ami",
+						kubermaticv1.OperatingSystemFlatcar: "flatcar-ami",
+					},
+					Region: "us-central1",
+				},
+				Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
+					Region: "fra1",
+				},
+				OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
+					AuthURL:          "https://example.com:8000/v3",
+					AvailabilityZone: "zone1",
+					DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
+					IgnoreVolumeAZ:   true,
+					Region:           "cbk",
+				},
 			},
 		},
 	}
@@ -343,7 +359,7 @@ func createClusterObject(version semverlib.Version, cloudSpec kubermaticv1.Cloud
 }
 
 func TestLoadFiles(t *testing.T) {
-	kubermaticVersions := kubermatic.NewFakeVersions()
+	kubermaticVersions := kubermatic.NewFakeVersions(edition.CommunityEdition)
 	caBundle := certificates.NewFakeCABundle()
 
 	if *update {
@@ -368,6 +384,11 @@ func TestLoadFiles(t *testing.T) {
 	markFixtureUsed := func(fixtureName string) {
 		filename := fixtureName + ".yaml"
 		allFiles.Delete(filename)
+	}
+
+	defaultedConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("Failed to default config: %v", err)
 	}
 
 	for _, ver := range kubernetesVersions {
@@ -723,25 +744,7 @@ func TestLoadFiles(t *testing.T) {
 						WithClient(dynamicClient).
 						WithCluster(cluster).
 						WithDatacenter(datacenter).
-						WithSeed(&kubermaticv1.Seed{
-							ObjectMeta: metav1.ObjectMeta{Name: "testdc"},
-							Spec: kubermaticv1.SeedSpec{
-								ProxySettings: &kubermaticv1.ProxySettings{
-									HTTPProxy: pointer.String("http://my-corp"),
-								},
-								MLA: &kubermaticv1.SeedMLASettings{
-									UserClusterMLAEnabled: true,
-								},
-								NodeportProxy: &kubermaticv1.NodeportProxyConfig{
-									Envoy: &kubermaticv1.NodePortProxyComponentEnvoy{
-										LoadBalancerService: &kubermaticv1.EnvoyLoadBalancerService{},
-									},
-									EnvoyManager: &kubermaticv1.NodeportProxyComponent{},
-									Updater:      &kubermaticv1.NodeportProxyComponent{},
-								},
-							},
-						}).
-						WithKubermaticConfiguration(config).
+						WithKubermaticConfiguration(defaultedConfig).
 						WithNodeAccessNetwork("192.0.2.0/24").
 						WithEtcdDiskSize(resource.MustParse("5Gi")).
 						WithBackupPeriod(20 * time.Minute).
@@ -771,7 +774,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 	cluster := data.Cluster()
 
 	var deploymentReconcilers []reconciling.NamedDeploymentReconcilerFactory
-	deploymentReconcilers = append(deploymentReconcilers, kubernetescontroller.GetDeploymentReconcilers(data, true)...)
+	deploymentReconcilers = append(deploymentReconcilers, controlplanecontroller.GetDeploymentReconcilers(data, true)...)
 	deploymentReconcilers = append(deploymentReconcilers, monitoringcontroller.GetDeploymentReconcilers(data)...)
 	for _, create := range deploymentReconcilers {
 		name, creator := create()
@@ -790,7 +793,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 	}
 
 	var namedConfigMapReconcilerFactorys []reconciling.NamedConfigMapReconcilerFactory
-	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, kubernetescontroller.GetConfigMapReconcilers(data)...)
+	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, controlplanecontroller.GetConfigMapReconcilers(data)...)
 	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, monitoringcontroller.GetConfigMapReconcilers(data)...)
 	for _, namedGetter := range namedConfigMapReconcilerFactorys {
 		name, create := namedGetter()
@@ -806,7 +809,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	serviceReconcilers := kubernetescontroller.GetServiceReconcilers(data)
+	serviceReconcilers := controlplanecontroller.GetServiceReconcilers(data)
 	for _, creatorGetter := range serviceReconcilers {
 		name, create := creatorGetter()
 		res, err := create(&corev1.Service{})
@@ -822,7 +825,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 	}
 
 	var statefulSetReconcilers []reconciling.NamedStatefulSetReconcilerFactory
-	statefulSetReconcilers = append(statefulSetReconcilers, kubernetescontroller.GetStatefulSetReconcilers(data, false, false)...)
+	statefulSetReconcilers = append(statefulSetReconcilers, controlplanecontroller.GetStatefulSetReconcilers(data, false, false)...)
 	statefulSetReconcilers = append(statefulSetReconcilers, monitoringcontroller.GetStatefulSetReconcilers(data)...)
 	for _, creatorGetter := range statefulSetReconcilers {
 		name, create := creatorGetter()
@@ -850,7 +853,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetPodDisruptionBudgetReconcilers(data) {
+	for _, creatorGetter := range controlplanecontroller.GetPodDisruptionBudgetReconcilers(data) {
 		name, create := creatorGetter()
 		res, err := create(&policyv1.PodDisruptionBudget{})
 		if err != nil {
@@ -868,7 +871,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetCronJobReconcilers(data) {
+	for _, creatorGetter := range controlplanecontroller.GetCronJobReconcilers(data) {
 		name, create := creatorGetter()
 		res, err := create(&batchv1.CronJob{})
 		if err != nil {
@@ -885,24 +888,6 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		// Verify that every CronJob has the ImagePullSecret set
 		if len(res.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets) == 0 {
 			t.Errorf("CronJob %s is missing the ImagePullSecret on the PodTemplate", res.Name)
-		}
-
-		fixtureDone(fixturePath)
-		checkTestResult(t, fixturePath, res)
-	}
-
-	for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigReconcilers(data, generator.GenTestSeed()) {
-		name, create := creatorGetter()
-		res, err := create(&kubermaticv1.EtcdBackupConfig{})
-		if err != nil {
-			t.Fatalf("failed to create EtcdBackupConfig: %v", err)
-		}
-		res.Name = name
-		res.Namespace = cluster.Status.NamespaceName
-
-		fixturePath := tc.fixturePath("etcdbackupconfig", res.Name)
-		if err != nil {
-			t.Fatalf("failed to create EtcdBackupConfig for %s: %v", fixturePath, err)
 		}
 
 		fixtureDone(fixturePath)

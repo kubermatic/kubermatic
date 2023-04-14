@@ -56,9 +56,7 @@ func (s *commmonScenario) MachineJig() *jig.MachineJig {
 }
 
 func (s *commmonScenario) Setup(ctx context.Context) (*kubermaticv1.Cluster, error) {
-	_, cluster, err := s.testJig.Setup(ctx, jig.WaitForReadyPods)
-
-	return cluster, err
+	return s.testJig.Setup(ctx, jig.WaitForReadyPods)
 }
 
 func (s *commmonScenario) Cleanup(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) error {

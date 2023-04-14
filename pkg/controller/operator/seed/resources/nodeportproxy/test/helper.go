@@ -51,7 +51,6 @@ func Deploy(
 	log *zap.SugaredLogger,
 	namespace string,
 	cfg *kubermaticv1.KubermaticConfiguration,
-	seed *kubermaticv1.Seed,
 	versions kubermatic.Versions,
 	timeout time.Duration,
 ) error {
@@ -86,14 +85,14 @@ func Deploy(
 	}
 
 	if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceReconcilerFactory{
-		nodeportproxy.ServiceReconciler(seed)},
+		nodeportproxy.ServiceReconciler(cfg)},
 		namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, []reconciling.NamedDeploymentReconcilerFactory{
-		nodeportproxy.EnvoyDeploymentReconciler(cfg, seed, false, versions),
-		nodeportproxy.UpdaterDeploymentReconciler(cfg, seed, versions),
+		nodeportproxy.EnvoyDeploymentReconciler(cfg, false, versions),
+		nodeportproxy.UpdaterDeploymentReconciler(cfg, versions),
 	}, namespace, client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
 	}

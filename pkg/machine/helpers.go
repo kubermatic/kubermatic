@@ -227,31 +227,31 @@ func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kube
 
 	switch cloudProvider {
 	case kubermaticv1.CloudProviderAlibaba:
-		return provider.CompleteAlibabaProviderSpec(assert[alibaba.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Alibaba)
+		return provider.CompleteAlibabaProviderSpec(assert[alibaba.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.Alibaba)
 	case kubermaticv1.CloudProviderAnexia:
-		return provider.CompleteAnexiaProviderSpec(assert[anexia.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Anexia)
+		return provider.CompleteAnexiaProviderSpec(assert[anexia.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.Anexia)
 	case kubermaticv1.CloudProviderAWS:
-		return provider.CompleteAWSProviderSpec(assert[aws.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.AWS, os)
+		return provider.CompleteAWSProviderSpec(assert[aws.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.AWS, os)
 	case kubermaticv1.CloudProviderAzure:
-		return provider.CompleteAzureProviderSpec(assert[azure.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Azure)
+		return provider.CompleteAzureProviderSpec(assert[azure.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.Azure)
 	case kubermaticv1.CloudProviderDigitalocean:
-		return provider.CompleteDigitaloceanProviderSpec(assert[digitalocean.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Digitalocean)
+		return provider.CompleteDigitaloceanProviderSpec(assert[digitalocean.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.Digitalocean)
 	case kubermaticv1.CloudProviderGCP:
-		return provider.CompleteGCPProviderSpec(assert[gce.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.GCP)
+		return provider.CompleteGCPProviderSpec(assert[gce.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.GCP)
 	case kubermaticv1.CloudProviderHetzner:
-		return provider.CompleteHetznerProviderSpec(assert[hetzner.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Hetzner)
+		return provider.CompleteHetznerProviderSpec(assert[hetzner.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.Hetzner)
 	case kubermaticv1.CloudProviderKubeVirt:
-		return provider.CompleteKubevirtProviderSpec(assert[kubevirt.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.KubeVirt)
+		return provider.CompleteKubevirtProviderSpec(assert[kubevirt.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.KubeVirt)
 	case kubermaticv1.CloudProviderNutanix:
-		return provider.CompleteNutanixProviderSpec(assert[nutanix.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Nutanix, os)
+		return provider.CompleteNutanixProviderSpec(assert[nutanix.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.Nutanix, os)
 	case kubermaticv1.CloudProviderOpenStack:
-		return provider.CompleteOpenStackProviderSpec(assert[openstack.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.OpenStack, os)
+		return provider.CompleteOpenStackProviderSpec(assert[openstack.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.OpenStack, os)
 	case kubermaticv1.CloudProviderPacket:
-		return provider.CompleteEquinixMetalProviderSpec(assert[equinixmetal.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Packet)
+		return provider.CompleteEquinixMetalProviderSpec(assert[equinixmetal.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.Packet)
 	case kubermaticv1.CloudProviderVMwareCloudDirector:
-		return provider.CompleteVMwareCloudDirectorProviderSpec(assert[vmwareclouddirector.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VMwareCloudDirector, os)
+		return provider.CompleteVMwareCloudDirectorProviderSpec(assert[vmwareclouddirector.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.VMwareCloudDirector, os)
 	case kubermaticv1.CloudProviderVSphere:
-		return provider.CompleteVSphereProviderSpec(assert[vsphere.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VSphere, os)
+		return provider.CompleteVSphereProviderSpec(assert[vsphere.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Provider.VSphere, os)
 	default:
 		return nil, fmt.Errorf("cannot handle unknown cloud provider %q", cloudProvider)
 	}

@@ -40,27 +40,25 @@ import (
 // code, for which those constants live in pkg/resources.
 
 const (
-	DefaultPProfEndpoint                          = ":6600"
-	DefaultEtcdVolumeSize                         = "5Gi"
-	DefaultAuthClientID                           = "kubermatic"
-	DefaultIngressClass                           = "nginx"
-	DefaultCABundleConfigMapName                  = "ca-bundle"
-	DefaultAPIReplicas                            = 2
-	DefaultUIReplicas                             = 2
-	DefaultSeedControllerMgrReplicas              = 1
-	DefaultMasterControllerMgrReplicas            = 1
-	DefaultAPIServerReplicas                      = 2
-	DefaultWebhookReplicas                        = 1
-	DefaultControllerManagerReplicas              = 1
-	DefaultSchedulerReplicas                      = 1
-	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyNodePort
-	DefaultVPARecommenderDockerRepository         = "registry.k8s.io/autoscaling/vpa-recommender"
-	DefaultVPAUpdaterDockerRepository             = "registry.k8s.io/autoscaling/vpa-updater"
-	DefaultVPAAdmissionControllerDockerRepository = "registry.k8s.io/autoscaling/vpa-admission-controller"
-	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
-	DefaultUserClusterScrapeAnnotationPrefix      = "monitoring.kubermatic.io"
-	DefaultMaximumParallelReconciles              = 10
-	DefaultS3Endpoint                             = "s3.amazonaws.com"
+	DefaultPProfEndpoint                       = ":6600"
+	DefaultEtcdVolumeSize                      = "5Gi"
+	DefaultAuthClientID                        = "kubermatic"
+	DefaultIngressClass                        = "nginx"
+	DefaultCABundleConfigMapName               = "ca-bundle"
+	DefaultAPIReplicas                         = 2
+	DefaultUIReplicas                          = 2
+	DefaultSeedControllerManagerReplicas       = 1
+	DefaultWebhookReplicas                     = 1
+	DefaultKubernetesApiserverReplicas         = 2
+	DefaultKubernetesControllerManagerReplicas = 1
+	DefaultKubernetesSchedulerReplicas         = 1
+	DefaultExposeStrategy                      = kubermaticv1.ExposeStrategyNodePort
+	DefaultEnvoyDockerRepository               = "docker.io/envoyproxy/envoy-alpine"
+	DefaultUserClusterScrapeAnnotationPrefix   = "monitoring.kubermatic.io"
+	DefaultMaximumParallelReconciles           = 10
+	DefaultS3Endpoint                          = "s3.amazonaws.com"
+	DefaultSSHPort                             = 22
+	DefaultKubeletPort                         = 10250
 
 	// DefaultCloudProviderReconciliationInterval is the time in between deep cloud provider reconciliations
 	// in case the user did not configure a special interval for the given datacenter.
@@ -109,18 +107,7 @@ var (
 		},
 	}
 
-	DefaultMasterControllerMgrResources = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-			corev1.ResourceMemory: resource.MustParse("400Mi"),
-		},
-	}
-
-	DefaultSeedControllerMgrResources = corev1.ResourceRequirements{
+	DefaultSeedControllerManagerResources = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("200m"),
 			corev1.ResourceMemory: resource.MustParse("100Mi"),
@@ -139,39 +126,6 @@ var (
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:    resource.MustParse("250m"),
 			corev1.ResourceMemory: resource.MustParse("256Mi"),
-		},
-	}
-
-	DefaultVPARecommenderResources = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-			corev1.ResourceMemory: resource.MustParse("3Gi"),
-		},
-	}
-
-	DefaultVPAUpdaterResources = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-		},
-	}
-
-	DefaultVPAAdmissionControllerResources = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("32Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
 		},
 	}
 
@@ -393,6 +347,26 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 
 	configCopy := config.DeepCopy()
 
+	if configCopy.Spec.NodeportProxy == nil {
+		configCopy.Spec.NodeportProxy = &kubermaticv1.NodeportProxyConfig{}
+	}
+
+	if configCopy.Spec.NodeportProxy.Envoy == nil {
+		configCopy.Spec.NodeportProxy.Envoy = &kubermaticv1.NodePortProxyComponentEnvoy{}
+	}
+
+	if configCopy.Spec.NodeportProxy.Envoy.LoadBalancerService == nil {
+		configCopy.Spec.NodeportProxy.Envoy.LoadBalancerService = &kubermaticv1.EnvoyLoadBalancerService{}
+	}
+
+	if configCopy.Spec.NodeportProxy.EnvoyManager == nil {
+		configCopy.Spec.NodeportProxy.EnvoyManager = &kubermaticv1.NodeportProxyComponent{}
+	}
+
+	if configCopy.Spec.NodeportProxy.Updater == nil {
+		configCopy.Spec.NodeportProxy.Updater = &kubermaticv1.NodeportProxyComponent{}
+	}
+
 	if configCopy.Spec.ExposeStrategy == "" {
 		configCopy.Spec.ExposeStrategy = DefaultExposeStrategy
 		logger.Debugw("Defaulting field", "field", "exposeStrategy", "value", configCopy.Spec.ExposeStrategy)
@@ -403,18 +377,23 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "caBundle.name", "value", configCopy.Spec.CABundle.Name)
 	}
 
-	if configCopy.Spec.SeedController == nil {
-		configCopy.Spec.SeedController = &kubermaticv1.KubermaticSeedControllerConfiguration{}
+	if configCopy.Spec.ControllerManager == nil {
+		configCopy.Spec.ControllerManager = &kubermaticv1.KubermaticControllerManagerConfiguration{}
 	}
 
-	if configCopy.Spec.SeedController.MaximumParallelReconciles == 0 {
-		configCopy.Spec.SeedController.MaximumParallelReconciles = DefaultMaximumParallelReconciles
-		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", configCopy.Spec.SeedController.MaximumParallelReconciles)
+	if configCopy.Spec.ControllerManager.MaximumParallelReconciles == 0 {
+		configCopy.Spec.ControllerManager.MaximumParallelReconciles = DefaultMaximumParallelReconciles
+		logger.Debugw("Defaulting field", "field", "controllerManager.maximumParallelReconciles", "value", configCopy.Spec.ControllerManager.MaximumParallelReconciles)
 	}
 
-	if configCopy.Spec.SeedController.Replicas == nil {
-		configCopy.Spec.SeedController.Replicas = pointer.Int32(DefaultSeedControllerMgrReplicas)
-		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)
+	if configCopy.Spec.ControllerManager.Replicas == nil {
+		configCopy.Spec.ControllerManager.Replicas = pointer.Int32(DefaultSeedControllerManagerReplicas)
+		logger.Debugw("Defaulting field", "field", "controllerManager.replicas", "value", *configCopy.Spec.ControllerManager.Replicas)
+	}
+
+	if configCopy.Spec.ControllerManager.PProfEndpoint == nil {
+		configCopy.Spec.ControllerManager.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
+		logger.Debugw("Defaulting field", "field", "controllerManager.pprofEndpoint", "value", *configCopy.Spec.ControllerManager.PProfEndpoint)
 	}
 
 	if configCopy.Spec.Webhook == nil {
@@ -440,25 +419,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *configCopy.Spec.API.PProfEndpoint)
 	}
 
-	if configCopy.Spec.SeedController.PProfEndpoint == nil {
-		configCopy.Spec.SeedController.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
-		logger.Debugw("Defaulting field", "field", "seedController.pprofEndpoint", "value", *configCopy.Spec.SeedController.PProfEndpoint)
-	}
-
-	if configCopy.Spec.MasterController == nil {
-		configCopy.Spec.MasterController = &kubermaticv1.KubermaticMasterControllerConfiguration{}
-	}
-
-	if configCopy.Spec.MasterController.PProfEndpoint == nil {
-		configCopy.Spec.MasterController.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
-		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *configCopy.Spec.MasterController.PProfEndpoint)
-	}
-
-	if configCopy.Spec.MasterController.Replicas == nil {
-		configCopy.Spec.MasterController.Replicas = pointer.Int32(DefaultMasterControllerMgrReplicas)
-		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *configCopy.Spec.MasterController.Replicas)
-	}
-
 	if configCopy.Spec.UserCluster == nil {
 		configCopy.Spec.UserCluster = &kubermaticv1.KubermaticUserClusterConfiguration{}
 	}
@@ -473,7 +433,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.UserCluster.APIServerReplicas == nil {
-		configCopy.Spec.UserCluster.APIServerReplicas = pointer.Int32(DefaultAPIServerReplicas)
+		configCopy.Spec.UserCluster.APIServerReplicas = pointer.Int32(DefaultKubernetesApiserverReplicas)
 		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *configCopy.Spec.UserCluster.APIServerReplicas)
 	}
 
@@ -537,10 +497,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	if err := defaultExternalClusterVersioning(&configCopy.Spec.Versions, ExternalClusterDefaultKubernetesVersioning); err != nil {
-		return configCopy, err
-	}
-
 	auth := configCopy.Spec.Auth
 	if auth == nil {
 		auth = &kubermaticv1.KubermaticAuthConfiguration{}
@@ -577,6 +533,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		configCopy.Spec.FeatureGates[features.EtcdLauncher] = true
 	}
 
+	if len(configCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations) == 0 {
+		configCopy.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations = DefaultNodeportProxyServiceAnnotations
+		logger.Debugw("Defaulting field", "field", "nodeportProxy.envoy.loadBalancerService.annotations", "value", configCopy.Spec.NodeportProxy.Annotations)
+	}
+
 	if err := defaultDockerRepo(&configCopy.Spec.API.DockerRepository, DefaultDashboardImage, "api.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
@@ -585,11 +546,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&configCopy.Spec.MasterController.DockerRepository, DefaultKubermaticImage, "masterController.dockerRepository", logger); err != nil {
-		return configCopy, err
-	}
-
-	if err := defaultDockerRepo(&configCopy.Spec.SeedController.DockerRepository, DefaultKubermaticImage, "seedController.dockerRepository", logger); err != nil {
+	if err := defaultDockerRepo(&configCopy.Spec.ControllerManager.DockerRepository, DefaultKubermaticImage, "controllerManager.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
 
@@ -613,39 +570,35 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
+	if err := defaultDockerRepo(&configCopy.Spec.NodeportProxy.Envoy.DockerRepository, DefaultEnvoyDockerRepository, "nodeportProxy.envoy.dockerRepository", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultDockerRepo(&configCopy.Spec.NodeportProxy.EnvoyManager.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.envoyManager.dockerRepository", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultDockerRepo(&configCopy.Spec.NodeportProxy.Updater.DockerRepository, DefaultNodeportProxyDockerRepository, "nodeportProxy.updater.dockerRepository", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultResources(&configCopy.Spec.NodeportProxy.Envoy.Resources, DefaultNodeportProxyEnvoyResources, "nodeportProxy.envoy.resources", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultResources(&configCopy.Spec.NodeportProxy.EnvoyManager.Resources, DefaultNodeportProxyEnvoyManagerResources, "nodeportProxy.envoyManager.resources", logger); err != nil {
+		return configCopy, err
+	}
+
+	if err := defaultResources(&configCopy.Spec.NodeportProxy.Updater.Resources, DefaultNodeportProxyUpdaterResources, "nodeportProxy.updater.resources", logger); err != nil {
+		return configCopy, err
+	}
+
 	if configCopy.Spec.UserCluster.SystemApplications == nil {
 		configCopy.Spec.UserCluster.SystemApplications = &kubermaticv1.SystemApplicationsConfiguration{}
 	}
 
 	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.SystemApplications.HelmRepository, DefaultSystemApplicationsHelmRepository, "userCluster.systemApplications.helmRepository", logger); err != nil {
-		return configCopy, err
-	}
-
-	if configCopy.Spec.VerticalPodAutoscaler == nil {
-		configCopy.Spec.VerticalPodAutoscaler = &kubermaticv1.KubermaticVPAConfiguration{}
-	}
-
-	if configCopy.Spec.VerticalPodAutoscaler.Recommender == nil {
-		configCopy.Spec.VerticalPodAutoscaler.Recommender = &kubermaticv1.KubermaticVPAComponent{}
-	}
-
-	if configCopy.Spec.VerticalPodAutoscaler.Updater == nil {
-		configCopy.Spec.VerticalPodAutoscaler.Updater = &kubermaticv1.KubermaticVPAComponent{}
-	}
-
-	if configCopy.Spec.VerticalPodAutoscaler.AdmissionController == nil {
-		configCopy.Spec.VerticalPodAutoscaler.AdmissionController = &kubermaticv1.KubermaticVPAComponent{}
-	}
-
-	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
-		return configCopy, err
-	}
-
-	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Updater.DockerRepository, DefaultVPAUpdaterDockerRepository, "verticalPodAutoscaler.updater.dockerRepository", logger); err != nil {
-		return configCopy, err
-	}
-
-	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository, DefaultVPAAdmissionControllerDockerRepository, "verticalPodAutoscaler.admissionController.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
 
@@ -657,27 +610,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	if err := defaultResources(&configCopy.Spec.SeedController.Resources, DefaultSeedControllerMgrResources, "seedController.resources", logger); err != nil {
-		return configCopy, err
-	}
-
-	if err := defaultResources(&configCopy.Spec.MasterController.Resources, DefaultMasterControllerMgrResources, "masterController.resources", logger); err != nil {
+	if err := defaultResources(&configCopy.Spec.ControllerManager.Resources, DefaultSeedControllerManagerResources, "controllerManager.resources", logger); err != nil {
 		return configCopy, err
 	}
 
 	if err := defaultResources(&configCopy.Spec.Webhook.Resources, DefaultWebhookResources, "webhook.resources", logger); err != nil {
-		return configCopy, err
-	}
-
-	if err := defaultResources(&configCopy.Spec.VerticalPodAutoscaler.Recommender.Resources, DefaultVPARecommenderResources, "verticalPodAutoscaler.recommender.resources", logger); err != nil {
-		return configCopy, err
-	}
-
-	if err := defaultResources(&configCopy.Spec.VerticalPodAutoscaler.Updater.Resources, DefaultVPAUpdaterResources, "verticalPodAutoscaler.updater.resources", logger); err != nil {
-		return configCopy, err
-	}
-
-	if err := defaultResources(&configCopy.Spec.VerticalPodAutoscaler.AdmissionController.Resources, DefaultVPAAdmissionControllerResources, "verticalPodAutoscaler.admissionController.resources", logger); err != nil {
 		return configCopy, err
 	}
 
@@ -760,37 +697,6 @@ func defaultVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration,
 
 	if len(settings.ProviderIncompatibilities) == 0 {
 		settings.ProviderIncompatibilities = defaults.ProviderIncompatibilities
-	}
-
-	return nil
-}
-
-func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersioningConfiguration, defaults map[kubermaticv1.ExternalClusterProvider]kubermaticv1.ExternalClusterProviderVersioningConfiguration) error {
-	// this should never happen as the resources are not pointers in a KubermaticConfiguration
-	if settings == nil {
-		return nil
-	}
-
-	for provider, providerVersions := range defaults {
-		curSettings := settings.ExternalClusters[provider]
-
-		if curSettings.Default == nil {
-			curSettings.Default = providerVersions.Default
-		}
-
-		if len(curSettings.Versions) == 0 {
-			curSettings.Versions = providerVersions.Versions
-		}
-
-		if len(curSettings.Updates) == 0 {
-			curSettings.Updates = providerVersions.Updates
-		}
-
-		if settings.ExternalClusters == nil {
-			settings.ExternalClusters = map[kubermaticv1.ExternalClusterProvider]kubermaticv1.ExternalClusterProviderVersioningConfiguration{}
-		}
-
-		settings.ExternalClusters[provider] = curSettings
 	}
 
 	return nil
