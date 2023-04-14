@@ -97,10 +97,6 @@ func CompleteDigitaloceanProviderSpec(config *digitalocean.RawConfig, cluster *k
 			fmt.Sprintf("kubernetes-cluster-%s", cluster.Name),
 			fmt.Sprintf("system-cluster-%s", cluster.Name),
 		)
-
-		if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
-			tags = append(tags, fmt.Sprintf("system-project-%s", projectID))
-		}
 	}
 	config.Tags = mergeTags(config.Tags, tags)
 

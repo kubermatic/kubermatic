@@ -119,15 +119,6 @@ beforeDockerBuild=$(nowms)
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
 (
-  echodate "Building user-ssh-keys-agent image"
-  TEST_NAME="Build user-ssh-keys-agent Docker image"
-  cd cmd/user-ssh-keys-agent
-  make build
-  IMAGE_NAME="quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
-)
-(
   echodate "Building etcd-launcher image"
   TEST_NAME="Build etcd-launcher Docker image"
   IMAGE_NAME="quay.io/kubermatic/etcd-launcher:${KUBERMATIC_VERSION}"

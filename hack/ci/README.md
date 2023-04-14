@@ -141,18 +141,6 @@ version for the user-ssh-key-agent.
 
 TBD
 
-## setup-kubermatic-backups-in-kind.sh
-
-This script creates a local kind cluster, compiles the KKP binaries,
-creates all Docker images and loads them into the kind cluster,
-generates a custom CA and a certificate for minio to be used as backup location,
-then installs KKP using the KKP installer + operator and sets up a
-single shared master/seed system.
-This serves as the precursor for all other tests.
-
-This script should be sourced, not called, so callers get the variables
-it sets.
-
 ## setup-kubermatic-in-kind.sh
 
 This script creates a local kind cluster, compiles the KKP binaries,

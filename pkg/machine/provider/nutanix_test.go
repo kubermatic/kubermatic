@@ -75,8 +75,7 @@ func TestCompleteNutanixProviderSpec(t *testing.T) {
 	})
 
 	defaultMachine := NewNutanixConfig().
-		WithCategory("KKPCluster", fmt.Sprintf("kubernetes-%s", goodCluster.Name)).
-		WithCategory("KKPProject", goodCluster.Labels[kubermaticv1.ProjectIDLabelKey])
+		WithCategory("KKPCluster", fmt.Sprintf("kubernetes-%s", goodCluster.Name))
 
 	testcases := []testcase[nutanix.RawConfig]{
 		&nutanixTestcase{

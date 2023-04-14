@@ -20,7 +20,6 @@
 ### * quay.io/kubermatic/addons
 ### * quay.io/kubermatic/nodeport-proxy
 ### * quay.io/kubermatic/kubeletdnat-controller
-### * quay.io/kubermatic/user-ssh-keys-agent
 ### * quay.io/kubermatic/etcd-launcher
 ### * quay.io/kubermatic/network-interface-manager
 ###
@@ -93,9 +92,6 @@ buildx_build() {
 # build and push multi-arch images
 # (buildx cannot just build and load a multi-arch image,
 # see https://github.com/docker/buildx/issues/59)
-echodate "Building user-ssh-keys-agent images..."
-buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent"
-
 echodate "Building kubeletdnat-controller images..."
 buildx_build . cmd/kubeletdnat-controller/Dockerfile.multiarch "$DOCKER_REPO/kubeletdnat-controller"
 

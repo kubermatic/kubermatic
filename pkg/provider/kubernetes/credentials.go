@@ -80,7 +80,7 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 }
 
 func CreateOrUpdateSecretForCluster(ctx context.Context, client ctrlruntimeclient.Client, externalcluster *kubermaticv1.ExternalCluster, secretData map[string][]byte, secretName, secretNamespace string) (*kubermaticv1.GlobalSecretKeySelector, error) {
-	reconciler, err := credentialSecretReconcilerFactory(secretName, externalcluster.Labels, secretData)
+	reconciler, err := credentialSecretReconcilerFactory(secretName, secretData)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func CreateOrUpdateSecretForCluster(ctx context.Context, client ctrlruntimeclien
 }
 
 func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*kubermaticv1.GlobalSecretKeySelector, error) {
-	reconciler, err := credentialSecretReconcilerFactory(cluster.GetSecretName(), cluster.Labels, secretData)
+	reconciler, err := credentialSecretReconcilerFactory(cluster.GetSecretName(), secretData)
 	if err != nil {
 		return nil, err
 	}
@@ -115,19 +115,9 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	}, nil
 }
 
-func credentialSecretReconcilerFactory(secretName string, clusterLabels map[string]string, secretData map[string][]byte) (reconciling.NamedSecretReconcilerFactory, error) {
-	projectID := clusterLabels[kubermaticv1.ProjectIDLabelKey]
-	if len(projectID) == 0 {
-		return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
-	}
-
+func credentialSecretReconcilerFactory(secretName string, secretData map[string][]byte) (reconciling.NamedSecretReconcilerFactory, error) {
 	return func() (name string, reconciler reconciling.SecretReconciler) {
 		return secretName, func(existing *corev1.Secret) (*corev1.Secret, error) {
-			if existing.Labels == nil {
-				existing.Labels = map[string]string{}
-			}
-
-			existing.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 			existing.Data = secretData
 
 			return existing, nil

@@ -52,11 +52,6 @@ type Deletion struct {
 func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	log = log.Named("cleanup")
 
-	// Delete OPA constraints first to make sure some rules dont block deletion
-	if err := d.cleanupConstraints(ctx, log, cluster); err != nil {
-		return err
-	}
-
 	// Delete Volumes and LB's inside the user cluster
 	if err := d.cleanupInClusterResources(ctx, log, cluster); err != nil {
 		return err
@@ -69,10 +64,6 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		kubermaticv1.InClusterPVCleanupFinalizer) {
 		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "LoadBalancers / PersistentVolumeClaims have been deleted, waiting for them to be destroyed.")
 		return nil
-	}
-
-	if err := d.cleanupEtcdBackupConfigs(ctx, cluster); err != nil {
-		return err
 	}
 
 	if err := d.cleanupNodes(ctx, cluster); err != nil {

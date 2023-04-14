@@ -39,11 +39,9 @@ import (
 	seedoperatornodeportproxy "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
 	controlplanecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/control-plane-controller"
 	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring-controller"
-	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	nodelocaldns "k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
-	"k8c.io/kubermatic/v3/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/cloudcontroller"
@@ -297,23 +295,18 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	// deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
 	deploymentReconcilers = append(deploymentReconcilers, operatingsystemmanager.DeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
-	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentReconcilers = append(templateData.Cluster().Spec.Version, deploymentReconcilers, konnectivity.DeploymentReconciler("dummy", 0, resources.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
+		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(templateData.Cluster().Spec.Version, "dummy", 0, resources.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
 	}
 
 	cronjobReconcilers := controlplanecontroller.GetCronJobReconcilers(templateData)
 
 	var daemonsetReconcilers []reconciling.NamedDaemonSetReconcilerFactory
-	daemonsetReconcilers = append(daemonsetReconcilers, usersshkeys.DaemonSetReconciler(
-		kubermaticVersions,
-		templateData.RewriteImage,
-	))
 	daemonsetReconcilers = append(daemonsetReconcilers, nodelocaldns.DaemonSetReconciler(templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetReconcilers {
@@ -499,7 +492,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		metricsserver.ServingCertSecretName,
 		resources.UserSSHKeys,
 		resources.AdminKubeconfigSecretName,
-		resources.GatekeeperWebhookServerCertSecretName,
 		resources.OperatingSystemManagerKubeconfigSecretName,
 		resources.KonnectivityKubeconfigSecretName,
 		resources.KonnectivityProxyTLSSecretName,
@@ -528,7 +520,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		return nil, err
 	}
 	fakeCluster := &kubermaticv1.Cluster{}
-	fakeCluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: "project"}
 	fakeCluster.Spec.Cloud = cloudSpec
 	fakeCluster.Spec.Version = *clusterSemver
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}

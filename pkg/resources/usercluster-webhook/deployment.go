@@ -85,11 +85,6 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				"fluentbit.io/parser":  "json_iso",
 			}
 
-			projectID, ok := data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]
-			if !ok {
-				return nil, fmt.Errorf("no project-id label on cluster %q", data.Cluster().Name)
-			}
-
 			args := []string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				fmt.Sprintf("-seed-webhook-listen-port=%d", seedWebhookListenPort),
@@ -101,7 +96,6 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				fmt.Sprintf("-user-webhook-cert-name=%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-user-webhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
-				fmt.Sprintf("-project-id=%s", projectID),
 			}
 
 			if data.Cluster().Spec.DebugLog {

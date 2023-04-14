@@ -129,10 +129,6 @@ func CompleteGCPProviderSpec(config *gce.RawConfig, cluster *kubermaticv1.Cluste
 			fmt.Sprintf("system-cluster-%s", cluster.Name),
 		)
 
-		if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
-			tags.Insert(fmt.Sprintf("system-project-%s", projectID))
-		}
-
 		config.Tags = sets.List(tags)
 	}
 

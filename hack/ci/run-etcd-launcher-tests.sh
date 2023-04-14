@@ -50,7 +50,7 @@ source hack/ci/setup-kind-cluster.sh
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/usercluster" --namespace 'cluster-*' > /dev/null 2>&1 &
 
-source hack/ci/setup-kubermatic-backups-in-kind.sh
+source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Running etcd-launcher tests..."
 

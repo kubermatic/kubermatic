@@ -84,17 +84,6 @@ beforeDockerBuild=$(nowms)
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
 (
-  echodate "Building user-ssh-keys-agent image"
-  TEST_NAME="Build user-ssh-keys-agent Docker image"
-  retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-  cd cmd/user-ssh-keys-agent
-  make build
-  IMAGE_NAME="quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  # we use docker push here as the agent is pulled by the worker nodes and therefore needs to be available on quay
-  time retry 5 docker push "${IMAGE_NAME}"
-)
-(
   echodate "Building etcd-launcher image"
   TEST_NAME="Build etcd-launcher Docker image"
   IMAGE_NAME="quay.io/kubermatic/etcd-launcher:${KUBERMATIC_VERSION}"
@@ -204,8 +193,6 @@ fi
 if [[ ! -z "${VCD_URL:-}" ]]; then
   sed -i "s#__VCD_URL__#$VCD_URL#g" $DATACENTERS_MANIFEST
 fi
-
-kubectl apply --filename hack/ci/testdata/metering_s3_creds.yaml
 
 retry 8 kubectl apply --filename $DATACENTERS_MANIFEST
 echodate "Finished installing Seed"

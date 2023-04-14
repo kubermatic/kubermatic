@@ -156,7 +156,7 @@ func genCluster(name, userEmail string, instance kubermaticv1.ClusterTemplateIns
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
-			Labels:          map[string]string{kubermaticv1.ProjectIDLabelKey: instance.Spec.ProjectID, kubermaticv1.ClusterTemplateInstanceLabelKey: instance.Name},
+			Labels:          map[string]string{kubermaticv1.ClusterTemplateInstanceLabelKey: instance.Name},
 			ResourceVersion: "1",
 			Annotations:     map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},

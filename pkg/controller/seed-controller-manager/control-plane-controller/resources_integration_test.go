@@ -119,9 +119,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	testCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: "project",
-			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,

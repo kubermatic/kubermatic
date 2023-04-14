@@ -163,10 +163,6 @@ func CompleteAzureProviderSpec(config *azure.RawConfig, cluster *kubermaticv1.Cl
 
 		config.Tags["KubernetesCluster"] = cluster.Name
 		config.Tags["system-cluster"] = cluster.Name
-
-		if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
-			config.Tags["system-project"] = projectID
-		}
 	}
 
 	return config, nil

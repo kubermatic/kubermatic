@@ -81,8 +81,7 @@ func TestCompleteDigitaloceanProviderSpec(t *testing.T) {
 		WithPrivateNetworking(true).
 		WithTag("kubernetes").
 		WithTag(fmt.Sprintf("kubernetes-cluster-%s", goodCluster.Name)).
-		WithTag(fmt.Sprintf("system-cluster-%s", goodCluster.Name)).
-		WithTag(fmt.Sprintf("system-project-%s", goodCluster.Labels[kubermaticv1.ProjectIDLabelKey]))
+		WithTag(fmt.Sprintf("system-cluster-%s", goodCluster.Name))
 
 	testcases := []testcase[digitalocean.RawConfig]{
 		&digitaloceanTestcase{

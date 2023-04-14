@@ -89,9 +89,6 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			Annotations: map[string]string{
 				kubermaticv1.InitialCNIValuesRequestAnnotation: annotation,
 			},
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Version: *kubernetesVersion,

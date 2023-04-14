@@ -25,7 +25,6 @@ import (
 
 var RequiredHealthConditions = []kubermaticv1.ClusterConditionType{
 	kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess,
-	kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
 	kubermaticv1.ClusterConditionCloudControllerReconcilingSuccess,
 	kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
 	kubermaticv1.ClusterConditionMonitoringControllerReconcilingSuccess,

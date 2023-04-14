@@ -79,10 +79,6 @@ func CompleteMachineDeployment(md *clusterv1alpha1.MachineDeployment, cluster *k
 	// providerSpec, which ultimately get applied on the cloud provider resources.
 	// That's why these labels do not depend on the given cloud provider.
 	md.Spec.Template.Spec.Labels["system/cluster"] = cluster.Name
-	projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if ok {
-		md.Spec.Template.Spec.Labels["system/project"] = projectID
-	}
 
 	// ensure a version is set; if one is set already, Validate() took care to ensure
 	// it's compatible

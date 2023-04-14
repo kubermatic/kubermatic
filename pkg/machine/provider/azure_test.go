@@ -78,8 +78,7 @@ func TestCompleteAzureProviderSpec(t *testing.T) {
 
 	defaultMachine := NewAzureConfig().
 		WithTag("system-cluster", goodCluster.Name).
-		WithTag("KubernetesCluster", goodCluster.Name).
-		WithTag("system-project", goodCluster.Labels[kubermaticv1.ProjectIDLabelKey])
+		WithTag("KubernetesCluster", goodCluster.Name)
 
 	// good machine is the base machine, but with values from the cluster already applied
 	goodMachine := cloneBuilder(defaultMachine).WithVNetName(goodCluster.Spec.Cloud.Azure.VNetName)

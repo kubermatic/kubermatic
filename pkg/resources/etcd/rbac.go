@@ -64,11 +64,6 @@ func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
 					Resources: []string{"statefulsets"},
 					Verbs:     []string{"get", "list"},
 				},
-				{
-					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"etcdrestores"},
-					Verbs:     []string{"get", "list"},
-				},
 			}
 			return r, nil
 		}
@@ -104,12 +99,6 @@ func ClusterRoleReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedClust
 					Resources:     []string{"clusters"},
 					Verbs:         []string{"get"},
 					ResourceNames: []string{cluster.Name},
-				},
-				{
-					APIGroups:     []string{""},
-					Resources:     []string{"configmaps"},
-					Verbs:         []string{"get"},
-					ResourceNames: []string{resources.BackupCABundleConfigMapName(cluster)},
 				},
 			}
 
