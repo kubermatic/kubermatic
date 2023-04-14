@@ -29,23 +29,19 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
-	client  ctrlruntimeclient.Client
 	log     logr.Logger
 	decoder *admission.Decoder
 }
 
 // NewAdmissionHandler returns a new UserSSHKey AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
-	return &AdmissionHandler{
-		client: client,
-	}
+func NewAdmissionHandler() *AdmissionHandler {
+	return &AdmissionHandler{}
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {

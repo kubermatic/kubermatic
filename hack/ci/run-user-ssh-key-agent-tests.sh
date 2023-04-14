@@ -23,7 +23,6 @@ cd $(dirname $0)/../..
 source hack/lib.sh
 
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
-export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export ARCHITECTURES="${ARCHITECTURES:-linux/amd64,linux/arm64/v8}"
 export TAG_NAME=test
 
@@ -35,7 +34,6 @@ docker buildx create --use
 docker buildx build \
   --platform "$ARCHITECTURES" \
   --build-arg "GOPROXY=${GOPROXY:-}" \
-  --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
   --file cmd/user-ssh-keys-agent/Dockerfile.multiarch \
   --tag "$DOCKER_REPO/user-ssh-keys-agent:$TAG_NAME" .
 

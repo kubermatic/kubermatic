@@ -39,12 +39,11 @@ var embeddedFS embed.FS
 
 const (
 	k8cDir = "k8c.io"
-	k8sDir = "k8s.io"
 )
 
 // Groups returns a list of all known API groups for which CRDs are available.
 func Groups() ([]string, error) {
-	dirs := []string{k8cDir, k8sDir}
+	dirs := []string{k8cDir}
 
 	entries := []fs.DirEntry{}
 
@@ -134,8 +133,6 @@ func getDirForGroup(group string) (string, error) {
 	switch {
 	case strings.HasSuffix(group, k8cDir):
 		return k8cDir, nil
-	case strings.HasSuffix(group, k8sDir):
-		return k8sDir, nil
 	}
 
 	return "", fmt.Errorf("no directory exists for \"%s\"", group)

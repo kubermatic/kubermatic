@@ -30,15 +30,14 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v3/pkg/util/cli"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	applicationinstallationmutation "k8c.io/kubermatic/v3/pkg/webhook/application/applicationinstallation/mutation"
 	applicationinstallationvalidation "k8c.io/kubermatic/v3/pkg/webhook/application/applicationinstallation/validation"
-	machinevalidation "k8c.io/kubermatic/v3/pkg/webhook/machine/validation"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -64,8 +63,8 @@ func main() {
 	reconciling.Configure(log)
 
 	// say hello
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "User Cluster Webhook", options.log.Debug, &versions)
+	versions := kubermatic.NewDefaultVersions(edition.CommunityEdition)
+	cli.Hello(log, "User Cluster Webhook", options.log.Debug, versions)
 
 	// /////////////////////////////////////////
 	// get kubeconfigs
@@ -128,15 +127,6 @@ func main() {
 
 	// Setup the validation admission handler for ApplicationInstallation CRDs in seed manager.
 	applicationinstallationvalidation.NewAdmissionHandler(seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
-
-	// Setup Machine Webhook in user manager.
-	machineValidator, err := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle, options.projectID)
-	if err != nil {
-		log.Fatalw("Failed to setup Machine validator", zap.Error(err))
-	}
-	if err := builder.WebhookManagedBy(userMgr).For(&clusterv1alpha1.Machine{}).WithValidator(machineValidator).Complete(); err != nil {
-		log.Fatalw("Failed to setup Machine validation webhook", zap.Error(err))
-	}
 
 	// /////////////////////////////////////////
 	// Start managers

@@ -62,11 +62,11 @@ type Azure struct {
 
 // New returns a new Azure provider.
 func New(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Azure, error) {
-	if dc.Spec.Azure == nil {
+	if dc.Spec.Provider.Azure == nil {
 		return nil, errors.New("datacenter is not an Azure datacenter")
 	}
 	return &Azure{
-		dc:                dc.Spec.Azure,
+		dc:                dc.Spec.Provider.Azure,
 		log:               log.Logger,
 		secretKeySelector: secretKeyGetter,
 	}, nil

@@ -19,7 +19,6 @@ package loggingagent
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -57,9 +56,9 @@ const (
 
 var (
 	controllerLabels = map[string]string{
-		common.NameLabel:      resources.MLALoggingAgentDaemonSetName,
-		common.InstanceLabel:  resources.MLALoggingAgentDaemonSetName,
-		common.ComponentLabel: resources.MLAComponentName,
+		"app.kubernetes.io/name":      resources.MLALoggingAgentDaemonSetName,
+		"app.kubernetes.io/instance":  resources.MLALoggingAgentDaemonSetName,
+		"app.kubernetes.io/component": resources.MLAComponentName,
 	}
 	defaultResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{

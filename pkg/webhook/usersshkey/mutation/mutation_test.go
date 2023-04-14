@@ -120,11 +120,12 @@ func (r rawKeyGen) Do() []byte {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: r.Name,
 		},
-		Spec: kubermaticv1.SSHKeySpec{
-			Owner:       r.Owner,
-			Name:        r.Name,
+		Spec: kubermaticv1.UserSSHKeySpec{
+			Name:      r.Name,
+			PublicKey: r.PublicKey,
+		},
+		Status: kubermaticv1.SSHKeyStatus{
 			Fingerprint: r.Fingerprint,
-			PublicKey:   r.PublicKey,
 		},
 	}
 

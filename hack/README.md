@@ -112,10 +112,6 @@ TBD
 
 TBD
 
-## run-master-controller-manager.sh
-
-TBD
-
 ## run-nodeport-proxy-e2e-test-in-kind.sh
 
 This script sets up a local KKP installation in kind, deploys a

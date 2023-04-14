@@ -422,7 +422,7 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 	}
 
 	if n.IPFamily == kubermaticv1.IPFamilyDualStack && dc != nil {
-		cloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
+		cloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec.Provider)
 		if err != nil {
 			allErrs = append(allErrs, field.Invalid(fldPath, nil,
 				fmt.Sprintf("could not determine cloud provider: %v", err)))
@@ -645,7 +645,7 @@ func validateDatacenterMatchesProvider(spec kubermaticv1.CloudSpec, dc *kubermat
 		return fmt.Errorf("could not determine cluster cloud provider: %w", err)
 	}
 
-	dcCloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec)
+	dcCloudProvider, err := kubermaticv1helper.DatacenterCloudProviderName(&dc.Spec.Provider)
 	if err != nil {
 		return fmt.Errorf("could not determine datacenter cloud provider: %w", err)
 	}
@@ -779,7 +779,7 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenStackCloudSpec, dc *kuber
 		return errors.New("no tenant name or ID specified")
 	}
 
-	if dc != nil && spec.FloatingIPPool == "" && dc.Spec.OpenStack != nil && dc.Spec.OpenStack.EnforceFloatingIP {
+	if dc != nil && spec.FloatingIPPool == "" && dc.Spec.Provider.OpenStack != nil && dc.Spec.Provider.OpenStack.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
 	}
 
@@ -851,11 +851,12 @@ func validateGCPCloudSpec(spec *kubermaticv1.GCPCloudSpec, dc *kubermaticv1.Data
 		subnetworkRegion := subnetworkParts[3]
 		subnetworkName := subnetworkParts[5]
 
-		if dc.Spec.GCP.Region != subnetworkRegion {
+		if dc.Spec.Provider.GCP.Region != subnetworkRegion {
 			return errors.New("GCP subnetwork should belong to same cluster region")
 		}
 
 		if spec.ServiceAccount != "" {
+			// TODO: Pass in a real context here.
 			gcpSubnetwork, err := gcpSubnetworkGetter(context.Background(), spec.ServiceAccount, subnetworkRegion, subnetworkName)
 			if err != nil {
 				return err

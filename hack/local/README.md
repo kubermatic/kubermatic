@@ -99,15 +99,12 @@ After this you should have all pod running:
 $ kubectl get pods -n kubermatic
 NAME                                                    READY   STATUS    RESTARTS   AGE
 kubermatic-api-5bf7c9ff96-zh6cm                         1/1     Running   0          18m
-kubermatic-master-controller-manager-66bc6f8679-txsms   1/1     Running   0          21m
 kubermatic-operator-775f8fbf9f-csvck                    1/1     Running   0          21m
 kubermatic-seed-controller-manager-5dfd9c877-khhxv      1/1     Running   0          18m
 nodeport-proxy-envoy-64c9f48744-jl2bs                   2/2     Running   0          18m
 nodeport-proxy-envoy-64c9f48744-nvd4m                   2/2     Running   0          18m
 nodeport-proxy-envoy-64c9f48744-r4rpf                   2/2     Running   0          18m
 nodeport-proxy-updater-7dccbd59b5-5rp7t                 1/1     Running   0          18m
-seed-proxy-kubermatic-54678d774b-r96hr                  1/1     Running   0          18m
-
 ```
 
 The next step is to check services and set up `nodeport-proxy` external IP in `dnsmasq` configuration file. It will allow

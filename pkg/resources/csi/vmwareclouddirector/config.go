@@ -69,7 +69,7 @@ func GetVMwareCloudDirectorCSIConfig(cluster *kubermaticv1.Cluster, dc *kubermat
 	}
 
 	// host shouldn't have the `/api` suffix.
-	host := strings.TrimSuffix(dc.Spec.VMwareCloudDirector.URL, "/api")
+	host := strings.TrimSuffix(dc.Spec.Provider.VMwareCloudDirector.URL, "/api")
 
 	cc := cloudConfig{
 		Host:         host,

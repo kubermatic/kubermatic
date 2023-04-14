@@ -22,12 +22,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 )
 
-func Hello(log *zap.SugaredLogger, app string, verbose bool, versions *kubermatic.Versions) {
-	if versions == nil {
-		v := kubermatic.NewDefaultVersions()
-		versions = &v
-	}
-
+func Hello(log *zap.SugaredLogger, app string, verbose bool, versions kubermatic.Versions) {
 	log = log.With("version", versions.Kubermatic)
 	if verbose {
 		log = log.With("commit", versions.KubermaticCommit)

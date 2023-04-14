@@ -27,7 +27,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v3/pkg/install/helm"
-	"k8c.io/kubermatic/v3/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 )
 
@@ -57,7 +56,7 @@ func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) 
 
 func VersionFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt *VersionOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
-		name := fmt.Sprintf("Kubermatic %s Installer", edition.KubermaticEdition)
+		name := fmt.Sprintf("Kubermatic %s Installer", versions.KubermaticEdition)
 
 		if opt.Short {
 			fmt.Printf("%s %s\n", name, versions.Kubermatic)

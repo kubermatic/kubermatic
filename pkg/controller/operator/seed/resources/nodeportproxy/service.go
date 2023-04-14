@@ -18,7 +18,7 @@ package nodeportproxy
 
 import (
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
+	operatorresources "k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,7 +35,7 @@ const (
 )
 
 // ServiceReconciler bootstraps the nodeport-proxy service object for a seed cluster resource.
-func ServiceReconciler(seed *kubermaticv1.Seed) reconciling.NamedServiceReconcilerFactory {
+func ServiceReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return ServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just
@@ -43,29 +43,29 @@ func ServiceReconciler(seed *kubermaticv1.Seed) reconciling.NamedServiceReconcil
 
 			s.Spec.Type = corev1.ServiceTypeLoadBalancer
 			s.Spec.Selector = map[string]string{
-				common.NameLabel: EnvoyDeploymentName,
+				operatorresources.NameLabel: EnvoyDeploymentName,
 			}
 
 			if s.Annotations == nil {
 				s.Annotations = make(map[string]string)
 			}
 
-			// seed.Spec.NodeportProxy.Annotations is deprecated and should be removed in the future
+			// cfg.Spec.NodeportProxy.Annotations is deprecated and should be removed in the future
 			// To avoid breaking changes we still copy these values over to the service annotations
-			if seed.Spec.NodeportProxy.Annotations != nil {
-				s.Annotations = seed.Spec.NodeportProxy.Annotations
+			if cfg.Spec.NodeportProxy.Annotations != nil {
+				s.Annotations = cfg.Spec.NodeportProxy.Annotations
 			}
 
 			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
-			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
-			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
-				for k, v := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
+			// the operatorresources annotations specified in cfg.Spec.NodeportProxy.Annotations, which is deprecated.
+			if cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				for k, v := range cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
 					s.Annotations[k] = v
 				}
 			}
 
-			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
-				for _, cidr := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
+			if cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
+				for _, cidr := range cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
 					s.Spec.LoadBalancerSourceRanges = append(s.Spec.LoadBalancerSourceRanges, string(cidr))
 				}
 			}

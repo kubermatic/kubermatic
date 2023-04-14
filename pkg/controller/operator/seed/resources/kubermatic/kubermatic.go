@@ -35,7 +35,7 @@ func ClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
 	return fmt.Sprintf("%s:%s-seed:cluster-admin", cfg.Namespace, cfg.Name)
 }
 
-func ServiceAccountReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedServiceAccountReconcilerFactory {
+func ServiceAccountReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountReconciler) {
 		return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 			return sa, nil
@@ -43,7 +43,7 @@ func ServiceAccountReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *k
 	}
 }
 
-func ClusterRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedClusterRoleBindingReconcilerFactory {
+func ClusterRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedClusterRoleBindingReconcilerFactory {
 	name := ClusterRoleBindingName(cfg)
 
 	return func() (string, reconciling.ClusterRoleBindingReconciler) {

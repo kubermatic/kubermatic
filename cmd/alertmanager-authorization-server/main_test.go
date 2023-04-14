@@ -74,7 +74,6 @@ func TestAuthorize(t *testing.T) {
 			clusterID: generator.DefaultClusterID,
 			existingKubermaticObjects: generator.GenDefaultKubermaticObjects(
 				generator.GenDefaultCluster(),
-				generator.GenAdminUser("John", "john@acme.com", false),
 			),
 			expectedError:      false,
 			expectedAuthorized: false,
@@ -86,18 +85,6 @@ func TestAuthorize(t *testing.T) {
 			existingKubermaticObjects: generator.GenDefaultKubermaticObjects(
 				generator.GenDefaultCluster(),
 				generator.GenAdminUser("John", "john@acme.com", true),
-			),
-			expectedError:      false,
-			expectedAuthorized: true,
-		},
-		{
-			name:      "user is authorized to access alertmanager through group project bindings",
-			userEmail: "john@acme.com",
-			clusterID: generator.DefaultClusterID,
-			existingKubermaticObjects: generator.GenDefaultKubermaticObjects(
-				generator.GenDefaultCluster(),
-				generator.GenUserWithGroups("user", "John", "john@acme.com", []string{"projectgroup"}),
-				generator.GenGroupBinding(generator.GenDefaultProject().Name, "projectgroup", "viewers"),
 			),
 			expectedError:      false,
 			expectedAuthorized: true,

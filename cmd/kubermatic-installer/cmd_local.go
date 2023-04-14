@@ -37,12 +37,12 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/install/stack"
-	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v3/pkg/install/helm"
+	"k8c.io/kubermatic/v3/pkg/install/stack"
+	kubermaticseed "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-seed"
+	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -282,7 +282,7 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	ensureResource(kubeClient, logger, &kindIngressControllerService)
 	ensureResource(kubeClient, logger, &kindNodeportProxyService)
 
-	ms := kubermaticmaster.MasterStack{}
+	ms := kubermaticseed.SeedStack{}
 	k, uk, err := loadKubermaticConfiguration(kubermaticPath)
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
@@ -437,7 +437,7 @@ func initKindPreset(logger *logrus.Logger, internalKubeconfigPath string) kuberm
 	if err != nil {
 		logger.Fatalf("Failed to initialize preset: %v", err)
 	}
-	kindLocalPreset.Spec.Kubevirt.Kubeconfig = base64.StdEncoding.EncodeToString(k)
+	kindLocalPreset.Spec.KubeVirt.Kubeconfig = base64.StdEncoding.EncodeToString(k)
 	return kindLocalPreset
 }
 

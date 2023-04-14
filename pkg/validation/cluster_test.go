@@ -40,9 +40,11 @@ import (
 var (
 	dc = &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
-				// Used for a test case
-				EnforceFloatingIP: true,
+			Provider: kubermaticv1.DatacenterProviderSpec{
+				OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
+					// Used for a test case
+					EnforceFloatingIP: true,
+				},
 			},
 		},
 	}
@@ -574,7 +576,9 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					AWS: &kubermaticv1.DatacenterSpecAWS{},
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						AWS: &kubermaticv1.DatacenterSpecAWS{},
+					},
 				},
 			},
 			wantErr: false,
@@ -591,8 +595,10 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
-						IPv6Enabled: pointer.Bool(true),
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
+							IPv6Enabled: pointer.Bool(true),
+						},
 					},
 				},
 			},
@@ -610,8 +616,10 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
-						IPv6Enabled: pointer.Bool(false),
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						OpenStack: &kubermaticv1.DatacenterSpecOpenStack{
+							IPv6Enabled: pointer.Bool(false),
+						},
 					},
 				},
 			},
@@ -629,8 +637,10 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						IPv6Enabled: pointer.Bool(true),
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
+							IPv6Enabled: pointer.Bool(true),
+						},
 					},
 				},
 			},
@@ -648,8 +658,10 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						IPv6Enabled: pointer.Bool(false),
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						VSphere: &kubermaticv1.DatacenterSpecVSphere{
+							IPv6Enabled: pointer.Bool(false),
+						},
 					},
 				},
 			},
@@ -667,7 +679,9 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},
+					},
 				},
 			},
 			wantErr: false,
@@ -797,8 +811,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -817,8 +833,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -839,8 +857,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -860,8 +880,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -882,8 +904,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -905,8 +929,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -929,8 +955,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -953,8 +981,10 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west3",
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west3",
+						},
 					},
 				},
 			},
@@ -977,8 +1007,11 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west2",
+
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west2",
+						},
 					},
 				},
 			},
@@ -1003,8 +1036,11 @@ func TestValidateGCPCloudSpec(t *testing.T) {
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
-					GCP: &kubermaticv1.DatacenterSpecGCP{
-						Region: "europe-west2",
+
+					Provider: kubermaticv1.DatacenterProviderSpec{
+						GCP: &kubermaticv1.DatacenterSpecGCP{
+							Region: "europe-west2",
+						},
 					},
 				},
 			},

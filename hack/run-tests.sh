@@ -19,7 +19,5 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
-
 CGO_ENABLED=1 go_test unit_tests \
-  -tags "unit,${KUBERMATIC_EDITION}" -timeout 20m -race -v ./pkg/... ./cmd/... ./codegen/...
+  -tags "unit" -timeout 20m -race -v ./pkg/... ./cmd/... ./codegen/...

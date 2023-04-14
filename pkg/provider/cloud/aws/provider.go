@@ -57,12 +57,12 @@ type AmazonEC2 struct {
 
 // NewCloudProvider returns a new AmazonEC2 provider.
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*AmazonEC2, error) {
-	if dc.Spec.AWS == nil {
+	if dc.Spec.Provider.AWS == nil {
 		return nil, errors.New("datacenter is not an AWS datacenter")
 	}
 
 	return &AmazonEC2{
-		dc:                dc.Spec.AWS,
+		dc:                dc.Spec.Provider.AWS,
 		secretKeySelector: secretKeyGetter,
 	}, nil
 }

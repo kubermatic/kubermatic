@@ -53,28 +53,28 @@ func UpdateClusterStatus(ctx context.Context, client ctrlruntimeclient.Client, c
 	})
 }
 
-type SeedPatchFunc func(seed *kubermaticv1.Seed)
+type DatacenterPatchFunc func(datacenter *kubermaticv1.Datacenter)
 
-func UpdateSeedStatus(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, patch SeedPatchFunc) error {
-	key := ctrlruntimeclient.ObjectKeyFromObject(seed)
+func UpdateDatacenterStatus(ctx context.Context, client ctrlruntimeclient.Client, datacenter *kubermaticv1.Datacenter, patch DatacenterPatchFunc) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(datacenter)
 
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// fetch the current state of the seed
-		if err := client.Get(ctx, key, seed); err != nil {
+		// fetch the current state of the datacenter
+		if err := client.Get(ctx, key, datacenter); err != nil {
 			return err
 		}
 
 		// modify it
-		original := seed.DeepCopy()
-		patch(seed)
+		original := datacenter.DeepCopy()
+		patch(datacenter)
 
 		// save some work
-		if reflect.DeepEqual(original.Status, seed.Status) {
+		if reflect.DeepEqual(original.Status, datacenter.Status) {
 			return nil
 		}
 
 		// update the status
-		return client.Status().Patch(ctx, seed, ctrlruntimeclient.MergeFrom(original))
+		return client.Status().Patch(ctx, datacenter, ctrlruntimeclient.MergeFrom(original))
 	})
 }
 
@@ -103,32 +103,5 @@ func UpdateKubermaticConfigurationStatus(ctx context.Context,
 
 		// update the status
 		return client.Patch(ctx, kc, ctrlruntimeclient.MergeFrom(original))
-	})
-}
-
-type ResourceQuotaPatchFunc func(resourceQuota *kubermaticv1.ResourceQuota)
-
-// UpdateResourceQuotaStatus will attempt to patch the resource quota status
-// of the given resource quota.
-func UpdateResourceQuotaStatus(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota, patch ResourceQuotaPatchFunc) error {
-	key := ctrlruntimeclient.ObjectKeyFromObject(resourceQuota)
-
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// fetch the current state of the resourceQuota
-		if err := client.Get(ctx, key, resourceQuota); err != nil {
-			return err
-		}
-
-		// modify it
-		original := resourceQuota.DeepCopy()
-		patch(resourceQuota)
-
-		// save some work
-		if reflect.DeepEqual(original.Status, resourceQuota.Status) {
-			return nil
-		}
-
-		// update the status
-		return client.Status().Patch(ctx, resourceQuota, ctrlruntimeclient.MergeFrom(original))
 	})
 }

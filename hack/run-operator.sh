@@ -19,7 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 NAMESPACE="${NAMESPACE:-}"
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 PPROF_PORT=${PPROF_PORT:-6602}

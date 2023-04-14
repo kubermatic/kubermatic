@@ -23,7 +23,6 @@ import (
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/install/helm"
-	"k8c.io/kubermatic/v3/pkg/provider"
 	"k8c.io/kubermatic/v3/pkg/util/yamled"
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
@@ -43,9 +42,6 @@ type DeployOptions struct {
 	ChartsDirectory            string
 	AllowEditionChange         bool
 	SkipSeedValidation         sets.Set[string]
-
-	SeedsGetter      provider.SeedsGetter
-	SeedClientGetter provider.SeedClientGetter
 
 	Versions kubermaticversion.Versions
 

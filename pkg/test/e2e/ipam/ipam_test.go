@@ -261,7 +261,6 @@ func createUserCluster(
 	name string,
 ) (*kubermaticv1.Cluster, ctrlruntimeclient.Client, func(), error) {
 	testJig := jig.NewAWSCluster(seedClient, log, credentials, 1, nil)
-	testJig.ProjectJig.WithHumanReadableName("IPAM test")
 	testJig.ClusterJig.
 		WithTestName(name).
 		WithAddons(jig.Addon{
@@ -275,7 +274,7 @@ func createUserCluster(
 		testJig.Cleanup(ctx, t, true)
 	}
 
-	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	if err != nil {
 		return nil, nil, cleanup, fmt.Errorf("failed to setup test cluster: %w", err)
 	}

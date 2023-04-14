@@ -31,7 +31,6 @@ import (
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v3/pkg/cluster/client"
-	backupcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/backup"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/features"
 	"k8c.io/kubermatic/v3/pkg/provider"
@@ -121,8 +120,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", defaulting.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
-	flag.StringVar(&c.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
+	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", "gcr.io/etcd-development/etcd", "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
+	flag.StringVar(&c.backupInterval, "backup-interval", "20m", "Interval in which the etcd gets backed up")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "", "The file containing the docker auth config.")
 	flag.Var(&c.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
@@ -149,7 +148,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.machineControllerImageTag, "machine-controller-image-tag", "", "The Machine Controller image tag.")
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
-	addFlags(flag.CommandLine)
 	flag.Parse()
 
 	etcdDiskSize, err := resource.ParseQuantity(rawEtcdDiskSize)
@@ -214,7 +212,8 @@ type controllerContext struct {
 	runOptions           controllerRunOptions
 	mgr                  manager.Manager
 	clientProvider       *client.Provider
-	seedGetter           provider.SeedGetter
+	datacenterGetter     provider.DatacenterGetter
+	datacentersGetter    provider.DatacentersGetter
 	configGetter         provider.KubermaticConfigurationGetter
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger

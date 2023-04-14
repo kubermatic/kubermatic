@@ -19,7 +19,6 @@ package kubesystem
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v3/pkg/controller/operator/common"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +60,7 @@ func DefaultNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFa
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								PodSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{common.NameLabel: "kube-dns"},
+									MatchLabels: map[string]string{"app.kubernetes.io/name": "kube-dns"},
 								},
 							},
 						},

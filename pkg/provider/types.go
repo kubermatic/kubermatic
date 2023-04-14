@@ -22,18 +22,12 @@ import (
 	"fmt"
 	"strconv"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	ksemver "k8c.io/api/v3/pkg/semver"
-	apiv1 "k8c.io/kubermatic/v3/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v3/pkg/api/v2"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/rest"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,19 +48,13 @@ const (
 // running application (e.g. the seed-controller-manager). It's an error
 // if there are none or more than one KubermaticConfiguration objects in
 // a single namespace.
-type KubermaticConfigurationGetter = func(ctx context.Context) (*kubermaticv1.KubermaticConfiguration, error)
+type KubermaticConfigurationGetter = func(context.Context) (*kubermaticv1.KubermaticConfiguration, error)
 
-// SeedGetter is a function to retrieve a single seed.
-type SeedGetter = func() (*kubermaticv1.Seed, error)
+// DatacenterGetter is a function to retrieve a single Datacenter.
+type DatacenterGetter = func(context.Context, string) (*kubermaticv1.Datacenter, error)
 
-// SeedsGetter is a function to retrieve a list of seeds.
-type SeedsGetter = func() (map[string]*kubermaticv1.Seed, error)
-
-// SeedKubeconfigGetter is used to fetch the kubeconfig for a given seed.
-type SeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
-
-// SeedClientGetter is used to get a ctrlruntimeclient for a given seed.
-type SeedClientGetter = func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error)
+// DatacentersGetter is a function to retrieve a list of all available Datacenters.
+type DatacentersGetter = func(context.Context) (map[string]*kubermaticv1.Datacenter, error)
 
 // CloudProvider declares a set of methods for interacting with a cloud provider.
 type CloudProvider interface {
@@ -127,82 +115,6 @@ type UserInfo struct {
 	Groups  []string
 	Roles   sets.Set[string]
 	IsAdmin bool
-}
-
-// ExternalClusterProvider declares the set of methods for interacting with external cluster.
-type ExternalClusterProvider interface {
-	New(ctx context.Context, userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
-
-	Get(ctx context.Context, userInfo *UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error)
-
-	Delete(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
-
-	Update(ctx context.Context, userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
-
-	List(ctx context.Context, project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
-
-	GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error)
-
-	GetClient(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
-
-	ValidateKubeconfig(ctx context.Context, kubeconfig []byte) error
-
-	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig []byte, namespace string) error
-
-	CreateOrUpdateCredentialSecretForCluster(ctx context.Context, cloud *apiv2.ExternalClusterCloudSpec, projectID, clusterID string) (*providerconfig.GlobalSecretKeySelector, error)
-
-	CreateKubeOneClusterNamespace(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster) error
-
-	CreateOrUpdateKubeOneSSHSecret(ctx context.Context, sshKey apiv2.KubeOneSSHKey, externalCluster *kubermaticv1.ExternalCluster) error
-
-	CreateOrUpdateKubeOneManifestSecret(ctx context.Context, manifest string, externalCluster *kubermaticv1.ExternalCluster) error
-
-	CreateOrUpdateKubeOneCredentialSecret(ctx context.Context, cloud apiv2.KubeOneCloudSpec, externalCluster *kubermaticv1.ExternalCluster) error
-
-	GetVersion(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
-
-	VersionsEndpoint(ctx context.Context, configGetter KubermaticConfigurationGetter, providerType kubermaticv1.ExternalClusterProvider) ([]apiv1.MasterVersion, error)
-
-	ListNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
-
-	GetNode(ctx context.Context, cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error)
-
-	GetProviderPoolNodes(ctx context.Context, cluster *kubermaticv1.ExternalCluster, providerNodeLabel, providerNodePoolName string) ([]corev1.Node, error)
-
-	IsMetricServerAvailable(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (bool, error)
-}
-
-// ExternalClusterProvider declares the set of methods for interacting with external cluster.
-type PrivilegedExternalClusterProvider interface {
-	// NewUnsecured creates an external cluster
-	//
-	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to create the resources
-	NewUnsecured(ctx context.Context, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
-
-	// DeleteUnsecured deletes an external cluster
-	//
-	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to delete the resources
-	DeleteUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error
-
-	// GetUnsecured gets an external cluster
-	//
-	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to get the resources
-	GetUnsecured(ctx context.Context, clusterName string) (*kubermaticv1.ExternalCluster, error)
-
-	// UpdateUnsecured updates an external cluster
-	//
-	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to update the resources
-	UpdateUnsecured(ctx context.Context, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
-
-	// GetMasterClient returns master client
-	//
-	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to update the resources
-	GetMasterClient() ctrlruntimeclient.Client
 }
 
 // NodeCapacity represents the size of a cluster node in a Kubernetes cluster.

@@ -68,7 +68,6 @@ type ClusterCredentials struct {
 
 // TemplateData is the root context injected into each addon manifest file.
 type TemplateData struct {
-	SeedName       string
 	DatacenterName string
 	Cluster        ClusterData
 	Credentials    ClusterCredentials

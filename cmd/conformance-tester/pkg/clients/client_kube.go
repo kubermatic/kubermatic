@@ -61,97 +61,23 @@ func (c *kubeClient) log(log *zap.SugaredLogger) *zap.SugaredLogger {
 	return log.With("client", "kube")
 }
 
-func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, name string) (string, error) {
-	c.log(log).Info("Creating project...")
-
-	project := &kubermaticv1.Project{}
-	project.Name = name
-	project.Spec.Name = name
-
-	if err := c.opts.SeedClusterClient.Create(ctx, project); err != nil {
-		return "", fmt.Errorf("failed to create project: %w", err)
-	}
-
-	if err := wait.PollImmediate(ctx, 2*time.Second, 1*time.Minute, func() (error, error) {
-		p := &kubermaticv1.Project{}
-		if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(project), p); err != nil {
-			return nil, fmt.Errorf("failed to get project: %w", err)
-		}
-
-		if p.Status.Phase != kubermaticv1.ProjectPhaseActive {
-			return fmt.Errorf("project is %s", p.Status.Phase), nil
-		}
-
-		return nil, nil
-	}); err != nil {
-		return "", fmt.Errorf("failed to wait for project to be ready: %w", err)
-	}
-
-	return name, nil
-}
-
-func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, id string, timeout time.Duration) error {
-	project := &kubermaticv1.Project{}
-	if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: id}, project); err != nil {
-		if apierrors.IsNotFound(err) {
-			c.log(log).Info("Project is gone already")
-			return nil
-		}
-
-		return fmt.Errorf("failed to get project: %w", err)
-	}
-
-	// if there is no timeout, we do not wait for the project to be gone
-	if timeout == 0 {
-		c.log(log).Info("Deleting project now...")
-
-		return ctrlruntimeclient.IgnoreNotFound(c.opts.SeedClusterClient.Delete(ctx, project))
-	}
-
-	return wait.PollImmediate(ctx, 1*time.Second, timeout, func() (error, error) {
-		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(project), project)
-
-		// gone already!
-		if apierrors.IsNotFound(err) {
-			return nil, nil
-		}
-
-		if err != nil {
-			return fmt.Errorf("failed to get project: %w", err), nil
-		}
-
-		if project.DeletionTimestamp == nil {
-			c.log(log).Info("Deleting project now...")
-
-			if err := c.opts.SeedClusterClient.Delete(ctx, project); err != nil {
-				return fmt.Errorf("failed to delete project: %w", err), nil
-			}
-
-			return errors.New("project was deleted"), nil
-		}
-
-		return errors.New("project still exists"), nil
-	})
-}
-
 func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
 	creators := []kkpreconciling.NamedUserSSHKeyReconcilerFactory{}
 
 	for i, key := range c.opts.PublicKeys {
 		c.log(log).Infow("Ensuring UserSSHKey...", "pubkey", string(key))
 
-		name := fmt.Sprintf("ssh-key-%s-%d", c.opts.KubermaticProject, i+1)
-		creators = append(creators, userSSHKeyReconcilerFactory(name, c.opts.KubermaticProject, key))
+		name := fmt.Sprintf("ssh-key-%d", i+1)
+		creators = append(creators, userSSHKeyReconcilerFactory(name, key))
 	}
 
 	return kkpreconciling.ReconcileUserSSHKeys(ctx, creators, "", c.opts.SeedClusterClient)
 }
 
-func userSSHKeyReconcilerFactory(keyName string, project string, publicKey []byte) kkpreconciling.NamedUserSSHKeyReconcilerFactory {
+func userSSHKeyReconcilerFactory(keyName string, publicKey []byte) kkpreconciling.NamedUserSSHKeyReconcilerFactory {
 	return func() (string, kkpreconciling.UserSSHKeyReconciler) {
 		return keyName, func(existing *kubermaticv1.UserSSHKey) (*kubermaticv1.UserSSHKey, error) {
 			existing.Spec.Name = "Test SSH Key"
-			existing.Spec.Project = project
 			existing.Spec.PublicKey = string(publicKey)
 
 			if existing.Spec.Clusters == nil {
@@ -168,7 +94,6 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	name := fmt.Sprintf("%s-%s", c.opts.NamePrefix, rand.String(5))
 
-	// The cluster humanReadableName must be unique per project;
 	// we build up a readable humanReadableName with the various cli parameters and
 	// add a random string in the end to ensure we really have a unique humanReadableName.
 	humanReadableName := ""
@@ -180,9 +105,6 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	cluster := &kubermaticv1.Cluster{}
 	cluster.Name = name
-	cluster.Labels = map[string]string{
-		kubermaticv1.ProjectIDLabelKey: c.opts.KubermaticProject,
-	}
 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
@@ -221,14 +143,14 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return nil, err
 	}
 
-	// get all the keys in the current project
-	projectKeys, err := c.getAssignedSSHKeys(ctx)
+	// get all the keys
+	sshKeys, err := c.getExistingSSHKeys(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// assign them to the new cluster
-	for _, key := range projectKeys {
+	for _, key := range sshKeys {
 		if err := wait.PollImmediate(ctx, 100*time.Millisecond, 10*time.Second, func() (transient error, terminal error) {
 			k := &kubermaticv1.UserSSHKey{}
 			if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(&key), k); err != nil {
@@ -248,22 +170,13 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	return cluster, nil
 }
 
-func (c *kubeClient) getAssignedSSHKeys(ctx context.Context) ([]kubermaticv1.UserSSHKey, error) {
-	// fetch all existing SSH keys
+func (c *kubeClient) getExistingSSHKeys(ctx context.Context) ([]kubermaticv1.UserSSHKey, error) {
 	keyList := &kubermaticv1.UserSSHKeyList{}
 	if err := c.opts.SeedClusterClient.List(ctx, keyList); err != nil {
 		return nil, fmt.Errorf("failed to list SSH keys: %w", err)
 	}
 
-	// get all the keys in the current project
-	projectKeys := []kubermaticv1.UserSSHKey{}
-	for _, key := range keyList.Items {
-		if key.Spec.Project == c.opts.KubermaticProject {
-			projectKeys = append(projectKeys, key)
-		}
-	}
-
-	return projectKeys, nil
+	return keyList.Items, nil
 }
 
 func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
@@ -288,14 +201,14 @@ func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.Suga
 		return nil
 	}
 
-	// get all the keys in the current project
-	projectKeys, err := c.getAssignedSSHKeys(ctx)
+	// get all the keys
+	sshKeys, err := c.getExistingSSHKeys(ctx)
 	if err != nil {
 		return err
 	}
 
 	publicKeys := sets.NewString()
-	for _, key := range projectKeys {
+	for _, key := range sshKeys {
 		publicKeys.Insert(key.Spec.PublicKey)
 	}
 

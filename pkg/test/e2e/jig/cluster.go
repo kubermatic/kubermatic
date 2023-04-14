@@ -28,6 +28,7 @@ import (
 	"k8c.io/api/v3/pkg/semver"
 	"k8c.io/kubermatic/v3/pkg/cluster/client"
 	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/util/wait"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
@@ -47,7 +48,6 @@ type ClusterJig struct {
 	versions kubermatic.Versions
 
 	// user-controller parameters
-	projectName  string
 	spec         *kubermaticv1.ClusterSpec
 	desiredName  string
 	ownerEmail   string
@@ -69,7 +69,7 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 	jig := &ClusterJig{
 		client:     client,
 		log:        log,
-		versions:   kubermatic.NewFakeVersions(),
+		versions:   kubermatic.NewFakeVersions(edition.CommunityEdition),
 		spec:       &kubermaticv1.ClusterSpec{},
 		labels:     map[string]string{},
 		ownerEmail: "e2e@test.kubermatic.com",
@@ -83,15 +83,6 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 	}
 
 	return jig
-}
-
-func (j *ClusterJig) WithProject(project *kubermaticv1.Project) *ClusterJig {
-	return j.WithProjectName(project.Name)
-}
-
-func (j *ClusterJig) WithProjectName(projectName string) *ClusterJig {
-	j.projectName = projectName
-	return j
 }
 
 func (j *ClusterJig) WithExistingCluster(clusterName string) *ClusterJig {
@@ -258,15 +249,6 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 		return nil, errors.New("cluster was already created; delete it first or use a different cluster jig")
 	}
 
-	if j.projectName == "" {
-		return nil, errors.New("no project specified")
-	}
-
-	project, err := j.getProject(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get parent project: %w", err)
-	}
-
 	var preset *kubermaticv1.Preset
 	if j.presetSecret != "" {
 		preset = &kubermaticv1.Preset{}
@@ -283,7 +265,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 	)
 
 	creators := []reconciling.NamedClusterReconcilerFactory{
-		j.clusterReconcilerFactory(project, preset),
+		j.clusterReconcilerFactory(preset),
 	}
 
 	if err := reconciling.ReconcileClusters(ctx, creators, "", j.client); err != nil {
@@ -297,7 +279,7 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 
 	if waitForHealthy {
 		log.Info("Waiting for cluster to become healthy...")
-		if err = j.WaitForHealthyControlPlane(ctx, 5*time.Minute); err != nil {
+		if err := j.WaitForHealthyControlPlane(ctx, 5*time.Minute); err != nil {
 			return nil, fmt.Errorf("failed to wait for cluster to become healthy: %w", err)
 		}
 	}
@@ -309,11 +291,10 @@ func (j *ClusterJig) Create(ctx context.Context, waitForHealthy bool) (*kubermat
 	return j.Cluster(ctx)
 }
 
-func (j *ClusterJig) clusterReconcilerFactory(project *kubermaticv1.Project, preset *kubermaticv1.Preset) reconciling.NamedClusterReconcilerFactory {
+func (j *ClusterJig) clusterReconcilerFactory(preset *kubermaticv1.Preset) reconciling.NamedClusterReconcilerFactory {
 	return func() (string, reconciling.ClusterReconciler) {
 		return j.desiredName, func(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 			cluster.Labels = j.labels
-			cluster.Labels[kubermaticv1.ProjectIDLabelKey] = project.Name
 			cluster.Spec = *j.spec
 
 			if preset != nil {
@@ -505,17 +486,4 @@ func genAddonResource(cluster *kubermaticv1.Cluster, addonName string, variables
 			Variables: variables,
 		},
 	}, nil
-}
-
-func (j *ClusterJig) getProject(ctx context.Context) (*kubermaticv1.Project, error) {
-	if j.projectName == "" {
-		return nil, errors.New("no parent project specified")
-	}
-
-	project := &kubermaticv1.Project{}
-	if err := j.client.Get(ctx, types.NamespacedName{Name: j.projectName}, project); err != nil {
-		return nil, fmt.Errorf("failed to get project: %w", err)
-	}
-
-	return project, nil
 }

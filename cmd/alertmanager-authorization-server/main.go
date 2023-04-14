@@ -38,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -159,45 +158,10 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 	if isAdmin {
 		return true, nil
 	}
+
 	cluster := &kubermaticv1.Cluster{}
-	if err := a.client.Get(ctx, types.NamespacedName{
-		Name: clusterID,
-	}, cluster); err != nil {
+	if err := a.client.Get(ctx, types.NamespacedName{Name: clusterID}, cluster); err != nil {
 		return false, fmt.Errorf("getting cluster: %w", err)
-	}
-
-	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-	if len(projectID) == 0 {
-		return false, fmt.Errorf("cluster %s is missing '%s' label", cluster.Name, kubermaticv1.ProjectIDLabelKey)
-	}
-
-	allMembers := &kubermaticv1.UserProjectBindingList{}
-	if err := a.client.List(ctx, allMembers); err != nil {
-		return false, fmt.Errorf("listing userProjectBinding: %w", err)
-	}
-
-	for _, member := range allMembers.Items {
-		if strings.EqualFold(member.Spec.UserEmail, userEmail) && member.Spec.ProjectID == projectID {
-			a.log.Debugf("user %q authorized for project: %s, cluster: %s", userEmail, projectID, clusterID)
-			return true, nil
-		}
-	}
-
-	// authorize through group project bindings
-	allGroupBindings := &kubermaticv1.GroupProjectBindingList{}
-	if err := a.client.List(ctx, allGroupBindings, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
-		return false, fmt.Errorf("listing groupProjectBinding: %w", err)
-	}
-
-	groupSet := sets.New[string]()
-	for _, gpb := range allGroupBindings.Items {
-		a.log.Debugf("found group project binding %q for project %q with group %q", gpb.Name, projectID, gpb.Spec.Group)
-		groupSet.Insert(gpb.Spec.Group)
-	}
-
-	if groupSet.Len() == 0 {
-		a.log.Debugf("user %q is NOT authorized for project: %s, cluster %s", userEmail, projectID, clusterID)
-		return false, nil
 	}
 
 	allUsers := &kubermaticv1.UserList{}
@@ -206,13 +170,13 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 	}
 
 	for _, user := range allUsers.Items {
-		if strings.EqualFold(user.Spec.Email, userEmail) && groupSet.HasAny(user.Spec.Groups...) {
-			a.log.Debugf("user %q authorized for project: %s, cluster: %s", userEmail, projectID, clusterID)
+		if strings.EqualFold(user.Spec.Email, userEmail) {
+			a.log.Debugf("user %q authorized cluster %s", userEmail, clusterID)
 			return true, nil
 		}
 	}
 
-	a.log.Debugf("user %q is NOT authorized for project: %s, cluster %s", userEmail, projectID, clusterID)
+	a.log.Debugf("user %q is NOT authorized cluster %s", userEmail, clusterID)
 	return false, nil
 }
 

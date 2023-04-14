@@ -23,7 +23,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -62,12 +61,6 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.OpenVPNCASecretName,
-				Namespace: namespace,
-			},
-		},
-		&autoscalingv1.VerticalPodAutoscaler{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.OpenVPNServerDeploymentName,
 				Namespace: namespace,
 			},
 		},

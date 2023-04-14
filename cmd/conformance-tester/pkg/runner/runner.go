@@ -48,7 +48,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/util/retry"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,38 +57,20 @@ type TestRunner struct {
 	log       *zap.SugaredLogger
 	opts      *ctypes.Options
 	kkpClient clients.Client
-
-	createdProject bool
+	versions  kubermatic.Versions
 }
 
-func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger) *TestRunner {
+func NewKubeRunner(opts *ctypes.Options, log *zap.SugaredLogger, versions kubermatic.Versions) *TestRunner {
 	return &TestRunner{
 		log:       log,
 		opts:      opts,
 		kkpClient: clients.NewKubeClient(opts),
+		versions:  versions,
 	}
 }
 
 func (r *TestRunner) Setup(ctx context.Context) error {
 	return r.kkpClient.Setup(ctx, r.log)
-}
-
-func (r *TestRunner) SetupProject(ctx context.Context) error {
-	if r.opts.KubermaticProject == "" {
-		projectName, err := r.kkpClient.CreateProject(ctx, r.log, "e2e-"+rand.String(5))
-		if err != nil {
-			return fmt.Errorf("failed to create project: %w", err)
-		}
-
-		r.opts.KubermaticProject = projectName
-		r.createdProject = true
-	}
-
-	if err := r.kkpClient.EnsureSSHKeys(ctx, r.log); err != nil {
-		return fmt.Errorf("failed to create SSH keys: %w", err)
-	}
-
-	return nil
 }
 
 func (r *TestRunner) Run(ctx context.Context, testScenarios []scenarios.Scenario) (*Results, error) {
@@ -298,15 +279,6 @@ func (r *TestRunner) executeScenario(ctx context.Context, log *zap.SugaredLogger
 
 	errs := []error{testError, clusterDeleteError}
 
-	if r.createdProject {
-		projectDeleteError := util.JUnitWrapper("[KKP] Delete project", report, func() error {
-			// use a background context to ensure that when the test is cancelled using Ctrl-C,
-			// the cleanup is still happening
-			return r.kkpClient.DeleteProject(context.Background(), log, r.opts.KubermaticProject, deleteTimeout)
-		})
-		errs = append(errs, projectDeleteError)
-	}
-
 	return report, cluster, kerrors.NewAggregate(errs)
 }
 
@@ -374,10 +346,8 @@ func (r *TestRunner) executeTests(
 				return err, nil
 			}
 
-			versions := kubermatic.NewDefaultVersions()
-
 			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
-			missingConditions, _ := clusterhelper.ClusterReconciliationSuccessful(cluster, versions, true)
+			missingConditions, _ := clusterhelper.ClusterReconciliationSuccessful(cluster, r.versions, true)
 			if len(missingConditions) > 0 {
 				return fmt.Errorf("missing conditions: %v", missingConditions), nil
 			}
@@ -573,15 +543,6 @@ func (r *TestRunner) testCluster(
 		},
 	)); err != nil {
 		log.Errorf("Failed to verify that LoadBalancers work: %v", err)
-	}
-
-	// Do user cluster RBAC controller test
-	if err := util.JUnitWrapper("[KKP] Test user cluster RBAC controller", report, func() error {
-		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
-			return tests.TestUserclusterControllerRBAC(ctx, log, r.opts, cluster, userClusterClient, r.opts.SeedClusterClient)
-		})
-	}); err != nil {
-		log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
 	}
 
 	// Do prometheus metrics available test

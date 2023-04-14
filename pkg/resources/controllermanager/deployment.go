@@ -401,7 +401,7 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 
 type kubeControllerManagerEnvData interface {
 	Cluster() *kubermaticv1.Cluster
-	Seed() *kubermaticv1.Seed
+	KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration
 }
 
 func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
@@ -437,7 +437,7 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
 
-	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...)
+	vars = append(vars, resources.GetHTTPProxyEnvVars(data.KubermaticConfiguration(), data.Cluster().Status.Address.InternalName)...)
 	return vars, nil
 }
 

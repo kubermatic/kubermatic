@@ -764,7 +764,7 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 
 type kubeAPIServerEnvData interface {
 	Cluster() *kubermaticv1.Cluster
-	Seed() *kubermaticv1.Seed
+	KubermaticConfiguration() *kubermaticv1.KubermaticConfiguration
 }
 
 func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
@@ -796,7 +796,7 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ASSUME_ROLE_EXTERNAL_ID", Value: cluster.Spec.Cloud.AWS.AssumeRoleExternalID})
 	}
 
-	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...), nil
+	return append(vars, resources.GetHTTPProxyEnvVars(data.KubermaticConfiguration(), data.Cluster().Status.Address.InternalName)...), nil
 }
 
 func intPtr(n int32) *int32 {

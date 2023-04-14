@@ -439,7 +439,6 @@ func createUserCluster(
 	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
-	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("cilium").
 		WithProxyMode(proxyMode).
@@ -454,7 +453,7 @@ func createUserCluster(
 	}
 
 	// let the magic happen
-	if _, _, err := testJig.Setup(ctx, jig.WaitForReadyPods); err != nil {
+	if _, err := testJig.Setup(ctx, jig.WaitForReadyPods); err != nil {
 		return nil, cleanup, log, fmt.Errorf("failed to setup test environment: %w", err)
 	}
 

@@ -91,14 +91,11 @@ type Options struct {
 	SeedGeneratedClient          kubernetes.Interface
 	ClusterClientProvider        *clusterclient.Provider
 	RepoRoot                     string
-	Seed                         *kubermaticv1.Seed
 	SeedRestConfig               *rest.Config
 	ClusterParallelCount         int
 	HomeDir                      string
 	ExistingClusterLabel         string
 	KubermaticNamespace          string
-	KubermaticSeedName           string
-	KubermaticProject            string
 	KubermaticConfiguration      *kubermaticv1.KubermaticConfiguration
 	PushgatewayEndpoint          string
 
@@ -119,7 +116,6 @@ func NewDefaultOptions() *Options {
 		ExcludeTests:                 sets.New[string](),
 		Tests:                        sets.New[string](),
 		KubermaticNamespace:          "kubermatic",
-		KubermaticSeedName:           "kubermatic",
 		ControlPlaneReadyWaitTimeout: 10 * time.Minute,
 		NodeReadyTimeout:             20 * time.Minute,
 		CustomTestTimeout:            10 * time.Minute,
@@ -147,8 +143,6 @@ func (o *Options) AddFlags() {
 	flag.Var(flagopts.SetFlag(o.ExcludeTests), "exclude-tests", "Run all the tests except the ones in this comma-separated list (cannot be used in conjunction with -tests)")
 	flag.Var(flagopts.SetFlag(o.ScenarioOptions), "scenario-options", "Comma-separated list of additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&o.RepoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
-	flag.StringVar(&o.KubermaticProject, "kubermatic-project", "", "Kubermatic project to use; leave empty to create a new one")
-	flag.StringVar(&o.KubermaticSeedName, "kubermatic-seed-cluster", o.KubermaticSeedName, "Seed cluster name to create test cluster in")
 	flag.StringVar(&o.KubermaticNamespace, "kubermatic-namespace", o.KubermaticNamespace, "Namespace where Kubermatic is installed to")
 	flag.IntVar(&o.NodeCount, "kubermatic-nodes", 3, "number of worker nodes")
 	flag.IntVar(&o.ClusterParallelCount, "kubermatic-parallel-clusters", 1, "number of clusters to test in parallel")

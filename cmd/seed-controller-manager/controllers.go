@@ -22,34 +22,29 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/addon"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/addoninstaller"
+	addoncontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/addon-controller"
+	addoninstallercontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/addon-installer-controller"
 	applicationsecretclustercontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/application-secret-cluster-controller"
 	autoupdatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/auto-update-controller"
-	backupcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/backup"
-	cloudcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cloud"
+	cloudcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cloud-controller"
 	clustercredentialscontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cluster-credentials-controller"
 	clusterphasecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cluster-phase-controller"
 	clusterstuckcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cluster-stuck-controller"
 	clustertemplatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cluster-template-controller"
+	clusterupdatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cluster-update-controller"
+	clusterusersshkeyscontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cluster-usersshkeys-controller"
 	cniapplicationinstallationcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cni-application-installation-controller"
-	seedconstraintsynchronizer "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/constraint-controller"
-	constrainttemplatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/constraint-template-controller"
-	encryptionatrestcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/encryption-at-rest-controller"
-	etcdbackupcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/etcdbackup"
-	etcdrestorecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/etcdrestore"
+	controlplanecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/control-plane-controller"
+	controlplanestatuscontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/control-plane-status-controller"
+	datacenterstatuscontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/datacenter-status-controller"
 	initialapplicationinstallationcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/initial-application-installation-controller"
-	initialmachinedeployment "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/initial-machinedeployment-controller"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/ipam"
-	kubernetescontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/kubernetes"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring"
+	initialmachinedeploymentcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/initial-machinedeployment-controller"
+	ipamcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/ipam-controller"
+	kcstatuscontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/kc-status-controller"
+	monitoringcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/monitoring-controller"
 	operatingsystemprofilesynchronizer "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/operating-system-profile-synchronizer"
 	presetcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/preset-controller"
-	projectcontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/project"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/pvwatcher"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
-	updatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/update-controller"
+	pvwatchercontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/pvwatcher-controller"
 	"k8c.io/kubermatic/v3/pkg/features"
 )
 
@@ -57,34 +52,30 @@ import (
 // each entry holds the name of the controller and the corresponding
 // start function that will essentially run the controller.
 var AllControllers = map[string]controllerCreator{
-	kubernetescontroller.ControllerName:                     createKubernetesController,
-	autoupdatecontroller.ControllerName:                     createAutoUpdateController,
-	updatecontroller.ControllerName:                         createUpdateController,
-	addon.ControllerName:                                    createAddonController,
-	addoninstaller.ControllerName:                           createAddonInstallerController,
-	etcdbackupcontroller.ControllerName:                     createEtcdBackupController,
-	backupcontroller.ControllerName:                         createBackupController,
-	etcdrestorecontroller.ControllerName:                    createEtcdRestoreController,
-	monitoring.ControllerName:                               createMonitoringController,
-	cloudcontroller.ControllerName:                          createCloudController,
-	seedresourcesuptodatecondition.ControllerName:           createSeedConditionUpToDateController,
-	pvwatcher.ControllerName:                                createPvWatcherController,
-	seedconstraintsynchronizer.ControllerName:               createConstraintController,
-	constrainttemplatecontroller.ControllerName:             createConstraintTemplateController,
-	initialmachinedeployment.ControllerName:                 createInitialMachineDeploymentController,
-	initialapplicationinstallationcontroller.ControllerName: createInitialApplicationInstallationController,
-	cniapplicationinstallationcontroller.ControllerName:     createCNIApplicationInstallationController,
-	mla.ControllerName:                                      createMLAController,
-	clustertemplatecontroller.ControllerName:                createClusterTemplateController,
-	projectcontroller.ControllerName:                        createProjectController,
-	clusterphasecontroller.ControllerName:                   createClusterPhaseController,
-	presetcontroller.ControllerName:                         createPresetController,
-	encryptionatrestcontroller.ControllerName:               createEncryptionAtRestController,
-	ipam.ControllerName:                                     createIPAMController,
-	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
-	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
-	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
+	addoncontroller.ControllerName:                          createAddonController,
+	addoninstallercontroller.ControllerName:                 createAddonInstallerController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
+	autoupdatecontroller.ControllerName:                     createAutoUpdateController,
+	cloudcontroller.ControllerName:                          createCloudController,
+	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
+	clusterphasecontroller.ControllerName:                   createClusterPhaseController,
+	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
+	clustertemplatecontroller.ControllerName:                createClusterTemplateController,
+	clusterupdatecontroller.ControllerName:                  createClusterUpdateController,
+	clusterusersshkeyscontroller.ControllerName:             createClusterUserSSHKeysController,
+	cniapplicationinstallationcontroller.ControllerName:     createCNIApplicationInstallationController,
+	controlplanecontroller.ControllerName:                   createControlPlaneController,
+	controlplanestatuscontroller.ControllerName:             createControlPlaneStatusController,
+	datacenterstatuscontroller.ControllerName:               createDatacenterStatusController,
+	initialapplicationinstallationcontroller.ControllerName: createInitialApplicationInstallationController,
+	initialmachinedeploymentcontroller.ControllerName:       createInitialMachineDeploymentController,
+	ipamcontroller.ControllerName:                           createIPAMController,
+	kcstatuscontroller.ControllerName:                       createKcStatusController,
+	// mla.ControllerName:                                      createMLAController,
+	monitoringcontroller.ControllerName:               createMonitoringController,
+	operatingsystemprofilesynchronizer.ControllerName: createOperatingSystemProfileController,
+	presetcontroller.ControllerName:                   createPresetController,
+	pvwatchercontroller.ControllerName:                createPvWatcherController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -96,20 +87,26 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		}
 	}
 
-	// init CE/EE-only controllers
-	if err := setupControllers(ctrlCtx); err != nil {
-		return err
-	}
 	return nil
 }
 
-func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
-	return seedresourcesuptodatecondition.Add(
+func createControlPlaneStatusController(ctrlCtx *controllerContext) error {
+	return controlplanestatuscontroller.Add(
 		ctrlCtx.ctx,
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
+		ctrlCtx.versions,
+	)
+}
+
+func createDatacenterStatusController(ctrlCtx *controllerContext) error {
+	return datacenterstatuscontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.log,
 		ctrlCtx.versions,
 	)
 }
@@ -121,7 +118,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.seedGetter,
+		ctrlCtx.datacenterGetter,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle.CertPool(),
@@ -131,19 +128,19 @@ func createCloudController(ctrlCtx *controllerContext) error {
 	return nil
 }
 
-func createKubernetesController(ctrlCtx *controllerContext) error {
+func createControlPlaneController(ctrlCtx *controllerContext) error {
 	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
 	}
 
-	return kubernetescontroller.Add(
+	return controlplanecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.externalURL,
-		ctrlCtx.seedGetter,
+		ctrlCtx.datacenterGetter,
 		ctrlCtx.configGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.runOptions.overwriteRegistry,
@@ -162,8 +159,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.machineControllerImageRepository,
 		ctrlCtx.runOptions.tunnelingAgentIP.String(),
 		ctrlCtx.runOptions.caBundle,
-		kubernetescontroller.Features{
-			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
+		controlplanecontroller.Features{
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			KubernetesOIDCAuthentication: ctrlCtx.runOptions.featureGates.Enabled(features.OpenIDAuthPlugin),
 			EtcdLauncher:                 ctrlCtx.runOptions.featureGates.Enabled(features.EtcdLauncher),
@@ -172,74 +168,19 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func createProjectController(ctrlCtx *controllerContext) error {
-	return projectcontroller.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
-	)
-}
-
-func createEtcdBackupController(ctrlCtx *controllerContext) error {
-	return etcdbackupcontroller.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.backupContainerImage,
-		ctrlCtx.versions,
-		ctrlCtx.runOptions.caBundle,
-		ctrlCtx.seedGetter,
-		ctrlCtx.configGetter,
-	)
-}
-
-func createBackupController(ctrlCtx *controllerContext) error {
-	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
-	}
-	return backupcontroller.Add(
-		ctrlCtx.log,
-		ctrlCtx.mgr,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		backupInterval,
-		ctrlCtx.runOptions.backupContainerImage,
-		ctrlCtx.versions,
-		ctrlCtx.runOptions.caBundle,
-		ctrlCtx.seedGetter,
-		ctrlCtx.configGetter,
-	)
-}
-
-func createEtcdRestoreController(ctrlCtx *controllerContext) error {
-	return etcdrestorecontroller.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.versions,
-		ctrlCtx.seedGetter,
-	)
-}
-
 func createMonitoringController(ctrlCtx *controllerContext) error {
-	return monitoring.Add(
+	return monitoringcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
-		ctrlCtx.seedGetter,
 		ctrlCtx.configGetter,
+		ctrlCtx.datacenterGetter,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
-		monitoring.Features{
-			VPA: ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
-		},
 		ctrlCtx.versions,
 	)
 }
@@ -256,8 +197,8 @@ func createAutoUpdateController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func createUpdateController(ctrlCtx *controllerContext) error {
-	return updatecontroller.Add(
+func createClusterUpdateController(ctrlCtx *controllerContext) error {
+	return clusterupdatecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
@@ -277,7 +218,7 @@ func createClusterPhaseController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
-	return addon.Add(
+	return addoncontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
@@ -296,7 +237,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonInstallerController(ctrlCtx *controllerContext) error {
-	return addoninstaller.Add(
+	return addoninstallercontroller.Add(
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
@@ -312,7 +253,6 @@ func createInitialApplicationInstallationController(ctrlCtx *controllerContext) 
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.seedGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
@@ -334,74 +274,52 @@ func createCNIApplicationInstallationController(ctrlCtx *controllerContext) erro
 }
 
 func createPvWatcherController(ctrlCtx *controllerContext) error {
-	return pvwatcher.Add(
+	return pvwatchercontroller.Add(
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-	)
-}
-
-func createConstraintTemplateController(ctrlCtx *controllerContext) error {
-	return constrainttemplatecontroller.Add(
-		ctrlCtx.ctx,
-		ctrlCtx.mgr,
-		ctrlCtx.clientProvider,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.workerCount,
 	)
 }
 
 func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error {
-	return initialmachinedeployment.Add(
+	return initialmachinedeploymentcontroller.Add(
 		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.seedGetter,
+		ctrlCtx.datacenterGetter,
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
 	)
 }
 
-func createMLAController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
-		return nil
-	}
-	return mla.Add(
-		ctrlCtx.ctx,
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.versions,
-		ctrlCtx.runOptions.mlaNamespace,
-		ctrlCtx.runOptions.grafanaURL,
-		ctrlCtx.runOptions.grafanaHeaderName,
-		ctrlCtx.runOptions.grafanaSecret,
-		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.cortexAlertmanagerURL,
-		ctrlCtx.runOptions.cortexRulerURL,
-		ctrlCtx.runOptions.lokiRulerURL,
-		ctrlCtx.runOptions.enableUserClusterMLA,
-	)
-}
+// func createMLAController(ctrlCtx *controllerContext) error {
+// 	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
+// 		return nil
+// 	}
+// 	return mla.Add(
+// 		ctrlCtx.ctx,
+// 		ctrlCtx.mgr,
+// 		ctrlCtx.log,
+// 		ctrlCtx.runOptions.workerCount,
+// 		ctrlCtx.runOptions.workerName,
+// 		ctrlCtx.versions,
+// 		ctrlCtx.runOptions.mlaNamespace,
+// 		ctrlCtx.runOptions.grafanaURL,
+// 		ctrlCtx.runOptions.grafanaHeaderName,
+// 		ctrlCtx.runOptions.grafanaSecret,
+// 		ctrlCtx.runOptions.overwriteRegistry,
+// 		ctrlCtx.runOptions.cortexAlertmanagerURL,
+// 		ctrlCtx.runOptions.cortexRulerURL,
+// 		ctrlCtx.runOptions.lokiRulerURL,
+// 		ctrlCtx.runOptions.enableUserClusterMLA,
+// 	)
+// }
 
 func userClusterMLAEnabled(ctrlCtx *controllerContext) bool {
 	return ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) && ctrlCtx.runOptions.enableUserClusterMLA
-}
-
-func createConstraintController(ctrlCtx *controllerContext) error {
-	return seedconstraintsynchronizer.Add(
-		ctrlCtx.ctx,
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.namespace,
-		ctrlCtx.runOptions.workerCount,
-	)
 }
 
 func createClusterTemplateController(ctrlCtx *controllerContext) error {
@@ -423,22 +341,8 @@ func createPresetController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func createEncryptionAtRestController(ctrlCtx *controllerContext) error {
-	return encryptionatrestcontroller.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.clientProvider,
-		ctrlCtx.seedGetter,
-		ctrlCtx.configGetter,
-		ctrlCtx.versions,
-		ctrlCtx.runOptions.overwriteRegistry,
-	)
-}
-
 func createIPAMController(ctrlCtx *controllerContext) error {
-	return ipam.Add(
+	return ipamcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,
@@ -477,6 +381,27 @@ func createClusterCredentialsController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.log,
+		ctrlCtx.versions,
+	)
+}
+
+func createClusterUserSSHKeysController(ctrlCtx *controllerContext) error {
+	return clusterusersshkeyscontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.workerCount,
+	)
+}
+
+func createKcStatusController(ctrlCtx *controllerContext) error {
+	return kcstatuscontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.namespace,
 		ctrlCtx.versions,
 	)
 }

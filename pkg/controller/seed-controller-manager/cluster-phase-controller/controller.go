@@ -24,7 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 	clusterhelper "k8c.io/kubermatic/v3/pkg/cluster"
-	updatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/update-controller"
+	clusterupdatecontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/cluster-update-controller"
 	kuberneteshelper "k8c.io/kubermatic/v3/pkg/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
@@ -110,7 +110,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// if there is a pending update condition, the cluster is in Updating phase
 	cond, exists := cluster.Status.Conditions[kubermaticv1.ClusterConditionUpdateProgress]
-	if exists && cond.Reason != updatecontroller.ClusterConditionUpToDate {
+	if exists && cond.Reason != clusterupdatecontroller.ClusterConditionUpToDate {
 		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterPhaseUpdating)
 	}
 

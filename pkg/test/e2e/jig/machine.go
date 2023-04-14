@@ -177,7 +177,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 		return fmt.Errorf("failed to determine user cluster: %w", err)
 	}
 
-	_, datacenter, err := Seed(ctx, j.client, datacenterName)
+	datacenter, err := Datacenter(ctx, j.client, datacenterName)
 	if err != nil {
 		return fmt.Errorf("failed to determine target datacenter: %w", err)
 	}
@@ -426,8 +426,6 @@ func (j *MachineJig) getClusterClient(ctx context.Context, cluster *kubermaticv1
 		return j.clusterClient, nil
 	}
 
-	projectName := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
-
 	clusterJig := j.clusterJig
 	if clusterJig == nil {
 		clusterJig = NewClusterJig(j.client, j.log)
@@ -435,6 +433,5 @@ func (j *MachineJig) getClusterClient(ctx context.Context, cluster *kubermaticv1
 
 	return clusterJig.
 		WithExistingCluster(cluster.Name).
-		WithProjectName(projectName).
 		ClusterClient(ctx)
 }

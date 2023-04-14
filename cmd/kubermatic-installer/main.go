@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -48,7 +49,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	logger := log.NewLogrus()
-	versions := kubermaticversion.NewDefaultVersions()
+	versions := kubermaticversion.NewDefaultVersions(edition.CommunityEdition)
 
 	rootCmd := &cobra.Command{
 		Use:           "kubermatic-installer",
@@ -94,7 +95,13 @@ func main() {
 	rootCmd.PersistentFlags().VarP(&options.LogFormat, "output", "o", fmt.Sprintf("write logs in a specific output format. supported formats: %s", log.AvailableLogrusFormats.String()))
 	rootCmd.PersistentFlags().StringVar(&options.ChartsDirectory, "charts-directory", "", "filesystem path to the Kubermatic Helm charts (defaults to charts/)")
 
-	addCommands(rootCmd, logger, versions)
+	rootCmd.AddCommand(
+		ConvertKubeconfigCommand(logger),
+		DeployCommand(logger, versions),
+		PrintCommand(),
+		VersionCommand(logger, versions),
+		MirrorImagesCommand(logger, versions),
+	)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

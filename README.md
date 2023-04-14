@@ -106,12 +106,6 @@ Afterwards, you can start your local user-cluster-controller-manager.
 ./hack/run-seed-controller-manager.sh
 ```
 
-##### master-controller-manager
-
-```bash
-./hack/run-master-controller-manager.sh
-```
-
 #### Run linters
 
 Before every push, make sure you run:

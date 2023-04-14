@@ -396,7 +396,7 @@ func TestNewClusters(t *testing.T) {
 
 			// create the project and cluster (waits until the control plane is healthy, the WaitForNothing
 			// has no effect since no machines are being created)
-			_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
+			cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 			if err != nil {
 				t.Fatalf("Failed to create cluster: %v", err)
 			}

@@ -31,15 +31,8 @@ All providers have custom quotas. Hitting the quota is fairly easy when testing 
 
 ## Running
 
-The tester needs Kube API access to a specific KKP _seed_ cluster (can be a shared master/seed). All clusters will
-be scheduled onto this given seed.
-
 Depending on the cloud provider, additional credentials must be provided. See the `hack/run-conformance-tests.sh`
 script for more information.
-
-You can specify a fixed project (`-kubermatic-project`) or let the tester create a temporary project on-the-fly.
-Note that you need to cleanup projects after failed tests, like removing any added SSH keys to prevent conflicts
-on the next run.
 
 Run `./hack/run-conformance-tests.sh -help` for more information.
 
@@ -75,7 +68,6 @@ _build/conformance-tester \
   -name-prefix "qa" \
   -exclude-tests "conformance,telemetry" \
   -wait-for-cluster-deletion=false \
-  -kubermatic-seed-cluster "kkp-qa-env" \
   -reports-root "$(realpath reports)" \
   -kubermatic-parallel-clusters ${PARALLEL:-3}
 ```
@@ -106,7 +98,7 @@ explicitly give a full version like `1.26.1`.
 **Parallelism**
 
 To configure the number of clusters which should be tested in parallel, the `-kubermatic-parallel-clusters=4`
-flag can be use. Pay attention to not overload the seed cluster.
+flag can be use. Pay attention to not overload the KKP cluster.
 
 **Node count**
 

@@ -49,13 +49,7 @@ source hack/lib.sh
 export ALL_TAGS=$@
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 export GOOS="${GOOS:-linux}"
-export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 export ARCHITECTURES="${ARCHITECTURES:-linux/amd64,linux/arm64/v8}"
-
-REPOSUFFIX=""
-if [ "$KUBERMATIC_EDITION" != "ce" ]; then
-  REPOSUFFIX="-$KUBERMATIC_EDITION"
-fi
 
 # build Docker images
 PRIMARY_TAG="${1}"
@@ -90,7 +84,6 @@ buildx_build() {
     --push \
     --platform "$ARCHITECTURES" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
     --provenance false \
     --file "$file" \
     $(build_tag_flags "$repository") \
@@ -116,13 +109,13 @@ for TAG in "$@"; do
   fi
 
   echodate "Tagging as $TAG"
-  docker tag "$DOCKER_REPO/kubermatic$REPOSUFFIX:$PRIMARY_TAG" "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
+  docker tag "$DOCKER_REPO/kubermatic:$PRIMARY_TAG" "$DOCKER_REPO/kubermatic:$TAG"
   docker tag "$DOCKER_REPO/nodeport-proxy:$PRIMARY_TAG" "$DOCKER_REPO/nodeport-proxy:$TAG"
   docker tag "$DOCKER_REPO/addons:$PRIMARY_TAG" "$DOCKER_REPO/addons:$TAG"
   docker tag "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" "$DOCKER_REPO/etcd-launcher:$TAG"
 
   echodate "Pushing images"
-  docker push "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
+  docker push "$DOCKER_REPO/kubermatic:$TAG"
   docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
   docker push "$DOCKER_REPO/addons:$TAG"
   docker push "$DOCKER_REPO/etcd-launcher:$TAG"

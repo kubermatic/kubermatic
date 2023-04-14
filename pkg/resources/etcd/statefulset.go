@@ -26,7 +26,6 @@ import (
 	"github.com/Masterminds/sprig/v3"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/registry"
@@ -116,7 +115,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				Name:   name,
 				Labels: podLabels,
 			}
-			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
+			set.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
 
 			etcdEnv := []corev1.EnvVar{
 				{

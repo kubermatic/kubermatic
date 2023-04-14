@@ -32,7 +32,6 @@ RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certific
 COPY ./_build/kubermatic-operator \
      ./_build/kubermatic-installer \
      ./_build/kubermatic-webhook \
-     ./_build/master-controller-manager \
      ./_build/seed-controller-manager \
      ./_build/user-cluster-controller-manager \
      ./_build/user-cluster-webhook \

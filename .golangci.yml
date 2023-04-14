@@ -18,21 +18,16 @@ run:
   modules-download-mode: readonly
   deadline: 20m
   build-tags:
-    - ce
     - cloud
     - create
     - dualstack
     - e2e
-    - ee
     - integration
     - ipam
     - kubevirt
     - logout
   skip-files:
     - zz_generated.*.go
-    # This package was forked from upstream (in #9826)
-    # and we want to keep it as close to upstream as possible.
-    - pkg/provider/cloud/eks/authenticator
 
 linters:
   enable:

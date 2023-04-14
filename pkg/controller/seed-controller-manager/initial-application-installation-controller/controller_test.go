@@ -31,6 +31,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v3/pkg/api/v1"
 	clusterclient "k8c.io/kubermatic/v3/pkg/cluster/client"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -209,18 +210,12 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
-	project := &kubermaticv1.Project{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: projectID,
-		},
-	}
-
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			seedClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(test.cluster, project).
+				WithObjects(test.cluster).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
@@ -235,27 +230,9 @@ func TestReconcile(t *testing.T) {
 				Client:   seedClient,
 				recorder: &record.FakeRecorder{},
 				log:      log,
-				versions: kubermatic.NewFakeVersions(),
+				versions: kubermatic.NewFakeVersions(edition.CommunityEdition),
 
 				userClusterConnectionProvider: newFakeClientProvider(userClusterClient),
-
-				// this dummy seedGetter returns the same dummy hetzner DC for all tests
-				seedGetter: func() (*kubermaticv1.Seed, error) {
-					return &kubermaticv1.Seed{
-						Spec: kubermaticv1.SeedSpec{
-							Datacenters: map[string]kubermaticv1.Datacenter{
-								datacenterName: {
-									Spec: kubermaticv1.DatacenterSpec{
-										Hetzner: &kubermaticv1.DatacenterSpecHetzner{
-											Datacenter: "hel1",
-											Network:    "default",
-										},
-									},
-								},
-							},
-						},
-					}, nil
-				},
 			}
 
 			nName := types.NamespacedName{Name: test.cluster.Name}

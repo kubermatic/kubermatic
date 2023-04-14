@@ -24,14 +24,12 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	masterctrl "k8c.io/kubermatic/v3/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v3/pkg/controller/operator/seed"
-	seedinit "k8c.io/kubermatic/v3/pkg/controller/operator/seed-init"
-	seedcontrollerlifecycle "k8c.io/kubermatic/v3/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/pprof"
 	kubernetesprovider "k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -84,7 +82,7 @@ func main() {
 		log.Fatal("-namespace is a mandatory flag")
 	}
 
-	v := kubermatic.NewDefaultVersions()
+	v := kubermatic.NewDefaultVersions(edition.CommunityEdition)
 	log.With("kubermatic", v.Kubermatic, "ui", v.UI).Infof("Moin, moin, I'm the Kubermatic %s Operator and these are the versions I work with.", v.KubermaticEdition)
 
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
@@ -116,42 +114,8 @@ func main() {
 		log.Fatalw("Failed to construct configGetter", zap.Error(err))
 	}
 
-	seedsGetter, err := seedsGetterFactory(ctx, mgr.GetClient(), opt)
-	if err != nil {
-		log.Fatalw("Failed to construct seedsGetter", zap.Error(err))
-	}
-
-	seedKubeconfigGetter, err := kubernetesprovider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient())
-	if err != nil {
-		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
-	}
-
-	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
-
-	if err := masterctrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
-		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
-	}
-
-	if err := seedinit.Add(ctx, log, opt.namespace, mgr, seedClientGetter, opt.workerCount, opt.workerName); err != nil {
-		log.Fatalw("Failed to add seed-init controller", zap.Error(err))
-	}
-
-	seedOperatorControllerFactory := func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		return seedctrl.ControllerName, seedctrl.Add(
-			ctx,
-			log,
-			opt.namespace,
-			mgr,
-			seedManagerMap,
-			configGetter,
-			seedsGetter,
-			opt.workerCount,
-			opt.workerName,
-		)
-	}
-
-	if err := seedcontrollerlifecycle.Add(ctx, log, mgr, opt.namespace, seedsGetter, seedKubeconfigGetter, seedOperatorControllerFactory); err != nil {
-		log.Fatalw("Failed to create seed-lifecycle controller", zap.Error(err))
+	if err := seedctrl.Add(ctx, log, opt.namespace, mgr, configGetter, opt.workerCount, opt.workerName, v); err != nil {
+		log.Fatalw("Failed to add seed-operator controller", zap.Error(err))
 	}
 
 	if err := mgr.Start(ctx); err != nil {

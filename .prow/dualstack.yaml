@@ -37,8 +37,6 @@ presubmits:
               value: all
             - name: OSNAMES
               value: all
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -76,8 +74,6 @@ presubmits:
               value: all
             - name: OSNAMES
               value: all
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -112,8 +108,6 @@ presubmits:
               value: cilium
             - name: PROVIDER
               value: aws
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -148,8 +142,6 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: aws
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -184,8 +176,6 @@ presubmits:
               value: canal,cilium
             - name: PROVIDER
               value: alibaba
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -220,8 +210,6 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: azure
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -256,8 +244,6 @@ presubmits:
               value: cilium
             - name: PROVIDER
               value: azure
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -292,8 +278,6 @@ presubmits:
               value: canal,cilium
             - name: PROVIDER
               value: gcp
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -328,8 +312,6 @@ presubmits:
               value: canal
             - name: PROVIDER
               value: openstack
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -364,8 +346,6 @@ presubmits:
               value: cilium
             - name: PROVIDER
               value: openstack
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -400,8 +380,6 @@ presubmits:
               value: canal,cilium
             - name: PROVIDER
               value: vsphere
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -436,8 +414,6 @@ presubmits:
               value: canal,cilium
             - name: PROVIDER
               value: digitalocean
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -474,8 +450,6 @@ presubmits:
               value: packet
             - name: OSNAMES
               value: ubuntu
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -512,8 +486,6 @@ presubmits:
               value: packet
             - name: OSNAMES
               value: flatcar
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -550,8 +522,6 @@ presubmits:
               value: packet
             - name: OSNAMES
               value: rockylinux
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -588,8 +558,6 @@ presubmits:
               value: packet
             - name: OSNAMES
               value: centos
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
@@ -624,8 +592,6 @@ presubmits:
               value: canal,cilium
             - name: PROVIDER
               value: hetzner
-            - name: KUBERMATIC_EDITION
-              value: ee
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

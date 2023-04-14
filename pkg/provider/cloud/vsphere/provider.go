@@ -50,11 +50,11 @@ type VSphere struct {
 
 // NewCloudProvider creates a new vSphere provider.
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*VSphere, error) {
-	if dc.Spec.VSphere == nil {
+	if dc.Spec.Provider.VSphere == nil {
 		return nil, errors.New("datacenter is not a vSphere datacenter")
 	}
 	return &VSphere{
-		dc:                dc.Spec.VSphere,
+		dc:                dc.Spec.Provider.VSphere,
 		log:               log.Logger,
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,

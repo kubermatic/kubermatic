@@ -18,7 +18,7 @@ package main
 
 import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -37,7 +37,7 @@ nodes:
      hostPort: 6443
    - containerPort: 32121
      hostPort: 8088
-   # ingress controller for kubermatic api and dashboard 
+   # ingress controller for kubermatic api and dashboard
    - containerPort: 31514
      hostPort: 80
    - containerPort: 32394

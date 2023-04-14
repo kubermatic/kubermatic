@@ -1094,12 +1094,6 @@ func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 	return *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
 }
 
-// GetProjectRef returns a metav1.OwnerReference for the given Project.
-func GetProjectRef(project *kubermaticv1.Project) metav1.OwnerReference {
-	gv := kubermaticv1.SchemeGroupVersion
-	return *metav1.NewControllerRef(project, gv.WithKind("Project"))
-}
-
 // GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore.
 func GetEtcdRestoreRef(restore *kubermaticv1.EtcdRestore) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
@@ -1485,13 +1479,14 @@ func GetPodTemplateLabels(
 	return podLabels, nil
 }
 
-func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL string) []corev1.EnvVar {
-	if seed.Spec.ProxySettings.Empty() {
+func GetHTTPProxyEnvVars(config *kubermaticv1.KubermaticConfiguration, inClusterAPIServerURL string) []corev1.EnvVar {
+	if config == nil || config.Spec.UserCluster == nil || config.Spec.UserCluster.ProxySettings.Empty() {
 		return nil
 	}
+
 	var envVars []corev1.EnvVar
 
-	if proxy := pointer.StringDeref(seed.Spec.ProxySettings.HTTPProxy, ""); proxy != "" {
+	if proxy := pointer.StringDeref(config.Spec.UserCluster.ProxySettings.HTTPProxy, ""); proxy != "" {
 		envVars = []corev1.EnvVar{
 			{
 				Name:  "HTTP_PROXY",
@@ -1513,7 +1508,7 @@ func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL 
 	}
 
 	noProxyValue := inClusterAPIServerURL
-	if noProxy := pointer.StringDeref(seed.Spec.ProxySettings.NoProxy, ""); noProxy != "" {
+	if noProxy := pointer.StringDeref(config.Spec.UserCluster.ProxySettings.NoProxy, ""); noProxy != "" {
 		noProxyValue += "," + noProxy
 	}
 	envVars = append(envVars,
@@ -1629,7 +1624,7 @@ func BackupCABundleConfigMapName(cluster *kubermaticv1.Cluster) string {
 // If the EtcdRestore doesn't reference a secret containing the credentials and endpoint and bucket name data,
 // one can optionally be created from a well-known secret and configmap in kube-system, or from a specified backup destination.
 func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster,
-	destination *kubermaticv1.BackupDestination) (*minio.Client, string, error) {
+	destination *kubermaticv1.EtcdBackupDestination) (*minio.Client, string, error) {
 	secretData := make(map[string]string)
 
 	if restore.Spec.BackupDownloadCredentialsSecret != "" {

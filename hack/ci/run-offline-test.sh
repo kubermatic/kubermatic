@@ -252,7 +252,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --namespace ${NAMESPACE} \
   kubermatic-${BUILD_ID} charts/kubermatic/
 
-go build --tags "$KUBERMATIC_EDITION" ./cmd/conformance-tester
+go build ./cmd/conformance-tester
 
 cp ${KUBECONFIG} /tmp/kubeconfig-remote
 kubectl --kubeconfig /tmp/kubeconfig-remote config set-cluster kubernetes --server=https://${KUBERNETES_CONTROLLER_ADDR}:6443

@@ -39,11 +39,11 @@ var _ admission.CustomValidator = &validator{}
 
 // validator for validating Kubermatic ClusterTemplate CRs.
 type validator struct {
-	features     features.FeatureGate
-	client       ctrlruntimeclient.Client
-	seedGetter   provider.SeedGetter
-	configGetter provider.KubermaticConfigurationGetter
-	caBundle     *x509.CertPool
+	features         features.FeatureGate
+	seedClient       ctrlruntimeclient.Client
+	datacenterGetter provider.DatacenterGetter
+	configGetter     provider.KubermaticConfigurationGetter
+	caBundle         *x509.CertPool
 
 	// disableProviderValidation is only for unit tests, to ensure no
 	// provider would phone home to validate dummy test credentials
@@ -51,13 +51,13 @@ type validator struct {
 }
 
 // NewValidator returns a new cluster template validator.
-func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter, configGetter provider.KubermaticConfigurationGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
+func NewValidator(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, datacenterGetter provider.DatacenterGetter, features features.FeatureGate, caBundle *x509.CertPool) *validator {
 	return &validator{
-		client:       client,
-		features:     features,
-		seedGetter:   seedGetter,
-		configGetter: configGetter,
-		caBundle:     caBundle,
+		seedClient:       client,
+		features:         features,
+		configGetter:     configGetter,
+		datacenterGetter: datacenterGetter,
+		caBundle:         caBundle,
 	}
 }
 
@@ -97,15 +97,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 }
 
 func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.ClusterSpec) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
-	seed, err := v.seedGetter()
-	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
-	}
-	if seed == nil {
-		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
-	}
-
-	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(c, seed)
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(ctx, c, v.datacenterGetter)
 	if fieldErr != nil {
 		return nil, nil, fieldErr
 	}
@@ -114,7 +106,7 @@ func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermat
 		return datacenter, nil, nil
 	}
 
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.client)
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.seedClient)
 	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, v.caBundle)
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)

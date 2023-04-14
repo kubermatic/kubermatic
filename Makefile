@@ -15,9 +15,8 @@
 export CGO_ENABLED ?= 0
 export GOFLAGS ?= -mod=readonly -trimpath
 export GO111MODULE = on
-export KUBERMATIC_EDITION ?= ce
 DOCKER_REPO ?= quay.io/kubermatic
-REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
+REPO = $(DOCKER_REPO)/kubermatic
 CMD ?= $(filter-out OWNERS nodeport-proxy kubeletdnat-controller network-interface-manager, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
@@ -47,7 +46,7 @@ build: $(CMD)
 $(CMD): %: $(BUILD_DEST)/%
 
 $(BUILD_DEST)/%: cmd/% download-gocache
-	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
+	GOOS=$(GOOS) go build $(GOTOOLFLAGS) -o $@ ./cmd/$*
 
 .PHONY: install
 install:
@@ -71,8 +70,8 @@ build-tests:
 	@# without actually running them by using `-run` with a non-existing test.
 	@# **Important:** Do not replace this with one `go test` with multiple tags,
 	@# as that doesn't properly reflect if each individual tag still builds
-	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/nodeport-proxy/...
-	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
+	go test -tags "e2e" -run nope ./pkg/test/e2e/nodeport-proxy/...
+	go test -tags "integration" -run nope ./pkg/... ./cmd/... ./codegen/...
 
 .PHONY: test-integration
 test-integration:
@@ -133,10 +132,6 @@ run-controller-manager:
 .PHONY: run-operator
 run-operator:
 	./hack/run-operator.sh
-
-.PHONY: run-master-controller-manager
-run-master-controller-manager:
-	./hack/run-master-controller-manager.sh
 
 .PHONY: verify
 verify:

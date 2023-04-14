@@ -72,7 +72,9 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 
 			network := data.Cluster().Spec.Cloud.Hetzner.Network
 			if network == "" {
-				network = data.DC().Spec.Hetzner.Network
+				if hetzner := data.Datacenter().Spec.Provider.Hetzner; hetzner != nil {
+					network = hetzner.Network
+				}
 			}
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)

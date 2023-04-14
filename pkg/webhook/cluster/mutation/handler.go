@@ -41,19 +41,19 @@ type AdmissionHandler struct {
 	log     logr.Logger
 	decoder *admission.Decoder
 
-	client       ctrlruntimeclient.Client
-	seedGetter   provider.SeedGetter
-	configGetter provider.KubermaticConfigurationGetter
-	caBundle     *x509.CertPool
+	client           ctrlruntimeclient.Client
+	datacenterGetter provider.DatacenterGetter
+	configGetter     provider.KubermaticConfigurationGetter
+	caBundle         *x509.CertPool
 }
 
 // NewAdmissionHandler returns a new cluster AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *AdmissionHandler {
+func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, datacenterGetter provider.DatacenterGetter, caBundle *x509.CertPool) *AdmissionHandler {
 	return &AdmissionHandler{
-		client:       client,
-		configGetter: configGetter,
-		seedGetter:   seedGetter,
-		caBundle:     caBundle,
+		client:           client,
+		configGetter:     configGetter,
+		datacenterGetter: datacenterGetter,
+		caBundle:         caBundle,
 	}
 }
 
@@ -98,7 +98,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
 	}
 
-	mutator := NewMutator(h.client, h.configGetter, h.seedGetter, h.caBundle)
+	mutator := NewMutator(h.client, h.configGetter, h.datacenterGetter, h.caBundle)
 
 	mutated, mutateErr := mutator.Mutate(ctx, oldCluster, cluster)
 	if mutateErr != nil {

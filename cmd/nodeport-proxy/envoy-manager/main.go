@@ -25,6 +25,8 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v3/pkg/util/cli"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
+	"k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -54,7 +56,8 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
-	cli.Hello(log, "Envoy-Manager", logOpts.Debug, nil)
+	version := kubermatic.NewDefaultVersions(edition.CommunityEdition)
+	cli.Hello(log, "Envoy-Manager", logOpts.Debug, version)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {

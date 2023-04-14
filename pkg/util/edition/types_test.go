@@ -22,10 +22,10 @@ import (
 )
 
 func TestEditionString(t *testing.T) {
-	if got, exp := fmt.Sprintf("Edition: %s", CE), "Edition: Community Edition"; got != exp {
+	if got, exp := fmt.Sprintf("Edition: %s", CommunityEdition), "Edition: Community Edition"; got != exp {
 		t.Errorf("Expected %s but got %s", exp, got)
 	}
-	if got, exp := fmt.Sprintf("Edition: %s", EE), "Edition: Enterprise Edition"; got != exp {
+	if got, exp := fmt.Sprintf("Edition: %s", EnterpriseEdition), "Edition: Enterprise Edition"; got != exp {
 		t.Errorf("Expected %s but got %s", exp, got)
 	}
 }

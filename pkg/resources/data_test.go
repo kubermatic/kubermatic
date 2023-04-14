@@ -129,7 +129,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 	}
 }
 
-func TestKubermaticAPIImage(t *testing.T) {
+func TestKubermaticImage(t *testing.T) {
 	testCases := []struct {
 		name         string
 		templateData *TemplateData
@@ -183,7 +183,7 @@ func TestKubermaticAPIImage(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if img := tc.templateData.KubermaticAPIImage(); img != tc.wantAPIImage {
+			if img := tc.templateData.KubermaticImage(); img != tc.wantAPIImage {
 				t.Errorf("want kubermatic api image %q, but got %q", tc.wantAPIImage, img)
 			}
 		})

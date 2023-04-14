@@ -53,12 +53,12 @@ type Nutanix struct {
 var _ provider.ReconcilingCloudProvider = &Nutanix{}
 
 func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*Nutanix, error) {
-	if dc.Spec.Nutanix == nil {
+	if dc.Spec.Provider.Nutanix == nil {
 		return nil, errors.New("datacenter is not a Nutanix datacenter")
 	}
 
 	return &Nutanix{
-		dc:                dc.Spec.Nutanix,
+		dc:                dc.Spec.Provider.Nutanix,
 		log:               log.Logger,
 		secretKeySelector: secretKeyGetter,
 	}, nil

@@ -40,7 +40,7 @@ type ModifiersBuilder struct {
 	log         *zap.SugaredLogger
 	client      ctrlruntimeclient.Client
 	cluster     *kubermaticv1.Cluster
-	seed        *kubermaticv1.Seed
+	config      *kubermaticv1.KubermaticConfiguration
 	externalURL string
 	// used to ease unit tests
 	lookupFunction lookupFunction
@@ -63,8 +63,8 @@ func (m *ModifiersBuilder) Cluster(c *kubermaticv1.Cluster) *ModifiersBuilder {
 	return m
 }
 
-func (m *ModifiersBuilder) Seed(s *kubermaticv1.Seed) *ModifiersBuilder {
-	m.seed = s
+func (m *ModifiersBuilder) KubermaticConfiguration(c *kubermaticv1.KubermaticConfiguration) *ModifiersBuilder {
+	m.config = c
 	return m
 }
 
@@ -80,20 +80,17 @@ func (m *ModifiersBuilder) lookupFunc(l lookupFunction) *ModifiersBuilder {
 
 func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Cluster), error) {
 	var modifiers []func(*kubermaticv1.Cluster)
-	if m.seed == nil {
-		return modifiers, errors.New("providing seed is mandatory for building address modifiers")
+	if m.config == nil {
+		return modifiers, errors.New("providing KubermaticConfiguration is mandatory for building address modifiers")
 	}
 	if m.cluster == nil {
-		return modifiers, errors.New("providing cluster is mandatory for building address modifiers")
+		return modifiers, errors.New("providing Cluster is mandatory for building address modifiers")
 	}
 	if m.client == nil {
 		return modifiers, errors.New("providing client is mandatory for building address modifiers")
 	}
 
-	subdomain := m.seed.Name
-	if m.seed.Spec.SeedDNSOverwrite != "" {
-		subdomain = m.seed.Spec.SeedDNSOverwrite
-	}
+	subdomain := m.config.Spec.Ingress.Domain
 
 	frontProxyLBServiceIP := ""
 	frontProxyLBServiceHostname := ""
@@ -247,7 +244,7 @@ func (m *ModifiersBuilder) getFrontProxyLBServiceData(frontProxyLoadBalancerServ
 func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 	resolvedIPs, err := m.lookupFunction(hostname)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup ip for %s: %w", hostname, err)
+		return "", fmt.Errorf("failed to lookup IP for %s: %w", hostname, err)
 	}
 	ipList := sets.New[string]()
 	for _, ip := range resolvedIPs {
@@ -257,12 +254,12 @@ func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 	}
 	ips := sets.List(ipList)
 	if len(ips) == 0 {
-		return "", fmt.Errorf("no ip addresses found for %s: %w", hostname, err)
+		return "", fmt.Errorf("no IP addresses found for %s", hostname)
 	}
 
 	// Just one ipv4
 	if len(ips) > 1 {
-		m.log.Debugw("Lookup returned multiple ipv4 addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
+		m.log.Debugw("Lookup returned multiple IPv4 addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
 	}
 	return ips[0], nil
 }

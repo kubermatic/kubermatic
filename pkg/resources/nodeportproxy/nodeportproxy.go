@@ -399,12 +399,12 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 				}
 			}
 
-			seed := data.Seed()
+			cfg := data.KubermaticConfiguration()
 
 			// seed.Spec.NodeportProxy.Annotations is deprecated and should be removed in the future
 			// To avoid breaking changes we still copy these values over to the service annotations
-			if seed.Spec.NodeportProxy.Annotations != nil {
-				s.Annotations = seed.Spec.NodeportProxy.Annotations
+			if cfg.Spec.NodeportProxy.Annotations != nil {
+				s.Annotations = cfg.Spec.NodeportProxy.Annotations
 			}
 
 			if s.Annotations == nil {
@@ -413,8 +413,8 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 
 			// Copy custom annotations specified for the loadBalancer Service. They have a higher precedence then
 			// the common annotations specified in seed.Spec.NodeportProxy.Annotations, which is deprecated.
-			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
-				for k, v := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
+			if cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations != nil {
+				for k, v := range cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.Annotations {
 					s.Annotations[k] = v
 				}
 			}
@@ -422,8 +422,8 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 			// set of Source IP ranges
 			sourceIPList := sets.Set[string]{}
 
-			if data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
-				for _, cidr := range data.Seed().Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
+			if cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges != nil {
+				for _, cidr := range cfg.Spec.NodeportProxy.Envoy.LoadBalancerService.SourceRanges {
 					sourceIPList.Insert(string(cidr))
 				}
 			}

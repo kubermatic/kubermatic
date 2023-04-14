@@ -19,16 +19,12 @@ package mutation
 import (
 	"context"
 	"crypto/x509"
-	"errors"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v3/pkg/defaulting"
-	clustermutation "k8c.io/kubermatic/v2/pkg/mutation/cluster"
+	clustermutation "k8c.io/kubermatic/v3/pkg/mutation/cluster"
 	"k8c.io/kubermatic/v3/pkg/provider"
 	"k8c.io/kubermatic/v3/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,10 +32,10 @@ import (
 
 // Mutator for mutating Kubermatic Cluster CRD.
 type Mutator struct {
-	client       ctrlruntimeclient.Client
-	seedGetter   provider.SeedGetter
-	configGetter provider.KubermaticConfigurationGetter
-	caBundle     *x509.CertPool
+	seedClient       ctrlruntimeclient.Client
+	datacenterGetter provider.DatacenterGetter
+	configGetter     provider.KubermaticConfigurationGetter
+	caBundle         *x509.CertPool
 
 	// disableProviderMutation is only for unit tests, to ensure no
 	// provider would phone home to validate dummy test credentials
@@ -47,12 +43,12 @@ type Mutator struct {
 }
 
 // NewAdmissionHandler returns a new cluster AdmissionHandler.
-func NewMutator(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *Mutator {
+func NewMutator(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, datacenterGetter provider.DatacenterGetter, caBundle *x509.CertPool) *Mutator {
 	return &Mutator{
-		client:       client,
-		configGetter: configGetter,
-		seedGetter:   seedGetter,
-		caBundle:     caBundle,
+		seedClient:       client,
+		configGetter:     configGetter,
+		datacenterGetter: datacenterGetter,
+		caBundle:         caBundle,
 	}
 }
 
@@ -62,7 +58,7 @@ func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermatic
 		return newCluster, nil
 	}
 
-	seed, provider, fieldErr := m.buildDefaultingDependencies(ctx, newCluster)
+	provider, datacenter, fieldErr := m.determineCloudProvider(ctx, newCluster)
 	if fieldErr != nil {
 		return nil, fieldErr
 	}
@@ -73,48 +69,40 @@ func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermatic
 	}
 
 	// apply defaults to the existing clusters
-	defaultTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, m.client, seed)
+	defaultTemplate, err := defaulting.GetDefaultingClusterTemplate(ctx, m.seedClient, config)
 	if err != nil {
 		return nil, field.InternalError(nil, err)
 	}
 
-	if err := defaulting.DefaultClusterSpec(ctx, &newCluster.Spec, defaultTemplate, seed, config, provider); err != nil {
+	if err := defaulting.DefaultClusterSpec(ctx, &newCluster.Spec, defaultTemplate, config, m.datacenterGetter, provider); err != nil {
 		return nil, field.InternalError(nil, err)
 	}
 
 	// perform operation-dependent mutations
 	if oldCluster == nil {
-		fieldErr = clustermutation.MutateCreate(newCluster, config, seed, provider)
+		fieldErr = clustermutation.MutateCreate(newCluster, config, datacenter, provider)
 	} else {
-		fieldErr = clustermutation.MutateUpdate(oldCluster, newCluster, config, seed, provider)
+		fieldErr = clustermutation.MutateUpdate(oldCluster, newCluster, config, datacenter, provider)
 	}
 
 	return newCluster, fieldErr
 }
 
-func (m *Mutator) buildDefaultingDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
-	seed, err := m.seedGetter()
-	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
-	}
-	if seed == nil {
-		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
-	}
-
+func (m *Mutator) determineCloudProvider(ctx context.Context, c *kubermaticv1.Cluster) (provider.CloudProvider, *kubermaticv1.Datacenter, *field.Error) {
 	if m.disableProviderMutation {
-		return seed, nil, nil
+		return nil, nil, nil
 	}
 
-	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
+	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(ctx, &c.Spec, m.datacenterGetter)
 	if fieldErr != nil {
 		return nil, nil, fieldErr
 	}
 
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, m.client)
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, m.seedClient)
 	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, m.caBundle)
 	if err != nil {
 		return nil, nil, field.InternalError(nil, err)
 	}
 
-	return seed, cloudProvider, nil
+	return cloudProvider, datacenter, nil
 }

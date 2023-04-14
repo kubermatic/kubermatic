@@ -78,7 +78,6 @@ if [ -z "${SKIP_KUBECTL_TESTS:-}" ]; then
     _build/kubermatic-operator \
     _build/kubermatic-installer \
     _build/kubermatic-webhook \
-    _build/master-controller-manager \
     _build/seed-controller-manager \
     _build/user-cluster-controller-manager \
     _build/user-cluster-webhook
@@ -102,5 +101,5 @@ for file in $(grep --files-with-matches --recursive --extended-regexp '//go:buil
     continue
   fi
 
-  go_test $(echo $file | sed 's/\//_/g') -tags "integration,${KUBERMATIC_EDITION:-ce}" -race ./${file} -v
+  go_test $(echo $file | sed 's/\//_/g') -tags "integration" -race ./${file} -v
 done

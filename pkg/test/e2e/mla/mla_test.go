@@ -36,7 +36,7 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller"
 	"k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"

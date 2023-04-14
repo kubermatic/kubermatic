@@ -33,30 +33,24 @@ import (
 )
 
 type TestJig struct {
-	ProjectJig *ProjectJig
 	ClusterJig *ClusterJig
 	MachineJig *MachineJig
 }
 
-func (j *TestJig) Setup(ctx context.Context, waitMode MachineWaitMode) (*kubermaticv1.Project, *kubermaticv1.Cluster, error) {
-	project, err := j.ProjectJig.Create(ctx, true)
+func (j *TestJig) Setup(ctx context.Context, waitMode MachineWaitMode) (*kubermaticv1.Cluster, error) {
+	cluster, err := j.ClusterJig.Create(ctx, true)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create project: %w", err)
-	}
-
-	cluster, err := j.ClusterJig.WithProject(project).Create(ctx, true)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create cluster: %w", err)
+		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
 
 	if j.MachineJig != nil {
 		err = j.MachineJig.Create(ctx, waitMode, cluster.Spec.Cloud.DatacenterName)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to create worker nodes: %w", err)
+			return nil, fmt.Errorf("failed to create worker nodes: %w", err)
 		}
 	}
 
-	return project, cluster, nil
+	return cluster, nil
 }
 
 type ErrorPrinter interface {
@@ -67,12 +61,6 @@ func (j *TestJig) Cleanup(ctx context.Context, t ErrorPrinter, synchronous bool)
 	if j.ClusterJig != nil {
 		if err := j.ClusterJig.Delete(ctx, synchronous); err != nil {
 			t.Errorf("Failed to delete cluster: %v", err)
-		}
-	}
-
-	if j.ProjectJig != nil {
-		if err := j.ProjectJig.Delete(ctx, synchronous); err != nil {
-			t.Errorf("Failed to delete project: %v", err)
 		}
 	}
 }
@@ -102,8 +90,6 @@ func (j *TestJig) WaitForHealthyControlPlane(ctx context.Context, timeout time.D
 }
 
 func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AlibabaCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -123,15 +109,12 @@ func NewAlibabaCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithCloudProviderSpec(provider.NewAlibabaConfig().WithInstanceType("ecs.ic5.large").WithDiskSize(40).Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AWSCredentials, replicas int, spotMaxPriceUSD *string) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -156,15 +139,12 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 		WithCloudProviderSpec(awsConfig.Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewAzureCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AzureCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -192,15 +172,12 @@ func NewAzureCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cr
 			Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials HetznerCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -219,15 +196,12 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx21").Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewOpenStackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials OpenStackCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -251,15 +225,12 @@ func NewOpenStackCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger
 		WithCloudProviderSpec(provider.NewOpenStackConfig().WithFlavor("m1.small").Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewVSphereCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials VSphereCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -279,15 +250,12 @@ func NewVSphereCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithCloudProviderSpec(provider.NewVSphereConfig().WithCPUs(2).WithMemoryMB(4096).WithDiskSizeGB(10).Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewDigitaloceanCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials DigitaloceanCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -306,15 +274,12 @@ func NewDigitaloceanCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 		WithCloudProviderSpec(provider.NewDigitaloceanConfig().WithSize("c-2").WithBackups(false).WithMonitoring(false).Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials GCPCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -333,15 +298,12 @@ func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 		WithCloudProviderSpec(provider.NewGCPConfig().WithMachineType("e2-small").WithDiskSize(25).WithDiskType("pd-standard").WithPreemptible(false).Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials EquinixMetalCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -361,15 +323,12 @@ func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLog
 		WithCloudProviderSpec(provider.NewEquinixMetalConfig().WithInstanceType("c3.small.x86").Build())
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 		MachineJig: machineJig,
 	}
 }
 
 func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials BYOCredentials) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
 	clusterJig := NewClusterJig(client, log).
 		WithHumanReadableName("e2e test cluster").
 		WithSSHKeyAgent(false).
@@ -380,7 +339,6 @@ func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 		})
 
 	return &TestJig{
-		ProjectJig: projectJig,
 		ClusterJig: clusterJig,
 	}
 }

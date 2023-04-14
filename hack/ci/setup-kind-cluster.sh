@@ -22,7 +22,6 @@ if [ -z "${JOB_NAME:-}" ] || [ -z "${PROW_JOB_ID:-}" ]; then
 fi
 
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 WITH_WORKERS="${WITH_WORKERS:-}"
 WORKERS=''
 
@@ -142,7 +141,7 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # a NodePort service on the host
   echodate "Starting cluster exposer"
 
-  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
+  CGO_ENABLED=0 go build -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
   /tmp/clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
     --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
