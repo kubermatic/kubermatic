@@ -114,6 +114,9 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to enable MLA: %v", err)
 	}
 
+	logger.Info("Waiting for new seed-controller-manager to acquire leader lease...")
+	time.Sleep(30 * time.Second)
+
 	logger.Info("Creating Grafana client for user cluster...")
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 	cortexClient := cortex.NewClient(httpClient, alertmanagerURL, rulerURL, lokiURL)
@@ -139,6 +142,7 @@ func TestMLAIntegration(t *testing.T) {
 		return nil, nil
 	})
 	if err != nil {
+		// this is actually a fatal error, as no other reconcilers can do anything useful without an org
 		t.Fatalf("failed to reconcile, Grafana organization never appeared: %v", err)
 	}
 
@@ -174,20 +178,25 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to disable MLA: %v", err)
 	}
 
+	logger.Info("Waiting for new seed-controller-manager to acquire leader lease...")
+	time.Sleep(30 * time.Second)
+
 	logger.Info("Waiting for cluster to healthy...")
 	if err := testJig.WaitForHealthyControlPlane(ctx, 2*time.Minute); err != nil {
 		t.Fatalf("cluster did not get healthy: %v", err)
 	}
 
-	logger.Info("Waiting for Grafana user to be gone...")
-	err = wait.PollLog(ctx, logger, 3*time.Second, 5*time.Minute, func() (transient error, terminal error) {
-		if _, err := grafanaClient.LookupUser(ctx, kkpUser.Spec.Email); err == nil {
-			return errors.New("user still exists"), nil
+	if kkpUser != nil {
+		logger.Info("Waiting for Grafana user to be gone...")
+		err = wait.PollLog(ctx, logger, 3*time.Second, 5*time.Minute, func() (transient error, terminal error) {
+			if _, err := grafanaClient.LookupUser(ctx, kkpUser.Spec.Email); err == nil {
+				return errors.New("user still exists"), nil
+			}
+			return nil, nil
+		})
+		if err != nil {
+			t.Fatal("cleanup did not complete successfully")
 		}
-		return nil, nil
-	})
-	if err != nil {
-		t.Fatal("cleanup did not complete successfully")
 	}
 }
 
@@ -234,7 +243,7 @@ func verifyGrafanaUser(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 	}
 
 	if user.IsGrafanaAdmin != true || user.OrgID != org.ID {
-		return nil, fmt.Errorf("user expected to be Grafana Admin and have orgID %d", org.ID)
+		return nil, fmt.Errorf("user expected to be Grafana Admin and have orgID %d, but is %+v", org.ID, user)
 	}
 
 	log.Info("Verifying Grafana org user's role...")
@@ -243,8 +252,8 @@ func verifyGrafanaUser(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 		return nil, fmt.Errorf("failed to get grafana org user: %w", err)
 	}
 
-	if orgUser.Role != string(grafanasdk.ROLE_EDITOR) {
-		return nil, fmt.Errorf("orgUser %v expected to have Editor role, but has %v", orgUser, orgUser.Role)
+	if orgUser.Role != string(grafanasdk.ROLE_ADMIN) {
+		return nil, fmt.Errorf("orgUser %v expected to have Admin role, but has %v", orgUser, orgUser.Role)
 	}
 
 	log.Info("Grafana user successfully verified.")

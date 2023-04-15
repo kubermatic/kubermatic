@@ -17,9 +17,10 @@ limitations under the License.
 package mlacontroller
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"reflect"
 	"time"
 
 	"go.uber.org/zap"
@@ -173,6 +174,11 @@ func (r *grafanaDatasourceReconciler) reconcile(ctx context.Context, cluster *ku
 
 	org, err := gClient.GetOrgByOrgName(ctx, GrafanaOrganization)
 	if err != nil {
+		if grafana.IsNotFoundErr(err) {
+			log.Debug("Organization not found.")
+			return nil, nil
+		}
+
 		return nil, fmt.Errorf("failed to get Grafana organization %q: %w", GrafanaOrganization, err)
 	}
 
@@ -181,7 +187,7 @@ func (r *grafanaDatasourceReconciler) reconcile(ctx context.Context, cluster *ku
 
 	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
 	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
-		return nil, r.handleDeletion(ctx, cluster, gClient)
+		return nil, r.handleDeletion(ctx, log, cluster, gClient)
 	}
 
 	if err := kubernetes.TryAddFinalizer(ctx, r.seedClient, cluster, datasourceCleanupFinalizer); err != nil {
@@ -218,14 +224,14 @@ func (r *grafanaDatasourceReconciler) reconcile(ctx context.Context, cluster *ku
 	if err := r.ensureServices(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Services: %w", err)
 	}
-	if err := r.ensureDatasources(ctx, gClient, cluster, org); err != nil {
+	if err := r.ensureDatasources(ctx, log, gClient, cluster, org); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Grafana datasources: %w", err)
 	}
 
 	return nil, nil
 }
 
-func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, gClient grafana.Client, cluster *kubermaticv1.Cluster, org grafanasdk.Org) error {
+func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, log *zap.SugaredLogger, gClient grafana.Client, cluster *kubermaticv1.Cluster, org grafanasdk.Org) error {
 	alertmanagerDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
 		UID:    DatasourceUIDForCluster(grafana.DatasourceTypeAlertmanager, cluster),
@@ -238,7 +244,7 @@ func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, gCl
 			"implementation":             "cortex",
 		},
 	}
-	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled, alertmanagerDS, gClient); err != nil {
+	if err := r.reconcileDatasource(ctx, log, cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled, alertmanagerDS, gClient); err != nil {
 		return fmt.Errorf("failed to ensure Grafana Alertmanager datasource: %w", err)
 	}
 
@@ -253,7 +259,7 @@ func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, gCl
 			"alertmanagerUid": DatasourceUIDForCluster(grafana.DatasourceTypeAlertmanager, cluster),
 		},
 	}
-	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS, gClient); err != nil {
+	if err := r.reconcileDatasource(ctx, log, cluster.Spec.MLA.LoggingEnabled, lokiDS, gClient); err != nil {
 		return fmt.Errorf("failed to ensure Grafana Loki datasource: %w", err)
 	}
 
@@ -269,40 +275,72 @@ func (r *grafanaDatasourceReconciler) ensureDatasources(ctx context.Context, gCl
 			"httpMethod":      "POST",
 		},
 	}
-	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled, prometheusDS, gClient); err != nil {
+	if err := r.reconcileDatasource(ctx, log, cluster.Spec.MLA.MonitoringEnabled, prometheusDS, gClient); err != nil {
 		return fmt.Errorf("failed to ensure Grafana Prometheus datasource: %w", err)
 	}
 
 	return nil
 }
 
-func (r *grafanaDatasourceReconciler) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource, gClient grafana.Client) error {
+// datasourcesEqual returns true if both datasources are identical with
+// regards to the fields set by this reconciler. Grafana defaults some
+// fields server-side which this function is meant to ignore.
+func datasourcesEqual(a, b grafanasdk.Datasource) bool {
+	if a.OrgID != b.OrgID || a.UID != b.UID || a.Name != b.Name || a.Type != b.Type || a.Access != b.Access || a.URL != b.URL {
+		return false
+	}
+
+	jsonA, err := json.Marshal(a.JSONData)
+	if err != nil {
+		return false
+	}
+
+	jsonB, err := json.Marshal(b.JSONData)
+	if err != nil {
+		return false
+	}
+
+	return bytes.Equal(jsonA, jsonB)
+}
+
+func (r *grafanaDatasourceReconciler) reconcileDatasource(ctx context.Context, log *zap.SugaredLogger, enabled bool, expected grafanasdk.Datasource, gClient grafana.Client) error {
+	dsLog := log.With("datasource", expected.UID)
+
 	if enabled {
 		ds, err := gClient.GetDatasourceByUID(ctx, expected.UID)
 		if err != nil {
-			if grafana.IsNotFoundErr(err) {
-				status, err := gClient.CreateDatasource(ctx, expected)
-				if err != nil {
-					return fmt.Errorf("unable to add datasource: %w", err)
-				}
-				if status.ID != nil {
-					return nil
-				}
-				// possibly already exists with such name
-				ds, err = gClient.GetDatasourceByName(ctx, expected.Name)
-				if err != nil {
-					return fmt.Errorf("unable to get datasource by name %s", expected.Name)
-				}
+			if !grafana.IsNotFoundErr(err) {
+				return fmt.Errorf("failed to check datasource: %w", err)
+			}
+
+			dsLog.Info("Creating Grafana datasource")
+			status, err := gClient.CreateDatasource(ctx, expected)
+			if err != nil {
+				return fmt.Errorf("unable to add datasource: %w", err)
+			}
+			if status.ID != nil {
+				return nil
+			}
+
+			// possibly already exists with such name
+			ds, err = gClient.GetDatasourceByName(ctx, expected.Name)
+			if err != nil {
+				return fmt.Errorf("unable to get datasource by name %s", expected.Name)
 			}
 		}
 		expected.ID = ds.ID
-		if !reflect.DeepEqual(ds, expected) {
+
+		if !datasourcesEqual(ds, expected) {
+			dsLog.Info("Updating Grafana datasource")
 			if _, err := gClient.UpdateDatasource(ctx, expected); err != nil {
 				return fmt.Errorf("unable to update datasource: %w", err)
 			}
 		}
-	} else if _, err := gClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil && !grafana.IsNotFoundErr(err) {
-		return fmt.Errorf("unable to delete datasource: %w", err)
+	} else {
+		dsLog.Info("Deleting Grafana datasource")
+		if _, err := gClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil && !grafana.IsNotFoundErr(err) {
+			return fmt.Errorf("unable to delete datasource: %w", err)
+		}
 	}
 
 	return nil
@@ -342,20 +380,20 @@ func (r *grafanaDatasourceReconciler) ensureServices(ctx context.Context, c *kub
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.seedClient)
 }
 
-func (r *grafanaDatasourceReconciler) Cleanup(ctx context.Context) error {
+func (r *grafanaDatasourceReconciler) Cleanup(ctx context.Context, log *zap.SugaredLogger) error {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList); err != nil {
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		if err := r.handleDeletion(ctx, &cluster, nil); err != nil {
+		if err := r.handleDeletion(ctx, log.With("cluster", cluster.Name), &cluster, nil); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *grafanaDatasourceReconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster, gClient grafana.Client) error {
+func (r *grafanaDatasourceReconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, gClient grafana.Client) error {
 	if gClient != nil {
 		datasources := []string{
 			DatasourceUIDForCluster(grafana.DatasourceTypeAlertmanager, cluster),
@@ -364,6 +402,7 @@ func (r *grafanaDatasourceReconciler) handleDeletion(ctx context.Context, cluste
 		}
 
 		for _, ds := range datasources {
+			log.Infow("Deleting Grafana datasource", "datasource", ds)
 			if _, err := gClient.DeleteDatasourceByUID(ctx, ds); err != nil && !grafana.IsNotFoundErr(err) {
 				return fmt.Errorf("unable to delete datasource %q: %w", ds, err)
 			}

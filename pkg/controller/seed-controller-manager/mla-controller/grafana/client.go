@@ -63,6 +63,8 @@ type Client interface {
 	DeleteOrgUser(ctx context.Context, orgID uint, userID uint) (grafanasdk.StatusMessage, error)
 	DeleteGlobalUser(ctx context.Context, userID uint) (grafanasdk.StatusMessage, error)
 
+	UpdateUserPermissions(ctx context.Context, permissions grafanasdk.UserPermissions, userID uint) (grafanasdk.StatusMessage, error)
+
 	CreateDatasource(ctx context.Context, ds grafanasdk.Datasource) (grafanasdk.StatusMessage, error)
 	GetDatasourceByName(ctx context.Context, name string) (grafanasdk.Datasource, error)
 	GetDatasourceByUID(ctx context.Context, uid string) (grafanasdk.Datasource, error)
@@ -189,5 +191,6 @@ func NewClientProvider(client ctrlruntimeclient.Client, httpClient *http.Client,
 }
 
 func IsNotFoundErr(err error) bool {
-	return errors.Is(err, grafanasdk.ErrNotFound{})
+	// do not use errors.Is(), as it would also compare error messages
+	return errors.As(err, &grafanasdk.ErrNotFound{})
 }

@@ -35,7 +35,7 @@ import (
 )
 
 type cleaner interface {
-	Cleanup(context.Context) error
+	Cleanup(context.Context, *zap.SugaredLogger) error
 }
 
 // cleanupReconciler is a "meta" reconciler which is used when MLA is globally disabled;
@@ -93,7 +93,7 @@ func (r *cleanupReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 func (r *cleanupReconciler) reconcile(ctx context.Context) error {
 	for _, cleaner := range r.cleaners {
-		if err := cleaner.Cleanup(ctx); err != nil {
+		if err := cleaner.Cleanup(ctx, r.log); err != nil {
 			return err
 		}
 	}
