@@ -71,7 +71,7 @@ echodate "Running MLA tests..."
 
 go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla \
   -kubeconfig "$KUBECONFIG" \
-  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
+  -byo-kkp-datacenter byo-kubernetes \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Tests completed successfully!"

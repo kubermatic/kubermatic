@@ -76,7 +76,7 @@ alertmanager_config: |
 )
 
 var (
-	credentials jig.AWSCredentials
+	credentials jig.BYOCredentials
 	logOptions  = utils.DefaultLogOptions
 )
 
@@ -100,7 +100,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	// create test environment
-	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
+	testJig := jig.NewBYOCluster(seedClient, logger, credentials)
 	testJig.ClusterJig.WithTestName("mla")
 
 	cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
