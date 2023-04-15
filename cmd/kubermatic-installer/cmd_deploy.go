@@ -33,11 +33,9 @@ import (
 	"k8c.io/kubermatic/v3/pkg/install/helm"
 	"k8c.io/kubermatic/v3/pkg/install/stack"
 	"k8c.io/kubermatic/v3/pkg/install/stack/common"
-	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-seed"
 	userclustermla "k8c.io/kubermatic/v3/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v3/pkg/log"
-	"k8c.io/kubermatic/v3/pkg/util/flagopts"
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -59,12 +57,12 @@ type DeployOptions struct {
 	Kubeconfig  string
 	KubeContext string
 
-	HelmBinary         string
-	HelmValues         string
-	HelmTimeout        time.Duration
-	SkipDependencies   bool
-	SkipSeedValidation sets.Set[string]
-	Force              bool
+	HelmBinary                string
+	HelmValues                string
+	HelmTimeout               time.Duration
+	SkipDependencies          bool
+	SkipUserClusterValidation bool
+	Force                     bool
 
 	StorageClass       string
 	DisableTelemetry   bool
@@ -84,13 +82,12 @@ type DeployOptions struct {
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := DeployOptions{
-		HelmTimeout:        5 * time.Minute,
-		HelmBinary:         "helm",
-		SkipSeedValidation: sets.New[string](),
+		HelmTimeout: 5 * time.Minute,
+		HelmBinary:  "helm",
 	}
 
 	cmd := &cobra.Command{
-		Use:          "deploy [kubermatic-master | kubermatic-seed | usercluster-mla]",
+		Use:          "deploy [kubermatic-seed | usercluster-mla]",
 		Short:        "Install or upgrade the current installation to the installer's built-in version",
 		Long:         "Installs or upgrades the current installation to the installer's built-in version",
 		RunE:         DeployFunc(logger, versions, &opt),
@@ -124,7 +121,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
-	cmd.PersistentFlags().Var(flagopts.SetFlag(opt.SkipSeedValidation), "skip-seed-validation", "comma-separated list of seed clusters to skip running the preflight checks on (use with caution, as this can lead to defunct KKP setups)")
+	cmd.PersistentFlags().BoolVar(&opt.SkipUserClusterValidation, "skip-usercluster-validation", false, "do not validate that existing userclusters are compatible with the new KKP version (use with caution, as this can lead to defunct KKP setups)")
 	cmd.PersistentFlags().BoolVar(&opt.Force, "force", false, "perform Helm upgrades even when the release is up-to-date")
 
 	cmd.PersistentFlags().StringVar(&opt.StorageClass, "storageclass", "", fmt.Sprintf("type of StorageClass to create (one of %v)", sets.List(common.SupportedStorageClassProviders())))
@@ -186,12 +183,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		var kubermaticStack stack.Stack
 		switch stackName {
+		case "kubermatic-seed", "":
+			kubermaticStack = kubermaticseed.NewStack()
 		case "usercluster-mla":
 			kubermaticStack = userclustermla.NewStack()
-		case "kubermatic-seed":
-			kubermaticStack = kubermaticseed.NewStack()
-		case "kubermatic-master", "":
-			kubermaticStack = kubermaticmaster.NewStack()
 		default:
 			return fmt.Errorf("unknown stack %q specified", stackName)
 		}
@@ -227,6 +222,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			EnableNginxIngressMigration:        opt.MigrateNginx,
 			DisableTelemetry:                   opt.DisableTelemetry,
 			DisableDependencyUpdate:            opt.SkipDependencies,
+			SkipUserClusterValidation:          opt.SkipUserClusterValidation,
 			AllowEditionChange:                 opt.AllowEditionChange,
 			MLASkipMinio:                       opt.MLASkipMinio,
 			MLASkipMinioLifecycleMgr:           opt.MLASkipMinioLifecycleMgr,
@@ -270,7 +266,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		// try to auto-find the KubermaticConfiguration
 		if kubermaticConfig == nil {
-			kubermaticConfig, err = findKubermaticConfiguration(appContext, kubeClient, kubermaticmaster.KubermaticOperatorNamespace)
+			kubermaticConfig, err = findKubermaticConfiguration(appContext, kubeClient, kubermaticseed.KubermaticOperatorNamespace)
 			if err != nil {
 				return fmt.Errorf("failed to detect current KubermaticConfiguration: %w", err)
 			}

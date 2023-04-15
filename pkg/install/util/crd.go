@@ -34,7 +34,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string, versions *kubermaticversion.Versions, kind crd.ClusterKind) error {
+func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log logrus.FieldLogger, directory string, versions *kubermaticversion.Versions) error {
 	crds, err := crd.LoadFromDirectory(directory)
 	if err != nil {
 		return fmt.Errorf("failed to load CRDs: %w", err)
@@ -42,12 +42,6 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 
 	for _, crdObject := range crds {
 		logger := log.WithField("name", crdObject.GetName())
-
-		if crd.SkipCRDOnCluster(crdObject, kind) {
-			logger.Debug("Skipping CRD")
-			continue
-		}
-
 		logger.Debug("Creating CRD…")
 
 		if versions != nil {
@@ -69,10 +63,6 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 
 	// wait for CRDs to be established
 	for _, crdObject := range crds {
-		if crd.SkipCRDOnCluster(crdObject, kind) {
-			continue
-		}
-
 		if err := WaitForReadyCRD(ctx, kubeClient, crdObject.GetName(), 30*time.Second); err != nil {
 			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %w", crdObject.GetName(), err)
 		}

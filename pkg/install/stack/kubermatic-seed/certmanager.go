@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubermaticmaster
+package kubermaticseed
 
 import (
 	"context"
@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v3/pkg/install/util"
 	"k8c.io/kubermatic/v3/pkg/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/log"
-	"k8c.io/kubermatic/v3/pkg/util/crd"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -105,7 +104,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		}
 	} else {
 		sublogger.Info("Deploying Custom Resource Definitions…")
-		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd"), nil, crd.MasterCluster); err != nil {
+		if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd"), nil); err != nil {
 			return fmt.Errorf("failed to deploy CRDs: %w", err)
 		}
 	}
@@ -250,7 +249,7 @@ func migrateCertManagerV2(
 
 	// step 6: install new CRDs
 	logger.Info("Deploying new Custom Resource Definitions…")
-	if err := util.DeployCRDs(ctx, kubeClient, logger, filepath.Join(chart.Directory, "crd"), nil, crd.MasterCluster); err != nil {
+	if err := util.DeployCRDs(ctx, kubeClient, logger, filepath.Join(chart.Directory, "crd"), nil); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %w", err)
 	}
 

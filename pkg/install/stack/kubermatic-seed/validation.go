@@ -18,46 +18,309 @@ package kubermaticseed
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
 	"fmt"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
+	k8csemver "k8c.io/api/v3/pkg/semver"
+	"k8c.io/kubermatic/v3/pkg/defaulting"
+	"k8c.io/kubermatic/v3/pkg/features"
 	"k8c.io/kubermatic/v3/pkg/install/stack"
-	"k8c.io/kubermatic/v3/pkg/install/stack/common"
+	"k8c.io/kubermatic/v3/pkg/install/util"
+	"k8c.io/kubermatic/v3/pkg/provider"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v3/pkg/util/edition"
 	"k8c.io/kubermatic/v3/pkg/util/yamled"
 )
 
 func (m *SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
-	return nil
+	var errs []error
+
+	// validation can only happen if KKP was already installed, otherwise the resource types
+	// won't even be known by the kube-apiserver
+	crdsExists, err := util.HasAllReadyCRDs(ctx, opt.KubeClient, []string{
+		"clusters.kubermatic.k8c.io",
+		"datacenters.kubermatic.k8c.io",
+	})
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to check for CRDs: %w", err))
+	}
+
+	if !crdsExists {
+		return nil // nothing to do
+	}
+
+	// Ensure that no KKP upgrade was skipped.
+	kkpMinorVersion := semverlib.MustParse(opt.Versions.KubermaticCommit).Minor()
+	minMinorRequired := kkpMinorVersion - 1
+
+	// The configured KubermaticConfiguration might be a static YAML file,
+	// which would not have a status set at all. To ensure that we always
+	// get the currently live config, we fetch it from the cluster. This
+	// dynamically fetched config is only relevant to the version check, all
+	// other validations are supposed to be based on the given config.
+	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, opt.KubeClient, KubermaticOperatorNamespace)
+	if err != nil && !errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
+		return append(errs, fmt.Errorf("failed to create fetch KubermaticConfiguration: %w", err))
+	}
+
+	var currentVersion string
+	if config != nil {
+		currentVersion = config.Status.KubermaticVersion
+	}
+
+	if currentVersion != "" {
+		currentSemver, err := semverlib.NewVersion(currentVersion)
+		if err != nil {
+			return append(errs, fmt.Errorf("failed to parse existing KKP version %q: %w", currentVersion, err))
+		}
+
+		if currentSemver.Minor() < minMinorRequired {
+			return append(errs, fmt.Errorf("existing installation is on version %s and must be updated to KKP 2.%d first (sequentially to all minor releases in-between)", currentVersion, kkpMinorVersion))
+		}
+	}
+
+	// If a KubermaticConfiguration exists, check its status to compare editions.
+	if config != nil && config.Status.KubermaticEdition != "" {
+		currentEdition, err := edition.FromString(config.Status.KubermaticEdition)
+		if err != nil {
+			return append(errs, fmt.Errorf("failed to validate KKP edition: %w", err))
+		}
+
+		installerEdition := opt.Versions.KubermaticEdition
+
+		if currentEdition != installerEdition {
+			if opt.AllowEditionChange {
+				opt.Logger.Warnf("This installation will change KKP to the %s.", installerEdition)
+			} else {
+				return append(errs, fmt.Errorf("existing installation uses the %s, refusing to change to %s (if this is intended, please add the --allow-edition-change flag)", currentEdition, installerEdition))
+			}
+		}
+	}
+
+	// we need the actual, effective versioning configuration, which most users will
+	// probably not override
+	defaulted, err := defaulting.DefaultConfiguration(opt.KubermaticConfiguration, zap.NewNop().Sugar())
+	if err != nil {
+		return append(errs, fmt.Errorf("failed to apply default values to the KubermaticConfiguration: %w", err))
+	}
+
+	upgradeConstraints, constraintErrs := getAutoUpdateConstraints(defaulted)
+	if len(constraintErrs) > 0 {
+		return constraintErrs
+	}
+
+	if opt.SkipUserClusterValidation {
+		opt.Logger.Info("User cluster validation was skipped.")
+	} else {
+		opt.Logger.Info("Checking user clusters…")
+
+		// list all userclusters
+		clusters := kubermaticv1.ClusterList{}
+		if err := opt.KubeClient.List(ctx, &clusters); err != nil {
+			return append(errs, fmt.Errorf("failed to list user clusters: %w", err))
+		}
+
+		// check that each cluster still matches the configured versions
+		for _, cluster := range clusters.Items {
+			clusterVersion := cluster.Spec.Version
+
+			if !clusterVersionIsConfigured(clusterVersion, defaulted, upgradeConstraints) {
+				errs = append(errs, fmt.Errorf("cluster %s (version %s) would not be supported anymore", cluster.Name, clusterVersion))
+			}
+
+			// we effectively don't support docker in KKP 2.22; Kubernetes 1.23 clusters that are
+			// still running it need to be upgraded before proceeding with the KKP upgrade.
+			if cluster.Spec.ContainerRuntime == "docker" {
+				errs = append(errs, fmt.Errorf("cluster %s is running 'docker' as container runtime; please upgrade it to 'containerd' before proceeding", cluster.Name))
+			}
+		}
+	}
+
+	return errs
+}
+
+func getAutoUpdateConstraints(defaultedConfig *kubermaticv1.KubermaticConfiguration) ([]*semverlib.Constraints, []error) {
+	var errs []error
+
+	upgradeConstraints := []*semverlib.Constraints{}
+
+	for i, update := range defaultedConfig.Spec.Versions.Updates {
+		// only consider automated updates, otherwise we might accept an unsupported
+		// cluster that is never manually updated
+		if update.Automatic == nil || !*update.Automatic {
+			continue
+		}
+
+		from, err := semverlib.NewConstraint(update.From)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("`from` constraint %q for update rule %d is invalid: %w", update.From, i, err))
+			continue
+		}
+
+		upgradeConstraints = append(upgradeConstraints, from)
+	}
+
+	return upgradeConstraints, errs
+}
+
+func clusterVersionIsConfigured(version k8csemver.Semver, defaultedConfig *kubermaticv1.KubermaticConfiguration, constraints []*semverlib.Constraints) bool {
+	// is this version still straight up supported?
+	for _, configured := range defaultedConfig.Spec.Versions.Versions {
+		if configured.Equal(&version) {
+			return true
+		}
+	}
+
+	sversion := version.Semver()
+
+	// is an upgrade path defined from the current version to something else?
+	for _, update := range constraints {
+		if update.Check(sversion) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (*SeedStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
-	helmFailures := validateHelmValues(helmValues)
+	kubermaticFailures := validateKubermaticConfiguration(config)
+	for idx, e := range kubermaticFailures {
+		kubermaticFailures[idx] = prefixError("KubermaticConfiguration: ", e)
+	}
+
+	helmFailures := validateHelmValues(config, helmValues, opt, logger)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)
 	}
 
-	return config, helmValues, helmFailures
+	return config, helmValues, append(kubermaticFailures, helmFailures...)
 }
 
-func validateHelmValues(helmValues *yamled.Document) []error {
+func validateKubermaticConfiguration(config *kubermaticv1.KubermaticConfiguration) []error {
+	failures := []error{}
+
+	if config.Namespace != KubermaticOperatorNamespace {
+		failures = append(failures, errors.New("the namespace must be \"kubermatic\""))
+	}
+
+	if config.Spec.Ingress.Domain == "" {
+		failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
+	}
+
+	// only validate auth-related keys if we are not setting up a headless system
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
+
+		if err := validateServiceAccountKey(config.Spec.Auth.ServiceAccountKey); err != nil {
+			failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %w", err))
+		}
+
+		if config.Spec.FeatureGates[features.OIDCKubeCfgEndpoint] {
+			failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
+			failures = validateRandomSecret(config, config.Spec.Auth.IssuerCookieKey, "spec.auth.issuerCookieKey", failures)
+		}
+	}
+
+	return failures
+}
+
+func validateServiceAccountKey(privateKey string) error {
+	if len(privateKey) == 0 {
+		return errors.New("the signing key cannot be empty")
+	}
+	if len(privateKey) < 32 {
+		return errors.New("the signing key is too short, use 32 bytes or longer")
+	}
+	return nil
+}
+
+func validateRandomSecret(config *kubermaticv1.KubermaticConfiguration, value string, path string, failures []error) []error {
+	if value == "" {
+		secret, err := randomString()
+		if err == nil {
+			failures = append(failures, fmt.Errorf("%s must be a non-empty secret, for example: %s", path, secret))
+		} else {
+			failures = append(failures, fmt.Errorf("%s must be a non-empty secret", path))
+		}
+	}
+
+	return failures
+}
+
+type dexClient struct {
+	ID string `yaml:"id"`
+}
+
+func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
 	if helmValues.IsEmpty() {
 		return []error{fmt.Errorf("No Helm Values file was provided, or the file was empty; installation cannot proceed. Please use the flag --helm-values=<valuesfile.yaml>")}
 	}
 
 	failures := []error{}
 
-	path := yamled.Path{"minio", "credentials", "accessKey"}
-	accessKey, _ := helmValues.GetString(path)
-	if err := common.ValidateRandomSecret(accessKey, path.String()); err != nil {
-		failures = append(failures, err)
+	path := yamled.Path{"kubermaticOperator", "imagePullSecret"}
+	if value, _ := helmValues.GetString(path); value == "" {
+		logger.Warnf("Helm values: %s is empty, setting to spec.imagePullSecret from KubermaticConfiguration", path.String())
+		helmValues.Set(path, config.Spec.ImagePullSecret)
 	}
 
-	path = yamled.Path{"minio", "credentials", "secretKey"}
-	secretKey, _ := helmValues.GetString(path)
-	if err := common.ValidateRandomSecret(secretKey, path.String()); err != nil {
-		failures = append(failures, err)
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		path := yamled.Path{"dex", "ingress", "host"}
+		if domain, _ := helmValues.GetString(path); domain == "" {
+			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
+			helmValues.Set(path, config.Spec.Ingress.Domain)
+		}
+	}
+
+	defaultedConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
+		return failures // must stop here, without defaulting the clientID check can be misleading
+	}
+
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		clientID := defaultedConfig.Spec.Auth.ClientID
+		hasDexIssues := false
+		clients := []dexClient{}
+
+		if err := helmValues.DecodeAtPath(yamled.Path{"dex", "clients"}, &clients); err != nil {
+			hasDexIssues = true
+			logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
+		} else {
+			hasMatchingClient := false
+
+			for _, client := range clients {
+				if client.ID == clientID {
+					hasMatchingClient = true
+					break
+				}
+			}
+
+			if !hasMatchingClient {
+				hasDexIssues = true
+				logger.Warnf("Helm values: The Dex configuration does not contain a `%s` client to allow logins to the Kubermatic dashboard.", clientID)
+			}
+		}
+
+		connectors, _ := helmValues.GetArray(yamled.Path{"dex", "connectors"})
+		staticPasswords, _ := helmValues.GetArray(yamled.Path{"dex", "staticPasswords"})
+
+		if len(connectors) == 0 && len(staticPasswords) == 0 {
+			hasDexIssues = true
+			logger.Warn("Helm values: There are no connectors or static passwords configured for Dex.")
+		}
+
+		if hasDexIssues {
+			logger.Warnf("If you intend to use Dex, please refer to the example configuration to define a `%s` client and connectors.", clientID)
+		}
 	}
 
 	return failures
@@ -65,4 +328,16 @@ func validateHelmValues(helmValues *yamled.Document) []error {
 
 func prefixError(prefix string, e error) error {
 	return fmt.Errorf("%s%w", prefix, e)
+}
+
+func randomString() (string, error) {
+	c := 32
+	b := make([]byte, c)
+
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
