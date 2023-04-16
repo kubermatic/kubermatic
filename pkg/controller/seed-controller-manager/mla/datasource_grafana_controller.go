@@ -308,9 +308,11 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 
 func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource, grafanaClient *grafanasdk.Client) error {
 	if enabled {
+		fmt.Printf("GetDatasourceByUID(%v)...\n", expected.UID)
 		ds, err := grafanaClient.GetDatasourceByUID(ctx, expected.UID)
 		if err != nil {
 			if errors.As(err, &grafanasdk.ErrNotFound{}) {
+				fmt.Printf("CreateDatasource()...\n")
 				status, err := grafanaClient.CreateDatasource(ctx, expected)
 				if err != nil {
 					return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
@@ -326,8 +328,11 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 				}
 			}
 		}
+		fmt.Printf("ds: %#v\n", ds)
+		fmt.Printf("expected: %#v\n", expected)
 		expected.ID = ds.ID
 		if !reflect.DeepEqual(ds, expected) {
+			fmt.Printf("UpdateDatasource(%v)...\n", expected.UID)
 			if status, err := grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 				return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
 					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
