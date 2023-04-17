@@ -17,10 +17,11 @@ limitations under the License.
 package mla
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"time"
 
 	"go.uber.org/zap"
@@ -306,6 +307,27 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	return nil, nil
 }
 
+// datasourcesEqual returns true if both datasources are identical with
+// regards to the fields set by this reconciler. Grafana defaults some
+// fields server-side which this function is meant to ignore.
+func datasourcesEqual(a, b grafanasdk.Datasource) bool {
+	if a.OrgID != b.OrgID || a.UID != b.UID || a.Name != b.Name || a.Type != b.Type || a.Access != b.Access || a.URL != b.URL {
+		return false
+	}
+
+	jsonA, err := json.Marshal(a.JSONData)
+	if err != nil {
+		return false
+	}
+
+	jsonB, err := json.Marshal(b.JSONData)
+	if err != nil {
+		return false
+	}
+
+	return bytes.Equal(jsonA, jsonB)
+}
+
 func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource, grafanaClient *grafanasdk.Client) error {
 	if enabled {
 		ds, err := grafanaClient.GetDatasourceByUID(ctx, expected.UID)
@@ -327,7 +349,7 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 			}
 		}
 		expected.ID = ds.ID
-		if !reflect.DeepEqual(ds, expected) {
+		if !datasourcesEqual(ds, expected) {
 			if status, err := grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 				return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
 					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
