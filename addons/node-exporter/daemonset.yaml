@@ -20,7 +20,7 @@ metadata:
   labels:
     addonmanager.kubernetes.io/mode: Reconcile
     app.kubernetes.io/name: node-exporter
-    app.kubernetes.io/version: v1.2.2
+    app.kubernetes.io/version: v1.4.0
 spec:
   updateStrategy:
     type: RollingUpdate
@@ -37,71 +37,71 @@ spec:
       hostPID: true
       serviceAccountName: node-exporter
       containers:
-      - name: node-exporter
-        image: '{{ Image "quay.io/prometheus/node-exporter:v1.2.2" }}'
-        args:
-        - '--path.procfs=/host/proc'
-        - '--path.sysfs=/host/sys'
-        - '--path.rootfs=/host/root'
-        - '--web.listen-address=127.0.0.1:9100'
-        resources:
-          requests:
-            cpu: 10m
-            memory: 24Mi
-          limits:
-            cpu: 25m
-            memory: 48Mi
-        volumeMounts:
-        - name: proc
-          readOnly:  true
-          mountPath: /host/proc
-        - name: sys
-          readOnly: true
-          mountPath: /host/sys
-        - name: root
-          readOnly: true
-          mountPath: /host/root
-          mountPropagation: HostToContainer
+        - name: node-exporter
+          image: '{{ Image "quay.io/prometheus/node-exporter:v1.4.0" }}'
+          args:
+            - "--path.procfs=/host/proc"
+            - "--path.sysfs=/host/sys"
+            - "--path.rootfs=/host/root"
+            - "--web.listen-address=127.0.0.1:9100"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 24Mi
+            limits:
+              cpu: 25m
+              memory: 48Mi
+          volumeMounts:
+            - name: proc
+              readOnly: true
+              mountPath: /host/proc
+            - name: sys
+              readOnly: true
+              mountPath: /host/sys
+            - name: root
+              readOnly: true
+              mountPath: /host/root
+              mountPropagation: HostToContainer
 
-      - name: kube-rbac-proxy
-        image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.11.0" }}'
-        args:
-        - '--logtostderr'
-        - '--secure-listen-address=$(IP):9100'
-        - '--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256'
-        - '--upstream=http://127.0.0.1:9100/'
-        env:
-        - name: IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        ports:
-        - containerPort: 9100
-          hostPort: 9100
-          name: https
-        resources:
-          requests:
-            cpu: 10m
-            memory: 24Mi
-          limits:
-            cpu: 20m
-            memory: 48Mi
+        - name: kube-rbac-proxy
+          image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.13.1" }}'
+          args:
+            - "--logtostderr"
+            - "--secure-listen-address=$(IP):9100"
+            - "--tls-cipher-suites=TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+            - "--upstream=http://127.0.0.1:9100/"
+          env:
+            - name: IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          ports:
+            - containerPort: 9100
+              hostPort: 9100
+              name: https
+          resources:
+            requests:
+              cpu: 10m
+              memory: 24Mi
+            limits:
+              cpu: 20m
+              memory: 48Mi
 
       tolerations:
-      - effect: NoExecute
-        operator: Exists
-      - effect: NoSchedule
-        operator: Exists
+        - effect: NoExecute
+          operator: Exists
+        - effect: NoSchedule
+          operator: Exists
       volumes:
-      - name: proc
-        hostPath:
-          path: /proc
-      - name: sys
-        hostPath:
-          path: /sys
-      - name: root
-        hostPath:
-          path: /
+        - name: proc
+          hostPath:
+            path: /proc
+        - name: sys
+          hostPath:
+            path: /sys
+        - name: root
+          hostPath:
+            path: /
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
