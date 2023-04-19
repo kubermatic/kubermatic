@@ -24,7 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.5
 	github.com/aws/smithy-go v1.13.5
 	github.com/cert-manager/cert-manager v1.11.0
-	github.com/cilium/cilium v1.13.1
+	github.com/cilium/cilium v1.13.2
 	github.com/digitalocean/godo v1.97.0
 	github.com/distribution/distribution/v3 v3.0.0-20230223072852-e5d5810851d1
 	github.com/envoyproxy/go-control-plane v0.11.0
@@ -79,14 +79,14 @@ require (
 	k8c.io/kubeone v1.6.0
 	k8c.io/operating-system-manager v1.2.1-0.20230316111943-fefdb70fecee
 	k8c.io/reconciler v0.3.1
-	k8s.io/api v0.26.2
-	k8s.io/apiextensions-apiserver v0.26.2
-	k8s.io/apimachinery v0.26.2
+	k8s.io/api v0.26.4
+	k8s.io/apiextensions-apiserver v0.26.4
+	k8s.io/apimachinery v0.26.4
 	k8s.io/apiserver v0.26.1
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.13.0
 	k8s.io/cli-runtime v0.26.1
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.26.2
+	k8s.io/code-generator v0.26.4
 	k8s.io/klog/v2 v2.90.0
 	k8s.io/kube-aggregator v0.26.1
 	k8s.io/kube-openapi v0.0.0-20230228151317-19cbebb19cb7
@@ -338,7 +338,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.26.2 // indirect
+	k8s.io/component-base v0.26.4 // indirect
 	k8s.io/gengo v0.0.0-20220902162205-c0856e24416d // indirect
 	k8s.io/klog v1.0.0
 	k8s.io/kubelet v0.26.2 // indirect
