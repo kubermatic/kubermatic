@@ -208,7 +208,7 @@ spec:
                             description: Kubevirt configures a KubeVirt datacenter.
                             properties:
                               customNetworkPolicies:
-                                description: CustomNetworkPolicies (optional) allows to add some extra custom NetworkPolicies, that are deployed in the dedicated infra KubeVirt cluster. They are added to the defaults.
+                                description: 'Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed in the dedicated infra KubeVirt cluster. They are added to the defaults.'
                                 items:
                                   description: CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
                                   properties:
@@ -520,6 +520,9 @@ spec:
                                   - Default
                                   - None
                                 type: string
+                              enableDefaultNetworkPolicies:
+                                description: 'Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation. Defaults to true.'
+                                type: boolean
                               images:
                                 description: Images represents standard VM Image sources.
                                 properties:
@@ -539,7 +542,7 @@ spec:
                                     type: object
                                 type: object
                               infraStorageClasses:
-                                description: 'InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names that will be used to initialise StorageClasses in the tenant cluster. In the tenant cluster, the created StorageClass name will have as name: kubevirt-<infra-storageClass-name>'
+                                description: 'Optional: InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names that will be used to initialise StorageClasses in the tenant cluster. In the tenant cluster, the created StorageClass name will have as name: kubevirt-<infra-storageClass-name>'
                                 items:
                                   properties:
                                     isDefaultClass:
