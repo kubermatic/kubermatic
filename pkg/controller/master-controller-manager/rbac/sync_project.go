@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
 	"k8c.io/kubermatic/v2/pkg/crd"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -111,21 +112,21 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		objCrd, err := crd.CRDForGVK(gvk)
+		resource, err := c.getPluralResourceNameForGVK(gvk)
 		if err != nil {
-			return fmt.Errorf("failed to get CRD for GroupVersionKind: %w", err)
+			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
-					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, objCrd.Spec.Names.Plural, gvk.Kind)
+					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, resource, gvk.Kind)
 					if err != nil {
 						return fmt.Errorf("failed to ensure ClusterRole for resource on seed: %w", err)
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, objCrd.Spec.Names.Plural, gvk.Kind)
+				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, resource, gvk.Kind)
 				if err != nil {
 					return fmt.Errorf("failed to ensure ClusterRole for resource on master: %w", err)
 				}
@@ -135,6 +136,43 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 	return nil
 }
 
+// getPluralResourceNameForGVK returns the resource name we require to generate RBAC in rbac-controller.
+// If the resource type is part of our CRDs, it will be read from the CRD definition. As a fall back,
+// we try to dynamically discover it (e.g. for corev1 resources).
+func (c *projectController) getPluralResourceNameForGVK(gvk schema.GroupVersionKind) (string, error) {
+	groups, err := crd.Groups()
+	if err != nil {
+		return "", fmt.Errorf("failed to get CRD groups: %w", err)
+	}
+
+	crdAvailable := false
+	for _, value := range groups {
+		if gvk.Group == value {
+			crdAvailable = true
+			break
+		}
+	}
+
+	// this is static information we can discover from our CRDs.
+	if crdAvailable {
+		objCrd, err := crd.CRDForGVK(gvk)
+		if err != nil {
+			return "", fmt.Errorf("failed to get CRD for GroupVersionKind: %w", err)
+		}
+
+		return objCrd.Spec.Names.Plural, nil
+	}
+
+	// if we don't have the CRD stored, we will try to discover this dynamically.
+
+	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return "", fmt.Errorf("failed ot get REST Mapping for '%s': %w", gvk.GroupKind().String(), err)
+	}
+
+	return rmapping.Resource.Resource, nil
+}
+
 func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context.Context, projectName string) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
@@ -142,15 +180,15 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		objCrd, err := crd.CRDForGVK(gvk)
+		resource, err := c.getPluralResourceNameForGVK(gvk)
 		if err != nil {
-			return fmt.Errorf("failed to get CRD for GroupVersionKind: %w", err)
+			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, objCrd.Spec.Names.Plural, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("failed to determine if ClusterRoleBinding should be skipped: %w", err)
@@ -162,7 +200,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 						ctx,
 						seedClusterRESTClient,
 						groupName,
-						objCrd.Spec.Names.Plural)
+						resource)
 					if err != nil {
 						return fmt.Errorf("failed to ensure ClusterRoleBinding for resource on seed: %w", err)
 					}
@@ -172,7 +210,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 					ctx,
 					c.client,
 					groupName,
-					objCrd.Spec.Names.Plural)
+					resource)
 				if err != nil {
 					return fmt.Errorf("failed to ensure ClusterRoleBinding for resource on master: %w", err)
 				}
@@ -275,9 +313,9 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		resource, err := c.getPluralResourceNameForGVK(gvk)
 		if err != nil {
-			return fmt.Errorf("failed to get REST mapping for '%s': %w", gvk.GroupKind().String(), err)
+			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
@@ -288,8 +326,8 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 						c.log,
 						seedClusterRESTClient,
 						groupPrefix,
-						rmapping.Resource,
-						gvk.Kind,
+						gvk,
+						resource,
 						projectResource.namespace)
 					if err != nil {
 						return fmt.Errorf("failed to ensure Role for resource on seed: %w", err)
@@ -301,8 +339,8 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 					c.log,
 					c.client,
 					groupPrefix,
-					rmapping.Resource,
-					gvk.Kind,
+					gvk,
+					resource,
 					projectResource.namespace)
 				if err != nil {
 					return fmt.Errorf("failed to ensure Role for resource on master: %w", err)
@@ -313,13 +351,13 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 	return nil
 }
 
-func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
-	generatedRole, err := generateRBACRoleForResource(groupName, gvr.Resource, gvr.Group, kind, namespace)
+func ensureRBACRoleForResource(ctx context.Context, log *zap.SugaredLogger, c ctrlruntimeclient.Client, groupName string, gvk schema.GroupVersionKind, resource, namespace string) error {
+	generatedRole, err := generateRBACRoleForResource(groupName, resource, gvk.Group, gvk.Kind, namespace)
 	if err != nil {
 		return fmt.Errorf("failed to generate Role for resource: %w", err)
 	}
 	if generatedRole == nil {
-		log.Debugw("skipping Role generation", "group", groupName, "resource", gvr.Resource, "namespace", namespace)
+		log.Debugw("skipping Role generation", "group", groupName, "resource", resource, "namespace", namespace)
 		return nil
 	}
 	var sharedExistingRole rbacv1.Role
@@ -353,15 +391,15 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		resource, err := c.getPluralResourceNameForGVK(gvk)
 		if err != nil {
-			return fmt.Errorf("failed to get REST mapping for '%s': %w", gvk.GroupKind().String(), err)
+			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind, projectResource.namespace); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(c.log, groupName, resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind, projectResource.namespace); skip {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("failed to determine if RoleBinding should be skipped: %w", err)
@@ -373,7 +411,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 						ctx,
 						seedClusterRESTClient,
 						groupName,
-						rmapping.Resource.Resource,
+						resource,
 						projectResource.namespace)
 					if err != nil {
 						return fmt.Errorf("failed to ensure RoleBinding for resource on seed: %w", err)
@@ -384,7 +422,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 					ctx,
 					c.client,
 					groupName,
-					rmapping.Resource.Resource,
+					resource,
 					projectResource.namespace)
 				if err != nil {
 					return fmt.Errorf("failed to ensure RoleBinding for resource on master: %w", err)
@@ -456,14 +494,14 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		resource, err := c.getPluralResourceNameForGVK(gvk)
 		if err != nil {
-			return fmt.Errorf("failed to get REST mapping for '%s': %w", gvk.GroupKind().String(), err)
+			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(project.Name, groupPrefix)
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, gvk.Kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, gvk.Kind); skip {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("failed to determine if ClusterRoleBinding should be skipped: %w", err)
@@ -471,13 +509,13 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClient := range c.seedClientMap {
-					err := cleanUpClusterRBACRoleBindingFor(ctx, seedClient, groupName, rmapping.Resource.Resource)
+					err := cleanUpClusterRBACRoleBindingFor(ctx, seedClient, groupName, resource)
 					if err != nil {
 						return fmt.Errorf("failed to clean up ClusterRoleBinding for resource on seed: %w", err)
 					}
 				}
 			} else {
-				err := cleanUpClusterRBACRoleBindingFor(ctx, c.client, groupName, rmapping.Resource.Resource)
+				err := cleanUpClusterRBACRoleBindingFor(ctx, c.client, groupName, resource)
 				if err != nil {
 					return fmt.Errorf("failed to clean up ClusterRoleBinding for resource on master: %w", err)
 				}

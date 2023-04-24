@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -43,9 +44,35 @@ const (
 // object.
 func (c *resourcesController) getPluralResourceName(obj ctrlruntimeclient.Object) (string, error) {
 	gvk := obj.GetObjectKind().GroupVersionKind()
+
+	groups, err := crd.Groups()
+	if err != nil {
+		return "", fmt.Errorf("failed to get CRD groups: %w", err)
+	}
+
+	crdAvailable := false
+	for _, value := range groups {
+		if gvk.Group == value {
+			crdAvailable = true
+			break
+		}
+	}
+
+	// this is static information we can discover from our CRDs.
+	if crdAvailable {
+		objCrd, err := crd.CRDForGVK(gvk)
+		if err != nil {
+			return "", fmt.Errorf("failed to get CRD for GroupVersionKind: %w", err)
+		}
+
+		return objCrd.Spec.Names.Plural, nil
+	}
+
+	// if we don't have the CRD stored, we will try to discover this dynamically.
+
 	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed ot get REST Mapping for '%s': %w", gvk.GroupKind().String(), err)
 	}
 
 	return rmapping.Resource.Resource, nil
