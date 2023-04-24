@@ -103,7 +103,7 @@ spec:
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /health
+            path: /health?exclude=NOSPACE&serializable=true
             port: 2378
             scheme: HTTP
           initialDelaySeconds: 5
