@@ -126,7 +126,7 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 			} else {
 				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
 				if err != nil {
-					return fmt.Errorf("failed to ensure ClusterRole for resource on master: %d", err)
+					return fmt.Errorf("failed to ensure ClusterRole for resource on master: %w", err)
 				}
 			}
 		}
