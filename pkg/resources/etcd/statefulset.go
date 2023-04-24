@@ -259,6 +259,22 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 						SuccessThreshold:    1,
 						TimeoutSeconds:      10,
 					},
+					// timing info calculated based on
+					// https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/util/staticpod/utils.go#L254-L265
+					StartupProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/health?serializable=false",
+								Port:   intstr.FromInt(2378),
+								Scheme: corev1.URISchemeHTTP,
+							},
+						},
+						InitialDelaySeconds: 10,
+						FailureThreshold:    16,
+						PeriodSeconds:       10,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      15,
+					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "data",

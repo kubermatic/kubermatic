@@ -138,6 +138,16 @@ spec:
           requests:
             cpu: 50m
             memory: 256Mi
+        startupProbe:
+          failureThreshold: 16
+          httpGet:
+            path: /health?serializable=false
+            port: 2378
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
         volumeMounts:
         - mountPath: /var/run/etcd
           name: data
