@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8c.io/kubermatic/v2/pkg/crd"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -112,7 +111,7 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		resource, err := c.getPluralResourceNameForGVK(gvk)
+		resource, err := getPluralResourceName(c.restMapper, projectResource.object)
 		if err != nil {
 			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
@@ -136,43 +135,6 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 	return nil
 }
 
-// getPluralResourceNameForGVK returns the resource name we require to generate RBAC in rbac-controller.
-// If the resource type is part of our CRDs, it will be read from the CRD definition. As a fall back,
-// we try to dynamically discover it (e.g. for corev1 resources).
-func (c *projectController) getPluralResourceNameForGVK(gvk schema.GroupVersionKind) (string, error) {
-	groups, err := crd.Groups()
-	if err != nil {
-		return "", fmt.Errorf("failed to get CRD groups: %w", err)
-	}
-
-	crdAvailable := false
-	for _, value := range groups {
-		if gvk.Group == value {
-			crdAvailable = true
-			break
-		}
-	}
-
-	// this is static information we can discover from our CRDs.
-	if crdAvailable {
-		objCrd, err := crd.CRDForGVK(gvk)
-		if err != nil {
-			return "", fmt.Errorf("failed to get CRD for GroupVersionKind: %w", err)
-		}
-
-		return objCrd.Spec.Names.Plural, nil
-	}
-
-	// if we don't have the CRD stored, we will try to discover this dynamically.
-
-	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-	if err != nil {
-		return "", fmt.Errorf("failed ot get REST Mapping for '%s': %w", gvk.GroupKind().String(), err)
-	}
-
-	return rmapping.Resource.Resource, nil
-}
-
 func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context.Context, projectName string) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
@@ -180,7 +142,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		resource, err := c.getPluralResourceNameForGVK(gvk)
+		resource, err := getPluralResourceName(c.restMapper, projectResource.object)
 		if err != nil {
 			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
@@ -313,7 +275,7 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		resource, err := c.getPluralResourceNameForGVK(gvk)
+		resource, err := getPluralResourceName(c.restMapper, projectResource.object)
 		if err != nil {
 			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
@@ -391,7 +353,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		resource, err := c.getPluralResourceNameForGVK(gvk)
+		resource, err := getPluralResourceName(c.restMapper, projectResource.object)
 		if err != nil {
 			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
@@ -494,7 +456,7 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		resource, err := c.getPluralResourceNameForGVK(gvk)
+		resource, err := getPluralResourceName(c.restMapper, projectResource.object)
 		if err != nil {
 			return fmt.Errorf("failed to get resource for GroupVersionKind: %w", err)
 		}
