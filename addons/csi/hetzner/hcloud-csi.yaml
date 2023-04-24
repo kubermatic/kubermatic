@@ -238,7 +238,7 @@ spec:
             - name: socket-dir
               mountPath: /run/csi
         - name: hcloud-csi-driver
-          image: '{{ Image "hetznercloud/hcloud-csi-driver:2.3.2" }}'
+          image: '{{ Image "hetznercloud/hcloud-csi-driver:v2.3.2" }}'
           command:
             - /bin/hcloud-csi-driver-controller
           env:
@@ -330,7 +330,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: hcloud-csi-driver
-          image: '{{ Image "hetznercloud/hcloud-csi-driver:2.3.2" }}'
+          image: '{{ Image "hetznercloud/hcloud-csi-driver:v2.3.2" }}'
           command:
             - /bin/hcloud-csi-driver-node
           env:
