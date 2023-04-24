@@ -248,7 +248,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/health",
+								Path:   "/health?exclude=NOSPACE&serializable=true",
 								Port:   intstr.FromInt(2378),
 								Scheme: corev1.URISchemeHTTP,
 							},
