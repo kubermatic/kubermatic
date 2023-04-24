@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -110,21 +111,21 @@ func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Contex
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		objCrd, err := crd.CRDForGVK(gvk)
 		if err != nil {
-			return fmt.Errorf("failed to read REST mapping for '%s': %w", gvk.GroupKind().String(), err)
+			return fmt.Errorf("failed to get CRD for GroupVersionKind: %w", err)
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
-					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
+					err := ensureClusterRBACRoleForResource(ctx, c.log, seedClusterRESTClient, groupPrefix, objCrd.Spec.Names.Plural, gvk.Kind)
 					if err != nil {
 						return fmt.Errorf("failed to ensure ClusterRole for resource on seed: %w", err)
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
+				err := ensureClusterRBACRoleForResource(ctx, c.log, c.client, groupPrefix, objCrd.Spec.Names.Plural, gvk.Kind)
 				if err != nil {
 					return fmt.Errorf("failed to ensure ClusterRole for resource on master: %w", err)
 				}
@@ -141,15 +142,15 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 		}
 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
-		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		objCrd, err := crd.CRDForGVK(gvk)
 		if err != nil {
-			return fmt.Errorf("failed to get REST mapping for '%s': %w", gvk.GroupKind().String(), err)
+			return fmt.Errorf("failed to get CRD for GroupVersionKind: %w", err)
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(c.log, groupName, objCrd.Spec.Names.Plural, kubermaticv1.SchemeGroupVersion.Group, projectName, gvk.Kind); skip {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("failed to determine if ClusterRoleBinding should be skipped: %w", err)
@@ -161,7 +162,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 						ctx,
 						seedClusterRESTClient,
 						groupName,
-						rmapping.Resource.Resource)
+						objCrd.Spec.Names.Plural)
 					if err != nil {
 						return fmt.Errorf("failed to ensure ClusterRoleBinding for resource on seed: %w", err)
 					}
@@ -171,7 +172,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 					ctx,
 					c.client,
 					groupName,
-					rmapping.Resource.Resource)
+					objCrd.Spec.Names.Plural)
 				if err != nil {
 					return fmt.Errorf("failed to ensure ClusterRoleBinding for resource on master: %w", err)
 				}
