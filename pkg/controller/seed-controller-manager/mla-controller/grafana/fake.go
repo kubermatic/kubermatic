@@ -66,7 +66,7 @@ func (f *FakeGrafana) CreateDefaultOrg(org grafanasdk.Org) error {
 		return err
 	}
 
-	f.Database.DefaultOrg = *status.ID
+	f.Database.DefaultOrg = *status.OrgID
 
 	return nil
 }
@@ -79,7 +79,7 @@ func (f *FakeGrafana) CreateOrg(_ context.Context, org grafanasdk.Org) (grafanas
 	org.ID = uint(len(f.Database.Orgs) + 1)
 	f.Database.Orgs[org.Name] = org
 
-	return grafanasdk.StatusMessage{ID: &org.ID}, nil
+	return grafanasdk.StatusMessage{OrgID: &org.ID}, nil
 }
 
 func (f *FakeGrafana) GetOrgByOrgName(_ context.Context, name string) (grafanasdk.Org, error) {
@@ -145,6 +145,21 @@ func (f *FakeGrafana) GetOrgUsers(_ context.Context, orgID uint) ([]grafanasdk.O
 	}
 
 	return result, nil
+}
+
+func (f *FakeGrafana) GetOrgUser(ctx context.Context, orgID, userID uint) (*grafanasdk.OrgUser, error) {
+	users, err := f.GetOrgUsers(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, user := range users {
+		if user.ID == userID {
+			return &user, nil
+		}
+	}
+
+	return nil, nil
 }
 
 func (f *FakeGrafana) getUserByID(userID uint) *grafanasdk.User {
@@ -226,6 +241,18 @@ func (f *FakeGrafana) DeleteGlobalUser(ctx context.Context, userID uint) (grafan
 	}
 
 	delete(f.Database.Users, user.Email) // after this, `user` points to junk
+
+	return grafanasdk.StatusMessage{}, nil
+}
+
+func (f *FakeGrafana) UpdateUserPermissions(ctx context.Context, permissions grafanasdk.UserPermissions, userID uint) (grafanasdk.StatusMessage, error) {
+	user := f.getUserByID(userID)
+	if user == nil {
+		return grafanasdk.StatusMessage{}, grafanasdk.ErrNotFound{}
+	}
+
+	user.IsGrafanaAdmin = permissions.IsGrafanaAdmin
+	f.Database.Users[user.Email] = *user
 
 	return grafanasdk.StatusMessage{}, nil
 }

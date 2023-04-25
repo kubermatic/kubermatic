@@ -47,9 +47,10 @@ export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 
 source hack/ci/setup-kind-cluster.sh
 
-# gather the logs of all things in the cluster control plane and in the Kubermatic namespace
+# gather the logs of all things in the cluster control plane and in the Kubermatic namespace, plus the MLA components
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/mla" --namespace mla > /dev/null 2>&1 &
 
 source hack/ci/setup-kubermatic-mla-in-kind.sh
 
@@ -70,7 +71,7 @@ echodate "Running MLA tests..."
 
 go_test mla_e2e -timeout 30m -tags mla -v ./pkg/test/e2e/mla \
   -kubeconfig "$KUBECONFIG" \
-  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
+  -byo-kkp-datacenter byo-kubernetes \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Tests completed successfully!"

@@ -130,7 +130,7 @@ func (r *grafanaDashboardReconciler) Reconcile(ctx context.Context, request reco
 	return reconcile.Result{}, nil
 }
 
-func (r *grafanaDashboardReconciler) Cleanup(ctx context.Context) error {
+func (r *grafanaDashboardReconciler) Cleanup(ctx context.Context, log *zap.SugaredLogger) error {
 	configMapList := &corev1.ConfigMapList{}
 	if err := r.seedClient.List(ctx, configMapList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return fmt.Errorf("failed to list ConfigMaps: %w", err)
@@ -170,6 +170,11 @@ func (r *grafanaDashboardReconciler) handleDeletion(ctx context.Context, log *za
 func (r *grafanaDashboardReconciler) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, configMap *corev1.ConfigMap, gClient grafana.Client) error {
 	org, err := gClient.GetOrgByOrgName(ctx, GrafanaOrganization)
 	if err != nil {
+		if grafana.IsNotFoundErr(err) {
+			log.Debug("Organization not found.")
+			return nil
+		}
+
 		return fmt.Errorf("failed to get Grafana organization %q: %w", GrafanaOrganization, err)
 	}
 
@@ -182,6 +187,7 @@ func addDashboards(ctx context.Context, log *zap.SugaredLogger, gClient grafana.
 		if err := json.Unmarshal([]byte(data), &board); err != nil {
 			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
 		}
+		log.Debugw("Upserting Grafana dashboard", "uid", board.UID)
 		if _, err := gClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
 			return err
 		}
@@ -200,6 +206,7 @@ func deleteDashboards(ctx context.Context, log *zap.SugaredLogger, gClient grafa
 			log.Debugw("dashboard doesn't have UID set, skipping", "title", board.Title)
 			continue
 		}
+		log.Infow("Deleting Grafana dashboard", "uid", board.UID)
 		if _, err := gClient.DeleteDashboardByUID(ctx, board.UID); err != nil && !grafana.IsNotFoundErr(err) {
 			return err
 		}

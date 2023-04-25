@@ -19,14 +19,13 @@ limitations under the License.
 package mla
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -36,8 +35,11 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller"
+	mlacontroller "k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller/cortex"
+	"k8c.io/kubermatic/v3/pkg/controller/seed-controller-manager/mla-controller/grafana"
 	"k8c.io/kubermatic/v3/pkg/log"
+	"k8c.io/kubermatic/v3/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v3/pkg/test/e2e/utils"
@@ -65,10 +67,16 @@ alertmanager_config: |
       - to: 'test@example.org'
 
 `
+
+	grafanaSecret   = "mla/grafana"
+	grafanaURL      = "http://localhost:3000"
+	alertmanagerURL = "http://localhost:3001"
+	rulerURL        = "http://localhost:3002"
+	lokiURL         = "http://localhost:3003"
 )
 
 var (
-	credentials jig.AWSCredentials
+	credentials jig.BYOCredentials
 	logOptions  = utils.DefaultLogOptions
 )
 
@@ -92,10 +100,10 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	// create test environment
-	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
+	testJig := jig.NewBYOCluster(seedClient, logger, credentials)
 	testJig.ClusterJig.WithTestName("mla")
 
-	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	defer testJig.Cleanup(ctx, t, true)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
@@ -106,60 +114,62 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to enable MLA: %v", err)
 	}
 
-	logger.Info("Waiting for project to get Grafana org annotation...")
-	p := &kubermaticv1.Project{}
-	orgID := ""
-	timeout := 5 * time.Minute
-	if !utils.WaitFor(1*time.Second, timeout, func() (ok bool) {
-		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.Name}, p); err != nil {
-			t.Fatalf("failed to get project: %v", err)
-		}
-
-		orgID, ok = p.GetAnnotations()[mla.GrafanaOrgAnnotationKey]
-		return ok
-	}) {
-		t.Fatalf("waiting for project annotation %+v", p)
-	}
-
-	id, err := strconv.ParseUint(orgID, 10, 32)
-	if err != nil {
-		t.Fatalf("unable to parse uint from %s", orgID)
-	}
+	logger.Info("Waiting for new seed-controller-manager to acquire leader lease...")
+	time.Sleep(30 * time.Second)
 
 	logger.Info("Creating Grafana client for user cluster...")
-	grafanaClient, err := getGrafanaClient(ctx, seedClient)
+	httpClient := &http.Client{Timeout: 15 * time.Second}
+	cortexClient := cortex.NewClient(httpClient, alertmanagerURL, rulerURL, lokiURL)
+
+	grafanaClientProvider, err := grafana.NewClientProvider(seedClient, httpClient, grafanaSecret, grafanaURL, true)
 	if err != nil {
-		t.Fatalf("unable to initialize Grafana client")
+		t.Fatalf("failed to initialize Grafana client: %v", err)
 	}
 
-	logger.Info("Fetching Grafana organization...")
-	org, err := grafanaClient.GetOrgById(ctx, uint(id))
+	grafanaClient, err := grafanaClientProvider(ctx)
 	if err != nil {
-		t.Fatalf("error while getting Grafana org: %v", err)
+		t.Fatalf("failed to initialize Grafana client: %v", err)
 	}
+
+	logger.Info("Waiting for Grafana organization...")
+	var org *grafanasdk.Org
+	err = wait.PollLog(ctx, logger, 5*time.Second, 3*time.Minute, func() (transient error, terminal error) {
+		organization, err := grafanaClient.GetOrgByOrgName(ctx, mlacontroller.GrafanaOrganization)
+		if err != nil {
+			return err, nil
+		}
+		org = &organization
+		return nil, nil
+	})
+	if err != nil {
+		// this is actually a fatal error, as no other reconcilers can do anything useful without an org
+		t.Fatalf("failed to reconcile, Grafana organization never appeared: %v", err)
+	}
+
 	grafanaClient.SetOrgIDHeader(org.ID)
 
 	if err := verifyGrafanaDatasource(ctx, logger, grafanaClient, cluster); err != nil {
-		t.Errorf("failed to verify grafana datasource: %v", err)
+		t.Errorf("failed to verify Grafana datasource: %v", err)
 	}
 
-	if err := verifyGrafanaUser(ctx, logger, grafanaClient, &org); err != nil {
-		t.Errorf("failed to verify grafana user: %v", err)
+	kkpUser, err := verifyGrafanaUser(ctx, logger, seedClient, grafanaClient, org)
+	if err != nil {
+		t.Errorf("failed to verify Grafana user: %v", err)
 	}
 
-	if err := verifyLogRuleGroup(ctx, logger, seedClient, p, cluster); err != nil {
+	if err := verifyLogsRuleGroup(ctx, logger, seedClient, cortexClient, cluster); err != nil {
 		t.Errorf("failed to verify logs RuleGroup: %v", err)
 	}
 
-	if err := verifyMetricsRuleGroup(ctx, logger, seedClient, p, cluster); err != nil {
+	if err := verifyMetricsRuleGroup(ctx, logger, seedClient, cortexClient, cluster); err != nil {
 		t.Errorf("failed to verify metrics RuleGroup: %v", err)
 	}
 
-	if err := verifyAlertmanager(ctx, logger, seedClient, p, cluster); err != nil {
+	if err := verifyAlertmanager(ctx, logger, seedClient, cortexClient, cluster); err != nil {
 		t.Errorf("failed to verify Alertmanager: %v", err)
 	}
 
-	if err := verifyRateLimits(ctx, logger, seedClient, p, cluster); err != nil {
+	if err := verifyRateLimits(ctx, logger, seedClient, cluster); err != nil {
 		t.Errorf("failed to verify rate limits: %v", err)
 	}
 
@@ -168,48 +178,40 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("failed to disable MLA: %v", err)
 	}
 
+	logger.Info("Waiting for new seed-controller-manager to acquire leader lease...")
+	time.Sleep(30 * time.Second)
+
 	logger.Info("Waiting for cluster to healthy...")
 	if err := testJig.WaitForHealthyControlPlane(ctx, 2*time.Minute); err != nil {
 		t.Fatalf("cluster did not get healthy: %v", err)
 	}
 
-	logger.Info("Waiting for Grafana org to be gone...")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		_, err = grafanaClient.GetOrgById(ctx, org.ID)
-		return err != nil
-	}) {
-		t.Fatal("grafana org not cleaned up")
-	}
-
-	logger.Info("Waiting for Grafana user to be gone...")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
-		return errors.As(err, &grafanasdk.ErrNotFound{})
-	}) {
-		t.Fatal("grafana user not cleaned up")
-	}
-
-	logger.Info("Waiting for project to get rid of grafana org annotation")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
-		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.Name}, p); err != nil {
-			t.Fatalf("failed to get project: %v", err)
+	if kkpUser != nil {
+		logger.Info("Waiting for Grafana user to be gone...")
+		err = wait.PollLog(ctx, logger, 3*time.Second, 5*time.Minute, func() (transient error, terminal error) {
+			if _, err := grafanaClient.LookupUser(ctx, kkpUser.Spec.Email); err == nil {
+				return errors.New("user still exists"), nil
+			}
+			return nil, nil
+		})
+		if err != nil {
+			t.Fatal("cleanup did not complete successfully")
 		}
-
-		_, ok := p.GetAnnotations()[mla.GrafanaOrgAnnotationKey]
-		return !ok
-	}) {
-		t.Fatal("project still has the grafana org annotation")
 	}
 }
 
-func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, cluster *kubermaticv1.Cluster) (err error) {
+func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafanaClient grafana.Client, cluster *kubermaticv1.Cluster) error {
+	datasource := mlacontroller.DatasourceUIDForCluster(grafana.DatasourceTypePrometheus, cluster)
+
+	log = log.With("datasource", datasource)
 	log.Info("Waiting for datasource to be added to Grafana...")
 
-	if !utils.WaitFor(1*time.Second, 5*time.Minute, func() bool {
-		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", mla.PrometheusType, cluster.Name))
-		return err == nil
-	}) {
-		return fmt.Errorf("timed out waiting for grafana datasource %s-%s", mla.PrometheusType, cluster.Name)
+	err := wait.PollImmediateLog(ctx, log, 3*time.Second, 3*time.Minute, func() (transient error, terminal error) {
+		_, err := grafanaClient.GetDatasourceByUID(ctx, datasource)
+		return err, nil
+	})
+	if err != nil {
+		return errors.New("timed out waiting for datasource")
 	}
 
 	log.Info("Grafana datasource successfully verified.")
@@ -217,42 +219,49 @@ func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafan
 	return nil
 }
 
-func verifyGrafanaUser(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, org *grafanasdk.Org) error {
+func verifyGrafanaUser(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, grafanaClient grafana.Client, org *grafanasdk.Org) (*kubermaticv1.User, error) {
 	log.Info("Checking that an admin user was added to Grafana...")
 
+	users := kubermaticv1.UserList{}
+	if err := client.List(ctx, &users); err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+	if len(users.Items) != 1 {
+		return nil, fmt.Errorf("expected to find exactly 1 KKP User, but found %d", len(users.Items))
+	}
+
+	kkpUser := users.Items[0]
+	log = log.With("email", kkpUser.Spec.Email)
+
 	user := grafanasdk.User{}
-	err := wait.Poll(ctx, 1*time.Second, 2*time.Minute, func() (transient error, terminal error) {
-		user, transient = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
-		if transient != nil {
-			return errors.New("user does not yet exist in Grafana"), nil
-		}
-
-		if user.IsGrafanaAdmin != true || user.OrgID != org.ID {
-			return fmt.Errorf("user expected to be Grafana Admin and have orgID %d", org.ID), nil
-		}
-
-		return nil, nil
+	err := wait.PollLog(ctx, log, 3*time.Second, 1*time.Minute, func() (transient error, terminal error) {
+		user, transient = grafanaClient.LookupUser(ctx, kkpUser.Spec.Email)
+		return transient, nil
 	})
 	if err != nil {
-		return fmt.Errorf("waiting for grafana user: %w", err)
+		return nil, fmt.Errorf("waiting for grafana user: %w", err)
+	}
+
+	if user.IsGrafanaAdmin != true || user.OrgID != org.ID {
+		return nil, fmt.Errorf("user expected to be Grafana Admin and have orgID %d, but is %+v", org.ID, user)
 	}
 
 	log.Info("Verifying Grafana org user's role...")
-	orgUser, err := mla.GetGrafanaOrgUser(ctx, grafanaClient, org.ID, user.ID)
+	orgUser, err := grafanaClient.GetOrgUser(ctx, org.ID, user.ID)
 	if err != nil {
-		return fmt.Errorf("failed to get grafana org user: %w", err)
+		return nil, fmt.Errorf("failed to get grafana org user: %w", err)
 	}
 
-	if orgUser.Role != string(grafanasdk.ROLE_EDITOR) {
-		return fmt.Errorf("orgUser %v expected to have Editor role, but has %v", orgUser, orgUser.Role)
+	if orgUser.Role != string(grafanasdk.ROLE_ADMIN) {
+		return nil, fmt.Errorf("orgUser %v expected to have Admin role, but has %v", orgUser, orgUser.Role)
 	}
 
 	log.Info("Grafana user successfully verified.")
 
-	return nil
+	return &kkpUser, nil
 }
 
-func verifyLogRuleGroup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
+func verifyLogsRuleGroup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cortexClient cortex.Client, cluster *kubermaticv1.Cluster) error {
 	log.Info("Creating logs RuleGroup...")
 
 	lokiRule := `
@@ -269,37 +278,23 @@ rules:
 `
 	expectedData, err := createRuleGroup(ctx, client, cluster, []byte(lokiRule), kubermaticv1.RuleGroupTypeLogs)
 	if err != nil {
-		return fmt.Errorf("unable to create rule group: %w", err)
+		return fmt.Errorf("failed to create rule group: %w", err)
 	}
 
-	logRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3003", mla.LogRuleGroupConfigEndpoint, "/default")
-	httpClient := &http.Client{Timeout: 15 * time.Second}
-
-	err = wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", logRuleGroupURL, "test-rule"), nil)
+	err = wait.PollLog(ctx, log, 3*time.Second, 3*time.Minute, func() (error, error) {
+		ruleGroup, err := cortexClient.GetRuleGroupConfiguration(ctx, cluster.Name, kubermaticv1.RuleGroupTypeLogs, "test-rule")
 		if err != nil {
-			return fmt.Errorf("unable to create request: %v", err), nil
-		}
-		req.Header.Add(mla.RuleGroupTenantHeaderName, cluster.Name)
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("unable to get rule group: %w", err), nil
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("expected HTTP 200 OK, got HTTP %s", resp.Status), nil
+			return fmt.Errorf("failed to get rule group: %w", err), nil
 		}
 
 		config := map[string]interface{}{}
-		decoder := yaml.NewDecoder(resp.Body)
+		decoder := yaml.NewDecoder(bytes.NewReader(ruleGroup))
 		if err := decoder.Decode(&config); err != nil {
-			return fmt.Errorf("unable to decode response body: %w", err), nil
+			return fmt.Errorf("failed to decode rule group: %w", err), nil
 		}
 
 		if !reflect.DeepEqual(config, expectedData) {
-			return errors.New("response does not match the expected rule group"), nil
+			return errors.New("Cortex rule group does not match the expected rule group"), nil
 		}
 
 		return nil, nil
@@ -313,43 +308,29 @@ rules:
 	return nil
 }
 
-func verifyMetricsRuleGroup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
+func verifyMetricsRuleGroup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cortexClient cortex.Client, cluster *kubermaticv1.Cluster) error {
 	log.Info("Creating metrics RuleGroup...")
 
 	testRuleGroup := generator.GenerateTestRuleGroupData("test-metric-rule")
 	expectedData, err := createRuleGroup(ctx, client, cluster, testRuleGroup, kubermaticv1.RuleGroupTypeMetrics)
 	if err != nil {
-		return fmt.Errorf("unable to create rule group: %w", err)
+		return fmt.Errorf("failed to create rule group: %w", err)
 	}
 
-	metricRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3002", mla.MetricsRuleGroupConfigEndpoint, "/default")
-	httpClient := &http.Client{Timeout: 15 * time.Second}
-
-	err = wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", metricRuleGroupURL, "test-metric-rule"), nil)
+	err = wait.Poll(ctx, 3*time.Second, 3*time.Minute, func() (error, error) {
+		ruleGroup, err := cortexClient.GetRuleGroupConfiguration(ctx, cluster.Name, kubermaticv1.RuleGroupTypeMetrics, "test-metric-rule")
 		if err != nil {
-			return fmt.Errorf("unable to create request: %v", err), nil
-		}
-		req.Header.Add(mla.RuleGroupTenantHeaderName, cluster.Name)
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("unable to get rule group: %w", err), nil
+			return fmt.Errorf("failed to get rule group: %w", err), nil
 		}
 
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("expected HTTP 200 OK, got HTTP %s", resp.Status), nil
-		}
-
-		defer resp.Body.Close()
 		config := map[string]interface{}{}
-		decoder := yaml.NewDecoder(resp.Body)
+		decoder := yaml.NewDecoder(bytes.NewReader(ruleGroup))
 		if err := decoder.Decode(&config); err != nil {
-			return fmt.Errorf("unable to decode response body: %w", err), nil
+			return fmt.Errorf("failed to decode rule group: %w", err), nil
 		}
 
 		if !reflect.DeepEqual(config, expectedData) {
-			return errors.New("response does not match the expected rule group"), nil
+			return errors.New("Cortex rule group does not match the expected rule group"), nil
 		}
 
 		return nil, nil
@@ -363,62 +344,47 @@ func verifyMetricsRuleGroup(ctx context.Context, log *zap.SugaredLogger, client 
 	return nil
 }
 
-func verifyAlertmanager(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
+func verifyAlertmanager(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cortexClient cortex.Client, cluster *kubermaticv1.Cluster) error {
 	log.Info("Verifying Alertmanager...")
+
 	if err := updateAlertmanager(ctx, client, cluster, []byte(testAlertmanagerConfig)); err != nil {
-		return fmt.Errorf("unable to update alertmanager config: %w", err)
+		return fmt.Errorf("failed to update alertmanager config: %w", err)
 	}
 
-	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
+	err := wait.PollLog(ctx, log, 3*time.Second, 3*time.Minute, func() (transient error, terminal error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
-			return false
+			return err, nil
 		}
-		return *cluster.Status.ExtendedHealth.AlertmanagerConfig == kubermaticv1.HealthStatusUp
-	}) {
-		return fmt.Errorf("has alertmanager status: %v", *cluster.Status.ExtendedHealth.AlertmanagerConfig)
+
+		if *cluster.Status.ExtendedHealth.AlertmanagerConfig != kubermaticv1.HealthStatusUp {
+			return fmt.Errorf("alertmanager config is %v", *cluster.Status.ExtendedHealth.AlertmanagerConfig), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for alertmanager: %w", err)
 	}
 
-	alertmanagerURL := "http://localhost:3001" + mla.AlertmanagerConfigEndpoint
 	expectedConfig := map[string]interface{}{}
 	if err := yaml.Unmarshal([]byte(testAlertmanagerConfig), &expectedConfig); err != nil {
-		return fmt.Errorf("unable to unmarshal expected config: %w", err)
+		return fmt.Errorf("failed to unmarshal expected config: %w", err)
 	}
 
-	httpClient := &http.Client{Timeout: 15 * time.Second}
-
-	err := wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
-		req, err := http.NewRequest(http.MethodGet, alertmanagerURL, nil)
+	err = wait.PollLog(ctx, log, 3*time.Second, 3*time.Minute, func() (error, error) {
+		ruleGroup, err := cortexClient.GetAlertmanagerConfiguration(ctx, cluster.Name)
 		if err != nil {
-			return fmt.Errorf("unable to create request to get alertmanager config: %w", err), nil
-		}
-		req.Header.Add(mla.AlertmanagerTenantHeaderName, cluster.Name)
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("unable to get alertmanager config: %w", err), nil
-		}
-		defer resp.Body.Close()
-
-		// https://cortexmetrics.io/docs/api/#get-alertmanager-configuration
-		if resp.StatusCode == http.StatusNotFound {
-			return errors.New("alertmanager config not found"), nil
-		}
-		if resp.StatusCode != http.StatusOK {
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return fmt.Errorf("unable to read alertmanager config: %w", err), nil
-			}
-			return fmt.Errorf("status code: %d, response body: %s", resp.StatusCode, string(body)), nil
+			return fmt.Errorf("failed to get rule group: %w", err), nil
 		}
 
 		config := map[string]interface{}{}
-		decoder := yaml.NewDecoder(resp.Body)
+		decoder := yaml.NewDecoder(bytes.NewReader(ruleGroup))
 		if err := decoder.Decode(&config); err != nil {
-			return fmt.Errorf("unable to decode response body: %w", err), nil
+			return fmt.Errorf("failed to decode rule group: %w", err), nil
 		}
 
 		if !reflect.DeepEqual(config, expectedConfig) {
-			return errors.New("response does not match the expected rule group"), nil
+			return errors.New("Alertmanager rule group does not match the expected rule group"), nil
 		}
 
 		return nil, nil
@@ -458,7 +424,7 @@ func updateAlertmanager(ctx context.Context, client ctrlruntimeclient.Client, cl
 	return client.Update(ctx, secret)
 }
 
-func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
+func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	log.Info("Setting rate limits...")
 
 	rateLimits := kubermaticv1.MonitoringRateLimitSettings{
@@ -469,25 +435,26 @@ func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlru
 		MaxSamplesPerQuery: 5,
 		MaxSeriesPerQuery:  6,
 	}
-	if err := createMonitoringMLARateLimits(ctx, client, cluster, project, rateLimits); err != nil {
-		return fmt.Errorf("unable to set monitoring rate limits: %w", err)
+	if err := createMonitoringMLARateLimits(ctx, client, cluster, rateLimits); err != nil {
+		return fmt.Errorf("failed to set monitoring rate limits: %w", err)
 	}
 
-	err := wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
+	err := wait.PollLog(ctx, log, 3*time.Second, 3*time.Minute, func() (error, error) {
 		mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.MLAAdminSettingsName}, mlaAdminSetting); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-			return fmt.Errorf("can't get cluster mlaadminsetting: %w", err), nil
+			return fmt.Errorf("failed to get cluster mlaadminsetting: %w", err), nil
 		}
 
 		configMap := &corev1.ConfigMap{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mla.RuntimeConfigMap}, configMap); err != nil {
-			return fmt.Errorf("unable to get configMap: %w", err), nil
+		if err := client.Get(ctx, types.NamespacedName{Namespace: "mla", Name: mlacontroller.RuntimeConfigMap}, configMap); err != nil {
+			return fmt.Errorf("failed to get configMap: %w", err), nil
 		}
-		actualOverrides := &mla.Overrides{}
-		decoder := yaml.NewDecoder(strings.NewReader(configMap.Data[mla.RuntimeConfigFileName]))
+
+		actualOverrides := &mlacontroller.Overrides{}
+		decoder := yaml.NewDecoder(strings.NewReader(configMap.Data[mlacontroller.RuntimeConfigFileName]))
 		decoder.KnownFields(true)
 		if err := decoder.Decode(actualOverrides); err != nil {
-			return fmt.Errorf("unable to unmarshal rate limit config map"), nil
+			return fmt.Errorf("failed to unmarshal rate limit config map"), nil
 		}
 
 		actualRateLimits, ok := actualOverrides.Overrides[cluster.Name]
@@ -528,7 +495,7 @@ func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlru
 	return nil
 }
 
-func createMonitoringMLARateLimits(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, project *kubermaticv1.Project, rateLimits kubermaticv1.MonitoringRateLimitSettings) error {
+func createMonitoringMLARateLimits(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, rateLimits kubermaticv1.MonitoringRateLimitSettings) error {
 	mlaAdminSetting := &kubermaticv1.MLAAdminSetting{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.MLAAdminSettingsName,
@@ -544,8 +511,8 @@ func createMonitoringMLARateLimits(ctx context.Context, client ctrlruntimeclient
 }
 
 func setMLAIntegration(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, enabled bool) error {
-	if err := toggleMLAInSeed(ctx, client, enabled); err != nil {
-		return fmt.Errorf("failed to update seed: %w", err)
+	if err := toggleMLAInConfiguration(ctx, client, enabled); err != nil {
+		return fmt.Errorf("failed to toggle MLA integration to %v: %w", enabled, err)
 	}
 
 	oldCluster := cluster.DeepCopy()
@@ -557,47 +524,22 @@ func setMLAIntegration(ctx context.Context, client ctrlruntimeclient.Client, clu
 	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func getGrafanaClient(ctx context.Context, client ctrlruntimeclient.Client) (*grafanasdk.Client, error) {
-	grafanaSecret := "mla/grafana"
-
-	split := strings.Split(grafanaSecret, "/")
-	if n := len(split); n != 2 {
-		return nil, fmt.Errorf("splitting value of %q didn't yield two but %d results", grafanaSecret, n)
-	}
-
-	secret := corev1.Secret{}
-	if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
-		return nil, fmt.Errorf("failed to get Grafana Secret: %w", err)
-	}
-
-	adminName, ok := secret.Data[mla.GrafanaUserKey]
-	if !ok {
-		return nil, fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, mla.GrafanaUserKey)
-	}
-	adminPass, ok := secret.Data[mla.GrafanaPasswordKey]
-	if !ok {
-		return nil, fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, mla.GrafanaPasswordKey)
-	}
-
-	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
-	httpClient := &http.Client{Timeout: 15 * time.Second}
-	grafanaURL := "http://localhost:3000"
-
-	return grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
-}
-
-func toggleMLAInSeed(ctx context.Context, client ctrlruntimeclient.Client, enable bool) error {
-	seed, _, err := jig.Seed(ctx, client, credentials.KKPDatacenter)
+func toggleMLAInConfiguration(ctx context.Context, client ctrlruntimeclient.Client, enable bool) error {
+	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, client, jig.KubermaticNamespace())
 	if err != nil {
-		return fmt.Errorf("failed to get seed: %w", err)
+		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
-	seed.Spec.MLA = &kubermaticv1.SeedMLASettings{
-		UserClusterMLAEnabled: enable,
+	if config.Spec.UserCluster == nil {
+		config.Spec.UserCluster = &kubermaticv1.KubermaticUserClusterConfiguration{}
 	}
 
-	if err := client.Update(ctx, seed); err != nil {
-		return fmt.Errorf("failed to update seed: %w", err)
+	config.Spec.UserCluster.MLA = &kubermaticv1.KubermaticUserClusterMLAConfiguration{
+		Enabled: enable,
+	}
+
+	if err := client.Update(ctx, config); err != nil {
+		return fmt.Errorf("failed to update KubermaticConfiguration: %w", err)
 	}
 
 	return nil
@@ -606,7 +548,7 @@ func toggleMLAInSeed(ctx context.Context, client ctrlruntimeclient.Client, enabl
 func createRuleGroup(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, data []byte, kind kubermaticv1.RuleGroupType) (map[string]interface{}, error) {
 	expected := map[string]interface{}{}
 	if err := yaml.Unmarshal(data, &expected); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal expected rule group: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal expected rule group: %w", err)
 	}
 
 	ruleGroup := &kubermaticv1.RuleGroup{
