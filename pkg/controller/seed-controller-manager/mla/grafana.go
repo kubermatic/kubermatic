@@ -19,6 +19,7 @@ package mla
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -31,16 +32,40 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project) (grafanasdk.Org, error) {
-	orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
+func getOrgIDForProject(project *kubermaticv1.Project) (uint, bool) {
+	annotation, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
 	if !ok {
-		return grafanasdk.Org{}, fmt.Errorf("project should have grafana org annotation set")
+		return 0, false
 	}
-	id, err := strconv.ParseUint(orgID, 10, 32)
+
+	id, err := strconv.ParseUint(annotation, 10, 32)
 	if err != nil {
-		return grafanasdk.Org{}, err
+		return 0, false
 	}
-	return grafanaClient.GetOrgById(ctx, uint(id))
+
+	return uint(id), true
+}
+
+// getOrgByProject gets the org ID from the project's annotation and
+// then fetches the organization from Grafana. The function will also ensure
+// that the org name matches the project name, in order to prevent any
+// controller from accidentally reconciling content into the wrong org.
+func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project) (grafanasdk.Org, error) {
+	orgID, ok := getOrgIDForProject(project)
+	if !ok {
+		return grafanasdk.Org{}, errors.New("project should have grafana org annotation set")
+	}
+
+	org, err := grafanaClient.GetOrgById(ctx, orgID)
+	if err != nil {
+		return grafanasdk.Org{}, fmt.Errorf("failed to get Grafana org: %w", err)
+	}
+
+	if !orgNameMatchesProject(project, org.Name) {
+		return grafanasdk.Org{}, fmt.Errorf("Grafana org %d has invalid name (%q)", orgID, org.Name)
+	}
+
+	return org, nil
 }
 
 func GetGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, orgID, uid uint) (*grafanasdk.OrgUser, error) {
