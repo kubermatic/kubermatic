@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v3/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-seed"
+	userclustermla "k8c.io/kubermatic/v3/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v3/pkg/log"
 	"k8c.io/kubermatic/v3/pkg/util/flagopts"
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
@@ -185,8 +186,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		var kubermaticStack stack.Stack
 		switch stackName {
-		// case "usercluster-mla":
-		// 	kubermaticStack = userclustermla.NewStack()
+		case "usercluster-mla":
+			kubermaticStack = userclustermla.NewStack()
 		case "kubermatic-seed":
 			kubermaticStack = kubermaticseed.NewStack()
 		case "kubermatic-master", "":

@@ -156,7 +156,7 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 		r.versions,
 		kubermaticv1.ClusterConditionMLAControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, cluster)
+			return r.reconcile(ctx, log, cluster)
 		},
 	)
 	if err != nil {
@@ -169,19 +169,19 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 	return *result, err
 }
 
-func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *alertmanagerReconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	mlaEnabled := cluster.Spec.MLA != nil && (cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled)
 	// Currently, we don't have a dedicated flag for enabling/disabling Alertmanager, and Alertmanager will be enabled
 	// or disabled based on MLA flag.
 	if !cluster.DeletionTimestamp.IsZero() || !mlaEnabled {
-		return nil, r.handleDeletion(ctx, cluster)
+		return nil, r.handleDeletion(ctx, log, cluster)
 	}
 
 	if err := kubernetes.TryAddFinalizer(ctx, r.seedClient, cluster, alertmanagerFinalizer); err != nil {
 		return nil, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	err := r.ensureAlertmanagerConfiguration(ctx, cluster)
+	err := r.ensureAlertmanagerConfiguration(ctx, log, cluster)
 	// Do not return immediately if alertmanger configuration update failed. Update the configuration health status first.
 	if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil {
 		return nil, fmt.Errorf("failed to update alertmanager configuration status: %w", err)
@@ -192,26 +192,26 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 	return nil, nil
 }
 
-func (r *alertmanagerReconciler) Cleanup(ctx context.Context) error {
+func (r *alertmanagerReconciler) Cleanup(ctx context.Context, log *zap.SugaredLogger) error {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList); err != nil {
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		if err := r.handleDeletion(ctx, &cluster); err != nil {
+		if err := r.handleDeletion(ctx, log, &cluster); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (r *alertmanagerReconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *alertmanagerReconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	// only perform cleanup steps if the Cluster object is valid,
 	// but do remove the finalizer at the end even if the object was junk,
 	// so that we do not block cluster deletion
 	if cluster.Status.NamespaceName != "" {
 		// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
-		err := r.cleanupAlertmanagerConfiguration(ctx, cluster)
+		err := r.cleanupAlertmanagerConfiguration(ctx, log, cluster)
 		// Do not return immmediatly if alertmanger configuration update failed. Update the configuration health status first.
 		if errC := r.ensureAlertManagerConfigStatus(ctx, cluster, err); errC != nil && !apierrors.IsNotFound(errC) {
 			return fmt.Errorf("failed to update alertmanager configuration status in cluster: %w", err)
@@ -235,7 +235,8 @@ func (r *alertmanagerReconciler) handleDeletion(ctx context.Context, cluster *ku
 	return kubernetes.TryRemoveFinalizer(ctx, r.seedClient, cluster, alertmanagerFinalizer)
 }
 
-func (r *alertmanagerReconciler) cleanupAlertmanagerConfiguration(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *alertmanagerReconciler) cleanupAlertmanagerConfiguration(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	log.Info("Deleting Alertmanager configuration")
 	return r.cortexClientProvider().DeleteAlertmanagerConfiguration(ctx, cluster.Name)
 }
 
@@ -280,7 +281,7 @@ func (r *alertmanagerReconciler) cleanupAlertmanagerObjects(ctx context.Context,
 	return nil
 }
 
-func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	config, err := r.getAlertmanagerConfigForCluster(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get alertmanager config: %w", err)
@@ -303,6 +304,7 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 
 	cClient := r.cortexClientProvider()
 
+	log.Info("Upserting Alertmanager configuration")
 	if err := cClient.SetAlertmanagerConfiguration(ctx, cluster.Name, config); err != nil {
 		return fmt.Errorf("failed to update Cortex Alertmanager configuration: %w", err)
 	}

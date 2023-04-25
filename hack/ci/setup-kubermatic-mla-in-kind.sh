@@ -176,7 +176,7 @@ EOF
 ./_build/kubermatic-installer deploy usercluster-mla \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$MLA_HELM_VALUES_FILE" \
-  --helm-timeout 1500s
+  --helm-timeout 25m
 
 sleep 5
 echodate "Waiting for MLA to deploy Seed components..."

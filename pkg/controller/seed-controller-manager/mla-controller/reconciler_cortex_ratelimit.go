@@ -181,7 +181,7 @@ func (r *cortexRatelimitReconciler) ensureLimits(ctx context.Context, mlaAdminSe
 	return r.seedClient.Update(ctx, configMap)
 }
 
-func (r *cortexRatelimitReconciler) Cleanup(ctx context.Context) error {
+func (r *cortexRatelimitReconciler) Cleanup(ctx context.Context, log *zap.SugaredLogger) error {
 	mlaAdminSettingList := &kubermaticv1.MLAAdminSettingList{}
 	if err := r.seedClient.List(ctx, mlaAdminSettingList); err != nil {
 		return fmt.Errorf("Failed to list mlaAdminSetting: %w", err)

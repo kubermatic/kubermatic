@@ -169,6 +169,8 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
+	log = log.With("cluster", ruleGroup.Spec.Cluster.Name)
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := util.ClusterReconcileWrapper(
 		ctx,
@@ -178,7 +180,7 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 		r.versions,
 		kubermaticv1.ClusterConditionMLAControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return nil, r.reconcile(ctx, cluster, ruleGroup)
+			return nil, r.reconcile(ctx, log, cluster, ruleGroup)
 		},
 	)
 	if err != nil {
@@ -191,9 +193,9 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 	return *result, err
 }
 
-func (r *ruleGroupReconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, ruleGroup *kubermaticv1.RuleGroup) error {
+func (r *ruleGroupReconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, ruleGroup *kubermaticv1.RuleGroup) error {
 	if !ruleGroup.DeletionTimestamp.IsZero() {
-		return r.handleDeletion(ctx, ruleGroup)
+		return r.handleDeletion(ctx, log, ruleGroup)
 	}
 
 	mlaEnabled := cluster.Spec.MLA != nil && (cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled)
@@ -211,21 +213,23 @@ func (r *ruleGroupReconciler) reconcile(ctx context.Context, cluster *kubermatic
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	if err := r.ensureRuleGroup(ctx, ruleGroup); err != nil {
+	if err := r.ensureRuleGroup(ctx, log, ruleGroup); err != nil {
 		return fmt.Errorf("failed to create rule group: %w", err)
 	}
 
 	return nil
 }
 
-func (r *ruleGroupReconciler) Cleanup(ctx context.Context) error {
+func (r *ruleGroupReconciler) Cleanup(ctx context.Context, log *zap.SugaredLogger) error {
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
 	if err := r.seedClient.List(ctx, ruleGroupList); err != nil {
 		return err
 	}
 
 	for _, ruleGroup := range ruleGroupList.Items {
-		if err := r.handleDeletion(ctx, &ruleGroup); err != nil {
+		groupLog := log.With("rulegroup", ruleGroup.Name, "cluster", ruleGroup.Spec.Cluster.Name)
+
+		if err := r.handleDeletion(ctx, groupLog, &ruleGroup); err != nil {
 			return fmt.Errorf("failed to handle deletion: %w", err)
 		}
 		if err := r.seedClient.Delete(ctx, &ruleGroup); err != nil {
@@ -236,9 +240,10 @@ func (r *ruleGroupReconciler) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-func (r *ruleGroupReconciler) handleDeletion(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup) error {
+func (r *ruleGroupReconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, ruleGroup *kubermaticv1.RuleGroup) error {
 	cClient := r.cortexClientProvider()
 
+	log.Infow("Deleting rule group", "type", ruleGroup.Spec.RuleGroupType)
 	if err := cClient.DeleteRuleGroupConfiguration(ctx, ruleGroup.Spec.Cluster.Name, ruleGroup.Spec.RuleGroupType, ruleGroup.Name); err != nil {
 		return fmt.Errorf("failed to delete Cortex rule group: %w", err)
 	}
@@ -246,7 +251,7 @@ func (r *ruleGroupReconciler) handleDeletion(ctx context.Context, ruleGroup *kub
 	return kubernetes.TryRemoveFinalizer(ctx, r.seedClient, ruleGroup, ruleGroupFinalizer)
 }
 
-func (r *ruleGroupReconciler) ensureRuleGroup(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup) error {
+func (r *ruleGroupReconciler) ensureRuleGroup(ctx context.Context, log *zap.SugaredLogger, ruleGroup *kubermaticv1.RuleGroup) error {
 	expectedRuleGroup := map[string]interface{}{}
 	decoder := yaml.NewDecoder(bytes.NewReader(ruleGroup.Spec.Data))
 	if err := decoder.Decode(&expectedRuleGroup); err != nil {
@@ -264,6 +269,7 @@ func (r *ruleGroupReconciler) ensureRuleGroup(ctx context.Context, ruleGroup *ku
 
 	cClient := r.cortexClientProvider()
 
+	log.Infow("Upserting rule group", "type", ruleGroup.Spec.RuleGroupType)
 	return cClient.SetRuleGroupConfiguration(ctx, ruleGroup.Spec.Cluster.Name, ruleGroup.Spec.RuleGroupType, ruleGroup.Name, ruleGroup.Spec.Data)
 }
 

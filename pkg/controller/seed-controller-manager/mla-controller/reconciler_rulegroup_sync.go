@@ -132,7 +132,7 @@ func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconci
 	return reconcile.Result{}, nil
 }
 
-func (r *ruleGroupSyncReconciler) Cleanup(ctx context.Context) error {
+func (r *ruleGroupSyncReconciler) Cleanup(ctx context.Context, log *zap.SugaredLogger) error {
 	ruleGroupList := &kubermaticv1.RuleGroupList{}
 	if err := r.seedClient.List(ctx, ruleGroupList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return err

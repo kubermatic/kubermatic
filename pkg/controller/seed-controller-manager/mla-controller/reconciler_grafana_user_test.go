@@ -64,6 +64,7 @@ func newTestGrafanaUserReconciler(objects []ctrlruntimeclient.Object) (*grafanaU
 	}, gClient
 }
 
+//gocyclo:ignore
 func TestGrafanaUserReconcile(t *testing.T) {
 	ctx := context.Background()
 
@@ -145,8 +146,7 @@ func TestGrafanaUserReconcile(t *testing.T) {
 						Name: userName,
 					},
 					Spec: kubermaticv1.UserSpec{
-						Email:   userEmail,
-						IsAdmin: true,
+						Email: userEmail,
 					},
 				},
 			},
@@ -159,6 +159,15 @@ func TestGrafanaUserReconcile(t *testing.T) {
 					t.Error("Expected user to have MLA finalizer, but does not.")
 				}
 
+				globalUser, err := gClient.LookupUser(ctx, user.Spec.Email)
+				if err != nil {
+					t.Fatalf("Failed to get global Grafana user: %v", err)
+				}
+
+				if globalUser.IsGrafanaAdmin != user.Spec.IsAdmin {
+					t.Fatalf("Expected IsGrafanaAdmin to be %v, but is %v", user.Spec.IsAdmin, globalUser.IsGrafanaAdmin)
+				}
+
 				user.Spec.IsAdmin = true
 				if err := reconciler.seedClient.Update(ctx, user); err != nil {
 					t.Fatalf("Failed to toggle isAdmin flag: %v", err)
@@ -168,6 +177,15 @@ func TestGrafanaUserReconcile(t *testing.T) {
 				_, reconcileErr = reconciler.Reconcile(ctx, request)
 				if reconcileErr != nil {
 					t.Fatalf("Failed to reconcile a second time: %v", reconcileErr)
+				}
+
+				globalUser, err = gClient.LookupUser(ctx, user.Spec.Email)
+				if err != nil {
+					t.Fatalf("Failed to get updated global Grafana user: %v", err)
+				}
+
+				if globalUser.IsGrafanaAdmin != user.Spec.IsAdmin {
+					t.Fatalf("Expected IsGrafanaAdmin now to be %v, but is %v", user.Spec.IsAdmin, globalUser.IsGrafanaAdmin)
 				}
 
 				// ... but should be in the KKP org

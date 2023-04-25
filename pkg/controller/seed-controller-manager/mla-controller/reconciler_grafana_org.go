@@ -129,12 +129,13 @@ func (r *grafanaOrgReconciler) ensureOrganization(ctx context.Context, log *zap.
 		return existingOrg.ID, nil
 	}
 
+	log.Info("Creating Grafana organization")
 	status, err := gClient.CreateOrg(ctx, expected)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create organization: %w", err)
 	}
 
-	return *status.ID, nil
+	return *status.OrgID, nil
 }
 
 func (r *grafanaOrgReconciler) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, orgID uint, gClient grafana.Client) error {
