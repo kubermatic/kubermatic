@@ -38,19 +38,6 @@ const (
 	EtcdLauncherServiceAccountName = "etcd-launcher"
 )
 
-// getPluralResourceName returns the lowercase, plural kind name for
-// an object, for example "clusters" for a kubermatic.k8c.io/Cluster
-// object.
-func (c *resourcesController) getPluralResourceName(obj ctrlruntimeclient.Object) (string, error) {
-	gvk := obj.GetObjectKind().GroupVersionKind()
-	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-	if err != nil {
-		return "", err
-	}
-
-	return rmapping.Resource.Resource, nil
-}
-
 // syncClusterScopedProjectResource generates RBAC Role and Binding for a cluster-scoped resource that belongs to a project.
 // in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
 // instead it assumes that all required information is stored in OwnerReferences or in Labels (for cluster resources)
@@ -71,7 +58,7 @@ func (c *resourcesController) syncClusterScopedProjectResource(ctx context.Conte
 	}
 
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	resourceName, err := c.getPluralResourceName(obj)
+	resourceName, err := getPluralResourceName(c.restMapper, obj)
 	if err != nil {
 		return err
 	}
@@ -114,7 +101,7 @@ func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Con
 	}
 
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	resourceName, err := c.getPluralResourceName(obj)
+	resourceName, err := getPluralResourceName(c.restMapper, obj)
 	if err != nil {
 		return err
 	}
