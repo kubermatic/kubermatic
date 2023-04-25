@@ -153,7 +153,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:owners",
+						Name:            "kubermatic:usersshkeys:owners",
 						ResourceVersion: "1",
 					},
 					Subjects: []rbacv1.Subject{
@@ -166,12 +166,12 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:owners",
+						Name:     "kubermatic:usersshkeys:owners",
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:editors",
+						Name:            "kubermatic:usersshkeys:editors",
 						ResourceVersion: "1",
 					},
 					Subjects: []rbacv1.Subject{
@@ -184,7 +184,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:editors",
+						Name:     "kubermatic:usersshkeys:editors",
 					},
 				},
 			},
@@ -257,7 +257,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:owners",
+						Name: "kubermatic:usersshkeys:owners",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -269,12 +269,12 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:owners",
+						Name:     "kubermatic:usersshkeys:owners",
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:editors",
+						Name: "kubermatic:usersshkeys:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -286,14 +286,14 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:editors",
+						Name:     "kubermatic:usersshkeys:editors",
 					},
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:owners",
+						Name:            "kubermatic:usersshkeys:owners",
 						ResourceVersion: "1",
 					},
 					TypeMeta: metav1.TypeMeta{
@@ -316,12 +316,12 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:owners",
+						Name:     "kubermatic:usersshkeys:owners",
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:editors",
+						Name:            "kubermatic:usersshkeys:editors",
 						ResourceVersion: "1",
 					},
 					TypeMeta: metav1.TypeMeta{
@@ -344,7 +344,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:editors",
+						Name:     "kubermatic:usersshkeys:editors",
 					},
 				},
 			},
@@ -643,7 +643,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:owners",
+						Name:            "kubermatic:usersshkeys:owners",
 						ResourceVersion: "1",
 					},
 					TypeMeta: metav1.TypeMeta{
@@ -654,12 +654,12 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:owners",
+						Name:     "kubermatic:usersshkeys:owners",
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:editors",
+						Name:            "kubermatic:usersshkeys:editors",
 						ResourceVersion: "1",
 					},
 					TypeMeta: metav1.TypeMeta{
@@ -670,14 +670,14 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:editors",
+						Name:     "kubermatic:usersshkeys:editors",
 					},
 				},
 			},
 			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:owners",
+						Name: "kubermatic:usersshkeys:owners",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -689,12 +689,12 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:owners",
+						Name:     "kubermatic:usersshkeys:owners",
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:usersshkeies:editors",
+						Name: "kubermatic:usersshkeys:editors",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -706,7 +706,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
-						Name:     "kubermatic:usersshkeies:editors",
+						Name:     "kubermatic:usersshkeys:editors",
 					},
 				},
 			},
@@ -971,7 +971,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			expectedClusterRolesForMaster: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:owners",
+						Name:            "kubermatic:usersshkeys:owners",
 						ResourceVersion: "1",
 						Labels: map[string]string{
 							kubermaticv1.AuthZRoleLabel: "owners",
@@ -980,7 +980,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{"usersshkeies"},
+							Resources: []string{"usersshkeys"},
 							Verbs:     []string{"create"},
 						},
 					},
@@ -988,7 +988,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:usersshkeies:editors",
+						Name:            "kubermatic:usersshkeys:editors",
 						ResourceVersion: "1",
 						Labels: map[string]string{
 							kubermaticv1.AuthZRoleLabel: "editors",
@@ -997,7 +997,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
-							Resources: []string{"usersshkeies"},
+							Resources: []string{"usersshkeys"},
 							Verbs:     []string{"create"},
 						},
 					},

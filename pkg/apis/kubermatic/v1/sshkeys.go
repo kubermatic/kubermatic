@@ -23,7 +23,7 @@ import (
 
 const (
 	// SSHKeyResourceName represents "Resource" defined in Kubernetes.
-	SSHKeyResourceName = "usersshkeies"
+	SSHKeyResourceName = "usersshkeys"
 
 	// SSHKeyKind represents "Kind" defined in Kubernetes.
 	SSHKeyKind = "UserSSHKey"
