@@ -21,8 +21,7 @@ import (
 	"net"
 
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v3/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
+	kubermaticseed "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-seed"
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -347,7 +346,7 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP) reconciling.NamedNetworkPolic
 							// mode combinations a local path to it may be used to reach OIDC issuer installed in KKP
 							NamespaceSelector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									corev1.LabelMetadataName: kubermaticmaster.NginxIngressControllerNamespace,
+									corev1.LabelMetadataName: kubermaticseed.NginxIngressControllerNamespace,
 								},
 							},
 						}),

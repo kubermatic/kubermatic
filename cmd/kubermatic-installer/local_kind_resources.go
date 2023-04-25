@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/api/v3/pkg/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -153,44 +152,30 @@ var kindNodeportProxyService = corev1.Service{
 	},
 }
 
-var kindLocalSeed = kubermaticv1.Seed{
+var kindLocalDatacenter = kubermaticv1.Datacenter{
 	ObjectMeta: metav1.ObjectMeta{
-		Name:      "kubermatic",
-		Namespace: "kubermatic",
+		Name: "kubevirt",
 	},
-	Spec: kubermaticv1.SeedSpec{
-		Country:  "DE",      // TODO: some clever heuristic or geolocation service?
-		Location: "Hamburg", // TODO: some clever heuristic or geolocation service?
-		Kubeconfig: corev1.ObjectReference{
-			Namespace: "kubermatic",
-			Name:      "kubeconfig-seed",
-		},
-		Datacenters: map[string]kubermaticv1.Datacenter{
-			"kubevirt": {
-				Country:  "DE",      // TODO: some clever heuristic or geolocation service?
-				Location: "Hamburg", // TODO: some clever heuristic or geolocation service?
-				Spec: kubermaticv1.DatacenterSpec{
-					Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
-						EnableDefaultNetworkPolicies: ptr(false),
-						DNSPolicy:                    "ClusterFirst",
-						Images: kubermaticv1.KubeVirtImageSources{
-							HTTP: &kubermaticv1.KubeVirtHTTPSource{
-								OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
-									providerconfig.OperatingSystemUbuntu: map[string]string{
-										// TODO: create image-repo cache on the local cluster?
-										// the MD at the moment takes about 18 minutes to get ready which is too long
-										// could be worth to start downloading this in the beginning of the call, cache
-										// locally deployed image-repo and then speed up the MD startup
-										"22.04": "https://dev.kubermatic.io/kubevirt-images/images/ubuntu-22.04.img",
-									},
-								},
+	Spec: kubermaticv1.DatacenterSpec{
+		Provider: kubermaticv1.DatacenterProviderSpec{
+			KubeVirt: &kubermaticv1.DatacenterSpecKubeVirt{
+				EnableDefaultNetworkPolicies: ptr(false),
+				DNSPolicy:                    "ClusterFirst",
+				Images: &kubermaticv1.KubeVirtImageSources{
+					HTTP: &kubermaticv1.KubeVirtHTTPSource{
+						OperatingSystems: map[kubermaticv1.OperatingSystem]kubermaticv1.OSVersions{
+							kubermaticv1.OperatingSystemUbuntu: map[string]string{
+								// TODO: create image-repo cache on the local cluster?
+								// the MD at the moment takes about 18 minutes to get ready which is too long
+								// could be worth to start downloading this in the beginning of the call, cache
+								// locally deployed image-repo and then speed up the MD startup
+								"22.04": "https://dev.kubermatic.io/kubevirt-images/images/ubuntu-22.04.img",
 							},
 						},
 					},
 				},
 			},
 		},
-		ExposeStrategy: "Tunneling",
 	},
 }
 
@@ -199,7 +184,7 @@ var kindLocalPreset = kubermaticv1.Preset{
 		Name: "local",
 	},
 	Spec: kubermaticv1.PresetSpec{
-		Kubevirt: &kubermaticv1.Kubevirt{
+		KubeVirt: &kubermaticv1.KubeVirtPreset{
 			ProviderPreset: kubermaticv1.ProviderPreset{
 				Enabled: ptr(true),
 			},

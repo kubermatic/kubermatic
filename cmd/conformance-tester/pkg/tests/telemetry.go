@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 
 	ctypes "k8c.io/kubermatic/v3/cmd/conformance-tester/pkg/types"
-	kubermaticmaster "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-master"
+	kubermaticseed "k8c.io/kubermatic/v3/pkg/install/stack/kubermatic-seed"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -53,7 +53,7 @@ func TestTelemetry(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Opt
 
 	log.Info("Testing telemetry availability...")
 
-	pod, err := getLatestTelemetryPod(ctx, opts.SeedClusterClient, kubermaticmaster.TelemetryNamespace)
+	pod, err := getLatestTelemetryPod(ctx, opts.SeedClusterClient, kubermaticseed.TelemetryNamespace)
 	if err != nil {
 		return fmt.Errorf("failed to determine latest completed telemetry Pod: %w", err)
 	}

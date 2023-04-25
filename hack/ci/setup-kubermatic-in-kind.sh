@@ -154,30 +154,19 @@ set_crds_version_annotation
 # install dependencies and Kubermatic Operator into cluster
 TEST_NAME="Install KKP into kind"
 
-./_build/kubermatic-installer deploy kubermatic-master \
+./_build/kubermatic-installer deploy kubermatic-seed \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE"
 
 # TODO: The installer should wait for everything to finish reconciling.
-echodate "Waiting for Kubermatic Operator to deploy Master components..."
+echodate "Waiting for Kubermatic Operator to deploy seed components..."
 # sleep a bit to prevent us from checking the Deployments too early, before
 # the operator had time to reconcile
 sleep 5
 retry 10 check_all_deployments_ready kubermatic
 
 echodate "Finished installing Kubermatic"
-
-TEST_NAME="Setup KKP Seed"
-echodate "Installing Seed..."
-
-# master&seed are the same cluster, but we still want to test that the
-# installer can setup the seed components. Effectively, in these tests
-# this is a NOP.
-./_build/kubermatic-installer deploy kubermatic-seed \
-  --storageclass copy-default \
-  --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$HELM_VALUES_FILE"
 
 DATACENTERS_MANIFEST="$(mktemp)"
 cp hack/ci/testdata/datacenters.yaml $DATACENTERS_MANIFEST
@@ -195,11 +184,6 @@ if [[ ! -z "${VCD_URL:-}" ]]; then
 fi
 
 retry 8 kubectl apply --filename $DATACENTERS_MANIFEST
-echodate "Finished installing Seed"
-
-sleep 5
-echodate "Waiting for Deployments to roll out..."
-retry 9 check_all_deployments_ready kubermatic
-echodate "Kubermatic is ready."
+echodate "Finished installing datacenters"
 
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT

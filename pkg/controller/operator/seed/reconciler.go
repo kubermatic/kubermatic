@@ -34,7 +34,6 @@ import (
 	"k8c.io/kubermatic/v3/pkg/resources"
 	"k8c.io/kubermatic/v3/pkg/resources/certificates"
 	kkpreconciling "k8c.io/kubermatic/v3/pkg/resources/reconciling"
-	crdutil "k8c.io/kubermatic/v3/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -302,11 +301,7 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, log *zap.SugaredLogger, 
 			return fmt.Errorf("failed to list CRDs for API group %q in the operator: %w", group, err)
 		}
 
-		for i, crdObject := range crds {
-			if crdutil.SkipCRDOnCluster(&crdObject, crdutil.SeedCluster) {
-				continue
-			}
-
+		for i := range crds {
 			creators = append(creators, operatorresources.CRDReconciler(&crds[i], log, r.versions))
 		}
 	}

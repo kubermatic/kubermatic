@@ -162,7 +162,7 @@ func customNetworkPolicyReconciler(existing *kubermaticv1.CustomNetworkPolicy) r
 	}
 }
 
-func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
+func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubeVirt, client ctrlruntimeclient.Client) error {
 	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		clusterIsolationNetworkPolicyReconciler(cluster.Status.Address.IP, dc.DNSConfig.Nameservers),
 		clusterImporterNetworkPolicyReconciler(),

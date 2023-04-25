@@ -27,7 +27,6 @@ import (
 	kubermaticversion "k8c.io/kubermatic/v3/pkg/version/kubermatic"
 
 	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,7 +40,7 @@ type DeployOptions struct {
 	ForceHelmReleaseUpgrade    bool
 	ChartsDirectory            string
 	AllowEditionChange         bool
-	SkipSeedValidation         sets.Set[string]
+	SkipUserClusterValidation  bool
 
 	Versions kubermaticversion.Versions
 

@@ -313,7 +313,7 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	ensureResource(kubeClient, logger, &kindSeedSecret)
 	kindPreset := initKindPreset(logger, internalKubeconfig)
 	ensureResource(kubeClient, logger, &kindPreset)
-	ensureResource(kubeClient, logger, &kindLocalSeed)
+	ensureResource(kubeClient, logger, &kindLocalDatacenter)
 	return kkpEndpoint
 }
 

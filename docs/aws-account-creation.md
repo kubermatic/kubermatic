@@ -17,7 +17,7 @@
         {
             "Effect": "Allow",
             "Action": "iam:*",
-            "Resource": "arn:aws:iam::INSERT_AWS_USER_ID:user/kubermatic-master/*"
+            "Resource": "arn:aws:iam::INSERT_AWS_USER_ID:user/kubermatic/*"
         },
         {
             "Effect": "Allow",
