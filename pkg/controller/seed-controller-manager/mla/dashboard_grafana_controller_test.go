@@ -117,6 +117,11 @@ func TestDashboardGrafanaReconcile(t *testing.T) {
 			hasFinalizer: true,
 			requests: []request{
 				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
 					name:     "set dashboard",
 					request:  httptest.NewRequest(http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "dashboard set"}`)), StatusCode: http.StatusOK},
@@ -195,6 +200,11 @@ func TestDashboardGrafanaReconcile(t *testing.T) {
 			},
 			hasFinalizer: false,
 			requests: []request{
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
 				{
 					name:     "delete dashboard",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/dashboards/uid/"+"unique", nil),
