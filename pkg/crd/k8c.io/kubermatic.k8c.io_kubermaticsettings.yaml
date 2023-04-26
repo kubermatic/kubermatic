@@ -210,6 +210,8 @@ spec:
                   type: object
                 restrictProjectCreation:
                   type: boolean
+                restrictProjectDeletion:
+                  type: boolean
                 userProjectsLimit:
                   description: UserProjectsLimit is the maximum number of projects a user can create.
                   format: int64
@@ -226,6 +228,7 @@ spec:
                 - mlaAlertmanagerPrefix
                 - mlaGrafanaPrefix
                 - restrictProjectCreation
+                - restrictProjectDeletion
                 - userProjectsLimit
               type: object
           type: object
