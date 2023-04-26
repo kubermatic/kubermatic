@@ -79,3 +79,35 @@ func FailureDomainZoneAntiAffinity(app string) corev1.WeightedPodAffinityTerm {
 		},
 	}
 }
+
+// ClusterFailureDomainZoneAntiAffinity ensures that same-kind pods for a specific user cluster are spread across different availability zones.
+func ClusterFailureDomainZoneAntiAffinity(app, clusterName string) []corev1.WeightedPodAffinityTerm {
+	return []corev1.WeightedPodAffinityTerm{
+		// Avoid that we schedule multiple same-kind pods of a cluster on a single zone
+		{
+			Weight: 100,
+			PodAffinityTerm: corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						AppLabelKey:     app,
+						ClusterLabelKey: clusterName,
+					},
+				},
+				TopologyKey: TopologyKeyZone,
+			},
+		},
+		// Avoid that we schedule multiple same-kind pods on a single zone
+
+		{
+			Weight: 10,
+			PodAffinityTerm: corev1.PodAffinityTerm{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						AppLabelKey: app,
+					},
+				},
+				TopologyKey: TopologyKeyZone,
+			},
+		},
+	}
+}

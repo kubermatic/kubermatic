@@ -311,7 +311,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
 				antiAffinities := set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
-				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName))
+				antiAffinities = append(antiAffinities, resources.ClusterFailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName, data.Cluster().Name)...)
 				set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
 			}
 

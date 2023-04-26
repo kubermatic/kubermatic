@@ -261,6 +261,11 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
+			if data.SupportsFailureDomainZoneAntiAffinity() {
+				antiAffinities := dep.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
+				antiAffinities = append(antiAffinities, resources.ClusterFailureDomainZoneAntiAffinity(name, data.Cluster().Name)...)
+				dep.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+			}
 
 			return dep, nil
 		}
