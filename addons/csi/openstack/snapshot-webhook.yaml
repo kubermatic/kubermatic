@@ -40,6 +40,7 @@ spec:
       labels:
         app: snapshot-validation
     spec:
+      serviceAccountName: snapshot-webhook
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -71,6 +72,34 @@ spec:
     - protocol: TCP
       port: 443 # Change if needed
       targetPort: 443 # Change if the webserver image expects a different port
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: snapshot-webhook
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-webhook-runner
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotclasses"]
+    verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: snapshot-webhook-role
+subjects:
+  - kind: ServiceAccount
+    name: snapshot-webhook
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: snapshot-webhook-runner
+  apiGroup: rbac.authorization.k8s.io
 
 {{ end }}
 {{ end }}
