@@ -722,7 +722,7 @@ func TestValidateCNIUpdate(t *testing.T) {
 			},
 			new: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCilium,
-				Version: "1.13.1",
+				Version: "1.13.2",
 			},
 			wantErr: false,
 		},
@@ -730,7 +730,7 @@ func TestValidateCNIUpdate(t *testing.T) {
 			name: "allow patch version downgrade",
 			old: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCilium,
-				Version: "1.13.1",
+				Version: "1.13.2",
 			},
 			new: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCilium,

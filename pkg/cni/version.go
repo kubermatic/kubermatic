@@ -33,7 +33,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.24",
-		kubermaticv1.CNIPluginTypeCilium: "1.13.1",
+		kubermaticv1.CNIPluginTypeCilium: "1.13.2",
 	}
 )
 
@@ -54,7 +54,7 @@ var (
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.13.0",
-			"1.13.1",
+			"1.13.2",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
