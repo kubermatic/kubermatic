@@ -85,7 +85,7 @@ func (m model) View() string {
 	b.WriteString("\n\n")
 	b.WriteString(m.pages.View())
 	b.WriteString("\n\n")
-	b.WriteString(subtle("←/→ page • esc: quit\n"))
+	b.WriteString(subtle("alt+←/→: page • esc: quit\n"))
 
 	return fmt.Sprintf("\n%s", indent.String(b.String(), 2))
 }
