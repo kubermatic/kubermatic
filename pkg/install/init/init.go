@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
+	"k8c.io/kubermatic/v2/pkg/install/init/models/confirmation"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -52,11 +53,20 @@ func initialModel() model {
 	}
 
 	// all steps in the wizard.
-	hostnameInput := input.New(40, 156, "What DNS name should be used for your KKP installation?", "kubermatic.example.com")
+	domainInput := input.New(40, 156, "What DNS name should be used for your KKP installation?", "kubermatic.example.com")
 
 	exposeStrategyChoice := choice.New("What expose strategy do you want to use for Kubernetes clusters created by this environment?", strategies)
 
 	secretGenerationChoice := choice.New("Would you like this wizard to generate secrets for your configuration?", generateSecretChoices)
+
+	confirm := confirmation.New(domainInput)
+
+	models := []tea.Model{
+		domainInput,
+		exposeStrategyChoice,
+		secretGenerationChoice,
+		confirm,
+	}
 
 	p := paginator.New()
 	p.Type = paginator.Dots
@@ -68,13 +78,10 @@ func initialModel() model {
 	p.KeyMap.NextPage = key.NewBinding(key.WithKeys("alt+right", "enter"))
 	p.KeyMap.PrevPage = key.NewBinding(key.WithKeys("alt+left"))
 
-	p.SetTotalPages(3)
+	p.SetTotalPages(len(models))
 
 	return model{
-		domain:           hostnameInput,
-		exposestrategy:   exposeStrategyChoice,
-		secretGeneration: secretGenerationChoice,
-
-		pages: p,
+		models: models,
+		pages:  p,
 	}
 }

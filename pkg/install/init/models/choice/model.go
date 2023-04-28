@@ -52,7 +52,7 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -84,7 +84,7 @@ func (m *Model) View() string {
 	}
 
 	b.WriteString("\n\n")
-	b.WriteString(wordwrap.String(m.Choices[m.ActiveChoice].Description(), 80))
+	b.WriteString(fmt.Sprintf("%s", colorFg(wordwrap.String(m.Choices[m.ActiveChoice].Description(), 80), "241")))
 
 	return b.String()
 }

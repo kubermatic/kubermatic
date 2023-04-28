@@ -14,31 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package input
+package confirmation
 
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/textinput"
+	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func New(width, limit int, question, placeholder string) *Model {
-	input := textinput.New()
-	input.Placeholder = placeholder
-	input.Focus()
-	input.CharLimit = limit
-	input.Width = width
-
+func New(domain *input.Model) *Model {
 	return &Model{
-		question: question,
-		input:    input,
+		domain: domain,
 	}
 }
 
 type Model struct {
-	question string
-	input    textinput.Model
+	domain *input.Model
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -48,19 +41,9 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	m.input, cmd = m.input.Update(msg)
-
 	return m, cmd
 }
 
 func (m *Model) View() string {
-	return fmt.Sprintf(
-		"%s\n\n%s",
-		m.question,
-		m.input.View(),
-	) + "\n"
-}
-
-func (m *Model) Value() string {
-	return m.input.Value()
+	return fmt.Sprintf("please review your settings: %s\n", m.domain.Value())
 }

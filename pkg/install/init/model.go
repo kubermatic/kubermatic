@@ -20,9 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
-	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
-
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -43,9 +40,7 @@ var (
 type model struct {
 	Quitting bool
 
-	domain           *input.Model
-	exposestrategy   *choice.Model
-	secretGeneration *choice.Model
+	models []tea.Model
 
 	pages paginator.Model
 }
@@ -75,38 +70,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	m.pages, cmd = m.pages.Update(msg)
 
-	switch m.pages.Page {
-	case 0:
-		m.domain, cmd = m.domain.Update(msg)
-	case 1:
-		m.exposestrategy, cmd = m.exposestrategy.Update(msg)
-	case 2:
-		m.secretGeneration, cmd = m.secretGeneration.Update(msg)
-	}
+	m.models[m.pages.Page], cmd = m.models[m.pages.Page].Update(msg)
 
 	return m, cmd
 }
 
 func (m model) View() string {
-	var (
-		b strings.Builder
-		s string
-	)
+	var b strings.Builder
 
 	if m.Quitting {
 		return indent.String("See you later!\n\n", 2)
 	}
 
-	switch m.pages.Page {
-	case 0:
-		s = m.domain.View()
-	case 1:
-		s = m.exposestrategy.View()
-	case 2:
-		s = m.secretGeneration.View()
-	}
-
-	b.WriteString(s)
+	b.WriteString(m.models[m.pages.Page].View())
 
 	b.WriteString("\n\n")
 	b.WriteString(m.pages.View())
