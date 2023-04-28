@@ -18,12 +18,13 @@ package init
 
 import (
 	"fmt"
-	"time"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/paginator"
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/indent"
+	"github.com/muesli/termenv"
 )
 
 const (
@@ -31,18 +32,25 @@ const (
 	StepExposeStrategy
 )
 
+var (
+	term   = termenv.EnvColorProfile()
+	subtle = makeFgStyle("241")
+)
+
 type model struct {
 	Quitting bool
 
-	domain textinput.Model
-	pages  paginator.Model
+	domain         tea.Model
+	exposeStrategy tea.Model
+
+	pages paginator.Model
 }
 
 type item struct {
-	title, desc string
+	name, desc string
 }
 
-func (i item) Title() string       { return i.title }
+func (i item) Name() string        { return i.name }
 func (i item) Description() string { return i.desc }
 
 func (m model) Init() tea.Cmd {
@@ -50,13 +58,6 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch m.pages.Page {
-	case StepDomain:
-		return m.domainUpdate(msg)
-	case StepExposeStrategy:
-		return m.exposeStrategyUpdate(msg)
-	}
-
 	// Make sure these keys always quit
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		k := msg.String()
@@ -66,24 +67,45 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	return m, nil
+	var cmd tea.Cmd
+
+	m.pages, cmd = m.pages.Update(msg)
+
+	switch m.pages.Page {
+	case StepDomain:
+		m.domain, cmd = m.domain.Update(msg)
+	case StepExposeStrategy:
+		m.exposeStrategy, cmd = m.exposeStrategy.Update(msg)
+	}
+
+	return m, cmd
 }
 
 func (m model) View() string {
-	var s string
+	var b strings.Builder
 
 	if m.Quitting {
-		s = "See you later!\n\n"
+		return indent.String("See you later!\n\n", 2)
 	}
 
 	switch m.pages.Page {
 	case StepDomain:
-		s = m.domainView()
-		break
+		b.WriteString(m.domain.View())
 	case StepExposeStrategy:
-		s = m.exposeStrategyView()
-		break
+		b.WriteString(m.exposeStrategy.View())
 	}
 
-	return fmt.Sprintf("\n%s", indent.String(s, 2))
+	b.WriteString("\n\n")
+	b.WriteString(m.pages.View())
+	b.WriteString("\n\n")
+	b.WriteString(subtle("←/→ page • esc: quit\n"))
+
+	return fmt.Sprintf("\n%s", indent.String(b.String(), 2))
+}
+
+var docStyle = lipgloss.NewStyle().Margin(1, 2)
+
+// Return a function that will colorize the foreground of a given string.
+func makeFgStyle(color string) func(string) string {
+	return termenv.Style{}.Foreground(term.Color(color)).Styled
 }

@@ -18,9 +18,15 @@ package strategy
 
 import (
 	"fmt"
-	"time"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/muesli/reflow/wordwrap"
+	"github.com/muesli/termenv"
+)
+
+var (
+	term = termenv.EnvColorProfile()
 )
 
 type Choice interface {
@@ -28,9 +34,21 @@ type Choice interface {
 	Description() string
 }
 
+// compile time check if interface is implemented
+var _ tea.Model = &Model{}
+
+func New(question string, choices []Choice) tea.Model {
+	return &Model{
+		Question: question,
+		Choices:  choices,
+	}
+}
+
 type Model struct {
+	Question     string
 	Choices      []Choice
 	ActiveChoice int
+	Chosen       bool
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -59,5 +77,29 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
+	var b strings.Builder
 
+	b.WriteString(fmt.Sprintf("%s\n\n", m.Question))
+
+	for i, item := range m.Choices {
+		b.WriteString(checkbox(fmt.Sprintf("%s", item.Name()), m.ActiveChoice == i))
+		b.WriteString("\n")
+	}
+
+	b.WriteString("\n\n")
+	b.WriteString(wordwrap.String(m.Choices[m.ActiveChoice].Description(), 80))
+
+	return b.String()
+}
+
+func checkbox(label string, checked bool) string {
+	if checked {
+		return colorFg("[x] "+label, "212")
+	}
+	return fmt.Sprintf("[ ] %s", label)
+}
+
+// Color a string's foreground with the given value.
+func colorFg(val, color string) string {
+	return termenv.String(val).Foreground(term.Color(color)).String()
 }
