@@ -45,6 +45,7 @@ require (
 	github.com/kubermatic/machine-controller v1.56.1-0.20230511171924-bc2e86d29674
 	github.com/minio/minio-go/v7 v7.0.49
 	github.com/muesli/reflow v0.3.0
+	github.com/muesli/termenv v0.14.0
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.6
@@ -363,6 +364,4 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/muesli/ansi v0.0.0-20211018074035-2e021307bc4b // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/muesli/termenv v0.14.0 // indirect
-	github.com/sahilm/fuzzy v0.1.0 // indirect
 )

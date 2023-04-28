@@ -34,10 +34,7 @@ type Choice interface {
 	Description() string
 }
 
-// compile time check if interface is implemented
-var _ tea.Model = &Model{}
-
-func New(question string, choices []Choice) tea.Model {
+func New(question string, choices []Choice) *Model {
 	return &Model{
 		Question: question,
 		Choices:  choices,
@@ -55,7 +52,7 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {

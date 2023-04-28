@@ -39,6 +39,7 @@ func Run() error {
 }
 
 func initialModel() model {
+
 	strategies := []choice.Choice{
 		item{name: "Tunneling", desc: "The Tunneling expose strategy addresses both the scaling issues of the NodePort strategy and cost issues of the LoadBalancer strategy. With this strategy, the traffic is routed to the based on a combination of SNI and HTTP/2 tunnels by the nodeport-proxy."},
 		item{name: "LoadBalancer", desc: "In the LoadBalancer expose strategy, a dedicated service of type LoadBalancer will be created for each user cluster. This strategy requires services of type LoadBalancer to be available on the Seed cluster and usually results into higher cost of cloud resources."},
@@ -51,11 +52,11 @@ func initialModel() model {
 	}
 
 	// all steps in the wizard.
-	models := []tea.Model{
-		input.New(40, 156, "What DNS name should be used for your KKP installation?", "kubermatic.example.com"),
-		choice.New("What expose strategy do you want to use for Kubernetes clusters created by this environment?", strategies),
-		choice.New("Would you like this wizard to generate secrets for your configuration?", generateSecretChoices),
-	}
+	hostnameInput := input.New(40, 156, "What DNS name should be used for your KKP installation?", "kubermatic.example.com")
+
+	exposeStrategyChoice := choice.New("What expose strategy do you want to use for Kubernetes clusters created by this environment?", strategies)
+
+	secretGenerationChoice := choice.New("Would you like this wizard to generate secrets for your configuration?", generateSecretChoices)
 
 	p := paginator.New()
 	p.Type = paginator.Dots
@@ -67,10 +68,13 @@ func initialModel() model {
 	p.KeyMap.NextPage = key.NewBinding(key.WithKeys("alt+right", "enter"))
 	p.KeyMap.PrevPage = key.NewBinding(key.WithKeys("alt+left"))
 
-	p.SetTotalPages(len(models))
+	p.SetTotalPages(3)
 
 	return model{
-		models: models,
-		pages:  p,
+		domain:           hostnameInput,
+		exposestrategy:   exposeStrategyChoice,
+		secretGeneration: secretGenerationChoice,
+
+		pages: p,
 	}
 }

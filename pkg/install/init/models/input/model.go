@@ -23,10 +23,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// compile time check if interface is implemented
-var _ tea.Model = &Model{}
-
-func New(width, limit int, question, placeholder string) tea.Model {
+func New(width, limit int, question, placeholder string) *Model {
 	input := textinput.New()
 	input.Placeholder = placeholder
 	input.Focus()
@@ -48,7 +45,7 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (*Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	m.input, cmd = m.input.Update(msg)
