@@ -68,9 +68,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 
-	m.pages, cmd = m.pages.Update(msg)
-
 	m.models[m.pages.Page], cmd = m.models[m.pages.Page].Update(msg)
+	m.pages, cmd = m.pages.Update(msg)
 
 	return m, cmd
 }

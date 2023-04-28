@@ -59,7 +59,7 @@ func initialModel() model {
 
 	secretGenerationChoice := choice.New("Would you like this wizard to generate secrets for your configuration?", generateSecretChoices)
 
-	confirm := confirmation.New(domainInput)
+	confirm := confirmation.New(domainInput, exposeStrategyChoice)
 
 	models := []tea.Model{
 		domainInput,

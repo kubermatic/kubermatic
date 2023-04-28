@@ -89,6 +89,10 @@ func (m *Model) View() string {
 	return b.String()
 }
 
+func (m *Model) Value() string {
+	return m.Choices[m.ActiveChoice].Name()
+}
+
 func checkbox(label string, checked bool) string {
 	if checked {
 		return colorFg("[x] "+label, "212")
