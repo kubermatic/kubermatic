@@ -40,10 +40,8 @@ var (
 type model struct {
 	Quitting bool
 
-	domain         tea.Model
-	exposeStrategy tea.Model
-
-	pages paginator.Model
+	models []tea.Model
+	pages  paginator.Model
 }
 
 type item struct {
@@ -70,13 +68,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	m.pages, cmd = m.pages.Update(msg)
-
-	switch m.pages.Page {
-	case StepDomain:
-		m.domain, cmd = m.domain.Update(msg)
-	case StepExposeStrategy:
-		m.exposeStrategy, cmd = m.exposeStrategy.Update(msg)
-	}
+	m.models[m.pages.Page], cmd = m.models[m.pages.Page].Update(msg)
 
 	return m, cmd
 }
@@ -88,12 +80,7 @@ func (m model) View() string {
 		return indent.String("See you later!\n\n", 2)
 	}
 
-	switch m.pages.Page {
-	case StepDomain:
-		b.WriteString(m.domain.View())
-	case StepExposeStrategy:
-		b.WriteString(m.exposeStrategy.View())
-	}
+	b.WriteString(m.models[m.pages.Page].View())
 
 	b.WriteString("\n\n")
 	b.WriteString(m.pages.View())

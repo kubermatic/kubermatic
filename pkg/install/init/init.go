@@ -19,8 +19,8 @@ package init
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/install/init/models/domain"
-	"k8c.io/kubermatic/v2/pkg/install/init/models/strategy"
+	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
+	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
 
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
@@ -38,25 +38,30 @@ func Run() error {
 }
 
 func initialModel() model {
-	domainInput := domain.New(40, 156, "What DNS name should be used for your KKP installation?", "kubermatic.example.com")
+	domainInput := input.New(40, 156, "What DNS name should be used for your KKP installation?", "kubermatic.example.com")
 
-	items := []strategy.Choice{
+	strategies := []choice.Choice{
 		item{name: "Tunneling", desc: "The Tunneling expose strategy addresses both the scaling issues of the NodePort strategy and cost issues of the LoadBalancer strategy. With this strategy, the traffic is routed to the based on a combination of SNI and HTTP/2 tunnels by the nodeport-proxy."},
 		item{name: "LoadBalancer", desc: "In the LoadBalancer expose strategy, a dedicated service of type LoadBalancer will be created for each user cluster. This strategy requires services of type LoadBalancer to be available on the Seed cluster and usually results into higher cost of cloud resources."},
 		item{name: "NodePort", desc: "NodePort is the default expose strategy in KKP. With this strategy a k8s service of type NodePort is created for each exposed component (e.g. Kubernetes API Server) of each user cluster. This implies, that each apiserver will be exposed on a randomly assigned TCP port from the nodePort range configured for the seed cluster."},
 	}
 
-	exposeStrategy := strategy.New("What expose strategy do you want to use for Kubernetes clusters created by this environment?", items)
+	exposeStrategy := choice.New("What expose strategy do you want to use for Kubernetes clusters created by this environment?", strategies)
+
+	// all steps in the wizard.
+	models := []tea.Model{
+		domainInput,
+		exposeStrategy,
+	}
 
 	p := paginator.New()
 	p.Type = paginator.Dots
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
-	p.SetTotalPages(2)
+	p.SetTotalPages(len(models))
 
 	return model{
-		domain:         domainInput,
-		exposeStrategy: exposeStrategy,
-		pages:          p,
+		models: models,
+		pages:  p,
 	}
 }
