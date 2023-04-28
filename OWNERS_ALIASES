@@ -8,16 +8,13 @@ aliases:
     - simontheleg
   sig-app-management:
     - ahmedwaleedmalik
-    - hdurand0710
     - simontheleg
-    - vgramer
     - wurbanski
     - xrstf
     - zyanichaimaa
   sig-cluster-management:
     - ahmedwaleedmalik
     - embik
-    - hdurand0710
     - kron4eg
     - moadqassem
     - moelsayed
@@ -35,5 +32,4 @@ aliases:
     - ahmedwaleedmalik
     - waseem826
   sig-virtualization:
-    - hdurand0710
     - mfranczy
