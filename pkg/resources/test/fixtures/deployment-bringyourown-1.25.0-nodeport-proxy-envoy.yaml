@@ -34,6 +34,12 @@ spec:
                   app: nodeport-proxy-envoy
               topologyKey: kubernetes.io/hostname
             weight: 10
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: nodeport-proxy-envoy
+              topologyKey: topology.kubernetes.io/zone
+            weight: 100
       containers:
       - command:
         - /envoy-manager
