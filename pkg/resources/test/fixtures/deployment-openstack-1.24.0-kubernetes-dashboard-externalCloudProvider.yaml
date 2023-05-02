@@ -27,15 +27,8 @@ spec:
               labelSelector:
                 matchLabels:
                   app: kubernetes-dashboard
-                  cluster: de-test-01
               topologyKey: kubernetes.io/hostname
             weight: 100
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: kubernetes-dashboard
-              topologyKey: kubernetes.io/hostname
-            weight: 10
       containers:
       - args:
         - -endpoint
