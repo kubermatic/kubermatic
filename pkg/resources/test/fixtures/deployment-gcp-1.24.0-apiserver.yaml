@@ -45,15 +45,8 @@ spec:
               labelSelector:
                 matchLabels:
                   app: apiserver
-                  cluster: de-test-01
               topologyKey: kubernetes.io/hostname
             weight: 100
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: apiserver
-              topologyKey: kubernetes.io/hostname
-            weight: 10
       containers:
       - args:
         - --client

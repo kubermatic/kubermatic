@@ -30,15 +30,14 @@ spec:
               labelSelector:
                 matchLabels:
                   app: etcd
-                  cluster: de-test-01
               topologyKey: kubernetes.io/hostname
             weight: 100
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
                   app: etcd
-              topologyKey: kubernetes.io/hostname
-            weight: 10
+              topologyKey: topology.kubernetes.io/zone
+            weight: 100
       containers:
       - command:
         - /bin/sh

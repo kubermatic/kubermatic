@@ -33,15 +33,8 @@ spec:
               labelSelector:
                 matchLabels:
                   app: dns-resolver
-                  cluster: de-test-01
               topologyKey: kubernetes.io/hostname
             weight: 100
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: dns-resolver
-              topologyKey: kubernetes.io/hostname
-            weight: 10
       containers:
       - args:
         - -conf

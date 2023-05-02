@@ -747,6 +747,7 @@ func TestLoadFiles(t *testing.T) {
 						WithDnatControllerImage("quay.io/kubermatic/kubeletdnat-controller").
 						WithNetworkIntfMgrImage("quay.io/kubermatic/network-interface-manager").
 						WithVersions(kubermaticVersions).
+						WithFailureDomainZoneAntiaffinity(true).
 						Build()
 
 					generateAndVerifyResources(t, data, tc, markFixtureUsed)

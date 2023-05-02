@@ -35,15 +35,8 @@ spec:
               labelSelector:
                 matchLabels:
                   app: scheduler
-                  cluster: de-test-01
               topologyKey: kubernetes.io/hostname
             weight: 100
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: scheduler
-              topologyKey: kubernetes.io/hostname
-            weight: 10
       containers:
       - args:
         - -endpoint
