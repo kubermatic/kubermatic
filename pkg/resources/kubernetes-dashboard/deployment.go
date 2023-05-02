@@ -100,7 +100,7 @@ func DeploymentReconciler(data kubernetesDashboardData) reconciling.NamedDeploym
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(name))
 			if err != nil {

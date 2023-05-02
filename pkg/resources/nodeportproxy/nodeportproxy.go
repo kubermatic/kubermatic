@@ -305,7 +305,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData) reconciling.NamedDeployme
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, data.Cluster().Name)
+			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
 				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
 				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue))

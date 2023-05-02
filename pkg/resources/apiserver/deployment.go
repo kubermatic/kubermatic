@@ -260,7 +260,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, data.Cluster().Name)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name)
 
 			return dep, nil
 		}
