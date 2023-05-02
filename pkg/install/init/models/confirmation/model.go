@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/table"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
 
@@ -28,16 +29,44 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var baseStyle = lipgloss.NewStyle().
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(lipgloss.Color("240"))
+
 func New(domain *input.Model, exposeStrategy *choice.Model) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
+	columns := []table.Column{
+		{Title: "Option", Width: 30},
+		{Title: "Value", Width: 40},
+	}
+
+	t := table.New(
+		table.WithColumns(columns),
+		table.WithFocused(true),
+		table.WithHeight(7),
+	)
+
+	style := table.DefaultStyles()
+	style.Header = style.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	style.Selected = style.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+	t.SetStyles(style)
+
 	return &Model{
 		domain:         domain,
 		exposeStrategy: exposeStrategy,
 
-		spin: s,
+		spin:        s,
+		configTable: t,
 	}
 }
 
@@ -45,7 +74,8 @@ type Model struct {
 	domain         *input.Model
 	exposeStrategy *choice.Model
 
-	spin spinner.Model
+	spin        spinner.Model
+	configTable table.Model
 
 	Generating bool
 	Generated  bool
@@ -57,6 +87,15 @@ func (m *Model) Init() tea.Cmd {
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+
+	if !m.Generating {
+		m.configTable.SetRows([]table.Row{
+			{"DNS Name", m.domain.Value()},
+			{"Expose Strategy", m.exposeStrategy.Value()},
+		})
+
+		m.configTable, cmd = m.configTable.Update(msg)
+	}
 
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		if msg.Type == tea.KeyEnter && !m.Generating {
@@ -82,8 +121,8 @@ func (m *Model) View() string {
 		b.WriteString(fmt.Sprintf("%s Generating configuration ...", m.spin.View()))
 	} else {
 		b.WriteString("Please review your settings:\n\n")
-		b.WriteString(fmt.Sprintf("DNS Name: %s\n", m.domain.Value()))
-		b.WriteString(fmt.Sprintf("Expose Strategy: %s\n", m.exposeStrategy.Value()))
+
+		b.WriteString(baseStyle.Render(m.configTable.View()) + "\n")
 
 		b.WriteString("\n\n")
 		b.WriteString("Hit <enter> to generate configuration files in the current directory.")
