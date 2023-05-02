@@ -40,7 +40,7 @@ import (
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		name: {
+		resources.UserClusterControllerContainerName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
 				corev1.ResourceCPU:    resource.MustParse("25m"),
@@ -52,8 +52,6 @@ var (
 		},
 	}
 )
-
-const name = "usercluster-controller"
 
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
@@ -87,11 +85,16 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.UserClusterControllerDeploymentName
-			dep.Labels = resources.BaseAppLabels(name, nil)
+			dep.Labels = resources.BaseAppLabels(resources.UserClusterControllerDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
+
+			if data.Cluster().Spec.ComponentsOverride.UserClusterController != nil && data.Cluster().Spec.ComponentsOverride.UserClusterController.Replicas != nil {
+				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.UserClusterController.Replicas
+			}
+
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil),
+				MatchLabels: resources.BaseAppLabels(resources.UserClusterControllerDeploymentName, nil),
 			}
 			dep.Spec.Strategy.Type = appsv1.RollingUpdateDeploymentStrategyType
 			dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
@@ -109,7 +112,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			volumes := getVolumes(data)
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(resources.UserClusterControllerDeploymentName, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
@@ -253,6 +256,10 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-node-labels", labelArgsValue)
 			}
 
+			if data.Cluster().Spec.ComponentsOverride.UserClusterController != nil && data.Cluster().Spec.ComponentsOverride.UserClusterController.Tolerations != nil {
+				dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.UserClusterController.Tolerations
+			}
+
 			envVars, err := data.GetEnvVars()
 			if err != nil {
 				return nil, err
@@ -261,7 +268,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    name,
+					Name:    resources.UserClusterControllerContainerName,
 					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args:    args,
@@ -291,13 +298,13 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				},
 			}
 
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(name))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(resources.UserClusterControllerContainerName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
