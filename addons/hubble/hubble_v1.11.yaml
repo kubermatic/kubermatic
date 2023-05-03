@@ -351,7 +351,7 @@ spec:
             subPath: nginx.conf
         terminationMessagePolicy: FallbackToLogsOnError
       - name: backend
-        image: "{{ Image "quay.io/cilium/hubble-ui-backend:v0.11.0@sha256:bcb369c47cada2d4257d63d3749f7f87c91dde32e010b223597306de95d1ecc8" }}"
+        image: "{{ Image "quay.io/cilium/hubble-ui-backend:v0.11.0@sha256:14c04d11f78da5c363f88592abae8d2ecee3cbe009f443ef11df6ac5f692d839" }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: EVENTS_SERVER_PORT
