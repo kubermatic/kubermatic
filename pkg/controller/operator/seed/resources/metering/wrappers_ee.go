@@ -36,6 +36,6 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 }
 
 // CronJobReconciler returns the func to create/update the metering report cronjob. Available only for ee.
-func CronJobReconciler(rn string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, r registry.ImageRewriter, ns string) reconciling.NamedCronJobReconcilerFactory {
-	return metering.CronJobReconciler(rn, mrc, caBundleName, r, ns)
+func CronJobReconciler(rn string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, r registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedCronJobReconcilerFactory {
+	return metering.CronJobReconciler(rn, mrc, caBundleName, r, seed)
 }
