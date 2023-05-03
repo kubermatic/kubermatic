@@ -19,8 +19,6 @@ package mla
 import (
 	"context"
 	"fmt"
-	"reflect"
-	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
@@ -32,7 +30,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -122,10 +119,7 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	org := grafanasdk.Org{
-		Name: getOrgNameForProject(project),
-	}
-	orgID, err := r.orgGrafanaController.ensureOrganization(ctx, log, project, org, GrafanaOrgAnnotationKey, grafanaClient)
+	orgID, err := r.orgGrafanaController.ensureOrganization(ctx, log, grafanaClient, project)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Organization: %w", err)
 	}
@@ -180,67 +174,138 @@ func (r *orgGrafanaController) CleanUp(ctx context.Context) error {
 func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kubermaticv1.Project, grafanaClient *grafanasdk.Client) error {
 	oldProject := project.DeepCopy()
 	update := false
-	orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
+
+	orgID, ok := getOrgIDForProject(project)
 	if ok {
 		update = true
 		delete(project.Annotations, GrafanaOrgAnnotationKey)
-		id, err := strconv.ParseUint(orgID, 10, 32)
-		if err != nil {
-			return err
-		}
+
 		if grafanaClient != nil {
-			_, err = grafanaClient.DeleteOrg(ctx, uint(id))
-			if err != nil {
+			if _, err := grafanaClient.DeleteOrg(ctx, orgID); err != nil {
 				return err
 			}
 		}
 	}
+
 	if kubernetes.HasFinalizer(project, mlaFinalizer) {
 		update = true
 		kubernetes.RemoveFinalizer(project, mlaFinalizer)
 	}
+
 	if update {
 		if err := r.Patch(ctx, project, ctrlruntimeclient.MergeFrom(oldProject)); err != nil {
 			return fmt.Errorf("failed to update Project: %w", err)
 		}
 	}
+
 	return nil
 }
 
-func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected grafanasdk.Org, grafanaClient *grafanasdk.Client) (grafanasdk.Org, error) {
-	status, err := grafanaClient.CreateOrg(ctx, expected)
-	if err != nil {
-		return expected, fmt.Errorf("unable to add organization: %w (status: %s, message: %s)",
-			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-	}
-	if status.OrgID == nil {
-		// possibly organization already exists
-		org, err := grafanaClient.GetOrgByOrgName(ctx, expected.Name)
-		if err != nil {
-			return org, fmt.Errorf("unable to get organization by name %+v %w", expected, err)
-		}
-		return org, nil
-	}
-	expected.ID = *status.OrgID
+func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project) (uint, error) {
+	desiredOrgName := getOrgNameForProject(project)
 
+	adoptOrCreateOrg := func() (uint, error) {
+		org, err := r.createGrafanaOrg(ctx, grafanaClient, desiredOrgName)
+		if err != nil {
+			return 0, fmt.Errorf("unable to create Grafana org: %w", err)
+		}
+
+		if err := r.setOrgAnnotation(ctx, project, org.ID); err != nil {
+			// Leave the org in Grafana and during the next reconciliation createGrafanaOrg() will
+			// adopt it and then we can try again to set the annotation.
+			return 0, fmt.Errorf("failed to update Project's org annotation: %w", err)
+		}
+
+		return org.ID, nil
+	}
+
+	// If the project has no org attached yet, try to create a new one;
+	// org names in Grafana are *unique* and createGrafanaOrg() will try
+	// to adopt an existing org if possible.
+	orgID, ok := getOrgIDForProject(project)
+	if !ok {
+		return adoptOrCreateOrg()
+	}
+
+	// We have an org ID, which might be stale. Fetch the associated org.
+	org, err := grafanaClient.GetOrgById(ctx, orgID)
+	if err != nil {
+		return adoptOrCreateOrg()
+	}
+
+	// Now we know that we point to an org and that org exists; however
+	// in case of catastrophic storage failure, it's possible that the Grafana
+	// PVC was removed and all annotations suddenly point to non-existing orgs.
+	// Once this controller begins to reconcile and fix the first (random)
+	// project, it will most likely create a new org with an ID that *another*
+	// project was already using previously. Now 2 projects would point to the
+	// same org.
+	// To prevent this, all we can do is rely on the org name, which will always
+	// be suffixed with the unchanging (!) project name (not the human readable
+	// name, which can easily change at any time).
+	if !orgNameMatchesProject(project, org.Name) {
+		return adoptOrCreateOrg()
+	}
+
+	// Lastly, check if the org name is still using the correct human readable
+	// project name; if not, update the organization.
+	if org.Name != desiredOrgName {
+		org.Name = desiredOrgName
+
+		if _, err := grafanaClient.UpdateOrg(ctx, org, orgID); err != nil {
+			return 0, fmt.Errorf("unable to update organization: %w", err)
+		}
+	}
+
+	// All good!
+	return orgID, nil
+}
+
+func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, grafanaClient *grafanasdk.Client, orgName string) (*grafanasdk.Org, error) {
+	org := grafanasdk.Org{
+		Name: orgName,
+	}
+
+	// Note that Grafana org names are unique, but a DuplicateName error is *not* returned as an error here.
+	status, err := grafanaClient.CreateOrg(ctx, org)
+	if err != nil {
+		return nil, fmt.Errorf("unable to add organization: %w", err)
+	}
+
+	// possibly organization already exists
+	if status.OrgID == nil {
+		org, err := grafanaClient.GetOrgByOrgName(ctx, orgName)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get organization by name: %w", err)
+		}
+
+		return &org, nil
+	}
+
+	org.ID = *status.OrgID
+
+	// initially assign users; updating these relations is done by the user-grafana-controller.
 	userList := &kubermaticv1.UserList{}
 	if err := r.List(ctx, userList); err != nil {
-		return expected, err
+		return nil, fmt.Errorf("failed to list KKP users: %w", err)
 	}
+
 	for _, user := range userList.Items {
 		if !user.Spec.IsAdmin {
 			continue
 		}
+
 		grafanaUser, err := grafanaClient.LookupUser(ctx, user.Spec.Email)
 		if err != nil {
-			return expected, err
+			return nil, fmt.Errorf("failed to lookup Grafana user %q: %w", user.Spec.Email, err)
 		}
-		if err := addUserToOrg(ctx, grafanaClient, expected, &grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
-			return expected, err
+
+		if err := addUserToOrg(ctx, grafanaClient, org, &grafanaUser, grafanasdk.ROLE_EDITOR); err != nil {
+			return nil, err
 		}
 	}
 
-	return expected, nil
+	return &org, nil
 }
 
 func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, orgID uint, grafanaClient *grafanasdk.Client) error {
@@ -259,69 +324,22 @@ func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.Su
 	return nil
 }
 
-func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string, grafanaClient *grafanasdk.Client) (uint, error) {
-	orgID, ok := project.GetAnnotations()[annotationKey]
-	if !ok {
-		org, err := r.createGrafanaOrg(ctx, expected, grafanaClient)
-		if err != nil {
-			return 0, fmt.Errorf("unable to create grafana org: %w", err)
-		}
-		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
-			// revert org creation, if deletion failed, we can't do much about it
-			// if we failed at this moment and the project would be renamed quickly, that organization will be orphaned and we will never remove it.
-			if status, err := grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
-				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
-					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-			}
-			return 0, err
-		}
-		return org.ID, nil
-	}
-	id, err := strconv.ParseUint(orgID, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	org, err := grafanaClient.GetOrgById(ctx, uint(id))
-	if err != nil {
-		// possibly not found
-		org, err := r.createGrafanaOrg(ctx, expected, grafanaClient)
-		if err != nil {
-			return 0, fmt.Errorf("unable to create grafana org: %w", err)
-		}
-		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
-			// revert org creation, if deletion failed, we can't do much about it
-			if status, err := grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
-				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
-					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-			}
-			return 0, err
-		}
-		return org.ID, nil
-	}
-	expected.ID = uint(id)
-	if !reflect.DeepEqual(org, expected) {
-		if status, err := grafanaClient.UpdateOrg(ctx, expected, uint(id)); err != nil {
-			return 0, fmt.Errorf("unable to update organization: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-		}
-	}
-	return org.ID, nil
-}
-
-func (r *orgGrafanaController) setAnnotation(ctx context.Context, project *kubermaticv1.Project, key, value string) error {
+func (r *orgGrafanaController) setOrgAnnotation(ctx context.Context, project *kubermaticv1.Project, orgID uint) error {
 	annotations := project.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
-	annotations[key] = value
+
+	annotations[GrafanaOrgAnnotationKey] = fmt.Sprintf("%d", orgID)
 	project.SetAnnotations(annotations)
-	if err := r.Update(ctx, project); err != nil {
-		return fmt.Errorf("updating Project: %w", err)
-	}
-	return nil
+
+	return r.Update(ctx, project)
 }
 
 func getOrgNameForProject(project *kubermaticv1.Project) string {
 	return fmt.Sprintf("%s-%s", project.Spec.Name, project.Name)
+}
+
+func orgNameMatchesProject(project *kubermaticv1.Project, orgName string) bool {
+	return strings.HasSuffix(orgName, fmt.Sprintf("-%s", project.Name))
 }

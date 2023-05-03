@@ -140,7 +140,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
@@ -210,7 +210,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
@@ -230,7 +230,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
@@ -303,7 +303,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				}, {
 					name:     "delete org user",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
@@ -312,7 +312,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2-project2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
@@ -332,7 +332,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
@@ -347,7 +347,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org 2 by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"projectName2-project2","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
@@ -437,7 +437,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
@@ -457,7 +457,7 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				{
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName1-project1","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
