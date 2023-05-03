@@ -238,12 +238,12 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			hasFinalizer: true,
 		},
 		{
-			name:        "update org for project",
+			name:        "update org name for project",
 			requestName: "create",
 			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "create",
-					Annotations: map[string]string{GrafanaOrgAnnotationKey: "1"},
+					Annotations: map[string]string{GrafanaOrgAnnotationKey: "2"},
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
@@ -252,12 +252,12 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 			requests: []request{
 				{
 					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-oldname","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/2", nil),
+					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"id":2,"name":"oldName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update",
-					request:  httptest.NewRequest(http.MethodPut, "/api/orgs/1", strings.NewReader(`{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					request:  httptest.NewRequest(http.MethodPut, "/api/orgs/2", strings.NewReader(`{"id":2,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: io.NopCloser(strings.NewReader(`{"message": "name already taken"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -333,7 +333,7 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bool) {
 	var counter int64 = -1
 	assertExpectation := func() bool {
-		return assert.Equal(t, len(requests), int(counter+1))
+		return assert.Equal(t, len(requests), int(counter+1), "number of requests does not match expected number of requests")
 	}
 	r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := atomic.AddInt64(&counter, 1)
