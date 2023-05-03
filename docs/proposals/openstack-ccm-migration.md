@@ -89,7 +89,7 @@ To address this point we can use one of the two following approaches:
 In addition to that KAS, KCM and `machine-controller` manifests should include
 the following feature gates:
 
-`"CSIMigration=true,CSIMigrationOpenStack=true,ExpandCSIVolumes=true"`
+`"CSIMigration=true,CSIMigrationOpenStack=true`
 
 A similar logic to the one described in the CCM migration section can be used
 to distinguish between a fresh install and a migration.

@@ -686,7 +686,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 		// The following feature gates are always enabled when the
 		// 'externalCloudProvider' feature is activated.
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			featureFlags = append(featureFlags, "CSIMigration=true", "ExpandCSIVolumes=true")
+			featureFlags = append(featureFlags, "CSIMigration=true")
 		}
 
 		// This flag is GA since 1.24 and enabled by default; it seems to be gone

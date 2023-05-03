@@ -81,7 +81,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true"),
+			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true"),
 		},
 		{
 			name: "CSI migration completed with k8s >= 1.23",
@@ -113,7 +113,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "InTreePluginOpenStackUnregister=true"),
+			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true", "InTreePluginOpenStackUnregister=true"),
 		},
 		{
 			name: "CSI migration disabled with k8s >= 1.23 and no CCM",
