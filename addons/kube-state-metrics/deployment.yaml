@@ -18,7 +18,7 @@ metadata:
   labels:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: 2.8.1
+    app.kubernetes.io/version: 2.8.2
   name: kube-state-metrics
   namespace: kube-system
 spec:
@@ -34,7 +34,7 @@ spec:
       labels:
         app.kubernetes.io/component: exporter
         app.kubernetes.io/name: kube-state-metrics
-        app.kubernetes.io/version: 2.8.1
+        app.kubernetes.io/version: 2.8.2
     spec:
       containers:
         - args:
@@ -42,7 +42,7 @@ spec:
             - --port=8081
             - --telemetry-host=127.0.0.1
             - --telemetry-port=8082
-          image: '{{ Image "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.8.1" }}'
+          image: '{{ Image "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.8.2" }}'
           name: kube-state-metrics
           resources:
             limits:

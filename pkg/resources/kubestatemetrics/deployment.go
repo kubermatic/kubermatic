@@ -49,7 +49,7 @@ var (
 
 const (
 	name    = "kube-state-metrics"
-	version = "v2.5.0"
+	version = "v2.8.2"
 )
 
 // DeploymentReconciler returns the function to create and update the kube-state-metrics deployment.
