@@ -103,7 +103,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	var cronJobs []reconciling.NamedCronJobCreatorGetter
 
 	for reportName, reportConf := range seed.Spec.Metering.ReportConfigurations {
-		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, caBundle.Name, overwriter, seed.Namespace))
+		cronJobs = append(cronJobs, cronJobCreator(reportName, reportConf, caBundle.Name, overwriter, seed))
 
 		if reportConf.Retention != nil {
 			config.Rules = append(config.Rules, lifecycle.Rule{

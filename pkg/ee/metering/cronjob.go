@@ -40,14 +40,15 @@ import (
 )
 
 // cronJobCreator returns the func to create/update the metering report cronjob.
-func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, getRegistry registry.WithOverwriteFunc, namespace string) reconciling.NamedCronJobCreatorGetter {
+func cronJobCreator(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, getRegistry registry.WithOverwriteFunc, seed *kubermaticv1.Seed) reconciling.NamedCronJobCreatorGetter {
 	return func() (string, reconciling.CronJobCreator) {
 		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			var args []string
 			args = append(args, fmt.Sprintf("--ca-bundle=%s", "/opt/ca-bundle/ca-bundle.pem"))
-			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, namespace))
+			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, seed.Namespace))
 			args = append(args, fmt.Sprintf("--last-number-of-days=%d", mrc.Interval))
 			args = append(args, fmt.Sprintf("--output-dir=%s", reportName))
+			args = append(args, fmt.Sprintf("--output-prefix=%s", seed.Name))
 			args = append(args, mrc.Types...)
 
 			if job.Labels == nil {
