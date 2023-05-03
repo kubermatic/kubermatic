@@ -511,7 +511,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.25.9
+    default: v1.26.4
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -606,6 +606,10 @@ spec:
         to: 1.26.*
       - from: 1.26.*
         to: 1.26.*
+      - from: 1.26.*
+        to: 1.27.*
+      - from: 1.27.*
+        to: 1.27.*
     # Versions lists the available versions.
     versions:
       - v1.24.3
@@ -621,6 +625,7 @@ spec:
       - v1.25.9
       - v1.26.1
       - v1.26.4
+      - v1.27.1
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
