@@ -57,11 +57,9 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			args := []string{
 				"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
-				"-logtostderr",
-				"-v", "4",
 				"-listen-address", "0.0.0.0:9876",
 				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
-				"-namespace", fmt.Sprintf("%s-%s", "cluster", data.Cluster().Name),
+				"-namespace", data.Cluster().Status.NamespaceName,
 			}
 
 			// Enable validations corresponding to OSM
