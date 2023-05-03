@@ -126,15 +126,15 @@ func getAzureVersion(version semver.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
 	case v123:
-		return "1.23.28", nil
+		return "1.23.30", nil
 	case v124:
-		return "1.24.15", nil
+		return "1.24.18", nil
 	case v125:
-		return "1.25.9", nil
+		return "1.25.12", nil
 	case v126:
-		fallthrough
+		return "1.26.8", nil
 	default:
-		return "1.26.5", nil
+		return "1.27.1", nil
 	}
 }
 

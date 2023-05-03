@@ -22,7 +22,7 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.27.0" }}
+{{ $version := "1.27.1" }}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
