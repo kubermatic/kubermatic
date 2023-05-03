@@ -89,6 +89,8 @@ const (
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment.
 	UserClusterControllerDeploymentName = "usercluster-controller"
+	// UserClusterControllerContainerName is the name of the container within the usercluster-controller deployment.
+	UserClusterControllerContainerName = "usercluster-controller"
 	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler deployment.
 	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
 	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment.
@@ -1601,6 +1603,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.NodePortProxyEnvoy.Resources.Requests != nil ||
 		componentSettings.NodePortProxyEnvoy.Resources.Limits != nil {
 		r[NodePortProxyEnvoyContainerName] = componentSettings.NodePortProxyEnvoy.Resources.DeepCopy()
+	}
+	if componentSettings.UserClusterController != nil && componentSettings.UserClusterController.Resources != nil {
+		r[UserClusterControllerContainerName] = componentSettings.UserClusterController.Resources.DeepCopy()
 	}
 
 	return r

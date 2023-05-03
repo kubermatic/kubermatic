@@ -420,6 +420,8 @@ spec:
       replicas: 1
       resources: null
       tolerations: null
+    # UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
+    userClusterController: null
   # EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
   # if this is set, the new backup/restore controllers are enabled for this Seed.
   etcdBackupRestore: null
