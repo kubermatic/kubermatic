@@ -19,7 +19,6 @@ package mla
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
@@ -187,17 +186,16 @@ func (r *dashboardGrafanaController) handleDeletion(ctx context.Context, log *za
 			return fmt.Errorf("failed to list Projects: %w", err)
 		}
 		for _, project := range projectList.Items {
-			orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
-			if !ok {
-				// looks like corresponding Grafana Org already remove, so we can skip this project
-				log.Debugf("project %+v doesn't have grafana org annotation, skipping", project)
+			org, err := getOrgByProject(ctx, grafanaClient, &project)
+			if err != nil {
+				// Looks like this project doesn't have corresponding Grafana Organization yet,
+				// or it has an invalid org (after a Grafana data loss, for example); we can skip it
+				// for now and it will be reconciled by org_grafana_controller later.
+				log.Debugw("Project doesn't have a valid grafana org annotation, skipping", "project", project.Name, zap.Error(err))
 				continue
 			}
-			id, err := strconv.ParseUint(orgID, 10, 32)
-			if err != nil {
-				return fmt.Errorf("unable to parse grafana org annotation %s: %w", orgID, err)
-			}
-			if err := deleteDashboards(ctx, log, grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
+
+			if err := deleteDashboards(ctx, log, grafanaClient.WithOrgIDHeader(org.ID), configMap); err != nil {
 				return err
 			}
 		}
@@ -211,21 +209,21 @@ func (r *dashboardGrafanaController) ensureDashboards(ctx context.Context, log *
 	if err := r.List(ctx, projectList); err != nil {
 		return fmt.Errorf("failed to list Projects: %w", err)
 	}
+
 	for _, project := range projectList.Items {
-		orgID, ok := project.GetAnnotations()[GrafanaOrgAnnotationKey]
-		if !ok {
-			// looks like this project doesn't have corresponding Grafana Organization yet,
-			// we can skip it for now and it will be reconciled by org_grafana_controller later
-			log.Debugf("project %+v doesn't have grafana org annotation, skipping", project)
+		org, err := getOrgByProject(ctx, grafanaClient, &project)
+		if err != nil {
+			// Looks like this project doesn't have corresponding Grafana Organization yet,
+			// or it has an invalid org (after a Grafana data loss, for example); we can skip it
+			// for now and it will be reconciled by org_grafana_controller later.
+			log.Debugw("Project doesn't have a valid grafana org annotation, skipping", "project", project.Name, zap.Error(err))
 			continue
 		}
-		id, err := strconv.ParseUint(orgID, 10, 32)
-		if err != nil {
-			return fmt.Errorf("unable to parse grafana org annotation %s: %w", orgID, err)
-		}
-		if err := addDashboards(ctx, log, grafanaClient.WithOrgIDHeader(uint(id)), configMap); err != nil {
+
+		if err := addDashboards(ctx, log, grafanaClient.WithOrgIDHeader(org.ID), configMap); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
