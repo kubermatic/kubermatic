@@ -134,6 +134,8 @@ func getOpenStackCCMImage(version semver.Semver) (string, error) {
 		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.25.5", nil
 	case v126:
 		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.26.2", nil
+	case v127:
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.27.1", nil
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)
 	}
