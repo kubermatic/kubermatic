@@ -17,24 +17,51 @@ limitations under the License.
 package main
 
 import (
+	"io/ioutil"
+	"os"
+
 	installinit "k8c.io/kubermatic/v2/pkg/install/init"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
+type InitOptions struct {
+	DebugLogPath string
+}
+
 func InitCommand() *cobra.Command {
+	opt := InitOptions{}
+
 	cmd := &cobra.Command{
 		Use:          "init",
 		Short:        "Run an interactive configurazion wizard",
-		RunE:         InitFunc(),
+		RunE:         InitFunc(&opt),
 		SilenceUsage: true,
 	}
+
+	cmd.PersistentFlags().StringVar(&opt.DebugLogPath, "debug-log-path", "", "file location for debug logging")
 
 	return cmd
 }
 
-func InitFunc() cobraFuncE {
+func InitFunc(opt *InitOptions) cobraFuncE {
 	return func(cmd *cobra.Command, args []string) error {
-		return installinit.Run()
+		logger := logrus.New()
+		if opt.DebugLogPath != "" {
+			logFile, err := os.Create(opt.DebugLogPath)
+			if err != nil {
+				return err
+			}
+			logger.SetOutput(logFile)
+			logger.SetLevel(logrus.DebugLevel)
+			logger.SetFormatter(&logrus.JSONFormatter{})
+			defer logFile.Close()
+		} else {
+			// if no debug-log-path is set, we do not want to log anything.
+			logger.SetOutput(ioutil.Discard)
+		}
+
+		return installinit.Run(logger)
 	}
 }

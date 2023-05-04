@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	"k8c.io/kubermatic/v2/pkg/install/init/generator"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
@@ -33,7 +35,7 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-func New(domain *input.Model, exposeStrategy *choice.Model) *Model {
+func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- generator.Config) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
@@ -67,6 +69,8 @@ func New(domain *input.Model, exposeStrategy *choice.Model) *Model {
 
 		spin:        s,
 		configTable: t,
+
+		configCh: configCh,
 	}
 }
 
@@ -79,6 +83,8 @@ type Model struct {
 
 	Generating bool
 	Generated  bool
+
+	configCh chan<- generator.Config
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -99,6 +105,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		if msg.Type == tea.KeyEnter && !m.Generating {
+			m.configCh <- generator.Config{
+				DNS: m.domain.Value(),
+			}
 			m.Generating = true
 			// start the spinner by returning its tick
 			return m, m.spin.Tick

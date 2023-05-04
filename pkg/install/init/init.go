@@ -19,6 +19,7 @@ package init
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/install/init/generator"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/confirmation"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
@@ -27,19 +28,26 @@ import (
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sirupsen/logrus"
 )
 
-func Run() error {
+func Run(logger *logrus.Logger) error {
+	logger.Debug("starting generator")
+	ch := make(chan generator.Config, 1)
+	doneCh := generator.Start(ch, logger)
 
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel(ch), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("could not start program: %w", err)
 	}
 
+	// wait for generator to finish.
+	<-doneCh
+
 	return nil
 }
 
-func initialModel() model {
+func initialModel(genCh chan<- generator.Config) model {
 
 	strategies := []choice.Choice{
 		item{name: "Tunneling", desc: "The Tunneling expose strategy addresses both the scaling issues of the NodePort strategy and cost issues of the LoadBalancer strategy. With this strategy, the traffic is routed to the based on a combination of SNI and HTTP/2 tunnels by the nodeport-proxy."},
@@ -59,7 +67,7 @@ func initialModel() model {
 
 	secretGenerationChoice := choice.New("Would you like this wizard to generate secrets for your configuration?", generateSecretChoices)
 
-	confirm := confirmation.New(domainInput, exposeStrategyChoice)
+	confirm := confirmation.New(domainInput, exposeStrategyChoice, genCh)
 
 	models := []tea.Model{
 		domainInput,
