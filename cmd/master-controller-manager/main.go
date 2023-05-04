@@ -200,6 +200,9 @@ func main() {
 	log.Debug("Starting projects collector")
 	collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
+	log.Debug("Starting seeds collector")
+	collectors.MustRegisterSeedCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+
 	if err := createAllControllers(ctrlCtx); err != nil {
 		log.Fatalw("could not create all controllers", zap.Error(err))
 	}

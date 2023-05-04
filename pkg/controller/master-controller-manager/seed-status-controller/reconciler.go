@@ -41,7 +41,7 @@ import (
 
 const (
 	// SeedKubeconfigUnavailableReason is the reason for the SeedConditionKubeconfigValid
-	// in case the kubeconfig does not exist and not client can be constructed.
+	// in case the kubeconfig does not exist and no client can be constructed.
 	SeedKubeconfigUnavailableReason = "KubeconfigUnavailable"
 	// SeedKubeconfigUnavailableReason is the reason for the SeedConditionKubeconfigValid
 	// in case the seed cluster was not yet prepared by the admin to be a seed (i.e. a

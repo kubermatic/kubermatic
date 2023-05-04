@@ -63,3 +63,18 @@ groups:
           steps:
             - Check the Prometheus Service Discovery page to find out why the target is unreachable.
             - Ensure that the master-controller-manager pod's logs and that it is not crashlooping.
+
+      - alert: KubermaticSeedNotHealthy
+        annotations:
+          message: The Seed cluster {{ $labels.seed_name }} cannot be reached or reconciled properly.
+          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticseednothealthy
+        expr: kubermatic_seed_info{phase!="Healthy"}
+        for: 5m
+        labels:
+          severity: warning
+          service: kubermatic-master
+        runbook:
+          steps:
+            - Check the conditions on the Seed object to learn more about the issues.
+            - Check the kubermatic-operator logs for additional information.
+            - Ensure that a valid kubeconfig Secret exists for the Seed.
