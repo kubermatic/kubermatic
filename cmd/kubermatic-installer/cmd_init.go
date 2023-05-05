@@ -28,6 +28,8 @@ import (
 
 type InitOptions struct {
 	DebugLogPath string
+
+	Interactive bool
 }
 
 func InitCommand() *cobra.Command {
@@ -41,27 +43,32 @@ func InitCommand() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringVar(&opt.DebugLogPath, "debug-log-path", "", "file location for debug logging")
+	cmd.PersistentFlags().BoolVarP(&opt.Interactive, "interactive", "i", false, "interactive mode to walk through options required for generating configuration files")
 
 	return cmd
 }
 
 func InitFunc(opt *InitOptions) cobraFuncE {
 	return func(cmd *cobra.Command, args []string) error {
-		logger := logrus.New()
-		if opt.DebugLogPath != "" {
-			logFile, err := os.Create(opt.DebugLogPath)
-			if err != nil {
-				return err
+		if opt.Interactive {
+			logger := logrus.New()
+			if opt.DebugLogPath != "" {
+				logFile, err := os.Create(opt.DebugLogPath)
+				if err != nil {
+					return err
+				}
+				logger.SetOutput(logFile)
+				logger.SetLevel(logrus.DebugLevel)
+				logger.SetFormatter(&logrus.JSONFormatter{})
+				defer logFile.Close()
+			} else {
+				// if no debug-log-path is set, we do not want to log anything.
+				logger.SetOutput(ioutil.Discard)
 			}
-			logger.SetOutput(logFile)
-			logger.SetLevel(logrus.DebugLevel)
-			logger.SetFormatter(&logrus.JSONFormatter{})
-			defer logFile.Close()
-		} else {
-			// if no debug-log-path is set, we do not want to log anything.
-			logger.SetOutput(ioutil.Discard)
-		}
 
-		return installinit.Run(logger)
+			return installinit.Run(logger)
+		} else {
+			return nil
+		}
 	}
 }
