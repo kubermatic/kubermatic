@@ -19,6 +19,7 @@ package generator
 import (
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/sirupsen/logrus"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -34,26 +35,26 @@ type Config struct {
 	ExposeStrategy kubermaticv1.ExposeStrategy
 }
 
-func Start(in <-chan Config, log *logrus.Logger) <-chan interface{} {
+func Start(in <-chan Config, log *logrus.Logger, outputDir string) <-chan interface{} {
 	done := make(chan interface{})
-	go runGenerator(in, done, log)
+	go runGenerator(in, done, log, outputDir)
 
 	return done
 }
 
-func runGenerator(in <-chan Config, done chan<- interface{}, log *logrus.Logger) {
+func runGenerator(in <-chan Config, done chan<- interface{}, log *logrus.Logger, outputDir string) {
 	defer close(done)
 
 	// wait for a generator config to come in.
 	config := <-in
 
-	if err := Generate(config); err != nil {
+	if err := Generate(config, outputDir); err != nil {
 		log.Errorf("failed to generate configuration files: %v", err)
 	}
 }
 
-func Generate(config Config) error {
-	f, _ := os.Create("./kubermatic.yaml")
+func Generate(config Config, outputDir string) error {
+	f, _ := os.Create(path.Join(outputDir, "kubermatic.yaml"))
 	defer f.Close()
 
 	kkpConfig, err := generateKubermaticConfiguration(config)

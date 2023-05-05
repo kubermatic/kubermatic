@@ -31,10 +31,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Run(logger *logrus.Logger) error {
+func Run(logger *logrus.Logger, outputDir string) error {
 	logger.Debug("starting generator")
 	ch := make(chan generator.Config, 1)
-	doneCh := generator.Start(ch, logger)
+	doneCh := generator.Start(ch, logger, outputDir)
 
 	p := tea.NewProgram(initialModel(ch), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

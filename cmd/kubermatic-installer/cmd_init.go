@@ -17,6 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"errors"
+	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 
@@ -28,28 +31,45 @@ import (
 
 type InitOptions struct {
 	DebugLogPath string
+	OutputDir    string
 
 	Interactive bool
 }
 
-func InitCommand() *cobra.Command {
+func InitCommand(cmdLogger *logrus.Logger) *cobra.Command {
 	opt := InitOptions{}
 
 	cmd := &cobra.Command{
 		Use:          "init",
 		Short:        "Run an interactive configurazion wizard",
-		RunE:         InitFunc(&opt),
+		RunE:         InitFunc(&opt, cmdLogger),
 		SilenceUsage: true,
 	}
 
+	cmd.PersistentFlags().StringVarP(&opt.OutputDir, "output-dir", "d", "", "directory to write generated configuration files to")
 	cmd.PersistentFlags().StringVar(&opt.DebugLogPath, "debug-log-path", "", "file location for debug logging")
 	cmd.PersistentFlags().BoolVarP(&opt.Interactive, "interactive", "i", false, "interactive mode to walk through options required for generating configuration files")
 
 	return cmd
 }
 
-func InitFunc(opt *InitOptions) cobraFuncE {
-	return func(cmd *cobra.Command, args []string) error {
+func InitFunc(opt *InitOptions, cmdLogger *logrus.Logger) cobraFuncE {
+	return handleErrors(cmdLogger, func(cmd *cobra.Command, args []string) error {
+		stat, err := os.Stat(opt.OutputDir)
+		if !os.IsNotExist(err) && err != nil {
+			return fmt.Errorf("failed to check output directory: %v", err)
+		}
+
+		if errors.Is(err, fs.ErrNotExist) {
+			if err := os.MkdirAll(opt.OutputDir, os.ModePerm); err != nil {
+				return fmt.Errorf("failed to create output directory: %v", err)
+			}
+		}
+
+		if !stat.IsDir() {
+			return fmt.Errorf("output directory is not a directory")
+		}
+
 		if opt.Interactive {
 			logger := logrus.New()
 			if opt.DebugLogPath != "" {
@@ -66,9 +86,9 @@ func InitFunc(opt *InitOptions) cobraFuncE {
 				logger.SetOutput(ioutil.Discard)
 			}
 
-			return installinit.Run(logger)
+			return installinit.Run(logger, opt.OutputDir)
 		} else {
 			return nil
 		}
-	}
+	})
 }
