@@ -31,7 +31,7 @@ nodeExporter:
   rbacProxy:
     image:
       repository: quay.io/brancz/kube-rbac-proxy
-      tag: v0.13.1
+      tag: v0.14.1
     resources:
       requests:
         cpu: 50m

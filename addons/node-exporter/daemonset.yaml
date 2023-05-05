@@ -64,7 +64,7 @@ spec:
           mountPropagation: HostToContainer
 
       - name: kube-rbac-proxy
-        image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.14.0" }}'
+        image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.14.1" }}'
         args:
         - '--secure-listen-address=$(IP):9100'
         - '--upstream=http://127.0.0.1:9100/'
