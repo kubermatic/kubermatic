@@ -69,10 +69,10 @@ spec:
     kind: ""
     # Name is the name of resource being referenced
     name: ca-bundle
-  # ExposeStrategy is the strategy to expose the cluster with.
-  # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
+  # ExposeStrategy is the strategy to expose the cluster with, default is Tunneling.
+  # Note: The `seedDNSOverwrite` setting of a Seed's datacenter doesn't have any effect
   # if this is set to LoadBalancerStrategy.
-  exposeStrategy: NodePort
+  exposeStrategy: Tunneling
   # FeatureGates are used to optionally enable certain features.
   featureGates:
     EtcdLauncher: true

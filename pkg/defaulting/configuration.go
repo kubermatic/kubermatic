@@ -53,7 +53,7 @@ const (
 	DefaultWebhookReplicas                        = 1
 	DefaultControllerManagerReplicas              = 1
 	DefaultSchedulerReplicas                      = 1
-	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyNodePort
+	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyTunneling
 	DefaultVPARecommenderDockerRepository         = "registry.k8s.io/autoscaling/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "registry.k8s.io/autoscaling/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "registry.k8s.io/autoscaling/vpa-admission-controller"

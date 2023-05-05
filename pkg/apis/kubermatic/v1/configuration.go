@@ -99,8 +99,8 @@ type KubermaticConfigurationSpec struct {
 	Webhook KubermaticWebhookConfiguration `json:"webhook,omitempty"`
 	// UserCluster configures various aspects of the user-created clusters.
 	UserCluster KubermaticUserClusterConfiguration `json:"userCluster,omitempty"`
-	// ExposeStrategy is the strategy to expose the cluster with.
-	// Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
+	// ExposeStrategy is the strategy to expose the cluster with, default is Tunneling.
+	// Note: The `seedDNSOverwrite` setting of a Seed's datacenter doesn't have any effect
 	// if this is set to LoadBalancerStrategy.
 	ExposeStrategy ExposeStrategy `json:"exposeStrategy,omitempty"`
 	// Ingress contains settings for making the API and UI accessible remotely.
