@@ -76,7 +76,7 @@ func openStackDeploymentReconciler(data *resources.TemplateData) reconciling.Nam
 				return nil, err
 			}
 
-			version, err := getOSVersion(data.Cluster().Status.Versions.ControlPlane)
+			ccmImage, err := getOpenStackCCMImage(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}
@@ -86,7 +86,7 @@ func openStackDeploymentReconciler(data *resources.TemplateData) reconciling.Nam
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:         ccmContainerName,
-					Image:        registry.Must(data.RewriteImage(resources.RegistryDocker + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version)),
+					Image:        registry.Must(data.RewriteImage(ccmImage)),
 					Command:      []string{"/bin/openstack-cloud-controller-manager"},
 					Args:         getOSFlags(data),
 					Env:          getEnvVars(),
@@ -124,16 +124,16 @@ func getOSFlags(data *resources.TemplateData) []string {
 	return flags
 }
 
-func getOSVersion(version semver.Semver) (string, error) {
+func getOpenStackCCMImage(version semver.Semver) (string, error) {
 	switch version.MajorMinor() {
 	case v123:
-		return "1.23.4", nil
+		return resources.RegistryDocker + "/k8scloudprovider/openstack-cloud-controller-manager:v1.23.4", nil
 	case v124:
-		return "1.24.6", nil
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.24.6", nil
 	case v125:
-		return "1.25.5", nil
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.25.5", nil
 	case v126:
-		return "1.26.2", nil
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.26.2", nil
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)
 	}

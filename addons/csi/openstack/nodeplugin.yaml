@@ -15,20 +15,20 @@
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
-{{ $version := "UNSUPPORTED" }}
+{{ $csiImage := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.23" }}
-{{ $version = "v1.23.4"}}
+{{ $csiImage = "docker.io/k8scloudprovider/cinder-csi-plugin:v1.23.4"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.24" }}
-{{ $version = "v1.24.6"}}
+{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.24.6"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $version = "v1.25.5"}}
+{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.25.5"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.2"}}
+{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.26.2"}}
 {{ end }}
-{{ if not (eq $version "UNSUPPORTED") }}
+{{ if not (eq $csiImage "UNSUPPORTED") }}
 ---
 kind: DaemonSet
 apiVersion: apps/v1
@@ -89,7 +89,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: '{{ Image (print "k8scloudprovider/cinder-csi-plugin:" $version) }}'
+          image: '{{ Image $csiImage }}'
           args:
             - /bin/cinder-csi-plugin
             - "--nodeid=$(NODE_ID)"
