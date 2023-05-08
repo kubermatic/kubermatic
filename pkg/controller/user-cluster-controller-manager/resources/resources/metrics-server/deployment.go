@@ -52,7 +52,7 @@ const (
 	servingCertMountFolder = "/etc/serving-cert"
 
 	imageName = "metrics-server/metrics-server"
-	imageTag  = "v0.6.1"
+	imageTag  = "v0.6.3"
 )
 
 // TLSServingCertSecretReconciler returns a function to manage the TLS serving cert for the metrics server.
