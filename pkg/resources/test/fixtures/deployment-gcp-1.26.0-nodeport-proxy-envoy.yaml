@@ -73,7 +73,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: docker.io/envoyproxy/envoy-alpine:v1.16.0
+        image: docker.io/envoyproxy/envoy-alpine:v1.17.1
         lifecycle:
           preStop:
             exec:

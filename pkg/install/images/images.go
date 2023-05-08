@@ -292,7 +292,7 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
-	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false)
+	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false, kubermaticVersions)
 	deploymentReconcilers = append(deploymentReconcilers, monitoring.GetDeploymentReconcilers(templateData)...)
 	deploymentReconcilers = append(deploymentReconcilers, masteroperator.APIDeploymentReconciler(config, "", kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, masteroperator.MasterControllerManagerDeploymentReconciler(config, "", kubermaticVersions))

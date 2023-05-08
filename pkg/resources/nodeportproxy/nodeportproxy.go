@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -197,7 +198,7 @@ func RoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
 	}
 }
 
-func DeploymentEnvoyReconciler(data nodePortProxyData) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	volumeMountNameEnvoyConfig := "envoy-config"
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -253,7 +254,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData) reconciling.NamedDeployme
 				},
 			}, {
 				Name:  resources.NodePortProxyEnvoyContainerName,
-				Image: registry.Must(data.RewriteImage("envoyproxy/envoy-alpine:v1.16.0")),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("envoyproxy/envoy-alpine:%s", versions.Envoy))),
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
