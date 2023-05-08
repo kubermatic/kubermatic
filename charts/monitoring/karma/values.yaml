@@ -51,7 +51,7 @@ karma:
   images:
     karma:
       repository: docker.io/lmierzwa/karma
-      tag: v0.103
+      tag: v0.114
       pullPolicy: IfNotPresent
     initContainer:
       repository: quay.io/kubermatic/util
