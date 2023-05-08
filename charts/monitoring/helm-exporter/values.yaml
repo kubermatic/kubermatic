@@ -22,7 +22,7 @@ helmExporter:
     - -namespaces-ignore=cluster-.*,kubeone-.*
   image:
     repository: docker.io/sstarcher/helm-exporter
-    tag: 1.2.2
+    tag: 1.2.5
     pullPolicy: IfNotPresent
   # list of image pull secret references, e.g.
   # imagePullSecrets:
