@@ -254,7 +254,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 				},
 			}, {
 				Name:  resources.NodePortProxyEnvoyContainerName,
-				Image: registry.Must(data.RewriteImage(fmt.Sprintf("envoyproxy/envoy-alpine:%s", versions.Envoy))),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("envoyproxy/envoy-distroless:%s", versions.Envoy))),
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
