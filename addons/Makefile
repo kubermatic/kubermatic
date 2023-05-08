@@ -55,7 +55,7 @@ aws-ebs-csi-driver:
 	mkdir -p csi/aws-ebs
 	cat csi/aws-ebs/_header.txt > $(OUTPUT_FILE)
 	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
-	  --version 2.17.1 \
+	  --version 2.18.0 \
 	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
 	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
 	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
