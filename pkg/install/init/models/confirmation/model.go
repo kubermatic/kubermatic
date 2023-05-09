@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/init/generator"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -106,7 +107,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		if msg.Type == tea.KeyEnter && !m.Generating {
 			m.configCh <- generator.Config{
-				DNS: m.domain.Value(),
+				DNS:            m.domain.Value(),
+				ExposeStrategy: kubermaticv1.ExposeStrategy(m.exposeStrategy.Value()),
 			}
 			m.Generating = true
 			// start the spinner by returning its tick

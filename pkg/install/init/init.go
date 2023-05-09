@@ -19,6 +19,7 @@ package init
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/init/generator"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
 	"k8c.io/kubermatic/v2/pkg/install/init/models/confirmation"
@@ -34,7 +35,7 @@ import (
 func Run(logger *logrus.Logger, outputDir string) error {
 	logger.Debug("starting generator")
 	ch := make(chan generator.Config, 1)
-	doneCh := generator.Start(ch, logger, outputDir)
+	generator.Start(ch, logger, outputDir)
 
 	p := tea.NewProgram(initialModel(ch), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
@@ -42,17 +43,16 @@ func Run(logger *logrus.Logger, outputDir string) error {
 	}
 
 	// wait for generator to finish.
-	<-doneCh
+	//<-doneCh
 
 	return nil
 }
 
 func initialModel(genCh chan<- generator.Config) model {
-
 	strategies := []choice.Choice{
-		item{name: "Tunneling", desc: "The Tunneling expose strategy addresses both the scaling issues of the NodePort strategy and cost issues of the LoadBalancer strategy. With this strategy, the traffic is routed to the based on a combination of SNI and HTTP/2 tunnels by the nodeport-proxy."},
-		item{name: "LoadBalancer", desc: "In the LoadBalancer expose strategy, a dedicated service of type LoadBalancer will be created for each user cluster. This strategy requires services of type LoadBalancer to be available on the Seed cluster and usually results into higher cost of cloud resources."},
-		item{name: "NodePort", desc: "NodePort is the default expose strategy in KKP. With this strategy a k8s service of type NodePort is created for each exposed component (e.g. Kubernetes API Server) of each user cluster. This implies, that each apiserver will be exposed on a randomly assigned TCP port from the nodePort range configured for the seed cluster."},
+		item{name: string(kubermaticv1.ExposeStrategyTunneling), desc: "The Tunneling expose strategy addresses both the scaling issues of the NodePort strategy and cost issues of the LoadBalancer strategy. With this strategy, the traffic is routed to the based on a combination of SNI and HTTP/2 tunnels by the nodeport-proxy."},
+		item{name: string(kubermaticv1.ExposeStrategyLoadBalancer), desc: "In the LoadBalancer expose strategy, a dedicated service of type LoadBalancer will be created for each user cluster. This strategy requires services of type LoadBalancer to be available on the Seed cluster and usually results into higher cost of cloud resources."},
+		item{name: string(kubermaticv1.ExposeStrategyNodePort), desc: "NodePort is the default expose strategy in KKP. With this strategy a k8s service of type NodePort is created for each exposed component (e.g. Kubernetes API Server) of each user cluster. This implies, that each apiserver will be exposed on a randomly assigned TCP port from the nodePort range configured for the seed cluster."},
 	}
 
 	generateSecretChoices := []choice.Choice{

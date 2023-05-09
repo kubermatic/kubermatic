@@ -21,10 +21,14 @@ import (
 	"os"
 	"path"
 
-	"github.com/sirupsen/logrus"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/install/init/values"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
+
+	"github.com/sirupsen/logrus"
+	yamlv3 "gopkg.in/yaml.v3"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,26 +52,49 @@ func runGenerator(in <-chan Config, done chan<- interface{}, log *logrus.Logger,
 	// wait for a generator config to come in.
 	config := <-in
 
-	if err := Generate(config, outputDir); err != nil {
+	if err := Generate(config, outputDir, log); err != nil {
 		log.Errorf("failed to generate configuration files: %v", err)
 	}
 }
 
-func Generate(config Config, outputDir string) error {
-	f, _ := os.Create(path.Join(outputDir, "kubermatic.yaml"))
-	defer f.Close()
+func Generate(config Config, outputDir string, log *logrus.Logger) error {
+	kkpConfigFile, _ := os.Create(path.Join(outputDir, "kubermatic.yaml"))
+	defer kkpConfigFile.Close()
 
-	kkpConfig, err := generateKubermaticConfiguration(config)
+	valuesFile, _ := os.Create(path.Join(outputDir, "values.yaml"))
+	defer valuesFile.Close()
+
+	secrets, err := generateSecrets(config)
+	if err != nil {
+		return fmt.Errorf("failed to generate secrets: %v", err)
+	}
+
+	kkpConfig, err := generateKubermaticConfiguration(config, secrets)
 	if err != nil {
 		return fmt.Errorf("failed to generate KubermaticConfiguration: %v", err)
 	}
 
-	yaml.Encode(kkpConfig, f)
+	chartValues, err := values.Values()
+	if err != nil {
+		return err
+	}
+
+	if err := setHelmValues(chartValues, config, secrets); err != nil {
+		return fmt.Errorf("failed to set Helm values: %v", err)
+	}
+
+	if err := yaml.Encode(kkpConfig, kkpConfigFile); err != nil {
+		return err
+	}
+
+	if err := yamlv3.NewEncoder(valuesFile).Encode(chartValues); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func generateKubermaticConfiguration(config Config) (*kubermaticv1.KubermaticConfiguration, error) {
+func generateKubermaticConfiguration(config Config, secrets kkpSecrets) (*kubermaticv1.KubermaticConfiguration, error) {
 	kkpConfig := &kubermaticv1.KubermaticConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -78,6 +105,7 @@ func generateKubermaticConfiguration(config Config) (*kubermaticv1.KubermaticCon
 			Namespace: "kubermatic",
 		},
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			ExposeStrategy: config.ExposeStrategy,
 			Ingress: kubermaticv1.KubermaticIngressConfiguration{
 				Domain: config.DNS,
 				CertificateIssuer: corev1.TypedLocalObjectReference{
@@ -86,6 +114,9 @@ func generateKubermaticConfiguration(config Config) (*kubermaticv1.KubermaticCon
 				},
 			},
 			FeatureGates: map[string]bool{
+				// the OIDC feature is quite important for multi-tenant
+				// setups, so let's enable this by default in generated
+				// configurations.
 				features.OIDCKubeCfgEndpoint: true,
 				features.OpenIDAuthPlugin:    true,
 			},
@@ -95,10 +126,45 @@ func generateKubermaticConfiguration(config Config) (*kubermaticv1.KubermaticCon
 
 	kkpConfig.Spec.Auth = kubermaticv1.KubermaticAuthConfiguration{
 		TokenIssuer:        fmt.Sprintf("https://%s/dex", config.DNS),
-		IssuerClientSecret: "<to-be-generated>",
-		IssuerCookieKey:    "<to-be-generated>",
-		ServiceAccountKey:  "<to-be-generated>",
+		IssuerClientSecret: secrets.KubermaticIssuerClientSecret,
+		IssuerCookieKey:    secrets.IssuerCookieKey,
+		ServiceAccountKey:  secrets.ServiceAccountKey,
 	}
 
 	return kkpConfig, nil
+}
+
+func setHelmValues(chartValues *yamled.Document, config Config, secrets kkpSecrets) error {
+	// set RedirectURIs for the 'kubermatic' dex client.
+	if ok := chartValues.Set(yamled.Path{"dex", "clients", 0, "RedirectURIs"}, []string{
+		fmt.Sprintf("https://%s", config.DNS),
+		fmt.Sprintf("https://%s/projects", config.DNS),
+	}); !ok {
+		return fmt.Errorf("failed to set 'kubermatic' redirect URIs")
+	}
+
+	if ok := chartValues.Set(yamled.Path{"dex", "clients", 0, "secret"}, secrets.KubermaticClientSecret); !ok {
+		return fmt.Errorf("failed to set secret for 'kubermatic' client")
+	}
+
+	// set kubermaticIssuer secret.
+	if ok := chartValues.Set(yamled.Path{"dex", "clients", 1, "secret"}, secrets.KubermaticIssuerClientSecret); !ok {
+		return fmt.Errorf("failed to set secret for 'kubermaticIssuer' client")
+	}
+
+	// set RedirectURIs for the 'kubermaticIssuer' dex client.
+	if ok := chartValues.Set(yamled.Path{"dex", "clients", 1, "RedirectURIs"}, []string{
+		fmt.Sprintf("https://%s/api/v1/kubeconfig", config.DNS),
+		fmt.Sprintf("https://%s/api/v2/kubeconfig/secret", config.DNS),
+		fmt.Sprintf("https://%s/api/v2/dashboard/login", config.DNS),
+	}); !ok {
+		return fmt.Errorf("failed to set 'kubermaticIssuer' redirect URIs")
+	}
+
+	// set Ingress domain.
+	if ok := chartValues.Set(yamled.Path{"dex", "ingress", "host"}, config.DNS); !ok {
+		return fmt.Errorf("failed to set dex ingress domain")
+	}
+
+	return nil
 }
