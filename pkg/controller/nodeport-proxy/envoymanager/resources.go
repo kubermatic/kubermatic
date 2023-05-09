@@ -37,8 +37,11 @@ import (
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoylistenerlogv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/file/v3"
 	envoyhealthv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
+	envoyrouterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3"
+	envoytlsinspectorv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/listener/tls_inspector/v3"
 	envoyhttpconnectionmanagerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoymatcherv3 "github.com/envoyproxy/go-control-plane/envoy/type/matcher/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
@@ -247,6 +250,12 @@ func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylis
 func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) *envoylistenerv3.Listener {
 	sb.log.Debugf("using a listener on port %d", sb.EnvoySNIListenerPort)
 
+	inspectorpb, err := anypb.New(&envoytlsinspectorv3.TlsInspector{})
+	if err != nil {
+		// panic as this either never occurs or cannot recover
+		panic(fmt.Errorf("failed to marshal TLS inspector: %w", err))
+	}
+
 	sniListener := &envoylistenerv3.Listener{
 		Name: "sni_listener",
 		Address: &envoycorev3.Address{
@@ -264,8 +273,10 @@ func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) 
 		// 1.17.
 		ListenerFilters: []*envoylistenerv3.ListenerFilter{
 			{
-				Name:       envoywellknown.TlsInspector,
-				ConfigType: &envoylistenerv3.ListenerFilter_TypedConfig{},
+				Name: envoywellknown.TlsInspector,
+				ConfigType: &envoylistenerv3.ListenerFilter_TypedConfig{
+					TypedConfig: inspectorpb,
+				},
 			},
 		},
 		FilterChains: fcs,
@@ -318,6 +329,12 @@ func (sb *snapshotBuilder) makeTunnelingVirtualHosts(service *corev1.Service) (v
 }
 
 func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHost) *envoylistenerv3.Listener {
+	routerpb, err := anypb.New(&envoyrouterv3.Router{})
+	if err != nil {
+		// panic as this either never occurs or cannot recover
+		panic(fmt.Errorf("failed to marshal router: %w", err))
+	}
+
 	hcm := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
 		CodecType:  envoyhttpconnectionmanagerv3.HttpConnectionManager_AUTO,
 		StatPrefix: "ingress_http",
@@ -331,6 +348,9 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 		HttpFilters: []*envoyhttpconnectionmanagerv3.HttpFilter{
 			{
 				Name: envoywellknown.Router,
+				ConfigType: &envoyhttpconnectionmanagerv3.HttpFilter_TypedConfig{
+					TypedConfig: routerpb,
+				},
 			},
 		},
 		Http2ProtocolOptions: &envoycorev3.Http2ProtocolOptions{
@@ -514,8 +534,12 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 		Headers: []*envoyroutev3.HeaderMatcher{
 			{
 				Name: ":path",
-				HeaderMatchSpecifier: &envoyroutev3.HeaderMatcher_ExactMatch{
-					ExactMatch: "/healthz",
+				HeaderMatchSpecifier: &envoyroutev3.HeaderMatcher_StringMatch{
+					StringMatch: &envoymatcherv3.StringMatcher{
+						MatchPattern: &envoymatcherv3.StringMatcher_Exact{
+							Exact: "/healthz",
+						},
+					},
 				},
 			},
 		},
@@ -525,6 +549,12 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 	if err != nil {
 		// panic as this either never occurs or cannot recover
 		panic(fmt.Errorf("failed to marshal HealthCheck: %w", err))
+	}
+
+	routerpb, err := anypb.New(&envoyrouterv3.Router{})
+	if err != nil {
+		// panic as this either never occurs or cannot recover
+		panic(fmt.Errorf("failed to marshal router: %w", err))
 	}
 
 	httpConnectionManager := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
@@ -565,6 +595,9 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 			},
 			{
 				Name: envoywellknown.Router,
+				ConfigType: &envoyhttpconnectionmanagerv3.HttpFilter_TypedConfig{
+					TypedConfig: routerpb,
+				},
 			},
 		},
 	}
