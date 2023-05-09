@@ -21,7 +21,7 @@
 # - add security context
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.26.1" }}
+{{ $version := "1.27.0" }}
 
 ---
 apiVersion: apps/v1
