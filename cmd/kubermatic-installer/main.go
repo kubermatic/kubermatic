@@ -27,6 +27,8 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 type Options struct {
