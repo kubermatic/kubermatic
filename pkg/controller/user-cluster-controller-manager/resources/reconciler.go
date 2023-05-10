@@ -62,6 +62,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	osmmigration "k8c.io/kubermatic/v2/pkg/util/migration"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -139,6 +140,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
+	clusterVersion := cluster.Status.Versions.ControlPlane
+	if clusterVersion == "" {
+		clusterVersion = cluster.Spec.Version
+	}
+
+	data.clusterVersion = clusterVersion
 	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
 
@@ -1087,7 +1094,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 
 	if r.isKonnectivityEnabled {
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
-			konnectivity.DeploymentReconciler(r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime, r.imageRewriter),
+			konnectivity.DeploymentReconciler(data.clusterVersion, r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime, r.imageRewriter),
 			metricsserver.DeploymentReconciler(r.imageRewriter), // deploy metrics-server in user cluster
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -1151,6 +1158,7 @@ type reconcileData struct {
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
+	clusterVersion   semver.Semver
 	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
 	csiCloudConfig                []byte
 	ccmMigration                  bool
