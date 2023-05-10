@@ -664,21 +664,20 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 	}
 
 	if r.opaIntegration {
-		creators = append(creators,
-			gatekeeper.ConfigCRDReconciler(),
-			gatekeeper.ConstraintTemplateCRDReconciler(),
-			gatekeeper.ConstraintPodStatusCRDReconciler(),
-			gatekeeper.ConstraintTemplatePodStatusCRDReconciler(),
-			gatekeeper.MutatorPodStatusCRDReconciler(),
-			gatekeeper.AssignCRDReconciler(),
-			gatekeeper.AssignMetadataCRDReconciler(),
-			gatekeeper.ModifySetCRDReconciler(),
-			gatekeeper.ProviderCRDReconciler())
+		gatekeeperCRDs, err := gatekeeper.CRDs()
+		if err != nil {
+			return fmt.Errorf("failed to load Gatekeeper CRDs: %w", err)
+		}
+
+		for i := range gatekeeperCRDs {
+			creators = append(creators, gatekeeper.CRDReconciler(gatekeeperCRDs[i]))
+		}
 	}
 
 	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %w", err)
 	}
+
 	return nil
 }
 
