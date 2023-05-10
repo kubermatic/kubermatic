@@ -15,7 +15,7 @@
 apiVersion: v1
 name: karma
 version: v9.9.9-dev
-appVersion: v0.103
+appVersion: v0.114
 description: Dashboard for Prometheus Alertmanager
 keywords:
   - kubermatic
