@@ -35,7 +35,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.25"
+              value: "1.26"
             - name: PROVIDER
               value: "anexia"
             - name: DISTRIBUTIONS
