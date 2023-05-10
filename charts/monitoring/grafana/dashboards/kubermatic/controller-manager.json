@@ -1,30 +1,11 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "target": {
-          "limit": 100,
-          "matchAny": false,
-          "tags": [],
-          "type": "dashboard"
-        },
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 35,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -46,6 +27,7 @@
         "type": "prometheus",
         "uid": "P1809F7CD0C75ACF3"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -197,7 +179,9 @@
           "refId": "B"
         }
       ],
+      "timeRegions": [],
       "title": "Reconciliations / sec",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -206,6 +190,7 @@
         "uid": "P1809F7CD0C75ACF3"
       },
       "description": "",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -314,7 +299,9 @@
           "refId": "C"
         }
       ],
+      "timeRegions": [],
       "title": "Controller Reconcile Time",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -336,6 +323,7 @@
         "uid": "P1809F7CD0C75ACF3"
       },
       "description": "This metric measures the number of additions handled by the workqueue. A high value might indicate problems in the cluster, or in some of the nodes. ",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -420,7 +408,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Workqueue Rate",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -429,6 +419,7 @@
         "uid": "P1809F7CD0C75ACF3"
       },
       "description": "his metric enables you to verify how big the workqueue is. How many actions in the workqueue are waiting to be processed? It should remain a low value. The following query will allow you to easily see the increase rate in the kube-controller-manager queue. The bigger the workqueue is, the more has to process. Thus, a workqueue growing trend may indicate problems in your Kubernetes cluster. ",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -513,7 +504,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Workqueue Depth",
+      "transparent": true,
       "type": "timeseries"
     },
     {
@@ -522,6 +515,7 @@
         "uid": "P1809F7CD0C75ACF3"
       },
       "description": "The time that kube-controller-manager is taking to fulfill the different actions to keep the desired status of the cluster. ",
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -606,11 +600,13 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Workqueue Latency",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": "30s",
   "revision": 1,
   "schemaVersion": 38,
   "style": "dark",
@@ -618,11 +614,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "Data Source",
@@ -638,11 +630,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
