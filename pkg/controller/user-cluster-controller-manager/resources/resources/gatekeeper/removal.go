@@ -29,118 +29,105 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetResourcesToRemoveOnDelete() []ctrlruntimeclient.Object {
+func GetResourcesToRemoveOnDelete() ([]ctrlruntimeclient.Object, error) {
 	var toRemove []ctrlruntimeclient.Object
 
-	// Webhook
-	toRemove = append(toRemove, &admissionregistrationv1.ValidatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperValidatingWebhookConfigurationName,
-		}})
-	toRemove = append(toRemove, &admissionregistrationv1.MutatingWebhookConfiguration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperMutatingWebhookConfigurationName,
-		}})
+	toRemove = append(toRemove,
+		// Webhooks
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.GatekeeperValidatingWebhookConfigurationName,
+			},
+		},
+		&admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.GatekeeperMutatingWebhookConfigurationName,
+			},
+		},
 
-	// Pod Disruption Budget
-	toRemove = append(toRemove, &policyv1.PodDisruptionBudget{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperPodDisruptionBudgetName,
-			Namespace: resources.GatekeeperNamespace,
-		}})
+		// Pod Disruption Budget
+		&policyv1.PodDisruptionBudget{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.GatekeeperPodDisruptionBudgetName,
+				Namespace: resources.GatekeeperNamespace,
+			},
+		},
 
-	// Deployment
-	toRemove = append(toRemove, &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperControllerDeploymentName,
-			Namespace: resources.GatekeeperNamespace,
+		// Deployments
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.GatekeeperControllerDeploymentName,
+				Namespace: resources.GatekeeperNamespace,
+			},
 		},
-	})
-	toRemove = append(toRemove, &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperAuditDeploymentName,
-			Namespace: resources.GatekeeperNamespace,
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.GatekeeperAuditDeploymentName,
+				Namespace: resources.GatekeeperNamespace,
+			},
 		},
-	})
-	// Service
-	toRemove = append(toRemove, &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperWebhookServiceName,
-			Namespace: resources.GatekeeperNamespace,
+
+		// Service
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.GatekeeperWebhookServiceName,
+				Namespace: resources.GatekeeperNamespace,
+			},
 		},
-	})
-	// RBACs
-	toRemove = append(toRemove, &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperServiceAccountName,
-			Namespace: resources.GatekeeperNamespace,
+
+		// RBAC
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.GatekeeperServiceAccountName,
+				Namespace: resources.GatekeeperNamespace,
+			},
 		},
-	})
-	toRemove = append(toRemove, &rbacv1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperRoleName,
-			Namespace: resources.GatekeeperNamespace,
+		&rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.GatekeeperRoleName,
+				Namespace: resources.GatekeeperNamespace,
+			},
 		},
-	})
-	toRemove = append(toRemove, &rbacv1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperRoleBindingName,
-			Namespace: resources.GatekeeperNamespace,
+		&rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.GatekeeperRoleBindingName,
+				Namespace: resources.GatekeeperNamespace,
+			},
 		},
-	})
-	toRemove = append(toRemove, &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperRoleName,
+		&rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.GatekeeperRoleName,
+			},
 		},
-	})
-	toRemove = append(toRemove, &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperRoleBindingName,
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.GatekeeperRoleBindingName,
+			},
 		},
-	})
+	)
 
 	// CRDs
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperConstraintTemplateCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperConfigCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperConstraintPodStatusCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperConstraintTemplatePodStatusCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperMutatorPodStatusCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperAssignCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperAssignMetadataCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperModifySetCRDName,
-		}})
-	toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperProviderCRDName,
-		}})
-	// Namespace
-	toRemove = append(toRemove, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: resources.GatekeeperNamespace,
-		}})
+	crds, err := CRDs()
+	if err != nil {
+		return nil, err
+	}
 
-	return toRemove
+	for _, crd := range crds {
+		toRemove = append(toRemove, &apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: crd.Name,
+			},
+		})
+	}
+
+	// Namespace
+	toRemove = append(toRemove,
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.GatekeeperNamespace,
+			},
+		},
+	)
+
+	return toRemove, nil
 }

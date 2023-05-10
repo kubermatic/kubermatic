@@ -37,7 +37,7 @@ const (
 	auditEmptyDirName      = "tmp-volume"
 	auditEmptyDirMountPath = "/tmp/audit"
 	imageName              = "openpolicyagent/gatekeeper"
-	tag                    = "v3.7.2"
+	tag                    = "v3.12.0"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
@@ -49,22 +49,20 @@ var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		controllerName: {
 			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
 				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("1"),
 			},
 		},
 		auditName: {
 			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
 				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("1"),
 			},
 		},
 	}
@@ -175,6 +173,14 @@ func AuditDeploymentReconciler(registryWithOverwrite registry.ImageRewriter, res
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
+				{
+					Name: resources.GatekeeperWebhookServerCertSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.GatekeeperWebhookServerCertSecretName,
+						},
+					},
+				},
 			}
 
 			dep.Spec.Template.Spec.Containers = getAuditContainers(registryWithOverwrite)
@@ -209,6 +215,13 @@ func getControllerContainers(enableMutation bool, imageRewriter registry.ImageRe
 			fmt.Sprintf("--exempt-namespace=%s", metav1.NamespaceSystem),
 			"--operation=webhook",
 			fmt.Sprintf("--enable-mutation=%t", enableMutation),
+			"--admission-events-involved-namespace=false",
+			"--disable-opa-builtin={http.send}",
+			"--enable-generator-resource-expansion=false",
+			"--log-mutations=false",
+			"--max-serving-threads=-1",
+			"--metrics-backend=prometheus",
+			"--mutation-annotations=false",
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -231,14 +244,26 @@ func getControllerContainers(enableMutation bool, imageRewriter registry.ImageRe
 			},
 		},
 		Env: []corev1.EnvVar{
-			{Name: "POD_NAMESPACE",
-				Value: resources.GatekeeperNamespace},
-			{Name: "POD_NAME",
+			{
+				Name:  "POD_NAMESPACE",
+				Value: resources.GatekeeperNamespace,
+			},
+			{
+				Name: "POD_NAME",
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: "metadata.name",
 					},
-				}},
+				},
+			},
+			{
+				Name:  "NAMESPACE",
+				Value: resources.GatekeeperNamespace,
+			},
+			{
+				Name:  "CONTAINER_NAME",
+				Value: "manager",
+			},
 		},
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -272,7 +297,7 @@ func getControllerContainers(enableMutation bool, imageRewriter registry.ImageRe
 			AllowPrivilegeEscalation: pointer.Bool(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
-					"all",
+					"ALL",
 				},
 			},
 			ReadOnlyRootFilesystem: pointer.Bool(true),
@@ -295,7 +320,13 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 			"--operation=status",
 			"--operation=mutation-status",
 			fmt.Sprintf("--constraint-violations-limit=%d", resources.ConstraintViolationsLimit),
+			"--audit-events-involved-namespace=false",
 			fmt.Sprintf("--audit-match-kind-only=%t", resources.AuditMatchKindOnly),
+			fmt.Sprintf("--validating-webhook-configuration-name=%s", resources.GatekeeperValidatingWebhookConfigurationName),
+			fmt.Sprintf("--mutating-webhook-configuration-name=%s", resources.GatekeeperMutatingWebhookConfigurationName),
+			"--enable-generator-resource-expansion=false",
+			"--metrics-backend=prometheus",
+			"--disable-cert-rotation=true",
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -308,14 +339,26 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 			},
 		},
 		Env: []corev1.EnvVar{
-			{Name: "POD_NAMESPACE",
-				Value: resources.GatekeeperNamespace},
-			{Name: "POD_NAME",
+			{
+				Name:  "POD_NAMESPACE",
+				Value: resources.GatekeeperNamespace,
+			},
+			{
+				Name: "POD_NAME",
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: "metadata.name",
 					},
-				}},
+				},
+			},
+			{
+				Name:  "NAMESPACE",
+				Value: resources.GatekeeperNamespace,
+			},
+			{
+				Name:  "CONTAINER_NAME",
+				Value: "manager",
+			},
 		},
 		LivenessProbe: &corev1.Probe{
 			ProbeHandler: corev1.ProbeHandler{
@@ -349,7 +392,7 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 			AllowPrivilegeEscalation: pointer.Bool(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
-					"all",
+					"ALL",
 				},
 			},
 			ReadOnlyRootFilesystem: pointer.Bool(true),
@@ -361,6 +404,11 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 			{
 				Name:      auditEmptyDirName,
 				MountPath: auditEmptyDirMountPath,
+			},
+			{
+				Name:      resources.GatekeeperWebhookServerCertSecretName,
+				MountPath: "/certs",
+				ReadOnly:  true,
 			},
 		},
 	}}

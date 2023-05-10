@@ -21,7 +21,6 @@ import (
 	_ "embed"
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -73,7 +72,7 @@ func loadCRD(filename string) (*apiextensionsv1.CustomResourceDefinition, error)
 // CRDReconciler returns a reconciler for a CRD.
 func CRDReconciler(crd apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
-		return resources.GatekeeperConfigCRDName, func(target *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+		return crd.Name, func(target *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			target.Labels = crd.Labels
 			target.Annotations = crd.Annotations
 			target.Spec = crd.Spec
