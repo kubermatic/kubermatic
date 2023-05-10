@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -42,14 +43,14 @@ var (
 
 // ProxySidecar returns container that runs konnectivity proxy server as a sidecar in apiserver pods.
 func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Container, error) {
-	const (
-		name    = "kas-network-proxy/proxy-server"
-		version = "v0.0.35"
-	)
+	clusterVersion := data.Cluster().Status.Versions.ControlPlane
+	if clusterVersion == "" {
+		clusterVersion = data.Cluster().Spec.Version
+	}
 
 	return &corev1.Container{
 		Name:            resources.KonnectivityServerContainer,
-		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryK8S, name, version))),
+		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/kas-network-proxy/proxy-server:%s", resources.RegistryK8S, NetworkProxyVersion(clusterVersion)))),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
 			"/proxy-server",
@@ -127,4 +128,22 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 		},
 		Resources: defResourceRequirements,
 	}, nil
+}
+
+func NetworkProxyVersion(clusterVersion semver.Semver) string {
+	// https://github.com/kubernetes-sigs/apiserver-network-proxy#releases
+	switch clusterVersion.MajorMinor() {
+	case "1.23":
+		fallthrough
+	case "1.24":
+		fallthrough
+	case "1.25":
+		fallthrough
+	case "1.26":
+		return "v0.0.37"
+	case "1.27":
+		fallthrough
+	default:
+		return "v0.1.2"
+	}
 }

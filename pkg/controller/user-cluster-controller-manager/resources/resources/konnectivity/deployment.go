@@ -20,7 +20,9 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,13 +50,8 @@ var (
 )
 
 // DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentReconciler(kServerHost string, kServerPort int, kKeepaliveTime string, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kServerPort int, kKeepaliveTime string, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		const (
-			name    = "kas-network-proxy/proxy-agent"
-			version = "v0.0.35"
-		)
-
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
@@ -78,7 +75,7 @@ func DeploymentReconciler(kServerHost string, kServerPort int, kKeepaliveTime st
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            resources.KonnectivityAgentContainer,
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryK8S, name, version))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/kas-network-proxy/proxy-agent:%s", resources.RegistryK8S, konnectivity.NetworkProxyVersion(clusterVersion)))),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/proxy-agent"},
 					Args: []string{
