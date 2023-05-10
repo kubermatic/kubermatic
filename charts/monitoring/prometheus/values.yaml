@@ -33,7 +33,7 @@ prometheus:
 
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.7.1
+    tag: v0.8.0
     pullPolicy: IfNotPresent
 
   # If you install Prometheus using a different Helm release name,
