@@ -59,6 +59,11 @@ func ValidatingWebhookConfigurationReconciler(timeout int) reconciling.NamedVali
 								Key:      resources.GatekeeperExemptNamespaceLabel,
 								Operator: metav1.LabelSelectorOpDoesNotExist,
 							},
+							{
+								Key:      "kubernetes.io/metadata.name",
+								Operator: metav1.LabelSelectorOpNotIn,
+								Values:   []string{resources.GatekeeperNamespace},
+							},
 						},
 					},
 					ObjectSelector: &metav1.LabelSelector{},
@@ -76,13 +81,32 @@ func ValidatingWebhookConfigurationReconciler(timeout int) reconciling.NamedVali
 							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Create,
 								admissionregistrationv1.Update,
-								admissionregistrationv1.Delete,
 							},
 							Rule: admissionregistrationv1.Rule{
 								APIGroups:   []string{"*"},
 								APIVersions: []string{"*"},
-								Resources:   []string{"*"},
-								Scope:       &allScopes,
+								Resources: []string{
+									"*",
+									// Explicitly list all known subresources except "status" (to avoid destabilizing the cluster and increasing load on gatekeeper).
+									// You can find a rough list of subresources by doing a case-sensitive search in the Kubernetes codebase for 'Subresource("'
+									"pods/ephemeralcontainers",
+									"pods/exec",
+									"pods/log",
+									"pods/eviction",
+									"pods/portforward",
+									"pods/proxy",
+									"pods/attach",
+									"pods/binding",
+									"deployments/scale",
+									"replicasets/scale",
+									"statefulsets/scale",
+									"replicationcontrollers/scale",
+									"services/proxy",
+									"nodes/proxy",
+									// For constraints that mitigate CVE-2020-8554
+									"services/status",
+								},
+								Scope: &allScopes,
 							},
 						},
 					},
@@ -103,6 +127,11 @@ func ValidatingWebhookConfigurationReconciler(timeout int) reconciling.NamedVali
 							{
 								Key:      resources.GatekeeperExemptNamespaceLabel,
 								Operator: metav1.LabelSelectorOpDoesNotExist,
+							},
+							{
+								Key:      "kubernetes.io/metadata.name",
+								Operator: metav1.LabelSelectorOpNotIn,
+								Values:   []string{resources.GatekeeperNamespace},
 							},
 						},
 					},
@@ -172,6 +201,11 @@ func MutatingWebhookConfigurationReconciler(timeout int) reconciling.NamedMutati
 							{
 								Key:      resources.GatekeeperExemptNamespaceLabel,
 								Operator: metav1.LabelSelectorOpDoesNotExist,
+							},
+							{
+								Key:      "kubernetes.io/metadata.name",
+								Operator: metav1.LabelSelectorOpNotIn,
+								Values:   []string{resources.GatekeeperNamespace},
 							},
 						},
 					},

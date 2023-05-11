@@ -442,26 +442,6 @@ const (
 	MachineSetCRDName = "machinesets.cluster.k8s.io"
 	// MachineDeploymentCRDName defines the CRD name for machinedeployment objects.
 	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
-	// ClusterCRDName defines the CRD name for cluster objects.
-	ClusterCRDName = "clusters.cluster.k8s.io"
-	// GatekeeperConfigCRDName defines the CRD name for gatekeeper config objects.
-	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
-	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects.
-	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
-	// GatekeeperMutatorPodStatusCRDName defines the CRD name for gatekeeper MutatorPodStatus objects.
-	GatekeeperMutatorPodStatusCRDName = "mutatorpodstatuses.status.gatekeeper.sh"
-	// GatekeeperAssignCRDName defines the CRD name for gatekeeper assign objects.
-	GatekeeperAssignCRDName = "assign.mutations.gatekeeper.sh"
-	// GatekeeperAssignMetadataCRDName defines the CRD name for gatekeeper assign metadata objects.
-	GatekeeperAssignMetadataCRDName = "assignmetadata.mutations.gatekeeper.sh"
-	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects.
-	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
-	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects.
-	GatekeeperConstraintTemplatePodStatusCRDName = "constrainttemplatepodstatuses.status.gatekeeper.sh"
-	// GatekeeperModifySetCRDName defines the CRD name for gatekeeper modify set objects.
-	GatekeeperModifySetCRDName = "modifyset.mutations.gatekeeper.sh"
-	// GatekeeperProviderCRDName defines the CRD name for gatekeeper provider objects.
-	GatekeeperProviderCRDName = "providers.externaldata.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration.

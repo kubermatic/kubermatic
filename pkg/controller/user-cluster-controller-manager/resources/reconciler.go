@@ -671,21 +671,20 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 	}
 
 	if r.opaIntegration {
-		creators = append(creators,
-			gatekeeper.ConfigCRDReconciler(),
-			gatekeeper.ConstraintTemplateCRDReconciler(),
-			gatekeeper.ConstraintPodStatusCRDReconciler(),
-			gatekeeper.ConstraintTemplatePodStatusCRDReconciler(),
-			gatekeeper.MutatorPodStatusCRDReconciler(),
-			gatekeeper.AssignCRDReconciler(),
-			gatekeeper.AssignMetadataCRDReconciler(),
-			gatekeeper.ModifySetCRDReconciler(),
-			gatekeeper.ProviderCRDReconciler())
+		gatekeeperCRDs, err := gatekeeper.CRDs()
+		if err != nil {
+			return fmt.Errorf("failed to load Gatekeeper CRDs: %w", err)
+		}
+
+		for i := range gatekeeperCRDs {
+			creators = append(creators, gatekeeper.CRDReconciler(gatekeeperCRDs[i]))
+		}
 	}
 
 	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %w", err)
 	}
+
 	return nil
 }
 
@@ -1178,7 +1177,12 @@ type reconcileData struct {
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
-	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete() {
+	resources, err := gatekeeper.GetResourcesToRemoveOnDelete()
+	if err != nil {
+		return err
+	}
+
+	for _, resource := range resources {
 		err := r.Client.Delete(ctx, resource)
 		if errC := r.cleanUpOPAHealthStatus(ctx, err); errC != nil {
 			return fmt.Errorf("failed to update OPA health status in cluster: %w", errC)
@@ -1187,6 +1191,7 @@ func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 			return fmt.Errorf("failed to ensure OPA integration is removed/not present: %w", err)
 		}
 	}
+
 	return nil
 }
 
