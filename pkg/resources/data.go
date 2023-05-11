@@ -691,17 +691,19 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 
 		// This flag is GA since 1.24 and enabled by default; it seems to be gone
 		// from Kubernetes 1.26, so we don't need to set it anymore.
-		if cluster.Spec.Cloud.Openstack != nil && lt25.Check(version) {
-			featureFlags = append(featureFlags, "CSIMigrationOpenStack=true")
-		}
-		if cluster.Spec.Cloud.VSphere != nil {
-			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
-		}
-		if cluster.Spec.Cloud.AWS != nil {
-			featureFlags = append(featureFlags, "CSIMigrationAWS=true")
-		}
-		if cluster.Spec.Cloud.Azure != nil {
-			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=true", "CSIMigrationAzureFile=true")
+		if lt25.Check(version) {
+			if cluster.Spec.Cloud.Openstack != nil {
+				featureFlags = append(featureFlags, "CSIMigrationOpenStack=true")
+			}
+			if cluster.Spec.Cloud.VSphere != nil {
+				featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
+			}
+			if cluster.Spec.Cloud.AWS != nil {
+				featureFlags = append(featureFlags, "CSIMigrationAWS=true")
+			}
+			if cluster.Spec.Cloud.Azure != nil {
+				featureFlags = append(featureFlags, "CSIMigrationAzureFile=true")
+			}
 		}
 
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
