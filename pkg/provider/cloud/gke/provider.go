@@ -147,7 +147,6 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 	if err != nil {
 		return nil, err
 	}
-	releaseChannel := ""
 
 	req := svc.Projects.Zones.GetServerconfig(project, zone)
 	resp, err := req.Context(ctx).Do()
@@ -157,7 +156,7 @@ func ListUpgrades(ctx context.Context, sa, zone, name string) ([]*apiv1.MasterVe
 	upgradesMap := map[string]bool{}
 
 	if cluster.ReleaseChannel != nil && len(cluster.ReleaseChannel.Channel) > 0 && cluster.ReleaseChannel.Channel != resources.GKEUnspecifiedReleaseChannel {
-		releaseChannel = cluster.ReleaseChannel.Channel
+		releaseChannel := cluster.ReleaseChannel.Channel
 		for _, channel := range resp.Channels {
 			// select versions from the current channel
 			if releaseChannel == channel.Channel {
