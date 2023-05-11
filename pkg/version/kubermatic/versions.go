@@ -61,7 +61,7 @@ func NewDefaultVersions() Versions {
 		Kubermatic:        kubermaticDockerTag,
 		UI:                uiDockerTag,
 		VPA:               "0.11.0",
-		Envoy:             "v1.17.1",
+		Envoy:             "v1.26.1",
 		KubermaticEdition: edition.KubermaticEdition,
 	}
 }

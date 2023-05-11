@@ -58,6 +58,12 @@ time kind create cluster --name "${KIND_CLUSTER_NAME}"
 # load nodeport-proxy image
 time kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND_CLUSTER_NAME"
 
+# gather the logs of all Envoys
+if [ -n "${ARTIFACTS:-}" ]; then
+  protokol --kubeconfig "${HOME}/.kube/config" --output "$ARTIFACTS/logs" --namespace 'np-proxy-test-*' > /dev/null 2>&1 &
+  protokol --kubeconfig "${HOME}/.kube/config" --output "$ARTIFACTS/logs" --namespace 'nodeport-proxy-*' > /dev/null 2>&1 &
+fi
+
 # run tests
 go_test nodeport_proxy_e2e -tags e2e -v -race ./pkg/test/e2e/nodeport-proxy \
   -kubeconfig "${HOME}/.kube/config" \

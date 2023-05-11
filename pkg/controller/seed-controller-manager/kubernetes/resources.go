@@ -52,6 +52,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
 	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/usercluster-webhook"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -361,7 +362,7 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 }
 
 // GetDeploymentReconcilers returns all DeploymentReconcilers that are currently in use.
-func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool) []reconciling.NamedDeploymentReconcilerFactory {
+func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
 	deployments := []reconciling.NamedDeploymentReconcilerFactory{
 		apiserver.DeploymentReconciler(data, enableAPIserverOIDCAuthentication),
 		scheduler.DeploymentReconciler(data),
@@ -401,7 +402,7 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		deployments = append(deployments,
-			nodeportproxy.DeploymentEnvoyReconciler(data),
+			nodeportproxy.DeploymentEnvoyReconciler(data, versions),
 			nodeportproxy.DeploymentLBUpdaterReconciler(data),
 		)
 	}
@@ -410,7 +411,7 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 }
 
 func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	creators := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication)
+	creators := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication, r.versions)
 	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r)
 }
 

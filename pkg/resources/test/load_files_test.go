@@ -750,7 +750,7 @@ func TestLoadFiles(t *testing.T) {
 						WithFailureDomainZoneAntiaffinity(true).
 						Build()
 
-					generateAndVerifyResources(t, data, tc, markFixtureUsed)
+					generateAndVerifyResources(t, data, tc, markFixtureUsed, kubermaticVersions)
 				})
 			}
 		}
@@ -761,11 +761,11 @@ func TestLoadFiles(t *testing.T) {
 	}
 }
 
-func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc testCase, fixtureDone func(string)) {
+func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc testCase, fixtureDone func(string), versions kubermatic.Versions) {
 	cluster := data.Cluster()
 
 	var deploymentReconcilers []reconciling.NamedDeploymentReconcilerFactory
-	deploymentReconcilers = append(deploymentReconcilers, kubernetescontroller.GetDeploymentReconcilers(data, true)...)
+	deploymentReconcilers = append(deploymentReconcilers, kubernetescontroller.GetDeploymentReconcilers(data, true, versions)...)
 	deploymentReconcilers = append(deploymentReconcilers, monitoringcontroller.GetDeploymentReconcilers(data)...)
 	for _, create := range deploymentReconcilers {
 		name, creator := create()
