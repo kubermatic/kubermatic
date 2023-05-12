@@ -46,9 +46,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/install/helm"
 )
 
 var kkpEndpointTemplate = "%v.nip.io"
+
+const (
+	// TODO make configurable
+	helmChartDir = "./charts"
+	helmBin      = "helm"
+)
 
 func QuickStartCommand(logger *logrus.Logger) *cobra.Command {
 	cmd := &cobra.Command{
@@ -73,6 +80,10 @@ func quickStartKindCommand(logger *logrus.Logger) *cobra.Command {
 			if err != nil {
 				logger.Fatalf("failed to find 'kind' binary", err)
 			}
+			_, err = exec.LookPath("helm")
+			if err != nil {
+				logger.Fatalf("failed to find 'helm' binary", err)
+			}
 		},
 		RunE: quickStartKindFunc(logger),
 	}
@@ -84,14 +95,14 @@ func quickStartKind(logger *logrus.Logger, dir string) (client.Client, context.C
 	if err := os.WriteFile(kindConfig, []byte(kindConfigContent), 0600); err != nil {
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
-	logger.Info("Creating kind cluster ...") // TODO: prettify
+	logger.Info("Creating kind cluster ...")
 	// TODO: make this idempotent
 	out, err := exec.Command("kind", "create", "cluster", "-n", "kkp-cluster", "--config", kindConfig).CombinedOutput()
 	if err != nil {
 		logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
 	}
 
-	logger.Info("Kind cluster ready, continuing configuration ...") // TODO: prettify
+	logger.Info("Kind cluster ready, continuing configuration ...")
 	kubeconfigCmd := exec.Command("kubectl", "config", "view", "--minify", "--flatten")
 	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
 	kindKubeConfig, err := os.Create(kindKubeConfigPath)
@@ -165,28 +176,16 @@ func ensureResource(kubeClient client.Client, logger *logrus.Logger, o client.Ob
 	}
 }
 
-func installKubevirt(logger *logrus.Logger, dir string, kubeClient client.Client) {
+func installKubevirt(logger *logrus.Logger, dir string) {
 	logger.Info("Installing KubeVirt ...")
-	// TODO: package this whole thing in KKP charts
-	ko := "https://github.com/kubevirt/kubevirt/releases/download/v1.0.0-alpha.0/kubevirt-operator.yaml"
-	kcr := "https://github.com/kubevirt/kubevirt/releases/download/v1.0.0-alpha.0/kubevirt-cr.yaml"
-	cdio := "https://github.com/kubevirt/containerized-data-importer/releases/download/v1.56.0/cdi-operator.yaml"
-	cdicr := "https://github.com/kubevirt/containerized-data-importer/releases/download/v1.56.0/cdi-cr.yaml"
-	out, err := exec.Command("kubectl", "apply", "-f", ko).CombinedOutput()
+	kubeconfig := filepath.Join(dir, "kube-config.yaml")
+	helmClient, err := helm.NewCLI(helmBin, kubeconfig, "", time.Minute, logger)
 	if err != nil {
-		logger.Fatalf("Failed to install KubeVirt: %v\n%v", err, string(out))
+		logger.Fatalf("Failed to create helm client: %v", err)
 	}
-	out, err = exec.Command("kubectl", "apply", "-f", kcr).CombinedOutput()
+	err = helmClient.InstallChart("", "kubevirt", filepath.Join(helmChartDir, "quickstart-kubevirt"), "", nil, nil)
 	if err != nil {
-		logger.Fatalf("Failed to install KubeVirt CR: %v\n%v", err, string(out))
-	}
-	out, err = exec.Command("kubectl", "apply", "-f", cdio).CombinedOutput()
-	if err != nil {
-		logger.Fatalf("Failed to install KubeVirt CDI: %v\n%v", err, string(out))
-	}
-	out, err = exec.Command("kubectl", "apply", "-f", cdicr).CombinedOutput()
-	if err != nil {
-		logger.Fatalf("Failed to install KubeVirt CDI CR: %v\n%v", err, string(out))
+		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
 	}
 }
 
@@ -295,7 +294,7 @@ func quickStartKindFunc(logger *logrus.Logger) cobraFuncE {
 		}
 		kubeClient, cancel := quickStartKind(logger, dir)
 		defer cancel()
-		installKubevirt(logger, dir, kubeClient)
+		installKubevirt(logger, dir)
 		endpoint := installKubermatic(logger, dir, kubeClient)
 		logger.Infof("KKP installed successfully, login at http://%v.", endpoint)
 		return nil

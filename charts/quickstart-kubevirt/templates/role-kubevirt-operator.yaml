@@ -1,0 +1,70 @@
+# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    kubevirt.io: ""
+  name: kubevirt-operator
+  namespace: kubevirt
+rules:
+  - apiGroups:
+      - ""
+    resourceNames:
+      - kubevirt-ca
+      - kubevirt-export-ca
+      - kubevirt-virt-handler-certs
+      - kubevirt-virt-handler-server-certs
+      - kubevirt-operator-certs
+      - kubevirt-virt-api-certs
+      - kubevirt-controller-certs
+      - kubevirt-exportproxy-certs
+    resources:
+      - secrets
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+  - apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - patch
+      - delete
+  - apiGroups:
+      - route.openshift.io
+    resources:
+      - routes/custom-host
+    verbs:
+      - create
