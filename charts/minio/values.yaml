@@ -20,8 +20,8 @@ minio:
   imagePullSecrets: []
 
   image:
-    repository: docker.io/minio/minio
-    tag: RELEASE.2022-06-25T15-50-16Z
+    repository: quay.io/minio/minio
+    tag: RELEASE.2023-05-04T21-44-30Z
   storeSize: 100Gi
 
   # The is required to enable the BackupRestore controller so it can backup
@@ -57,7 +57,7 @@ minio:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 2.1.0
+      tag: 2.3.0
 
   # If your cluster does not have a default storage class,
   # you can specify the class to use for Minio. Note that
