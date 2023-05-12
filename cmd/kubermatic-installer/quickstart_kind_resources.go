@@ -177,7 +177,7 @@ var kindLocalSeed = kubermaticv1.Seed{
 								OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
 									providerconfig.OperatingSystemUbuntu: map[string]string{
 										// TODO: upload to some kubermatic hosted public service?
-										"22.04": "http://image-repo.kube-system.svc/images/ubuntu-22.04.img",
+										"22.04": "https://dev.kubermatic.io/quickstart/kubevirt-images/images/ubuntu-22.04.img",
 									},
 								},
 							},
