@@ -104,7 +104,7 @@ func Add(
 		}
 
 		clusterSource := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := clusterSource.InjectCache(mgr.GetCache()); err != nil {
+		if err := clusterSource.InjectCache(seedManager.GetCache()); err != nil {
 			return fmt.Errorf("failed to inject cache into clusterSource for seed %s: %w", seedName, err)
 		}
 		if err := c.Watch(
