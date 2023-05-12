@@ -209,9 +209,6 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient client.Clie
 	unstructured.SetNestedField(uk.Object, randomString(32), "spec", "auth", "issuerClientSecret")
 	unstructured.SetNestedField(uk.Object, randomString(32), "spec", "auth", "issuerCookieKey")
 	unstructured.SetNestedField(uk.Object, randomString(32), "spec", "auth", "serviceAccountKey")
-	// TODO: backport https://github.com/kubermatic/dashboard/pull/5867 or wait for new release?
-	unstructured.SetNestedField(uk.Object, "wozniakjan/dashboard", "spec", "ui", "dockerRepository")
-	unstructured.SetNestedField(uk.Object, "latest", "spec", "ui", "dockerTag")
 	kout, err := yaml.Marshal(uk.Object)
 	if err != nil {
 		logger.Fatalf("failed to marshal kubermatic.yaml: %v", err)
