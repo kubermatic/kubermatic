@@ -17,15 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"io"
 	"math/rand"
 	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -42,9 +39,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -52,9 +49,8 @@ import (
 var kkpEndpointTemplate = "%v.nip.io"
 
 const (
-	// TODO make configurable
-	helmChartDir = "./charts"
-	helmBin      = "helm"
+	helmChartDir = "./charts" //TODO: make configurable
+	helmBin      = "helm"     //TODO: make configurable
 )
 
 func QuickStartCommand(logger *logrus.Logger) *cobra.Command {
@@ -78,11 +74,11 @@ func quickStartKindCommand(logger *logrus.Logger) *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			_, err := exec.LookPath("kind")
 			if err != nil {
-				logger.Fatalf("failed to find 'kind' binary", err)
+				logger.Fatalf("failed to find 'kind' binary: %v", err)
 			}
 			_, err = exec.LookPath("helm")
 			if err != nil {
-				logger.Fatalf("failed to find 'helm' binary", err)
+				logger.Fatalf("failed to find 'helm' binary: %v", err)
 			}
 		},
 		RunE: quickStartKindFunc(logger),
@@ -90,7 +86,7 @@ func quickStartKindCommand(logger *logrus.Logger) *cobra.Command {
 	return cmd
 }
 
-func quickStartKind(logger *logrus.Logger, dir string) (client.Client, context.CancelFunc) {
+func quickStartKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, context.CancelFunc) {
 	kindConfig := filepath.Join(dir, "kind-config.yaml")
 	if err := os.WriteFile(kindConfig, []byte(kindConfigContent), 0600); err != nil {
 		logger.Fatalf("failed to create 'kind' config: %v", err)
@@ -117,10 +113,12 @@ func quickStartKind(logger *logrus.Logger, dir string) (client.Client, context.C
 		logger.Fatalf("failed to close 'kind' cluster kubeconfig: %v", err)
 	}
 
-	flag.Set("kubeconfig", kindKubeConfigPath)
+	if err := flag.Set("kubeconfig", kindKubeConfigPath); err != nil {
+		logger.Fatalf("failed to close set kubeconfig path: %v", err)
+	}
 	ctrlConfig, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {
-		logger.Fatalf("failed to initialize runtime config: %w", err)
+		logger.Fatalf("failed to initialize runtime config: %v", err)
 	}
 
 	mgr, err := manager.New(ctrlConfig, manager.Options{
@@ -128,7 +126,7 @@ func quickStartKind(logger *logrus.Logger, dir string) (client.Client, context.C
 		HealthProbeBindAddress: "0",
 	})
 	if err != nil {
-		logger.Fatalf("failed to construct mgr: %w", err)
+		logger.Fatalf("failed to construct mgr: %v", err)
 	}
 
 	// start the manager in its own goroutine
@@ -149,29 +147,8 @@ func quickStartKind(logger *logrus.Logger, dir string) (client.Client, context.C
 	return mgr.GetClient(), cancel
 }
 
-func writeFileFromURL(url, filepath string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("Failed to get example file %v: %v", url, err)
-	}
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Failed to get example file %v: status code %v", url, resp.StatusCode)
-	}
-	defer resp.Body.Close()
-	file, err := os.Create(filepath)
-	if err != nil {
-		return fmt.Errorf("Failed to create file %v: %v", filepath, err)
-	}
-	writer := bufio.NewWriter(file)
-	defer writer.Flush()
-	if _, err := io.Copy(writer, resp.Body); err != nil {
-		return fmt.Errorf("Failed to write example file %v: %v", filepath, err)
-	}
-	return nil
-}
-
-func ensureResource(kubeClient client.Client, logger *logrus.Logger, o client.Object) {
-	if err := kubeClient.Create(context.Background(), o); err != nil && !errors.IsAlreadyExists(err) {
+func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, o ctrlruntimeclient.Object) {
+	if err := kubeClient.Create(context.Background(), o); err != nil && !apierrors.IsAlreadyExists(err) {
 		logger.Fatal(err)
 	}
 }
@@ -189,7 +166,7 @@ func installKubevirt(logger *logrus.Logger, dir string) {
 	}
 }
 
-func installKubermatic(logger *logrus.Logger, dir string, kubeClient client.Client) string {
+func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client) string {
 	ip := getLocalIP(logger)
 	kkpEndpoint := fmt.Sprintf(kkpEndpointTemplate, ip)
 	logger.Infof("Installing KKP at %v ...", ip) // TODO: prettify
@@ -203,12 +180,12 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient client.Clie
 		logger.Fatalf("failed to unmarshal example kubermatic.yaml: %v", err)
 	}
 	// TODO: make this idempotent (e.g. if generated yamls already exist, don't touch them)
-	unstructured.SetNestedField(uk.Object, kkpEndpoint, "spec", "ingress", "domain")
-	unstructured.SetNestedField(uk.Object, nil, "spec", "ingress", "certificateIssuer")
-	unstructured.SetNestedField(uk.Object, fmt.Sprintf("http://%v/dex", kkpEndpoint), "spec", "auth", "tokenIssuer")
-	unstructured.SetNestedField(uk.Object, randomString(32), "spec", "auth", "issuerClientSecret")
-	unstructured.SetNestedField(uk.Object, randomString(32), "spec", "auth", "issuerCookieKey")
-	unstructured.SetNestedField(uk.Object, randomString(32), "spec", "auth", "serviceAccountKey")
+	uSetNestedField(logger, uk.Object, kkpEndpoint, "spec", "ingress", "domain")
+	uSetNestedField(logger, uk.Object, nil, "spec", "ingress", "certificateIssuer")
+	uSetNestedField(logger, uk.Object, fmt.Sprintf("http://%v/dex", kkpEndpoint), "spec", "auth", "tokenIssuer")
+	uSetNestedField(logger, uk.Object, randomString(32), "spec", "auth", "issuerClientSecret")
+	uSetNestedField(logger, uk.Object, randomString(32), "spec", "auth", "issuerCookieKey")
+	uSetNestedField(logger, uk.Object, randomString(32), "spec", "auth", "serviceAccountKey")
 	kout, err := yaml.Marshal(uk.Object)
 	if err != nil {
 		logger.Fatalf("failed to marshal kubermatic.yaml: %v", err)
@@ -226,12 +203,12 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient client.Clie
 		logger.Fatalf("failed to decode example values.yaml: %v", err)
 	}
 
-	setNestedField(uv, "http", "dex", "ingress", "scheme")
-	setNestedField(uv, kkpEndpoint, "dex", "ingress", "host")
+	setNestedField(logger, uv, "http", "dex", "ingress", "scheme")
+	setNestedField(logger, uv, kkpEndpoint, "dex", "ingress", "host")
 	clients := uv["dex"].(map[any]any)["clients"].([]any)
 	for i, _ := range clients {
 		clientsMap := clients[i].(map[any]any)
-		setNestedField(clientsMap, randomString(32), "secret")
+		setNestedField(logger, clientsMap, randomString(32), "secret")
 		uris := clientsMap["RedirectURIs"].([]any)
 		for uri, _ := range uris {
 			u, err := url.Parse(uris[uri].(string))
@@ -244,8 +221,8 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient client.Clie
 		}
 	}
 
-	setNestedField(uv, uuid.NewString(), "telemetry", "uuid")
-	setNestedField(uv, nil, "minio")
+	setNestedField(logger, uv, uuid.NewString(), "telemetry", "uuid")
+	setNestedField(logger, uv, nil, "minio")
 	vout, err := yaml.Marshal(uv)
 	if err != nil {
 		logger.Fatalf("failed to marshal values.yaml: %v", err)
@@ -314,14 +291,20 @@ func getLocalIP(logger *logrus.Logger) string {
 	return ""
 }
 
-func setNestedField(obj map[any]any, value any, fields ...string) error {
+func uSetNestedField(logger *logrus.Logger, obj map[string]any, value any, fields ...string) {
+	if err := unstructured.SetNestedField(obj, value, fields...); err != nil {
+		logger.Fatalf("failed to set path %v: %v", fields, err)
+	}
+}
+
+func setNestedField(logger *logrus.Logger, obj map[any]any, value any, fields ...string) {
 	m := obj
 	for _, field := range fields[:len(fields)-1] {
 		if val, ok := m[field]; ok {
 			if valMap, ok := val.(map[any]any); ok {
 				m = valMap
 			} else {
-				return fmt.Errorf("value cannot be set because %v is not a map[any]any: %T %v", field, val, val)
+				logger.Fatalf("value cannot be set because %v is not a map[any]any: %T %v, path %v", field, val, val, fields)
 			}
 		} else {
 			newVal := make(map[any]any)
@@ -330,12 +313,11 @@ func setNestedField(obj map[any]any, value any, fields ...string) error {
 		}
 	}
 	m[fields[len(fields)-1]] = value
-	return nil
 }
 
-func initKindSeedSecret(kubeClient client.Client, logger *logrus.Logger, kubeconfigPath, internalKubeconfigPath string) corev1.Secret {
+func initKindSeedSecret(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, kubeconfigPath, internalKubeconfigPath string) corev1.Secret {
 	cpPod := corev1.Pod{}
-	key := client.ObjectKey{Namespace: "kube-system", Name: "kube-apiserver-kkp-cluster-control-plane"}
+	key := ctrlruntimeclient.ObjectKey{Namespace: "kube-system", Name: "kube-apiserver-kkp-cluster-control-plane"}
 	if err := kubeClient.Get(context.Background(), key, &cpPod); err != nil {
 		logger.Fatalf("Failed to get IP for kind control-plane pod: %v", err)
 	}
