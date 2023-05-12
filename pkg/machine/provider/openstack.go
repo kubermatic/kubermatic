@@ -118,10 +118,6 @@ func CompleteOpenstackProviderSpec(config *openstack.RawConfig, cluster *kuberma
 	}
 
 	if cluster != nil {
-		if config.FloatingIPPool.Value == "" {
-			config.FloatingIPPool.Value = cluster.Spec.Cloud.Openstack.FloatingIPPool
-		}
-
 		if config.Network.Value == "" {
 			config.Network.Value = cluster.Spec.Cloud.Openstack.Network
 		}
