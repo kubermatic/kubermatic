@@ -74,7 +74,7 @@ var kindIngressControllerService = corev1.Service{
 	},
 	Spec: corev1.ServiceSpec{
 		Ports: []corev1.ServicePort{
-			corev1.ServicePort{
+			{
 				Name:        "http",
 				Protocol:    "TCP",
 				AppProtocol: ptr("http"),
@@ -86,7 +86,7 @@ var kindIngressControllerService = corev1.Service{
 				},
 				NodePort: 31514,
 			},
-			corev1.ServicePort{
+			{
 				Name:        "https",
 				Protocol:    "TCP",
 				AppProtocol: ptr("https"),
@@ -121,7 +121,7 @@ var kindNodeportProxyService = corev1.Service{
 	},
 	Spec: corev1.ServiceSpec{
 		Ports: []corev1.ServicePort{
-			corev1.ServicePort{
+			{
 				Name:     "sni-listener",
 				Protocol: "TCP",
 				Port:     6443,
@@ -130,7 +130,7 @@ var kindNodeportProxyService = corev1.Service{
 				},
 				NodePort: 30652,
 			},
-			corev1.ServicePort{
+			{
 				Name:     "tunneling-listener",
 				Protocol: "TCP",
 				Port:     8088,
@@ -166,7 +166,7 @@ var kindLocalSeed = kubermaticv1.Seed{
 			Name:      "kubeconfig-seed",
 		},
 		Datacenters: map[string]kubermaticv1.Datacenter{
-			"kubevirt": kubermaticv1.Datacenter{
+			"kubevirt": {
 				Country:  "DE",      // TODO: some clever heuristic or geolocation service?
 				Location: "Hamburg", // TODO: some clever heuristic or geolocation service?
 				Spec: kubermaticv1.DatacenterSpec{

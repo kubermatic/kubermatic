@@ -206,11 +206,11 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	setNestedField(logger, uv, "http", "dex", "ingress", "scheme")
 	setNestedField(logger, uv, kkpEndpoint, "dex", "ingress", "host")
 	clients := uv["dex"].(map[any]any)["clients"].([]any)
-	for i, _ := range clients {
+	for i := range clients {
 		clientsMap := clients[i].(map[any]any)
 		setNestedField(logger, clientsMap, randomString(32), "secret")
 		uris := clientsMap["RedirectURIs"].([]any)
-		for uri, _ := range uris {
+		for uri := range uris {
 			u, err := url.Parse(uris[uri].(string))
 			if err != nil {
 				logger.Fatalf("failed to modify values.yaml: %v", err)
