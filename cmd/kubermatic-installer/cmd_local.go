@@ -37,6 +37,9 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	"k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -48,25 +51,42 @@ import (
 
 var kkpEndpointTemplate = "%v.nip.io"
 
-const (
-	helmChartDir = "./charts" //TODO: make configurable
-	helmBin      = "helm"     //TODO: make configurable
-)
+type LocalOptions struct {
+	Options
+
+	HelmBinary  string
+	HelmTimeout time.Duration
+}
 
 func LocalCommand(logger *logrus.Logger) *cobra.Command {
+	opt := LocalOptions{
+		HelmTimeout: 5 * time.Minute,
+		HelmBinary:  "helm",
+		Options: Options{
+			ChartsDirectory: "./charts",
+		},
+	}
 	cmd := &cobra.Command{
 		Use:   "local [environment]",
 		Short: "Initialize environment for simplified local KKP installation",
 		Long:  "Prepares minimal Kubernetes environment (e.g. kind) and auto-configures a non-production KKP installation for evaluation and development purpose.",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			options.CopyInto(&opt.Options)
+			if opt.HelmBinary == "" {
+				opt.HelmBinary = os.Getenv("HELM_BINARY")
+			}
+		},
 	}
+	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
+	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 
-	cmd.AddCommand(localKindCommand(logger))
+	cmd.AddCommand(localKindCommand(logger, opt))
 	// TODO: expose when ready
 	cmd.Hidden = true
 	return cmd
 }
 
-func localKindCommand(logger *logrus.Logger) *cobra.Command {
+func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "kind",
 		Short: "Initialize kind environment for simplified local KKP installation",
@@ -81,7 +101,7 @@ func localKindCommand(logger *logrus.Logger) *cobra.Command {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
 			}
 		},
-		RunE: localKindFunc(logger),
+		RunE: localKindFunc(logger, opt),
 	}
 	return cmd
 }
@@ -153,20 +173,15 @@ func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, 
 	}
 }
 
-func installKubevirt(logger *logrus.Logger, dir string) {
+func installKubevirt(logger *logrus.Logger, dir string, helmClient helm.Client, opt LocalOptions) {
 	logger.Info("Installing KubeVirt ...")
-	kubeconfig := filepath.Join(dir, "kube-config.yaml")
-	helmClient, err := helm.NewCLI(helmBin, kubeconfig, "", time.Minute, logger)
-	if err != nil {
-		logger.Fatalf("Failed to create helm client: %v", err)
-	}
-	err = helmClient.InstallChart("", "kubevirt", filepath.Join(helmChartDir, "local-kubevirt"), "", nil, nil)
+	err := helmClient.InstallChart("", "kubevirt", filepath.Join(opt.ChartsDirectory, "local-kubevirt"), "", nil, nil)
 	if err != nil {
 		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
 	}
 }
 
-func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client) string {
+func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opts LocalOptions) string {
 	ip := getLocalIP(logger)
 	kkpEndpoint := fmt.Sprintf(kkpEndpointTemplate, ip)
 	logger.Infof("Installing KKP at %v ...", ip) // TODO: prettify
@@ -237,19 +252,32 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	ensureResource(kubeClient, logger, &kindIngressControllerService)
 	ensureResource(kubeClient, logger, &kindNodeportProxyService)
 
-	// TODO: use cmd_deploy.go instead
-	kubeconfig := filepath.Join(dir, "kube-config.yaml")
-	executable, err := os.Executable()
+	ms := kubermaticmaster.MasterStack{}
+	k, uk, err := loadKubermaticConfiguration(kubermaticPath)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
 	}
-	cmd := exec.Command(executable, "deploy", "--config", kubermaticPath, "--helm-values", valuesPath, "--kubeconfig", kubeconfig)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		logger.Fatal(err)
+	v, err := loadHelmValues(valuesPath)
+	if err != nil {
+		logger.Panicf("Failed to load %v after autoconfiguration: %v", valuesPath, err)
+	}
+	msOpts := stack.DeployOptions{
+		ChartsDirectory:            opts.ChartsDirectory,
+		KubeClient:                 kubeClient,
+		HelmClient:                 helmClient,
+		Logger:                     log.Prefix(logrus.NewEntry(logger), "   "),
+		MLASkipMinio:               true,
+		MLASkipMinioLifecycleMgr:   true,
+		KubermaticConfiguration:    k,
+		RawKubermaticConfiguration: uk,
+		HelmValues:                 v,
 	}
 
+	if err := ms.Deploy(context.Background(), msOpts); err != nil {
+		logger.Fatalf("Failed to deploy kubermatic stack: %v", err)
+	}
+
+	kubeconfig := filepath.Join(dir, "kube-config.yaml")
 	internalKubeconfig := filepath.Join(dir, "kube-config-internal.yaml")
 	kindSeedSecret := initKindSeedSecret(kubeClient, logger, kubeconfig, internalKubeconfig)
 	ensureResource(kubeClient, logger, &kindSeedSecret)
@@ -259,7 +287,7 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	return kkpEndpoint
 }
 
-func localKindFunc(logger *logrus.Logger) cobraFuncE {
+func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		dir := "./examples"
 		path, err := os.Executable()
@@ -268,9 +296,26 @@ func localKindFunc(logger *logrus.Logger) cobraFuncE {
 		}
 		kubeClient, cancel := localKind(logger, dir)
 		defer cancel()
-		installKubevirt(logger, dir)
-		endpoint := installKubermatic(logger, dir, kubeClient)
-		logger.Infof("KKP installed successfully, login at http://%v.", endpoint)
+		kubeconfig := filepath.Join(dir, "kube-config.yaml")
+		helmClient, err := helm.NewCLI(opt.HelmBinary, kubeconfig, "", opt.HelmTimeout, logger)
+		if err != nil {
+			logger.Fatalf("Failed to create helm client: %v", err)
+		}
+		helmVersion, err := helmClient.Version()
+		if err != nil {
+			logger.Fatalf("Failed to check Helm version: %v", err)
+		}
+		if helmVersion.LessThan(MinHelmVersion) {
+			logger.Fatalf(
+				"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+				MinHelmVersion,
+				opt.HelmBinary,
+				helmVersion,
+			)
+		}
+		installKubevirt(logger, dir, helmClient, opt)
+		endpoint := installKubermatic(logger, dir, kubeClient, helmClient, opt)
+		logger.Infof("KKP installed successfully, login at http://%v", endpoint)
 		return nil
 	})
 }
