@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Generated from:
-#   helm template cilium cilium/cilium --version 1.11.0 --namespace kube-system --set operator.replicas=1 \
+#   helm template cilium cilium/cilium --version 1.11.16 --namespace kube-system --set cni.exclusive=false --set operator.replicas=1 \
 #     --set hubble.tls.auto.method=cronJob --set hubble.relay.enabled=true --set hubble.ui.enabled=true \
 #     --set kubeProxyReplacement=strict --set k8sServiceHost=CHANGEME --set k8sServicePort=CHANGEME
 #
@@ -66,6 +66,8 @@ data:
   #   setting it to "kvstore".
   identity-allocation-mode: crd
   cilium-endpoint-gc-interval: "5m0s"
+  nodes-gc-interval: "5m0s"
+  skip-cnp-status-startup-clean: "false"
   # Disable the usage of CiliumEndpoint CRD
   disable-endpoint-crd: "false"
 
@@ -139,7 +141,7 @@ data:
 
   # Name of the cluster. Only relevant when building a mesh of clusters.
   cluster-name: default
-  # Unique ID of the cluster. Must be unique across all conneted clusters and
+  # Unique ID of the cluster. Must be unique across all connected clusters and
   # in the range of 1 and 255. Only relevant when building a mesh of clusters.
   cluster-id: ""
 
@@ -148,7 +150,7 @@ data:
   #   - disabled
   #   - vxlan (default)
   #   - geneve
-  tunnel: vxlan
+  tunnel: "vxlan"
   # Enables L7 proxy for L7 policy enforcement and visibility
   enable-l7-proxy: "true"
 
@@ -177,6 +179,8 @@ data:
   enable-auto-protect-node-port-range: "true"
   enable-session-affinity: "true"
   enable-l2-neigh-discovery: "true"
+  arping-refresh-period: "30s"
+  cni-uninstall: "true"
   enable-endpoint-health-checking: "true"
   enable-health-checking: "true"
   enable-well-known-identities: "false"
@@ -198,6 +202,11 @@ data:
   disable-cnp-status-updates: "true"
   cgroup-root: "/run/cilium/cgroupv2"
   enable-k8s-terminating-endpoint: "true"
+  annotate-k8s-node: "true"
+  remove-cilium-node-taints: "true"
+  set-cilium-is-up-condition: "true"
+  unmanaged-pod-watcher-interval: "15"
+  agent-not-ready-taint-key: "node.cilium.io/agent-not-ready"
 ---
 # Source: cilium/templates/cilium-agent/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -226,38 +235,19 @@ rules:
   resources:
   - namespaces
   - services
-  - nodes
-  - endpoints
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - pods
-  - pods/finalizers
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-  - delete
-- apiGroups:
-  - ""
-  resources:
+  - endpoints
   - nodes
   verbs:
   - get
   - list
   - watch
-  - update
 - apiGroups:
   - ""
   resources:
-  - nodes
   - nodes/status
   verbs:
+  # To annotate the k8s node with Cilium's metadata
   - patch
 - apiGroups:
   - apiextensions.k8s.io
@@ -279,21 +269,15 @@ rules:
   resources:
   - ciliumnetworkpolicies
   - ciliumnetworkpolicies/status
-  - ciliumnetworkpolicies/finalizers
   - ciliumclusterwidenetworkpolicies
   - ciliumclusterwidenetworkpolicies/status
-  - ciliumclusterwidenetworkpolicies/finalizers
   - ciliumendpoints
   - ciliumendpoints/status
-  - ciliumendpoints/finalizers
   - ciliumnodes
   - ciliumnodes/status
-  - ciliumnodes/finalizers
   - ciliumidentities
-  - ciliumidentities/finalizers
   - ciliumlocalredirectpolicies
   - ciliumlocalredirectpolicies/status
-  - ciliumlocalredirectpolicies/finalizers
   - ciliumegressnatpolicies
   - ciliumendpointslices
   verbs:
@@ -308,14 +292,30 @@ rules:
 - apiGroups:
   - ""
   resources:
-  # to automatically delete [core|kube]dns pods so that are starting to being
-  # managed by Cilium
   - pods
   verbs:
   - get
   - list
   - watch
+  # to automatically delete [core|kube]dns pods so that are starting to being
+  # managed by Cilium
   - delete
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  # To remove node taints
+  - nodes
+  # To set NetworkUnavailable false on startup
+  - nodes/status
+  verbs:
+  - patch
 - apiGroups:
   - discovery.k8s.io
   resources:
@@ -447,11 +447,6 @@ spec:
   template:
     metadata:
       annotations:
-        # This annotation plus the CriticalAddonsOnly toleration makes
-        # cilium to be a critical pod in the cluster, which ensures cilium
-        # gets priority scheduling.
-        # https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
-        scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
         k8s-app: cilium
     spec:
@@ -480,7 +475,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cilium-agent
-        image: "quay.io/cilium/cilium:v1.11.0"
+        image: "quay.io/cilium/cilium:v1.11.16"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-agent
@@ -490,7 +485,7 @@ spec:
           httpGet:
             host: "127.0.0.1"
             path: /healthz
-            port: 9876
+            port: 9879
             scheme: HTTP
             httpHeaders:
             - name: "brief"
@@ -502,7 +497,7 @@ spec:
           httpGet:
             host: "127.0.0.1"
             path: /healthz
-            port: 9876
+            port: 9879
             scheme: HTTP
             httpHeaders:
             - name: "brief"
@@ -515,7 +510,7 @@ spec:
           httpGet:
             host: "127.0.0.1"
             path: /healthz
-            port: 9876
+            port: 9879
             scheme: HTTP
             httpHeaders:
             - name: "brief"
@@ -561,21 +556,20 @@ spec:
               command:
               - "/cni-install.sh"
               - "--enable-debug=false"
-              - "--cni-exclusive=true"
+              - "--cni-exclusive=false"
           preStop:
             exec:
               command:
               - /cni-uninstall.sh
         securityContext:
           privileged: true
+        terminationMessagePolicy: FallbackToLogsOnError
         volumeMounts:
         - name: bpf-maps
           mountPath: /sys/fs/bpf
           mountPropagation: Bidirectional
         - name: cilium-run
           mountPath: /var/run/cilium
-        - name: cni-path
-          mountPath: /host/opt/cni/bin
         - name: etc-cni-netd
           mountPath: /host/etc/cni/net.d
         - name: clustermesh-secrets
@@ -598,7 +592,7 @@ spec:
       # Required to mount cgroup2 filesystem on the underlying Kubernetes node.
       # We use nsenter command with host's cgroup and mount namespaces enabled.
       - name: mount-cgroup
-        image: "quay.io/cilium/cilium:v1.11.0"
+        image: "quay.io/cilium/cilium:v1.11.16"
         imagePullPolicy: IfNotPresent
         env:
         - name: CGROUP_ROOT
@@ -622,10 +616,37 @@ spec:
           mountPath: /hostproc
         - name: cni-path
           mountPath: /hostbin
+        terminationMessagePolicy: FallbackToLogsOnError
+        securityContext:
+          privileged: true
+      - name: apply-sysctl-overwrites
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.11.16"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: BIN_PATH
+          value: /opt/cni/bin
+        command:
+        - sh
+        - -ec
+        # The statically linked Go program binary is invoked to avoid any
+        # dependency on utilities like sh that can be missing on certain
+        # distros installed on the underlying host. Copy the binary to the
+        # same directory where we install cilium cni plugin so that exec permissions
+        # are available.
+        - |
+          cp /usr/bin/cilium-sysctlfix /hostbin/cilium-sysctlfix;
+          nsenter --mount=/hostproc/1/ns/mnt "${BIN_PATH}/cilium-sysctlfix";
+          rm /hostbin/cilium-sysctlfix
+        volumeMounts:
+        - name: hostproc
+          mountPath: /hostproc
+        - name: cni-path
+          mountPath: /hostbin
+        terminationMessagePolicy: FallbackToLogsOnError
         securityContext:
           privileged: true
       - name: clean-cilium-state
-        image: "quay.io/cilium/cilium:v1.11.0"
+        image: "quay.io/cilium/cilium:v1.11.16"
         imagePullPolicy: IfNotPresent
         command:
         - /init-container.sh
@@ -648,6 +669,7 @@ spec:
         - name: KUBERNETES_SERVICE_PORT
           value: "{{ $apiServerPort }}"
         {{ end }}
+        terminationMessagePolicy: FallbackToLogsOnError
         securityContext:
           privileged: true
         volumeMounts:
@@ -662,11 +684,31 @@ spec:
         resources:
           requests:
             cpu: 100m
-            memory: 100Mi
+            memory: 100Mi # wait-for-kube-proxy
+      # Install the CNI binaries in an InitContainer so we don't have a writable host mount in the agent
+      - name: install-cni-binaries
+        image: "quay.io/quay.io/cilium/cilium:v1.11.16"
+        imagePullPolicy: IfNotPresent
+        command:
+          - "/install-plugin.sh"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 10Mi
+        securityContext:
+          seLinuxOptions:
+          capabilities:
+            drop:
+              - ALL
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+          - name: cni-path
+            mountPath: /host/opt/cni/bin
       restartPolicy: Always
       priorityClassName: system-node-critical
       serviceAccount: "cilium"
       serviceAccountName: "cilium"
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 1
       tolerations:
         - operator: Exists
@@ -780,7 +822,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cilium-operator
-        image: quay.io/cilium/operator-generic:v1.11.0
+        image: quay.io/cilium/operator-generic:v1.11.16
         imagePullPolicy: IfNotPresent
         command:
         - cilium-operator-generic
@@ -823,11 +865,13 @@ spec:
         - name: cilium-config-path
           mountPath: /tmp/cilium/config-map
           readOnly: true
+        terminationMessagePolicy: FallbackToLogsOnError
       hostNetwork: true
       restartPolicy: Always
       priorityClassName: system-cluster-critical
       serviceAccount: "cilium-operator"
       serviceAccountName: "cilium-operator"
+      automountServiceAccountToken: true
       tolerations:
         - operator: Exists
       securityContext:
