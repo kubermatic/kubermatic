@@ -37,7 +37,7 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- generator.Config, doneCh <-chan bool) *Model {
+func New(domain *input.Model, exposeStrategy *choice.Model, generateSecrets *choice.Model, configCh chan<- generator.Config, doneCh <-chan bool) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
@@ -66,8 +66,9 @@ func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- gene
 	t.SetStyles(style)
 
 	m := &Model{
-		domain:         domain,
-		exposeStrategy: exposeStrategy,
+		domain:          domain,
+		exposeStrategy:  exposeStrategy,
+		generateSecrets: generateSecrets,
 
 		spin:        s,
 		configTable: t,
@@ -75,7 +76,7 @@ func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- gene
 		configCh: configCh,
 	}
 
-	// start goroutine that ways for generator to report it's done.
+	// start goroutine that waits for generator to report it's done.
 	go func() {
 		<-doneCh
 		m.Generated = true
@@ -86,8 +87,9 @@ func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- gene
 }
 
 type Model struct {
-	domain         *input.Model
-	exposeStrategy *choice.Model
+	domain          *input.Model
+	exposeStrategy  *choice.Model
+	generateSecrets *choice.Model
 
 	spin        spinner.Model
 	configTable table.Model
@@ -109,6 +111,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.configTable.SetRows([]table.Row{
 			{"DNS Name", m.domain.Value()},
 			{"Expose Strategy", m.exposeStrategy.Value()},
+			{"Generate Secrets", m.generateSecrets.Value()},
 		})
 
 		m.configTable, cmd = m.configTable.Update(msg)
@@ -124,9 +127,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		keyMsg := msg.(tea.KeyMsg)
 		if keyMsg.Type == tea.KeyEnter && !m.Generating {
+			generateSecrets := m.generateSecrets.Value()
+
 			m.configCh <- generator.Config{
-				DNS:            m.domain.Value(),
-				ExposeStrategy: kubermaticv1.ExposeStrategy(m.exposeStrategy.Value()),
+				DNS:             m.domain.Value(),
+				ExposeStrategy:  kubermaticv1.ExposeStrategy(m.exposeStrategy.Value()),
+				GenerateSecrets: generateSecrets == "Yes",
 			}
 			m.Generating = true
 			return m, cmd

@@ -35,11 +35,20 @@ type kkpSecrets struct {
 }
 
 func generateSecrets(config Config) (kkpSecrets, error) {
+	if config.GenerateSecrets {
+		return kkpSecrets{
+			KubermaticClientSecret:       randomString(32),
+			KubermaticIssuerClientSecret: randomString(32),
+			IssuerCookieKey:              randomString(32),
+			ServiceAccountKey:            randomString(32),
+		}, nil
+	}
+
 	return kkpSecrets{
-		KubermaticClientSecret:       randomString(32),
-		KubermaticIssuerClientSecret: randomString(32),
-		IssuerCookieKey:              randomString(32),
-		ServiceAccountKey:            randomString(32),
+		KubermaticClientSecret:       "<kubermatic-client-secret>",
+		KubermaticIssuerClientSecret: "<kubermatic-issuer-client-secret>",
+		IssuerCookieKey:              "<issuer-cookie-key>",
+		ServiceAccountKey:            "<service-account-key>",
 	}, nil
 }
 

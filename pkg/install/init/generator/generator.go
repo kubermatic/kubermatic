@@ -35,8 +35,9 @@ import (
 )
 
 type Config struct {
-	DNS            string
-	ExposeStrategy kubermaticv1.ExposeStrategy
+	DNS             string
+	ExposeStrategy  kubermaticv1.ExposeStrategy
+	GenerateSecrets bool
 }
 
 func Start(in <-chan Config, log *logrus.Logger, outputDir string) <-chan bool {

@@ -64,7 +64,7 @@ func initialModel(genCh chan<- generator.Config, returnCh <-chan bool, log *logr
 
 	secretGenerationChoice := choice.New("Would you like this wizard to generate secrets for your configuration?", generateSecretChoices)
 
-	confirm := confirmation.New(domainInput, exposeStrategyChoice, genCh, returnCh)
+	confirm := confirmation.New(domainInput, exposeStrategyChoice, secretGenerationChoice, genCh, returnCh)
 
 	models := []tea.Model{
 		domainInput,
