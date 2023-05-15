@@ -68,6 +68,7 @@ data:
   identity-allocation-mode: crd
   cilium-endpoint-gc-interval: "5m0s"
   nodes-gc-interval: "5m0s"
+  skip-cnp-status-startup-clean: "false"
   # Disable the usage of CiliumEndpoint CRD
   disable-endpoint-crd: "false"
 
@@ -184,6 +185,7 @@ data:
   enable-svc-source-range-check: "true"
   enable-l2-neigh-discovery: "true"
   arping-refresh-period: "30s"
+  cni-uninstall: "true"
   enable-endpoint-health-checking: "true"
   enable-health-checking: "true"
   enable-well-known-identities: "false"
@@ -576,7 +578,7 @@ spec:
     spec:
       containers:
       - name: cilium-agent
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.2"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.9"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-agent
@@ -665,11 +667,8 @@ spec:
               - /cni-uninstall.sh
         securityContext:
           seLinuxOptions:
-            level: 's0'
-            # Running with spc_t since we have removed the privileged mode.
-            # Users can change it to a different type as long as they have the
-            # type available on the system.
-            type: 'spc_t'
+            level: s0
+            type: spc_t
           capabilities:
             add:
               # Use to set socket permission
@@ -720,8 +719,6 @@ spec:
           mountPropagation: HostToContainer
         - name: cilium-run
           mountPath: /var/run/cilium
-        - name: cni-path
-          mountPath: /host/opt/cni/bin
         - name: etc-cni-netd
           mountPath: /host/etc/cni/net.d
         - name: clustermesh-secrets
@@ -743,7 +740,7 @@ spec:
       # Required to mount cgroup2 filesystem on the underlying Kubernetes node.
       # We use nsenter command with host's cgroup and mount namespaces enabled.
       - name: mount-cgroup
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.2"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.9"
         imagePullPolicy: IfNotPresent
         env:
         - name: CGROUP_ROOT
@@ -770,11 +767,8 @@ spec:
         terminationMessagePolicy: FallbackToLogsOnError
         securityContext:
           seLinuxOptions:
-            level: 's0'
-            # Running with spc_t since we have removed the privileged mode.
-            # Users can change it to a different type as long as they have the
-            # type available on the system.
-            type: 'spc_t'
+            level: s0
+            type: spc_t
           capabilities:
             drop:
               - ALL
@@ -785,7 +779,7 @@ spec:
               - SYS_CHROOT
               - SYS_PTRACE
       - name: apply-sysctl-overwrites
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.2"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.9"
         imagePullPolicy: IfNotPresent
         env:
         - name: BIN_PATH
@@ -810,11 +804,8 @@ spec:
         terminationMessagePolicy: FallbackToLogsOnError
         securityContext:
           seLinuxOptions:
-            level: 's0'
-            # Running with spc_t since we have removed the privileged mode.
-            # Users can change it to a different type as long as they have the
-            # type available on the system.
-            type: 'spc_t'
+            level: s0
+            type: spc_t
           capabilities:
             drop:
               - ALL
@@ -828,7 +819,7 @@ spec:
       # from a privileged container because the mount propagation bidirectional
       # only works from privileged containers.
       - name: mount-bpf-fs
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.2"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.9"
         imagePullPolicy: IfNotPresent
         args:
         - 'mount | grep "/sys/fs/bpf type bpf" || mount -t bpf bpf /sys/fs/bpf'
@@ -844,7 +835,7 @@ spec:
           mountPath: /sys/fs/bpf
           mountPropagation: Bidirectional
       - name: clean-cilium-state
-        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.2"
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.9"
         imagePullPolicy: IfNotPresent
         command:
         - /init-container.sh
@@ -870,11 +861,8 @@ spec:
         terminationMessagePolicy: FallbackToLogsOnError
         securityContext:
           seLinuxOptions:
-            level: 's0'
-            # Running with spc_t since we have removed the privileged mode.
-            # Users can change it to a different type as long as they have the
-            # type available on the system.
-            type: 'spc_t'
+            level: s0
+            type: spc_t
           capabilities:
             # Most of the capabilities here are the same ones used in the
             # cilium-agent's container because this container can be used to
@@ -911,10 +899,32 @@ spec:
           requests:
             cpu: 100m
             memory: 100Mi # wait-for-kube-proxy
+      # Install the CNI binaries in an InitContainer so we don't have a writable host mount in the agent
+      - name: install-cni-binaries
+        image: "{{ Registry "quay.io" }}/cilium/cilium:v1.12.9"
+        imagePullPolicy: IfNotPresent
+        command:
+          - "/install-plugin.sh"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 10Mi
+        securityContext:
+          seLinuxOptions:
+            level: s0
+            type: spc_t
+          capabilities:
+            drop:
+              - ALL
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+          - name: cni-path
+            mountPath: /host/opt/cni/bin
       restartPolicy: Always
       priorityClassName: system-node-critical
       serviceAccount: "cilium"
       serviceAccountName: "cilium"
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 1
       hostNetwork: true
       affinity:
@@ -1034,7 +1044,7 @@ spec:
     spec:
       containers:
       - name: cilium-operator
-        image: "{{ Registry "quay.io" }}/cilium/operator-generic:v1.12.2"
+        image: "{{ Registry "quay.io" }}/cilium/operator-generic:v1.12.9"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-operator-generic
@@ -1083,6 +1093,7 @@ spec:
       priorityClassName: system-cluster-critical
       serviceAccount: "cilium-operator"
       serviceAccountName: "cilium-operator"
+      automountServiceAccountToken: true
       # In HA mode, cilium-operator pods must not be scheduled on the same
       # node as they will clash with each other.
       affinity:
