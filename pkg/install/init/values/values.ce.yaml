@@ -56,7 +56,7 @@ dex:
   certIssuer:
     # For generating a certificate signed by a trusted root authority replace
     # with "letsencrypt-prod".
-    name: letsencrypt-staging
+    name: letsencrypt-prod
     kind: ClusterIssuer
 
 minio:

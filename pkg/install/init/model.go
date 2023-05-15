@@ -19,12 +19,16 @@ package init
 import (
 	"fmt"
 	"strings"
+	"time"
+
+	"k8c.io/kubermatic/v2/pkg/install/init/types"
 
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/indent"
 	"github.com/muesli/termenv"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -43,6 +47,14 @@ type model struct {
 	models []tea.Model
 
 	pages paginator.Model
+
+	debugLog *logrus.Logger
+}
+
+func tick() tea.Cmd {
+	return tea.Tick(time.Millisecond*100, func(time.Time) tea.Msg {
+		return types.TickMsg{}
+	})
 }
 
 type item struct {
@@ -53,10 +65,18 @@ func (i item) Name() string        { return i.name }
 func (i item) Description() string { return i.desc }
 
 func (m model) Init() tea.Cmd {
-	return nil
+	return tick()
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	// if we receive a tick, we update the active model.
+	if msg, ok := msg.(types.TickMsg); ok {
+		m.models[m.pages.Page], cmd = m.models[m.pages.Page].Update(msg)
+		return m, tick()
+	}
+
 	// Make sure these keys always quit
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		k := msg.String()
@@ -65,8 +85,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	}
-
-	var cmd tea.Cmd
 
 	m.models[m.pages.Page], cmd = m.models[m.pages.Page].Update(msg)
 	m.pages, cmd = m.pages.Update(msg)

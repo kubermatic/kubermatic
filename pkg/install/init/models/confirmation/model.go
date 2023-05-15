@@ -22,6 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/init/generator"
+	"k8c.io/kubermatic/v2/pkg/install/init/types"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
@@ -104,20 +105,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.configTable, cmd = m.configTable.Update(msg)
 	}
 
-	if msg, ok := msg.(tea.KeyMsg); ok {
-		if msg.Type == tea.KeyEnter && !m.Generating {
+	switch msg.(type) {
+	case types.TickMsg:
+		// we only want to make the spinner update if we're actually generating config right now.
+		if m.Generating {
+			m.spin, cmd = m.spin.Update(spinner.TickMsg{})
+		}
+		return m, cmd
+	case tea.KeyMsg:
+		keyMsg := msg.(tea.KeyMsg)
+		if keyMsg.Type == tea.KeyEnter && !m.Generating {
 			m.configCh <- generator.Config{
 				DNS:            m.domain.Value(),
 				ExposeStrategy: kubermaticv1.ExposeStrategy(m.exposeStrategy.Value()),
 			}
 			m.Generating = true
-			// start the spinner by returning its tick
-			return m, m.spin.Tick
+			return m, cmd
 		}
-	}
-
-	if m.Generating {
-		m.spin, cmd = m.spin.Update(msg)
 	}
 
 	return m, cmd

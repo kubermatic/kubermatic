@@ -37,7 +37,7 @@ func Run(logger *logrus.Logger, outputDir string) error {
 	ch := make(chan generator.Config, 1)
 	generator.Start(ch, logger, outputDir)
 
-	p := tea.NewProgram(initialModel(ch), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel(ch, logger), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("could not start program: %w", err)
 	}
@@ -48,7 +48,7 @@ func Run(logger *logrus.Logger, outputDir string) error {
 	return nil
 }
 
-func initialModel(genCh chan<- generator.Config) model {
+func initialModel(genCh chan<- generator.Config, log *logrus.Logger) model {
 	strategies := []choice.Choice{
 		item{name: string(kubermaticv1.ExposeStrategyTunneling), desc: "The Tunneling expose strategy addresses both the scaling issues of the NodePort strategy and cost issues of the LoadBalancer strategy. With this strategy, the traffic is routed to the based on a combination of SNI and HTTP/2 tunnels by the nodeport-proxy."},
 		item{name: string(kubermaticv1.ExposeStrategyLoadBalancer), desc: "In the LoadBalancer expose strategy, a dedicated service of type LoadBalancer will be created for each user cluster. This strategy requires services of type LoadBalancer to be available on the Seed cluster and usually results into higher cost of cloud resources."},
@@ -89,7 +89,8 @@ func initialModel(genCh chan<- generator.Config) model {
 	p.SetTotalPages(len(models))
 
 	return model{
-		models: models,
-		pages:  p,
+		models:   models,
+		pages:    p,
+		debugLog: log,
 	}
 }

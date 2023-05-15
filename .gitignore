@@ -18,6 +18,7 @@ download-gocache
 /dev.*
 .envrc
 /.vscode
+/config
 
 # this is filled during release
 charts/kubermatic-operator/crd/k8c.io
