@@ -39,22 +39,31 @@ type Config struct {
 	ExposeStrategy kubermaticv1.ExposeStrategy
 }
 
-func Start(in <-chan Config, log *logrus.Logger, outputDir string) <-chan interface{} {
-	done := make(chan interface{})
+func Start(in <-chan Config, log *logrus.Logger, outputDir string) <-chan bool {
+	done := make(chan bool)
 	go runGenerator(in, done, log, outputDir)
 
 	return done
 }
 
-func runGenerator(in <-chan Config, done chan<- interface{}, log *logrus.Logger, outputDir string) {
+func runGenerator(in <-chan Config, done chan<- bool, log *logrus.Logger, outputDir string) {
 	defer close(done)
 
 	// wait for a generator config to come in.
 	config := <-in
 
+	log.Debugf("received configuration: %+v", config)
+
 	if err := Generate(config, outputDir, log); err != nil {
 		log.Errorf("failed to generate configuration files: %v", err)
 	}
+
+	log.Debug("finished generating configuration")
+
+	// send out message that we are done.
+	done <- true
+
+	log.Debug("sent out message that we are done")
 }
 
 func Generate(config Config, outputDir string, log *logrus.Logger) error {

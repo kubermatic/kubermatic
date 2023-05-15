@@ -22,12 +22,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/init/generator"
+	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
+	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
 	"k8c.io/kubermatic/v2/pkg/install/init/types"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
-	"k8c.io/kubermatic/v2/pkg/install/init/models/choice"
-	"k8c.io/kubermatic/v2/pkg/install/init/models/input"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -37,7 +37,7 @@ var baseStyle = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(lipgloss.Color("240"))
 
-func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- generator.Config) *Model {
+func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- generator.Config, doneCh <-chan bool) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
@@ -65,7 +65,7 @@ func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- gene
 		Bold(false)
 	t.SetStyles(style)
 
-	return &Model{
+	m := &Model{
 		domain:         domain,
 		exposeStrategy: exposeStrategy,
 
@@ -74,6 +74,15 @@ func New(domain *input.Model, exposeStrategy *choice.Model, configCh chan<- gene
 
 		configCh: configCh,
 	}
+
+	// start goroutine that ways for generator to report it's done.
+	go func() {
+		<-doneCh
+		m.Generated = true
+		m.Generating = false
+	}()
+
+	return m
 }
 
 type Model struct {
@@ -96,7 +105,7 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
-	if !m.Generating {
+	if !m.Generating && !m.Generated {
 		m.configTable.SetRows([]table.Row{
 			{"DNS Name", m.domain.Value()},
 			{"Expose Strategy", m.exposeStrategy.Value()},
@@ -131,7 +140,10 @@ func (m *Model) View() string {
 	var b strings.Builder
 
 	if m.Generated {
-
+		b.WriteString("Configuration files have been generated into config/.\n")
+		b.WriteString("You can now start the installation by running:\n\n")
+		b.WriteString("kubermatic-installer deploy kubermatic-master --config config/kubermatic.yaml --helm-values config/values.yaml\n\n")
+		b.WriteString("Thank you for using Kubermatic Kubernetes Platform - Hope to see you again soon!")
 	} else if m.Generating {
 		b.WriteString(fmt.Sprintf("%s Generating configuration ...", m.spin.View()))
 	} else {
