@@ -903,7 +903,7 @@ spec:
             memory: 100Mi # wait-for-kube-proxy
       # Install the CNI binaries in an InitContainer so we don't have a writable host mount in the agent
       - name: install-cni-binaries
-        image: "quay.io/cilium/cilium:v1.12.9@sha256:677e7a906506b8a13fecb6f0f783ed647b36036786c8c640ff98e25ec2f2ab1f"
+        image: "{{ Image "quay.io/cilium/cilium:v1.12.9@sha256:677e7a906506b8a13fecb6f0f783ed647b36036786c8c640ff98e25ec2f2ab1f" }}"
         imagePullPolicy: IfNotPresent
         command:
           - "/install-plugin.sh"
@@ -1046,7 +1046,7 @@ spec:
     spec:
       containers:
       - name: cilium-operator
-        image: "{{ Image "quay.io/cilium/operator-generic:v1.12.9@sha256:677e7a906506b8a13fecb6f0f783ed647b36036786c8c640ff98e25ec2f2ab1f" }}"
+        image: "{{ Image "quay.io/cilium/operator-generic:v1.12.9@sha256:cc8d7b222f63812c691a685b32fedab8a805d243da720653cdc2ff0c4a562673" }}"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-operator-generic
