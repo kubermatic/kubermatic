@@ -53,23 +53,23 @@ const (
 	helmBin      = "helm"     //TODO: make configurable
 )
 
-func QuickStartCommand(logger *logrus.Logger) *cobra.Command {
+func LocalCommand(logger *logrus.Logger) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "quickstart [environment]",
-		Short: "Initialize environment for simplified quickstart KKP installation",
+		Use:   "local [environment]",
+		Short: "Initialize environment for simplified local KKP installation",
 		Long:  "Prepares minimal Kubernetes environment (e.g. kind) and auto-configures a non-production KKP installation for evaluation and development purpose.",
 	}
 
-	cmd.AddCommand(quickStartKindCommand(logger))
+	cmd.AddCommand(localKindCommand(logger))
 	// TODO: expose when ready
 	cmd.Hidden = true
 	return cmd
 }
 
-func quickStartKindCommand(logger *logrus.Logger) *cobra.Command {
+func localKindCommand(logger *logrus.Logger) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "kind",
-		Short: "Initialize kind environment for simplified quickstart KKP installation",
+		Short: "Initialize kind environment for simplified local KKP installation",
 		Long:  "Prepares minimal kind environment and auto-configures a non-production KKP installation for evaluation and development purpose.",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			_, err := exec.LookPath("kind")
@@ -81,12 +81,12 @@ func quickStartKindCommand(logger *logrus.Logger) *cobra.Command {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
 			}
 		},
-		RunE: quickStartKindFunc(logger),
+		RunE: localKindFunc(logger),
 	}
 	return cmd
 }
 
-func quickStartKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, context.CancelFunc) {
+func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, context.CancelFunc) {
 	kindConfig := filepath.Join(dir, "kind-config.yaml")
 	if err := os.WriteFile(kindConfig, []byte(kindConfigContent), 0600); err != nil {
 		logger.Fatalf("failed to create 'kind' config: %v", err)
@@ -160,7 +160,7 @@ func installKubevirt(logger *logrus.Logger, dir string) {
 	if err != nil {
 		logger.Fatalf("Failed to create helm client: %v", err)
 	}
-	err = helmClient.InstallChart("", "kubevirt", filepath.Join(helmChartDir, "quickstart-kubevirt"), "", nil, nil)
+	err = helmClient.InstallChart("", "kubevirt", filepath.Join(helmChartDir, "local-kubevirt"), "", nil, nil)
 	if err != nil {
 		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
 	}
@@ -259,14 +259,14 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	return kkpEndpoint
 }
 
-func quickStartKindFunc(logger *logrus.Logger) cobraFuncE {
+func localKindFunc(logger *logrus.Logger) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		dir := "./examples"
 		path, err := os.Executable()
 		if err == nil {
 			dir = filepath.Join(filepath.Dir(path), "examples")
 		}
-		kubeClient, cancel := quickStartKind(logger, dir)
+		kubeClient, cancel := localKind(logger, dir)
 		defer cancel()
 		installKubevirt(logger, dir)
 		endpoint := installKubermatic(logger, dir, kubeClient)

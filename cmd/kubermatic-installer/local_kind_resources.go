@@ -176,8 +176,11 @@ var kindLocalSeed = kubermaticv1.Seed{
 							HTTP: &kubermaticv1.KubeVirtHTTPSource{
 								OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
 									providerconfig.OperatingSystemUbuntu: map[string]string{
-										// TODO: upload to some kubermatic hosted public service?
-										"22.04": "https://dev.kubermatic.io/quickstart/kubevirt-images/images/ubuntu-22.04.img",
+										// TODO: create image-repo cache on the local cluster?
+										// the MD at the moment takes about 18 minutes to get ready which is too long
+										// could be worth to start downloading this in the beginning of the call, cache
+										// locally deployed image-repo and then speed up the MD startup
+										"22.04": "https://dev.kubermatic.io/kubevirt-images/images/ubuntu-22.04.img",
 									},
 								},
 							},

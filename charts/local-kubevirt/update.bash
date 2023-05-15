@@ -38,7 +38,7 @@ apiVersion: v1
 name: kubevirt
 version: ${latest_release}
 appVersion: ${latest_release}
-description: KubeVirt chart for KKP quickstart
+description: KubeVirt chart for KKP local installation 
 keywords:
   - kubermatic
   - kubevirt
