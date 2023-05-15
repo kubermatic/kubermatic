@@ -353,3 +353,13 @@ groups:
           severity: critical
           resource: "{{ $labels.instance }} {{ $labels.device }}"
           service: "node-exporter"
+
+      - alert: NodeTimeDrift
+        annotations:
+          message: Time on Node {{ $labels.node_name }} drifts by a {{ $value }} seconds.
+        expr: abs(timestamp(node_time_seconds) - node_time_seconds) > 1
+        for: 15m
+        labels:
+          severity: critical
+          resource: "{{ $labels.node_name }}"
+          service: "node-exporter"
