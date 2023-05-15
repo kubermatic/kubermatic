@@ -81,7 +81,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true"),
+			wantFeatureGates: sets.Set[string]{},
 		},
 		{
 			name: "CSI migration completed with k8s >= 1.23",
@@ -113,7 +113,7 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.New("CSIMigration=true", "CSIMigrationOpenStack=true", "InTreePluginOpenStackUnregister=true"),
+			wantFeatureGates: sets.New("InTreePluginOpenStackUnregister=true"),
 		},
 		{
 			name: "CSI migration disabled with k8s >= 1.23 and no CCM",
