@@ -9,6 +9,32 @@
 - [v2.21.6](#v2216)
 - [v2.21.7](#v2217)
 - [v2.21.8](#v2218)
+- [v2.21.9](#v2218)
+- [v2.21.9](#v2219)
+
+## [v2.21.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.9)
+
+### Bugfixes
+
+- Do not try to watch `Cluster` resources on the master in `usersshkey-synchronizer` and use Seeds as correct source instead ([#12271](https://github.com/kubermatic/kubermatic/pull/12271))
+- Fix a bug that lead to metering reports overwriting each other when used with multiple seeds. Report names now include the Seed name as a Prefix ([#12268](https://github.com/kubermatic/kubermatic/pull/12268))
+- The MLA stack is now able to recover from a lost Grafana volume, properly recreating organizations for KKP projects ([#12220](https://github.com/kubermatic/kubermatic/pull/12220))
+- Fix OOM on usercluster-controller by limiting the history of helm releases. This fix is critical if user-cluster is using Cilium >= 1.13.0 as CNI. From this version, Cilium is deployed using System Applications ([#12247](https://github.com/kubermatic/kubermatic/pull/12247))
+
+### Updates
+
+- Patch cilium v1.12 and v1.11 to latest patch releases (v1.12.9) (v1.11.16) ([#12272](https://github.com/kubermatic/kubermatic/pull/12272))
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.4 ([#12214](https://github.com/kubermatic/kubermatic/pull/12214))
+
+### New Feature
+
+- New alert for NodeTimeDrift ([#12275](https://github.com/kubermatic/kubermatic/pull/12275))
+
+### Dashboard
+
+#### Bugfixes
+
+- Machine Deployments are initialized without waiting for all cluster details to finish loading ([#5922](https://github.com/kubermatic/dashboard/pull/5922))
 
 ## [v2.21.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.8)
 
@@ -722,6 +748,13 @@ Note that in the current state, declarative working skips KKP authentication and
 - [v2.20.13](#v22013)
 - [v2.20.14](#v22014)
 - [v2.20.15](#v22015)
+- [v2.20.16](#v22015)
+
+## [v2.20.16](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.16)
+
+### Updates
+
+- Patch cilium  v1.11 to latest patch release (v1.11.16) ([#12273](https://github.com/kubermatic/kubermatic/pull/12273))
 
 ## [v2.20.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.15)
 
