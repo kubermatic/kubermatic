@@ -244,13 +244,6 @@ var (
 			newSemver("v1.26.4"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.23 =======
-			{
-				// Auto-upgrade unsupported clusters.
-				From:      "1.23.*",
-				To:        "1.24.10",
-				Automatic: pointer.Bool(true),
-			},
 			// ======= 1.24 =======
 			{
 				// Allow to change to any patch version
