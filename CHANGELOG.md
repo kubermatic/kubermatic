@@ -9,7 +9,6 @@
 - [v2.21.6](#v2216)
 - [v2.21.7](#v2217)
 - [v2.21.8](#v2218)
-- [v2.21.9](#v2218)
 - [v2.21.9](#v2219)
 
 ## [v2.21.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.9)
