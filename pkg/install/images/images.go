@@ -202,6 +202,11 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 
 		path := filepath.Join(dir, header.Name)
 
+		// prevent path traversal (https://cwe.mitre.org/data/definitions/22.html)
+		if strings.Contains(path, "..") {
+			continue
+		}
+
 		switch header.Typeflag {
 		case tar.TypeDir:
 			// we only want to extract the addons folder and thus we skip
