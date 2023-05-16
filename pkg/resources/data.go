@@ -671,8 +671,7 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverlib.Version) []string {
 	var featureFlags []string
-	gt23, _ := semverlib.NewConstraint("> 1.23.0")
-	lt25, _ := semverlib.NewConstraint("< 1.25.0")
+	is24, _ := semverlib.NewConstraint("1.24.*")
 	ccm := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
 	if version == nil {
@@ -684,7 +683,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 
 	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
 		// This flag is default=true since 1.25; will be removed in 1.29
-		if cluster.Spec.Cloud.VSphere != nil && lt25.Check(version) {
+		if cluster.Spec.Cloud.VSphere != nil && is24.Check(version) {
 			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
 
@@ -698,7 +697,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 				featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")
 			}
 		}
-	} else if !ccm && gt23.Check(version) && lt25.Check(version) {
+	} else if !ccm && is24.Check(version) {
 		// We disable CSIMigration only if Kubernetes version is > 1.23 and
 		// there's no external CCM.
 		// If there's external CCM, in-tree volumes plugin is not enabled

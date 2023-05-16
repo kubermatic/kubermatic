@@ -115,27 +115,6 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 			},
 			wantFeatureGates: sets.New("InTreePluginOpenStackUnregister=true"),
 		},
-		{
-			name: "CSI migration disabled with k8s >= 1.23 and no CCM",
-			cluster: &kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "cluster-a",
-				},
-				Spec: kubermaticv1.ClusterSpec{
-					Cloud: kubermaticv1.CloudSpec{
-						AWS: &kubermaticv1.AWSCloudSpec{},
-					},
-					Version: *semver.NewSemverOrDie("1.23.5"),
-				},
-				Status: kubermaticv1.ClusterStatus{
-					NamespaceName: "test",
-					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: *semver.NewSemverOrDie("1.23.5"),
-					},
-				},
-			},
-			wantFeatureGates: sets.New("CSIMigrationAWS=false"),
-		},
 	}
 
 	for _, tc := range testCases {
