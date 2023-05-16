@@ -62,6 +62,13 @@ func CloudConfig(
 			awsCloudConfig.Global.NodeIPFamilies = DualstackIPFamilies
 		}
 
+		// in 1.27, the AWS CCM removed the DisableStrictZoneCheck field, so
+		// for those setups we must set it to false, which will omit it from
+		// the generated cloudConfig
+		if cluster.Spec.Version.Semver().Minor() >= 27 {
+			awsCloudConfig.Global.DisableStrictZoneCheck = false
+		}
+
 		cloudConfig, err = aws.CloudConfigToString(awsCloudConfig)
 		if err != nil {
 			return cloudConfig, err

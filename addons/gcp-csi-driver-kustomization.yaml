@@ -19,7 +19,7 @@ resources:
   - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver.git/deploy/kubernetes/base/controller
   - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver.git/deploy/kubernetes/base/node_linux
 transformers:
-  - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver.git/deploy/kubernetes/images/stable-1-24
+  - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver.git/deploy/kubernetes/images/stable-master
 patches:
   - patch: |-
       - op: add

@@ -226,8 +226,6 @@ spec:
         - 'oidc:'
         - --oidc-groups-claim
         - groups
-        - --feature-gates
-        - CSIMigrationvSphere=false
         command:
         - /usr/local/bin/kube-apiserver
         env:

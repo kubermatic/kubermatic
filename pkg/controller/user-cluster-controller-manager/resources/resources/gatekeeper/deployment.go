@@ -87,11 +87,6 @@ func ControllerDeploymentReconciler(enableMutation bool, imageRewriter registry.
 			dep.Name = controllerName
 			dep.Labels = resources.BaseAppLabels(controllerName, gatekeeperControllerLabels)
 
-			if dep.Annotations == nil {
-				dep.Annotations = make(map[string]string)
-			}
-			dep.Annotations["container.seccomp.security.alpha.kubernetes.io/manager"] = "runtime/default"
-
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
@@ -147,11 +142,6 @@ func AuditDeploymentReconciler(registryWithOverwrite registry.ImageRewriter, res
 			dep.Name = auditName
 			dep.Labels = resources.BaseAppLabels(auditName, gatekeeperAuditLabels)
 
-			if dep.Annotations == nil {
-				dep.Annotations = make(map[string]string)
-			}
-			dep.Annotations["container.seccomp.security.alpha.kubernetes.io/manager"] = "runtime/default"
-
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(auditName, gatekeeperAuditLabels),
@@ -166,6 +156,11 @@ func AuditDeploymentReconciler(registryWithOverwrite registry.ImageRewriter, res
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(true)
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: auditEmptyDirName,
