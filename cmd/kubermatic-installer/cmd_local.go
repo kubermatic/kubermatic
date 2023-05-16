@@ -28,9 +28,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackpal/gateway"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -49,13 +51,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var kkpEndpointTemplate = "%v.nip.io"
+const (
+	nip   = "nip.io"
+	sslip = "sslip.io"
+)
 
 type LocalOptions struct {
 	Options
 
 	HelmBinary  string
 	HelmTimeout time.Duration
+	Endpoint    string
 }
 
 func LocalCommand(logger *logrus.Logger) *cobra.Command {
@@ -79,6 +85,7 @@ func LocalCommand(logger *logrus.Logger) *cobra.Command {
 	}
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
+	cmd.PersistentFlags().StringVar(&opt.Endpoint, "endpoint", "", "endpoint address for KKP installation (e.g. 10.0.0.5.nip.io), if this flag is left empty, the installer does best effort in auto-configuring from available network interfaces")
 
 	cmd.AddCommand(localKindCommand(logger, opt))
 	// TODO: expose when ready
@@ -182,9 +189,8 @@ func installKubevirt(logger *logrus.Logger, dir string, helmClient helm.Client, 
 }
 
 func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opts LocalOptions) string {
-	ip := getLocalIP(logger)
-	kkpEndpoint := fmt.Sprintf(kkpEndpointTemplate, ip)
-	logger.Infof("Installing KKP at %v ...", ip) // TODO: prettify
+	kkpEndpoint := getLocalEndpoint(logger, opts)
+	logger.Infof("Installing KKP at %v ...", kkpEndpoint) // TODO: prettify
 	valuesExamplePath := filepath.Join(dir, "values.example.yaml")
 	kubermaticExamplePath := filepath.Join(dir, "kubermatic.example.yaml")
 	valuesPath := filepath.Join(dir, "values.yaml")
@@ -320,20 +326,37 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 	})
 }
 
-func getLocalIP(logger *logrus.Logger) string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		logger.Fatalf("unable to get interfaces: %v", err)
+func getLocalEndpoint(logger *logrus.Logger, opts LocalOptions) string {
+	if opts.Endpoint != "" {
+		if ip := net.ParseIP(opts.Endpoint); ip != nil {
+			return ipToNip(ip)
+		}
+		return opts.Endpoint
 	}
-	for _, address := range addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
+	if gwip, err := gateway.DiscoverGateway(); err != nil {
+		logger.Fatalf("Failed to determine default gateway IP, please use --endpoint flag: %v", err)
+	} else {
+		addrs, err := net.InterfaceAddrs()
+		if err != nil {
+			logger.Fatalf("Failed to list interface addresses, please use --endpoint flag: %v", err)
+		}
+		for _, a := range addrs {
+			if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.Contains(gwip) {
+				return ipToNip(ipnet.IP)
 			}
 		}
 	}
-	logger.Fatalf("no interface with public IP")
+	logger.Fatalf("Failed to determine local IP, please use --endpoint flag")
 	return ""
+}
+
+func ipToNip(ip net.IP) string {
+	if ip.To4() != nil {
+		return fmt.Sprintf("%v.%v", ip.String(), nip)
+	}
+	// nip.io is much faster and more reliable but doesn't support IPv6
+	processedIP := strings.ReplaceAll(ip.String(), ":", "-")
+	return fmt.Sprintf("%v.%v", processedIP, sslip)
 }
 
 func uSetNestedField(logger *logrus.Logger, obj map[string]any, value any, fields ...string) {
