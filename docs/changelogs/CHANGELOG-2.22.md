@@ -7,6 +7,10 @@
 
 ## [v2.22.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.3)
 
+### Security
+
+- Fix potential path traversal in mirror-images command ([#12294](https://github.com/kubermatic/kubermatic/pull/12294))
+
 ### Bugfixes
 
 - Addons: (Openstack) add a dedicated service account for CSI snapshot webhook server ([#12201](https://github.com/kubermatic/kubermatic/pull/12201))
