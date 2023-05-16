@@ -16,6 +16,13 @@
 - [v2.20.13](#v22013)
 - [v2.20.14](#v22014)
 - [v2.20.15](#v22015)
+- [v2.20.16](#v22015)
+
+## [v2.20.16](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.16)
+
+### Updates
+
+- Patch cilium  v1.11 to latest patch release (v1.11.16) ([#12273](https://github.com/kubermatic/kubermatic/pull/12273))
 
 ## [v2.20.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.15)
 
