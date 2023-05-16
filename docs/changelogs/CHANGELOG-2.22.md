@@ -15,6 +15,7 @@
 - Fix a bug that lead to metering reports overwriting each other when used with multiple seeds. Report names now include the Seed name as a Prefix ([#12222](https://github.com/kubermatic/kubermatic/pull/12221))
 - Fix MLA stack constantly updating Grafana datasources ([#12182](https://github.com/kubermatic/kubermatic/pull/12182))
 - The MLA stack is now able to recover from a lost Grafana volume, properly recreating organizations for KKP projects ([#12195](https://github.com/kubermatic/kubermatic/pull/12195))
+- Revert CRD split between master and seed by installing all CRDs on the master again ([#12283](https://github.com/kubermatic/kubermatic/pull/12283))
 
 ### Updates
 
