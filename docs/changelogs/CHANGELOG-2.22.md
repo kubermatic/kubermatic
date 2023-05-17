@@ -3,6 +3,41 @@
 - [v2.22.0](#v2220)
 - [v2.22.1](#v2221)
 - [v2.22.2](#v2222)
+- [v2.22.3](#v2223)
+
+## [v2.22.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.3)
+
+### Security
+
+- Fix potential path traversal in mirror-images command ([#12294](https://github.com/kubermatic/kubermatic/pull/12294))
+
+### Bugfixes
+
+- Addons: (Openstack) add a dedicated service account for CSI snapshot webhook server ([#12201](https://github.com/kubermatic/kubermatic/pull/12201))
+- Fix: do not override floating IP settings from user input for OpenStack initial MD ([#12261](https://github.com/kubermatic/kubermatic/pull/12261))
+- Do not try to watch `Cluster` resources on the master in `usersshkey-synchronizer` and use Seeds as correct source instead ([#12271](https://github.com/kubermatic/kubermatic/pull/12271))
+- Fix a bug that lead to metering reports overwriting each other when used with multiple seeds. Report names now include the Seed name as a Prefix ([#12222](https://github.com/kubermatic/kubermatic/pull/12221))
+- Fix MLA stack constantly updating Grafana datasources ([#12182](https://github.com/kubermatic/kubermatic/pull/12182))
+- The MLA stack is now able to recover from a lost Grafana volume, properly recreating organizations for KKP projects ([#12195](https://github.com/kubermatic/kubermatic/pull/12195))
+- Revert CRD split between master and seed by installing all CRDs on the master again ([#12283](https://github.com/kubermatic/kubermatic/pull/12283))
+
+### Updates
+
+- Patch cilium v1.12 and v1.11 to latest patch releases (v1.12.9) (v1.11.16) ([#12264](https://github.com/kubermatic/kubermatic/pull/12264))
+- Addons: ([#12184](https://github.com/kubermatic/kubermatic/pull/12184))
+    - kube-state-metrics updated to v2.5.0
+    - node-exporter updated to v1.4.0
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.4 ([#12212](https://github.com/kubermatic/kubermatic/pull/12212))
+
+### New Feature
+
+- New alert for NodeTimeDrift ([#12275](https://github.com/kubermatic/kubermatic/pull/12275))
+
+### Dashboard
+
+#### Bugfixes
+
+- Machine Deployments are initialized without waiting for all cluster details to finish loading ([#5922](https://github.com/kubermatic/dashboard/pull/5922))
 
 ## [v2.22.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.2)
 
