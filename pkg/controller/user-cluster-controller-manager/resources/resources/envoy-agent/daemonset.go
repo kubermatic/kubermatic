@@ -73,10 +73,10 @@ func DaemonSetReconciler(agentIP net.IP, versions kubermatic.Versions, configHas
 				// Used to force the restart of the envoy-agent to re-read its configuration
 				// from the configMap when it changes. Necessary to support switching to/from Konnectivity.
 				Annotations: map[string]string{
-					"checksum/config":            configHash,
-					"prometheus.io/scrape":       "true",
-					"prometheus.io/port":         strconv.Itoa(int(StatsPort)),
-					"prometheus.io/metrics_path": "/stats/prometheus",
+					"checksum/config":      configHash,
+					"prometheus.io/scrape": "true",
+					"prometheus.io/port":   strconv.Itoa(int(StatsPort)),
+					"prometheus.io/path":   "/stats/prometheus",
 				},
 			}
 
