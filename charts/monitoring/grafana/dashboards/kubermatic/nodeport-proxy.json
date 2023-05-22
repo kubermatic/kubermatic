@@ -830,7 +830,6 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": {
-        "type": "prometheus",
         "uid": "$datasource"
       },
       "fieldConfig": {
@@ -846,125 +845,6 @@
         "w": 12,
         "x": 12,
         "y": 13
-      },
-      "hiddenSeries": false,
-      "id": 7,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "9.5.1",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "editorMode": "code",
-          "expr": "sum(envoy_cluster_membership_healthy{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_cluster_name=~\"cluster-.*\"})",
-          "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "healthy",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "uid": "$datasource"
-          },
-          "editorMode": "code",
-          "expr": "sum(envoy_cluster_membership_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_cluster_name=~\"cluster-.*\"})",
-          "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "total",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeRegions": [],
-      "title": "Downstream members",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "mode": "time",
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        },
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false
-      }
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 20
-      },
-      "id": 21,
-      "panels": [],
-      "title": "Tunneling",
-      "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "$datasource"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 21
       },
       "hiddenSeries": false,
       "id": 10,
@@ -1002,12 +882,10 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum(rate(envoy_cluster_upstream_rq_time_bucket{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_cluster_name=~\"cluster-$cluster.*\"}[1m])) by (le, envoy_cluster_name))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{envoy_cluster_name}} 99%",
-          "range": true,
           "refId": "A"
         },
         {
@@ -1063,98 +941,432 @@
       }
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "$datasource"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
+      "collapsed": true,
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 21
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
       },
-      "hiddenSeries": false,
-      "id": 6,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "9.5.1",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
+      "id": 21,
+      "panels": [
         {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
           "datasource": {
+            "type": "prometheus",
             "uid": "$datasource"
           },
-          "editorMode": "code",
-          "expr": "sum(irate(envoy_http_downstream_rq_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"}[1m]))",
-          "format": "time_series",
-          "intervalFactor": 2,
-          "legendFormat": "{{service}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeRegions": [],
-      "title": "Downstream Total active requests",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "mode": "time",
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "logBase": 1,
-          "show": true
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 53
+          },
+          "hiddenSeries": false,
+          "id": 5,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "9.5.1",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(envoy_http_downstream_cx_active{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"})",
+              "format": "time_series",
+              "intervalFactor": 2,
+              "legendFormat": "{{service}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "title": "Downstream Active Connections",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false
+          }
         },
         {
-          "format": "short",
-          "logBase": 1,
-          "show": true
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 53
+          },
+          "hiddenSeries": false,
+          "id": 6,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "9.5.1",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(irate(envoy_http_downstream_rq_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"}[1m]))",
+              "format": "time_series",
+              "intervalFactor": 2,
+              "legendFormat": "{{service}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "title": "Downstream Total active requests",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 60
+          },
+          "hiddenSeries": false,
+          "id": 7,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "9.5.1",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(envoy_cluster_membership_healthy{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_cluster_name=~\"cluster-.*\"})",
+              "format": "time_series",
+              "intervalFactor": 2,
+              "legendFormat": "healthy",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(envoy_cluster_membership_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_cluster_name=~\"cluster-.*\"})",
+              "format": "time_series",
+              "intervalFactor": 2,
+              "legendFormat": "total",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "title": "Downstream members",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "links": []
+            },
+            "overrides": []
+          },
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 60
+          },
+          "hiddenSeries": false,
+          "id": 17,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "links": [],
+          "nullPointMode": "null",
+          "options": {
+            "alertThreshold": true
+          },
+          "percentage": false,
+          "pluginVersion": "9.5.1",
+          "pointradius": 5,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(irate(envoy_http_downstream_cx_rx_bytes_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"}[1m]))",
+              "format": "time_series",
+              "intervalFactor": 1,
+              "legendFormat": "{{service}} - in",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "uid": "$datasource"
+              },
+              "editorMode": "code",
+              "expr": "sum(irate(envoy_http_downstream_cx_tx_bytes_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"}[1m]))",
+              "format": "time_series",
+              "intervalFactor": 1,
+              "legendFormat": "{{service}} - out",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "thresholds": [],
+          "timeRegions": [],
+          "title": "Downstream Network Traffic",
+          "tooltip": {
+            "shared": true,
+            "sort": 0,
+            "value_type": "individual"
+          },
+          "type": "graph",
+          "xaxis": {
+            "mode": "time",
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "decbytes",
+              "logBase": 1,
+              "show": true
+            },
+            {
+              "format": "short",
+              "logBase": 1,
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false
+          }
         }
       ],
-      "yaxis": {
-        "align": false
-      }
+      "title": "Tunneling",
+      "type": "row"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 24,
+      "panels": [],
+      "title": "Envoy Agent",
+      "type": "row"
     },
     {
       "aliasColors": {},
@@ -1165,7 +1377,6 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -1178,10 +1389,10 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 22
       },
       "hiddenSeries": false,
-      "id": 5,
+      "id": 25,
       "legend": {
         "avg": false,
         "current": false,
@@ -1213,17 +1424,17 @@
             "uid": "$datasource"
           },
           "editorMode": "code",
-          "expr": "sum(envoy_http_downstream_cx_active{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"})",
+          "expr": "job:envoy_cluster_upstream_cx_active:sum{cluster=~\"$cluster\"}",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{service}}",
+          "legendFormat": "{{envoy_cluster_name}} ({{service}})",
           "range": true,
           "refId": "A"
         }
       ],
       "thresholds": [],
       "timeRegions": [],
-      "title": "Downstream Active Connections",
+      "title": "Total active connections",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1272,10 +1483,10 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 22
       },
       "hiddenSeries": false,
-      "id": 17,
+      "id": 26,
       "legend": {
         "avg": false,
         "current": false,
@@ -1307,10 +1518,104 @@
             "uid": "$datasource"
           },
           "editorMode": "code",
-          "expr": "sum(irate(envoy_http_downstream_cx_rx_bytes_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"}[1m]))",
+          "expr": "job:envoy_cluster_upstream_rq_total:irate1msum{cluster=~\"$cluster\"}",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "legendFormat": "{{envoy_cluster_name}} ({{service}})",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeRegions": [],
+      "title": "Total requests",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 27,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "9.5.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "job:envoy_cluster_upstream_cx_rx_bytes_total:irate1msum{cluster=~\"$cluster\"}",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{service}} - in",
+          "legendFormat": "{{envoy_cluster_name}} ({{service}}) - in",
           "range": true,
           "refId": "A"
         },
@@ -1319,17 +1624,17 @@
             "uid": "$datasource"
           },
           "editorMode": "code",
-          "expr": "sum(irate(envoy_http_downstream_cx_tx_bytes_total{app_kubernetes_io_name=\"nodeport-proxy-envoy\", envoy_http_conn_manager_prefix=\"ingress_http\"}[1m]))",
+          "expr": "job:envoy_cluster_upstream_cx_tx_bytes_total:irate1msum{cluster=~\"$cluster\"}",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "{{service}} - out",
+          "legendFormat": "{{envoy_cluster_name}} ({{service}}) - out",
           "range": true,
           "refId": "B"
         }
       ],
       "thresholds": [],
       "timeRegions": [],
-      "title": "Downstream Network Traffic",
+      "title": "Upstream Network Traffic",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1344,6 +1649,129 @@
       "yaxes": [
         {
           "format": "decbytes",
+          "logBase": 1,
+          "show": true
+        },
+        {
+          "format": "short",
+          "logBase": 1,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "$datasource"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "links": []
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 29
+      },
+      "hiddenSeries": false,
+      "id": 28,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "hideZero": true,
+        "max": true,
+        "min": false,
+        "show": true,
+        "sort": "current",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "9.5.1",
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, job:envoy_cluster_upstream_rq_time_bucket:rate1msum{cluster=~\"$cluster\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{envoy_cluster_name}} 99%",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.9, job:envoy_cluster_upstream_rq_time_bucket:rate1msum{cluster=~\"$cluster\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{envoy_cluster_name}} 90%",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "uid": "$datasource"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, job:envoy_cluster_upstream_rq_time_bucket:rate1msum{cluster=~\"$cluster\"})",
+          "format": "time_series",
+          "hide": false,
+          "intervalFactor": 1,
+          "legendFormat": "{{envoy_cluster_name}} 50% ",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "thresholds": [],
+      "timeRegions": [],
+      "title": "Upstream Latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "mode": "time",
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
           "logBase": 1,
           "show": true
         },
@@ -1384,9 +1812,9 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": "isphll5sfh",
+          "value": "isphll5sfh"
         },
         "datasource": {
           "uid": "$datasource"
@@ -1414,7 +1842,7 @@
     ]
   },
   "time": {
-    "from": "now-12h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {
@@ -1444,7 +1872,7 @@
   },
   "timezone": "",
   "title": "Nodeport Proxy",
-  "uid": "8WkEOMnANKE7PW5hhpVv",
+  "uid": "8WkEONmBNKE9PW5hhpVv",
   "version": 1,
   "weekStart": ""
 }

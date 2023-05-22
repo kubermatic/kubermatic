@@ -41,6 +41,33 @@ groups:
     labels:
       kubermatic: federate
 
+- name: kubermatic.envoy-agent
+  rules:
+  - record: job:envoy_cluster_upstream_cx_active:sum
+	expr: sum(envoy_cluster_upstream_cx_active)
+	labels:
+	  kubermatic: federate
+
+  - record: job:envoy_cluster_upstream_rq_total:irate1msum
+	expr: sum(irate(envoy_cluster_upstream_rq_total[1m])) by (envoy_cluster_name)
+	labels:
+	  kubermatic: federate
+
+  - record: job:envoy_cluster_upstream_cx_rx_bytes_total:irate1msum
+	expr: sum(irate(envoy_cluster_upstream_cx_rx_bytes_total[1m])) by (envoy_cluster_name)
+	labels:
+	  kubermatic: federate
+  
+  - record: job:envoy_cluster_upstream_cx_tx_bytes_total:irate1msum
+	expr: sum(irate(envoy_cluster_upstream_cx_tx_bytes_total[1m])) by (envoy_cluster_name)
+	labels:
+	  kubermatic: federate
+  
+  - record: job:envoy_cluster_upstream_rq_time_bucket:rate1msum
+	expr: sum(rate(envoy_cluster_upstream_rq_time_bucket[1m])) by (le, envoy_cluster_name)
+	labels:
+	  kubermatic: federate
+
 - name: kubermatic.etcd
   rules:
   - alert: EtcdInsufficientMembers
