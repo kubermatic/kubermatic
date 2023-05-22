@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
+	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -185,6 +186,9 @@ func main() {
 	}
 	if runOp.dnsClusterIP == "" {
 		log.Fatal("-dns-cluster-ip must be set")
+	}
+	if runOp.kasSecurePort == int(envoyagent.StatsPort) {
+		log.Fatalf("-kas-secure-port \"%d\" is reserved and must not be used", runOp.kasSecurePort)
 	}
 	clusterURL, err := url.Parse(runOp.clusterURL)
 	if err != nil {
