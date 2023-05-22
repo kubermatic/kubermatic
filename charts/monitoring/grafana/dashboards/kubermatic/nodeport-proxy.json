@@ -1,25 +1,13 @@
 {
   "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "datasource",
-          "uid": "grafana"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+    "list": []
   },
   "description": "Envoy proxy monitoring Dashboard with cluster and service level templates. ",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "gnetId": 11021,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
+  "hideControls": false,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -41,6 +29,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -117,7 +106,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Live servers",
+      "transparent": true,
       "type": "gauge"
     },
     {
@@ -125,6 +116,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -196,7 +188,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Avg uptime per node",
+      "transparent": true,
       "type": "stat"
     },
     {
@@ -204,6 +198,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -275,7 +270,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Allocated Memory",
+      "transparent": true,
       "type": "stat"
     },
     {
@@ -283,6 +280,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -354,7 +352,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Heap Size",
+      "transparent": true,
       "type": "stat"
     },
     {
@@ -362,6 +362,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -433,7 +434,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Unhealthy Clusters",
+      "transparent": true,
       "type": "stat"
     },
     {
@@ -441,6 +444,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -527,7 +531,9 @@
           "refId": "A"
         }
       ],
+      "timeRegions": [],
       "title": "Cluster State",
+      "transparent": true,
       "type": "stat"
     },
     {
@@ -539,6 +545,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -602,6 +609,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -633,6 +641,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -696,6 +705,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -727,6 +737,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -802,6 +813,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -832,6 +844,7 @@
       "datasource": {
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -918,6 +931,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -1377,6 +1391,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -1440,6 +1455,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -1471,6 +1487,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -1534,6 +1551,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -1565,6 +1583,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -1640,6 +1659,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -1671,6 +1691,7 @@
         "type": "prometheus",
         "uid": "$datasource"
       },
+      "editable": true,
       "fieldConfig": {
         "defaults": {
           "links": []
@@ -1763,6 +1784,7 @@
         "sort": 0,
         "value_type": "individual"
       },
+      "transparent": true,
       "type": "graph",
       "xaxis": {
         "mode": "time",
@@ -1793,11 +1815,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "prometheus",
-          "value": "prometheus"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "multi": false,
@@ -1811,11 +1829,7 @@
       },
       {
         "allValue": ".*",
-        "current": {
-          "selected": true,
-          "text": "isphll5sfh",
-          "value": "isphll5sfh"
-        },
+        "current": {},
         "datasource": {
           "uid": "$datasource"
         },
@@ -1830,7 +1844,7 @@
           "query": "label_values(kubermatic_cluster_info,name)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
-        "refresh": 1,
+        "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
         "sort": 1,
@@ -1842,7 +1856,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {
