@@ -414,11 +414,13 @@ scrape_configs:
   scheme: http
   tls_config:
 {{ .ApiserverTLSConfig | indent 4 }}
+
   kubernetes_sd_configs:
   - role: pod
     api_server: 'https://{{ .APIServerHost }}'
     tls_config:
 {{ .ApiserverTLSConfig | indent 6 }}
+
   relabel_configs:
   - source_labels: [__meta_kubernetes_pod_label_app]
 	regex: "envoy-agent"
