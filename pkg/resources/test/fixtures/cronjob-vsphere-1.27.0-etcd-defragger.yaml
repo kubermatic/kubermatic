@@ -55,5 +55,5 @@ spec:
             secret:
               secretName: apiserver-etcd-client-certificate
   schedule: '@every 3h'
-  successfulJobsHistoryLimit: 0
+  successfulJobsHistoryLimit: 1
 status: {}
