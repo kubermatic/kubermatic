@@ -50,8 +50,8 @@ func CronJobReconciler(data cronJobReconcilerData) reconciling.NamedCronJobRecon
 
 			job.Name = resources.EtcdDefragCronJobName
 			job.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			var historyLimit int32
-			job.Spec.SuccessfulJobsHistoryLimit = &historyLimit
+			var successfulHistoryLimit int32 = 1
+			job.Spec.SuccessfulJobsHistoryLimit = &successfulHistoryLimit
 			job.Spec.Schedule = "@every 3h"
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 			job.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
