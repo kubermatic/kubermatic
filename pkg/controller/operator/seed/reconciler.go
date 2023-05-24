@@ -684,6 +684,18 @@ func (r *Reconciler) migrationForOSM(ctx context.Context, client ctrlruntimeclie
 
 	// We aggregate errors to ensure that we don't early exist and try to migrate as much as possible.
 	var errs []error
+
+	// Remove webhooks for OSM
+	err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, "kubermatic-operating-system-configs")
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Unable to delete Validating Admission Webhook kubermatic-operating-system-configs: %w", err))
+	}
+	err = common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, "kubermatic-operating-system-profiles")
+	if err != nil {
+		errs = append(errs, fmt.Errorf("Unable to delete Validating Admission Webhook kubermatic-operating-system-profiles: %w", err))
+	}
+
+	// Check if OSM CRD exists
 	ospCRDExists, err := osmmigration.IsOperatingSystemProfileInstalled(ctx, client)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("Unable to check for OperatingSystemProfile CRD: %w", err))
