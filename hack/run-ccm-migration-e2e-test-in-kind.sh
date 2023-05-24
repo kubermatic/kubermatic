@@ -82,7 +82,7 @@ azure)
   EXTRA_ARGS="-azure-kkp-datacenter=azure-westeurope"
   ;;
 aws)
-  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-central-1a"
+  EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-west-1a"
   ;;
 esac
 
