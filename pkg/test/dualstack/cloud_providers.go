@@ -234,7 +234,7 @@ func (a aws) CloudSpec() models.CloudSpec {
 			RouteTableID:            "",
 			SecretAccessKey:         os.Getenv("AWS_SECRET_ACCESS_KEY"),
 			SecurityGroupID:         "",
-			VPCID:                   "vpc-05dba8c3284fc2836",
+			VPCID:                   "vpc-0b91611f9eac0a67e",
 		},
 	}
 }
