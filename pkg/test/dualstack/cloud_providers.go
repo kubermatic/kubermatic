@@ -211,7 +211,7 @@ func (a aws) NodeSpec() models.NodeCloudSpec {
 		Aws: &models.AWSNodeSpec{
 			AMI:                           "",
 			AssignPublicIP:                true,
-			AvailabilityZone:              "eu-central-1b",
+			AvailabilityZone:              "eu-west-1b",
 			InstanceType:                  pointer.String("t3a.small"),
 			IsSpotInstance:                false,
 			SpotInstanceMaxPrice:          "",
@@ -225,7 +225,7 @@ func (a aws) NodeSpec() models.NodeCloudSpec {
 
 func (a aws) CloudSpec() models.CloudSpec {
 	return models.CloudSpec{
-		DatacenterName: "aws-eu-central-1a",
+		DatacenterName: "aws-eu-west-1a",
 		Aws: &models.AWSCloudSpec{
 			AccessKeyID:             os.Getenv("AWS_ACCESS_KEY_ID"),
 			ControlPlaneRoleARN:     "",

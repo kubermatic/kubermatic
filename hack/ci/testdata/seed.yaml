@@ -59,12 +59,12 @@ spec:
       spec:
         anexia:
           locationID: "__ANEXIA_LOCATION_ID__"
-    aws-eu-central-1a:
+    aws-eu-west-1a:
       location: EU (Frankfurt)
       country: DE
       spec:
         aws:
-          region: eu-central-1
+          region: eu-west-1
           images:
             ubuntu: ami-092f628832a8d22a5 # ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-20220523
     hetzner-hel1:
