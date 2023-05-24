@@ -24,9 +24,12 @@ aliases:
     - kron4eg
     - xrstf
   sig-networking:
+    - cnvergence
+    - mfranczy
     - moadqassem
-    - moelsayed
+    - pkprzekwas
     - weirdmachine
+    - wozniakjan
   sig-ui:
     - ahmadhamzh
     - ahmedwaleedmalik
