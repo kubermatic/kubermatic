@@ -59,18 +59,18 @@ spec:
       spec:
         anexia:
           locationID: "__ANEXIA_LOCATION_ID__"
-    aws-eu-central-1a:
+    aws-eu-west-1a:
       location: EU (Frankfurt)
       country: DE
       spec:
         aws:
-          region: eu-central-1
-    aws-eu-central-1b:
+          region: eu-west-1
+    aws-eu-west-1b:
       location: EU (Frankfurt)
       country: DE
       spec:
         aws:
-          region: eu-central-1
+          region: eu-west-1
     hetzner-hel1:
       location: Helsinki 1 DC 6
       country: DE

@@ -64,7 +64,7 @@ secretAccessKey="$(kubectl get presets qa -o json | jq '.spec.aws.secretAccessKe
 _build/conformance-tester \
   -aws-access-key-id "$accessKey" \
   -aws-secret-access-key "$secretAccessKey" \
-  -aws-kkp-datacenter "aws-eu-central-1a" \
+  -aws-kkp-datacenter "aws-eu-west-1a" \
   -providers "aws" \
   -distributions "${DISTRIBUTIONS:-}" \
   -releases "${RELEASES:-}" \
