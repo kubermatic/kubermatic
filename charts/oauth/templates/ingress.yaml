@@ -27,10 +27,12 @@ metadata:
     {{- end }}
     {{- end }}
 spec:
+{{- if eq .Values.dex.ingress.scheme "https" }}
   tls:
   - secretName: dex-tls
     hosts:
     - {{ .Values.dex.ingress.host }}
+{{- end }}
   defaultBackend:
     service:
       name: dex
