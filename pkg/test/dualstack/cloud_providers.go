@@ -216,7 +216,7 @@ func (a aws) NodeSpec() models.NodeCloudSpec {
 			IsSpotInstance:                false,
 			SpotInstanceMaxPrice:          "",
 			SpotInstancePersistentRequest: false,
-			SubnetID:                      "subnet-0373d73f016db25c7",
+			SubnetID:                      "subnet-0ef9b1c3a5c398584",
 			VolumeSize:                    pointer.Int64(64),
 			VolumeType:                    pointer.String("standard"),
 		},
