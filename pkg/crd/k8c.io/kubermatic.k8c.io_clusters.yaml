@@ -1243,16 +1243,25 @@ spec:
                       description: Etcd configures the etcd ring used to store Kubernetes data.
                       properties:
                         clusterSize:
+                          description: ClusterSize is the number of replicas created for etcd. This should be an odd number to guarantee consensus, e.g. 3, 5 or 7.
                           format: int32
                           type: integer
                         diskSize:
                           anyOf:
                             - type: integer
                             - type: string
+                          description: DiskSize is the volume size used when creating persistent storage from the configured StorageClass. This is inherited from KubermaticConfiguration if not set. Defaults to 5Gi.
                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                           x-kubernetes-int-or-string: true
+                        hostAntiAffinity:
+                          description: HostAntiAffinity allows to enforce a certain type of host anti-affinity on etcd pods. Options are "preferred" (default) and "required". Please note that enforcing anti-affinity via "required" can mean that pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                         resources:
-                          description: ResourceRequirements describes the compute resource requirements.
+                          description: Resources allows to override the resource requirements for etcd Pods.
                           properties:
                             claims:
                               description: "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container. \n This is an alpha field and requires enabling the DynamicResourceAllocation feature gate. \n This field is immutable."
@@ -1289,8 +1298,10 @@ spec:
                               type: object
                           type: object
                         storageClass:
+                          description: StorageClass is the Kubernetes StorageClass used for persistent storage which stores the etcd WAL and other data persisted across restarts. Defaults to `kubermatic-fast` (the global default).
                           type: string
                         tolerations:
+                          description: Tolerations allows to override the scheduling tolerations for etcd Pods.
                           items:
                             description: The pod this Toleration is attached to tolerates any taint that matches the triple <key,value,effect> using the matching operator <operator>.
                             properties:
@@ -1312,6 +1323,13 @@ spec:
                                 type: string
                             type: object
                           type: array
+                        zoneAntiAffinity:
+                          description: ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on etcd pods. Options are "preferred" (default) and "required". Please note that enforcing anti-affinity via "required" can mean that pods are never scheduled.
+                          enum:
+                            - ""
+                            - preferred
+                            - required
+                          type: string
                       type: object
                     konnectivityProxy:
                       description: KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
