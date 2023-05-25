@@ -17,21 +17,31 @@ limitations under the License.
 package resources
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // HostnameAntiAffinity returns a simple Affinity rule to prevent* scheduling of same kind pods on the same node.
 // *if scheduling is not possible with this rule, it will be ignored.
-func HostnameAntiAffinity(app string) *corev1.Affinity {
+func HostnameAntiAffinity(app string, antiAffinity kubermaticv1.AntiAffinityType) *corev1.Affinity {
+	if antiAffinity == kubermaticv1.AntiAffinityTypeRequired {
+		return &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: hostnameAntiAffinity(app),
+			},
+		}
+	}
+
 	return &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: hostnameAntiAffinity(app),
+			PreferredDuringSchedulingIgnoredDuringExecution: weightedHostnameAntiAffinity(app),
 		},
 	}
 }
 
-func hostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
+func weightedHostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
 	return []corev1.WeightedPodAffinityTerm{
 		// Avoid that we schedule multiple same-kind pods within the same namespace on a single node.
 		{
@@ -44,6 +54,20 @@ func hostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
 				},
 				TopologyKey: TopologyKeyHostname,
 			},
+		},
+	}
+}
+
+func hostnameAntiAffinity(app string) []corev1.PodAffinityTerm {
+	return []corev1.PodAffinityTerm{
+		// Avoid that we schedule multiple same-kind pods within the same namespace on a single node.
+		{
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					AppLabelKey: app,
+				},
+			},
+			TopologyKey: TopologyKeyHostname,
 		},
 	}
 }
