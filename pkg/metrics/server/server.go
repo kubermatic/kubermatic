@@ -77,7 +77,7 @@ func (m *MetricsServer) Start(ctx context.Context) error {
 		Addr:         m.listenAddress,
 		Handler:      mux,
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 2 * time.Minute,
 	}
 
 	return fmt.Errorf("metrics server stopped: %w", s.ListenAndServe())
