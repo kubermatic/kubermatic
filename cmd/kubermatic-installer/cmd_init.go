@@ -23,7 +23,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	installinit "k8c.io/kubermatic/v2/pkg/install/init"
+	"k8c.io/kubermatic/v2/pkg/install/init/generator"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -34,6 +36,11 @@ type InitOptions struct {
 	OutputDir    string
 
 	Interactive bool
+
+	// these options are only relevant if non-interactive config generation is used.
+	Hostname        string
+	ExposeStrategy  string
+	GenerateSecrets bool
 }
 
 func InitCommand(cmdLogger *logrus.Logger) *cobra.Command {
@@ -51,6 +58,10 @@ func InitCommand(cmdLogger *logrus.Logger) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&opt.OutputDir, "output-dir", "d", ".", "directory to write generated configuration files to")
 	cmd.PersistentFlags().StringVar(&opt.DebugLogPath, "debug-log-path", "", "file location for debug logging")
 	cmd.PersistentFlags().BoolVarP(&opt.Interactive, "interactive", "i", false, "interactive mode to walk through options required for generating configuration files")
+
+	cmd.PersistentFlags().StringVar(&opt.Hostname, "hostname", "", "DNS suffix used to construct hostnames")
+	cmd.PersistentFlags().StringVar(&opt.ExposeStrategy, "expose-strategy", "", "Expose Strategy to use for the generated configuration")
+	cmd.PersistentFlags().BoolVar(&opt.GenerateSecrets, "generate-secrets", true, "Generate secrets required for KKP configuration")
 
 	return cmd
 }
@@ -90,7 +101,12 @@ func InitFunc(opt *InitOptions, cmdLogger *logrus.Logger) cobraFuncE {
 
 			return installinit.Run(logger, opt.OutputDir)
 		} else {
-			return nil
+			config := generator.Config{
+				DNS:             opt.Hostname,
+				ExposeStrategy:  kubermaticv1.ExposeStrategy(opt.ExposeStrategy),
+				GenerateSecrets: opt.GenerateSecrets,
+			}
+			return generator.Generate(config, opt.OutputDir, cmdLogger)
 		}
 	})
 }
