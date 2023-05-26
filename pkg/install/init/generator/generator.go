@@ -34,10 +34,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+var defaultFeatureGates = map[string]bool{
+	features.OIDCKubeCfgEndpoint: true,
+	features.OpenIDAuthPlugin:    true,
+}
+
+// Config is supposed to be a de-facto stable interface in the sense that
+// the init command has flags to pass those (or you put them in via the interactive
+// wizard), and we take those options and generate a working set of KKP
+// configuration out of it.
+//
+// Think twice before removing/changing a value here because that likely means
+// you also need to update the wizard steps and the command line flags, and we
+// should consider that a breaking change.
 type Config struct {
 	DNS             string
 	ExposeStrategy  kubermaticv1.ExposeStrategy
 	GenerateSecrets bool
+	FeatureGate     features.FeatureGate
 }
 
 func Start(in <-chan Config, log *logrus.Logger, outputDir string) <-chan bool {
@@ -105,6 +119,12 @@ func Generate(config Config, outputDir string, log *logrus.Logger) error {
 }
 
 func generateKubermaticConfiguration(config Config, secrets kkpSecrets) (*kubermaticv1.KubermaticConfiguration, error) {
+	// "merge" the default feature gates with what is passed via the generator configuration.
+	featureGates := defaultFeatureGates
+	for key, val := range config.FeatureGate {
+		featureGates[key] = val
+	}
+
 	kkpConfig := &kubermaticv1.KubermaticConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -123,14 +143,8 @@ func generateKubermaticConfiguration(config Config, secrets kkpSecrets) (*kuberm
 					Name: "letsencrypt-prod",
 				},
 			},
-			FeatureGates: map[string]bool{
-				// the OIDC feature is quite important for multi-tenant
-				// setups, so let's enable this by default in generated
-				// configurations.
-				features.OIDCKubeCfgEndpoint: true,
-				features.OpenIDAuthPlugin:    true,
-			},
-			API: kubermaticv1.KubermaticAPIConfiguration{},
+			FeatureGates: featureGates,
+			API:          kubermaticv1.KubermaticAPIConfiguration{},
 		},
 	}
 

@@ -24,6 +24,7 @@ import (
 	"os"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	installinit "k8c.io/kubermatic/v2/pkg/install/init"
 	"k8c.io/kubermatic/v2/pkg/install/init/generator"
 
@@ -41,6 +42,7 @@ type InitOptions struct {
 	Hostname        string
 	ExposeStrategy  string
 	GenerateSecrets bool
+	FeatureGates    string
 }
 
 func InitCommand(cmdLogger *logrus.Logger) *cobra.Command {
@@ -62,6 +64,7 @@ func InitCommand(cmdLogger *logrus.Logger) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&opt.Hostname, "hostname", "", "DNS suffix used to construct hostnames")
 	cmd.PersistentFlags().StringVar(&opt.ExposeStrategy, "expose-strategy", "", "Expose Strategy to use for the generated configuration")
 	cmd.PersistentFlags().BoolVar(&opt.GenerateSecrets, "generate-secrets", true, "Generate secrets required for KKP configuration")
+	cmd.PersistentFlags().StringVar(&opt.FeatureGates, "feature-gates", "", "A comma-separated key=value list of KKP feature gates")
 
 	return cmd
 }
@@ -101,10 +104,17 @@ func InitFunc(opt *InitOptions, cmdLogger *logrus.Logger) cobraFuncE {
 
 			return installinit.Run(logger, opt.OutputDir)
 		} else {
+			var featureGate features.FeatureGate = make(features.FeatureGate)
+
+			if err := featureGate.Set(opt.FeatureGates); err != nil {
+				return fmt.Errorf("failed to parse feature gates: %v", err)
+			}
+
 			config := generator.Config{
 				DNS:             opt.Hostname,
 				ExposeStrategy:  kubermaticv1.ExposeStrategy(opt.ExposeStrategy),
 				GenerateSecrets: opt.GenerateSecrets,
+				FeatureGate:     featureGate,
 			}
 			return generator.Generate(config, opt.OutputDir, cmdLogger)
 		}
