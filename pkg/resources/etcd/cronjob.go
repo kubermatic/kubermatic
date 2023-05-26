@@ -31,6 +31,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 type cronJobReconcilerData interface {
@@ -50,8 +51,7 @@ func CronJobReconciler(data cronJobReconcilerData) reconciling.NamedCronJobRecon
 
 			job.Name = resources.EtcdDefragCronJobName
 			job.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			var historyLimit int32
-			job.Spec.SuccessfulJobsHistoryLimit = &historyLimit
+			job.Spec.SuccessfulJobsHistoryLimit = pointer.Int32(1)
 			job.Spec.Schedule = "@every 3h"
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 			job.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
