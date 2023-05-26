@@ -44,6 +44,8 @@ func InitCommand(cmdLogger *logrus.Logger) *cobra.Command {
 		Short:        "Run an interactive configurazion wizard",
 		RunE:         InitFunc(&opt, cmdLogger),
 		SilenceUsage: true,
+		// TODO(embik): make this command GA once it's in a good shape.
+		Hidden: true,
 	}
 
 	cmd.PersistentFlags().StringVarP(&opt.OutputDir, "output-dir", "d", ".", "directory to write generated configuration files to")
