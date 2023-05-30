@@ -147,6 +147,10 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 				if !data.IsKonnectivityEnabled() {
 					cm.Data["rules.yaml"] += prometheusRuleDNSResolverDownAlert
 				}
+
+				if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+					cm.Data["rules.yaml"] += prometheusRuleEnvoyAgentFederation
+				}
 			}
 
 			if customRules == "" {
@@ -409,6 +413,7 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics/resource
 
+{{ if eq .TemplateData.Cluster.Spec.ExposeStrategy "Tunneling" -}}
 # scrape envoy-agent
 - job_name: 'envoy-agent'
   scheme: http
@@ -447,7 +452,7 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
-
+{{ end }}
 {{- end }}
 
 {{- with .CustomScrapingConfigs }}
