@@ -211,12 +211,12 @@ func (a aws) NodeSpec() models.NodeCloudSpec {
 		Aws: &models.AWSNodeSpec{
 			AMI:                           "",
 			AssignPublicIP:                true,
-			AvailabilityZone:              "eu-central-1b",
+			AvailabilityZone:              "eu-west-1b",
 			InstanceType:                  pointer.String("t3a.small"),
 			IsSpotInstance:                false,
 			SpotInstanceMaxPrice:          "",
 			SpotInstancePersistentRequest: false,
-			SubnetID:                      "subnet-0373d73f016db25c7",
+			SubnetID:                      "subnet-0ef9b1c3a5c398584",
 			VolumeSize:                    pointer.Int64(64),
 			VolumeType:                    pointer.String("standard"),
 		},
@@ -225,7 +225,7 @@ func (a aws) NodeSpec() models.NodeCloudSpec {
 
 func (a aws) CloudSpec() models.CloudSpec {
 	return models.CloudSpec{
-		DatacenterName: "aws-eu-central-1a",
+		DatacenterName: "aws-eu-west-1a",
 		Aws: &models.AWSCloudSpec{
 			AccessKeyID:             os.Getenv("AWS_ACCESS_KEY_ID"),
 			ControlPlaneRoleARN:     "",
@@ -234,7 +234,7 @@ func (a aws) CloudSpec() models.CloudSpec {
 			RouteTableID:            "",
 			SecretAccessKey:         os.Getenv("AWS_SECRET_ACCESS_KEY"),
 			SecurityGroupID:         "",
-			VPCID:                   "vpc-05dba8c3284fc2836",
+			VPCID:                   "vpc-0b91611f9eac0a67e",
 		},
 	}
 }
