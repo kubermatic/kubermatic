@@ -171,7 +171,7 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.DNSResolverDeploymentName)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.DNSResolverDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
 
 			return dep, nil
 		}

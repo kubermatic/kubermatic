@@ -693,6 +693,17 @@ type ApplicationSettings struct {
 	CacheSize *resource.Quantity `json:"cacheSize,omitempty"`
 }
 
+// +kubebuilder:validation:Enum="";preferred;required
+
+// AntiAffinityType is the type of anti-affinity that should be used. Can be "preferred"
+// or "required".
+type AntiAffinityType string
+
+const (
+	AntiAffinityTypePreferred = "preferred"
+	AntiAffinityTypeRequired  = "required"
+)
+
 type ComponentSettings struct {
 	// Apiserver configures kube-apiserver settings.
 	Apiserver APIServerSettings `json:"apiserver"`
@@ -746,11 +757,29 @@ type StatefulSetSettings struct {
 }
 
 type EtcdStatefulSetSettings struct {
-	ClusterSize  *int32                       `json:"clusterSize,omitempty"`
-	StorageClass string                       `json:"storageClass,omitempty"`
-	DiskSize     *resource.Quantity           `json:"diskSize,omitempty"`
-	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
-	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
+	// ClusterSize is the number of replicas created for etcd. This should be an
+	// odd number to guarantee consensus, e.g. 3, 5 or 7.
+	ClusterSize *int32 `json:"clusterSize,omitempty"`
+	// StorageClass is the Kubernetes StorageClass used for persistent storage
+	// which stores the etcd WAL and other data persisted across restarts. Defaults to
+	// `kubermatic-fast` (the global default).
+	StorageClass string `json:"storageClass,omitempty"`
+	// DiskSize is the volume size used when creating persistent storage from
+	// the configured StorageClass. This is inherited from KubermaticConfiguration
+	// if not set. Defaults to 5Gi.
+	DiskSize *resource.Quantity `json:"diskSize,omitempty"`
+	// Resources allows to override the resource requirements for etcd Pods.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Tolerations allows to override the scheduling tolerations for etcd Pods.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// HostAntiAffinity allows to enforce a certain type of host anti-affinity on etcd
+	// pods. Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that pods are never scheduled.
+	HostAntiAffinity AntiAffinityType `json:"hostAntiAffinity,omitempty"`
+	// ZoneAntiAffinity allows to enforce a certain type of availability zone anti-affinity on etcd
+	// pods. Options are "preferred" (default) and "required". Please note that
+	// enforcing anti-affinity via "required" can mean that pods are never scheduled.
+	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 }
 
 type LeaderElectionSettings struct {

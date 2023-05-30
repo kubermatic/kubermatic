@@ -260,7 +260,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, kubermaticv1.AntiAffinityTypePreferred)
 
 			return dep, nil
 		}

@@ -196,7 +196,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name)
+			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, kubermaticv1.AntiAffinityTypePreferred)
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(name))
 			if err != nil {

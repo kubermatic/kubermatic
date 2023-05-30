@@ -306,7 +306,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue)
+			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, kubermaticv1.AntiAffinityTypePreferred)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
 				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
 				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue))

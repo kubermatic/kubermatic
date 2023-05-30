@@ -308,7 +308,8 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName)
+			antiAffinityType := data.Cluster().Spec.ComponentsOverride.Etcd.HostAntiAffinity
+			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, antiAffinityType)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
 				antiAffinities := set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
 				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName))
