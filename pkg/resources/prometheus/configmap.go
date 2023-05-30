@@ -423,30 +423,30 @@ scrape_configs:
 
   relabel_configs:
   - source_labels: [__meta_kubernetes_pod_label_app]
-	regex: "envoy-agent"
-	action: keep
+    regex: "envoy-agent"
+    action: keep
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-	action: keep
-	regex: true
+    action: keep
+    regex: true
   - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-	action: replace
-	target_label: __metrics_path__
-	regex: (.+)
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
   - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-	action: replace
-	regex: ([^:]+)(?::\d+)?;(\d+)
-	replacement: $1:$2
-	target_label: __address__
+    action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
   - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
-	action: replace
-	target_label: job
-	separator: ''
+    action: replace
+    target_label: job
+    separator: ''
   - source_labels: [__meta_kubernetes_namespace]
-	action: replace
-	target_label: namespace
+    action: replace
+    target_label: namespace
   - source_labels: [__meta_kubernetes_pod_name]
-	action: replace
-	target_label: pod
+    action: replace
+    target_label: pod
 
 {{- end }}
 
