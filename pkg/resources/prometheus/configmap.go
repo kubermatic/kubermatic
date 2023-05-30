@@ -452,10 +452,9 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
-{{ end }}
 {{- end }}
-
-{{- with .CustomScrapingConfigs }}
+{{- end }}
+{{- with .CustomScrapingConfigs -}}
 #######################################################################
 # custom scraping configurations
 
