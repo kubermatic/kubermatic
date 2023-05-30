@@ -76,12 +76,12 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 					},
 				},
 				{
-					Version: "1.13.2",
+					Version: "1.13.3",
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
-								ChartVersion: "1.13.2",
+								ChartVersion: "1.13.3",
 								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository,
 								Credentials:  credentials,
 							},
