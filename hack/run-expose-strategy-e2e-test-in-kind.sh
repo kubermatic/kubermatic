@@ -156,6 +156,13 @@ EOF
 copy_crds_to_chart
 set_crds_version_annotation
 
+# gather logs
+if [ -n "${ARTIFACTS:-}" ] && [ -x "$(command -v protokol)" ]; then
+  # gather the logs of all things in the cluster control plane and in the Kubermatic namespace
+  protokol --kubeconfig "${HOME}/.kube/config" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
+  protokol --kubeconfig "${HOME}/.kube/config" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+fi
+
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy --disable-telemetry \
   --storageclass copy-default \
