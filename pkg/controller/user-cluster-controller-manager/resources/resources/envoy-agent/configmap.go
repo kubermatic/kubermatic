@@ -43,7 +43,7 @@ static_resources:
 	  socket_address:
 		protocol: TCP
 		address: 0.0.0.0
-		port_value: {{.statsPort}}
+		port_value: {{.StatsPort}}
 	filter_chains:
 	- filters:
 	  - name: envoy.filters.network.http_connection_manager
@@ -115,7 +115,7 @@ static_resources:
 `
 
 type Config struct {
-	statsPort uint32
+	StatsPort uint32
 	AdminPort uint32
 	ProxyHost string
 	ProxyPort uint32
@@ -138,7 +138,7 @@ func ConfigMapReconciler(cfg Config) reconciling.NamedConfigMapReconcilerFactory
 					return nil, fmt.Errorf("listener port \"%d\" is reserved and must not be used", listener.BindPort)
 				}
 			}
-			cfg.statsPort = StatsPort
+			cfg.StatsPort = StatsPort
 
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
