@@ -39,31 +39,31 @@ var envoyConfigTemplate = `admin:
 static_resources:
   listeners:
   - name: service_stats
-	address:
-	  socket_address:
-		protocol: TCP
-		address: 0.0.0.0
-		port_value: {{.StatsPort}}
-	filter_chains:
-	- filters:
-	  - name: envoy.filters.network.http_connection_manager
-		typed_config:
-		  "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-		  stat_prefix: service_stats
-		  route_config:
-			name: local_route
-			virtual_hosts:
-			- name: stats_backend
-			  domains: ["*"]
-			  routes:
-			  - match:
-				  prefix: "/stats"
-				route:
-				  cluster: service_stats
-		  http_filters:
-		  - name: envoy.filters.http.router
-			"typed_config":
-			  "@type": "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"
+    address:
+      socket_address:
+        protocol: TCP
+        address: 0.0.0.0
+        port_value: {{.StatsPort}}
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: service_stats
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: stats_backend
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/stats"
+                route:
+                  cluster: service_stats
+          http_filters:
+          - name: envoy.filters.http.router
+            "typed_config":
+              "@type": "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"
 {{- range $i, $l := .Listeners}}
   - name: listener_{{$i}}
     address:
@@ -100,17 +100,17 @@ static_resources:
                     socket_address:
                       address: {{.ProxyHost}}
                       port_value: {{.ProxyPort}}
-	- name: service_stats
-	  connect_timeout: 0.1s
-	  type: STATIC
-	  load_assignment:
-		cluster_name: service_stats
-		endpoints:
-		- lb_endpoints:
-			- endpoint:
-				address:
-				  socket_address:
-					address: 127.0.0.1
+    - name: service_stats
+      connect_timeout: 0.1s
+      type: STATIC
+      load_assignment:
+        cluster_name: service_stats
+        endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 127.0.0.1
                     port_value: {{.AdminPort}}
 `
 
