@@ -60,6 +60,8 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 				"-listen-address", "0.0.0.0:9876",
 				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 				"-namespace", data.Cluster().Status.NamespaceName,
+				"-tls-cert-path=/tmp/cert/cert.pem",
+				"-tls-key-path=/tmp/cert/key.pem",
 			}
 
 			// Enable validations corresponding to OSM
