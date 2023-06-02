@@ -85,7 +85,7 @@ func clusterIsolationNetworkPolicyReconciler(clusterIp string, nameservers []str
 							},
 						},
 					},
-					// Allow kubermatic nodeport-proxy ip addresse
+					// Allow kubermatic nodeport-proxy ip address
 					{
 						To: []networkingv1.NetworkPolicyPeer{
 							{
