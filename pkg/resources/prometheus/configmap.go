@@ -147,6 +147,10 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 				if !data.IsKonnectivityEnabled() {
 					cm.Data["rules.yaml"] += prometheusRuleDNSResolverDownAlert
 				}
+
+				if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+					cm.Data["rules.yaml"] += prometheusRuleEnvoyAgentFederation
+				}
 			}
 
 			if customRules == "" {
@@ -409,9 +413,48 @@ scrape_configs:
     target_label: __metrics_path__
     replacement: /api/v1/nodes/${1}/proxy/metrics/resource
 
-{{- end }}
+{{ if eq .TemplateData.Cluster.Spec.ExposeStrategy "Tunneling" -}}
+# scrape envoy-agent
+- job_name: 'envoy-agent'
+  scheme: http
+  tls_config:
+{{ .ApiserverTLSConfig | indent 4 }}
 
-{{- with .CustomScrapingConfigs }}
+  kubernetes_sd_configs:
+  - role: pod
+    api_server: 'https://{{ .APIServerHost }}'
+    tls_config:
+{{ .ApiserverTLSConfig | indent 6 }}
+
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_label_app]
+    regex: "envoy-agent"
+    action: keep
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    action: keep
+    regex: true
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+    action: replace
+    regex: ([^:]+)(?::\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
+  - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
+    action: replace
+    target_label: job
+    separator: ''
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
+{{- end }}
+{{- end }}
+{{- with .CustomScrapingConfigs -}}
 #######################################################################
 # custom scraping configurations
 

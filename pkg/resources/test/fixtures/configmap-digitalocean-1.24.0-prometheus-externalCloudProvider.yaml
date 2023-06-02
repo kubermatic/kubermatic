@@ -249,6 +249,7 @@ data:
         regex: (.+)
         target_label: __metrics_path__
         replacement: /api/v1/nodes/${1}/proxy/metrics/resource
+
     #######################################################################
     # custom scraping configurations
 

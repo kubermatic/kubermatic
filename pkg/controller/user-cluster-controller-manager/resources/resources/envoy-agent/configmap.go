@@ -17,6 +17,7 @@ limitations under the License.
 package envoyagent
 
 import (
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -26,6 +27,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const StatsPort uint32 = 8002
+
 var envoyConfigTemplate = `admin:
   access_log_path: /dev/stdout
   address:
@@ -34,7 +37,33 @@ var envoyConfigTemplate = `admin:
       address: 127.0.0.1
       port_value: {{.AdminPort}}
 static_resources:
-  listeners: {{if not .Listeners -}}[]{{- end}}
+  listeners:
+  - name: service_stats
+    address:
+      socket_address:
+        protocol: TCP
+        address: 0.0.0.0
+        port_value: {{.StatsPort}}
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: service_stats
+          route_config:
+            name: local_route
+            virtual_hosts:
+            - name: stats_backend
+              domains: ["*"]
+              routes:
+              - match:
+                  prefix: "/stats"
+                route:
+                  cluster: service_stats
+          http_filters:
+          - name: envoy.filters.http.router
+            "typed_config":
+              "@type": "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router"
 {{- range $i, $l := .Listeners}}
   - name: listener_{{$i}}
     address:
@@ -71,9 +100,22 @@ static_resources:
                     socket_address:
                       address: {{.ProxyHost}}
                       port_value: {{.ProxyPort}}
+    - name: service_stats
+      connect_timeout: 0.1s
+      type: STATIC
+      load_assignment:
+        cluster_name: service_stats
+        endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: 127.0.0.1
+                    port_value: {{.AdminPort}}
 `
 
 type Config struct {
+	StatsPort uint32
 	AdminPort uint32
 	ProxyHost string
 	ProxyPort uint32
@@ -90,6 +132,14 @@ type Listener struct {
 func ConfigMapReconciler(cfg Config) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.EnvoyAgentConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			// ensure StatsPort is not used by any listener
+			for _, listener := range cfg.Listeners {
+				if listener.BindPort == StatsPort {
+					return nil, fmt.Errorf("listener port \"%d\" is reserved and must not be used", listener.BindPort)
+				}
+			}
+			cfg.StatsPort = StatsPort
+
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}

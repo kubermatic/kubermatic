@@ -43,6 +43,7 @@ import (
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
 	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
+	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	machinecontrollerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	roleclonercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -185,6 +186,9 @@ func main() {
 	}
 	if runOp.dnsClusterIP == "" {
 		log.Fatal("-dns-cluster-ip must be set")
+	}
+	if runOp.kasSecurePort == int(envoyagent.StatsPort) {
+		log.Fatalf("-kas-secure-port \"%d\" is reserved and must not be used", runOp.kasSecurePort)
 	}
 	clusterURL, err := url.Parse(runOp.clusterURL)
 	if err != nil {
