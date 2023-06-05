@@ -63,7 +63,7 @@ yq -s '.kind + "-" + .metadata.name + ".yaml"' ./cdi-operator.yaml
 rm ./cdi-operator.yaml
 
 for f in *; do 
-    l=$(echo "$f" | tr '[A-Z]' '[a-z]')
+    l=$(echo "$f" | tr '[A-Z:]' '[a-z-]')
     cat <(boilerplate) "$f" > tmp.yaml
     mv tmp.yaml "$f"
     if [[ "$f" != "$l" ]]; then
