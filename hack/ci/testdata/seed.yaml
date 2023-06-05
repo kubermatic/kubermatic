@@ -166,7 +166,7 @@ spec:
                 - Ingress
           infraStorageClasses:
             - isDefaultClass: true
-              name: px-csi-db
+              name: rook-ceph-block
     syseleven-dbl1:
       country: DE
       location: Syseleven - dbl1

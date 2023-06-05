@@ -172,7 +172,7 @@ spec:
               # If missing or false, annotation will be:
               # storageclass.kubernetes.io/is-default-class : false
               isDefaultClass: true
-              name: px-csi-db
+              name: rook-ceph-block
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU
