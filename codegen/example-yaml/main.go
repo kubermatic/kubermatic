@@ -209,7 +209,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 								},
 							},
 							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
-								Name:           "px-csi-db",
+								Name:           "rook-ceph-block",
 								IsDefaultClass: pointer.Bool(true),
 							},
 							},

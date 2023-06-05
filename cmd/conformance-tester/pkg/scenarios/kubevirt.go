@@ -34,7 +34,7 @@ const (
 	kubevirtCPUs               = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
-	kubevirtStorageClassName   = "px-csi-db"
+	kubevirtStorageClassName   = "rook-ceph-block"
 )
 
 type kubevirtScenario struct {
