@@ -118,6 +118,47 @@ spec:
                               type: object
                           type: object
                       type: object
+                    architectureConfiguration:
+                      properties:
+                        amd64:
+                          properties:
+                            emulatedMachines:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            machineType:
+                              type: string
+                            ovmfPath:
+                              type: string
+                          type: object
+                        arm64:
+                          properties:
+                            emulatedMachines:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            machineType:
+                              type: string
+                            ovmfPath:
+                              type: string
+                          type: object
+                        defaultArchitecture:
+                          type: string
+                        ppc64le:
+                          properties:
+                            emulatedMachines:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            machineType:
+                              type: string
+                            ovmfPath:
+                              type: string
+                          type: object
+                      type: object
                     controllerConfiguration:
                       description: ReloadableComponentConfiguration holds all generic k8s configuration options which can be reloaded by components without requiring a restart.
                       properties:
@@ -1644,6 +1685,8 @@ spec:
                       - type
                     type: object
                   type: array
+                defaultArchitecture:
+                  type: string
                 generations:
                   items:
                     description: GenerationStatus keeps track of the generation for a given resource so that decisions about forced updates can be made.
@@ -1706,7 +1749,7 @@ spec:
             - spec
           type: object
       served: true
-      storage: false
+      storage: true
       subresources:
         status: {}
     - additionalPrinterColumns:
@@ -1716,6 +1759,8 @@ spec:
         - jsonPath: .status.phase
           name: Phase
           type: string
+      deprecated: true
+      deprecationWarning: kubevirt.io/v1alpha3 is now deprecated and will be removed in a future release.
       name: v1alpha3
       schema:
         openAPIV3Schema:
@@ -1796,6 +1841,47 @@ spec:
                               type: object
                           type: object
                       type: object
+                    architectureConfiguration:
+                      properties:
+                        amd64:
+                          properties:
+                            emulatedMachines:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            machineType:
+                              type: string
+                            ovmfPath:
+                              type: string
+                          type: object
+                        arm64:
+                          properties:
+                            emulatedMachines:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            machineType:
+                              type: string
+                            ovmfPath:
+                              type: string
+                          type: object
+                        defaultArchitecture:
+                          type: string
+                        ppc64le:
+                          properties:
+                            emulatedMachines:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                            machineType:
+                              type: string
+                            ovmfPath:
+                              type: string
+                          type: object
+                      type: object
                     controllerConfiguration:
                       description: ReloadableComponentConfiguration holds all generic k8s configuration options which can be reloaded by components without requiring a restart.
                       properties:
@@ -3322,6 +3408,8 @@ spec:
                       - type
                     type: object
                   type: array
+                defaultArchitecture:
+                  type: string
                 generations:
                   items:
                     description: GenerationStatus keeps track of the generation for a given resource so that decisions about forced updates can be made.
@@ -3384,6 +3472,6 @@ spec:
             - spec
           type: object
       served: true
-      storage: true
+      storage: false
       subresources:
         status: {}
