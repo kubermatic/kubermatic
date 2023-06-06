@@ -251,6 +251,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/cert-manager \
     charts/iap \
     charts/kubermatic-operator \
+    charts/local-kubevirt \
     charts/logging \
     charts/minio \
     charts/mla \
@@ -290,6 +291,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/cert-manager \
     charts/iap \
     charts/kubermatic-operator \
+    charts/local-kubevirt \
     charts/logging \
     charts/minio \
     charts/mla \
