@@ -463,7 +463,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators,
 			konnectivity.TLSServingCertificateReconciler(data),
-			konnectivity.ProxyKubeconfig(data),
+			resources.GetInternalKubeconfigReconciler(namespace, resources.KonnectivityKubeconfigSecretName, resources.KonnectivityKubeconfigUsername, nil, data, r.log),
 		)
 	} else {
 		creators = append(creators,
