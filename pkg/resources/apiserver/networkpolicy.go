@@ -21,8 +21,6 @@ import (
 	"net"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -288,12 +286,17 @@ func MetricsServerAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetw
 	}
 }
 
-// ClusterExternalAddrAllowReconciler returns a func to create/update the apiserver cluster-external-addr-allow egress policy.
-// This policy is necessary in Konnectivity setup, so that konnectivity-server can connect to the apiserver via
-// the external URL (used as service-account-issuer) to validate konnectivity-agent authentication token.
-func ClusterExternalAddrAllowReconciler(egressIPs []net.IP, exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedNetworkPolicyReconcilerFactory {
+// ApiserverInternalAllowReconciler returns a func to create/update the apiserver-internal-allow egress policy.
+// This policy is necessary since konnectivity-server (sidecar to kube-apiserver when konnectivity is enabled) needs
+// to talk to the Kubernetes API to validate tokens coming from konnectivity-agent.
+//
+// This was previously handled with a policy called cluster-external-addr-allow that allowed connection to the
+// the external endpoint, but no reasoning for this design choice could be found in code comments or PR descriptions.
+// Upstream itself uses localhost in an example (see https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/a38752dc9884a1fc1c32652eacb38aed21e4ab25/examples/kubernetes/kubeconfig#L11),
+// so the strong assumption here is that this was never necessary.
+func ApiserverInternalAllowReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
-		return resources.NetworkPolicyClusterExternalAddrAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+		return resources.NetworkPolicyApiserverInternalAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
@@ -305,34 +308,17 @@ func ClusterExternalAddrAllowReconciler(egressIPs []net.IP, exposeStrategy kuber
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
-						To: ipListToPeers(egressIPs),
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										resources.AppLabelKey: name,
+									},
+								},
+							},
+						},
 					},
 				},
-			}
-
-			// allow egress traffic to the nodeport-proxy as for some CNI + kube-proxy mode
-			// combinations a local path to it may be used to reach the external apiserver address
-			if exposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-				// allows traffic to the nodeport-proxy running in the user cluster namespace used for the LB expose strategy
-				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
-					PodSelector: &metav1.LabelSelector{
-						MatchLabels: resources.BaseAppLabels(resources.NodePortProxyEnvoyDeploymentName, nil),
-					},
-				})
-			} else {
-				// allows traffic to the nodeport-proxy running in the kubermatic namespace used for other expose strategies
-				np.Spec.Egress[0].To = append(np.Spec.Egress[0].To, networkingv1.NetworkPolicyPeer{
-					NamespaceSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							corev1.LabelMetadataName: resources.KubermaticNamespace,
-						},
-					},
-					PodSelector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							common.NameLabel: nodeportproxy.EnvoyDeploymentName,
-						},
-					},
-				})
 			}
 
 			return np, nil

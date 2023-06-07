@@ -57,5 +57,11 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 				Namespace: namespace,
 			},
 		},
+		&networkingv1.NetworkPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.NetworkPolicyApiserverInternalAllow,
+				Namespace: namespace,
+			},
+		},
 	}
 }
