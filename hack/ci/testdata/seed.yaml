@@ -154,16 +154,6 @@ spec:
           dnsConfig:
             nameservers:
               - 8.8.8.8
-          customNetworkPolicies:
-            - name: allow-incoming
-              spec:
-                ingress:
-                - from:
-                  - ipBlock:
-                      cidr: 0.0.0.0/0
-                podSelector: {}
-                policyTypes:
-                - Ingress
           infraStorageClasses:
             - isDefaultClass: true
               name: px-csi-db
