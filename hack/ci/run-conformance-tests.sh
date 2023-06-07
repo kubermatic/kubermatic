@@ -84,6 +84,7 @@ elif [[ $provider == "vsphere" ]]; then
     -vsphere-password=${VSPHERE_E2E_PASSWORD}
     -vsphere-kkp-datacenter=vsphere-ger"
 elif [[ $provider == "kubevirt" ]]; then
+  maxDuration=90
   tmpFile="$(mktemp)"
   echo "$KUBEVIRT_E2E_TESTS_KUBECONFIG" > "$tmpFile"
   EXTRA_ARGS="-kubevirt-kubeconfig=$tmpFile
