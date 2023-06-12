@@ -199,15 +199,15 @@ func (m *Mutator) mutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, con
 		if err != nil {
 			return field.Invalid(field.NewPath("spec", "cniPlugin", "version"), newCluster.Spec.CNIPlugin.Version, err.Error())
 		}
-		lowerThan322, err := semverlib.NewConstraint("< 3.23")
+		lowerThan323, err := semverlib.NewConstraint("< 3.23")
 		if err != nil {
 			return field.InternalError(nil, fmt.Errorf("semver constraint parsing failed: %w", err))
 		}
-		equalOrHigherThan123, err := semverlib.NewConstraint(">= 1.26")
+		equalOrHigherThan126, err := semverlib.NewConstraint(">= 1.26")
 		if err != nil {
 			return field.InternalError(nil, fmt.Errorf("semver constraint parsing failed: %w", err))
 		}
-		if lowerThan322.Check(cniVersion) && curVersion.String() != "" && equalOrHigherThan123.Check(curVersion.Semver()) {
+		if lowerThan323.Check(cniVersion) && curVersion.String() != "" && equalOrHigherThan126.Check(curVersion.Semver()) {
 			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
 				Version: "v3.23",
