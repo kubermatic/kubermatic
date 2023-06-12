@@ -970,7 +970,8 @@ alertmanager_config: |
 	KonnectivityProxyServiceName           = "konnectivity-server"
 	KonnectivityProxyTLSSecretName         = "konnectivityproxy-tls"
 	KonnectivityKubeconfigSecretName       = "konnectivity-kubeconfig"
-	KonnectivityServerConf                 = "konnectivity-server.conf"
+	KonnectivityKubeconfigUsername         = "system:konnectivity-server"
+	KonnectivityServerConf                 = "kubeconfig"
 	KonnectivityKubeApiserverEgress        = "kube-apiserver-egress"
 	KonnectivityUDS                        = "konnectivity-uds"
 	KonnectivityPodDisruptionBudgetName    = "konnectivity-agent"
@@ -1005,6 +1006,7 @@ const (
 	NetworkPolicyMetricsServerAllow                 = "metrics-server-allow"
 	NetworkPolicyClusterExternalAddrAllow           = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow                    = "oidc-issuer-allow"
+	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
 )
 
 const (

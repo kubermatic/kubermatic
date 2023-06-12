@@ -55,6 +55,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -173,6 +174,14 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	} else {
 		if err := r.ensureKonnectivitySetupIsRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	}
+
+	// clean up NetworkPolicy created before konnectivity-server's kubeconfig was changed
+	// to use the internal API server endpoint.
+	if data.IsKonnectivityEnabled() {
+		if err := r.ensureKonnectivityNetworkPolicyIsRemoved(ctx, data); err != nil {
 			return nil, err
 		}
 	}
@@ -463,7 +472,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators,
 			konnectivity.TLSServingCertificateReconciler(data),
-			konnectivity.ProxyKubeconfig(data),
+			resources.GetInternalKubeconfigReconciler(namespace, resources.KonnectivityKubeconfigSecretName, resources.KonnectivityKubeconfigUsername, nil, data, r.log),
 		)
 	} else {
 		creators = append(creators,
@@ -611,15 +620,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 		defer cancel()
 
 		if data.IsKonnectivityEnabled() {
-			extName := data.Cluster().Status.Address.ExternalName
-
-			// allow egress traffic to all resolved cluster external IPs
-			ipList, err := hostnameToIPList(resolverCtx, extName)
-			if err != nil {
-				return fmt.Errorf("failed to resolve cluster external name %q: %w", extName, err)
-			}
-
-			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.ClusterExternalAddrAllowReconciler(ipList, c.Spec.ExposeStrategy))
+			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.ApiserverInternalAllowReconciler())
 		} else {
 			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys,
 				apiserver.OpenVPNServerAllowReconciler(c),
@@ -864,6 +865,21 @@ func (r *Reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context, data 
 		if err := r.Client.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
 		}
+	}
+	return nil
+}
+
+// ensureKonnectivityNetworkPolicyIsRemoved removes the NetworkPolicy put in place for
+// konnectivity-server -> external API server endpoint communication.
+func (r *Reconciler) ensureKonnectivityNetworkPolicyIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	if err := r.Client.Delete(ctx, &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.NetworkPolicyClusterExternalAddrAllow,
+			Namespace: data.Cluster().Status.NamespaceName,
+		},
+	},
+	); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to ensure external konnectivity-server NetworkPolicyy is removed/not present: %w", err)
 	}
 	return nil
 }
