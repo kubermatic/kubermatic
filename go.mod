@@ -38,7 +38,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.40.0
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.56.1-0.20230601122944-bfd2fd7cf541
+	github.com/kubermatic/machine-controller v1.56.2
 	github.com/minio/minio-go/v7 v7.0.49
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
@@ -76,7 +76,7 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.11.1
-	k8c.io/kubeone v1.6.0
+	k8c.io/kubeone v1.6.0-rc.2.0.20230530130148-0536063ab064
 	k8c.io/operating-system-manager v1.2.1-0.20230316111943-fefdb70fecee
 	k8c.io/reconciler v0.3.1
 	k8s.io/api v0.26.4
@@ -201,8 +201,6 @@ require (
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
-	github.com/flatcar/container-linux-config-transpiler v0.9.4 // indirect
-	github.com/flatcar/ignition v0.36.2 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/fvbommel/sortorder v1.0.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
@@ -351,3 +349,9 @@ require (
 )
 
 require github.com/jackpal/gateway v1.0.10
+
+require (
+	github.com/ajeddeloh/yaml v0.0.0-20170912190910-6b94386aeefd // indirect
+	github.com/coreos/container-linux-config-transpiler v0.9.0 // indirect
+	github.com/coreos/ignition v0.35.0 // indirect
+)
