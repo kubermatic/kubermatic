@@ -377,7 +377,7 @@ spec:
                   type: object
                 provisioningUtility:
                   default: cloud-init
-                  description: ProvisioningConfig is used for configurating the worker node. Defaults to cloud-init.
+                  description: ProvisioningUtility used for configuring the worker node. Defaults to cloud-init.
                   enum:
                     - cloud-init
                     - ignition
@@ -408,6 +408,7 @@ spec:
                           - baremetal
                           - external
                           - vmware-cloud-director
+                          - opennebula
                         type: string
                       spec:
                         description: Spec represents the os/image reference in the supported cloud provider
