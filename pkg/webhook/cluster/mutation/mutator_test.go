@@ -580,10 +580,10 @@ func TestMutator(t *testing.T) {
 			),
 		},
 		{
-			name: "CNI plugin version bump to v3.22 on k8s version upgrade to 1.23",
+			name: "CNI plugin version bump to v3.23 on k8s version upgrade to 1.26",
 			oldCluster: rawClusterGen{
 				Name:    "foo",
-				Version: *semver.NewSemverOrDie("1.22"),
+				Version: *semver.NewSemverOrDie("1.25"),
 				CloudSpec: kubermaticv1.CloudSpec{
 					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 					DatacenterName: "openstack-dc",
@@ -599,7 +599,7 @@ func TestMutator(t *testing.T) {
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.21",
+					Version: "v3.22",
 				},
 				Features: map[string]bool{
 					kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -608,7 +608,7 @@ func TestMutator(t *testing.T) {
 			}.Do(),
 			newCluster: rawClusterGen{
 				Name:    "foo",
-				Version: *semver.NewSemverOrDie("1.23"),
+				Version: *semver.NewSemverOrDie("1.26"),
 				CloudSpec: kubermaticv1.CloudSpec{
 					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 					DatacenterName: "openstack-dc",
@@ -626,7 +626,7 @@ func TestMutator(t *testing.T) {
 				},
 				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.21",
+					Version: "v3.22",
 				},
 				Features: map[string]bool{
 					kubermaticv1.ApiserverNetworkPolicy:    true,
@@ -636,7 +636,7 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: append(
 				defaultPatches,
-				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", "v3.22"),
+				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", "v3.23"),
 			),
 		},
 		{
