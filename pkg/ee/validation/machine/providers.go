@@ -412,6 +412,15 @@ func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntim
 		return nil, fmt.Errorf("failed to get the value of openstack \"flavorSize\" field: %w", err)
 	}
 
+	if rawConfig.RootDiskSizeGB != nil {
+		// Setting custom disk size
+		storageReq, err := resource.ParseQuantity(fmt.Sprintf("%dG", *rawConfig.RootDiskSizeGB))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse machine storage request to quantity: %w", err)
+		}
+		flavor.Storage = &storageReq
+	}
+
 	return NewResourceDetailsFromCapacity(flavor)
 }
 
