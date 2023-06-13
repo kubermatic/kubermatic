@@ -819,6 +819,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "VCD_PASSWORD", ValueFrom: refTo(VMwareCloudDirectorPassword)})
 		vars = append(vars, corev1.EnvVar{Name: "VCD_ORG", ValueFrom: refTo(VMwareCloudDirectorOrganization)})
 		vars = append(vars, corev1.EnvVar{Name: "VCD_VDC", ValueFrom: refTo(VMwareCloudDirectorVDC)})
+		vars = append(vars, corev1.EnvVar{Name: "VCD_API_TOKEN", ValueFrom: refTo(VMwareCloudDirectorAPIToken)})
 
 		if dc.Spec.VMwareCloudDirector.AllowInsecure {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
