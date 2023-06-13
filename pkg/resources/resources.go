@@ -627,7 +627,7 @@ const (
 	KubeOneEquinix             = "equinix"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
-	KubeOneImageTag            = "e8f511e983d19d72dcd59d398babe93c15c292f5"
+	KubeOneImageTag            = "0536063ab064601ba217c2abd41abd4c80a02477"
 	KubeOneScript              = `
 #!/usr/bin/env bash
 
