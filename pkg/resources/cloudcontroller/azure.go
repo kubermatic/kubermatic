@@ -94,7 +94,7 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Scheme: corev1.URISchemeHTTP,
+								Scheme: corev1.URISchemeHTTPS,
 								Path:   "/healthz",
 								Port:   intstr.FromInt(10258),
 							},
