@@ -23,8 +23,11 @@ metadata:
   name: vcloud-basic-auth
   namespace: kube-system
 data:
+{{ if .Credentials.VMwareCloudDirector.Username }}
   username: {{ .Credentials.VMwareCloudDirector.Username | b64enc }}
   password: {{ .Credentials.VMwareCloudDirector.Password | b64enc }}
+{{ end }}
+{{ if .Credentials.VMwareCloudDirector.APIToken }}
   refreshToken: {{ .Credentials.VMwareCloudDirector.APIToken | b64enc }}
-
+{{ end }}
 {{ end }}
