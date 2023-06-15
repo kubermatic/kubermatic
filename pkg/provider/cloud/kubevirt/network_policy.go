@@ -38,6 +38,20 @@ func clusterIsolationNetworkPolicyReconciler(clusterIp string, nameservers []str
 	tcp := corev1.ProtocolTCP
 	udp := corev1.ProtocolUDP
 
+	// This address might only be set after the control plane has initialized.
+	var apiServerRule networkingv1.NetworkPolicyEgressRule
+	if apiServerCIDR != "" {
+		apiServerRule = networkingv1.NetworkPolicyEgressRule{
+			To: []networkingv1.NetworkPolicyPeer{
+				{
+					IPBlock: &networkingv1.IPBlock{
+						CIDR: apiServerCIDR,
+					},
+				},
+			},
+		}
+	}
+
 	var dnsRules []networkingv1.NetworkPolicyEgressRule
 	for _, ns := range nameservers {
 		dnsRules = append(dnsRules, networkingv1.NetworkPolicyEgressRule{
@@ -85,21 +99,14 @@ func clusterIsolationNetworkPolicyReconciler(clusterIp string, nameservers []str
 							},
 						},
 					},
-					// Allow kubermatic nodeport-proxy ip address
-					{
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								IPBlock: &networkingv1.IPBlock{
-									CIDR: apiServerCIDR,
-								},
-							},
-						},
-					},
 				},
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
 				},
 			}
+
+			// Allow kubermatic nodeport-proxy ip address
+			np.Spec.Egress = append(np.Spec.Egress, apiServerRule)
 
 			// Allow dns servers
 			np.Spec.Egress = append(np.Spec.Egress, dnsRules...)
