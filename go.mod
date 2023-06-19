@@ -39,7 +39,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.39.0
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.56.2
+	github.com/kubermatic/machine-controller v1.56.3
 	github.com/minio/minio-go/v7 v7.0.45
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
@@ -77,6 +77,7 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.11.1
+	k8c.io/kubeone v1.6.2
 	k8c.io/operating-system-manager v1.2.2
 	k8c.io/reconciler v0.3.1
 	k8s.io/api v0.26.1
@@ -351,6 +352,3 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
-
-// TODO: This image tag needs to be replaced with a semver tag after the kubeone release.
-require k8c.io/kubeone v1.6.0-rc.1.0.20230223102440-e8f511e983d1
