@@ -122,6 +122,10 @@ func (v *VSphere) InitializeCloudProvider(ctx context.Context, cluster *kubermat
 
 // DefaultCloudSpec adds defaults to the cloud spec.
 func (v *VSphere) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
+	if spec.Cloud.VSphere == nil {
+		return errors.New("no vSphere cloud spec found")
+	}
+
 	if spec.Cloud.VSphere.Tags == nil {
 		if v.dc.DefaultTagCategoryID != "" {
 			spec.Cloud.VSphere.Tags = &kubermaticv1.VSphereTag{
