@@ -23,42 +23,20 @@ cd $(dirname $0)/../..
 source hack/lib.sh
 
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
-export GOOS="${GOOS:-linux}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
-export ARCHITECTURES=${ARCHITECTURES:-amd64 arm64}
+export ARCHITECTURES="${ARCHITECTURES:-linux/amd64,linux/arm64/v8}"
 export TAG_NAME=test
 
-# prepare gocaches for each arch
-gocaches="$(mktemp -d)"
-for ARCH in ${ARCHITECTURES}; do
-  cacheDir="$gocaches/$ARCH"
-  mkdir -p "$cacheDir"
+echodate "Building user-ssh-keys-agent..."
 
-  # try to get a gocache for this arch; this can "fail" but still exit with 0
-  TARGET_DIRECTORY="$cacheDir" GOARCH="$ARCH" ./hack/ci/download-gocache.sh
-done
+start_docker_daemon_ci
+docker buildx create --use
 
-# build multi-arch images
-buildah manifest create "${DOCKER_REPO}/user-ssh-keys-agent:${TAG_NAME}"
-for ARCH in ${ARCHITECTURES}; do
-  echodate "Building image for $ARCH..."
-
-  # Building via buildah does not use the gocache, but that's okay, because we
-  # wouldn't want to cache arm64 stuff anyway, as it would just blow up the
-  # cache size and force every e2e test to download gigabytes worth of unneeded
-  # arm64 stuff. We might need to change this once we run e2e tests on arm64.
-  time buildah bud \
-    --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${TAG_NAME}" \
-    --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
-    --build-arg "GOCACHE=/gocache" \
-    --arch "$ARCH" \
-    --override-arch "$ARCH" \
-    --format=docker \
-    --file cmd/user-ssh-keys-agent/Dockerfile.multiarch \
-    --volume "$gocaches/$ARCH:/gocache" \
-    .
-  buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${TAG_NAME}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${TAG_NAME}"
-done
+docker buildx build \
+  --platform "$ARCHITECTURES" \
+  --build-arg "GOPROXY=${GOPROXY:-}" \
+  --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
+  --file cmd/user-ssh-keys-agent/Dockerfile.multiarch \
+  --tag "$DOCKER_REPO/user-ssh-keys-agent:$TAG_NAME" .
 
 echodate "Successfully built for all architectures."
