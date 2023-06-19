@@ -21,6 +21,7 @@
 ### Updates
 
 - Add support for Kubernetes 1.24.15 (fixing CVE-2023-2431, CVE-2023-2727 and CVE-2023-2728) ([#12376](https://github.com/kubermatic/kubermatic/pull/12376))
+- Update machine-controller to [v1.54.7](https://github.com/kubermatic/machine-controller/releases/tag/v1.54.7) ([#12391](https://github.com/kubermatic/kubermatic/pull/12391))
 
 ### Misc
 
