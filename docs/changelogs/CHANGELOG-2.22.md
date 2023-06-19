@@ -16,6 +16,7 @@
 
 ### Updates
 
+- Add support for Kubernetes 1.24.15, 1.25.11 and 1.26.6 (fixing CVE-2023-2431, CVE-2023-2727 and CVE-2023-2728) and set default Kubernetes version to 1.25.11 ([#12375](https://github.com/kubermatic/kubermatic/pull/12375))
 - Force update for canal below 3.22 on k8s version 1.26 and above ([#12360](https://github.com/kubermatic/kubermatic/pull/12360))
 
 ### Misc
@@ -26,7 +27,6 @@
 ### New Feature
 
 - Add option to disable deployment of default network policies in KubeVirt cluster ([#12082](https://github.com/kubermatic/kubermatic/pull/12082))
-- Add support for Kubernetes 1.24.15, 1.25.11 and 1.26.6 (fixing CVE-2023-2431, CVE-2023-2727 and CVE-2023-2728) and set default Kubernetes version to 1.25.11 ([#12375](https://github.com/kubermatic/kubermatic/pull/12375))
 
 ### Dashboard
 
