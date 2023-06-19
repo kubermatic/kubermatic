@@ -46,10 +46,11 @@ fi
 cd $(dirname "$0")/..
 source hack/lib.sh
 
+export ALL_TAGS=$@
 export DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 export GOOS="${GOOS:-linux}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
-export ARCHITECTURES=${ARCHITECTURES:-amd64 arm64}
+export ARCHITECTURES="${ARCHITECTURES:-linux/amd64,linux/arm64/v8}"
 
 REPOSUFFIX=""
 if [ "$KUBERMATIC_EDITION" != "ce" ]; then
@@ -58,83 +59,55 @@ fi
 
 # build Docker images
 PRIMARY_TAG="${1}"
-make docker-build TAGS="${PRIMARY_TAG}"
-make -C cmd/nodeport-proxy docker TAG="${PRIMARY_TAG}"
-docker build -t "${DOCKER_REPO}/addons:${PRIMARY_TAG}" addons
-docker build -t "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" -f cmd/etcd-launcher/Dockerfile .
+make docker-build TAGS="$PRIMARY_TAG"
+make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG"
+docker build -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons
+docker build -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile .
 
-# prepare gocaches for each arch
-gocaches="$(mktemp -d)"
-for ARCH in ${ARCHITECTURES}; do
-  cacheDir="$gocaches/$ARCH"
-  mkdir -p "$cacheDir"
+# switch to a multi platform-enabled builder
+docker buildx create --use
 
-  # amd64 has been downloaded into $GOCACHE already, do not download it again
-  if [ "$ARCH" == "amd64" ]; then
-    cp -ar "$(go env GOCACHE)"/* "$cacheDir"
-    continue
-  fi
+build_tag_flags() {
+  local repository="$1"
 
-  # try to get a gocache for this arch; this can "fail" but still exit with 0
-  TARGET_DIRECTORY="$cacheDir" GOARCH="$ARCH" ./hack/ci/download-gocache.sh
-done
+  for tag in $ALL_TAGS; do
+    if [ -z "$tag" ]; then
+      continue
+    fi
 
-# build multi-arch images
-buildah manifest create "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}"
-for ARCH in ${ARCHITECTURES}; do
-  echodate "Building user-ssh-keys-agent image for $ARCH..."
+    echo -n " --tag $repository:$tag"
+  done
 
-  buildah bud \
-    --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}" \
+  echo
+}
+
+buildx_build() {
+  local context="$1"
+  local file="$2"
+  local repository="$3"
+
+  docker buildx build \
+    --push \
+    --platform "$ARCHITECTURES" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
-    --build-arg "GOCACHE=/gocache" \
-    --arch "$ARCH" \
-    --override-arch "$ARCH" \
-    --format=docker \
-    --file cmd/user-ssh-keys-agent/Dockerfile.multiarch \
-    --volume "$gocaches/$ARCH:/gocache" \
-    .
-  buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}"
-done
+    --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
+    --provenance false \
+    --file "$file" \
+    $(build_tag_flags "$repository") \
+    $context
+}
 
-buildah manifest create "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}"
-for ARCH in ${ARCHITECTURES}; do
-  echodate "Building kubeletdnat-controller image for $ARCH..."
+# build and push multi-arch images
+# (buildx cannot just build and load a multi-arch image,
+# see https://github.com/docker/buildx/issues/59)
+echodate "Building user-ssh-keys-agent images..."
+buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent"
 
-  buildah bud \
-    --tag "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}" \
-    --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
-    --build-arg "GOCACHE=/gocache" \
-    --arch "$ARCH" \
-    --override-arch "$ARCH" \
-    --format=docker \
-    --file cmd/kubeletdnat-controller/Dockerfile.multiarch \
-    --volume "$gocaches/$ARCH:/gocache" \
-    .
-  buildah manifest add "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}"
-done
+echodate "Building kubeletdnat-controller images..."
+buildx_build . cmd/kubeletdnat-controller/Dockerfile.multiarch "$DOCKER_REPO/kubeletdnat-controller"
 
-buildah manifest create "${DOCKER_REPO}/network-interface-manager:${PRIMARY_TAG}"
-for ARCH in ${ARCHITECTURES}; do
-  echodate "Building network-interface-manager image for $ARCH..."
-
-  buildah bud \
-    --tag "${DOCKER_REPO}/network-interface-manager-${ARCH}:${PRIMARY_TAG}" \
-    --build-arg "GOPROXY=${GOPROXY:-}" \
-    --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
-    --build-arg "GOCACHE=/gocache" \
-    --arch "$ARCH" \
-    --override-arch "$ARCH" \
-    --format=docker \
-    --file cmd/network-interface-manager/Dockerfile.multiarch \
-    --volume "$gocaches/$ARCH:/gocache" \
-    .
-  buildah manifest add "${DOCKER_REPO}/network-interface-manager:${PRIMARY_TAG}" "${DOCKER_REPO}/network-interface-manager-${ARCH}:${PRIMARY_TAG}"
-done
-
-rm -rf -- "$gocaches"
+echodate "Building network-interface-manager images..."
+buildx_build . cmd/network-interface-manager/Dockerfile.multiarch "$DOCKER_REPO/network-interface-manager"
 
 # for each given tag, tag and push the image
 for TAG in "$@"; do
@@ -142,21 +115,15 @@ for TAG in "$@"; do
     continue
   fi
 
-  echodate "Tagging as ${TAG}"
-  docker tag "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${PRIMARY_TAG}" "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
-  docker tag "${DOCKER_REPO}/nodeport-proxy:${PRIMARY_TAG}" "${DOCKER_REPO}/nodeport-proxy:${TAG}"
-  docker tag "${DOCKER_REPO}/addons:${PRIMARY_TAG}" "${DOCKER_REPO}/addons:${TAG}"
-  docker tag "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" "${DOCKER_REPO}/etcd-launcher:${TAG}"
-  buildah tag "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
-  buildah tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
-  buildah tag "${DOCKER_REPO}/network-interface-manager:${PRIMARY_TAG}" "${DOCKER_REPO}/network-interface-manager:${TAG}"
+  echodate "Tagging as $TAG"
+  docker tag "$DOCKER_REPO/kubermatic$REPOSUFFIX:$PRIMARY_TAG" "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
+  docker tag "$DOCKER_REPO/nodeport-proxy:$PRIMARY_TAG" "$DOCKER_REPO/nodeport-proxy:$TAG"
+  docker tag "$DOCKER_REPO/addons:$PRIMARY_TAG" "$DOCKER_REPO/addons:$TAG"
+  docker tag "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" "$DOCKER_REPO/etcd-launcher:$TAG"
 
   echodate "Pushing images"
-  docker push "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
-  docker push "${DOCKER_REPO}/nodeport-proxy:${TAG}"
-  docker push "${DOCKER_REPO}/addons:${TAG}"
-  docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"
-  buildah manifest push --all "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" "docker://${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
-  buildah manifest push --all "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" "docker://${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
-  buildah manifest push --all "${DOCKER_REPO}/network-interface-manager:${TAG}" "docker://${DOCKER_REPO}/network-interface-manager:${TAG}"
+  docker push "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
+  docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
+  docker push "$DOCKER_REPO/addons:$TAG"
+  docker push "$DOCKER_REPO/etcd-launcher:$TAG"
 done
