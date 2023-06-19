@@ -38,7 +38,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.40.0
 	github.com/imdario/mergo v0.3.13
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.56.2
+	github.com/kubermatic/machine-controller v1.57.0
 	github.com/minio/minio-go/v7 v7.0.49
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
@@ -76,7 +76,7 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.11.1
-	k8c.io/kubeone v1.6.0-rc.2.0.20230530130148-0536063ab064
+	k8c.io/kubeone v1.6.2
 	k8c.io/operating-system-manager v1.2.1-0.20230316111943-fefdb70fecee
 	k8c.io/reconciler v0.3.1
 	k8s.io/api v0.26.4
@@ -126,8 +126,6 @@ replace (
 )
 
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
-
-replace github.com/kubermatic/machine-controller => github.com/kubermatic/machine-controller v1.56.1-0.20230601122944-bfd2fd7cf541
 
 // make `go list` work
 // see https://github.com/cilium/cilium/blob/master/go.mod#L250, caused by
