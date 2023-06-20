@@ -308,12 +308,13 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			antiAffinityType := data.Cluster().Spec.ComponentsOverride.Etcd.HostAntiAffinity
-			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, antiAffinityType)
+			hostAntiAffinityType := data.Cluster().Spec.ComponentsOverride.Etcd.HostAntiAffinity
+			set.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(resources.EtcdStatefulSetName, hostAntiAffinityType)
+
 			if data.SupportsFailureDomainZoneAntiAffinity() {
-				antiAffinities := set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
-				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName))
-				set.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+				zoneAntiAffinityType := data.Cluster().Spec.ComponentsOverride.Etcd.ZoneAntiAffinity
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName, zoneAntiAffinityType)
+				set.Spec.Template.Spec.Affinity = resources.MergeAffinities(failureDomainZoneAntiAffinity, set.Spec.Template.Spec.Affinity)
 			}
 
 			set.Spec.Template.Spec.Volumes = volumes
