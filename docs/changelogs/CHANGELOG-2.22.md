@@ -4,6 +4,37 @@
 - [v2.22.1](#v2221)
 - [v2.22.2](#v2222)
 - [v2.22.3](#v2223)
+- [v2.22.4](#v2224)
+
+## [v2.22.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.4)
+
+### Bugfixes
+
+- Fix a bug where redundant webhooks for OSM were not being removed from the seed cluster ([#12308](https://github.com/kubermatic/kubermatic/pull/12308))
+- Fix storage calculation for openstack's resource quota when custom disk size was provided ([#12370](https://github.com/kubermatic/kubermatic/pull/12370))
+- The kubeconfig used by konnectivity's server component gets renewed automatically now, no longer causing konnectivity to stop working when the embedded certificate expires ([#12344](https://github.com/kubermatic/kubermatic/pull/12344))
+
+### Updates
+
+- Add support for Kubernetes 1.24.15, 1.25.11 and 1.26.6 (fixing CVE-2023-2431, CVE-2023-2727 and CVE-2023-2728) and set default Kubernetes version to 1.25.11 ([#12375](https://github.com/kubermatic/kubermatic/pull/12375))
+- Force update for canal below 3.22 on k8s version 1.26 and above ([#12360](https://github.com/kubermatic/kubermatic/pull/12360))
+- Update machine-controller to [v1.56.3](https://github.com/kubermatic/machine-controller/releases/tag/v1.56.3) ([#12392](https://github.com/kubermatic/kubermatic/pull/12392))
+- Update KubeOne to [v1.6.2](https://github.com/kubermatic/kubeone/releases/tag/v1.6.2) ([#12392](https://github.com/kubermatic/kubermatic/pull/12392))
+
+### Misc
+
+- Limit EtcdDatabaseHighFragmentationRatio rule to avoid triggering excessively for small etcd instances ([#12318](https://github.com/kubermatic/kubermatic/pull/12318))
+- Change `etcd-defragger` CronJob `SuccessfulJobsHistoryLimit` from 0 to 1 to save logs of the most recent successful job ([#12317](https://github.com/kubermatic/kubermatic/pull/12317))
+
+### New Feature
+
+- Add option to disable deployment of default network policies in KubeVirt cluster ([#12082](https://github.com/kubermatic/kubermatic/pull/12082))
+
+### Dashboard
+
+#### Bugfixes
+
+- Allow removing cluster label when PodNodeSelector admission plugin and clusterDefaultNodeSelector namespace are set ([#5984](https://github.com/kubermatic/dashboard/pull/5984))
 
 ## [v2.22.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.3)
 

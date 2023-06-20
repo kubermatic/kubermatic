@@ -10,6 +10,22 @@
 - [v2.21.7](#v2217)
 - [v2.21.8](#v2218)
 - [v2.21.9](#v2219)
+- [v2.21.10](#v22110)
+
+## [v2.21.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.10)
+
+### Bugfixes
+
+- The kubeconfig used by konnectivity's server component gets renewed automatically now, no longer causing konnectivity to stop working when the embedded certificate expires ([#12346](https://github.com/kubermatic/kubermatic/pull/12346))
+
+### Updates
+
+- Add support for Kubernetes 1.24.15 (fixing CVE-2023-2431, CVE-2023-2727 and CVE-2023-2728) ([#12376](https://github.com/kubermatic/kubermatic/pull/12376))
+- Update machine-controller to [v1.54.7](https://github.com/kubermatic/machine-controller/releases/tag/v1.54.7) ([#12391](https://github.com/kubermatic/kubermatic/pull/12391))
+
+### Misc
+
+- Change `etcd-defragger` CronJob `SuccessfulJobsHistoryLimit` from 0 to 1 to save logs of the most recent successful job ([#12319](https://github.com/kubermatic/kubermatic/pull/12319))
 
 ## [v2.21.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.9)
 
