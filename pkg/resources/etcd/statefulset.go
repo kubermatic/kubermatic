@@ -314,7 +314,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 			if data.SupportsFailureDomainZoneAntiAffinity() {
 				zoneAntiAffinityType := data.Cluster().Spec.ComponentsOverride.Etcd.ZoneAntiAffinity
 				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(resources.EtcdStatefulSetName, zoneAntiAffinityType)
-				set.Spec.Template.Spec.Affinity = resources.MergeAffinities(failureDomainZoneAntiAffinity, set.Spec.Template.Spec.Affinity)
+				set.Spec.Template.Spec.Affinity = resources.MergeAffinities(set.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 
 			set.Spec.Template.Spec.Volumes = volumes
