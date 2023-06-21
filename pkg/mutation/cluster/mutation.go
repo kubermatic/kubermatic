@@ -114,8 +114,9 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 
 	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
 
-		// This part handles Canal version upgrade for clusters with Kubernetes version 1.26 and higher,
-		// where the minimal Canal version is v3.23.
+		// This part handles Canal version upgrade for clusters with Kubernetes version 1.25 and higher,
+		// where the minimal Canal version is v3.23. We need to check the target cluster version here to ensure,
+		// the upgrade happens at the same time.
 		cniVersion, err := semverlib.NewVersion(newCluster.Spec.CNIPlugin.Version)
 		if err != nil {
 			return field.Invalid(field.NewPath("spec", "cniPlugin", "version"), newCluster.Spec.CNIPlugin.Version, err.Error())
