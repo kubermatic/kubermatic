@@ -62,14 +62,14 @@ func antiAffinity(app string, antiAffinity kubermaticv1.AntiAffinityType, topolo
 	if antiAffinity == kubermaticv1.AntiAffinityTypeRequired {
 		return &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: podAffinityTerm(app, TopologyKeyZone),
+				RequiredDuringSchedulingIgnoredDuringExecution: podAffinityTerm(app, topologyKey),
 			},
 		}
 	}
 
 	return &corev1.Affinity{
 		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm(app, TopologyKeyZone),
+			PreferredDuringSchedulingIgnoredDuringExecution: weightedPodAffinityTerm(app, topologyKey),
 		},
 	}
 }
