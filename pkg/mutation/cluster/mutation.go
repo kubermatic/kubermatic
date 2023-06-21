@@ -22,7 +22,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -114,21 +113,6 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 	}
 
 	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
-		// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
-		// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
-		// are not supported anymore.
-		if newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
-			upgradeConstraint, err := semverlib.NewConstraint(">= 1.22")
-			if err != nil {
-				return field.InternalError(nil, fmt.Errorf("parsing CNI upgrade constraint failed: %w", err))
-			}
-			if curVersion.String() != "" && upgradeConstraint.Check(curVersion.Semver()) {
-				newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
-				}
-			}
-		}
 
 		// This part handles Canal version upgrade for clusters with Kubernetes version 1.26 and higher,
 		// where the minimal Canal version is v3.23.
