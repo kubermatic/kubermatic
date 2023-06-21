@@ -580,10 +580,10 @@ func TestMutator(t *testing.T) {
 			),
 		},
 		{
-			name: "CNI plugin version bump to v3.23 on k8s version upgrade to 1.26",
+			name: "CNI plugin version bump to v3.23 on k8s version upgrade to 1.25",
 			oldCluster: rawClusterGen{
 				Name:    "foo",
-				Version: *semver.NewSemverOrDie("1.25"),
+				Version: *semver.NewSemverOrDie("1.24"),
 				CloudSpec: kubermaticv1.CloudSpec{
 					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 					DatacenterName: "openstack-dc",
@@ -608,7 +608,7 @@ func TestMutator(t *testing.T) {
 			}.Do(),
 			newCluster: rawClusterGen{
 				Name:    "foo",
-				Version: *semver.NewSemverOrDie("1.26"),
+				Version: *semver.NewSemverOrDie("1.25"),
 				CloudSpec: kubermaticv1.CloudSpec{
 					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 					DatacenterName: "openstack-dc",
