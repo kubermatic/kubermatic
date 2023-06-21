@@ -40,13 +40,10 @@ elif [[ "$GIT_BRANCH" =~ release/v[0-9]+.* ]]; then
   TAGS="$TAGS $RELEASE_LATEST"
 fi
 
-apt install time -y
-
 if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
   echodate "Logging into Quay"
   start_docker_daemon_ci
   retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-  retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
   echodate "Successfully logged into Quay"
 fi
 
@@ -98,7 +95,7 @@ if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
 
   set -f # prevent globbing, do word splitting
   # shellcheck disable=SC2086
-  retry 5 ./hack/release-docker-images.sh $TAGS
+  retry 1 ./hack/release-docker-images.sh $TAGS
   echodate "Successfully finished building and pushing quay images"
   unset TEST_NAME
 fi
