@@ -35,11 +35,8 @@ func FailureDomainZoneAntiAffinity(app string, antiAffinityType kubermaticv1.Ant
 }
 
 func MergeAffinities(a *corev1.Affinity, b *corev1.Affinity) *corev1.Affinity {
-	mergedAffinity := &corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{},
-	}
 	if a == nil && b == nil {
-		return mergedAffinity
+		return a
 	}
 	if a == nil {
 		return b
@@ -47,15 +44,15 @@ func MergeAffinities(a *corev1.Affinity, b *corev1.Affinity) *corev1.Affinity {
 	if b == nil {
 		return a
 	}
-	mergedAffinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(
+	a.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution = append(
 		a.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution,
 		b.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution...,
 	)
-	mergedAffinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(
+	a.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = append(
 		a.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution,
 		b.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution...,
 	)
-	return mergedAffinity
+	return a
 }
 
 func antiAffinity(app string, antiAffinity kubermaticv1.AntiAffinityType, topologyKey string) *corev1.Affinity {
