@@ -108,12 +108,11 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 	// just because spec.Version might say 1.23 doesn't say that the cluster is already on 1.23,
 	// so for all feature toggles and migrations we should base this on the actual, current apiserver
 	curVersion := newCluster.Status.Versions.ControlPlane
-	if curVersion == "" {
+	if curVersion.String() == "" {
 		curVersion = newCluster.Spec.Version
 	}
 
 	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
-
 		// This part handles Canal version upgrade for clusters with Kubernetes version 1.25 and higher,
 		// where the minimal Canal version is v3.23. We need to check the target cluster version here to ensure,
 		// the upgrade happens at the same time.
