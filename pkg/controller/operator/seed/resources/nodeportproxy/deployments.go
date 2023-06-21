@@ -170,11 +170,11 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 					Resources: seed.Spec.NodeportProxy.Envoy.Resources,
 				},
 			}
-			d.Spec.Template.Spec.Affinity = HostnameAntiAffinity(EnvoyDeploymentName)
+			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(EnvoyDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
+
 			if supportsFailureDomainZoneAntiAffinity {
-				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
-				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(EnvoyDeploymentName))
-				d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(EnvoyDeploymentName, kubermaticv1.AntiAffinityTypePreferred)
+				d.Spec.Template.Spec.Affinity = resources.MergeAffinities(d.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
@@ -188,31 +188,6 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 
 			return d, nil
 		}
-	}
-}
-
-func HostnameAntiAffinity(app string) *corev1.Affinity {
-	return &corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			PreferredDuringSchedulingIgnoredDuringExecution: hostnameAntiAffinity(app),
-		},
-	}
-}
-
-func hostnameAntiAffinity(app string) []corev1.WeightedPodAffinityTerm {
-	return []corev1.WeightedPodAffinityTerm{
-		// Avoid that we schedule multiple same-kind pods of a cluster on a single node
-		{
-			Weight: 10,
-			PodAffinityTerm: corev1.PodAffinityTerm{
-				LabelSelector: &metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						resources.AppLabelKey: app,
-					},
-				},
-				TopologyKey: resources.TopologyKeyHostname,
-			},
-		},
 	}
 }
 

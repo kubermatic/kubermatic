@@ -308,9 +308,8 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 
 			d.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(envoyAppLabelValue, kubermaticv1.AntiAffinityTypePreferred)
 			if data.SupportsFailureDomainZoneAntiAffinity() {
-				antiAffinities := d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution
-				antiAffinities = append(antiAffinities, resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue))
-				d.Spec.Template.Spec.Affinity.PodAntiAffinity.PreferredDuringSchedulingIgnoredDuringExecution = antiAffinities
+				failureDomainZoneAntiAffinity := resources.FailureDomainZoneAntiAffinity(envoyAppLabelValue, kubermaticv1.AntiAffinityTypePreferred)
+				d.Spec.Template.Spec.Affinity = resources.MergeAffinities(d.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{{
