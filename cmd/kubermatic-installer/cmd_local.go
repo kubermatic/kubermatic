@@ -53,8 +53,11 @@ import (
 )
 
 const (
-	nip   = "nip.io"
-	sslip = "sslip.io"
+	nip                  = "nip.io"
+	sslip                = "sslip.io"
+	kkpDefaultLogin      = "kubermatic@example.com"
+	kkpDefaultPassword   = "password"
+	localKindTeardownCmd = "kind delete cluster -n kkp-cluster"
 )
 
 var (
@@ -342,7 +345,11 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 		}
 		installKubevirt(logger, dir, helmClient, opt)
 		endpoint := installKubermatic(logger, dir, kubeClient, helmClient, opt)
+		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)
+		logger.Infof("  Default login:    %v", kkpDefaultLogin)
+		logger.Infof("  Default password: %v\n", kkpDefaultPassword)
+		logger.Infof("You can tear down the environment by %q", localKindTeardownCmd)
 		return nil
 	})
 }
