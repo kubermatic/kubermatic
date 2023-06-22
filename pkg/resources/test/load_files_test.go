@@ -152,6 +152,18 @@ var (
 			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
+		"vcd": {
+			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),
+			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
+				Username:     "vcd-username",
+				Password:     "vcd-password",
+				APIToken:     "vcd-api-token",
+				Organization: "vcd-organization",
+				VDC:          "vcd-vdc",
+				OVDCNetwork:  "vcd-ovdc-network",
+				VApp:         "vcd-vapp",
+			},
+		},
 	}
 
 	config = &kubermaticv1.KubermaticConfiguration{
@@ -203,6 +215,14 @@ var (
 				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
 				IgnoreVolumeAZ:   true,
 				Region:           "cbk",
+			},
+			VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
+				URL:                   "https://example.com/",
+				DefaultCatalog:        "default-catalog",
+				DefaultStorageProfile: "default-storage-profile",
+				Templates: kubermaticv1.ImageList{
+					providerconfig.OperatingSystemUbuntu: "ubuntu",
+				},
 			},
 		},
 	}
