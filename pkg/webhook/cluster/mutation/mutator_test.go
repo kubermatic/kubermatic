@@ -520,70 +520,10 @@ func TestMutator(t *testing.T) {
 			),
 		},
 		{
-			name: "Unsupported CNI plugin version bump on k8s version upgrade",
+			name: "CNI plugin version bump to v3.23 on k8s version upgrade to 1.25",
 			oldCluster: rawClusterGen{
-				Name:    "foo",
-				Version: *semver.NewSemverOrDie("1.23"),
-				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
-				},
-				ExternalCloudProvider: true,
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "example.local",
-					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: cni.CanalCNILastUnspecifiedVersion,
-				},
-				Features: map[string]bool{
-					kubermaticv1.ApiserverNetworkPolicy:    true,
-					kubermaticv1.KubeSystemNetworkPolicies: true,
-				},
-			}.Do(),
-			newCluster: rawClusterGen{
 				Name:    "foo",
 				Version: *semver.NewSemverOrDie("1.24"),
-				CloudSpec: kubermaticv1.CloudSpec{
-					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
-					DatacenterName: "openstack-dc",
-					Openstack:      &kubermaticv1.OpenstackCloudSpec{},
-				},
-				ExternalCloudProvider: true,
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					IPFamily:                 kubermaticv1.IPFamilyIPv4,
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
-					DNSDomain:                "example.local",
-					ProxyMode:                resources.IPTablesProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: cni.CanalCNILastUnspecifiedVersion,
-				},
-				Features: map[string]bool{
-					kubermaticv1.ApiserverNetworkPolicy:    true,
-					kubermaticv1.KubeSystemNetworkPolicies: true,
-				},
-			}.Do(),
-			wantAllowed: true,
-			wantPatches: append(
-				defaultPatches,
-				jsonpatch.NewOperation("replace", "/spec/cniPlugin/version", cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal)),
-			),
-		},
-		{
-			name: "CNI plugin version bump to v3.23 on k8s version upgrade to 1.26",
-			oldCluster: rawClusterGen{
-				Name:    "foo",
-				Version: *semver.NewSemverOrDie("1.25"),
 				CloudSpec: kubermaticv1.CloudSpec{
 					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 					DatacenterName: "openstack-dc",
@@ -608,7 +548,7 @@ func TestMutator(t *testing.T) {
 			}.Do(),
 			newCluster: rawClusterGen{
 				Name:    "foo",
-				Version: *semver.NewSemverOrDie("1.26"),
+				Version: *semver.NewSemverOrDie("1.25"),
 				CloudSpec: kubermaticv1.CloudSpec{
 					ProviderName:   string(kubermaticv1.OpenstackCloudProvider),
 					DatacenterName: "openstack-dc",

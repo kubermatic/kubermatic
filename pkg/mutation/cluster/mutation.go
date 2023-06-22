@@ -22,7 +22,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -109,29 +108,14 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 	// just because spec.Version might say 1.23 doesn't say that the cluster is already on 1.23,
 	// so for all feature toggles and migrations we should base this on the actual, current apiserver
 	curVersion := newCluster.Status.Versions.ControlPlane
-	if curVersion == "" {
+	if curVersion.String() == "" {
 		curVersion = newCluster.Spec.Version
 	}
 
 	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
-		// This part handles CNI upgrade from unsupported CNI version to the default Canal version.
-		// This upgrade is necessary for k8s versions >= 1.22, where v1beta1 CRDs used in old Canal version (v3.8)
-		// are not supported anymore.
-		if newCluster.Spec.CNIPlugin.Version == cni.CanalCNILastUnspecifiedVersion {
-			upgradeConstraint, err := semverlib.NewConstraint(">= 1.22")
-			if err != nil {
-				return field.InternalError(nil, fmt.Errorf("parsing CNI upgrade constraint failed: %w", err))
-			}
-			if curVersion.String() != "" && upgradeConstraint.Check(curVersion.Semver()) {
-				newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
-				}
-			}
-		}
-
-		// This part handles Canal version upgrade for clusters with Kubernetes version 1.26 and higher,
-		// where the minimal Canal version is v3.23.
+		// This part handles Canal version upgrade for clusters with Kubernetes version 1.25 and higher,
+		// where the minimal Canal version is v3.23. We need to check the target cluster version here to ensure,
+		// the upgrade happens at the same time.
 		cniVersion, err := semverlib.NewVersion(newCluster.Spec.CNIPlugin.Version)
 		if err != nil {
 			return field.Invalid(field.NewPath("spec", "cniPlugin", "version"), newCluster.Spec.CNIPlugin.Version, err.Error())
@@ -140,11 +124,11 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 		if err != nil {
 			return field.InternalError(nil, fmt.Errorf("semver constraint parsing failed: %w", err))
 		}
-		equalOrHigherThan126, err := semverlib.NewConstraint(">= 1.26")
+		equalOrHigherThan125, err := semverlib.NewConstraint(">= 1.25")
 		if err != nil {
 			return field.InternalError(nil, fmt.Errorf("semver constraint parsing failed: %w", err))
 		}
-		if lowerThan323.Check(cniVersion) && curVersion.String() != "" && equalOrHigherThan126.Check(curVersion.Semver()) {
+		if lowerThan323.Check(cniVersion) && newCluster.Spec.Version.String() != "" && equalOrHigherThan125.Check(newCluster.Spec.Version.Semver()) {
 			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,
 				Version: "v3.23",
