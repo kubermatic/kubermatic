@@ -171,7 +171,8 @@ var kindLocalSeed = kubermaticv1.Seed{
 				Location: "Hamburg", // TODO: some clever heuristic or geolocation service?
 				Spec: kubermaticv1.DatacenterSpec{
 					Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
-						DNSPolicy: "ClusterFirst",
+						EnableDefaultNetworkPolicies: ptr(false),
+						DNSPolicy:                    "ClusterFirst",
 						Images: kubermaticv1.KubeVirtImageSources{
 							HTTP: &kubermaticv1.KubeVirtHTTPSource{
 								OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
