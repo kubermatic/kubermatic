@@ -42,6 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,8 +53,15 @@ import (
 )
 
 const (
-	nip   = "nip.io"
-	sslip = "sslip.io"
+	nip                  = "nip.io"
+	sslip                = "sslip.io"
+	kkpDefaultLogin      = "kubermatic@example.com"
+	kkpDefaultPassword   = "password"
+	localKindTeardownCmd = "kind delete cluster -n kkp-cluster"
+)
+
+var (
+	supportedKindVersion = semver.NewSemverOrDie("0.17.0")
 )
 
 type LocalOptions struct {
@@ -103,6 +111,22 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 			if err != nil {
 				logger.Fatalf("failed to find 'kind' binary: %v", err)
 			}
+			out, err := exec.Command("kind", "version").CombinedOutput()
+			if err != nil {
+				logger.Fatalf("failed to determine 'kind' version, requires at least %v: %v\n%v", supportedKindVersion, err, string(out))
+			}
+			submatch := regexp.MustCompile(`.* v([^ ]*) .*`).FindStringSubmatch(string(out))
+			if len(submatch) != 2 {
+				logger.Fatalf("failed to parse 'kind' version, requires at least %v: %v", supportedKindVersion, string(out))
+			}
+			kindVersion, err := semver.NewSemver(submatch[1])
+			if err != nil {
+				logger.Fatalf("failed to process 'kind' semver %q, requires at least %v: %v", submatch[1], supportedKindVersion, string(out))
+			}
+			if kindVersion.LessThan(supportedKindVersion) {
+				logger.Fatalf("please update your 'kind' %v, requires at least %v", kindVersion, supportedKindVersion)
+			}
+
 			_, err = exec.LookPath("helm")
 			if err != nil {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
@@ -321,7 +345,11 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 		}
 		installKubevirt(logger, dir, helmClient, opt)
 		endpoint := installKubermatic(logger, dir, kubeClient, helmClient, opt)
+		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)
+		logger.Infof("  Default login:    %v", kkpDefaultLogin)
+		logger.Infof("  Default password: %v\n", kkpDefaultPassword)
+		logger.Infof("You can tear down the environment by %q", localKindTeardownCmd)
 		return nil
 	})
 }
