@@ -71,7 +71,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		WithVlanID(secrets.Anexia.VlanID).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

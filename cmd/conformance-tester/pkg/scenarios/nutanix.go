@@ -65,7 +65,7 @@ func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets
 		WithDiskSize(nutanixDiskSize).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

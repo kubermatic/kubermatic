@@ -66,7 +66,7 @@ func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets
 		WithDiskSizeGB(10).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

@@ -116,6 +116,14 @@ func (b *RHELSpecBuilder) WithDistUpgradeOnBoot(enable bool) *RHELSpecBuilder {
 	return b
 }
 
+func (b *RHELSpecBuilder) SetSubscriptionDetails(username, password, offlineToken string) *RHELSpecBuilder {
+	b.RHELSubscriptionManagerUser = username
+	b.RHELSubscriptionManagerPassword = password
+	b.RHSMOfflineToken = offlineToken
+	b.AttachSubscription = username != "" && password != ""
+	return b
+}
+
 func (b *RHELSpecBuilder) WithPatch(patch func(*RHELSpecBuilder)) *RHELSpecBuilder {
 	patch(b)
 	return b

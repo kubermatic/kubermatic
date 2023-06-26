@@ -102,10 +102,10 @@ func (s *baseScenario) IsValid() error {
 	return nil
 }
 
-func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, replicas int, cloudProviderSpec interface{}, sshPubKeys []string) (clusterv1alpha1.MachineDeployment, error) {
+func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, replicas int, cloudProviderSpec interface{}, sshPubKeys []string, secrets types.Secrets) (clusterv1alpha1.MachineDeployment, error) {
 	replicas32 := int32(replicas)
 
-	osSpec, err := operatingsystem.DefaultSpec(s.operatingSystem, s.cloudProvider)
+	osSpec, err := s.getOperatingSystemSpec(secrets)
 	if err != nil {
 		return clusterv1alpha1.MachineDeployment{}, err
 	}
@@ -154,4 +154,19 @@ func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, re
 			},
 		},
 	}, nil
+}
+
+func (s *baseScenario) getOperatingSystemSpec(secrets types.Secrets) (interface{}, error) {
+	// inject RHEL credentials when needed
+	if s.operatingSystem == providerconfig.OperatingSystemRHEL {
+		return operatingsystem.NewRHELSpecBuilder(s.cloudProvider).
+			SetSubscriptionDetails(
+				secrets.RHEL.SubscriptionUser,
+				secrets.RHEL.SubscriptionPassword,
+				secrets.RHEL.OfflineToken,
+			).
+			Build(), nil
+	}
+
+	return operatingsystem.DefaultSpec(s.operatingSystem, s.cloudProvider)
 }
