@@ -40,7 +40,7 @@ func clusterIsolationNetworkPolicyReconciler(clusterIp string, nameservers []str
 
 	// This address might only be set after the control plane has initialized.
 	var apiServerRule networkingv1.NetworkPolicyEgressRule
-	if apiServerCIDR != "" {
+	if clusterIp != "" {
 		apiServerRule = networkingv1.NetworkPolicyEgressRule{
 			To: []networkingv1.NetworkPolicyPeer{
 				{
