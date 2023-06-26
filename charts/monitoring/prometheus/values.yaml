@@ -68,7 +68,7 @@ prometheus:
     # Enable Blackbox Exporter scraping rules, this requires to deploy blackbox exporter in the cluster.
     blackBoxExporter:
       enabled: false
-      #url: blackbox-exporter:9115
+      url: blackbox-exporter:9115
     # Enable if minio is running with tls in the same cluster
     minio:
       tls:
