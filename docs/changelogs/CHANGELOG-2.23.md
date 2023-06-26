@@ -112,7 +112,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 #### Calico
 
 - Add support for Canal 3.25 ([#12297](https://github.com/kubermatic/kubermatic/pull/12297))
-- Deprecate Canal 3.22 and enforce update for Canal below 3.22 on Kubernetes 1.25 and above ([#12347](https://github.com/kubermatic/kubermatic/pull/12347))
+- Deprecate Canal 3.22 and enforce update for Canal below 3.22 on Kubernetes 1.25 and above ([#12347](https://github.com/kubermatic/kubermatic/pull/12347), [#12403](https://github.com/kubermatic/kubermatic/pull/12403))
 
 #### Cilium
 
@@ -168,11 +168,13 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Use seed proxy configuration for seed deployed webhook ([#12070](https://github.com/kubermatic/kubermatic/pull/12070))
 - Use serializable etcd liveness probes and add a startup probe, as per upstream recommendations ([#12190](https://github.com/kubermatic/kubermatic/pull/12190))
 - The validating webhook for `Cluster` resources now properly checks for provider incompatibilities ([#11996](https://github.com/kubermatic/kubermatic/pull/11996))
+- nginx-ingress-controller: set default memory limit to 1Gi ([#12411](https://github.com/kubermatic/kubermatic/pull/12411))
 
 ### Updates
 
 - Update machine-controller to [1.57.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.57.0) ([#12390](https://github.com/kubermatic/kubermatic/pull/12390))
 - Update KubeOne to [1.6.2](https://github.com/kubermatic/kubeone/releases/tag/v1.6.2) ([#12390](https://github.com/kubermatic/kubermatic/pull/12390))
+- Update operating-system-manager (OSM) to [1.3.0](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.3.0) ([#12410](https://github.com/kubermatic/kubermatic/pull/12410))
 - Update Alertmanager to 0.25.0 ([#12237](https://github.com/kubermatic/kubermatic/pull/12237))
 - Update blackbox-exporter to 0.23.0 ([#12235](https://github.com/kubermatic/kubermatic/pull/12235))
 - Update cert-manager to 1.11.1 ([#12243](https://github.com/kubermatic/kubermatic/pull/12243))
