@@ -556,6 +556,14 @@ spec:
         version: < 1.24.0
       - condition: inTreeProvider
         operation: CREATE
+        provider: aws
+        version: '>= 1.27.0'
+      - condition: inTreeProvider
+        operation: UPGRADE
+        provider: aws
+        version: '>= 1.27.0'
+      - condition: inTreeProvider
+        operation: CREATE
         provider: openstack
         version: '>= 1.26.0'
       - condition: inTreeProvider
