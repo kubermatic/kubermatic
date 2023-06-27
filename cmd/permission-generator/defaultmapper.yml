@@ -97,6 +97,11 @@ modules:
           "*":
             actions:
               - "ec2:DescribeVpcs"
+      DescribeVpcAttribute:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeVpcAttribute"
       RunInstances:
         permissions:
           "*":
