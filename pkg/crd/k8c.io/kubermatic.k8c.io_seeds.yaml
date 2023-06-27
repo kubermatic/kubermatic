@@ -540,6 +540,20 @@ spec:
                                     required:
                                       - operatingSystems
                                     type: object
+                                  registry:
+                                    description: Registry represents a link to OCI registry image.
+                                    properties:
+                                      operatingSystems:
+                                        additionalProperties:
+                                          additionalProperties:
+                                            type: string
+                                          description: OSVersions defines a map of OS version and the source to download the image.
+                                          type: object
+                                        description: OperatingSystems represents list of supported operating-systems with their URLs.
+                                        type: object
+                                    required:
+                                      - operatingSystems
+                                    type: object
                                 type: object
                               infraStorageClasses:
                                 description: 'Optional: InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names that will be used to initialise StorageClasses in the tenant cluster. In the tenant cluster, the created StorageClass name will have as name: kubevirt-<infra-storageClass-name>'
