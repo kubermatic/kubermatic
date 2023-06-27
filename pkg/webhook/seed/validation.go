@@ -256,10 +256,22 @@ func validateEtcdBackupConfiguration(ctx context.Context, seedClient ctrlruntime
 
 func validateKubeVirtSupportedOS(datacenterSpec *kubermaticv1.DatacenterSpecKubevirt) error {
 	if datacenterSpec != nil && datacenterSpec.Images.HTTP != nil {
-		for os := range datacenterSpec.Images.HTTP.OperatingSystems {
-			if _, exist := kubermaticv1.SupportedKubeVirtOS[os]; !exist {
-				return fmt.Errorf("invalid/not supported operating system specified: %s", os)
-			}
+		if err := validateKubeVirtSupportedOSHelper(datacenterSpec.Images.HTTP); err != nil {
+			return err
+		}
+	}
+	if datacenterSpec != nil && datacenterSpec.Images.Registry != nil {
+		if err := validateKubeVirtSupportedOSHelper(datacenterSpec.Images.Registry); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateKubeVirtSupportedOSHelper(src *kubermaticv1.KubeVirtHTTPSource) error {
+	for os := range src.OperatingSystems {
+		if _, exist := kubermaticv1.SupportedKubeVirtOS[os]; !exist {
+			return fmt.Errorf("invalid/not supported operating system specified: %s", os)
 		}
 	}
 	return nil

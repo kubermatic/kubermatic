@@ -753,6 +753,9 @@ var (
 type KubeVirtImageSources struct {
 	// HTTP represents a http source.
 	HTTP *KubeVirtHTTPSource `json:"http,omitempty"`
+
+	// Registry represents a link to OCI registry image.
+	Registry *KubeVirtHTTPSource `json:"registry,omitempty"`
 }
 
 // KubeVirtHTTPSource represents list of images and their versions that can be downloaded over HTTP.
