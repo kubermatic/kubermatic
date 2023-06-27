@@ -21,16 +21,11 @@ type FuncMetadata struct {
 type FuncInvocations map[FuncCallID]FuncMetadata
 
 // SearchFuncInvocationsForPackages returns all unique functions that the passed packages use that match the filter.
-// You can supply a list of full go module paths that should be searched and a regex string the imports should match
+// You can supply a list of full go module paths that should be searched and a regex the imports should match
 // example:  ([]string{"github.com/my-module/my-package"}, "github.com/aws/aws-sdk-go-v2/*") => returns all functions inside your package
 // which are from any of the aws-sdk-go-v2 packages.
-func SearchFuncInvocationsForPackages(pkgToSearch []string, filter string) (FuncInvocations, error) {
+func SearchFuncInvocationsForPackages(pkgToSearch []string, filter *regexp.Regexp) (FuncInvocations, error) {
 	res := make(map[FuncCallID]FuncMetadata)
-
-	r, err := regexp.Compile(filter)
-	if err != nil {
-		return nil, err
-	}
 
 	conf := &packages.Config{Mode: packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo}
 	pkgs, err := packages.Load(conf, pkgToSearch...)
@@ -57,7 +52,7 @@ func SearchFuncInvocationsForPackages(pkgToSearch []string, filter string) (Func
 				}
 
 				// filter out only funcs where package matches
-				if r.Match([]byte(obj.Pkg().Path())) {
+				if filter.Match([]byte(obj.Pkg().Path())) {
 					id := FuncCallID{ModulePath: obj.Pkg().Path(), Funcname: obj.Name()}
 					res[id] = FuncMetadata{Definition: pkg.Fset.Position(obj.Pos()).String()}
 					// TODO turn into a log debug statement

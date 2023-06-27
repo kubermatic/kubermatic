@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"testing"
 	"text/tabwriter"
 )
@@ -26,7 +27,7 @@ func TestAddPolicyStatement(t *testing.T) {
 
 var pkgs = []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws", "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"}
 
-const filter = "github.com/aws/aws-sdk-go-v2/*"
+var filter = regexp.MustCompile("github.com/aws/aws-sdk-go-v2/*")
 
 func TestSearchFuncInvocationsForPackages(t *testing.T) {
 	res, err := SearchFuncInvocationsForPackages(pkgs, filter)
