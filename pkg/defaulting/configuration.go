@@ -330,6 +330,21 @@ var (
 				Condition: kubermaticv1.ExternalCloudProviderCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
+			// In-tree cloud provider for AWS is not supported starting with Kubernetes 1.27.
+			// This can be removed once we drop support for Kubernetes 1.27 (note: not for 1.26, because
+			// at that point we still might have clusters that needs to be upgraded from 1.26 to 1.27).
+			{
+				Provider:  string(kubermaticv1.AWSCloudProvider),
+				Version:   ">= 1.27.0",
+				Condition: kubermaticv1.InTreeCloudProviderCondition,
+				Operation: kubermaticv1.CreateOperation,
+			},
+			{
+				Provider:  string(kubermaticv1.AWSCloudProvider),
+				Version:   ">= 1.27.0",
+				Condition: kubermaticv1.InTreeCloudProviderCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
 			// In-tree cloud provider for OpenStack is not supported starting with Kubernetes 1.26.
 			// This can be removed once we drop support for Kubernetes 1.26 (note: not for 1.25, because
 			// at that point we still might have clusters that needs to be upgraded from 1.25 to 1.26).
