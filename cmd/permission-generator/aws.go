@@ -168,7 +168,7 @@ type resourceDefinition struct {
 //go:embed defaultmapper.yml
 var defaultmapperyml []byte
 
-func NewDefaultMapper() (*AWSPermissionMapper, error) {
+func NewAWSDefaultMapper() (*AWSPermissionMapper, error) {
 	mapper := &AWSPermissionMapper{}
 	err := yaml.Unmarshal(defaultmapperyml, mapper)
 	if err != nil {

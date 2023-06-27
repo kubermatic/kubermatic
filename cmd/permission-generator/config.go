@@ -13,6 +13,7 @@ type Config struct {
 	Provider string
 	Pkgs     []string
 	Filter   *regexp.Regexp
+	PoC      PolicyCreator
 }
 
 var defaultConfig = Config{
@@ -58,6 +59,14 @@ func (c *Config) InitAndValidate() error {
 		return fmt.Errorf("Provided filter '%s', is not a valid regex: %w", filter, err)
 	}
 	c.Filter = regex
+
+	if c.Provider == "aws" {
+		mapper, err := NewAWSDefaultMapper()
+		if err != nil {
+			return err
+		}
+		c.PoC = NewAWSPolicyCreator(mapper)
+	}
 
 	return nil
 }

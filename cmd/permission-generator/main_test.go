@@ -60,7 +60,7 @@ func TestAWSPermissionFuncMapping(t *testing.T) {
 }
 
 func TestGeneratingAWSPolicy(t *testing.T) {
-	mapper, err := NewDefaultMapper()
+	mapper, err := NewAWSDefaultMapper()
 	if err != nil {
 		t.Fatal(err)
 	}

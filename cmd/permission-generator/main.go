@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 
 	"go.uber.org/zap"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -31,6 +30,18 @@ func run(log *zap.SugaredLogger) error {
 		return errors.Join(InvalidConfigError{}, err)
 	}
 
+	invoc, err := SearchFuncInvocationsForPackages(config.Pkgs, config.Filter)
+	if err != nil {
+		return err
+	}
+
+	policy, err := config.PoC.GeneratePolicy(invoc)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(policy))
+
 	return nil
 }
 
@@ -38,14 +49,6 @@ func createLogger() *zap.SugaredLogger {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	return rawLog.Sugar()
-}
-
-func policyForPackages(poc PolicyCreator, pkgsToSearch []string, filter *regexp.Regexp) ([]byte, error) {
-	invoc, err := SearchFuncInvocationsForPackages(pkgsToSearch, filter)
-	if err != nil {
-		return nil, err
-	}
-	return poc.GeneratePolicy(invoc)
 }
 
 func printHelp(w io.Writer) {
