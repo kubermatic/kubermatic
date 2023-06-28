@@ -38,6 +38,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Remove auto-upgrade rule for user clusters from 1.23 to 1.24. All user clusters must be migrated to Kubernetes 1.24 before updating to KKP 2.23 ([#12280](https://github.com/kubermatic/kubermatic/pull/12280))
 - Add support for Kubernetes 1.24.15, 1.25.11, 1.26.6 and 1.27.3 (fixing CVE-2023-2431, CVE-2023-2727 and CVE-2023-2728) ([#12374](https://github.com/kubermatic/kubermatic/pull/12374))
 - Set default Kubernetes version to 1.26.6 ([#12374](https://github.com/kubermatic/kubermatic/pull/12374))
+- Do not allow Kubernetes >= 1.27 with in-tree CCM on AWS ([#12417](https://github.com/kubermatic/kubermatic/pull/12417))
 
 #### Supported Versions
 
