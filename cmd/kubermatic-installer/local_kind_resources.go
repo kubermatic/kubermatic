@@ -174,14 +174,10 @@ var kindLocalSeed = kubermaticv1.Seed{
 						EnableDefaultNetworkPolicies: ptr(false),
 						DNSPolicy:                    "ClusterFirst",
 						Images: kubermaticv1.KubeVirtImageSources{
-							HTTP: &kubermaticv1.KubeVirtHTTPSource{
+							Registry: &kubermaticv1.KubeVirtHTTPSource{
 								OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
 									providerconfig.OperatingSystemUbuntu: map[string]string{
-										// TODO: create image-repo cache on the local cluster?
-										// the MD at the moment takes about 18 minutes to get ready which is too long
-										// could be worth to start downloading this in the beginning of the call, cache
-										// locally deployed image-repo and then speed up the MD startup
-										"22.04": "https://dev.kubermatic.io/kubevirt-images/images/ubuntu-22.04.img",
+										"22.04": "docker://docker.io/wozniakjan/kubevirt-ubuntu-22.04",
 									},
 								},
 							},
