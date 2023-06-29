@@ -127,7 +127,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 	}
 
 	// Watch on cluster events
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, clusterEventPredicate, workerlabel.Predicates(workerName)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}, clusterEventPredicate, workerlabel.Predicates(workerName)); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 

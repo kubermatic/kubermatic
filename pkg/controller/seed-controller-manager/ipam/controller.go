@@ -85,7 +85,7 @@ func Add(
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for clusters: %w", err)
 	}
 
@@ -110,7 +110,7 @@ func Add(
 		}
 		return requests
 	})
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, enqueueClustersForIPAMPool); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.IPAMPool{}), enqueueClustersForIPAMPool); err != nil {
 		return fmt.Errorf("failed to create watch for IPAM Pools: %w", err)
 	}
 

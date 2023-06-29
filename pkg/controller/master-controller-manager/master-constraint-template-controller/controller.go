@@ -82,14 +82,14 @@ func Add(ctx context.Context,
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.ConstraintTemplate{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.ConstraintTemplate{}),
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
 		return fmt.Errorf("failed to create watch for constraintTemplates: %w", err)
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Seed{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Seed{}),
 		enqueueAllConstraintTemplates(reconciler.masterClient, reconciler.log),
 		predicate.ByNamespace(namespace),
 	); err != nil {

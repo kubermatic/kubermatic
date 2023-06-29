@@ -84,7 +84,7 @@ func Add(masterMgr manager.Manager,
 	}
 
 	// Watch for changes to ResourceQuota
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ResourceQuota{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(masterMgr.GetCache(), &kubermaticv1.ResourceQuota{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch resource quotas: %w", err)
 	}
 

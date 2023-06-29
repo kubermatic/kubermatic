@@ -93,7 +93,7 @@ func Add(
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &corev1.Node{}}, &handler.Funcs{
+	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), &handler.Funcs{
 		CreateFunc:  func(e event.CreateEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
 		DeleteFunc:  func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
 		GenericFunc: func(e event.GenericEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },

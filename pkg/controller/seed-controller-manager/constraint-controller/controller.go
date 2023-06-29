@@ -122,7 +122,7 @@ func Add(ctx context.Context,
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Cluster{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
 		enqueueConstraints(reconciler.seedClient, reconciler.log, namespace),
 		workerlabel.Predicates(workerName),
 		opaPredicate(),
@@ -131,7 +131,7 @@ func Add(ctx context.Context,
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Constraint{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Constraint{}),
 		&handler.EnqueueRequestForObject{},
 		kubermaticpred.ByNamespace(namespace),
 	); err != nil {
@@ -139,7 +139,7 @@ func Add(ctx context.Context,
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Constraint{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Constraint{}),
 		handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: namespace}}}
 		}),

@@ -79,17 +79,13 @@ func Add(mgr manager.Manager,
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.KubermaticSetting{}}, &handler.EnqueueRequestForObject{},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.KubermaticSetting{}), &handler.EnqueueRequestForObject{},
 		utilpredicate.ByName(kubermaticv1.GlobalSettingsName), withSettingsEventFilter()); err != nil {
 		return fmt.Errorf("failed to create watch for kubermatic global settings: %w", err)
 	}
 
 	// Watch for creation of Project; we need to make sure that we create default project quotas, if required.
-	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Project{}},
-		enqueueProjectQuotas(reconciler.masterClient),
-		projectEventFilter(),
-	); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), enqueueProjectQuotas(reconciler.masterClient), projectEventFilter()); err != nil {
 		return fmt.Errorf("failed to create watch for projects: %w", err)
 	}
 

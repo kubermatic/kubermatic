@@ -120,7 +120,7 @@ func Add(
 	})
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate, workerNamePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), config), configEventHandler, namespacePredicate, workerNamePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", config, err)
 	}
 
@@ -169,13 +169,13 @@ func Add(
 	})
 
 	configMap := &corev1.ConfigMap{}
-	if err := c.Watch(&source.Kind{Type: configMap}, configMapEventHandler, namespacePredicate, versionChangedPredicate); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), configMap), configMapEventHandler, namespacePredicate, versionChangedPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", configMap, err)
 	}
 
 	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
 	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate, workerNamePredicate, versionChangedPredicate); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), seed), &handler.EnqueueRequestForObject{}, namespacePredicate, workerNamePredicate, versionChangedPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
@@ -206,13 +206,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	})
 
 	watch := func(t ctrlruntimeclient.Object, preds ...predicate.Predicate) error {
-		seedTypeWatch := &source.Kind{Type: t}
-
-		if err := seedTypeWatch.InjectCache(cache); err != nil {
-			return fmt.Errorf("failed to inject cache into watch for %T: %w", t, err)
-		}
-
-		if err := controller.Watch(seedTypeWatch, eventHandler, preds...); err != nil {
+		if err := controller.Watch(source.Kind(cache, t), eventHandler, preds...); err != nil {
 			return fmt.Errorf("failed to watch %T: %w", t, err)
 		}
 

@@ -75,7 +75,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 		return kubermaticv1helper.IsProjectServiceAccount(object.GetName())
 	})
 
-	if err = c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, isServiceAccount); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.User{}), &handler.EnqueueRequestForObject{}, isServiceAccount); err != nil {
 		return err
 	}
 
@@ -106,7 +106,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 		},
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, enqueueRelatedUsers, onlyNewProjects); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), enqueueRelatedUsers, onlyNewProjects); err != nil {
 		return err
 	}
 

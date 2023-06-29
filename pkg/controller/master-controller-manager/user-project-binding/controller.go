@@ -67,7 +67,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 	}
 
 	// Watch for changes to UserProjectBinding
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserProjectBinding{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return err
 	}
 
@@ -81,7 +81,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 	}
 
 	// Watch for changes in User resources to sync their UserProjectBinding resources
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, enqueueUserProjectBindingsForUser(r.Client, r.log)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.User{}), enqueueUserProjectBindingsForUser(r.Client, r.log)); err != nil {
 		return fmt.Errorf("failed to create watch for users: %w", err)
 	}
 

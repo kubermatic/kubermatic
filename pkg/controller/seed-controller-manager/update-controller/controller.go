@@ -90,12 +90,12 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, configGetter pr
 	}
 
 	// watch Cluster objects to react to spec.version changing
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 
 	// Watch Deployments in cluster namespaces to react to the control plane change over time
-	if err := c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &appsv1.Deployment{}), controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 

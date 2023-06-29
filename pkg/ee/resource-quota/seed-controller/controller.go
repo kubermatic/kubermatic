@@ -81,7 +81,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Cluster{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
 		enqueueResourceQuota(reconciler.seedClient, reconciler.log, workerName),
 		workerlabel.Predicates(workerName),
 		withClusterEventFilter(),
@@ -90,7 +90,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.ResourceQuota{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.ResourceQuota{}),
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seed resource quotas: %w", err)

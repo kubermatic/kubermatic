@@ -94,7 +94,7 @@ func newRuleGroupSyncReconciler(
 		}
 		return []reconcile.Request{{NamespacedName: nn}}
 	})
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, enqueueRuleGroup); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.RuleGroup{}), enqueueRuleGroup); err != nil {
 		return fmt.Errorf("failed to watch RuleGroup: %w", err)
 	}
 	return nil

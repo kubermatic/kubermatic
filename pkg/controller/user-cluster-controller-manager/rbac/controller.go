@@ -78,11 +78,11 @@ func Add(mgr manager.Manager, logger *zap.SugaredLogger, registerReconciledCheck
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, mapFn); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}), mapFn); err != nil {
 		return err
 	}
 	// Watch for changes to ClusterRoleBindings
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, mapFn); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRoleBinding{}), mapFn); err != nil {
 		return err
 	}
 

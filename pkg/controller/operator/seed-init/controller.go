@@ -67,7 +67,7 @@ func Add(
 	}
 
 	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, predicateutil.ByNamespace(namespace), predicate.ResourceVersionChangedPredicate{}); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), seed), &handler.EnqueueRequestForObject{}, predicateutil.ByNamespace(namespace), predicate.ResourceVersionChangedPredicate{}); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 

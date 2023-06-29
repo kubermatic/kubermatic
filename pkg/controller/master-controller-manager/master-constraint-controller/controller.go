@@ -82,7 +82,7 @@ func Add(ctx context.Context,
 	}
 
 	// Watch for changes to Constraints
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Constraint{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
+	if err := c.Watch(source.Kind(masterMgr.GetCache(), &kubermaticv1.Constraint{}), &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
 		return fmt.Errorf("failed to watch constraints: %w", err)
 	}
 

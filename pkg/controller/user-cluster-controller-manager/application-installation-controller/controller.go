@@ -93,7 +93,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	// update of the status with conditions or HelmInfo triggers an update event. To avoid reconciling in loop, we filter
 	// update event on generation. We also allow update events if annotations have changed so that the user can force a
 	// reconciliation without changing the spec.
-	if err = c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationInstallation{}}, &handler.EnqueueRequestForObject{}, predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})); err != nil {
+	if err = c.Watch(source.Kind(userMgr.GetCache(), &appskubermaticv1.ApplicationInstallation{}), &handler.EnqueueRequestForObject{}, predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})); err != nil {
 		return fmt.Errorf("failed to create watch for ApplicationInstallation: %w", err)
 	}
 

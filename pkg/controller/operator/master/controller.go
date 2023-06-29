@@ -91,7 +91,7 @@ func Add(
 	})
 
 	cfg := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), cfg), kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", cfg, err)
 	}
 
@@ -138,7 +138,7 @@ func Add(
 	}
 
 	for _, t := range namespacedTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
@@ -149,7 +149,7 @@ func Add(
 	}
 
 	for _, t := range globalOwnedTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
@@ -159,7 +159,7 @@ func Add(
 	}
 
 	for _, t := range globalTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
@@ -167,7 +167,7 @@ func Add(
 	// namespaces are not managed by the operator and so can use neither namespacePredicate
 	// nor ManagedByPredicate, but still need to get their labels reconciled
 	ns := &corev1.Namespace{}
-	if err := c.Watch(&source.Kind{Type: ns}, childEventHandler, predicateutil.ByName(namespace)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), ns), childEventHandler, predicateutil.ByName(namespace)); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", ns, err)
 	}
 

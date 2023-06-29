@@ -71,11 +71,11 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, owner
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterRoleComponentValue)); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}), &handler.EnqueueRequestForObject{}, predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterRoleComponentValue)); err != nil {
 		return fmt.Errorf("failed to establish watch for the ClusterRoles: %w", err)
 	}
 	// Watch for changes to ClusterRoleBindings
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, enqueueAPIBindings(mgr.GetClient()), predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterBindingComponentValue)); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRoleBinding{}), enqueueAPIBindings(mgr.GetClient()), predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterBindingComponentValue)); err != nil {
 		return fmt.Errorf("failed to establish watch for the ClusterRoleBindings: %w", err)
 	}
 

@@ -112,7 +112,7 @@ func Add(
 	customOSP.SetKind(customOperatingSystemProfileKind)
 
 	if err := c.Watch(
-		&source.Kind{Type: customOSP},
+		source.Kind(mgr.GetCache(), customOSP),
 		&handler.EnqueueRequestForObject{},
 		kubermaticpred.ByNamespace(namespace),
 	); err != nil {
@@ -121,7 +121,7 @@ func Add(
 
 	// Watch changes for OSPs and then enqueue all the clusters where OSM is enabled.
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Cluster{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
 		enqueueOperatingSystemProfiles(reconciler.seedClient, reconciler.log, namespace),
 		workerlabel.Predicates(workerName),
 		withEventFilter(),

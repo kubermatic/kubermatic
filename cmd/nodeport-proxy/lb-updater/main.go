@@ -105,7 +105,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to construct controller", zap.Error(err))
 	}
-	if err := ctrl.Watch(&source.Kind{Type: &corev1.Service{}}, controllerutil.EnqueueConst("")); err != nil {
+	if err := ctrl.Watch(source.Kind(mgr.GetCache(), &corev1.Service{}), controllerutil.EnqueueConst("")); err != nil {
 		log.Fatalw("Failed to add watch for Service", zap.Error(err))
 	}
 	if err := mgr.Start(ctx); err != nil {

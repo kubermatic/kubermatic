@@ -67,7 +67,7 @@ func Add(
 	nsPredicate := predicate.ByNamespace(namespace)
 
 	// watch all seeds in the given namespace
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Seed{}), &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 

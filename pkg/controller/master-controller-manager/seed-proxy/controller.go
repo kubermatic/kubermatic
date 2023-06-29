@@ -134,7 +134,7 @@ func Add(
 	ownedPredicate := predicateutil.ByLabel(ManagedByLabel, ControllerName)
 
 	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), seed), &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
@@ -164,7 +164,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), eventHandler, namespacePredicate, ownedPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}

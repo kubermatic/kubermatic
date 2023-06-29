@@ -85,7 +85,7 @@ func Add(
 		},
 	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForObject{},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.PersistentVolumeClaim{}), &handler.EnqueueRequestForObject{},
 		LostClaimPredicates,
 		predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName)); err != nil {
 		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %w", err)

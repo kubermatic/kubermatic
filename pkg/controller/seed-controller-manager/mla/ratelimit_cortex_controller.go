@@ -102,7 +102,7 @@ func newRatelimitCortexReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.MLAAdminSetting{}), &handler.EnqueueRequestForObject{}, predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
 		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}
 

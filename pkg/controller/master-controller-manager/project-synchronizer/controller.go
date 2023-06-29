@@ -77,14 +77,14 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Project{}},
+		source.Kind(masterManager.GetCache(), &kubermaticv1.Project{}),
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
 		return fmt.Errorf("failed to create watch for projects: %w", err)
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Seed{}},
+		source.Kind(masterManager.GetCache(), &kubermaticv1.Seed{}),
 		enqueueAllProjects(r.masterClient, r.log),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seeds: %w", err)

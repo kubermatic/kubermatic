@@ -77,7 +77,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 
 	// Watch for changes to Machines
 	if err = c.Watch(
-		&source.Kind{Type: &clusterv1alpha1.Machine{}},
+		source.Kind(userMgr.GetCache(), &clusterv1alpha1.Machine{}),
 		handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
 			return []reconcile.Request{
 				{

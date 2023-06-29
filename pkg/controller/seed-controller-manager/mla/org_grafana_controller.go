@@ -84,7 +84,7 @@ func newOrgGrafanaReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Projects: %w", err)
 	}
 	return err

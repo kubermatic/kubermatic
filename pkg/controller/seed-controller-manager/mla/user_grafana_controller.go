@@ -96,17 +96,17 @@ func newUserGrafanaReconciler(
 		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
 	})
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.User{}), &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
 		return fmt.Errorf("failed to watch Users: %w", err)
 	}
 
 	// watch UserProjectBindings
-	if err = c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(ctx, reconciler.Client))); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(ctx, reconciler.Client))); err != nil {
 		return fmt.Errorf("failed to watch userprojectbindings: %w", err)
 	}
 
 	// watch GroupProjectBindings
-	if err = c.Watch(&source.Kind{Type: &kubermaticv1.GroupProjectBinding{}}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(ctx, reconciler.Client))); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.GroupProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(ctx, reconciler.Client))); err != nil {
 		return fmt.Errorf("failed to watch groupprojectbindings: %w", err)
 	}
 	return err

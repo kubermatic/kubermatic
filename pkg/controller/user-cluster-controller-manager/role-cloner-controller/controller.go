@@ -89,10 +89,10 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 	})
 
 	// Watch for changes to Roles and Namespaces
-	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, eventHandler); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.Role{}), eventHandler); err != nil {
 		return fmt.Errorf("failed to establish watch for Roles: %w", err)
 	}
-	if err = c.Watch(&source.Kind{Type: &corev1.Namespace{}}, eventHandler); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Namespace{}), eventHandler); err != nil {
 		return fmt.Errorf("failed to establish watch for Namespaces: %w", err)
 	}
 

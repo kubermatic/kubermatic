@@ -72,13 +72,13 @@ func Add(
 	}
 
 	// watch all GroupProjectBindings
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.GroupProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.GroupProjectBinding{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create GroupProjectBinding watcher: %w", err)
 	}
 
 	// watch ClusterRoles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
 	if err := c.Watch(
-		&source.Kind{Type: &rbacv1.ClusterRole{}},
+		source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}),
 		enqueueGroupProjectBindingsForRole(mgr.GetClient()),
 		predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel),
 	); err != nil {
@@ -87,7 +87,7 @@ func Add(
 
 	// watch Roles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
 	if err := c.Watch(
-		&source.Kind{Type: &rbacv1.Role{}},
+		source.Kind(mgr.GetCache(), &rbacv1.Role{}),
 		enqueueGroupProjectBindingsForRole(mgr.GetClient()),
 		predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel),
 	); err != nil {

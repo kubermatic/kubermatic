@@ -84,7 +84,7 @@ func Add(
 	})
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.UserProjectBinding{}},
+		source.Kind(masterManager.GetCache(), &kubermaticv1.UserProjectBinding{}),
 		&handler.EnqueueRequestForObject{},
 		serviceAccountPredicate,
 	); err != nil {
@@ -92,7 +92,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Seed{}},
+		source.Kind(masterManager.GetCache(), &kubermaticv1.Seed{}),
 		enqueueUserProjectBindingsForSeed(r.masterClient, r.log),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seeds: %w", err)

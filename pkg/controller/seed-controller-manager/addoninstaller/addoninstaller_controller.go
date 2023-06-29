@@ -102,11 +102,11 @@ func Add(
 		return fmt.Errorf("failed to add index on Addon IsDefault flag: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for Clusters: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, util.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Addon{}), util.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 		return fmt.Errorf("failed to create watch for Addons: %w", err)
 	}
 

@@ -94,11 +94,11 @@ func Add(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(applicationsecretsynchronizer.SecretTypeAnnotation, "", false), predicateutil.ByNamespace(r.namespace)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(applicationsecretsynchronizer.SecretTypeAnnotation, "", false), predicateutil.ByNamespace(r.namespace)); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, handler.EnqueueRequestsFromMapFunc(enqueueSecret(ctx, r.client, r.namespace)), workerlabel.Predicates(workerName), noDeleteEventPredicate()); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), handler.EnqueueRequestsFromMapFunc(enqueueSecret(ctx, r.client, r.namespace)), workerlabel.Predicates(workerName), noDeleteEventPredicate()); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 

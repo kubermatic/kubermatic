@@ -76,7 +76,7 @@ func Add(
 	nsPredicate := predicate.ByNamespace(namespace)
 
 	// watch the Kubermatic Configuration in the given namespace
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.KubermaticConfiguration{}},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.KubermaticConfiguration{}),
 		&handler.EnqueueRequestForObject{},
 		nsPredicate,
 	); err != nil {

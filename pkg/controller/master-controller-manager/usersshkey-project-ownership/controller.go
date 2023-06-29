@@ -67,7 +67,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 	}
 
 	// Watch for changes to UserSSHKey
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserSSHKey{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserSSHKey{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return err
 	}
 
@@ -98,7 +98,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 		},
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, enqueueRelatedKeys, onlyNewProjects); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), enqueueRelatedKeys, onlyNewProjects); err != nil {
 		return err
 	}
 

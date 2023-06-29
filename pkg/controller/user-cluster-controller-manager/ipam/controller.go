@@ -77,7 +77,7 @@ func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) erro
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	return c.Watch(&source.Kind{Type: &clusterv1alpha1.Machine{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &clusterv1alpha1.Machine{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

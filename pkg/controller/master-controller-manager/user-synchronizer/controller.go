@@ -86,7 +86,10 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate, withEventFilter(),
+		source.Kind(masterManager.GetCache(), &kubermaticv1.User{}),
+		&handler.EnqueueRequestForObject{},
+		serviceAccountPredicate,
+		withEventFilter(),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for user objects in master cluster: %w", err)
 	}

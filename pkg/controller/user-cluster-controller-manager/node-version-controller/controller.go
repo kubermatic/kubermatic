@@ -64,7 +64,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst("")); err != nil {
+	if err := c.Watch(source.Kind(userMgr.GetCache(), &corev1.Node{}), controllerutil.EnqueueConst("")); err != nil {
 		return fmt.Errorf("failed to establish watch for nodes: %w", err)
 	}
 

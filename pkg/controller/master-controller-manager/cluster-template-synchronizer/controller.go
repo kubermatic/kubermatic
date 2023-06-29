@@ -83,7 +83,7 @@ func Add(
 	}
 
 	// Watch for changes to ClusterTemplates
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ClusterTemplate{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(masterMgr.GetCache(), &kubermaticv1.ClusterTemplate{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch cluster templates: %w", err)
 	}
 

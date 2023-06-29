@@ -91,10 +91,7 @@ func Add(
 	for seedName, seedManager := range seedManagers {
 		reconciler.seedClients[seedName] = seedManager.GetClient()
 
-		secretSource := &source.Kind{Type: &corev1.Secret{}}
-		if err := secretSource.InjectCache(seedManager.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache into secretSource: %w", err)
-		}
+		secretSource := source.Kind(seedManager.GetCache(), &corev1.Secret{})
 		if err := c.Watch(
 			secretSource,
 			controllerutil.EnqueueClusterForNamespacedObjectWithSeedName(seedManager.GetClient(), seedName, workerSelector),
@@ -103,10 +100,7 @@ func Add(
 			return fmt.Errorf("failed to establish watch for secrets in seed %s: %w", seedName, err)
 		}
 
-		clusterSource := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := clusterSource.InjectCache(seedManager.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache into clusterSource for seed %s: %w", seedName, err)
-		}
+		clusterSource := source.Kind(seedManager.GetCache(), &kubermaticv1.Cluster{})
 		if err := c.Watch(
 			clusterSource,
 			controllerutil.EnqueueClusterScopedObjectWithSeedName(seedName),
@@ -117,7 +111,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.UserSSHKey{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.UserSSHKey{}),
 		enqueueAllClusters(ctx, reconciler.seedClients, workerSelector),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for userSSHKey: %w", err)

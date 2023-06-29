@@ -105,7 +105,7 @@ func newRuleGroupReconciler(
 		return ruleGroup.Spec.Cluster.Name != ""
 	})
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, &handler.EnqueueRequestForObject{}, ruleGroupPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.RuleGroup{}), &handler.EnqueueRequestForObject{}, ruleGroupPredicate); err != nil {
 		return fmt.Errorf("failed to watch RuleGroup: %w", err)
 	}
 
@@ -143,7 +143,7 @@ func newRuleGroupReconciler(
 			return (oldMonitoringEnabled != newMonitoringEnabled) || (oldLoggingEnabled != newLoggingEnabled)
 		},
 	}
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueRuleGroupsForCluster, clusterPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), enqueueRuleGroupsForCluster, clusterPredicate); err != nil {
 		return fmt.Errorf("failed to watch Cluster: %w", err)
 	}
 

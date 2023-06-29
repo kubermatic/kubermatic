@@ -77,8 +77,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	}
 
 	// Watch for changes to Constraints
-	if err = c.Watch(
-		&source.Kind{Type: &kubermaticv1.Constraint{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
+	if err = c.Watch(source.Kind(seedMgr.GetCache(), &kubermaticv1.Constraint{}), &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
 		return fmt.Errorf("failed to establish watch for the Constraints: %w", err)
 	}
 

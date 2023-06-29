@@ -97,11 +97,11 @@ func newAlertmanagerReconciler(
 	if err != nil {
 		return err
 	}
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Cluster: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Alertmanager{}}, util.EnqueueClusterForNamespacedObject(client)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Alertmanager{}), util.EnqueueClusterForNamespacedObject(client)); err != nil {
 		return fmt.Errorf("failed to watch Alertmanager: %w", err)
 	}
 
@@ -131,7 +131,7 @@ func newAlertmanagerReconciler(
 
 		return []reconcile.Request{}
 	})
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForSecret); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), enqueueClusterForSecret); err != nil {
 		return fmt.Errorf("failed to watch Secret: %w", err)
 	}
 	return err

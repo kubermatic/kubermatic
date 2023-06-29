@@ -72,7 +72,7 @@ func Add(
 	}
 
 	// Watch for changes to ApplicationDefinition
-	if err := c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationDefinition{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), &appskubermaticv1.ApplicationDefinition{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for applicationDefinitions: %w", err)
 	}
 

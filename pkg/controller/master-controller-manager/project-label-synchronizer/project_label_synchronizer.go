@@ -106,16 +106,13 @@ func Add(
 	for seedName, seedManager := range seedManagers {
 		r.seedClients[seedName] = seedManager.GetClient()
 
-		seedClusterWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := seedClusterWatch.InjectCache(seedManager.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache for seed %q into watch: %w", seedName, err)
-		}
+		seedClusterWatch := source.Kind(seedManager.GetCache(), &kubermaticv1.Cluster{})
 		if err := c.Watch(seedClusterWatch, requestFromCluster(log), workerlabel.Predicates(workerName)); err != nil {
 			return fmt.Errorf("failed to watch clusters in seed %q: %w", seedName, err)
 		}
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch projects: %w", err)
 	}
 

@@ -146,7 +146,7 @@ func Add(
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.EtcdBackupConfig{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.EtcdBackupConfig{}), &handler.EnqueueRequestForObject{})
 }
 
 // Reconcile handle etcd backups reconciliation.

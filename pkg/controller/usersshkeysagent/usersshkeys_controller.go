@@ -75,7 +75,7 @@ func Add(
 
 	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
 	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for secrets: %w", err)
 	}
 

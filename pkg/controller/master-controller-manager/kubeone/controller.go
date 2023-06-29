@@ -122,13 +122,13 @@ func Add(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ExternalCluster{}),
 		&handler.EnqueueRequestForObject{},
 		withEventFilter()); err != nil {
 		return fmt.Errorf("failed to create externalcluster watcher: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &batchv1.Job{}},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &batchv1.Job{}),
 		&handler.EnqueueRequestForOwner{
 			IsController: true,
 			OwnerType:    &kubermaticv1.ExternalCluster{},
