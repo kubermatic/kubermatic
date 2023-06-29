@@ -528,9 +528,9 @@ func TestValidate(t *testing.T) {
 			}
 
 			if tc.isDelete {
-				err = sv.ValidateDelete(context.Background(), tc.seedToValidate)
+				_, err = sv.ValidateDelete(context.Background(), tc.seedToValidate)
 			} else {
-				err = sv.ValidateCreate(context.Background(), tc.seedToValidate)
+				_, err = sv.ValidateCreate(context.Background(), tc.seedToValidate)
 			}
 
 			if (err != nil) != tc.errExpected {

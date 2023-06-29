@@ -1030,11 +1030,11 @@ func TestValidator(t *testing.T) {
 
 			switch tc.op {
 			case admissionv1.Create:
-				err = validator.ValidateCreate(ctx, tc.ipamPool)
+				_, err = validator.ValidateCreate(ctx, tc.ipamPool)
 			case admissionv1.Update:
-				err = validator.ValidateUpdate(ctx, tc.oldIPAMPool, tc.ipamPool)
+				_, err = validator.ValidateUpdate(ctx, tc.oldIPAMPool, tc.ipamPool)
 			case admissionv1.Delete:
-				err = validator.ValidateDelete(ctx, tc.ipamPool)
+				_, err = validator.ValidateDelete(ctx, tc.ipamPool)
 			}
 
 			assert.Equal(t, tc.expectedError, err)

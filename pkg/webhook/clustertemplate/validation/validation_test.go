@@ -677,11 +677,11 @@ func TestHandle(t *testing.T) {
 
 			switch tt.op {
 			case admissionv1.Create:
-				err = templateValidator.ValidateCreate(ctx, &tt.template)
+				_, err = templateValidator.ValidateCreate(ctx, &tt.template)
 			case admissionv1.Update:
-				err = templateValidator.ValidateUpdate(ctx, nil, &tt.template)
+				_, err = templateValidator.ValidateUpdate(ctx, nil, &tt.template)
 			case admissionv1.Delete:
-				err = templateValidator.ValidateDelete(ctx, &tt.template)
+				_, err = templateValidator.ValidateDelete(ctx, &tt.template)
 			}
 
 			allowed := err == nil

@@ -2015,11 +2015,11 @@ func TestHandle(t *testing.T) {
 
 			switch tt.op {
 			case admissionv1.Create:
-				err = clusterValidator.ValidateCreate(ctx, &tt.cluster)
+				_, err = clusterValidator.ValidateCreate(ctx, &tt.cluster)
 			case admissionv1.Update:
-				err = clusterValidator.ValidateUpdate(ctx, tt.oldCluster, &tt.cluster)
+				_, err = clusterValidator.ValidateUpdate(ctx, tt.oldCluster, &tt.cluster)
 			case admissionv1.Delete:
-				err = clusterValidator.ValidateDelete(ctx, &tt.cluster)
+				_, err = clusterValidator.ValidateDelete(ctx, &tt.cluster)
 			}
 
 			allowed := err == nil

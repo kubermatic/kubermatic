@@ -74,15 +74,10 @@ func TestHandle(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		d, err := admission.NewDecoder(testScheme)
-		if err != nil {
-			t.Fatalf("error occurred while creating decoder: %v", err)
-		}
-
 		t.Run(tt.name, func(t *testing.T) {
 			handler := AdmissionHandler{
 				log:     logr.Discard(),
-				decoder: d,
+				decoder: admission.NewDecoder(testScheme),
 			}
 			res := handler.Handle(context.Background(), tt.req)
 			if res.AdmissionResponse.Result != nil && res.AdmissionResponse.Result.Code == http.StatusInternalServerError {
