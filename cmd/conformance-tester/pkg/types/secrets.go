@@ -107,6 +107,11 @@ type Secrets struct {
 		VDC           string
 		OVDCNetwork   string
 	}
+	RHEL struct {
+		SubscriptionUser     string
+		SubscriptionPassword string
+		OfflineToken         string
+	}
 }
 
 var (
@@ -167,6 +172,9 @@ func (s *Secrets) AddFlags() {
 	flag.StringVar(&s.VMwareCloudDirector.VDC, "vmware-cloud-director-vdc", "", "VMware Cloud Director: Organizational VDC")
 	flag.StringVar(&s.VMwareCloudDirector.OVDCNetwork, "vmware-cloud-director-ovdc-network", "", "VMware Cloud Director: Organizational VDC network name")
 	flag.StringVar(&s.VMwareCloudDirector.KKPDatacenter, "vmware-cloud-director-kkp-datacenter", "", "VMware Cloud Director: KKP datacenter to use")
+	flag.StringVar(&s.RHEL.SubscriptionUser, "rhel-subscription-user", "", "RedHat Enterprise subscription user")
+	flag.StringVar(&s.RHEL.SubscriptionPassword, "rhel-subscription-password", "", "RedHat Enterprise subscription password")
+	flag.StringVar(&s.RHEL.OfflineToken, "rhel-offline-token", "", "RedHat Enterprise offlien token")
 }
 
 func (s *Secrets) ParseFlags() error {

@@ -62,7 +62,7 @@ func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secre
 		WithInstanceReadyCheckTimeout(openStackInstanceReadyCheckTimeout).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
+	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

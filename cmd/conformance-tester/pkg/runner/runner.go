@@ -463,7 +463,7 @@ func (r *TestRunner) executeTests(
 	// Packet is slower at provisioning the instances, presumably because those are actual
 	// physical hosts.
 	if cluster.Spec.Cloud.Packet != nil {
-		overallTimeout += 5 * time.Minute
+		overallTimeout += 45 * time.Minute
 	}
 
 	var timeoutRemaining time.Duration
@@ -584,9 +584,13 @@ func (r *TestRunner) testCluster(
 		log.Errorf("Failed to verify that user cluster RBAC controller work: %v", err)
 	}
 
+	// Metrics availability can take forever so for these tests we need
+	// to try for longer than normal.
+	maxMetrixAttempts := 15
+
 	// Do prometheus metrics available test
 	if err := util.JUnitWrapper("[KKP] Test prometheus metrics availability", report, func() error {
-		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxMetrixAttempts, func(attempt int) error {
 			return tests.TestUserClusterMetrics(ctx, log, r.opts, cluster, r.opts.SeedClusterClient)
 		})
 	}); err != nil {
@@ -595,7 +599,7 @@ func (r *TestRunner) testCluster(
 
 	// Do pod and node metrics availability test
 	if err := util.JUnitWrapper("[KKP] Test pod and node metrics availability", report, func() error {
-		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
+		return util.RetryN(5*time.Second, maxMetrixAttempts, func(attempt int) error {
 			return tests.TestUserClusterPodAndNodeMetrics(ctx, log, r.opts, cluster, userClusterClient)
 		})
 	}); err != nil {

@@ -51,7 +51,7 @@ func (s *alibabaScenario) MachineDeployments(_ context.Context, replicas int, se
 		WithVSwitchID("vsw-gw8g8mn4ohmj483hsylmn").
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, replicas, cloudProviderSpec, sshPubKeys)
+	md, err := s.createMachineDeployment(cluster, replicas, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

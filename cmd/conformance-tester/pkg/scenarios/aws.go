@@ -109,7 +109,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			WithSpotInstanceMaxPrice("0.5").
 			Build()
 
-		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys)
+		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 		if err != nil {
 			return nil, err
 		}
