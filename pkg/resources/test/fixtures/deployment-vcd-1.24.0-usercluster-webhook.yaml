@@ -63,6 +63,7 @@ spec:
             secretKeyRef:
               key: apiToken
               name: cloud-credentials
+              optional: true
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
