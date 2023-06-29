@@ -74,8 +74,27 @@ data:
                 virtual_hosts:
                 - name: local_service
                   domains: ["*"]
+                  # Added this to allow per-route filter disabling for healthcheck endpoint
+                  # Ref: https://www.envoyproxy.io/docs/envoy/v1.18.4/configuration/http/http_filters/ext_authz_filter#per-route-configuration
+                  typed_per_filter_config:
+                    envoy.filters.http.ext_authz:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                      check_settings:
+                        context_extensions:
+                          virtual_host: local_service
                   routes:
-
+                  # Added healthcheck route with Authz filter disabled.
+                  # Ref: https://www.envoyproxy.io/docs/envoy/v1.18.4/configuration/http/http_filters/ext_authz_filter#per-route-configuration
+                  - match:
+                      safe_regex:
+                        google_re2: {}
+                        regex: '/ready$'
+                    route:
+                      cluster: service_backend
+                    typed_per_filter_config:
+                      envoy.filters.http.ext_authz:
+                        "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
+                        disabled: true
                   # redirect if the path contains only cluster ID without slash (append slash at the end)
                   - match:
                       safe_regex:
