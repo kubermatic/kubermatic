@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlruntimewebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func main() {
@@ -82,13 +83,26 @@ func main() {
 
 	ctx := ctrlruntime.SetupSignalHandler()
 
+	// apply the CLI flags for configuring the webhook server
+	seedWebhookOptions := ctrlruntimewebhook.Options{}
+	if err := options.seedWebhook.Apply(&seedWebhookOptions); err != nil {
+		log.Fatalw("Failed to configure seed webhook server", zap.Error(err))
+	}
+
 	seedMgr, err := manager.New(seedCfg, manager.Options{
 		BaseContext: func() context.Context {
 			return ctx
 		},
+		WebhookServer: ctrlruntimewebhook.NewServer(seedWebhookOptions),
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the seed cluster manager", zap.Error(err))
+	}
+
+	// apply the CLI flags for configuring the webhook server
+	userWebhookOptions := ctrlruntimewebhook.Options{}
+	if err := options.userWebhook.Apply(&userWebhookOptions); err != nil {
+		log.Fatalw("Failed to configure user webhook server", zap.Error(err))
 	}
 
 	userMgr, err := manager.New(userCfg, manager.Options{
@@ -96,17 +110,10 @@ func main() {
 			return ctx
 		},
 		MetricsBindAddress: "0",
+		WebhookServer:      ctrlruntimewebhook.NewServer(userWebhookOptions),
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the user cluster manager", zap.Error(err))
-	}
-
-	// Apply the CLI flags for configuring the webhook servers.
-	if err := options.seedWebhook.Configure(seedMgr.GetWebhookServer()); err != nil {
-		log.Fatalw("Failed to configure webhook server", zap.Error(err))
-	}
-	if err := options.userWebhook.Configure(userMgr.GetWebhookServer()); err != nil {
-		log.Fatalw("Failed to configure webhook server", zap.Error(err))
 	}
 
 	// add APIs we use

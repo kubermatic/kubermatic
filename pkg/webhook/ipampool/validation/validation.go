@@ -49,13 +49,13 @@ func NewValidator(seedGetter provider.SeedGetter, seedClientGetter provider.Seed
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj)
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, obj)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	if err := v.validate(ctx, newObj); err != nil {
-		return err
+		return nil, err
 	}
 
 	newIPAMPool := newObj.(*kubermaticv1.IPAMPool)
@@ -70,11 +70,11 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		}
 
 		if dcOldConfig.PoolCIDR != dcNewConfig.PoolCIDR {
-			return errors.New("it's not allowed to update the pool CIDR for a datacenter")
+			return nil, errors.New("it's not allowed to update the pool CIDR for a datacenter")
 		}
 
 		if dcOldConfig.Type != dcNewConfig.Type {
-			return errors.New("it's not allowed to update the allocation type for a datacenter")
+			return nil, errors.New("it's not allowed to update the allocation type for a datacenter")
 		}
 
 		var addedExclusions []string
@@ -82,12 +82,12 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		switch dcOldConfig.Type {
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
 			if dcOldConfig.AllocationRange != dcNewConfig.AllocationRange {
-				return errors.New("it's not allowed to update the allocation range for a datacenter")
+				return nil, errors.New("it's not allowed to update the allocation range for a datacenter")
 			}
 			addedExclusions = getSliceAdditions(dcOldConfig.ExcludeRanges, dcNewConfig.ExcludeRanges)
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			if dcOldConfig.AllocationPrefix != dcNewConfig.AllocationPrefix {
-				return errors.New("it's not allowed to update the allocation prefix for a datacenter")
+				return nil, errors.New("it's not allowed to update the allocation prefix for a datacenter")
 			}
 			addedExclusions = getSliceAdditions(
 				subnetCIDRSliceToStringSlice(dcOldConfig.ExcludePrefixes),
@@ -96,16 +96,16 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		}
 
 		if err := v.checkExclusionsNotAllocated(ctx, addedExclusions, oldIPAMPool.Name, dc, dcOldConfig.Type); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
+func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
 	// NOP we allow delete operation
-	return nil
+	return nil, nil
 }
 
 func (v *validator) validate(ctx context.Context, obj runtime.Object) error {

@@ -42,34 +42,34 @@ func NewValidator() *validator {
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	config, ok := obj.(*kubermaticv1.KubermaticConfiguration)
 	if !ok {
-		return errors.New("object is not a KubermaticConfiguration")
+		return nil, errors.New("object is not a KubermaticConfiguration")
 	}
 
 	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return fmt.Errorf("failed to apply default values: %w", err)
+		return nil, fmt.Errorf("failed to apply default values: %w", err)
 	}
 
-	return validation.ValidateKubermaticConfigurationSpec(&defaulted.Spec).ToAggregate()
+	return nil, validation.ValidateKubermaticConfigurationSpec(&defaulted.Spec).ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	config, ok := newObj.(*kubermaticv1.KubermaticConfiguration)
 	if !ok {
-		return errors.New("new object is not a KubermaticConfiguration")
+		return nil, errors.New("new object is not a KubermaticConfiguration")
 	}
 
 	defaulted, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
-		return fmt.Errorf("failed to apply default values: %w", err)
+		return nil, fmt.Errorf("failed to apply default values: %w", err)
 	}
 
-	return validation.ValidateKubermaticConfigurationSpec(&defaulted.Spec).ToAggregate()
+	return nil, validation.ValidateKubermaticConfigurationSpec(&defaulted.Spec).ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }

@@ -63,16 +63,16 @@ var resourceNameValidator = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj, false)
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, obj, false)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return v.validate(ctx, newObj, false)
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, newObj, false)
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj, true)
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, obj, true)
 }
 
 func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete bool) error {

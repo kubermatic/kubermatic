@@ -86,12 +86,12 @@ func (opts *Options) Validate() error {
 	return nil
 }
 
-func (opts *Options) Configure(s *webhook.Server) error {
-	s.CertDir = opts.certDir
-	s.CertName = opts.certName
-	s.KeyName = opts.keyName
-	s.Host = opts.listenHost
-	s.Port = opts.listenPort
+func (opts *Options) Apply(o *webhook.Options) error {
+	o.CertDir = opts.certDir
+	o.CertName = opts.certName
+	o.KeyName = opts.keyName
+	o.Host = opts.listenHost
+	o.Port = opts.listenPort
 
 	return nil
 }

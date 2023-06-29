@@ -38,14 +38,14 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return validateCreate(ctx, obj, v.client)
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, validateCreate(ctx, obj, v.client)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return validateUpdate(ctx, oldObj, newObj)
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return nil, validateUpdate(ctx, oldObj, newObj)
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return validateDelete(ctx, obj, v.client)
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, validateDelete(ctx, obj, v.client)
 }

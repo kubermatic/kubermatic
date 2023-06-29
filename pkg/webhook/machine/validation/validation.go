@@ -67,10 +67,10 @@ func NewValidator(seedClient, userClient ctrlruntimeclient.Client, log *zap.Suga
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	machine, ok := obj.(*clusterv1alpha1.Machine)
 	if !ok {
-		return errors.New("object is not a Machine")
+		return nil, errors.New("object is not a Machine")
 	}
 
 	log := v.log.With("machine", machine.Name)
@@ -78,20 +78,20 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 
 	quota, err := getResourceQuota(ctx, v.seedClient, v.subjectSelector)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if quota != nil {
-		return validateQuota(ctx, log, v.userClient, machine, v.caBundle, quota)
+		return nil, validateQuota(ctx, log, v.userClient, machine, v.caBundle, quota)
 	}
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate validates Machine updates. As mutating Machine spec is disallowed by the Machine Mutating webhook,
 // no need to check anything here.
-func (v *validator) ValidateUpdate(_ context.Context, _, _ runtime.Object) error {
-	return nil
+func (v *validator) ValidateUpdate(_ context.Context, _, _ runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
-func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(_ context.Context, _ runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }

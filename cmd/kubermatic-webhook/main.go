@@ -57,6 +57,7 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	ctrlruntimewebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func main() {
@@ -96,19 +97,21 @@ func main() {
 	// /////////////////////////////////////////
 	// create manager
 
+	// apply the CLI flags for configuring the webhook server
+	webhookOptions := ctrlruntimewebhook.Options{}
+	if err := options.webhook.Apply(&webhookOptions); err != nil {
+		log.Fatalw("Failed to configure webhook server", zap.Error(err))
+	}
+
 	mgr, err := manager.New(cfg, manager.Options{
 		BaseContext: func() context.Context {
 			return rootCtx
 		},
-		Namespace: options.namespace,
+		Namespace:     options.namespace,
+		WebhookServer: ctrlruntimewebhook.NewServer(webhookOptions),
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
-	}
-
-	// apply the CLI flags for configuring the  webhook server to the manager
-	if err := options.webhook.Configure(mgr.GetWebhookServer()); err != nil {
-		log.Fatalw("Failed to configure webhook server", zap.Error(err))
 	}
 
 	// add APIs we use

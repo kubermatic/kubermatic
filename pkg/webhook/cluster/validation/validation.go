@@ -66,29 +66,29 @@ func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGette
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cluster, ok := obj.(*kubermaticv1.Cluster)
 	if !ok {
-		return errors.New("object is not a Cluster")
+		return nil, errors.New("object is not a Cluster")
 	}
 
 	// This validates the charset and the max length.
 	if errs := k8svalidation.IsDNS1035Label(cluster.Name); len(errs) != 0 {
-		return fmt.Errorf("cluster name must be valid rfc1035 label: %s", strings.Join(errs, ","))
+		return nil, fmt.Errorf("cluster name must be valid rfc1035 label: %s", strings.Join(errs, ","))
 	}
 
 	if len(cluster.Name) > validation.MaxClusterNameLength {
-		return fmt.Errorf("cluster name exceeds maximum allowed length of %d characters", validation.MaxClusterNameLength)
+		return nil, fmt.Errorf("cluster name exceeds maximum allowed length of %d characters", validation.MaxClusterNameLength)
 	}
 
 	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	config, configErr := v.configGetter(ctx)
 	if configErr != nil {
-		return configErr
+		return nil, configErr
 	}
 
 	versionManager := version.NewFromConfiguration(config)
@@ -99,28 +99,28 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		errs = append(errs, err)
 	}
 
-	return errs.ToAggregate()
+	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	oldCluster, ok := oldObj.(*kubermaticv1.Cluster)
 	if !ok {
-		return errors.New("old object is not a Cluster")
+		return nil, errors.New("old object is not a Cluster")
 	}
 
 	newCluster, ok := newObj.(*kubermaticv1.Cluster)
 	if !ok {
-		return errors.New("new object is not a Cluster")
+		return nil, errors.New("new object is not a Cluster")
 	}
 
 	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, newCluster)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	config, configErr := v.configGetter(ctx)
 	if configErr != nil {
-		return configErr
+		return nil, configErr
 	}
 
 	updateManager := version.NewFromConfiguration(config)
@@ -131,11 +131,11 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		errs = append(errs, err)
 	}
 
-	return errs.ToAggregate()
+	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
