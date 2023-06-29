@@ -247,15 +247,15 @@ func updateOwnAndPermissions(path string) error {
 	return nil
 }
 
-// NewCacheFunc returns a user-ssh-keys-agent specific cache.NewCacheFunc that limits the cache
+// CacheOptions returns a user-ssh-keys-agent specific cache.Options struct that limits the cache
 // to the Secret object that is needed by the controller. This is done so we can limit the RBAC
 // assignment for this controller to the bare minimum (the resource name).
-func NewCacheFunc() cache.NewCacheFunc {
-	return cache.BuilderWithOptions(cache.Options{
-		SelectorsByObject: cache.SelectorsByObject{
+func CacheOptions() cache.Options {
+	return cache.Options{
+		ByObject: map[ctrlruntimeclient.Object]cache.ByObject{
 			&corev1.Secret{}: {
 				Field: fields.SelectorFromSet(fields.Set{"metadata.name": resources.UserSSHKeys}),
 			},
 		},
-	})
+	}
 }

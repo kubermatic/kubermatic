@@ -598,7 +598,7 @@ func TestNewEndpointHandler(t *testing.T) {
 				log:     log,
 			}).newEndpointHandler()
 
-			res := handler(tt.eps)
+			res := handler(context.Background(), tt.eps)
 
 			if d := diff.ObjectDiff(tt.expectResults, res); d != "" {
 				t.Errorf("Got unexpected results:\n%v", d)
