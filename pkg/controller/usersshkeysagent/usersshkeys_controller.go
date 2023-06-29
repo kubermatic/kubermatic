@@ -60,7 +60,8 @@ type Reconciler struct {
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	authorizedKeysPaths []string) error {
+	authorizedKeysPaths []string,
+) error {
 	reconciler := &Reconciler{
 		Client:             mgr.GetClient(),
 		log:                log,
@@ -83,7 +84,7 @@ func Add(
 		return fmt.Errorf("failed to watch authorized_keys files: %w", err)
 	}
 
-	userSSHKeySecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	userSSHKeySecret := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{

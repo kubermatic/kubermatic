@@ -87,7 +87,7 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	}
 
 	outerServiceWatch := source.Kind(outer.GetCache(), &corev1.Service{})
-	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
 		if !exists {
 			return nil

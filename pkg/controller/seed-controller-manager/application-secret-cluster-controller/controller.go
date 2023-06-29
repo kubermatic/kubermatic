@@ -98,7 +98,7 @@ func Add(
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), handler.EnqueueRequestsFromMapFunc(enqueueSecret(ctx, r.client, r.namespace)), workerlabel.Predicates(workerName), noDeleteEventPredicate()); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), handler.EnqueueRequestsFromMapFunc(enqueueSecret(r.client, r.namespace)), workerlabel.Predicates(workerName), noDeleteEventPredicate()); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
@@ -234,8 +234,8 @@ func secretReconciler(s *corev1.Secret) reconciling.NamedSecretReconcilerFactory
 	}
 }
 
-func enqueueSecret(ctx context.Context, client ctrlruntimeclient.Client, namespace string) func(object ctrlruntimeclient.Object) []reconcile.Request {
-	return func(ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueSecret(client ctrlruntimeclient.Client, namespace string) func(context.Context, ctrlruntimeclient.Object) []reconcile.Request {
+	return func(ctx context.Context, _ ctrlruntimeclient.Object) []reconcile.Request {
 		secretList := &corev1.SecretList{}
 		if err := client.List(ctx, secretList, &ctrlruntimeclient.ListOptions{Namespace: namespace}, ctrlruntimeclient.MatchingFields{isAppSecretKey: "true"}); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list secret: %w", err))

@@ -64,7 +64,8 @@ type reconciler struct {
 	recorder     record.EventRecorder
 }
 
-func Add(mgr manager.Manager,
+func Add(
+	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
 ) error {
@@ -267,11 +268,11 @@ func projectQuotaReconcilerFactory(resourceQuota *kubermaticv1.ResourceQuota) re
 }
 
 func enqueueProjectQuotas(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		globalSettings := &kubermaticv1.KubermaticSetting{}
-		if err := client.Get(context.Background(), types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
+		if err := client.Get(ctx, types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to get global settings %q: %w", kubermaticv1.GlobalSettingsName, err))
 			return requests
 		}

@@ -44,7 +44,7 @@ func setupControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create resource quota controller: %w", err)
 	}
 
-	if err := groupprojectbindingcontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, false); err != nil {
+	if err := groupprojectbindingcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, false); err != nil {
 		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
 	}
 

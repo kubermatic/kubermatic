@@ -17,6 +17,7 @@ limitations under the License.
 package rbacusercluster
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -44,7 +45,7 @@ const (
 	ResourceViewerName = "system:kubermatic:viewers"
 )
 
-var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
+var mapFn = handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 	return []reconcile.Request{
 		{NamespacedName: types.NamespacedName{
 			Name:      ResourceOwnerName,

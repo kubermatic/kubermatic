@@ -66,7 +66,7 @@ type reconciler struct {
 	userClusterClients        map[string]ctrlruntimeclient.Client
 }
 
-func Add(ctx context.Context,
+func Add(
 	mgr manager.Manager,
 	clientProvider UserClusterClientProvider,
 	log *zap.SugaredLogger,
@@ -235,7 +235,7 @@ func constraintTemplateReconcilerFactory(kubeCT *kubermaticv1.ConstraintTemplate
 }
 
 func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		cluster, ok := a.(*kubermaticv1.Cluster)
@@ -250,7 +250,7 @@ func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.Sug
 		}
 
 		ctList := &kubermaticv1.ConstraintTemplateList{}
-		if err := client.List(context.Background(), ctList); err != nil {
+		if err := client.List(ctx, ctList); err != nil {
 			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list constraint templates: %w", err))
 		}

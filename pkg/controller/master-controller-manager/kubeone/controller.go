@@ -129,10 +129,7 @@ func Add(
 	}
 
 	if err := c.Watch(source.Kind(mgr.GetCache(), &batchv1.Job{}),
-		&handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &kubermaticv1.ExternalCluster{},
-		},
+		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &kubermaticv1.ExternalCluster{}, handler.OnlyControllerOwner()),
 		updateEventsOnly(),
 	); err != nil {
 		return fmt.Errorf("failed to create kubeone job watcher: %w", err)

@@ -347,7 +347,6 @@ func createPvWatcherController(ctrlCtx *controllerContext) error {
 
 func createConstraintTemplateController(ctrlCtx *controllerContext) error {
 	return constrainttemplatecontroller.Add(
-		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
@@ -374,7 +373,6 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		return nil
 	}
 	return mla.Add(
-		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
@@ -398,7 +396,6 @@ func userClusterMLAEnabled(ctrlCtx *controllerContext) bool {
 
 func createConstraintController(ctrlCtx *controllerContext) error {
 	return seedconstraintsynchronizer.Add(
-		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,

@@ -80,9 +80,9 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 	}
 
 	// Notice when projects appear, then enqueue all service account users in that project
-	enqueueRelatedUsers := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueRelatedUsers := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		userList := &kubermaticv1.UserList{}
-		if err := mgr.GetClient().List(context.Background(), userList); err != nil {
+		if err := mgr.GetClient().List(ctx, userList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Users: %w", err))
 			return []reconcile.Request{}
 		}

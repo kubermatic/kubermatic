@@ -201,8 +201,8 @@ func Add(
 	// a Secret or Pod is deleted (instead we want to wait 10 seconds between deletion checks).
 	// Instead of splitting this controller into 2 reconcilers, we simply do not return any requests if
 	// the cluster is in deletion.
-	inNamespaceHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		cluster, err := kubernetes.ClusterFromNamespace(context.Background(), reconciler, a.GetNamespace())
+	inNamespaceHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+		cluster, err := kubernetes.ClusterFromNamespace(ctx, reconciler, a.GetNamespace())
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}

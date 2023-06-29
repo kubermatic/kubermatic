@@ -51,7 +51,6 @@ const (
 
 // Add creates a new Seed-Sync controller and sets up Watches.
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
@@ -80,7 +79,7 @@ func Add(
 	}
 
 	// watch all KubermaticConfigurations in the given namespace
-	configHandler := func(o ctrlruntimeclient.Object) []reconcile.Request {
+	configHandler := func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to retrieve seeds", zap.Error(err))

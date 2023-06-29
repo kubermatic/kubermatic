@@ -55,7 +55,6 @@ const (
 )
 
 func Add(
-	ctx context.Context,
 	log *zap.SugaredLogger,
 	namespace string,
 	masterManager manager.Manager,
@@ -98,7 +97,7 @@ func Add(
 	}
 
 	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
-	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to handle request", zap.Error(err))
@@ -125,7 +124,7 @@ func Add(
 	}
 
 	// watch for changes to the global CA bundle ConfigMap and replicate it into each Seed
-	configMapEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	configMapEventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		// find the owning KubermaticConfiguration
 		config, err := configGetter(ctx)
 		if err != nil {
@@ -196,7 +195,7 @@ func Add(
 
 func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string, workerName string) error {
 	cache := seedManager.GetCache()
-	eventHandler := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{{
 			NamespacedName: types.NamespacedName{
 				Name:      seedName,

@@ -96,7 +96,7 @@ func withEventFilter() predicate.Predicate {
 	}
 }
 
-func Add(ctx context.Context,
+func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	workerName string,
@@ -140,7 +140,7 @@ func Add(ctx context.Context,
 
 	if err := c.Watch(
 		source.Kind(mgr.GetCache(), &kubermaticv1.Constraint{}),
-		handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: namespace}}}
 		}),
 		ByLabel(Key),
@@ -355,12 +355,12 @@ func (r *reconciler) syncAllClustersNS(
 }
 
 func enqueueConstraints(client ctrlruntimeclient.Client, log *zap.SugaredLogger, namespace string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		constraintList := &kubermaticv1.ConstraintList{}
 
-		if err := client.List(context.Background(), constraintList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
+		if err := client.List(ctx, constraintList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
 			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list constraints: %w", err))
 		}

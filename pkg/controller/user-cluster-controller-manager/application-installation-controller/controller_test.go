@@ -97,8 +97,8 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			g := gomega.NewGomegaWithT(t)
 
-			enqueueApplicationInstallationFunc := enqueueAppInstallationForAppDef(context.Background(), tc.userClient)
-			actual := enqueueApplicationInstallationFunc(tc.applicationDefinition)
+			enqueueApplicationInstallationFunc := enqueueAppInstallationForAppDef(tc.userClient)
+			actual := enqueueApplicationInstallationFunc(context.Background(), tc.applicationDefinition)
 
 			g.Expect(actual).Should(gomega.ConsistOf(tc.expectedReconcileRequests))
 		})

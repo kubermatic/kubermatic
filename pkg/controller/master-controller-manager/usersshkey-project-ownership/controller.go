@@ -72,9 +72,9 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 	}
 
 	// Notice when projects appear, then enqueue all keys that are in the project
-	enqueueRelatedKeys := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueRelatedKeys := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		keyList := &kubermaticv1.UserSSHKeyList{}
-		if err := mgr.GetClient().List(context.Background(), keyList); err != nil {
+		if err := mgr.GetClient().List(ctx, keyList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list UserSSHKeys: %w", err))
 			return []reconcile.Request{}
 		}

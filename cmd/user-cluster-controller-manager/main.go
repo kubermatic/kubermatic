@@ -383,13 +383,13 @@ func main() {
 	}
 	log.Info("Registered clusterrolelabeler controller")
 
-	if err := roleclonercontroller.Add(rootCtx, log, mgr, isPausedChecker); err != nil {
+	if err := roleclonercontroller.Add(log, mgr, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register role-cloner controller", zap.Error(err))
 	}
 	log.Info("Registered role-cloner controller")
 
 	if runOp.ownerEmail != "" {
-		if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
+		if err := ownerbindingcreator.Add(log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
 			log.Fatalw("Failed to register owner-binding-creator controller", zap.Error(err))
 		}
 		log.Info("Registered owner-binding-creator controller")
@@ -398,7 +398,7 @@ func main() {
 	}
 
 	if runOp.ccmMigration {
-		if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName, isPausedChecker); err != nil {
+		if err := ccmcsimigrator.Add(log, seedMgr, mgr, versions, runOp.clusterName, isPausedChecker); err != nil {
 			log.Fatalw("failed to register ccm-csi-migrator controller", zap.Error(err))
 		}
 		log.Info("registered ccm-csi-migrator controller")

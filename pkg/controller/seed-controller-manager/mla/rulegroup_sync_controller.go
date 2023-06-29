@@ -79,13 +79,13 @@ func newRuleGroupSyncReconciler(
 		return err
 	}
 
-	enqueueRuleGroup := handler.EnqueueRequestsFromMapFunc(func(object ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueRuleGroup := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlruntimeclient.Object) []reconcile.Request {
 		ruleGroup := &kubermaticv1.RuleGroup{}
 		nn := types.NamespacedName{
 			Name:      object.GetName(),
 			Namespace: reconciler.ruleGroupSyncController.mlaNamespace,
 		}
-		err = client.Get(context.Background(), nn, ruleGroup)
+		err = client.Get(ctx, nn, ruleGroup)
 		if apierrors.IsNotFound(err) {
 			return []reconcile.Request{}
 		}

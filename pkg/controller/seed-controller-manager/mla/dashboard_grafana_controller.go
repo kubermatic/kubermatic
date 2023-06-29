@@ -86,7 +86,7 @@ func newDashboardGrafanaReconciler(
 		return err
 	}
 
-	enqueueGrafanaConfigMap := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueGrafanaConfigMap := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		if !strings.HasPrefix(a.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			return []reconcile.Request{}
 		}

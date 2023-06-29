@@ -60,7 +60,6 @@ type userGrafanaReconciler struct {
 }
 
 func newUserGrafanaReconciler(
-	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
@@ -101,20 +100,20 @@ func newUserGrafanaReconciler(
 	}
 
 	// watch UserProjectBindings
-	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(ctx, reconciler.Client))); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler.Client))); err != nil {
 		return fmt.Errorf("failed to watch userprojectbindings: %w", err)
 	}
 
 	// watch GroupProjectBindings
-	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.GroupProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(ctx, reconciler.Client))); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.GroupProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler.Client))); err != nil {
 		return fmt.Errorf("failed to watch groupprojectbindings: %w", err)
 	}
 	return err
 }
 
 // enqueueUserForUserProjectBinding enqueues users connected with the userprojectbinding.
-func enqueueUserForUserProjectBinding(ctx context.Context, c ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
-	return func(o ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueUserForUserProjectBinding(c ctrlruntimeclient.Client) func(context.Context, ctrlruntimeclient.Object) []reconcile.Request {
+	return func(ctx context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		var res []reconcile.Request
 		upb, ok := o.(*kubermaticv1.UserProjectBinding)
 		if !ok {
@@ -137,8 +136,8 @@ func enqueueUserForUserProjectBinding(ctx context.Context, c ctrlruntimeclient.C
 }
 
 // enqueueUserForGroupProjectBinding enqueues users connected with the groupprojectbinding.
-func enqueueUserForGroupProjectBinding(ctx context.Context, c ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
-	return func(o ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueUserForGroupProjectBinding(c ctrlruntimeclient.Client) func(context.Context, ctrlruntimeclient.Object) []reconcile.Request {
+	return func(ctx context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		var res []reconcile.Request
 		gpb, ok := o.(*kubermaticv1.GroupProjectBinding)
 		if !ok {

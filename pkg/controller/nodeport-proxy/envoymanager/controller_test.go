@@ -596,7 +596,7 @@ func TestNewEndpointHandler(t *testing.T) {
 				Options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
 				Client:  client,
 				log:     log,
-			}).newEndpointHandler(context.Background())
+			}).newEndpointHandler()
 
 			res := handler(tt.eps)
 

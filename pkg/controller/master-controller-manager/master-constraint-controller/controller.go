@@ -55,7 +55,7 @@ type reconciler struct {
 	recorder     record.EventRecorder
 }
 
-func Add(ctx context.Context,
+func Add(
 	masterMgr manager.Manager,
 	namespace string,
 	seedManagers map[string]manager.Manager,

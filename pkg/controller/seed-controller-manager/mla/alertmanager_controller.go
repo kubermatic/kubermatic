@@ -105,8 +105,7 @@ func newAlertmanagerReconciler(
 		return fmt.Errorf("failed to watch Alertmanager: %w", err)
 	}
 
-	enqueueClusterForSecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		ctx := context.Background()
+	enqueueClusterForSecret := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		alertmanager := &kubermaticv1.Alertmanager{}
 		if err := client.Get(ctx, types.NamespacedName{
 			Name:      resources.AlertmanagerName,

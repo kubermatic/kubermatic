@@ -101,7 +101,6 @@ const (
 // pods to allow access to monitoring applications inside the seed
 // clusters, like Prometheus and Grafana.
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
@@ -139,7 +138,7 @@ func Add(
 	}
 
 	// watch related resources
-	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("failed to get seeds", zap.Error(err))

@@ -185,11 +185,11 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 }
 
 func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		projectList := &kubermaticv1.ProjectList{}
-		if err := client.List(context.Background(), projectList); err != nil {
+		if err := client.List(ctx, projectList); err != nil {
 			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list projects: %w", err))
 		}

@@ -89,11 +89,11 @@ func Add(
 		return fmt.Errorf("failed to create watch for clusters: %w", err)
 	}
 
-	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		ipamPool := a.(*kubermaticv1.IPAMPool)
 
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
+		if err := mgr.GetClient().List(ctx, clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			log.Errorw("Failed to list clusters", zap.Error(err))
 			return []reconcile.Request{}

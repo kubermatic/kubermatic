@@ -52,7 +52,6 @@ const (
 
 // Add creates a new group-project-binding controller and sets up Watches.
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
@@ -102,7 +101,7 @@ func Add(
 // match the GroupProjectBinding.Spec.Role. Only GroupProjectBindings with a matching KKP role need to be reconciled
 // when a new ClusterRole/Role object for that KKP role is created by rbac-controller.
 func enqueueGroupProjectBindingsForRole(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var (
 			requests []reconcile.Request
 		)
@@ -110,7 +109,7 @@ func enqueueGroupProjectBindingsForRole(client ctrlruntimeclient.Client) handler
 		bindingList := &kubermaticv1.GroupProjectBindingList{}
 		listOpts := &ctrlruntimeclient.ListOptions{}
 
-		if err := client.List(context.Background(), bindingList, listOpts); err != nil {
+		if err := client.List(ctx, bindingList, listOpts); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list GroupProjectBindings: %w", err))
 			return []reconcile.Request{}
 		}

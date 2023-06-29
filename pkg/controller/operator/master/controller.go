@@ -53,7 +53,6 @@ const (
 )
 
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	namespace string,
@@ -79,7 +78,7 @@ func Add(
 	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	// put the config's identifier on the queue
-	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -96,7 +95,7 @@ func Add(
 	}
 
 	// for each child put the parent configuration onto the queue
-	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		config, err := kubernetes.GetRawKubermaticConfiguration(ctx, mgr.GetClient(), namespace)
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to get KubermaticConfiguration: %w", err))

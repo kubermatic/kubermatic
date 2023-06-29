@@ -64,7 +64,6 @@ type Reconciler struct {
 }
 
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
@@ -112,7 +111,7 @@ func Add(
 
 	if err := c.Watch(
 		source.Kind(mgr.GetCache(), &kubermaticv1.UserSSHKey{}),
-		enqueueAllClusters(ctx, reconciler.seedClients, workerSelector),
+		enqueueAllClusters(reconciler.seedClients, workerSelector),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for userSSHKey: %w", err)
 	}
@@ -222,8 +221,8 @@ func buildUserSSHKeysForCluster(clusterName string, keys *kubermaticv1.UserSSHKe
 }
 
 // enqueueAllClusters enqueues all clusters.
-func enqueueAllClusters(ctx context.Context, clients kuberneteshelper.SeedClientMap, workerSelector labels.Selector) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueAllClusters(clients kuberneteshelper.SeedClientMap, workerSelector labels.Selector) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		listOpts := &ctrlruntimeclient.ListOptions{

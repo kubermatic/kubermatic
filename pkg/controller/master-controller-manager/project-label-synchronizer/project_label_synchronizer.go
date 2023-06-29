@@ -53,7 +53,7 @@ type reconciler struct {
 // requestFromCluster returns a reconcile.Request for the project the given
 // cluster belongs to, if any.
 func requestFromCluster(log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(mo ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(_ context.Context, mo ctrlruntimeclient.Object) []reconcile.Request {
 		cluster, ok := mo.(*kubermaticv1.Cluster)
 		if !ok {
 			err := fmt.Errorf("Object was not a cluster but a %T", mo)
@@ -74,7 +74,6 @@ func requestFromCluster(log *zap.SugaredLogger) handler.EventHandler {
 }
 
 func Add(
-	ctx context.Context,
 	masterManager manager.Manager,
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,

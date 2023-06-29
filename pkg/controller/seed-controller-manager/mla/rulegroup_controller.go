@@ -109,13 +109,13 @@ func newRuleGroupReconciler(
 		return fmt.Errorf("failed to watch RuleGroup: %w", err)
 	}
 
-	enqueueRuleGroupsForCluster := handler.EnqueueRequestsFromMapFunc(func(object ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueRuleGroupsForCluster := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlruntimeclient.Object) []reconcile.Request {
 		cluster := object.(*kubermaticv1.Cluster)
 		if cluster.Status.NamespaceName == "" {
 			return nil
 		}
 		ruleGroupList := &kubermaticv1.RuleGroupList{}
-		if err := client.List(context.Background(), ruleGroupList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+		if err := client.List(ctx, ruleGroupList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 			log.Errorw("failed to list ruleGroups for cluster", zap.Error(err), "cluster", cluster.Name)
 			utilruntime.HandleError(fmt.Errorf("failed to list ruleGroups: %w", err))
 		}

@@ -227,11 +227,11 @@ func (r *reconcileSyncProjectBinding) getProjectForBinding(ctx context.Context, 
 }
 
 func enqueueUserProjectBindingsForUser(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		user := a.(*kubermaticv1.User)
 
 		userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
-		if err := client.List(context.Background(), userProjectBindingList, ctrlruntimeclient.MatchingFields{
+		if err := client.List(ctx, userProjectBindingList, ctrlruntimeclient.MatchingFields{
 			userProjectBindingEmailKey: user.Spec.Email,
 		}); err != nil {
 			log.Error(err)

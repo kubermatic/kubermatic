@@ -51,7 +51,7 @@ func setupControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create GroupProjectBinding sync controller: %w", err)
 	}
 
-	if err := groupprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.workerCount, true); err != nil {
+	if err := groupprojectbinding.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.workerCount, true); err != nil {
 		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
 	}
 

@@ -149,11 +149,8 @@ func Add(
 		return err
 	}
 
-	mapFn := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
-		log.Debugw("Controller got triggered",
-			"type", fmt.Sprintf("%T", o),
-			"name", o.GetName(),
-			"namespace", o.GetNamespace())
+	mapFn := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
+		log.Debugw("Controller got triggered", "type", fmt.Sprintf("%T", o), "name", o.GetName(), "namespace", o.GetNamespace())
 
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{

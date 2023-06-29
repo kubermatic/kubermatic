@@ -274,14 +274,14 @@ func withEventFilter() predicate.Predicate {
 }
 
 func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.SugaredLogger, namespace string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		ospList := &unstructured.UnstructuredList{}
 		ospList.SetAPIVersion(operatingSystemManagerAPIVersion)
 		ospList.SetKind(fmt.Sprintf("%sList", customOperatingSystemProfileKind))
 
-		if err := client.List(context.Background(), ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
+		if err := client.List(ctx, ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list customOperatingSystemProfiles: %w", err))
 		}
 
