@@ -165,7 +165,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "avg by (node_name) (100 - (irate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
+              "expr": "avg by (node_name) (100 - (rate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "{{ node_name }}",
@@ -276,7 +276,7 @@ data:
           "tableColumn": "",
           "targets": [
             {
-              "expr": "avg (100 - (irate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
+              "expr": "avg (100 - (rate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
               "format": "time_series",
               "intervalFactor": 2,
               "refId": "A"
@@ -1254,7 +1254,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by (cpu) (irate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[5m]) * 100)",
+              "expr": "sum by (cpu) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[5m]) * 100)",
               "format": "time_series",
               "intervalFactor": 2,
               "legendFormat": "core {{ cpu }}",
@@ -1346,7 +1346,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "avg(sum by (cpu) (irate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
+              "expr": "avg(sum by (cpu) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
               "format": "time_series",
               "intervalFactor": 10,
               "legendFormat": "average",
@@ -1457,7 +1457,7 @@ data:
           "tableColumn": "",
           "targets": [
             {
-              "expr": "avg (sum by (cpu) (irate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
+              "expr": "avg (sum by (cpu) (rate(node_cpu_seconds_total{job=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
               "format": "time_series",
               "intervalFactor": 2,
               "refId": "A"
