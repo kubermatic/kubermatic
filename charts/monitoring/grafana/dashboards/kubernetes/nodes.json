@@ -258,7 +258,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "sum by (cpu) (irate(node_cpu_seconds_total{app=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[5m]) * 100)",
+          "expr": "sum by (cpu) (rate(node_cpu_seconds_total{app=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[5m]) * 100)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "core {{ cpu }}",
@@ -356,7 +356,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "avg(sum by (cpu) (irate(node_cpu_seconds_total{app=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
+          "expr": "avg(sum by (cpu) (rate(node_cpu_seconds_total{app=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
           "format": "time_series",
           "intervalFactor": 10,
           "legendFormat": "average",
@@ -439,7 +439,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "avg (sum by (cpu) (irate(node_cpu_seconds_total{app=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
+          "expr": "avg (sum by (cpu) (rate(node_cpu_seconds_total{app=\"node-exporter\", mode!=\"idle\", node_name=\"$node\"}[2m]) * 100))",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A"
