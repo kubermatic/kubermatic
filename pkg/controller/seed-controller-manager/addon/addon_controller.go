@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -506,6 +507,31 @@ func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, ma
 	return cmd, nil
 }
 
+// Between v2.22 and v2.23, there was a change to hetzner CSI driver immutable field fsGroupPolicy
+// as a result, the CSDriver resource has to be redeployed
+// https://github.com/kubermatic/kubermatic/issues/12429
+func (r *Reconciler) migrateHetznerCSIDriver(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get kube client: %w", err)
+	}
+
+	driver := &storagev1.CSIDriver{}
+	if err := cl.Get(ctx, types.NamespacedName{Name: "csi.hetzner.cloud"}, driver); apierrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to get CSIDriver: %w", err)
+	}
+
+	if driver.Spec.FSGroupPolicy == nil || *driver.Spec.FSGroupPolicy != storagev1.FileFSGroupPolicy {
+		log.Debug("deleting hetzner CSIDriver to allow upgrade")
+		if err := cl.Delete(ctx, driver); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete old CSIDriver: %w", err)
+		}
+	}
+	return nil
+}
+
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
 	if err != nil {
@@ -532,6 +558,14 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 
+	if addon.Name == "csi" && cluster.Spec.Cloud.Hetzner != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		// Between v2.22 and v2.23, there was a change to hetzner CSI driver immutable field fsGroupPolicy
+		// as a result, the CSDriver resource has to be redeployed
+		// https://github.com/kubermatic/kubermatic/issues/12429
+		if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
+			return fmt.Errorf("failed to migrate CSI Driver: %w", err)
+		}
+	}
 	cmdLog.Debug("Applying manifest...")
 	out, err := cmd.CombinedOutput()
 	cmdLog.Debugw("Finished executing command", "output", string(out))
