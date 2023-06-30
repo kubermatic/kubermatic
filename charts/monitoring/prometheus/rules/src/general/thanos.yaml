@@ -1,5 +1,3 @@
-# This file has been generated, DO NOT EDIT.
-
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +25,7 @@ groups:
           severity: warning
           resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
           service: thanos
+
       - alert: ThanosSidecarNoHeartbeat
         annotations:
           message: The Thanos sidecar in `{{ $labels.namespace }}/{{ $labels.pod }}` didn't send a heartbeat in {{ $value }} seconds.
@@ -37,6 +36,7 @@ groups:
           severity: warning
           resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
           service: thanos
+
       - alert: ThanosCompactorManyRetries
         annotations:
           message: The Thanos compactor in `{{ $labels.namespace }}` is experiencing a high retry rate.
@@ -47,6 +47,10 @@ groups:
           severity: warning
           resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
           service: thanos
+        runbook:
+          steps:
+            - Check the `thanos-compact` pod's logs.
+
       - alert: ThanosShipperManyDirSyncFailures
         annotations:
           message: The Thanos shipper in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a high dir-sync failure rate.
@@ -57,6 +61,10 @@ groups:
           severity: warning
           resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
           service: thanos
+        runbook:
+          steps:
+            - Check the `thanos` containers's logs inside the Prometheus pod.
+
       - alert: ThanosManyPanicRecoveries
         annotations:
           message: The Thanos component in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a panic recovery rate.
@@ -67,6 +75,7 @@ groups:
           severity: warning
           resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
           service: thanos
+
       - alert: ThanosManyBlockLoadFailures
         annotations:
           message: The Thanos store in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a many failed block loads.
@@ -77,6 +86,7 @@ groups:
           severity: warning
           resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
           service: thanos
+
       - alert: ThanosManyBlockDropFailures
         annotations:
           message: The Thanos store in `{{ $labels.namespace }}/{{ $labels.pod }}` is experiencing a many failed block drops.
