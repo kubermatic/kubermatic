@@ -21,7 +21,9 @@ minio:
 
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-05-04T21-44-30Z
+    # any release after this removes support for the legacy filesystem driver,
+    # requiring a data migration; see https://github.com/kubermatic/kubermatic/issues/12430
+    tag: RELEASE.2022-10-24T18-35-07Z
   storeSize: 100Gi
 
   # The is required to enable the BackupRestore controller so it can backup
