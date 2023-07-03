@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"go/types"
+	"io"
 	"regexp"
+	"text/tabwriter"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -63,4 +65,14 @@ func SearchFuncInvocationsForPackages(dir string, pkgToSearch []string, filter *
 	}
 
 	return res, nil
+}
+
+func PrintFuncInvocations(writer io.Writer, fi FuncInvocations) {
+	w := new(tabwriter.Writer)
+	w.Init(writer, 8, 8, 0, '\t', 0)
+	defer w.Flush()
+
+	for k, v := range fi {
+		fmt.Fprintf(w, "%s\t%s\t%s\n", k.Funcname, k.ModulePath, v.Definition)
+	}
 }

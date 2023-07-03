@@ -35,6 +35,12 @@ func run(log *zap.SugaredLogger) error {
 		return err
 	}
 
+	// if we only want to print the funcs, exit early
+	if config.PrintFuncs == true {
+		PrintFuncInvocations(os.Stdout, invoc)
+		return nil
+	}
+
 	policy, err := config.PoC.GeneratePolicy(invoc)
 	if err != nil {
 		return err
