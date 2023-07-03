@@ -24,10 +24,10 @@ type FuncInvocations map[FuncCallID]FuncMetadata
 // You can supply a list of full go module paths that should be searched and a regex the imports should match
 // example:  ([]string{"github.com/my-module/my-package"}, "github.com/aws/aws-sdk-go-v2/*") => returns all functions inside your package
 // which are from any of the aws-sdk-go-v2 packages.
-func SearchFuncInvocationsForPackages(pkgToSearch []string, filter *regexp.Regexp) (FuncInvocations, error) {
+func SearchFuncInvocationsForPackages(dir string, pkgToSearch []string, filter *regexp.Regexp) (FuncInvocations, error) {
 	res := make(map[FuncCallID]FuncMetadata)
 
-	conf := &packages.Config{Mode: packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo}
+	conf := &packages.Config{Dir: dir, Mode: packages.NeedFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesInfo}
 	pkgs, err := packages.Load(conf, pkgToSearch...)
 	if err != nil {
 		return nil, err

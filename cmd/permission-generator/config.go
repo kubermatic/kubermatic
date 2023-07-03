@@ -9,16 +9,19 @@ import (
 )
 
 type Config struct {
-	GoModDir string
-	Provider string
-	Pkgs     []string
-	Filter   *regexp.Regexp
-	PoC      PolicyCreator
+	GoModDir   string
+	Provider   string
+	Pkgs       []string
+	Filter     *regexp.Regexp
+	PrintFuncs bool
+
+	PoC PolicyCreator
 }
 
 var defaultConfig = Config{
-	Provider: "", // must be set by the user
-	GoModDir: "", // will be defaulted to working directory in Init
+	Provider:   "", // must be set by the user
+	GoModDir:   "", // will be defaulted to working directory in Init
+	PrintFuncs: false,
 }
 
 var supportedProviders = []string{"aws"}
@@ -73,5 +76,6 @@ func (c *Config) InitAndValidate() error {
 
 func (c *Config) FromFlags() {
 	flag.StringVar(&c.Provider, "provider", defaultConfig.Provider, fmt.Sprintf("Cloud provider to generate policy for. Must be set. Supported providers: %s", supportedProviders))
-	flag.StringVar(&c.GoModDir, "path", defaultConfig.GoModDir, "The base path from which to start searching. This should be where your go.mod file is located. Defaults to current directory")
+	flag.StringVar(&c.GoModDir, "modDir", defaultConfig.GoModDir, "The base path from which to start searching. This should be where your go.mod file is located. Defaults to current directory")
+	flag.BoolVar(&c.PrintFuncs, "printFuncs", defaultConfig.PrintFuncs, "Whether you only want to print the func usage, and not generate a whole provider statement. Defaults to false")
 }
