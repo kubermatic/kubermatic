@@ -15,6 +15,15 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Introduce `EnableShareCluster` flag in `KubermaticSettings` to toggle the share cluster feature for the dashboard ([#11950](https://github.com/kubermatic/kubermatic/pull/11950))
   - **ACTION REQUIRED:** `share_kubeconfig` field in the UI configuration for KubermaticConfiguration has been replaced with `EnableShareCluster` flag in KubermaticSettings. `share_kubeconfig` is no-op and will be ignored by the dashboard
 
+### Known Issues
+
+The following issues have been identified and will be fixed in the upcoming patch releases.
+
+- CSI addon for Hetzner fails to apply after upgrade ([12429](https://github.com/kubermatic/kubermatic/issues/12429))
+  - **REMEDIATION:** A workaround is to manually delete the `CSIDriver` and let the `addon-controller` reconcile it - `kubectl delete csidriver csi.hetzner.cloud`.
+- Crashing MinIO after upgrade ([12430](https://github.com/kubermatic/kubermatic/issues/12430))
+  - **REMEDIATION:** A workaround is to downgrade Minio to the last release supporting the `fs` storage driver. You can pin the `minio` image `tag` to `RELEASE.2022-10-24T18-35-07Z` in the [`values.yaml`](https://github.com/kubermatic/kubermatic/blob/v2.23.0/charts/minio/values.yaml#L24) and re-run the installer.
+
 ### Security
 
 - Fix potential path traversal in mirror-images command ([#12293](https://github.com/kubermatic/kubermatic/pull/12293))
