@@ -6121,6 +6121,13 @@ func (in *SettingSpec) DeepCopyInto(out *SettingSpec) {
 		*out = new(MachineFlavorFilter)
 		**out = **in
 	}
+	if in.AllowedOperatingSystems != nil {
+		in, out := &in.AllowedOperatingSystems, &out.AllowedOperatingSystems
+		*out = make(allowedOperatingSystems, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.DefaultProjectResourceQuota != nil {
 		in, out := &in.DefaultProjectResourceQuota, &out.DefaultProjectResourceQuota
 		*out = new(DefaultProjectResourceQuota)

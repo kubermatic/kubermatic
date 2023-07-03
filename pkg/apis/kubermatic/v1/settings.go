@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,6 +38,9 @@ type KubermaticSetting struct {
 
 	Spec SettingSpec `json:"spec,omitempty"`
 }
+
+// allowedOperatingSystems defines a map of operating systems that can be used for the machines.
+type allowedOperatingSystems map[providerconfig.OperatingSystem]bool
 
 type SettingSpec struct {
 	// CustomLinks are additional links that can be shown the dashboard's footer.
@@ -90,6 +95,9 @@ type SettingSpec struct {
 
 	// MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
 	MachineDeploymentVMResourceQuota *MachineFlavorFilter `json:"machineDeploymentVMResourceQuota,omitempty"`
+
+	// AllowedOperatingSystems shows if the operating system is allowed to be use in the machinedeployment.
+	AllowedOperatingSystems allowedOperatingSystems `json:"allowedOperatingSystems,omitempty"`
 
 	// DefaultProjectResourceQuota allows to configure a default project resource quota which
 	// will be set for all projects that do not have a custom quota already set. EE-version only.

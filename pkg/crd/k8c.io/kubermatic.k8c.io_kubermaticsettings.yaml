@@ -35,6 +35,11 @@ spec:
               type: object
             spec:
               properties:
+                allowedOperatingSystems:
+                  additionalProperties:
+                    type: boolean
+                  description: AllowedOperatingSystems shows if the operating system is allowed to be use in the machinedeployment.
+                  type: object
                 cleanupOptions:
                   description: CleanupOptions control what happens when a cluster is deleted via the dashboard.
                   properties:
