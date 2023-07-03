@@ -19,6 +19,7 @@ package kubevirtvmieviction
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"go.uber.org/zap"
 	kubevirtv1 "kubevirt.io/api/core/v1"
@@ -30,7 +31,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -47,10 +47,10 @@ const (
 
 func init() {
 	if err := kubevirtv1.AddToScheme(scheme.Scheme); err != nil {
-		klog.Fatalf("failed to add kubevirtv1 to scheme: %v", err)
+		log.Fatalf("failed to add kubevirtv1 to scheme: %v", err)
 	}
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
-		klog.Fatalf("failed to add kubevirtv1 to scheme: %v", err)
+		log.Fatalf("failed to add kubevirtv1 to scheme: %v", err)
 	}
 }
 
