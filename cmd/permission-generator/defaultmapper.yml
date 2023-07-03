@@ -205,4 +205,12 @@ modules:
     funcs:
       String: null
       Int32: null
+      Int64: null
       Bool: null
+      Float32: null
+      Float64: null
+      ToBool: null
+      ToInt64: null
+      ToString: null
+      ToFloat64: null
+      StringSlice: null
