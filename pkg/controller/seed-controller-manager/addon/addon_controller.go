@@ -63,9 +63,10 @@ import (
 const (
 	ControllerName = "kkp-addon-controller"
 
-	addonLabelKey        = "kubermatic-addon"
-	cleanupFinalizerName = "cleanup-manifests"
-	addonEnsureLabelKey  = "addons.kubermatic.io/ensure"
+	addonLabelKey           = "kubermatic-addon"
+	cleanupFinalizerName    = "cleanup-manifests"
+	addonEnsureLabelKey     = "addons.kubermatic.io/ensure"
+	migratedHetznerCSIAddon = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -556,16 +557,26 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to create command: %w", err)
 	}
 
-	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
-
-	if addon.Name == "csi" && cluster.Spec.Cloud.Hetzner != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+	if addon.Name == "csi" &&
+		cluster.Spec.Cloud.Hetzner != nil &&
+		cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
+		cluster.Annotations[migratedHetznerCSIAddon] != "yes" {
 		// Between v2.22 and v2.23, there was a change to hetzner CSI driver immutable field fsGroupPolicy
 		// as a result, the CSDriver resource has to be redeployed
 		// https://github.com/kubermatic/kubermatic/issues/12429
 		if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
 			return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 		}
+		if cluster.Annotations == nil {
+			cluster.Annotations = make(map[string]string)
+		}
+		cluster.Annotations[migratedHetznerCSIAddon] = "yes"
+		if err := r.Update(ctx, cluster); err != nil {
+			log.Errorf("failed to set %q cluster annotation: %w", migratedHetznerCSIAddon, err)
+		}
 	}
+
+	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 	cmdLog.Debug("Applying manifest...")
 	out, err := cmd.CombinedOutput()
 	cmdLog.Debugw("Finished executing command", "output", string(out))
