@@ -465,14 +465,15 @@ type commandTplData struct {
 func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
-			"-cluster", cluster.Name,
-			"-pod-name", "$(POD_NAME)",
-			"-pod-ip", "$(POD_IP)",
-			"-api-version", "$(ETCDCTL_API)",
-			"-token", "$(TOKEN)",
+			"run",
+			"--cluster", cluster.Name,
+			"--pod-name", "$(POD_NAME)",
+			"--pod-ip", "$(POD_IP)",
+			"--api-version", "$(ETCDCTL_API)",
+			"--token", "$(TOKEN)",
 		}
 		if enableCorruptionCheck {
-			command = append(command, "-enable-corruption-check")
+			command = append(command, "--enable-corruption-check")
 		}
 		return command, nil
 	}
