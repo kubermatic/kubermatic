@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -35,6 +36,10 @@ const (
 type options struct {
 	cluster           string
 	etcdctlAPIVersion string
+
+	etcdCAFile   string
+	etcdCertFile string
+	etcdKeyFile  string
 }
 
 func (o *options) CopyInto(other *options) {
@@ -73,7 +78,17 @@ func main() {
 	})
 
 	rootCmd.PersistentFlags().StringVar(&opts.cluster, "cluster", "", "KKP user cluster to run this etcd-launcher for")
+
 	rootCmd.PersistentFlags().StringVar(&opts.etcdctlAPIVersion, "api-version", defaultEtcdctlAPIVersion, "etcdctl API version")
+	rootCmd.PersistentFlags().StringVar(&opts.etcdCAFile, "etcd-ca-file", resources.EtcdTrustedCAFile, "path to etcd CA cert file")
+	rootCmd.PersistentFlags().StringVar(&opts.etcdCertFile, "etcd-client-cert-file", resources.EtcdClientCertFile, "path to etcd client cert file")
+	rootCmd.PersistentFlags().StringVar(&opts.etcdKeyFile, "etcd-client-key-file", resources.EtcdClientKeyFile, "path to etcd client cert key")
+
+	/*
+		    		CertFile:       resources.EtcdClientCertFile,
+				KeyFile:        resources.EtcdClientKeyFile,
+				TrustedCAFile:  resources.EtcdTrustedCAFile,
+	*/
 
 	addCommands(rootCmd, log, versions)
 
