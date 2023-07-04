@@ -54,6 +54,19 @@ func RunCommand(logger *zap.SugaredLogger) *cobra.Command {
 		SilenceUsage: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.CopyInto(&opt.options)
+
+			if opt.podName == "" {
+				return fmt.Errorf("--pod-name cannot be empty")
+			}
+
+			if opt.podIP == "" {
+				return fmt.Errorf("--pod-ip cannot be empty")
+			}
+
+			if opt.token == "" {
+				return fmt.Errorf("--token cannot be empty")
+			}
+
 			opt.dataDir = fmt.Sprintf("/var/run/etcd/pod_%s/", opt.podName)
 
 			return nil

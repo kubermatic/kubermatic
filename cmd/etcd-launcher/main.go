@@ -80,7 +80,6 @@ func main() {
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(1)
 	}
-
 }
 
 func createLogger() *zap.SugaredLogger {
