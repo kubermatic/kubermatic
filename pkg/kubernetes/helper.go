@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -485,11 +484,11 @@ func GetContainerRuntime(ctx context.Context,
 ) (string, error) {
 	nodeReq, err := labels.NewRequirement(NodeControlPlaneLabel, selection.Exists, []string{})
 	if err != nil {
-		return "", errors.Wrap(err, "error creating selector requirement")
+		return "", fmt.Errorf("error creating selector requirement: %w", err)
 	}
 	selector := labels.NewSelector().Add(*nodeReq)
 	if err != nil {
-		return "", errors.Wrap(err, "error converting node label selector to map")
+		return "", fmt.Errorf("error converting node label selector to map: %w", err)
 	}
 
 	controlPlaneNode, err := clusterClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{
