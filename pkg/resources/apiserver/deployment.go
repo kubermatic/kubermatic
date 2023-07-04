@@ -79,7 +79,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			dep.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(true)
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
 
@@ -676,20 +676,6 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.AdmissionControlConfigMapName,
-					},
-				},
-			},
-		},
-		{
-			Name: "service-account-token",
-			VolumeSource: corev1.VolumeSource{
-				Projected: &corev1.ProjectedVolumeSource{
-					Sources: []corev1.VolumeProjection{
-						{
-							ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
-								Path: "token",
-							},
-						},
 					},
 				},
 			},
