@@ -18,7 +18,6 @@ package main
 
 import (
 	"os"
-	"time"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -30,18 +29,7 @@ import (
 )
 
 const (
-	defaultClusterSize       = 3
 	defaultEtcdctlAPIVersion = "3"
-	etcdCommandPath          = "/usr/local/bin/etcd"
-	initialStateExisting     = "existing"
-	initialStateNew          = "new"
-	envPeerTLSMode           = "PEER_TLS_MODE"
-	peerTLSModeStrict        = "strict"
-
-	timeoutListMembers    = time.Second * 5
-	timeoutAddMember      = time.Second * 15
-	timeoutRemoveMember   = time.Second * 30
-	timeoutUpdatePeerURLs = time.Second * 10
 )
 
 type options struct {
