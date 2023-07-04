@@ -18,6 +18,7 @@ package etcdrunning
 
 import (
 	"fmt"
+	"path/filepath"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -40,6 +41,9 @@ func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 		Command: []string{
 			"/etcd-launcher",
 			"is-running",
+			"--etcd-ca-file=/etc/etcd/pki/client/ca.crt",
+			fmt.Sprintf("--etcd-client-cert-file=%s", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateCertSecretKey)),
+			fmt.Sprintf("--etcd-client-key-file=%s", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateKeySecretKey)),
 			fmt.Sprintf("--cluster=%s", data.Cluster().Name),
 		},
 		VolumeMounts: []corev1.VolumeMount{

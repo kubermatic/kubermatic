@@ -89,6 +89,10 @@ func RunFunc(log *zap.SugaredLogger, opt *runOptions) cobraFuncE {
 			Cluster:           opt.cluster,
 			EtcdctlAPIVersion: opt.etcdctlAPIVersion,
 
+			CaCertFile:     opt.etcdCAFile,
+			ClientCertFile: opt.etcdCertFile,
+			ClientKeyFile:  opt.etcdKeyFile,
+
 			PodName:               opt.podName,
 			PodIP:                 opt.podIP,
 			DataDir:               opt.dataDir,

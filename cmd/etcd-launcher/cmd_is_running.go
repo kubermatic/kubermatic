@@ -67,6 +67,10 @@ func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 		e := &etcd.Cluster{
 			Cluster:           opt.cluster,
 			EtcdctlAPIVersion: opt.etcdctlAPIVersion,
+
+			CaCertFile:     opt.etcdCAFile,
+			ClientCertFile: opt.etcdCertFile,
+			ClientKeyFile:  opt.etcdKeyFile,
 		}
 
 		if _, err := e.Init(ctx); err != nil {

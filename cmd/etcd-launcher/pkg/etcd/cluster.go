@@ -60,8 +60,11 @@ const (
 )
 
 type Cluster struct {
-	Cluster               string // given as a CLI flag
-	ClusterClient         ctrlruntimeclient.Client
+	Cluster        string // given as a CLI flag
+	CaCertFile     string
+	ClientCertFile string
+	ClientKeyFile  string
+
 	PodName               string
 	PodIP                 string
 	EtcdctlAPIVersion     string
@@ -69,10 +72,12 @@ type Cluster struct {
 	Token                 string
 	EnableCorruptionCheck bool
 
+	clusterClient ctrlruntimeclient.Client
+	namespace     string // filled in later during init()
+
 	initialState   string
 	initialMembers []string
 	usePeerTLSOnly bool
-	namespace      string // filled in later during init()
 	clusterSize    int
 }
 
@@ -88,14 +93,14 @@ func (e *Cluster) Init(ctx context.Context) (*kubermaticv1.Cluster, error) {
 	var err error
 
 	// here we find the cluster state
-	e.ClusterClient, err = inClusterClient()
+	e.clusterClient, err = inClusterClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get in-cluster client: %w", err)
 	}
 
 	cluster := &kubermaticv1.Cluster{}
 	key := types.NamespacedName{Name: e.Cluster}
-	if err := e.ClusterClient.Get(ctx, key, cluster); err != nil {
+	if err := e.clusterClient.Get(ctx, key, cluster); err != nil {
 		return nil, err
 	}
 
@@ -107,7 +112,7 @@ func (e *Cluster) Init(ctx context.Context) (*kubermaticv1.Cluster, error) {
 func (e *Cluster) KubermaticCluster(ctx context.Context) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
 	key := types.NamespacedName{Name: e.Cluster}
-	if err := e.ClusterClient.Get(ctx, key, cluster); err != nil {
+	if err := e.clusterClient.Get(ctx, key, cluster); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +132,7 @@ func (e *Cluster) SetInitialState(ctx context.Context, log *zap.SugaredLogger, c
 		// new clusters can use "strict" TLS mode for etcd (TLS-only peering connections)
 		e.usePeerTLSOnly = true
 
-		if err := e.restoreDatadirFromBackupIfNeeded(ctx, log, e.ClusterClient, cluster); err != nil {
+		if err := e.restoreDatadirFromBackupIfNeeded(ctx, log, e.clusterClient, cluster); err != nil {
 			return fmt.Errorf("failed to restore datadir from backup: %w", err)
 		}
 	}
@@ -140,13 +145,13 @@ func (e *Cluster) Exists() bool {
 }
 
 func (e *Cluster) SetInitialMembers(ctx context.Context, log *zap.SugaredLogger) {
-	e.initialMembers = initialMemberList(ctx, log, e.ClusterClient, e.clusterSize, e.namespace, e.usePeerTLSOnly)
+	e.initialMembers = initialMemberList(ctx, log, e.clusterClient, e.clusterSize, e.namespace, e.usePeerTLSOnly)
 }
 
 func (e *Cluster) SetClusterSize(ctx context.Context) error {
 	sts := &appsv1.StatefulSet{}
 
-	if err := e.ClusterClient.Get(ctx, types.NamespacedName{Name: "etcd", Namespace: e.namespace}, sts); err != nil {
+	if err := e.clusterClient.Get(ctx, types.NamespacedName{Name: "etcd", Namespace: e.namespace}, sts); err != nil {
 		return fmt.Errorf("failed to get etcd sts: %w", err)
 	}
 	e.clusterSize = defaultClusterSize
@@ -404,9 +409,9 @@ func (e *Cluster) getLocalClient() (*client.Client, error) {
 func (e *Cluster) getClientWithEndpoints(eps []string) (*client.Client, error) {
 	var err error
 	tlsInfo := transport.TLSInfo{
-		CertFile:       resources.EtcdClientCertFile,
-		KeyFile:        resources.EtcdClientKeyFile,
-		TrustedCAFile:  resources.EtcdTrustedCAFile,
+		CertFile:       e.ClientCertFile,
+		KeyFile:        e.ClientKeyFile,
+		TrustedCAFile:  e.CaCertFile,
 		ClientCertAuth: true,
 	}
 	tlsConfig, err := tlsInfo.ClientConfig()
@@ -597,7 +602,7 @@ func (e *Cluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, log *zap
 		OutputDataDir:       e.DataDir,
 		OutputWALDir:        filepath.Join(e.DataDir, "member", "wal"),
 		PeerURLs:            []string{fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2381", e.PodName, e.namespace)},
-		InitialCluster:      strings.Join(initialMemberList(ctx, log, e.ClusterClient, e.clusterSize, e.namespace, e.usePeerTLSOnly), ","),
+		InitialCluster:      strings.Join(initialMemberList(ctx, log, e.clusterClient, e.clusterSize, e.namespace, e.usePeerTLSOnly), ","),
 		InitialClusterToken: e.Token,
 		SkipHashCheck:       false,
 	})
