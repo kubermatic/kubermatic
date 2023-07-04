@@ -80,7 +80,6 @@ func main() {
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(1)
 	}
-
 }
 
 func createLogger() *zap.SugaredLogger {
@@ -92,6 +91,7 @@ func createLogger() *zap.SugaredLogger {
 func addCommands(cmd *cobra.Command, logger *zap.SugaredLogger, versions kubermaticversion.Versions) {
 	cmd.AddCommand(
 		RunCommand(logger),
+		IsRunningCommand(logger),
 	)
 }
 

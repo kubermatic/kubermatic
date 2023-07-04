@@ -49,7 +49,7 @@ func TestGetEtcdCommand(t *testing.T) {
 				},
 			},
 			launcherEnabled: true,
-			expectedArgs:    11,
+			expectedArgs:    12,
 		},
 		{
 			name: "with-corruption-flags",
@@ -75,7 +75,7 @@ func TestGetEtcdCommand(t *testing.T) {
 			}
 
 			if len(args) != test.expectedArgs {
-				t.Fatalf("got less/more arguments than expected. got %d expected %d", len(args), test.expectedArgs)
+				t.Fatalf("got less/more arguments than expected. got %d expected %d: %s", len(args), test.expectedArgs, strings.Join(args, " "))
 			}
 			cmd := strings.Join(args, " ")
 			if !test.launcherEnabled {

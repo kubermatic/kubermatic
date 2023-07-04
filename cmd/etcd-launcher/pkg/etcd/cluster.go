@@ -78,23 +78,11 @@ type Cluster struct {
 
 func (e *Cluster) Init(ctx context.Context) (*kubermaticv1.Cluster, error) {
 	if e.Cluster == "" {
-		return nil, errors.New("--namespace is not set")
-	}
-
-	if e.PodName == "" {
-		return nil, errors.New("--pod-name is not set")
-	}
-
-	if e.PodIP == "" {
-		return nil, errors.New("-pod-ip is not set")
+		return nil, errors.New("--cluster is not set")
 	}
 
 	if e.EtcdctlAPIVersion != "2" && e.EtcdctlAPIVersion != "3" {
 		return nil, errors.New("--api-version is either 2 or 3")
-	}
-
-	if e.Token == "" {
-		return nil, errors.New("--token is not set")
 	}
 
 	var err error
@@ -217,7 +205,7 @@ func (e *Cluster) JoinCluster(ctx context.Context, log *zap.SugaredLogger) error
 		return fmt.Errorf("removing possible stale data dir: %w", err)
 	}
 	// join the cluster
-	client, err := e.getClusterClient()
+	client, err := e.GetClusterClient()
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -247,7 +235,7 @@ func (e *Cluster) JoinCluster(ctx context.Context, log *zap.SugaredLogger) error
 }
 
 func (e *Cluster) RemoveStaleMember(ctx context.Context, log *zap.SugaredLogger, memberID uint64) error {
-	client, err := e.getClusterClient()
+	client, err := e.GetClusterClient()
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -270,7 +258,7 @@ func (e *Cluster) UpdatePeerURLs(ctx context.Context, log *zap.SugaredLogger) er
 	if err != nil {
 		return err
 	}
-	client, err := e.getClusterClient()
+	client, err := e.GetClusterClient()
 	if err != nil {
 		return err
 	}
@@ -404,7 +392,7 @@ func (e *Cluster) endpoint() string {
 	return "https://127.0.0.1:2379"
 }
 
-func (e *Cluster) getClusterClient() (*client.Client, error) {
+func (e *Cluster) GetClusterClient() (*client.Client, error) {
 	endpoints := clientEndpoints(e.clusterSize, e.namespace)
 	return e.getClientWithEndpoints(endpoints)
 }
@@ -524,7 +512,7 @@ func (e *Cluster) isLeader(ctx context.Context, log *zap.SugaredLogger) (bool, e
 }
 
 func (e *Cluster) removeDeadMembers(ctx context.Context, log *zap.SugaredLogger, unwantedMembers []*etcdserverpb.Member) error {
-	client, err := e.getClusterClient()
+	client, err := e.GetClusterClient()
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
