@@ -50,7 +50,7 @@ func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 			},
 			{
 				Name:      "service-account-token",
-				MountPath: "/var/run/secrets/tokens",
+				MountPath: "/var/run/secrets/kubernetes.io/serviceaccount",
 				ReadOnly:  true,
 			},
 		},

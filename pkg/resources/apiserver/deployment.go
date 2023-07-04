@@ -682,12 +682,13 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 		},
 		{
 			Name: "service-account-token",
-
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: []corev1.VolumeProjection{
 						{
-							ServiceAccountToken: &corev1.ServiceAccountTokenProjection{},
+							ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+								Path: "token",
+							},
 						},
 					},
 				},
