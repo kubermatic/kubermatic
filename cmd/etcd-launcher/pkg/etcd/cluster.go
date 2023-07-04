@@ -46,13 +46,12 @@ import (
 )
 
 const (
-	defaultClusterSize       = 3
-	defaultEtcdctlAPIVersion = "3"
-	etcdCommandPath          = "/usr/local/bin/etcd"
-	initialStateExisting     = "existing"
-	initialStateNew          = "new"
-	envPeerTLSMode           = "PEER_TLS_MODE"
-	peerTLSModeStrict        = "strict"
+	defaultClusterSize   = 3
+	etcdCommandPath      = "/usr/local/bin/etcd"
+	initialStateExisting = "existing"
+	initialStateNew      = "new"
+	envPeerTLSMode       = "PEER_TLS_MODE"
+	peerTLSModeStrict    = "strict"
 
 	timeoutListMembers    = time.Second * 5
 	timeoutAddMember      = time.Second * 15
