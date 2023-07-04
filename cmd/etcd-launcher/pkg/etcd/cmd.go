@@ -1,0 +1,77 @@
+package etcd
+
+import (
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
+	"os/exec"
+	"strings"
+
+	"go.uber.org/zap"
+
+	"k8c.io/kubermatic/v2/pkg/resources"
+)
+
+func (e *Cluster) StartEtcdCmd(log *zap.SugaredLogger) (*exec.Cmd, error) {
+	if _, err := os.Stat(etcdCommandPath); errors.Is(err, fs.ErrNotExist) {
+		return nil, fmt.Errorf("failed to find etcd executable: %w", err)
+	}
+
+	cmd := exec.Command(etcdCommandPath, etcdCmd(e)...)
+	cmd.Env = os.Environ()
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+
+	log.Infof("starting etcd command: %s %s", etcdCommandPath, strings.Join(etcdCmd(e), " "))
+
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start etcd: %w", err)
+	}
+
+	return cmd, nil
+}
+
+func etcdCmd(config *Cluster) []string {
+	cmd := []string{
+		fmt.Sprintf("--name=%s", config.PodName),
+		fmt.Sprintf("--data-dir=%s", config.DataDir),
+		fmt.Sprintf("--initial-cluster=%s", strings.Join(config.initialMembers, ",")),
+		fmt.Sprintf("--initial-cluster-token=%s", config.Token),
+		fmt.Sprintf("--initial-cluster-state=%s", config.initialState),
+		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.PodName, config.namespace, config.PodIP),
+		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.PodIP),
+		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.PodIP),
+		"--client-cert-auth",
+		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
+		fmt.Sprintf("--key-file=%s", resources.EtcdKeyFile),
+		fmt.Sprintf("--peer-cert-file=%s", resources.EtcdCertFile),
+		fmt.Sprintf("--peer-key-file=%s", resources.EtcdKeyFile),
+		fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+		"--auto-compaction-retention=8",
+	}
+
+	// set TLS only peer URLs
+	if config.usePeerTLSOnly {
+		cmd = append(cmd, []string{
+			fmt.Sprintf("--listen-peer-urls=https://%s:2381", config.PodIP),
+			fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etcd.%s.svc.cluster.local:2381", config.PodName, config.namespace),
+			"--peer-client-cert-auth",
+		}...)
+	} else {
+		// 'mixed' mode clusters should start with both plaintext and HTTPS peer ports
+		cmd = append(cmd, []string{
+			fmt.Sprintf("--listen-peer-urls=http://%s:2380,https://%s:2381", config.PodIP, config.PodIP),
+			fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380,https://%s.etcd.%s.svc.cluster.local:2381", config.PodName, config.namespace, config.PodName, config.namespace),
+		}...)
+	}
+
+	if config.EnableCorruptionCheck {
+		cmd = append(cmd, []string{
+			"--experimental-initial-corrupt-check=true",
+			"--experimental-corrupt-check-time=240m",
+		}...)
+	}
+	return cmd
+}
