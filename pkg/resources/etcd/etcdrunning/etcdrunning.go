@@ -38,7 +38,7 @@ func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 		Image:           data.EtcdLauncherImage() + ":" + data.EtcdLauncherTag(),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
-			"/usr/local/bin/etcd-launcher",
+			"/etcd-launcher",
 			"is-running",
 			fmt.Sprintf("--cluster=%s", data.Cluster().Name),
 		},
