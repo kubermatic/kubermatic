@@ -1042,7 +1042,12 @@ type VSphereCloudSpec struct {
 	// +optional
 	Password string `json:"password"`
 	// VMNetName is the name of the vSphere network.
-	VMNetName string `json:"vmNetName"`
+	// Deprecated: Use networks instead.
+	// +optional
+	VMNetName string `json:"vmNetName,omitempty"`
+	// Networks is the list of vSphere networks.
+	// +optional
+	Networks []string `json:"networks,omitempty"`
 	// Folder is the folder to be used to group the provisioned virtual
 	// machines.
 	// +optional

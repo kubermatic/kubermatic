@@ -417,6 +417,10 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    networks:
+                      items:
+                        type: string
+                      type: array
                     password:
                       type: string
                     resourcePool:
@@ -424,6 +428,7 @@ spec:
                     username:
                       type: string
                     vmNetName:
+                      description: 'Deprecated: Use networks instead.'
                       type: string
                   required:
                     - password
