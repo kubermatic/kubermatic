@@ -48,6 +48,11 @@ func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 				MountPath: "/etc/etcd/pki/client",
 				ReadOnly:  true,
 			},
+			{
+				Name:      "service-account-token",
+				MountPath: "/var/run/secrets/tokens",
+				ReadOnly:  true,
+			},
 		},
 	}
 }

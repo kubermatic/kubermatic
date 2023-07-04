@@ -24,6 +24,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
@@ -38,6 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -76,6 +78,8 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+			dep.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
 
@@ -672,6 +676,19 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.AdmissionControlConfigMapName,
+					},
+				},
+			},
+		},
+		{
+			Name: "service-account-token",
+
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							ServiceAccountToken: &corev1.ServiceAccountTokenProjection{},
+						},
 					},
 				},
 			},
