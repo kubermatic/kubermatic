@@ -91,6 +91,7 @@ func createLogger() *zap.SugaredLogger {
 func addCommands(cmd *cobra.Command, logger *zap.SugaredLogger, versions kubermaticversion.Versions) {
 	cmd.AddCommand(
 		RunCommand(logger),
+		IsRunningCommand(logger),
 	)
 }
 
