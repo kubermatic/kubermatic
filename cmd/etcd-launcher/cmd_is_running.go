@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	"k8c.io/kubermatic/v2/cmd/etcd-launcher/pkg/etcd"
-	"k8c.io/kubermatic/v2/pkg/util/wait"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+
+	"k8c.io/kubermatic/v2/cmd/etcd-launcher/pkg/etcd"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 )
 
 type isRunningOptions struct {

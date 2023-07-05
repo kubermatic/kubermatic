@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"time"
 
-	"k8c.io/kubermatic/v2/cmd/etcd-launcher/pkg/etcd"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+
+	"k8c.io/kubermatic/v2/cmd/etcd-launcher/pkg/etcd"
 )
 
 type defragOptions struct {
