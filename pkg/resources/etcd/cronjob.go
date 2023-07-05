@@ -17,15 +17,12 @@ limitations under the License.
 package etcd
 
 import (
-	"bytes"
 	"fmt"
-	"text/template"
-
-	"github.com/Masterminds/sprig/v3"
+	"path/filepath"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -38,28 +35,27 @@ type cronJobReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	GetClusterRef() metav1.OwnerReference
+	EtcdLauncherImage() string
+	EtcdLauncherTag() string
 }
 
 // CronJobReconciler returns the func to create/update the etcd defragger cronjob.
 func CronJobReconciler(data cronJobReconcilerData) reconciling.NamedCronJobReconcilerFactory {
 	return func() (string, reconciling.CronJobReconciler) {
 		return resources.EtcdDefragCronJobName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
-			command, err := defraggerCommand(data)
-			if err != nil {
-				return nil, err
-			}
-
 			job.Name = resources.EtcdDefragCronJobName
 			job.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
 			job.Spec.SuccessfulJobsHistoryLimit = pointer.Int32(1)
 			job.Spec.Schedule = "@every 3h"
+
+			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 			job.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "defragger",
-					Image:   registry.Must(data.RewriteImage(resources.RegistryGCR + "/etcd-development/etcd:" + ImageTag(data.Cluster()))),
-					Command: command,
+					Image:   fmt.Sprintf("%s:%s", data.EtcdLauncherImage(), data.EtcdLauncherTag()),
+					Command: defraggerCommand(data),
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.ApiserverEtcdClientCertificateSecretName,
@@ -86,60 +82,13 @@ func CronJobReconciler(data cronJobReconcilerData) reconciling.NamedCronJobRecon
 	}
 }
 
-type defraggerCommandTplData struct {
-	ServiceName string
-	Namespace   string
-	CACertFile  string
-	CertFile    string
-	KeyFile     string
-}
-
-func defraggerCommand(data cronJobReconcilerData) ([]string, error) {
-	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(defraggerCommandTpl)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
-	}
-
-	tplData := defraggerCommandTplData{
-		ServiceName: resources.EtcdServiceName,
-		Namespace:   data.Cluster().Status.NamespaceName,
-		CACertFile:  resources.CACertSecretKey,
-		CertFile:    resources.ApiserverEtcdClientCertificateCertSecretKey,
-		KeyFile:     resources.ApiserverEtcdClientCertificateKeySecretKey,
-	}
-
-	buf := bytes.Buffer{}
-	if err := tpl.Execute(&buf, tplData); err != nil {
-		return nil, err
-	}
-
+func defraggerCommand(data cronJobReconcilerData) []string {
 	return []string{
-		"/bin/sh",
-		"-ec",
-		buf.String(),
-	}, nil
+		"/etcd-launcher",
+		"defrag",
+		"--etcd-ca-file=/etc/etcd/pki/client/ca.crt",
+		fmt.Sprintf("--etcd-client-cert-file=%s", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateCertSecretKey)),
+		fmt.Sprintf("--etcd-client-key-file=%s", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateKeySecretKey)),
+		fmt.Sprintf("--cluster=%s", data.Cluster().Name),
+	}
 }
-
-const (
-	defraggerCommandTpl = `etcdctl() {
-ETCDCTL_API=3 /usr/local/bin/etcdctl \
-  --command-timeout=60s \
-  --endpoints https://$1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local.:2379 \
-  --cacert /etc/etcd/pki/client/{{ .CACertFile }} \
-  --cert /etc/etcd/pki/client/{{ .CertFile }} \
-  --key /etc/etcd/pki/client/{{ .KeyFile }} \
-  $2
-}
-
-for node in etcd-0 etcd-1 etcd-2; do
-  etcdctl $node "endpoint health"
-
-  if [ $? -eq 0 ]; then
-    echo "Defragmenting $node..."
-    etcdctl $node defrag
-    sleep 30
-  else
-    echo "$node is not healthy, skipping defrag."
-  fi
-done`
-)

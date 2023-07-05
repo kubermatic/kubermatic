@@ -47,6 +47,7 @@ spec:
                   app: apiserver
               topologyKey: kubernetes.io/hostname
             weight: 100
+      automountServiceAccountToken: true
       containers:
       - args:
         - --client
@@ -328,21 +329,21 @@ spec:
       - name: dockercfg
       initContainers:
       - command:
-        - /bin/sh
-        - -ec
-        - 'for i in $(seq 1 100); do if ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt
-          --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key
-          --dial-timeout=2s --endpoints=''https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379''
-          put kubermatic/quorum-check something; then echo "etcd ready"; exit 0; fi;
-          echo "waiting for etcd. retry=$i/100"; sleep 2; done; echo "error: etcd
-          not ready"; exit 1;'
-        image: gcr.io/etcd-development/etcd:v3.5.6
+        - /etcd-launcher
+        - is-running
+        - --etcd-ca-file=/etc/etcd/pki/client/ca.crt
+        - --etcd-client-cert-file=/etc/etcd/pki/client/apiserver-etcd-client.crt
+        - --etcd-client-key-file=/etc/etcd/pki/client/apiserver-etcd-client.key
+        - --cluster=de-test-01
+        image: quay.io/kubermatic/etcd-launcher:v0.0.0-test
+        imagePullPolicy: IfNotPresent
         name: etcd-running
         resources: {}
         volumeMounts:
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
+      serviceAccountName: etcd-launcher
       volumes:
       - name: apiserver-tls
         secret:
