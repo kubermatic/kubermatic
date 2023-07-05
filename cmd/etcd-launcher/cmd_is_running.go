@@ -56,8 +56,8 @@ func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&opt.testKey, "key", "kubermatic/quorum-check", "key to write into etcd for testing its availability")
 	cmd.PersistentFlags().StringVar(&opt.testValue, "value", "something", "value to write into etcd for testing its availability")
-	cmd.PersistentFlags().DurationVar(&opt.interval, "interval", opt.interval, "interval in seconds between attempts to write to etcd")
-	cmd.PersistentFlags().DurationVar(&opt.timeout, "timeout", opt.timeout, "timeout in seconds before giving up writing to etcd")
+	cmd.PersistentFlags().DurationVar(&opt.interval, "interval", opt.interval, "interval as a Go duration between attempts to write to etcd")
+	cmd.PersistentFlags().DurationVar(&opt.timeout, "timeout", opt.timeout, "timeout as a Go duration before giving up writing to etcd")
 
 	return cmd
 }
