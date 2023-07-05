@@ -16,31 +16,13 @@ spec:
         spec:
           containers:
           - command:
-            - /bin/sh
-            - -ec
-            - |-
-              etcdctl() {
-              ETCDCTL_API=3 /usr/local/bin/etcdctl \
-                --command-timeout=60s \
-                --endpoints https://$1.etcd.cluster-de-test-01.svc.cluster.local.:2379 \
-                --cacert /etc/etcd/pki/client/ca.crt \
-                --cert /etc/etcd/pki/client/apiserver-etcd-client.crt \
-                --key /etc/etcd/pki/client/apiserver-etcd-client.key \
-                $2
-              }
-
-              for node in etcd-0 etcd-1 etcd-2; do
-                etcdctl $node "endpoint health"
-
-                if [ $? -eq 0 ]; then
-                  echo "Defragmenting $node..."
-                  etcdctl $node defrag
-                  sleep 30
-                else
-                  echo "$node is not healthy, skipping defrag."
-                fi
-              done
-            image: gcr.io/etcd-development/etcd:v3.5.6
+            - /etcd-launcher
+            - defrag
+            - --etcd-ca-file=/etc/etcd/pki/client/ca.crt
+            - --etcd-client-cert-file=/etc/etcd/pki/client/apiserver-etcd-client.crt
+            - --etcd-client-key-file=/etc/etcd/pki/client/apiserver-etcd-client.key
+            - --cluster=de-test-01
+            image: quay.io/kubermatic/etcd-launcher:v0.0.0-test
             name: defragger
             resources: {}
             volumeMounts:
@@ -50,6 +32,7 @@ spec:
           imagePullSecrets:
           - name: dockercfg
           restartPolicy: OnFailure
+          serviceAccountName: etcd-launcher
           volumes:
           - name: apiserver-etcd-client-certificate
             secret:
