@@ -37,11 +37,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -210,7 +210,7 @@ func (e *Cluster) JoinCluster(ctx context.Context, log *zap.SugaredLogger) error
 		return fmt.Errorf("removing possible stale data dir: %w", err)
 	}
 	// join the cluster
-	client, err := e.GetClusterClient()
+	client, err := e.GetClusterClient(ctx, log)
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -240,7 +240,7 @@ func (e *Cluster) JoinCluster(ctx context.Context, log *zap.SugaredLogger) error
 }
 
 func (e *Cluster) RemoveStaleMember(ctx context.Context, log *zap.SugaredLogger, memberID uint64) error {
-	client, err := e.GetClusterClient()
+	client, err := e.GetClusterClient(ctx, log)
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -263,7 +263,7 @@ func (e *Cluster) UpdatePeerURLs(ctx context.Context, log *zap.SugaredLogger) er
 	if err != nil {
 		return err
 	}
-	client, err := e.GetClusterClient()
+	client, err := e.GetClusterClient(ctx, log)
 	if err != nil {
 		return err
 	}
@@ -397,16 +397,16 @@ func (e *Cluster) endpoint() string {
 	return "https://127.0.0.1:2379"
 }
 
-func (e *Cluster) GetClusterClient() (*client.Client, error) {
+func (e *Cluster) GetClusterClient(ctx context.Context, log *zap.SugaredLogger) (*client.Client, error) {
 	endpoints := clientEndpoints(e.clusterSize, e.namespace)
-	return e.getClientWithEndpoints(endpoints)
+	return e.getClientWithEndpoints(ctx, log, endpoints)
 }
 
-func (e *Cluster) getLocalClient() (*client.Client, error) {
-	return e.getClientWithEndpoints([]string{e.endpoint()})
+func (e *Cluster) getLocalClient(ctx context.Context, log *zap.SugaredLogger) (*client.Client, error) {
+	return e.getClientWithEndpoints(ctx, log, []string{e.endpoint()})
 }
 
-func (e *Cluster) getClientWithEndpoints(eps []string) (*client.Client, error) {
+func (e *Cluster) getClientWithEndpoints(ctx context.Context, log *zap.SugaredLogger, eps []string) (*client.Client, error) {
 	var err error
 	tlsInfo := transport.TLSInfo{
 		CertFile:       e.ClientCertFile,
@@ -414,26 +414,36 @@ func (e *Cluster) getClientWithEndpoints(eps []string) (*client.Client, error) {
 		TrustedCAFile:  e.CaCertFile,
 		ClientCertAuth: true,
 	}
+
 	tlsConfig, err := tlsInfo.ClientConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate client TLS config: %w", err)
 	}
-	for i := 0; i < 5; i++ {
+
+	var etcdClient *client.Client
+
+	if err = wait.PollImmediateLog(ctx, log, 5*time.Second, 60*time.Second, func() (error, error) {
 		cli, err := client.New(client.Config{
 			Endpoints:   eps,
 			DialTimeout: 2 * time.Second,
 			TLS:         tlsConfig,
 		})
+
 		if err == nil && cli != nil {
-			return cli, nil
+			etcdClient = cli
+			return nil, nil
 		}
-		time.Sleep(5 * time.Second)
+
+		return nil, err
+	}); err != nil {
+		return nil, fmt.Errorf("failed to establish client connection: %w", err)
 	}
-	return nil, fmt.Errorf("failed to establish client connection: %w", err)
+
+	return etcdClient, nil
 }
 
 func (e *Cluster) listMembers(ctx context.Context, log *zap.SugaredLogger) ([]*etcdserverpb.Member, error) {
-	client, err := e.getClientWithEndpoints(clientEndpoints(e.clusterSize, e.namespace))
+	client, err := e.getClientWithEndpoints(ctx, log, clientEndpoints(e.clusterSize, e.namespace))
 	if err != nil {
 		return nil, fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -470,6 +480,7 @@ func (e *Cluster) getUnwantedMembers(ctx context.Context, log *zap.SugaredLogger
 			if err != nil {
 				return []*etcdserverpb.Member{}, err
 			}
+
 			if !contains(expectedMembers, peerURL.Hostname()) {
 				unwantedMembers = append(unwantedMembers, member)
 			}
@@ -480,24 +491,27 @@ func (e *Cluster) getUnwantedMembers(ctx context.Context, log *zap.SugaredLogger
 }
 
 func (e *Cluster) isHealthyWithEndpoints(ctx context.Context, log *zap.SugaredLogger, endpoints []string) (bool, error) {
-	client, err := e.getClientWithEndpoints(endpoints)
+	client, err := e.getClientWithEndpoints(ctx, log, endpoints)
 	if err != nil {
 		return false, err
 	}
 	defer closeClient(client, log)
+
 	// just get a key from etcd, this is how `etcdctl endpoint health` works!
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	_, err = client.Get(ctx, "healthy")
 	defer cancel()
+
 	if err != nil && !errors.Is(err, rpctypes.ErrPermissionDenied) {
 		// silently swallow/drop transient errors
 		return false, nil
 	}
+
 	return true, nil
 }
 
 func (e *Cluster) isLeader(ctx context.Context, log *zap.SugaredLogger) (bool, error) {
-	localClient, err := e.getLocalClient()
+	localClient, err := e.getLocalClient(ctx, log)
 	if err != nil {
 		return false, err
 	}
@@ -509,6 +523,7 @@ func (e *Cluster) isLeader(ctx context.Context, log *zap.SugaredLogger) (bool, e
 			time.Sleep(2 * time.Second)
 			continue
 		}
+
 		if resp.Header.MemberId == resp.Leader {
 			return true, nil
 		}
@@ -517,7 +532,7 @@ func (e *Cluster) isLeader(ctx context.Context, log *zap.SugaredLogger) (bool, e
 }
 
 func (e *Cluster) removeDeadMembers(ctx context.Context, log *zap.SugaredLogger, unwantedMembers []*etcdserverpb.Member) error {
-	client, err := e.GetClusterClient()
+	client, err := e.GetClusterClient(ctx, log)
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -530,25 +545,36 @@ func (e *Cluster) removeDeadMembers(ctx context.Context, log *zap.SugaredLogger,
 			continue
 		}
 
-		if err = wait.Poll(1*time.Second, 15*time.Second, func() (bool, error) {
+		if err = wait.Poll(ctx, 1*time.Second, 15*time.Second, func() (error, error) {
 			// attempt to update member in case a client URL has recently been added
 			if m, err := e.GetMemberByName(ctx, log, member.Name); err != nil {
-				return false, err
+				return nil, err
 			} else if m != nil {
 				member = m
 			}
 
 			if len(member.ClientURLs) == 0 {
-				return false, nil
+				return nil, fmt.Errorf("no client URLs are found")
 			}
 
 			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
 			// fail because the certificates don't include Pod IP addresses.
-			return e.isHealthyWithEndpoints(ctx, log, member.ClientURLs[len(member.ClientURLs)-1:])
+			healthy, err := e.isHealthyWithEndpoints(ctx, log, member.ClientURLs[len(member.ClientURLs)-1:])
+			if err != nil {
+				return nil, fmt.Errorf("failed to check health: %w", err)
+			}
+
+			if !healthy {
+				return nil, fmt.Errorf("endpoints are not healthy")
+			}
+
+			return nil, nil
 		}); err != nil {
 			log.Infow("member is not responding, removing from cluster", "member-name", member.Name)
+
 			ctx, cancelFunc := context.WithTimeout(ctx, timeoutRemoveMember)
 			defer cancelFunc()
+
 			_, err = client.MemberRemove(ctx, member.ID)
 			return err
 		}

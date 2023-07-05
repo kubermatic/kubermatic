@@ -77,7 +77,7 @@ func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 			return fmt.Errorf("failed to initialize etcd cluster configuration: %w", err)
 		}
 
-		client, err := e.GetClusterClient()
+		client, err := e.GetClusterClient(ctx, log)
 		if err != nil {
 			return fmt.Errorf("failed to get etcd cluster client: %w", err)
 		}
