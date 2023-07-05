@@ -89,6 +89,5 @@ func DefragFunc(log *zap.SugaredLogger, opt *defragOptions) cobraFuncE {
 		log.Info("finished defragmentation on all members")
 
 		return nil
-
 	})
 }

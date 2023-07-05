@@ -57,7 +57,6 @@ func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
 	cmd.PersistentFlags().IntVar(&opt.intervalSeconds, "timeout", 50, "timeout in seconds before giving up writing to etcd")
 
 	return cmd
-
 }
 
 func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {

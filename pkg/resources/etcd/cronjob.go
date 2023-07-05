@@ -82,14 +82,6 @@ func CronJobReconciler(data cronJobReconcilerData) reconciling.NamedCronJobRecon
 	}
 }
 
-type defraggerCommandTplData struct {
-	ServiceName string
-	Namespace   string
-	CACertFile  string
-	CertFile    string
-	KeyFile     string
-}
-
 func defraggerCommand(data cronJobReconcilerData) []string {
 	return []string{
 		"/etcd-launcher",
