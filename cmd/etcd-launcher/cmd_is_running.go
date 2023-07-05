@@ -30,14 +30,17 @@ import (
 type isRunningOptions struct {
 	options
 
-	testKey         string
-	testValue       string
-	intervalSeconds int
-	timeoutSeconds  int
+	testKey   string
+	testValue string
+	interval  time.Duration
+	timeout   time.Duration
 }
 
 func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
-	opt := isRunningOptions{}
+	opt := isRunningOptions{
+		interval: 2 * time.Second,
+		timeout:  60 * time.Second,
+	}
 
 	cmd := &cobra.Command{
 		Use:          "is-running",
@@ -53,8 +56,8 @@ func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&opt.testKey, "key", "kubermatic/quorum-check", "key to write into etcd for testing its availability")
 	cmd.PersistentFlags().StringVar(&opt.testValue, "value", "something", "value to write into etcd for testing its availability")
-	cmd.PersistentFlags().IntVar(&opt.intervalSeconds, "interval", 2, "interval in seconds between attempts to write to etcd")
-	cmd.PersistentFlags().IntVar(&opt.intervalSeconds, "timeout", 50, "timeout in seconds before giving up writing to etcd")
+	cmd.PersistentFlags().DurationVar(&opt.interval, "interval", opt.interval, "interval in seconds between attempts to write to etcd")
+	cmd.PersistentFlags().DurationVar(&opt.timeout, "timeout", opt.timeout, "timeout in seconds before giving up writing to etcd")
 
 	return cmd
 }
@@ -87,7 +90,7 @@ func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 		}
 
 		// try to write to etcd and log transient errors.
-		err = wait.PollImmediateLog(ctx, log, time.Duration(opt.intervalSeconds)*time.Second, time.Duration(opt.timeoutSeconds)*time.Second, func() (error, error) {
+		err = wait.PollImmediateLog(ctx, log, opt.interval, opt.timeout, func() (error, error) {
 			_, err := client.Put(ctx, opt.testKey, opt.testValue)
 			return err, nil
 		})
