@@ -88,7 +88,7 @@ func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 
 		// try to write to etcd and log transient errors.
 		err = wait.PollImmediateLog(ctx, log, time.Duration(opt.intervalSeconds)*time.Second, time.Duration(opt.timeoutSeconds)*time.Second, func() (error, error) {
-			_, err := client.Put(ctx, opt.testKey, opt.testKey)
+			_, err := client.Put(ctx, opt.testKey, opt.testValue)
 			return err, nil
 		})
 
