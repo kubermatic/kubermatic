@@ -45,6 +45,9 @@ type options struct {
 func (o *options) CopyInto(other *options) {
 	other.cluster = o.cluster
 	other.etcdctlAPIVersion = o.etcdctlAPIVersion
+	other.etcdCAFile = o.etcdCAFile
+	other.etcdCertFile = o.etcdCertFile
+	other.etcdKeyFile = o.etcdKeyFile
 }
 
 type cobraFuncE func(cmd *cobra.Command, args []string) error
