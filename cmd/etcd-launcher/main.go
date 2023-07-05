@@ -87,12 +87,6 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&opts.etcdCertFile, "etcd-client-cert-file", resources.EtcdClientCertFile, "path to etcd client cert file")
 	rootCmd.PersistentFlags().StringVar(&opts.etcdKeyFile, "etcd-client-key-file", resources.EtcdClientKeyFile, "path to etcd client cert key")
 
-	/*
-		    		CertFile:       resources.EtcdClientCertFile,
-				KeyFile:        resources.EtcdClientKeyFile,
-				TrustedCAFile:  resources.EtcdTrustedCAFile,
-	*/
-
 	addCommands(rootCmd, log, versions)
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
@@ -110,6 +104,7 @@ func addCommands(cmd *cobra.Command, logger *zap.SugaredLogger, versions kuberma
 	cmd.AddCommand(
 		RunCommand(logger),
 		IsRunningCommand(logger),
+		DefragCommand(logger),
 	)
 }
 

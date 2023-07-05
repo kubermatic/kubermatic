@@ -75,12 +75,12 @@ func DefragFunc(log *zap.SugaredLogger, opt *defragOptions) cobraFuncE {
 		}
 
 		for _, endpoint := range client.Endpoints() {
-			resp, err := client.Defragment(ctx, endpoint)
+			_, err := client.Defragment(ctx, endpoint)
 			if err != nil {
 				return fmt.Errorf("failed to defragment %s: %w", endpoint, err)
 			}
 
-			log.With("revision", resp.Header.Revision, "endpoint", endpoint).Info("defragmented etcd member")
+			log.With("endpoint", endpoint).Info("defragmented etcd member")
 
 			time.Sleep(5 * time.Second)
 		}
