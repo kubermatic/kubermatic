@@ -154,6 +154,7 @@ func (e *Cluster) SetClusterSize(ctx context.Context) error {
 	if err := e.clusterClient.Get(ctx, types.NamespacedName{Name: "etcd", Namespace: e.namespace}, sts); err != nil {
 		return fmt.Errorf("failed to get etcd sts: %w", err)
 	}
+
 	e.clusterSize = defaultClusterSize
 	if sts.Spec.Replicas != nil {
 		e.clusterSize = int(*sts.Spec.Replicas)
@@ -422,7 +423,7 @@ func (e *Cluster) getClientWithEndpoints(ctx context.Context, log *zap.SugaredLo
 
 	var etcdClient *client.Client
 
-	if err = wait.PollImmediateLog(ctx, log, 5*time.Second, 60*time.Second, func() (error, error) {
+	if err = wait.PollImmediateLog(ctx, log.With("endpoints", strings.Join(eps, ",")), 5*time.Second, 60*time.Second, func() (error, error) {
 		cli, err := client.New(client.Config{
 			Endpoints:   eps,
 			DialTimeout: 2 * time.Second,
@@ -434,7 +435,7 @@ func (e *Cluster) getClientWithEndpoints(ctx context.Context, log *zap.SugaredLo
 			return nil, nil
 		}
 
-		return nil, err
+		return err, nil
 	}); err != nil {
 		return nil, fmt.Errorf("failed to establish client connection: %w", err)
 	}
@@ -548,24 +549,24 @@ func (e *Cluster) removeDeadMembers(ctx context.Context, log *zap.SugaredLogger,
 		if err = wait.Poll(ctx, 1*time.Second, 15*time.Second, func() (error, error) {
 			// attempt to update member in case a client URL has recently been added
 			if m, err := e.GetMemberByName(ctx, log, member.Name); err != nil {
-				return nil, err
+				return err, nil
 			} else if m != nil {
 				member = m
 			}
 
 			if len(member.ClientURLs) == 0 {
-				return nil, fmt.Errorf("no client URLs are found")
+				return fmt.Errorf("no client URLs are found"), nil
 			}
 
 			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
 			// fail because the certificates don't include Pod IP addresses.
 			healthy, err := e.isHealthyWithEndpoints(ctx, log, member.ClientURLs[len(member.ClientURLs)-1:])
 			if err != nil {
-				return nil, fmt.Errorf("failed to check health: %w", err)
+				return fmt.Errorf("failed to check health: %w", err), nil
 			}
 
 			if !healthy {
-				return nil, fmt.Errorf("endpoints are not healthy")
+				return fmt.Errorf("endpoints are not healthy"), nil
 			}
 
 			return nil, nil
