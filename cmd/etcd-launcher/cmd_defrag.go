@@ -51,6 +51,7 @@ func DefragCommand(log *zap.SugaredLogger) *cobra.Command {
 func DefragFunc(log *zap.SugaredLogger, opt *defragOptions) cobraFuncE {
 	return handleErrors(log, func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
+		log := log.With("cluster", opt.cluster)
 
 		e := &etcd.Cluster{
 			Cluster:           opt.cluster,
@@ -80,7 +81,7 @@ func DefragFunc(log *zap.SugaredLogger, opt *defragOptions) cobraFuncE {
 				return fmt.Errorf("failed to defragment %s: %w", endpoint, err)
 			}
 
-			log.With("endpoint", endpoint).Info("defragmented etcd member")
+			log.Infow("defragmented etcd member", "endpoint", endpoint)
 
 			time.Sleep(5 * time.Second)
 		}

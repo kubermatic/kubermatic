@@ -63,6 +63,7 @@ func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
 func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 	return handleErrors(log, func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
+		log = log.With("cluster", opt.cluster)
 
 		e := &etcd.Cluster{
 			Cluster:           opt.cluster,
@@ -89,11 +90,11 @@ func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 		// try to write to etcd and log transient errors.
 		err = wait.PollImmediateLog(ctx, log, time.Duration(opt.intervalSeconds)*time.Second, time.Duration(opt.timeoutSeconds)*time.Second, func() (error, error) {
 			_, err := client.Put(ctx, opt.testKey, opt.testKey)
-			return nil, err
+			return err, nil
 		})
 
 		if err != nil {
-			log.Info("failed to wait for etcd to become ready")
+			log.Error("failed to wait for etcd to become ready")
 			return err
 		}
 

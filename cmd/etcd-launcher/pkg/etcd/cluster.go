@@ -163,12 +163,11 @@ func (e *Cluster) SetClusterSize(ctx context.Context) error {
 }
 
 func (e *Cluster) LogInitialState(log *zap.SugaredLogger) {
-	log.Info("initializing etcd..")
-	log.Infof("initial-state: %s", e.initialState)
-	log.Infof("initial-cluster: %s", strings.Join(e.initialMembers, ","))
-	if e.usePeerTLSOnly {
-		log.Info("peer-tls-mode: strict")
-	}
+	log.Infow("initializing etcd",
+		"initial-state", e.initialState,
+		"initial-cluster", strings.Join(e.initialMembers, ","),
+		"peer-tls-only", e.usePeerTLSOnly,
+	)
 }
 
 func (e *Cluster) DeleteUnwantedDeadMembers(ctx context.Context, log *zap.SugaredLogger) (bool, error) {
