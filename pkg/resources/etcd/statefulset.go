@@ -189,7 +189,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				set.Spec.Template.Spec.InitContainers = []corev1.Container{
 					{
 						Name:            "etcd-launcher-init",
-						Image:           data.EtcdLauncherImage() + ":" + data.EtcdLauncherTag(),
+						Image:           fmt.Sprintf("%s:%s", data.EtcdLauncherImage(), data.EtcdLauncherTag()),
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						Command:         []string{"/bin/cp", "/etcd-launcher", "/opt/bin/"},
 						VolumeMounts: []corev1.VolumeMount{

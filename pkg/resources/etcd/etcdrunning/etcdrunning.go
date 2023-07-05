@@ -36,7 +36,7 @@ type etcdRunningData interface {
 func Container(etcdEndpoints []string, data etcdRunningData) corev1.Container {
 	return corev1.Container{
 		Name:            "etcd-running",
-		Image:           data.EtcdLauncherImage() + ":" + data.EtcdLauncherTag(),
+		Image:           fmt.Sprintf("%s:%s", data.EtcdLauncherImage(), data.EtcdLauncherTag()),
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command: []string{
 			"/etcd-launcher",

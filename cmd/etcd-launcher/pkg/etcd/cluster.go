@@ -205,13 +205,15 @@ func (e *Cluster) DeleteUnwantedDeadMembers(ctx context.Context, log *zap.Sugare
 
 func (e *Cluster) JoinCluster(ctx context.Context, log *zap.SugaredLogger) error {
 	log.Info("pod is not a cluster member, trying to join..")
+
 	// remove possibly stale member data dir..
 	log.Info("removing possibly stale data dir")
 	if err := os.RemoveAll(e.DataDir); err != nil {
 		return fmt.Errorf("removing possible stale data dir: %w", err)
 	}
+
 	// join the cluster
-	client, err := e.GetClusterClient(ctx, log)
+	client, err := e.GetEtcdClient(ctx, log)
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -241,7 +243,7 @@ func (e *Cluster) JoinCluster(ctx context.Context, log *zap.SugaredLogger) error
 }
 
 func (e *Cluster) RemoveStaleMember(ctx context.Context, log *zap.SugaredLogger, memberID uint64) error {
-	client, err := e.GetClusterClient(ctx, log)
+	client, err := e.GetEtcdClient(ctx, log)
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -264,11 +266,11 @@ func (e *Cluster) UpdatePeerURLs(ctx context.Context, log *zap.SugaredLogger) er
 	if err != nil {
 		return err
 	}
-	client, err := e.GetClusterClient(ctx, log)
+
+	client, err := e.GetEtcdClient(ctx, log)
 	if err != nil {
 		return err
 	}
-
 	defer closeClient(client, log)
 
 	for _, member := range members {
@@ -318,6 +320,7 @@ func (e *Cluster) UpdatePeerURLs(ctx context.Context, log *zap.SugaredLogger) er
 					member.ID,
 					[]string{tlsPeerURL.String()},
 				)
+
 				return err
 			}
 		}
@@ -331,16 +334,19 @@ func (e *Cluster) GetMemberByName(ctx context.Context, log *zap.SugaredLogger, m
 	if err != nil {
 		return nil, err
 	}
+
 	for _, member := range members {
 		url, err := url.Parse(member.PeerURLs[0])
 		if err != nil {
 			return nil, err
 		}
+
 		// if the member is not started yet, its name would be empty, in that case, we match for peerURL hostname
 		if member.Name == memberName || url.Hostname() == fmt.Sprintf("%s.etcd.%s.svc.cluster.local", e.PodName, e.namespace) {
 			return member, nil
 		}
 	}
+
 	return nil, nil
 }
 
@@ -352,8 +358,10 @@ func initialMemberList(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 	members := []string{}
 	for i := 0; i < n; i++ {
 		var pod corev1.Pod
+
 		if err := client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, &pod); err != nil {
 			log.Warnw("failed to get Pod information for etcd, guessing peer URLs", zap.Error(err))
+
 			if useTLSPeer {
 				members = append(members, fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace))
 			} else {
@@ -388,9 +396,11 @@ func peerHostsList(n int, namespace string) []string {
 
 func clientEndpoints(n int, namespace string) []string {
 	endpoints := []string{}
+
 	for i := 0; i < n; i++ {
 		endpoints = append(endpoints, fmt.Sprintf("https://etcd-%d.etcd.%s.svc.cluster.local:2379", i, namespace))
 	}
+
 	return endpoints
 }
 
@@ -398,7 +408,7 @@ func (e *Cluster) endpoint() string {
 	return "https://127.0.0.1:2379"
 }
 
-func (e *Cluster) GetClusterClient(ctx context.Context, log *zap.SugaredLogger) (*client.Client, error) {
+func (e *Cluster) GetEtcdClient(ctx context.Context, log *zap.SugaredLogger) (*client.Client, error) {
 	endpoints := clientEndpoints(e.clusterSize, e.namespace)
 	return e.getClientWithEndpoints(ctx, log, endpoints)
 }
@@ -457,6 +467,7 @@ func (e *Cluster) listMembers(ctx context.Context, log *zap.SugaredLogger) ([]*e
 	if err != nil {
 		return nil, err
 	}
+
 	return resp.Members, err
 }
 
@@ -533,7 +544,7 @@ func (e *Cluster) isLeader(ctx context.Context, log *zap.SugaredLogger) (bool, e
 }
 
 func (e *Cluster) removeDeadMembers(ctx context.Context, log *zap.SugaredLogger, unwantedMembers []*etcdserverpb.Member) error {
-	client, err := e.GetClusterClient(ctx, log)
+	client, err := e.GetEtcdClient(ctx, log)
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %w", err)
 	}
@@ -595,6 +606,7 @@ func (e *Cluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, log *zap
 			if activeRestore != nil {
 				return fmt.Errorf("found more than one restore in state %v, refusing to restore anything", kubermaticv1.EtcdRestorePhaseStsRebuilding)
 			}
+
 			activeRestore = restore.DeepCopy()
 		}
 	}

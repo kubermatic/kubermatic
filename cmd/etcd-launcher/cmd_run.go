@@ -183,6 +183,7 @@ func RunFunc(log *zap.SugaredLogger, opt *runOptions) cobraFuncE {
 		if err = etcdCmd.Wait(); err != nil {
 			log.Panic(err)
 		}
+
 		return nil
 	})
 }

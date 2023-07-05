@@ -21,28 +21,22 @@ import (
 	"time"
 
 	"k8c.io/kubermatic/v2/cmd/etcd-launcher/pkg/etcd"
-	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
-type isRunningOptions struct {
+type defragOptions struct {
 	options
-
-	testKey         string
-	testValue       string
-	intervalSeconds int
-	timeoutSeconds  int
 }
 
-func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
-	opt := isRunningOptions{}
+func DefragCommand(log *zap.SugaredLogger) *cobra.Command {
+	opt := defragOptions{}
 
 	cmd := &cobra.Command{
-		Use:          "is-running",
-		Short:        "Check if the etcd cluster for a specific user cluster is available by writing to its KV store",
-		RunE:         IsRunningFunc(logger, &opt),
+		Use:          "defrag",
+		Short:        "Run defragmentation on all etcds in a etcd cluster in sequence",
+		RunE:         DefragFunc(log, &opt),
 		SilenceUsage: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.CopyInto(&opt.options)
@@ -51,16 +45,10 @@ func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVar(&opt.testKey, "key", "kubermatic/quorum-check", "key to write into etcd for testing its availability")
-	cmd.PersistentFlags().StringVar(&opt.testValue, "value", "something", "value to write into etcd for testing its availability")
-	cmd.PersistentFlags().IntVar(&opt.intervalSeconds, "interval", 2, "interval in seconds between attempts to write to etcd")
-	cmd.PersistentFlags().IntVar(&opt.intervalSeconds, "timeout", 50, "timeout in seconds before giving up writing to etcd")
-
 	return cmd
-
 }
 
-func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
+func DefragFunc(log *zap.SugaredLogger, opt *defragOptions) cobraFuncE {
 	return handleErrors(log, func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
@@ -86,18 +74,20 @@ func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 			return fmt.Errorf("failed to get etcd cluster client: %w", err)
 		}
 
-		// try to write to etcd and log transient errors.
-		err = wait.PollImmediateLog(ctx, log, time.Duration(opt.intervalSeconds)*time.Second, time.Duration(opt.timeoutSeconds)*time.Second, func() (error, error) {
-			_, err := client.Put(ctx, opt.testKey, opt.testKey)
-			return nil, err
-		})
+		for _, endpoint := range client.Endpoints() {
+			resp, err := client.Defragment(ctx, endpoint)
+			if err != nil {
+				return fmt.Errorf("failed to defragment %s: %w", endpoint, err)
+			}
 
-		if err != nil {
-			log.Info("failed to wait for etcd to become ready")
-			return err
+			log.With("revision", resp.Header.Revision, "endpoint", endpoint).Info("defragmented etcd member")
+
+			time.Sleep(5 * time.Second)
 		}
 
-		log.Info("etcd is ready")
+		log.Info("finished defragmentation on all members")
+
 		return nil
+
 	})
 }
