@@ -20,10 +20,10 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 # To support a wider range of Kubernetes userclusters, we ship multiple
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.24.2/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.24
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.22.11/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.22
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.24.15/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.24
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.22.17/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.22
 
-RUN wget -O- https://get.helm.sh/helm-v3.9.0-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
+RUN wget -O- https://get.helm.sh/helm-v3.9.4-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
 # We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
