@@ -1,0 +1,5 @@
+# Describe in detail why we ignore the specific CVE.
+
+# not fixed in helm v3.11.3 (binary and go package) and kubectl v1.26.6
+CVE-2023-2253
+
