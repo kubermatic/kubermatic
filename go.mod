@@ -41,7 +41,7 @@ require (
 	github.com/imdario/mergo v0.3.15
 	github.com/jackpal/gateway v1.0.10
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.57.0
+	github.com/kubermatic/machine-controller v1.57.1-0.20230704163314-5f4e903ddafe
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
@@ -96,7 +96,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f
 	k8s.io/kubectl v0.26.1
 	k8s.io/metrics v0.26.1
-	k8s.io/test-infra v0.0.0-20230703072051-e6ae5b372a4a
+	k8s.io/test-infra v0.0.0-20230705033454-c496ead09741
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 	kubevirt.io/api v0.59.2
 	kubevirt.io/containerized-data-importer-api v1.56.0

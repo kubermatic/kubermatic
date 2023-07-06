@@ -953,6 +953,11 @@ spec:
                             username:
                               type: string
                           type: object
+                        networks:
+                          description: Networks is the list of vSphere networks.
+                          items:
+                            type: string
+                          type: array
                         password:
                           description: Password is the vSphere user password.
                           type: string
@@ -980,12 +985,11 @@ spec:
                           description: Username is the vSphere user name.
                           type: string
                         vmNetName:
-                          description: VMNetName is the name of the vSphere network.
+                          description: 'VMNetName is the name of the vSphere network. Deprecated: Use networks instead.'
                           type: string
                       required:
                         - infraManagementUser
                         - storagePolicy
-                        - vmNetName
                       type: object
                   required:
                     - dc
