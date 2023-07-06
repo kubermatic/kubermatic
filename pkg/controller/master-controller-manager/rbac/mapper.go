@@ -217,8 +217,8 @@ func generateClusterRBACRoleBindingForResource(resourceName, groupName string) *
 	return binding
 }
 
-// generateClusterRBACRoleBindingForResourceWithServiceAccount creates a ClusterRoleBinding with a ServiceAccount as a subject, instead of a group.
-func generateClusterRBACRoleBindingForResourceWithServiceAccount(resourceName, kind, groupName, sa, namespace string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
+// generateEtcdRBACRoleBindingForResourceWithServiceAccount creates a ClusterRoleBinding with etcd-launcher ServiceAccounts as a subject.
+func generateEtcdRBACRoleBindingForResourceWithServiceAccount(resourceName, kind, groupName, clusterName, sa, namespace string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            generateRBACRoleNameForNamedResourceWithServiceAccount(kind, resourceName, sa),
@@ -230,6 +230,12 @@ func generateClusterRBACRoleBindingForResourceWithServiceAccount(resourceName, k
 				Kind:      rbacv1.ServiceAccountKind,
 				Name:      sa,
 				Namespace: namespace,
+			},
+			{
+				APIGroup:  "",
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      fmt.Sprintf("%s-%s", sa, clusterName),
+				Namespace: metav1.NamespaceSystem,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
@@ -480,8 +486,8 @@ func generateRBACRoleForClusterNamespaceResourceAndServiceAccount(cluster *kuber
 	return role, nil
 }
 
-// generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount generates per-cluster RoleBinding for the given cluster and service account in the cluster namespace.
-func generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount(cluster *kubermaticv1.Cluster, serviceAccountName, kind string) *rbacv1.RoleBinding {
+// generateRBACRoleBindingForEtcdLauncherServiceAccount generates per-cluster RoleBinding for the given cluster and service account in the cluster namespace.
+func generateRBACRoleBindingForEtcdLauncherServiceAccount(cluster *kubermaticv1.Cluster, serviceAccountName, kind string) *rbacv1.RoleBinding {
 	binding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      generateRBACRoleNameForClusterNamespaceResourceAndServiceAccount(kind, serviceAccountName),
@@ -493,6 +499,12 @@ func generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount(cluster
 				Kind:      rbacv1.ServiceAccountKind,
 				Name:      serviceAccountName,
 				Namespace: cluster.Status.NamespaceName,
+			},
+			{
+				APIGroup:  "",
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      fmt.Sprintf("%s-%s", serviceAccountName, cluster.Name),
+				Namespace: metav1.NamespaceSystem,
 			},
 		},
 		RoleRef: rbacv1.RoleRef{

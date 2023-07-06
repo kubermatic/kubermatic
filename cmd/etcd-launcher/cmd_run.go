@@ -73,6 +73,15 @@ func RunCommand(logger *zap.SugaredLogger) *cobra.Command {
 		},
 	}
 
+	cmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		if err := c.Usage(); err != nil {
+			return err
+		}
+
+		// ensure we exit with code 1 later on
+		return err
+	})
+
 	cmd.PersistentFlags().StringVar(&opt.podName, "pod-name", "", "name of this etcd pod")
 	cmd.PersistentFlags().StringVar(&opt.podIP, "pod-ip", "", "IP address of this etcd pod")
 	cmd.PersistentFlags().StringVar(&opt.token, "token", "", "etcd database token")

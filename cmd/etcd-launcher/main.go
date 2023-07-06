@@ -69,7 +69,7 @@ func main() {
 
 	// cobra does not make any distinction between "error that happened because of bad flags"
 	// and "error that happens because of something going bad inside the RunE function", and
-	// so would always show the Usage, no matter what error occurred. Tow ork around this, we
+	// so would always show the Usage, no matter what error occurred. To work around this, we
 	// set SilenceUsages on all commands and manually print the error using the FlagErrorFunc.
 	rootCmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
 		if err := c.Usage(); err != nil {
@@ -105,6 +105,7 @@ func addCommands(cmd *cobra.Command, logger *zap.SugaredLogger, versions kuberma
 		RunCommand(logger),
 		IsRunningCommand(logger),
 		DefragCommand(logger),
+		SnapshotCommand(logger),
 	)
 }
 

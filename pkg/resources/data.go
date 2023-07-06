@@ -75,7 +75,6 @@ type TemplateData struct {
 	oidcIssuerURL                    string
 	oidcIssuerClientID               string
 	kubermaticImage                  string
-	etcdLauncherImage                string
 	dnatControllerImage              string
 	networkIntfMgrImage              string
 	machineControllerImageTag        string
@@ -90,6 +89,11 @@ type TemplateData struct {
 	isKonnectivityEnabled bool
 
 	tunnelingAgentIP string
+
+	etcdLauncherImage         string
+	etcdBackupStoreContainer  *corev1.Container
+	etcdBackupDeleteContainer *corev1.Container
+	etcdBackupDestination     *kubermaticv1.BackupDestination
 }
 
 type TemplateDataBuilder struct {
@@ -185,6 +189,21 @@ func (td *TemplateDataBuilder) WithEtcdLauncherImage(image string) *TemplateData
 	return td
 }
 
+func (td *TemplateDataBuilder) WithEtcdBackupStoreContainer(container *corev1.Container) *TemplateDataBuilder {
+	td.data.etcdBackupStoreContainer = container
+	return td
+}
+
+func (td *TemplateDataBuilder) WithEtcdBackupDeleteContainer(container *corev1.Container) *TemplateDataBuilder {
+	td.data.etcdBackupDeleteContainer = container
+	return td
+}
+
+func (td *TemplateDataBuilder) WithEtcdBackupDestination(destination *kubermaticv1.BackupDestination) *TemplateDataBuilder {
+	td.data.etcdBackupDestination = destination
+	return td
+}
+
 func (td *TemplateDataBuilder) WithDnatControllerImage(image string) *TemplateDataBuilder {
 	td.data.dnatControllerImage = image
 	return td
@@ -272,6 +291,18 @@ func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 
 func (d *TemplateData) EtcdLauncherImage() string {
 	return registry.Must(d.RewriteImage(d.etcdLauncherImage))
+}
+
+func (d *TemplateData) EtcdBackupStoreContainer() *corev1.Container {
+	return d.etcdBackupStoreContainer
+}
+
+func (d *TemplateData) EtcdBackupDeleteContainer() *corev1.Container {
+	return d.etcdBackupDeleteContainer
+}
+
+func (d *TemplateData) EtcdBackupDestination() *kubermaticv1.BackupDestination {
+	return d.etcdBackupDestination
 }
 
 func (d *TemplateData) EtcdLauncherTag() string {

@@ -45,6 +45,15 @@ func DefragCommand(log *zap.SugaredLogger) *cobra.Command {
 		},
 	}
 
+	cmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		if err := c.Usage(); err != nil {
+			return err
+		}
+
+		// ensure we exit with code 1 later on
+		return err
+	})
+
 	return cmd
 }
 

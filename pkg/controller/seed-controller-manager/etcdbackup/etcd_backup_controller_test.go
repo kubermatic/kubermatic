@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -32,6 +34,7 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	etcdbackup "k8c.io/kubermatic/v2/pkg/resources/etcd/backup"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -43,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	clock "k8s.io/utils/clock"
 	clocktesting "k8s.io/utils/clock/testing"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -152,20 +154,8 @@ func genBackupJob(t *testing.T, backupName string, jobName string) *batchv1.Job 
 	}
 
 	storeContainer := genStoreContainer()
-	configGetter := getConfigGetter(t, storeContainer, nil)
 
-	reconciler := Reconciler{
-		log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
-		scheme:   scheme.Scheme,
-		recorder: record.NewFakeRecorder(10),
-		clock:    clock.RealClock{},
-		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return generator.GenTestSeed(), nil
-		},
-		configGetter: configGetter,
-	}
-	job := reconciler.backupJob(backupConfig, cluster, backup, nil, storeContainer)
+	job := etcdbackup.BackupJob(backupConfig, cluster, backup, nil, storeContainer)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -183,20 +173,8 @@ func genBackupDeleteJob(t *testing.T, backupName string, jobName string) *batchv
 	}
 
 	deleteContainer := genDeleteContainer()
-	configGetter := getConfigGetter(t, nil, deleteContainer)
 
-	reconciler := Reconciler{
-		log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:   ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
-		scheme:   scheme.Scheme,
-		recorder: record.NewFakeRecorder(10),
-		clock:    clock.RealClock{},
-		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return generator.GenTestSeed(), nil
-		},
-		configGetter: configGetter,
-	}
-	job := reconciler.backupDeleteJob(backupConfig, cluster, backup, nil, deleteContainer)
+	job := etcdbackup.BackupDeleteJob(backupConfig, cluster, backup, nil, deleteContainer)
 	job.ResourceVersion = "1"
 	// remove all env variables from the job so they're comparable against the
 	// ones we get from fake clusters during tests, where we strip the variables too
@@ -1597,14 +1575,14 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{
-				genSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, genDefaultBackupDestination()),
-				genSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, genDefaultBackupDestination()),
+				etcdbackup.GenSecretEnvVar(etcdbackup.AccessKeyIdEnvVarKey, etcdbackup.AccessKeyIdEnvVarKey, genDefaultBackupDestination()),
+				etcdbackup.GenSecretEnvVar(etcdbackup.SecretAccessKeyEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey, genDefaultBackupDestination()),
 				{
-					Name:  bucketNameEnvVarKey,
+					Name:  etcdbackup.BucketNameEnvVarKey,
 					Value: genDefaultBackupDestination().BucketName,
 				},
 				{
-					Name:  backupEndpointEnvVarKey,
+					Name:  etcdbackup.BackupEndpointEnvVarKey,
 					Value: genDefaultBackupDestination().Endpoint,
 				},
 			},
@@ -1744,4 +1722,17 @@ func TestIsInsecure(t *testing.T) {
 			}
 		})
 	}
+}
+
+func isInsecureURL(u string) bool {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+
+	// a hostname like "foo.com:9000" is parsed as {scheme: "foo.com", host: ""},
+	// so we must make sure to not mis-interpret "http:9000" ({scheme: "http", host: ""}) as
+	// an HTTP url
+
+	return strings.ToLower(parsed.Scheme) == "http" && parsed.Host != ""
 }

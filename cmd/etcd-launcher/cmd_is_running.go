@@ -54,6 +54,15 @@ func IsRunningCommand(logger *zap.SugaredLogger) *cobra.Command {
 		},
 	}
 
+	cmd.SetFlagErrorFunc(func(c *cobra.Command, err error) error {
+		if err := c.Usage(); err != nil {
+			return err
+		}
+
+		// ensure we exit with code 1 later on
+		return err
+	})
+
 	cmd.PersistentFlags().StringVar(&opt.testKey, "key", "kubermatic/quorum-check", "key to write into etcd for testing its availability")
 	cmd.PersistentFlags().StringVar(&opt.testValue, "value", "something", "value to write into etcd for testing its availability")
 	cmd.PersistentFlags().DurationVar(&opt.interval, "interval", opt.interval, "interval as a Go duration between attempts to write to etcd")

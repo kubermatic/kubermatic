@@ -17,6 +17,9 @@ limitations under the License.
 package etcd
 
 import (
+	"fmt"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -27,5 +30,13 @@ import (
 func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
 	return rbac.EtcdLauncherServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
+	}
+}
+
+func KubeSystemServiceAccountReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceAccountReconcilerFactory {
+	return func() (string, reconciling.ServiceAccountReconciler) {
+		return fmt.Sprintf("%s-%s", rbac.EtcdLauncherServiceAccountName, cluster.Name), func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			return sa, nil
+		}
 	}
 }
