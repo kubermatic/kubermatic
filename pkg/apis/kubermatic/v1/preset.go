@@ -168,10 +168,12 @@ type VSphere struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 
-	VMNetName        string `json:"vmNetName,omitempty"`
-	Datastore        string `json:"datastore,omitempty"`
-	DatastoreCluster string `json:"datastoreCluster,omitempty"`
-	ResourcePool     string `json:"resourcePool,omitempty"`
+	// VMNetName is going to be deprecated starting with KKP 2.24 and removed in KKP 2.26+. It's recommended to use Networks instead.
+	VMNetName        string   `json:"vmNetName,omitempty"`
+	Networks         []string `json:"networks,omitempty"`
+	Datastore        string   `json:"datastore,omitempty"`
+	DatastoreCluster string   `json:"datastoreCluster,omitempty"`
+	ResourcePool     string   `json:"resourcePool,omitempty"`
 }
 
 func (s VSphere) IsValid() bool {

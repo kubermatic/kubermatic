@@ -896,6 +896,10 @@ func validateVSphereCloudSpec(spec *kubermaticv1.VSphereCloudSpec) error {
 		}
 	}
 
+	if len(spec.Networks) != 0 && spec.VMNetName != "" {
+		return errors.New("networks and vmNetName cannot be set at the same time")
+	}
+
 	return nil
 }
 
