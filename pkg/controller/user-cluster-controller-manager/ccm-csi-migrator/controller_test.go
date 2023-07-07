@@ -29,8 +29,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -129,14 +129,13 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
+	scheme := fake.NewScheme()
+	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme))
+
 	for idx := range testCases {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-
-			scheme := runtime.NewScheme()
-			_ = kubermaticv1.AddToScheme(scheme)
-			_ = clusterv1alpha1.AddToScheme(scheme)
 
 			seedClientBuilder := fake.NewClientBuilder().WithScheme(scheme)
 			seedClientBuilder.WithObjects(tc.userCluster)

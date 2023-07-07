@@ -55,7 +55,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 )
@@ -419,7 +418,6 @@ func TestLoadFiles(t *testing.T) {
 
 					dynamicClient := fake.
 						NewClientBuilder().
-						WithScheme(scheme.Scheme).
 						WithObjects(
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{

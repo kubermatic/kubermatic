@@ -150,8 +150,7 @@ func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateN
 	nsName := "foo"
 	userClient := fake.
 		NewClientBuilder().
-		WithObjects(
-			genNamespace(nsName), genNamespace(defaultNamespace)).
+		WithObjects(genNamespace(nsName), genNamespace(defaultNamespace)).
 		Build()
 
 	namespaceSpec := appskubermaticv1.AppNamespaceSpec{

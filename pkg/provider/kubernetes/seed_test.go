@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func TestSeedGetterFactorySetsDefaults(t *testing.T) {
@@ -46,7 +45,6 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 
 	client := fake.
 		NewClientBuilder().
-		WithScheme(scheme.Scheme).
 		WithObjects(initSeed).
 		Build()
 
@@ -85,7 +83,6 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	}
 	client := fake.
 		NewClientBuilder().
-		WithScheme(scheme.Scheme).
 		WithObjects(initSeed).
 		Build()
 
@@ -115,7 +112,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 func TestSeedsGetterFactoryNoSeed(t *testing.T) {
 	t.Parallel()
 	// No seed is returned by the fake client
-	client := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+	client := fake.NewClientBuilder().Build()
 	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "my-ns")
 	if err != nil {
 		t.Fatalf("failed getting seedsGetter: %v", err)

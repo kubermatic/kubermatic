@@ -36,20 +36,11 @@ const (
 	invalidResource            = "invalid"
 )
 
-var (
-	testScheme = runtime.NewScheme()
-)
-
-func init() {
-	_ = appskubermaticv1.AddToScheme(testScheme)
-}
-
 // TestValidateApplicationInstallationSpec tests the validation for ApplicationInstallation creation.
 func TestValidateApplicationInstallationSpec(t *testing.T) {
 	ad := getApplicationDefinition(defaultAppName)
 	fakeClient := fake.
 		NewClientBuilder().
-		WithScheme(testScheme).
 		WithObjects(ad).
 		Build()
 
@@ -216,7 +207,6 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 	updatedAD := getApplicationDefinition("updated-app")
 	fakeClient := fake.
 		NewClientBuilder().
-		WithScheme(testScheme).
 		WithObjects(ad, updatedAD).
 		Build()
 

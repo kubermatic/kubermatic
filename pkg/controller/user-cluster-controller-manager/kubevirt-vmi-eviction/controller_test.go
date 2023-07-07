@@ -30,14 +30,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+var testScheme = fake.NewScheme()
+
 func init() {
-	utilruntime.Must(kubevirtv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(kubevirtv1.AddToScheme(testScheme))
+	utilruntime.Must(clusterv1alpha1.AddToScheme(testScheme))
 }
 
 const (
@@ -119,9 +120,9 @@ func TestReconcile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			r := reconciler{
 				log: kubermaticlog.NewDefault().Sugar(),
-				infraClient: fake.NewClientBuilder().WithScheme(scheme.Scheme).
+				infraClient: fake.NewClientBuilder().WithScheme(testScheme).
 					WithObjects(tc.vmis...).Build(),
-				userClient: fake.NewClientBuilder().WithScheme(scheme.Scheme).
+				userClient: fake.NewClientBuilder().WithScheme(testScheme).
 					WithObjects(tc.machines...).Build(),
 				clusterIsPaused: func(context.Context) (bool, error) {
 					return tc.clusterPaused, nil

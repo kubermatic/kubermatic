@@ -36,7 +36,6 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -46,9 +45,6 @@ import (
 const rqName = "resourceQuota"
 
 func TestReconcile(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = kubermaticv1.AddToScheme(scheme)
-
 	testCases := []struct {
 		name                       string
 		requestName                string
@@ -65,7 +61,6 @@ func TestReconcile(t *testing.T) {
 			},
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme).
 				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), generator.GenTestSeed(), generator.GenDefaultProject()).
 				Build(),
 		},
@@ -75,7 +70,6 @@ func TestReconcile(t *testing.T) {
 			expectedReconcileErrStatus: metav1.StatusReasonNotFound,
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme).
 				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), generator.GenTestSeed()).
 				Build(),
 		},

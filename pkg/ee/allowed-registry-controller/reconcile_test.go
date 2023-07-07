@@ -41,7 +41,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,7 +65,6 @@ func TestReconcile(t *testing.T) {
 			expectedConstraint: genWRConstraint(sets.New("quay.io")),
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genAllowedRegistry("quay", "quay.io", false)).
 				Build(),
 		},
@@ -77,7 +75,6 @@ func TestReconcile(t *testing.T) {
 			expectedConstraint: genWRConstraint(sets.New[string]()),
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genAllowedRegistry("quay", "quay.io", true),
 					genConstraintTemplate(), genWRConstraint(sets.New("quay.io"))).
 				Build(),
@@ -92,7 +89,6 @@ func TestReconcile(t *testing.T) {
 			expectedConstraint: genWRConstraint(sets.New("quay.io", "https://myregistry.com")),
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					genAllowedRegistry("quay", "quay.io", false),
 					genAllowedRegistry("myreg", "https://myregistry.com", false)).
@@ -109,7 +105,6 @@ func TestReconcile(t *testing.T) {
 			expectedConstraint:    genWRConstraint(sets.New("quay.io-edited", "https://myregistry.com")),
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					genAllowedRegistry("quay", "quay.io", false),
 					genAllowedRegistry("myreg", "https://myregistry.com", false)).

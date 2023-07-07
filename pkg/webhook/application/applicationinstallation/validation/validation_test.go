@@ -40,12 +40,8 @@ const (
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme = fake.NewScheme()
 )
-
-func init() {
-	_ = appskubermaticv1.AddToScheme(testScheme)
-}
 
 func TestValidateApplicationInstallation(t *testing.T) {
 	ad := getApplicationDefinition(defaultAppName)

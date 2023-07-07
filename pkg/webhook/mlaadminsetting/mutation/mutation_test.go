@@ -40,12 +40,8 @@ import (
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme = fake.NewScheme()
 )
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 func TestHandle(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{

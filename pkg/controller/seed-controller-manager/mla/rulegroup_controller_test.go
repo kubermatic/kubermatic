@@ -44,7 +44,6 @@ func newTestRuleGroupReconciler(objects []ctrlruntimeclient.Object, handler http
 	fakeClient := fake.
 		NewClientBuilder().
 		WithObjects(objects...).
-		WithScheme(testScheme).
 		Build()
 	ts := httptest.NewServer(handler)
 

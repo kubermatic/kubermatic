@@ -33,8 +33,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+var (
+	testScheme = fake.NewScheme()
 )
 
 func init() {
@@ -42,8 +45,8 @@ func init() {
 	// scheme multiple times it is an unprotected concurrent map access and these tests
 	// are very good at making that panic
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		log.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", zap.Error(err))
+	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(testScheme); err != nil {
+		log.Fatalw("failed to add clusterv1alpha1 scheme to testScheme", zap.Error(err))
 	}
 }
 
@@ -174,6 +177,7 @@ func createMachine(name string) *clusterv1alpha1.Machine {
 func newTestReconciler(networks []Network, objects ...ctrlruntimeclient.Object) *reconciler {
 	client := fake.
 		NewClientBuilder().
+		WithScheme(testScheme).
 		WithObjects(objects...).
 		Build()
 

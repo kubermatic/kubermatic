@@ -18,7 +18,6 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -33,14 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes/scheme"
 )
-
-func init() {
-	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		panic(fmt.Sprintf("failed to add clusterv1alpha1 to scheme: %v", err))
-	}
-}
 
 func TestCloudControllerManagerDeployment(t *testing.T) {
 	// these tests use openstack as an example for a provider that has

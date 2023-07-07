@@ -38,27 +38,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var testScheme = runtime.NewScheme()
-
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(testScheme))
-	utilruntime.Must(kubermaticv1.AddToScheme(testScheme))
-}
-
 func newTestAlertmanagerReconciler(objects []ctrlruntimeclient.Object, handler http.Handler) (*alertmanagerReconciler, *httptest.Server) {
 	fakeClient := fake.
 		NewClientBuilder().
 		WithObjects(objects...).
-		WithScheme(testScheme).
 		Build()
 	ts := httptest.NewServer(handler)
 

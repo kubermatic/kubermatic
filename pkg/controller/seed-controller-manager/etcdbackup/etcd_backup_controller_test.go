@@ -395,7 +395,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 
 			reconciler := Reconciler{
 				log:                 kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:              fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+				Client:              fake.NewClientBuilder().WithObjects(cluster, backupConfig).Build(),
 				scheme:              scheme.Scheme,
 				recorder:            record.NewFakeRecorder(10),
 				clock:               clock,
@@ -617,7 +617,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
 
-			fc := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build()
+			fc := fake.NewClientBuilder().WithObjects(initObjs...).Build()
 
 			reconciler := Reconciler{
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
@@ -966,7 +966,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
 
-			fc := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build()
+			fc := fake.NewClientBuilder().WithObjects(initObjs...).Build()
 
 			reconciler := Reconciler{
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
@@ -1253,7 +1253,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				initObjs = append(initObjs, j.DeepCopy())
 			}
 
-			fc := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build()
+			fc := fake.NewClientBuilder().WithObjects(initObjs...).Build()
 
 			reconciler := Reconciler{
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
@@ -1578,7 +1578,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 
 			reconciler := Reconciler{
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:   fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				Client:   fake.NewClientBuilder().WithObjects(initObjs...).Build(),
 				scheme:   scheme.Scheme,
 				recorder: record.NewFakeRecorder(10),
 				clock:    clock,
@@ -1709,7 +1709,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 
 			reconciler := Reconciler{
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:   fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				Client:   fake.NewClientBuilder().WithObjects(initObjs...).Build(),
 				scheme:   scheme.Scheme,
 				recorder: record.NewFakeRecorder(10),
 				clock:    clocktesting.NewFakeClock(time.Unix(60, 0).UTC()),

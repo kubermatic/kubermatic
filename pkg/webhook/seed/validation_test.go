@@ -30,7 +30,6 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -489,7 +488,8 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	if err := apiextensionsv1.AddToScheme(scheme.Scheme); err != nil {
+	scheme := fake.NewScheme()
+	if err := apiextensionsv1.AddToScheme(scheme); err != nil {
 		t.Fatalf("Failed to register scheme: %v", err)
 	}
 
@@ -514,7 +514,7 @@ func TestValidate(t *testing.T) {
 			}
 			client := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(scheme).
 				WithObjects(obj...).
 				Build()
 

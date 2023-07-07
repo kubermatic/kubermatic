@@ -30,7 +30,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -59,12 +58,10 @@ func TestReconcile(t *testing.T) {
 			expectedConstraint: genConstraint(constraintName, "namespace", kind, false),
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraint(constraintName, "namespace", kind, false), generator.GenTestSeed()).
 				Build(),
 			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				Build(),
 		},
 		{
@@ -76,12 +73,10 @@ func TestReconcile(t *testing.T) {
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraint(constraintName, "namespace", kind, true), generator.GenTestSeed()).
 				Build(),
 			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraint(constraintName, "namespace", kind, false)).
 				Build(),
 		},

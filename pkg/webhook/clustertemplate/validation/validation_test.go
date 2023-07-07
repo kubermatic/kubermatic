@@ -31,19 +31,14 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/utils/pointer"
 )
 
 var (
-	testScheme     = runtime.NewScheme()
+	testScheme     = fake.NewScheme()
 	datacenterName = "foo"
 )
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 // TestHandle tests the admission handler, but with the cloud provider validation
 // disabled (i.e. we do not check if the hetzner token is valid, which would

@@ -37,8 +37,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -105,9 +105,8 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			scheme := runtime.NewScheme()
-			_ = kubermaticv1.AddToScheme(scheme)
-			_ = clusterv1alpha1.AddToScheme(scheme)
+			scheme := fake.NewScheme()
+			utilruntime.Must(clusterv1alpha1.AddToScheme(scheme))
 
 			seedClientBuilder := fake.NewClientBuilder().WithScheme(scheme)
 			seedClientBuilder.WithObjects(tc.cluster)

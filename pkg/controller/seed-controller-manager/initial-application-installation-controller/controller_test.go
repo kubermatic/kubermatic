@@ -38,7 +38,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -46,6 +45,7 @@ import (
 
 var (
 	kubernetesVersion = defaulting.DefaultKubernetesVersioning.Default
+	testScheme        = fake.NewScheme()
 )
 
 const (
@@ -55,8 +55,7 @@ const (
 )
 
 func init() {
-	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(clusterv1alpha1.AddToScheme(testScheme))
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
@@ -217,14 +216,14 @@ func TestReconcile(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			seedClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(test.cluster, project).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
 			userClusterClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(userClusterObjects...).
 				Build()
 

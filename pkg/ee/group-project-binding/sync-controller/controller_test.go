@@ -39,16 +39,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 const groupProjectBindingName = "group-project-binding-test"
 
@@ -88,13 +82,11 @@ func TestReconcile(t *testing.T) {
 			seed := generator.GenTestSeed()
 
 			masterClient := fake.NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(seed).
 				WithObjects(tc.existingMasterResources...).
 				Build()
 
 			seedClient := fake.NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(seed).
 				WithObjects(tc.existingSeedResources...).
 				Build()

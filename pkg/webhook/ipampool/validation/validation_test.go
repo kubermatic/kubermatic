@@ -30,17 +30,12 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme = fake.NewScheme()
 )
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 func TestValidator(t *testing.T) {
 	testCases := []struct {

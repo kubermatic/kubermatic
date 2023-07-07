@@ -31,15 +31,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 var addons = kubermaticv1.AddonList{Items: []kubermaticv1.Addon{
 	{ObjectMeta: metav1.ObjectMeta{Name: "Foo"}},
@@ -120,7 +114,6 @@ func TestCreateAddon(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			client := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(test.cluster).
 				WithIndex(&kubermaticv1.Addon{}, addonDefaultKey, func(rawObj ctrlruntimeclient.Object) []string {
 					a := rawObj.(*kubermaticv1.Addon)

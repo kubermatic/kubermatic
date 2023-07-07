@@ -32,7 +32,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -64,7 +63,6 @@ func TestReconcile(t *testing.T) {
 			},
 			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					generator.GenClusterTemplate("ct1", "ctID1", projectName, kubermaticv1.UserClusterTemplateScope, "bob@acme.com"),
 					generator.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),

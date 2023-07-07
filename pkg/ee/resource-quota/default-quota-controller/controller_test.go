@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,9 +42,6 @@ import (
 )
 
 func TestReconcile(t *testing.T) {
-	scheme := runtime.NewScheme()
-	_ = kubermaticv1.AddToScheme(scheme)
-
 	testCases := []struct {
 		name                   string
 		expectedResourceQuotas []kubermaticv1.ResourceQuota
@@ -63,7 +59,6 @@ func TestReconcile(t *testing.T) {
 			},
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme).
 				WithObjects(genSettings(genResourceDetails("2", "5G", "10G")), generator.GenDefaultProject()).
 				Build(),
 		},
@@ -78,7 +73,6 @@ func TestReconcile(t *testing.T) {
 			},
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme).
 				WithObjects(
 					genSettings(genResourceDetails("2", "5G", "10G")),
 					generator.GenDefaultProject(),
@@ -99,7 +93,6 @@ func TestReconcile(t *testing.T) {
 			},
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme).
 				WithObjects(
 					genSettings(genResourceDetails("2", "5G", "10G")),
 					generator.GenDefaultProject(),
@@ -114,7 +107,6 @@ func TestReconcile(t *testing.T) {
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{},
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme).
 				WithObjects(
 					genSettings(nil),
 					generator.GenDefaultProject(),
@@ -135,7 +127,6 @@ func TestReconcile(t *testing.T) {
 			},
 			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme).
 				WithObjects(
 					genSettings(nil),
 					generator.GenDefaultProject(),

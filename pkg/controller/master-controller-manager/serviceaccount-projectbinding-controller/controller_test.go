@@ -31,15 +31,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 	tests := []struct {
@@ -73,7 +67,6 @@ func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			kubermaticFakeClient := fake.NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(test.existingKubermaticObjects...).
 				Build()
 

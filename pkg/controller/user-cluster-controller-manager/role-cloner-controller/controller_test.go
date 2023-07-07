@@ -30,7 +30,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -300,7 +299,7 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			clientBuilder := fake.NewClientBuilder().WithScheme(scheme.Scheme)
+			clientBuilder := fake.NewClientBuilder()
 			if tc.expectedRoles != nil {
 				clientBuilder.WithObjects(tc.objects...)
 			}

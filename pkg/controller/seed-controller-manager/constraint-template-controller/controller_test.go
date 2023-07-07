@@ -35,7 +35,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -44,10 +44,8 @@ import (
 const ctName = "requiredlabels"
 
 func TestReconcile(t *testing.T) {
-	sch, err := constrainttemplatev1.SchemeBuilder.Build()
-	if err != nil {
-		t.Fatalf("building gatekeeper scheme failed: %v", err)
-	}
+	sch := fake.NewScheme()
+	utilruntime.Must(constrainttemplatev1.AddToScheme(sch))
 
 	workerSelector, err := workerlabel.LabelSelector("")
 	if err != nil {
@@ -68,7 +66,6 @@ func TestReconcile(t *testing.T) {
 			expectedCT:  genConstraintTemplate(ctName, false),
 			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", true)).
 				Build(),
 			userClient: fake.NewClientBuilder().WithScheme(sch).Build(),
@@ -79,7 +76,6 @@ func TestReconcile(t *testing.T) {
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
 			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", false)).
 				Build(),
 			userClient: fake.NewClientBuilder().WithScheme(sch).Build(),
@@ -90,7 +86,6 @@ func TestReconcile(t *testing.T) {
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
 			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraintTemplate(ctName, true), genCluster("cluster", true)).
 				Build(),
 			userClient: fake.
@@ -155,10 +150,8 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
-	sch, err := constrainttemplatev1.SchemeBuilder.Build()
-	if err != nil {
-		t.Fatalf("building gatekeeper scheme failed: %v", err)
-	}
+	sch := fake.NewScheme()
+	utilruntime.Must(constrainttemplatev1.AddToScheme(sch))
 
 	workerSelector, err := workerlabel.LabelSelector("")
 	if err != nil {
@@ -167,7 +160,6 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 
 	seedClient := fake.
 		NewClientBuilder().
-		WithScheme(scheme.Scheme).
 		WithObjects(genConstraintTemplate(ctName, true), genCluster("cluster", true)).
 		Build()
 	userClient := fake.

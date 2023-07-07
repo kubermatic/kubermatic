@@ -37,7 +37,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -109,7 +108,6 @@ func TestGetClustersForConstraintTemplate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cli := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(tc.clusters...).
 				Build()
 

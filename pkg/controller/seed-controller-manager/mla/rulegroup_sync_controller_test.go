@@ -44,7 +44,6 @@ func newTestRuleGroupSyncReconciler(objects []ctrlruntimeclient.Object) *ruleGro
 	fakeClient := fake.
 		NewClientBuilder().
 		WithObjects(objects...).
-		WithScheme(testScheme).
 		Build()
 	controller := newRuleGroupSyncController(fakeClient, kubermaticlog.Logger, mlaNamespace)
 	reconciler := ruleGroupSyncReconciler{

@@ -21,8 +21,6 @@ import (
 	"reflect"
 	"testing"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
@@ -30,17 +28,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/kubectl/pkg/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 const secretName = "secret-1"
 const seedNamespace = "kubermatic"

@@ -37,16 +37,10 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 func TestReconcile(t *testing.T) {
 	testCases := []struct {
@@ -280,7 +274,6 @@ func TestReconcile(t *testing.T) {
 			ctx := context.Background()
 			project := generateProject(tc.projectName)
 			client := fake.NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(tc.existingResources...).
 				WithObjects(project).
 				WithObjects(genGroupProjectBinding(tc.bindingName, tc.groupName, tc.roleName, tc.projectName)).

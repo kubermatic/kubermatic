@@ -28,16 +28,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var testScheme = runtime.NewScheme()
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(testScheme))
-}
 
 func generateTestCluster(clusterName, dc string) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
@@ -1025,7 +1017,6 @@ func TestReconcileCluster(t *testing.T) {
 				Client: fake.
 					NewClientBuilder().
 					WithObjects(tc.objects...).
-					WithScheme(testScheme).
 					Build(),
 			}
 

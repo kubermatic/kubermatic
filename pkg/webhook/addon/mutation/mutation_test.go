@@ -41,12 +41,8 @@ import (
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme = fake.NewScheme()
 )
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 func TestHandle(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{
@@ -259,7 +255,7 @@ func TestHandle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seedClient := fake.NewClientBuilder().WithObjects(tt.clusters...).Build()
+			seedClient := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(tt.clusters...).Build()
 			seed := &kubermaticv1.Seed{}
 
 			handler := AdmissionHandler{

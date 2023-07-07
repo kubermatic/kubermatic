@@ -33,13 +33,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var testScheme = fake.NewScheme()
+
 func init() {
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(testScheme); err != nil {
 		panic(fmt.Sprintf("failed to add clusterv1alpha1 to scheme: %v", err))
 	}
 }
@@ -96,7 +97,7 @@ func TestCleanupPVUsingWorkloads(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			client := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(tc.objects...).
 				Build()
 
@@ -159,7 +160,7 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 
 			userClusterClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(tc.objects...).
 				Build()
 

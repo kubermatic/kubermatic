@@ -40,7 +40,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,6 +49,7 @@ import (
 
 var (
 	kubernetesVersion = defaulting.DefaultKubernetesVersioning.Default
+	testScheme        = fake.NewScheme()
 )
 
 const (
@@ -57,9 +58,7 @@ const (
 )
 
 func init() {
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		panic(fmt.Sprintf("failed to add clusterv1alpha1 to scheme: %v", err))
-	}
+	utilruntime.Must(clusterv1alpha1.AddToScheme(testScheme))
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
@@ -247,14 +246,14 @@ func TestReconcile(t *testing.T) {
 
 			seedClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(test.cluster, project, webhook).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
 			userClusterClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(userClusterObjects...).
 				Build()
 

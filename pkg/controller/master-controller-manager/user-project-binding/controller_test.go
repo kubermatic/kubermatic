@@ -29,14 +29,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 var (
 	jamesBond   = test.CreateUser("James Bond")
@@ -117,7 +111,6 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 
 			kubermaticFakeClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(objs...).
 				Build()
 
@@ -193,7 +186,6 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 
 			kubermaticFakeClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(objs...).
 				Build()
 

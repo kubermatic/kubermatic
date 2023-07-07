@@ -68,9 +68,10 @@ var (
 	}
 )
 
+var testScheme = fake.NewScheme()
+
 func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(apiextensionsv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(apiextensionsv1.AddToScheme(testScheme))
 }
 
 func getSeeds(now metav1.Time) map[string]*kubermaticv1.Seed {
@@ -446,7 +447,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 
 		seedClients[seedName] = fake.
 			NewClientBuilder().
-			WithScheme(scheme.Scheme).
+			WithScheme(testScheme).
 			WithObjects(seedObjects[seedName]...).
 			Build()
 
@@ -455,7 +456,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 
 	masterClient := fake.
 		NewClientBuilder().
-		WithScheme(scheme.Scheme).
+		WithScheme(testScheme).
 		WithObjects(masterObjects...).
 		Build()
 

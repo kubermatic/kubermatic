@@ -33,17 +33,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var (
-	testScheme = runtime.NewScheme()
-)
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 func TestValidateCreate(t *testing.T) {
 	testCases := []struct {
@@ -138,7 +129,6 @@ func TestValidateCreate(t *testing.T) {
 
 			client := fake.
 				NewClientBuilder().
-				WithScheme(testScheme).
 				WithObjects(obj...).
 				Build()
 

@@ -27,22 +27,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
-
-var (
-	testScheme = runtime.NewScheme()
-)
-
-func init() {
-	_ = appskubermaticv1.AddToScheme(testScheme)
-}
 
 func TestDefaultApplicationInstallation(t *testing.T) {
 	appDef := &appskubermaticv1.ApplicationDefinition{ObjectMeta: metav1.ObjectMeta{Name: "appDef-1"}, Spec: appskubermaticv1.ApplicationDefinitionSpec{Description: "Description", Versions: []appskubermaticv1.ApplicationVersion{{Version: "v1.0.0"}}}}
 	fakeClient := fake.
 		NewClientBuilder().
-		WithScheme(testScheme).
 		WithObjects(appDef).
 		Build()
 
