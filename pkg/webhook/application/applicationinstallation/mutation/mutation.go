@@ -22,12 +22,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -35,27 +36,20 @@ import (
 
 // AdmissionHandler for mutating Kubermatic ApplicationInstallation CRD.
 type AdmissionHandler struct {
-	log     logr.Logger
+	log     *zap.SugaredLogger
 	decoder *admission.Decoder
 }
 
 // NewAdmissionHandler returns a new ApplicationInstallation AdmissionHandler.
-func NewAdmissionHandler() *AdmissionHandler {
-	return &AdmissionHandler{}
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme) *AdmissionHandler {
+	return &AdmissionHandler{
+		log:     log,
+		decoder: admission.NewDecoder(scheme),
+	}
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/mutate-application-installation", &webhook.Admission{Handler: h})
-}
-
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("application-installation-mutation-handler")
-	return nil
-}
-
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {

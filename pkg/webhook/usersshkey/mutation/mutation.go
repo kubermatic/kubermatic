@@ -22,12 +22,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -36,30 +37,22 @@ import (
 
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
-	client  ctrlruntimeclient.Client
-	log     logr.Logger
+	log     *zap.SugaredLogger
 	decoder *admission.Decoder
+	client  ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new UserSSHKey AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, client ctrlruntimeclient.Client) *AdmissionHandler {
 	return &AdmissionHandler{
-		client: client,
+		log:     log,
+		decoder: admission.NewDecoder(scheme),
+		client:  client,
 	}
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-usersshkey", &webhook.Admission{Handler: h})
-}
-
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("usersshkey-mutation-handler")
-	return nil
-}
-
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {

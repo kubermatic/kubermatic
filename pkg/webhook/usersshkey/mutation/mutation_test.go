@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/go-test/deep"
+	"go.uber.org/zap"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -76,7 +76,7 @@ func TestHandle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			handler := AdmissionHandler{
-				log:     logr.Discard(),
+				log:     zap.NewNop().Sugar(),
 				decoder: admission.NewDecoder(testScheme),
 			}
 			res := handler.Handle(context.Background(), tt.req)

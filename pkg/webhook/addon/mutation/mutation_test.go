@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/go-test/deep"
+	"go.uber.org/zap"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -262,7 +262,7 @@ func TestHandle(t *testing.T) {
 			seed := &kubermaticv1.Seed{}
 
 			handler := AdmissionHandler{
-				log:        logr.Discard(),
+				log:        zap.NewNop().Sugar(),
 				decoder:    admission.NewDecoder(testScheme),
 				seedGetter: test.NewSeedGetter(seed),
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {

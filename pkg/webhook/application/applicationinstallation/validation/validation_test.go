@@ -21,7 +21,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 
@@ -139,7 +139,7 @@ func TestValidateApplicationInstallation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			handler := AdmissionHandler{
-				log:     logr.Discard(),
+				log:     zap.NewNop().Sugar(),
 				decoder: admission.NewDecoder(testScheme),
 				client:  fakeClient,
 			}
