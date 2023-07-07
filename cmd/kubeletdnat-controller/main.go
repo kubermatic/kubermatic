@@ -26,9 +26,9 @@ import (
 
 	kubeletdnatcontroller "k8c.io/kubermatic/v2/pkg/controller/kubeletdnat-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -40,7 +40,7 @@ import (
 )
 
 func main() {
-	pprofOpts := &pprof.Opts{}
+	pprofOpts := &flagopts.PProf{}
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -98,6 +98,7 @@ func main() {
 			return ctx
 		},
 		MetricsBindAddress: ":8090",
+		PprofBindAddress:   pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create manager", zap.Error(err))
@@ -105,10 +106,6 @@ func main() {
 
 	if err := kubeletdnatcontroller.Add(mgr, *chainNameFlag, nodeAccessNetwork, log, *vpnInterfaceFlag); err != nil {
 		log.Fatalw("Failed to add the kubelet dnat controller", zap.Error(err))
-	}
-
-	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
 	}
 
 	if err := mgr.Start(ctx); err != nil {

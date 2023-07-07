@@ -28,8 +28,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/klog/v2"
@@ -42,7 +42,7 @@ type appOptions struct {
 	caBundle     *certificates.CABundle
 
 	webhook webhook.Options
-	pprof   pprof.Opts
+	pprof   flagopts.PProf
 	log     kubermaticlog.Options
 
 	// for development purposes, a local configuration file

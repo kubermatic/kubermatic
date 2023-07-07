@@ -36,11 +36,11 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
@@ -61,7 +61,7 @@ const (
 
 func main() {
 	klog.InitFlags(nil)
-	pprofOpts := &pprof.Opts{}
+	pprofOpts := &flagopts.PProf{}
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -119,12 +119,10 @@ func main() {
 			BurstSize: 20,
 			QPS:       5,
 		}),
+		PprofBindAddress: pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
-	}
-	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
 	}
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
 	if err := autoscalingv1.AddToScheme(mgr.GetScheme()); err != nil {

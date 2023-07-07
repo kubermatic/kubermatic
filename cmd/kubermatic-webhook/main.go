@@ -107,8 +107,9 @@ func main() {
 		BaseContext: func() context.Context {
 			return rootCtx
 		},
-		Namespace:     options.namespace,
-		WebhookServer: ctrlruntimewebhook.NewServer(webhookOptions),
+		Namespace:        options.namespace,
+		WebhookServer:    ctrlruntimewebhook.NewServer(webhookOptions),
+		PprofBindAddress: options.pprof.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
@@ -125,13 +126,6 @@ func main() {
 	configGetter, seedGetter, seedsGetter, seedClientGetter := createGetters(rootCtx, log, mgr, &options)
 
 	caPool := options.caBundle.CertPool()
-
-	// /////////////////////////////////////////
-	// add pprof runnable, which will start a websever if configured
-
-	if err := mgr.Add(&options.pprof); err != nil {
-		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
-	}
 
 	// /////////////////////////////////////////
 	// setup Seed webhook

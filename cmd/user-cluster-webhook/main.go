@@ -93,7 +93,8 @@ func main() {
 		BaseContext: func() context.Context {
 			return ctx
 		},
-		WebhookServer: ctrlruntimewebhook.NewServer(seedWebhookOptions),
+		WebhookServer:    ctrlruntimewebhook.NewServer(seedWebhookOptions),
+		PprofBindAddress: options.pprof.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the seed cluster manager", zap.Error(err))
@@ -119,13 +120,6 @@ func main() {
 	// add APIs we use
 	addAPIs(seedMgr.GetScheme(), log)
 	addAPIs(userMgr.GetScheme(), log)
-
-	// /////////////////////////////////////////
-	// add pprof runnable, which will start a websever if configured
-
-	if err := seedMgr.Add(&options.pprof); err != nil {
-		log.Fatalw("Failed to add the pprof handler (seed manager)", zap.Error(err))
-	}
 
 	// /////////////////////////////////////////
 	// setup webhooks

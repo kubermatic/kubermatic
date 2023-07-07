@@ -47,7 +47,6 @@ import (
 	machinecontrollerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	roleclonercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -113,7 +112,7 @@ type controllerRunOptions struct {
 func main() {
 	runOp := controllerRunOptions{}
 	klog.InitFlags(nil)
-	pprofOpts := &pprof.Opts{}
+	pprofOpts := &flagopts.PProf{}
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -241,12 +240,10 @@ func main() {
 		LeaderElectionID:        "user-cluster-controller-leader-lock",
 		MetricsBindAddress:      runOp.metricsListenAddr,
 		HealthProbeBindAddress:  runOp.healthListenAddr,
+		PprofBindAddress:        pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
-	}
-	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to add pprof handler", zap.Error(err))
 	}
 
 	var seedConfig *rest.Config

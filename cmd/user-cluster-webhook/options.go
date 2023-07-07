@@ -21,8 +21,8 @@ import (
 	"fmt"
 
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/klog/v2"
@@ -31,7 +31,7 @@ import (
 type appOptions struct {
 	seedWebhook webhook.Options
 	userWebhook webhook.Options
-	pprof       pprof.Opts
+	pprof       flagopts.PProf
 	log         kubermaticlog.Options
 	caBundle    *certificates.CABundle
 	projectID   string
