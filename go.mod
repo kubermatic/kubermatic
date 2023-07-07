@@ -118,23 +118,14 @@ replace (
 	k8s.io/metrics => k8s.io/metrics v0.27.2
 )
 
-// overrides required for OPA constraints
-replace (
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v1.16.0
-	go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.16.0
-	go.opentelemetry.io/otel/metric => go.opentelemetry.io/otel/metric v1.16.0
-	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v1.16.0
-	go.opentelemetry.io/otel/semconv => go.opentelemetry.io/otel/semconv v1.16.0
-	go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v1.16.0
-	go.opentelemetry.io/proto/otlp => go.opentelemetry.io/proto/otlp v0.7.0
-)
+// fix for wonky opentelemetry dependencies
+replace go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
 
+// follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
 
 // make `go list` work
-// see https://github.com/cilium/cilium/blob/master/go.mod#L250, caused by
-// an old dependency to metallb in cilium
+// see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
 require (
