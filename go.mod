@@ -38,11 +38,13 @@ require (
 	github.com/hetznercloud/hcloud-go v1.40.0
 	github.com/imdario/mergo v0.3.15
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.57.0
+	// Pinned to https://github.com/kubermatic/machine-controller/commit/7eab515b642dd3902b845d4861d1f41b4b37753e
+	// TODO: Replace this with v1.57.1 before release
+	github.com/kubermatic/machine-controller v1.57.1-0.20230707082432-7eab515b642d
 	github.com/minio/minio-go/v7 v7.0.49
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/gomega v1.27.8
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230304011918-d82cbe189211 // v0.9.0+
 	github.com/open-policy-agent/gatekeeper v0.0.0-20230414171823-770d9756db04 // v3.12.0
 	github.com/packethost/packngo v0.29.0
@@ -58,15 +60,15 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20220608195807-1a118fe229fc
 	github.com/vmware/go-vcloud-director/v2 v2.19.0
 	github.com/vmware/govmomi v0.30.2
-	go.anx.io/go-anxcloud v0.5.1
+	go.anx.io/go-anxcloud v0.5.3
 	go.etcd.io/etcd/api/v3 v3.5.6
 	go.etcd.io/etcd/client/pkg/v3 v3.5.6
 	go.etcd.io/etcd/client/v3 v3.5.6
 	go.etcd.io/etcd/etcdutl/v3 v3.5.6
 	go.uber.org/zap v1.24.0
-	golang.org/x/crypto v0.8.0
+	golang.org/x/crypto v0.10.0
 	golang.org/x/oauth2 v0.7.0
-	golang.org/x/tools v0.7.0
+	golang.org/x/tools v0.9.3
 	gomodules.xyz/jsonpatch/v2 v2.2.0
 	google.golang.org/api v0.110.0
 	google.golang.org/genproto v0.0.0-20230223222841-637eb2293923
@@ -326,12 +328,12 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
-	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.7.0
-	golang.org/x/term v0.7.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/mod v0.10.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sync v0.2.0 // indirect
+	golang.org/x/sys v0.9.0
+	golang.org/x/term v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

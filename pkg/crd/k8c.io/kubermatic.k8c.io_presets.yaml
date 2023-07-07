@@ -417,6 +417,10 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    networks:
+                      items:
+                        type: string
+                      type: array
                     password:
                       type: string
                     resourcePool:
@@ -424,6 +428,7 @@ spec:
                     username:
                       type: string
                     vmNetName:
+                      description: VMNetName is going to be deprecated starting with KKP 2.24 and removed in KKP 2.26+. It's recommended to use Networks instead.
                       type: string
                   required:
                     - password

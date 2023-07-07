@@ -127,8 +127,17 @@ func CompleteVSphereProviderSpec(config *vsphere.RawConfig, cluster *kubermaticv
 	}
 
 	if cluster != nil {
-		if config.VMNetName.Value == "" {
-			config.VMNetName.Value = cluster.Spec.Cloud.VSphere.VMNetName
+		//nolint:staticcheck
+		//lint:ignore SA1019: config.VMNetName is deprecated: use networks instead.
+		if config.VMNetName.Value == "" && len(config.Networks) == 0 {
+			// Both Networks and VMNetName can't exist at the same time.
+			if len(cluster.Spec.Cloud.VSphere.Networks) > 0 {
+				for _, network := range cluster.Spec.Cloud.VSphere.Networks {
+					config.Networks = append(config.Networks, providerconfig.ConfigVarString{Value: network})
+				}
+			} else if cluster.Spec.Cloud.VSphere.VMNetName != "" {
+				config.Networks = append(config.Networks, providerconfig.ConfigVarString{Value: cluster.Spec.Cloud.VSphere.VMNetName})
+			}
 		}
 
 		if config.DatastoreCluster.Value == "" {
