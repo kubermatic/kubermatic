@@ -31,6 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +40,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -63,7 +63,7 @@ func TestReconcile(t *testing.T) {
 				kubermaticv1.ResourceQuotaSubjectNameLabelKey: generator.GenDefaultProject().Name,
 				kubermaticv1.ResourceQuotaSubjectKindLabelKey: kubermaticv1.ProjectSubjectKind,
 			},
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), generator.GenTestSeed(), generator.GenDefaultProject()).
@@ -73,7 +73,7 @@ func TestReconcile(t *testing.T) {
 			name:                       "scenario 2: error when subject project is not present",
 			requestName:                rqName,
 			expectedReconcileErrStatus: metav1.StatusReasonNotFound,
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(genResourceQuota(rqName, kubermaticv1.ResourceDetails{}), generator.GenTestSeed()).

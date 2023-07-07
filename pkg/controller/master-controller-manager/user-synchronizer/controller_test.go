@@ -24,6 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +34,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -55,12 +55,12 @@ func TestReconcile(t *testing.T) {
 			name:         "scenario 1: sync user from master cluster to seed cluster",
 			requestName:  userName,
 			expectedUser: generateUser(userName, false),
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(generateUser(userName, false)).
 				Build(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				Build(),
@@ -69,12 +69,12 @@ func TestReconcile(t *testing.T) {
 			name:         "scenario 2: cleanup user on the seed cluster when master user is being terminated",
 			requestName:  userName,
 			expectedUser: nil,
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(generateUser(userName, true)).
 				Build(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(generateUser(userName, false)).

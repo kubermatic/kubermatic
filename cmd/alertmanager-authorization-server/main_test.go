@@ -24,12 +24,12 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -107,7 +107,7 @@ func TestAuthorize(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			client := fakectrlruntimeclient.NewClientBuilder().
+			client := fake.NewClientBuilder().
 				WithScheme(testScheme).
 				WithObjects(tc.existingKubermaticObjects...).
 				Build()

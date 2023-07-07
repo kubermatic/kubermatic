@@ -23,12 +23,12 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -114,10 +114,10 @@ func TestReconciliation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			if tc.masterClient == nil {
-				tc.masterClient = fakectrlruntimeclient.NewClientBuilder().Build()
+				tc.masterClient = fake.NewClientBuilder().Build()
 			}
 			if tc.seedClient == nil {
-				tc.seedClient = fakectrlruntimeclient.NewClientBuilder().Build()
+				tc.seedClient = fake.NewClientBuilder().Build()
 			}
 
 			ctx := context.Background()
@@ -153,7 +153,7 @@ func TestReconciliation(t *testing.T) {
 }
 
 func namedProjectClientWithLabels(name string, labels map[string]string) ctrlruntimeclient.Client {
-	return fakectrlruntimeclient.NewClientBuilder().WithObjects(&kubermaticv1.Project{
+	return fake.NewClientBuilder().WithObjects(&kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,
@@ -165,7 +165,7 @@ func namedProjectClientWithLabels(name string, labels map[string]string) ctrlrun
 }
 
 func namedClusterWithLabels(name string, labels map[string]string) ctrlruntimeclient.Client {
-	return fakectrlruntimeclient.NewClientBuilder().WithObjects(&kubermaticv1.Cluster{
+	return fake.NewClientBuilder().WithObjects(&kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,

@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +46,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -340,7 +340,7 @@ func TestSync(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			log := zaptest.NewLogger(t).Sugar()
 			ctx := context.Background()
-			client := fakectrlruntimeclient.
+			client := fake.
 				NewClientBuilder().
 				WithObjects(test.resources...).
 				WithIndex(&corev1.Service{}, nodeportproxy.DefaultExposeAnnotationKey, func(raw ctrlruntimeclient.Object) []string {
@@ -587,7 +587,7 @@ func TestNewEndpointHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			log := zaptest.NewLogger(t).Sugar()
-			client := fakectrlruntimeclient.
+			client := fake.
 				NewClientBuilder().
 				WithObjects(tt.resources...).
 				Build()

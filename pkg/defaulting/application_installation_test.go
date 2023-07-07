@@ -23,11 +23,11 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -40,7 +40,7 @@ func init() {
 
 func TestDefaultApplicationInstallation(t *testing.T) {
 	appDef := &appskubermaticv1.ApplicationDefinition{ObjectMeta: metav1.ObjectMeta{Name: "appDef-1"}, Spec: appskubermaticv1.ApplicationDefinitionSpec{Description: "Description", Versions: []appskubermaticv1.ApplicationVersion{{Version: "v1.0.0"}}}}
-	fakeClient := fakectrlruntimeclient.
+	fakeClient := fake.
 		NewClientBuilder().
 		WithScheme(testScheme).
 		WithObjects(appDef).

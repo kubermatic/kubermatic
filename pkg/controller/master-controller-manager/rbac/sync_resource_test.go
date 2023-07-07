@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -35,7 +36,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -1283,7 +1283,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				objs = append(objs, existingClusterRoleBinding)
 			}
 
-			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			fakeMasterClusterClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			target := resourcesController{
@@ -1520,7 +1520,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				objs = append(objs, existingRoleBinding)
 			}
 
-			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			fakeMasterClusterClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 			// act
 			target := resourcesController{
 				client:     fakeMasterClusterClient,
@@ -2172,7 +2172,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindings {
 				objs = append(objs, existingClusterRoleBinding)
 			}
-			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			fakeMasterClusterClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
@@ -2758,7 +2758,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			for _, existingClusterRole := range test.existingClusterRoles {
 				objs = append(objs, existingClusterRole)
 			}
-			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			fakeMasterClusterClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			err := ensureClusterRBACRoleForNamedResource(context.Background(), zap.NewNop().Sugar(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
@@ -3048,7 +3048,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 				objs = append(objs, existingRoleBinding)
 			}
 
-			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			fakeMasterClusterClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 			// act
 			target := resourcesController{
 				client:     fakeMasterClusterClient,
@@ -3478,7 +3478,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 				objs = append(objs, existingRoleBinding)
 			}
 
-			fakeSeedClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			fakeSeedClusterClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 			// act
 			target := resourcesController{
 				client:     fakeSeedClusterClient,
@@ -3798,7 +3798,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 				objs = append(objs, existingRoleBinding)
 			}
 
-			fakeSeedClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			fakeSeedClusterClient := fake.NewClientBuilder().WithObjects(objs...).Build()
 			// act
 			target := resourcesController{
 				client:     fakeSeedClusterClient,

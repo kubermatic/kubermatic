@@ -21,10 +21,10 @@ import (
 	"testing"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
@@ -93,7 +93,7 @@ func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			clientBuilder := fakectrlruntimeclient.NewClientBuilder()
+			clientBuilder := fake.NewClientBuilder()
 			if tc.secret != nil {
 				clientBuilder.WithObjects(tc.secret)
 			}

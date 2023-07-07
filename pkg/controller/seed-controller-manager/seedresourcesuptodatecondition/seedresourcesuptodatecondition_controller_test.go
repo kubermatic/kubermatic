@@ -23,6 +23,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -40,7 +40,7 @@ import (
 func TestReconcileReturnsError(t *testing.T) {
 	ctx := context.Background()
 	r := &reconciler{
-		client: &fakeClientThatErrorsOnGet{fakectrlruntimeclient.NewClientBuilder().Build()},
+		client: &fakeClientThatErrorsOnGet{fake.NewClientBuilder().Build()},
 	}
 	expectedErr := `failed to get cluster "": erroring on get as requested`
 	if _, err := r.Reconcile(ctx, reconcile.Request{}); err == nil || err.Error() != expectedErr {
@@ -156,7 +156,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 	for _, testCase := range testcases {
 		t.Run(testCase.name, func(t *testing.T) {
 			ctx := context.Background()
-			client := fakectrlruntimeclient.
+			client := fake.
 				NewClientBuilder().
 				WithObjects(append(testCase.resources, testCase.cluster)...).
 				Build()

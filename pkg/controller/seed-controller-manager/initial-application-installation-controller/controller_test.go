@@ -31,6 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,7 +41,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -215,14 +215,14 @@ func TestReconcile(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			seedClient := fakectrlruntimeclient.
+			seedClient := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(test.cluster, project).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
-			userClusterClient := fakectrlruntimeclient.
+			userClusterClient := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(userClusterObjects...).

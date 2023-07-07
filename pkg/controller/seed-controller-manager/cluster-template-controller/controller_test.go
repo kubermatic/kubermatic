@@ -25,6 +25,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
@@ -33,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -62,7 +62,7 @@ func TestReconcile(t *testing.T) {
 				genCluster("ct2-1", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
 				genCluster("ct2-2", "bob@acme.com", *generator.GenClusterTemplateInstance(projectName, "ctID2", "bob@acme.com", 3)),
 			},
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(

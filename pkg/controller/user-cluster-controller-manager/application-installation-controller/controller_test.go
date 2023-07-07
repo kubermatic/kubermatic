@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/applications/fake"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	kubermaticfake "k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +38,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -59,7 +59,7 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 		{
 			name:                  "scenario 1: only applications that reference ApplicationDef 'app-def-1' are enqueued",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0),
@@ -74,7 +74,7 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 		{
 			name:                  "scenario 2: when no application reference ApplicationDef 'app-def-1', nothing is enqueued",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-2", "1.0.0", 0, 1, 0),
@@ -86,7 +86,7 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 		{
 			name:                  "scenario 3: when no application in cluster, nothing is enqueued",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{},
@@ -125,7 +125,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=true -> limited retries]installation succeeds",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0)).
@@ -139,7 +139,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=false -> unlimited retries] installation succeeds",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					func() *appskubermaticv1.ApplicationInstallation {
@@ -158,7 +158,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=true -> limited retries] installation fails [atomic=true -> limited retries]: app.Status.Failures should be increased and condition set to false",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 1)).
@@ -172,7 +172,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=true -> limited retries] installation succeeds after a failure: app.Status.Failures should be reset and condition set to true",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 0)).
@@ -186,7 +186,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=true -> limited retries] installation fails after failure and spec changed app.Status.Failures should be set to 1 (reset + failure) and condition set to false",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 2, 1)).
@@ -200,7 +200,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=true -> limited retries] installation fails and reaches max retries: condition should be set to fails and no error should be returned (to not requeue object)",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 1, 1)).
@@ -215,7 +215,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=true -> limited retries] installation has reached max retries and then spec has changed (with working install): app.Status.Failures should be reset and condition set to true",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
@@ -229,7 +229,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=true -> limited retries] installation has reached max retries and then spec has changed (with not working install): app.Status.Failures should be set to 1 ( reset + failure) and condition set to false",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
@@ -243,7 +243,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		{
 			name:                  "[atomic=false -> unlimited retries] installation fails: retries should not be incremented",
 			applicationDefinition: genApplicationDefinition("app-def-1"),
-			userClient: fakectrlruntimeclient.
+			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					func() *appskubermaticv1.ApplicationInstallation {

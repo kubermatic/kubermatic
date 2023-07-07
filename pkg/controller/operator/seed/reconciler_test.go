@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -47,7 +48,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -444,7 +444,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 			seedObjects[seedName] = append(seedObjects[seedName], masterSeed.DeepCopy())
 		}
 
-		seedClients[seedName] = ctrlruntimefakeclient.
+		seedClients[seedName] = fake.
 			NewClientBuilder().
 			WithScheme(scheme.Scheme).
 			WithObjects(seedObjects[seedName]...).
@@ -453,7 +453,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 		seedRecorders[seedName] = record.NewFakeRecorder(999)
 	}
 
-	masterClient := ctrlruntimefakeclient.
+	masterClient := fake.
 		NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(masterObjects...).

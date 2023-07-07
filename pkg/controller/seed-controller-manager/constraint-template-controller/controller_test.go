@@ -28,6 +28,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -37,7 +38,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -66,34 +66,34 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: sync ct to user cluster",
 			requestName: ctName,
 			expectedCT:  genConstraintTemplate(ctName, false),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", true)).
 				Build(),
-			userClient: fakectrlruntimeclient.NewClientBuilder().WithScheme(sch).Build(),
+			userClient: fake.NewClientBuilder().WithScheme(sch).Build(),
 		},
 		{
 			name:                 "scenario 2: dont sync ct to user cluster which has opa-integration off",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", false)).
 				Build(),
-			userClient: fakectrlruntimeclient.NewClientBuilder().WithScheme(sch).Build(),
+			userClient: fake.NewClientBuilder().WithScheme(sch).Build(),
 		},
 		{
 			name:                 "scenario 3: cleanup ct on user cluster when master ct is being terminated",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(genConstraintTemplate(ctName, true), genCluster("cluster", true)).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
 				WithScheme(sch).
 				WithObjects(genGKConstraintTemplate(ctName)).
@@ -165,12 +165,12 @@ func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
 		t.Fatalf("failed to build worker-name selector: %v", err)
 	}
 
-	seedClient := fakectrlruntimeclient.
+	seedClient := fake.
 		NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(genConstraintTemplate(ctName, true), genCluster("cluster", true)).
 		Build()
-	userClient := fakectrlruntimeclient.
+	userClient := fake.
 		NewClientBuilder().
 		WithScheme(sch).
 		WithObjects().

@@ -26,6 +26,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +34,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
 )
 
@@ -118,7 +118,7 @@ func TestCreateAddon(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			client := ctrlruntimefakeclient.
+			client := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(test.cluster).
@@ -352,7 +352,7 @@ func TestUpdateAddon(t *testing.T) {
 				objs = append(objs, a)
 			}
 
-			client := ctrlruntimefakeclient.NewClientBuilder().
+			client := fake.NewClientBuilder().
 				WithObjects(objs...).
 				WithIndex(&kubermaticv1.Addon{}, addonDefaultKey, func(rawObj ctrlruntimeclient.Object) []string {
 					a := rawObj.(*kubermaticv1.Addon)

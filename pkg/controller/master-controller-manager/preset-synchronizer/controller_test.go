@@ -24,6 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +34,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -55,11 +55,11 @@ func TestReconcile(t *testing.T) {
 			name:           "scenario 1: sync preset from master cluster to seed cluster",
 			requestName:    presetName,
 			expectedPreset: generatePreset(presetName, false),
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithObjects(generatePreset(presetName, false), generator.GenTestSeed()).
 				Build(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				Build(),
 		},
@@ -67,11 +67,11 @@ func TestReconcile(t *testing.T) {
 			name:           "scenario 2: cleanup preset on the seed cluster when master preset is being terminated",
 			requestName:    presetName,
 			expectedPreset: nil,
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithObjects(generatePreset(presetName, true), generator.GenTestSeed()).
 				Build(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithObjects(generatePreset(presetName, false), generator.GenTestSeed()).
 				Build(),

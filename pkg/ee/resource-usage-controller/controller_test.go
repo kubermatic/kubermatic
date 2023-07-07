@@ -33,13 +33,13 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -109,10 +109,10 @@ func TestReconcile(t *testing.T) {
 			_ = kubermaticv1.AddToScheme(scheme)
 			_ = clusterv1alpha1.AddToScheme(scheme)
 
-			seedClientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme)
+			seedClientBuilder := fake.NewClientBuilder().WithScheme(scheme)
 			seedClientBuilder.WithObjects(tc.cluster)
 
-			userClientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme)
+			userClientBuilder := fake.NewClientBuilder().WithScheme(scheme)
 			for _, m := range tc.machines {
 				userClientBuilder.WithObjects(m)
 			}

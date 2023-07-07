@@ -23,7 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
@@ -71,7 +71,7 @@ func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
 				},
 			}
 			r := &Reconciler{
-				Client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(cluster).Build(),
+				Client: fake.NewClientBuilder().WithObjects(cluster).Build(),
 				features: Features{
 					EtcdLauncher: test.seedEtcdLauncher,
 				},

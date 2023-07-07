@@ -23,11 +23,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -43,7 +43,7 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 			name: "Test cleanup cluster ids in UserSSHKey on cluster deletion",
 			reconciler: &Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				masterClient: fakectrlruntimeclient.NewClientBuilder().WithObjects(
+				masterClient: fake.NewClientBuilder().WithObjects(
 					&kubermaticv1.UserSSHKey{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      "test_user_ssh_keys",
@@ -58,7 +58,7 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 					},
 				).Build(),
 				seedClients: map[string]ctrlruntimeclient.Client{
-					"seed_test": fakectrlruntimeclient.NewClientBuilder().WithObjects(
+					"seed_test": fake.NewClientBuilder().WithObjects(
 						&kubermaticv1.Cluster{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:              "test_cluster_1",

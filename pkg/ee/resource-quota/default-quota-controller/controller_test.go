@@ -31,6 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -38,7 +39,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -61,7 +61,7 @@ func TestReconcile(t *testing.T) {
 					*genResourceDetails("2", "5G", "10G"),
 					true),
 			},
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(genSettings(genResourceDetails("2", "5G", "10G")), generator.GenDefaultProject()).
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 					*genResourceDetails("2", "5G", "10G"),
 					true),
 			},
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(
@@ -97,7 +97,7 @@ func TestReconcile(t *testing.T) {
 					*genResourceDetails("1", "3G", "7G"),
 					false),
 			},
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(
@@ -112,7 +112,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name:                   "scenario 4: delete default project quota",
 			expectedResourceQuotas: []kubermaticv1.ResourceQuota{},
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 					*genResourceDetails("1", "3G", "7G"),
 					false),
 			},
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithScheme(scheme).
 				WithObjects(

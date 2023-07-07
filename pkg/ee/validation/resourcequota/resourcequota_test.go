@@ -30,11 +30,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/validation/resourcequota"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -136,7 +136,7 @@ func TestValidateCreate(t *testing.T) {
 				obj = append(obj, rq)
 			}
 
-			client := fakectrlruntimeclient.
+			client := fake.
 				NewClientBuilder().
 				WithScheme(testScheme).
 				WithObjects(obj...).

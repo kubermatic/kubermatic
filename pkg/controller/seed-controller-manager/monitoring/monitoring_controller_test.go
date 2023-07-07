@@ -21,10 +21,10 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 )
 
 func newTestReconciler(t *testing.T, objects []ctrlruntimeclient.Object) *Reconciler {
-	dynamicClient := ctrlruntimefakeclient.
+	dynamicClient := fake.
 		NewClientBuilder().
 		WithObjects(objects...).
 		Build()

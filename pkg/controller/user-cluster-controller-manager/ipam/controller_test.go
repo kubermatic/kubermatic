@@ -28,13 +28,13 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func init() {
@@ -172,7 +172,7 @@ func createMachine(name string) *clusterv1alpha1.Machine {
 }
 
 func newTestReconciler(networks []Network, objects ...ctrlruntimeclient.Object) *reconciler {
-	client := fakectrlruntimeclient.
+	client := fake.
 		NewClientBuilder().
 		WithObjects(objects...).
 		Build()

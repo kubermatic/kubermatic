@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +43,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -273,7 +273,7 @@ func TestReconcile(t *testing.T) {
 				appDef.Spec.DefaultValues = &runtime.RawExtension{Raw: rawValues}
 			}
 
-			seedClient := fakectrlruntimeclient.
+			seedClient := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(test.cluster, project, appDef).
@@ -294,7 +294,7 @@ func TestReconcile(t *testing.T) {
 				appInst.Spec.Values = runtime.RawExtension{Raw: rawValues}
 				userClusterObjects = append(userClusterObjects, appInst)
 			}
-			userClusterClient := fakectrlruntimeclient.
+			userClusterClient := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(userClusterObjects...).

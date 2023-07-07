@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,7 +44,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -245,14 +245,14 @@ func TestReconcile(t *testing.T) {
 				webhook.Status.UpdatedReplicas = *webhook.Spec.Replicas
 			}
 
-			seedClient := fakectrlruntimeclient.
+			seedClient := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(test.cluster, project, webhook).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
-			userClusterClient := fakectrlruntimeclient.
+			userClusterClient := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(userClusterObjects...).

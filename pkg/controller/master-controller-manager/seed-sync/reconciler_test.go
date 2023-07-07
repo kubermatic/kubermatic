@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,7 +37,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -223,8 +223,8 @@ func TestReconcilingSeed(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(test.seed, kubeconfigSecret).Build()
-			seedClient := fakectrlruntimeclient.
+			masterClient := fake.NewClientBuilder().WithObjects(test.seed, kubeconfigSecret).Build()
+			seedClient := fake.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(test.existingSeeds...).
