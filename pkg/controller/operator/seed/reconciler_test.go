@@ -92,6 +92,7 @@ func getSeeds(now metav1.Time) map[string]*kubermaticv1.Seed {
 				Name:              "goner",
 				Namespace:         "kubermatic",
 				DeletionTimestamp: &now,
+				Finalizers:        []string{"dummy"},
 			},
 		},
 		"other": {
@@ -246,8 +247,7 @@ func TestBasicReconciling(t *testing.T) {
 
 				seed := &kubermaticv1.Seed{}
 				must(t, seedClient.Get(ctx, seedName, seed))
-				seed.DeletionTimestamp = &now
-				must(t, seedClient.Update(ctx, seed))
+				must(t, seedClient.Delete(ctx, seed))
 
 				// let the controller clean up
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {

@@ -149,5 +149,9 @@ func genCluster(name, userEmail, preset string) *kubermaticv1.Cluster {
 func getPreset(deletionTimestamp *metav1.Time) *kubermaticv1.Preset {
 	preset := generator.GenDefaultPreset()
 	preset.DeletionTimestamp = deletionTimestamp
+	if deletionTimestamp != nil {
+		preset.Finalizers = []string{"dummy"}
+	}
+
 	return preset
 }

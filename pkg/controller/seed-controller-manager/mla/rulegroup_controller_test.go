@@ -209,6 +209,7 @@ func generateRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.Rule
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		group.DeletionTimestamp = &deleteTime
+		group.Finalizers = []string{"dummy"}
 	}
 	return group
 }

@@ -283,7 +283,11 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{Name: "kube-system"},
 				},
 				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{Name: "test", DeletionTimestamp: nowPtr()},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "test",
+						DeletionTimestamp: nowPtr(),
+						Finalizers:        []string{"dummy"},
+					},
 				},
 			},
 			requestName:      "view",

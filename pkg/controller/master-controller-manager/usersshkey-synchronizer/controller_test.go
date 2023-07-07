@@ -63,6 +63,7 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 							ObjectMeta: metav1.ObjectMeta{
 								Name:              "test_cluster_1",
 								DeletionTimestamp: &deletionTimestamp,
+								Finalizers:        []string{"dummy"},
 							},
 							Status: kubermaticv1.ClusterStatus{
 								NamespaceName: "cluster-test_cluster_1",

@@ -140,6 +140,7 @@ func generateMLARuleGroup(name, namespace string, ruleGroupType kubermaticv1.Rul
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		group.DeletionTimestamp = &deleteTime
+		group.Finalizers = []string{"dummy"}
 	}
 	return group
 }

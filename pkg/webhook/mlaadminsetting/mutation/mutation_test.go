@@ -149,6 +149,7 @@ func TestHandle(t *testing.T) {
 					cluster := c.DeepCopy()
 					now := metav1.Now()
 					cluster.DeletionTimestamp = &now
+					cluster.Finalizers = []string{"dummy"}
 					return cluster
 				}(cluster)),
 			},
