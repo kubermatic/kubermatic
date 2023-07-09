@@ -33,7 +33,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"sigs.k8s.io/controller-runtime"
+	controllerruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
@@ -56,7 +56,7 @@ func CreateNamespaceWithCleanup(t *testing.T, ctx context.Context, client ctrlru
 		}
 	})
 
-	if !utils.WaitFor(time.Second*1, time.Second*10, func() bool {
+	if !utils.WaitFor(ctx, time.Second*1, time.Second*10, func() bool {
 		namespace := &corev1.Namespace{}
 		return client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(ns), namespace) == nil
 	}) {
@@ -144,7 +144,7 @@ func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.
 
 	cm := &corev1.ConfigMap{}
 	var errorGetCm error
-	if !utils.WaitFor(time.Second*1, time.Second*10, func() bool {
+	if !utils.WaitFor(ctx, time.Second*1, time.Second*10, func() bool {
 		errorGetCm = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: ConfigmapName}, cm)
 		// if config map has not been  updated
 		if errorGetCm != nil || !diff.SemanticallyEqual(expectedData, cm.Data) || cm.Labels[VersionLabelKey] != expectedVersionLabel || !isExpectedDnsValue(cm.Labels[EnableDNSLabelKey], enableDns) {

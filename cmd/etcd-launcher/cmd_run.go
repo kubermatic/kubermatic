@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -171,7 +172,7 @@ func RunFunc(log *zap.SugaredLogger, opt *runOptions) cobraFuncE {
 			log.Panicw("failed to start etcd cmd", zap.Error(err))
 		}
 
-		if err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
+		if err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 60*time.Second, false, func(ctx context.Context) (bool, error) {
 			return e.IsClusterHealthy(ctx, log)
 		}); err != nil {
 			log.Panicw("manager thread failed to connect to cluster", zap.Error(err))

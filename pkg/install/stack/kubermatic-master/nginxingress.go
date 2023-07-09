@@ -211,7 +211,7 @@ func waitForNginxIngressWebhook(
 	}
 
 	var lastCreateErr error
-	err := wait.PollImmediate(3*time.Second, 2*time.Minute, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
 		lastCreateErr = kubeClient.Create(ctx, dummyIngress)
 		return lastCreateErr == nil, nil
 	})

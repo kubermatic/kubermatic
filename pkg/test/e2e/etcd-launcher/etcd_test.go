@@ -514,7 +514,7 @@ func resizeEtcd(ctx context.Context, client ctrlruntimeclient.Client, cluster *k
 
 func waitForEtcdBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, backup *kubermaticv1.EtcdBackupConfig) error {
 	before := time.Now()
-	if err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: backup.Name, Namespace: backup.Namespace}, backup); err != nil {
 			return false, err
 		}
@@ -530,7 +530,7 @@ func waitForEtcdBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 
 func waitForEtcdRestore(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, restore *kubermaticv1.EtcdRestore) error {
 	before := time.Now()
-	if err := wait.PollImmediate(10*time.Second, 5*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: restore.Name, Namespace: restore.Namespace}, restore); err != nil {
 			return false, err
 		}
@@ -550,7 +550,7 @@ func waitForClusterHealthy(ctx context.Context, log *zap.SugaredLogger, client c
 	// let's briefly sleep to give controllers a chance to kick in
 	time.Sleep(10 * time.Second)
 
-	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 10*time.Minute, true, func(ctx context.Context) (bool, error) {
 		// refresh cluster object for updated health status
 		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
 			return false, fmt.Errorf("failed to get cluster: %w", err)
@@ -573,7 +573,7 @@ func waitForClusterHealthy(ctx context.Context, log *zap.SugaredLogger, client c
 
 func waitForStrictTLSMode(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	before := time.Now()
-	if err := wait.PollImmediate(3*time.Second, 10*time.Minute, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 10*time.Minute, true, func(ctx context.Context) (bool, error) {
 		// refresh cluster object for updated health status
 		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
 			return false, fmt.Errorf("failed to get cluster: %w", err)
@@ -653,7 +653,7 @@ func forceDeleteEtcdPV(ctx context.Context, client ctrlruntimeclient.Client, clu
 	}
 
 	// make sure it's gone
-	return wait.PollImmediate(2*time.Second, 3*time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 2*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := client.Get(ctx, typedName, pv); apierrors.IsNotFound(err) {
 			return true, nil
 		}
@@ -702,7 +702,7 @@ func deleteEtcdPVC(ctx context.Context, client ctrlruntimeclient.Client, cluster
 
 	// make sure the PVC is recreated by checking the CreationTimestamp against a DeepCopy
 	// created of the PVC resource.
-	return wait.PollImmediate(2*time.Second, 3*time.Minute, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 2*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: pvc.Name, Namespace: pvc.Namespace}, &pvc); err == nil {
 			if oldPvc.ObjectMeta.CreationTimestamp.Before(&pvc.ObjectMeta.CreationTimestamp) {
 				return true, nil

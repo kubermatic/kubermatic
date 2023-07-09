@@ -38,7 +38,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	cmdtesting "k8s.io/kubectl/pkg/cmd/testing"
 	"k8s.io/utils/pointer"
@@ -584,7 +583,7 @@ func uninstallTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.C
 	}
 
 	cm := &corev1.ConfigMap{}
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		err := client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.ConfigmapName}, cm)
 		return err != nil && apierrors.IsNotFound(err)
 	}) {
@@ -644,8 +643,8 @@ func checkReleaseFailedWithTimemout(t *testing.T, releaseInfo *release.Release, 
 	if err == nil {
 		t.Fatalf("expect installation or upgrade failed when timeout is exceeded but not error was raised")
 	}
-	if !errors.Is(err, wait.ErrWaitTimeout) {
-		t.Fatalf("expect wait.ErrWaitTimeout error. got %s", err)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("expect context.DeadlineExceeded error. got %s", err)
 	}
 	if releaseInfo.Info.Status != release.StatusFailed {
 		t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, releaseInfo.Info.Status)
@@ -655,7 +654,7 @@ func checkReleaseFailedWithTimemout(t *testing.T, releaseInfo *release.Release, 
 // checkServiceDeleted checks that test.SvcName does not exist in namespace "ns" otherwise fails the test.
 func checkServiceDeleted(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace) {
 	svc := &corev1.Service{}
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		err := client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.SvcName}, svc)
 		return err != nil && apierrors.IsNotFound(err)
 	}) {
@@ -666,7 +665,7 @@ func checkServiceDeleted(t *testing.T, ctx context.Context, client ctrlruntimecl
 // checkServiceDeployed checks that test.SvcName exist in namespace "ns" otherwise fails the test.
 func checkServiceDeployed(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace) {
 	var err error
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		svc := &corev1.Service{}
 		err = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: test.SvcName}, svc)
 		return err == nil

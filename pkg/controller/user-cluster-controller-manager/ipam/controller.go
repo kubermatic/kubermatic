@@ -142,7 +142,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, mach
 	}
 
 	// Block until the change is in the lister to make sure we don't hand out an IP twice
-	return wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 1*time.Second, 60*time.Second, false, func(ctx context.Context) (bool, error) {
 		newMachine := &clusterv1alpha1.Machine{}
 		if err := r.Get(ctx, types.NamespacedName{Namespace: machine.Namespace, Name: machine.Name}, newMachine); err != nil {
 			return false, err

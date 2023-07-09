@@ -36,7 +36,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	k8swait "k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
@@ -278,7 +277,7 @@ func TestNodeportProxy(t *testing.T) {
 
 			return errors.New("nothing exposed, all good"), nil
 		})
-		if err != nil && !errors.Is(err, k8swait.ErrWaitTimeout) {
+		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 			t.Fatalf("Should not have exposed a service, but %v", err)
 		}
 

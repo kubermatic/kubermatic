@@ -77,7 +77,7 @@ func WaitForAllPodsToBeGone(ctx context.Context, logger logrus.FieldLogger, clie
 	// scaled down to 0 replicas, so we must check for existing pods
 	podNamePrefix := name + "-"
 
-	err := wait.Poll(500*time.Millisecond, timeout, func() (done bool, err error) {
+	err := wait.PollUntilContextTimeout(ctx, 500*time.Millisecond, timeout, false, func(ctx context.Context) (done bool, err error) {
 		pods := &corev1.PodList{}
 		opt := ctrlruntimeclient.ListOptions{
 			Namespace: namespace,
@@ -101,7 +101,7 @@ func WaitForAllPodsToBeGone(ctx context.Context, logger logrus.FieldLogger, clie
 		return true, nil
 	})
 
-	if errors.Is(err, wait.ErrWaitTimeout) {
+	if errors.Is(err, context.DeadlineExceeded) {
 		return errors.New("there are still Pods running, please wait and let them shut down")
 	}
 

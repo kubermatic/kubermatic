@@ -22,8 +22,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	k8swait "k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestPollSuccess(t *testing.T) {
@@ -52,8 +50,8 @@ func TestPollTimeout(t *testing.T) {
 		t.Fatal("Poll should have returned an error, but got nil")
 	}
 
-	if !errors.Is(err, k8swait.ErrWaitTimeout) {
-		t.Fatalf("err should be a wrapped ErrWaitTimeout, but is %+v", err)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("err should be a wrapped DeadlineExceeded, but is %+v", err)
 	}
 
 	if !strings.Contains(err.Error(), "transient") {

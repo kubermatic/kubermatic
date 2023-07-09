@@ -44,7 +44,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -151,7 +150,7 @@ func TestHelmProvider(t *testing.T) {
 
 				// check configmap is removed
 				cm := &corev1.ConfigMap{}
-				if !utils.WaitFor(interval, timeout, func() bool {
+				if !utils.WaitFor(ctx, interval, timeout, func() bool {
 					err := client.Get(ctx, types.NamespacedName{Namespace: testNs.Name, Name: test.ConfigmapName}, cm)
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
@@ -184,7 +183,7 @@ func TestHelmProvider(t *testing.T) {
 				// Ensure dependency has been installed too.
 				cm := &corev1.ConfigMap{}
 				var errorGet error
-				if !utils.WaitFor(interval, timeout, func() bool {
+				if !utils.WaitFor(ctx, interval, timeout, func() bool {
 					errorGet = client.Get(ctx, types.NamespacedName{Namespace: testNs.Name, Name: test.ConfigmapName2}, cm)
 					return errorGet == nil
 				}) {
@@ -237,8 +236,8 @@ func TestHelmProvider(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expect installation or upgrade failed when timeout is exceeded but not error was raised")
 				}
-				if !errors.Is(err, wait.ErrWaitTimeout) {
-					t.Fatalf("expect wait.ErrWaitTimeout error. got %s", err)
+				if !errors.Is(err, context.DeadlineExceeded) {
+					t.Fatalf("expect context.DeadlineExceeded error. got %s", err)
 				}
 
 				// Check that status of helm release is set to failed.
@@ -274,8 +273,8 @@ func TestHelmProvider(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expect installation or upgrade failed when timeout is exceeded but not error was raised")
 				}
-				if !errors.Is(err, wait.ErrWaitTimeout) {
-					t.Fatalf("expect wait.ErrWaitTimeout error. got %s", err)
+				if !errors.Is(err, context.DeadlineExceeded) {
+					t.Fatalf("expect context.DeadlineExceeded error. got %s", err)
 				}
 
 				// Check that status of helm release is set to failed.

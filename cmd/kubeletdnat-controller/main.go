@@ -75,7 +75,7 @@ func main() {
 	// Wait until the API server is actually up & the corev1 api groups is available.
 	// This is a smallish hack to avoid dying instantly when running as sidecar to the kube API server
 	// The API server takes a few seconds to start which makes this sidecar die immediately
-	err = wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 		if err != nil {
 			return false, nil

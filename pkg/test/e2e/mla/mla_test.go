@@ -110,7 +110,7 @@ func TestMLAIntegration(t *testing.T) {
 	p := &kubermaticv1.Project{}
 	orgID := ""
 	timeout := 5 * time.Minute
-	if !utils.WaitFor(1*time.Second, timeout, func() (ok bool) {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() (ok bool) {
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.Name}, p); err != nil {
 			t.Fatalf("failed to get project: %v", err)
 		}
@@ -174,7 +174,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	logger.Info("Waiting for Grafana org to be gone...")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		_, err = grafanaClient.GetOrgById(ctx, org.ID)
 		return err != nil
 	}) {
@@ -182,7 +182,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	logger.Info("Waiting for Grafana user to be gone...")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {
@@ -190,7 +190,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	logger.Info("Waiting for project to get rid of grafana org annotation")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.Name}, p); err != nil {
 			t.Fatalf("failed to get project: %v", err)
 		}
@@ -205,7 +205,7 @@ func TestMLAIntegration(t *testing.T) {
 func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, cluster *kubermaticv1.Cluster) (err error) {
 	log.Info("Waiting for datasource to be added to Grafana...")
 
-	if !utils.WaitFor(1*time.Second, 5*time.Minute, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, 5*time.Minute, func() bool {
 		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", mla.PrometheusType, cluster.Name))
 		return err == nil
 	}) {
@@ -369,7 +369,7 @@ func verifyAlertmanager(ctx context.Context, log *zap.SugaredLogger, client ctrl
 		return fmt.Errorf("unable to update alertmanager config: %w", err)
 	}
 
-	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, 1*time.Minute, func() bool {
 		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
 			return false
 		}

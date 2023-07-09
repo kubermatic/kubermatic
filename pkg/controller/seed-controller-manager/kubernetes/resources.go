@@ -306,7 +306,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.Sugared
 	// before returning the namespace and putting its name into the cluster status,
 	// ensure that the namespace is in our cache, or else other controllers that
 	// want to reconcile might get confused
-	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
 		ns := &corev1.Namespace{}
 		err := r.Get(ctx, types.NamespacedName{Name: namespace}, ns)
 		if err == nil {

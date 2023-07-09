@@ -64,7 +64,7 @@ func TestController(t *testing.T) {
 				def := createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
-				if !utils.WaitFor(interval, timeout, func() bool {
+				if !utils.WaitFor(ctx, interval, timeout, func() bool {
 					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
 						return false
 					}
@@ -73,7 +73,7 @@ func TestController(t *testing.T) {
 					t.Fatalf("app.Status.ApplicationVersion differs from expected: %s", diff.ObjectDiff(def.Spec.Versions[0], app.Status.ApplicationVersion))
 				}
 
-				expectApplicationInstalledWithVersion(t, &applicationInstallerRecorder, app.Name, def.Spec.Versions[0])
+				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, app.Name, def.Spec.Versions[0])
 				expectStatusHasConditions(t, ctx, client, app.Name)
 			},
 		},
@@ -87,7 +87,7 @@ func TestController(t *testing.T) {
 				app := createApplicationInstallation(t, ctx, client, appInstallName, "app-def-not-exist", "1.0.0")
 
 				// Ensure application is not deleted.
-				if utils.WaitFor(interval, timeout, func() bool {
+				if utils.WaitFor(ctx, interval, timeout, func() bool {
 					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
@@ -109,7 +109,7 @@ func TestController(t *testing.T) {
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0-not-exist")
 
 				// Ensure application is not deleted.
-				if utils.WaitFor(interval, timeout, func() bool {
+				if utils.WaitFor(ctx, interval, timeout, func() bool {
 					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
@@ -129,7 +129,7 @@ func TestController(t *testing.T) {
 
 				def := createApplicationDef(t, ctx, client, appDefName)
 				createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
-				expectApplicationInstalledWithVersion(t, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
+				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
 
 				// Removing applicationDefinition.
 				if err := client.Delete(ctx, def); err != nil {
@@ -137,14 +137,14 @@ func TestController(t *testing.T) {
 				}
 
 				// Checking application Installation CR is removed.
-				if !utils.WaitFor(interval, timeout, func() bool {
+				if !utils.WaitFor(ctx, interval, timeout, func() bool {
 					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation CR should have been deleted but was not")
 				}
 
-				expectApplicationUninstalledWithVersion(t, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
+				expectApplicationUninstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
 			},
 		},
 		{
@@ -155,7 +155,7 @@ func TestController(t *testing.T) {
 
 				def := createApplicationDef(t, ctx, client, appDefName)
 				createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
-				expectApplicationInstalledWithVersion(t, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
+				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
 
 				previousVersion := def.Spec.Versions[0]
 
@@ -179,14 +179,14 @@ func TestController(t *testing.T) {
 				}
 
 				// Checking application Installation CR is removed.
-				if !utils.WaitFor(interval, timeout, func() bool {
+				if !utils.WaitFor(ctx, interval, timeout, func() bool {
 					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation CR should have been deleted but was not")
 				}
 
-				expectApplicationUninstalledWithVersion(t, &applicationInstallerRecorder, appInstallName, previousVersion)
+				expectApplicationUninstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, previousVersion)
 			},
 		},
 		{
@@ -198,7 +198,7 @@ func TestController(t *testing.T) {
 				def := createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
-				if !utils.WaitFor(interval, timeout, func() bool {
+				if !utils.WaitFor(ctx, interval, timeout, func() bool {
 					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
 						return false
 					}
@@ -207,7 +207,7 @@ func TestController(t *testing.T) {
 					t.Fatalf("app.Status.ApplicationVersion differs from expected: %s", diff.ObjectDiff(def.Spec.Versions[0], app.Status.ApplicationVersion))
 				}
 
-				expectApplicationInstalledWithVersion(t, &applicationInstallerRecorder, app.Name, def.Spec.Versions[0])
+				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, app.Name, def.Spec.Versions[0])
 				expectStatusHasConditions(t, ctx, client, app.Name)
 
 				// Update application Installation.
@@ -216,7 +216,7 @@ func TestController(t *testing.T) {
 					t.Fatalf("failed to update applicationInstallation: %s", err)
 				}
 
-				if !utils.WaitFor(interval, timeout, func() bool {
+				if !utils.WaitFor(ctx, interval, timeout, func() bool {
 					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
 						return false
 					}
@@ -225,7 +225,7 @@ func TestController(t *testing.T) {
 					t.Fatalf("app.Status.ApplicationVersion differs from expected: %s", diff.ObjectDiff(def.Spec.Versions[1], app.Status.ApplicationVersion))
 				}
 
-				expectApplicationInstalledWithVersion(t, &applicationInstallerRecorder, app.Name, def.Spec.Versions[1])
+				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, app.Name, def.Spec.Versions[1])
 				expectStatusHasConditions(t, ctx, client, app.Name)
 			},
 		},
@@ -236,9 +236,9 @@ func TestController(t *testing.T) {
 	}
 }
 
-func expectApplicationInstalledWithVersion(t *testing.T, applicationInstallerRecorder *fake.ApplicationInstallerRecorder, appName string, expectedVersion appskubermaticv1.ApplicationVersion) {
+func expectApplicationInstalledWithVersion(t *testing.T, ctx context.Context, applicationInstallerRecorder *fake.ApplicationInstallerRecorder, appName string, expectedVersion appskubermaticv1.ApplicationVersion) {
 	var errReason string
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		if _, found := applicationInstallerRecorder.DownloadEvents.Load(appName); !found {
 			errReason = "Application " + appName + "'s sources have not been download"
 			return false
@@ -261,9 +261,9 @@ func expectApplicationInstalledWithVersion(t *testing.T, applicationInstallerRec
 	}
 }
 
-func expectApplicationUninstalledWithVersion(t *testing.T, applicationInstallerRecorder *fake.ApplicationInstallerRecorder, appName string, expectedVersion appskubermaticv1.ApplicationVersion) {
+func expectApplicationUninstalledWithVersion(t *testing.T, ctx context.Context, applicationInstallerRecorder *fake.ApplicationInstallerRecorder, appName string, expectedVersion appskubermaticv1.ApplicationVersion) {
 	var errReason string
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		result, found := applicationInstallerRecorder.DeleteEvents.Load(appName)
 		if !found {
 			errReason = "Application " + appName + " has not been uninstalled"
@@ -284,7 +284,7 @@ func expectApplicationUninstalledWithVersion(t *testing.T, applicationInstallerR
 func expectStatusHasConditions(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, appName string) {
 	app := &appskubermaticv1.ApplicationInstallation{}
 	var errReason string
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		if err := client.Get(ctx, types.NamespacedName{Name: appName, Namespace: applicationNamespace}, app); err != nil {
 			errReason = err.Error()
 			return false
@@ -309,7 +309,7 @@ func createApplicationDef(t *testing.T, ctx context.Context, client ctrlruntimec
 	}
 
 	def := &appskubermaticv1.ApplicationDefinition{}
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		return client.Get(ctx, types.NamespacedName{Name: appDefName}, def) == nil
 	}) {
 		t.Fatal("failed to get applicationDefinition")
@@ -325,7 +325,7 @@ func createApplicationInstallation(t *testing.T, ctx context.Context, client ctr
 
 	// Wait for application to be created.
 	app := appskubermaticv1.ApplicationInstallation{}
-	if !utils.WaitFor(interval, 3*time.Second, func() bool {
+	if !utils.WaitFor(ctx, interval, 3*time.Second, func() bool {
 		return client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app) == nil
 	}) {
 		t.Fatal("failed to create get applicationInstallation")

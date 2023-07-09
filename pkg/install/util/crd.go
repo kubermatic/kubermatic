@@ -149,13 +149,13 @@ func HasReadyCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdNa
 }
 
 func WaitForReadyCRD(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdName string, timeout time.Duration) error {
-	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		return HasReadyCRD(ctx, kubeClient, crdName)
 	})
 }
 
 func WaitForCRDGone(ctx context.Context, kubeClient ctrlruntimeclient.Client, crdName string, timeout time.Duration) error {
-	return wait.PollImmediate(1*time.Second, timeout, func() (bool, error) {
+	return wait.PollUntilContextTimeout(ctx, 1*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		retrievedCRD := &apiextensionsv1.CustomResourceDefinition{}
 		name := types.NamespacedName{Name: crdName}
 
