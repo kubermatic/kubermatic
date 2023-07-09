@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-logr/zapr"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 
@@ -32,6 +33,7 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func main() {
@@ -50,6 +52,9 @@ func main() {
 	// setup logging
 	rawLog := log.New(logOpts.Debug, logOpts.Format)
 	logger := rawLog.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	if *accessKeyID == "" {
 		*accessKeyID = os.Getenv("ACCESS_KEY_ID")
