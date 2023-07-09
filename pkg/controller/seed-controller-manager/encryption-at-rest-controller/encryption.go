@@ -92,10 +92,8 @@ func (r *Reconciler) encryptData(ctx context.Context, client ctrlruntimeclient.C
 		}
 
 		// wait for Job to appear in cache
-		waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r.Client, log, ctrlruntimeclient.ObjectKeyFromObject(&job), &job)
-		if err := wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 10*time.Second, false, func(_ context.Context) (done bool, err error) {
-			return waiter()
-		}); err != nil {
+		waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(r.Client, log, ctrlruntimeclient.ObjectKeyFromObject(&job), &job)
+		if err := wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 10*time.Second, false, waiter); err != nil {
 			return &reconcile.Result{}, fmt.Errorf("failed waiting for the Job to appear in the cache: %w", err)
 		}
 

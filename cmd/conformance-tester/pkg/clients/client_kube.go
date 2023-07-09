@@ -197,9 +197,9 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
 
-	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, c.opts.SeedClusterClient, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
+	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(c.opts.SeedClusterClient, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
 	if err := wait.Poll(ctx, 100*time.Millisecond, 5*time.Second, func(ctx context.Context) (error, error) {
-		success, err := waiter()
+		success, err := waiter(ctx)
 		if err != nil {
 			return nil, err
 		}

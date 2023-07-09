@@ -492,10 +492,8 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 
 	// Wait until the object exists in the cache
 	namespacedName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r, objectLogger(job), namespacedName, job)
-	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, func(_ context.Context) (done bool, err error) {
-		return createdObjectIsInCache()
-	})
+	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(r, objectLogger(job), namespacedName, job)
+	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, createdObjectIsInCache)
 	if err != nil {
 		return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
 	}
@@ -723,10 +721,8 @@ func (r *reconciler) initiateClusterUpgrade(ctx context.Context,
 
 	// Wait until the object exists in the cache
 	namespacedName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r, objectLogger(job), namespacedName, job)
-	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, func(_ context.Context) (done bool, err error) {
-		return createdObjectIsInCache()
-	})
+	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(r, objectLogger(job), namespacedName, job)
+	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, createdObjectIsInCache)
 	if err != nil {
 		return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
 	}
@@ -879,10 +875,8 @@ func (r *reconciler) initiateClusterMigration(ctx context.Context,
 
 	// Wait until the object exists in the cache
 	namespacedName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r, objectLogger(job), namespacedName, job)
-	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, func(_ context.Context) (done bool, err error) {
-		return createdObjectIsInCache()
-	})
+	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(r, objectLogger(job), namespacedName, job)
+	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, createdObjectIsInCache)
 	if err != nil {
 		return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
 	}
