@@ -349,7 +349,7 @@ func checkAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctr
 }
 
 func checkIPAMAllocation(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string, expectedIPAMAllocationSpec kubermaticv1.IPAMAllocationSpec) bool {
-	return wait.PollLog(ctx, log, 10*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 10*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation); err != nil {
 			return fmt.Errorf("error getting IPAM allocation for cluster %s: %w", cluster.Name, err), nil
@@ -379,7 +379,7 @@ type ipAddressPoolV1Beta1 struct {
 }
 
 func checkMetallbIPAddressPool(ctx context.Context, log *zap.SugaredLogger, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocation *kubermaticv1.IPAMAllocation) bool {
-	return wait.PollLog(ctx, log, 20*time.Second, 10*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 20*time.Second, 10*time.Minute, func(ctx context.Context) (error, error) {
 		// We use an unstructured object instead of using metallb's v1beta1 directly
 		// because Cilium has its own fork of metallb which does not contain v1beta1.
 		metallbIPAddressPool := &unstructured.Unstructured{}
@@ -429,7 +429,7 @@ func checkAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClie
 }
 
 func checkIPAMAllocationIsGone(ctx context.Context, log *zap.SugaredLogger, seedClient, userClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, ipamAllocationName string) bool {
-	return wait.PollLog(ctx, log, 10*time.Second, 5*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, log, 10*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
 		err := seedClient.Get(ctx, types.NamespacedName{Name: ipamAllocationName, Namespace: cluster.Status.NamespaceName}, ipamAllocation)
 		if err != nil {

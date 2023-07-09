@@ -219,7 +219,7 @@ func (j *ClusterJig) ClusterClient(ctx context.Context) (ctrlruntimeclient.Clien
 	}
 
 	var clusterClient ctrlruntimeclient.Client
-	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func() (transient error, terminal error) {
+	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
 		clusterClient, transient = provider.GetClient(ctx, cluster)
 		return transient, nil
 	})
@@ -242,7 +242,7 @@ func (j *ClusterJig) ClusterRESTConfig(ctx context.Context) (*rest.Config, error
 	}
 
 	var clusterClient *rest.Config
-	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func() (transient error, terminal error) {
+	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
 		clusterClient, transient = provider.GetClientConfig(ctx, cluster)
 		return transient, nil
 	})
@@ -344,7 +344,7 @@ func (j *ClusterJig) WaitForClusterNamespace(ctx context.Context, timeout time.D
 		return errors.New("cluster jig has not created a cluster yet")
 	}
 
-	return wait.PollLog(ctx, j.log, 5*time.Second, timeout, func() (transient error, terminal error) {
+	return wait.PollLog(ctx, j.log, 5*time.Second, timeout, func(ctx context.Context) (transient error, terminal error) {
 		curCluster := kubermaticv1.Cluster{}
 		if err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, &curCluster); err != nil {
 			return fmt.Errorf("failed to retrieve cluster: %w", err), nil
@@ -368,7 +368,7 @@ func (j *ClusterJig) WaitForHealthyControlPlane(ctx context.Context, timeout tim
 		return errors.New("cluster jig has not created a cluster yet")
 	}
 
-	return wait.PollLog(ctx, j.log, 5*time.Second, timeout, func() (transient error, terminal error) {
+	return wait.PollLog(ctx, j.log, 5*time.Second, timeout, func(ctx context.Context) (transient error, terminal error) {
 		curCluster := kubermaticv1.Cluster{}
 		if err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, &curCluster); err != nil {
 			return fmt.Errorf("failed to retrieve cluster: %w", err), nil
@@ -434,7 +434,7 @@ func (j *ClusterJig) Delete(ctx context.Context, synchronous bool) error {
 	if synchronous {
 		log.Info("Waiting for cluster to be gone...")
 
-		err = wait.PollLog(ctx, log, 20*time.Second, 30*time.Minute, func() (transient error, terminal error) {
+		err = wait.PollLog(ctx, log, 20*time.Second, 30*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 			c := &kubermaticv1.Cluster{}
 			err := j.client.Get(ctx, types.NamespacedName{Name: j.clusterName}, c)
 

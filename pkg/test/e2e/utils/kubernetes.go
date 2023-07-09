@@ -210,7 +210,7 @@ func WaitForPodsCreated(ctx context.Context, c ctrlruntimeclient.Client, log *za
 	// List the pods, making sure we observe all the replicas.
 	foundPods := []string{}
 
-	err := wait.PollImmediateLog(ctx, logger, 2*time.Second, timeout, func() (transient error, terminal error) {
+	err := wait.PollImmediateLog(ctx, logger, 2*time.Second, timeout, func(ctx context.Context) (transient error, terminal error) {
 		pods := corev1.PodList{}
 		if err := c.List(ctx, &pods, listOpts...); err != nil {
 			return nil, fmt.Errorf("failed to list Pods: %w", err)
@@ -260,7 +260,7 @@ func WaitForPodCondition(ctx context.Context, c ctrlruntimeclient.Client, log *z
 	logger := log.With("pod", podName)
 	logger.With("timeout", timeout).Infof("Waiting for Pod to be %q...", desc)
 
-	return wait.PollImmediateLog(ctx, logger, pollPeriod, timeout, func() (error, error) {
+	return wait.PollImmediateLog(ctx, logger, pollPeriod, timeout, func(ctx context.Context) (error, error) {
 		pod := corev1.Pod{}
 		if err := c.Get(ctx, key, &pod); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -335,7 +335,7 @@ func WaitForDeploymentReady(ctx context.Context, c ctrlruntimeclient.Client, log
 	logger := log.With("deployment", key.String())
 	logger.Info("Waiting for Deployment to be ready...")
 
-	return wait.PollImmediateLog(ctx, log, 5*time.Second, timeout, func() (error, error) {
+	return wait.PollImmediateLog(ctx, log, 5*time.Second, timeout, func(ctx context.Context) (error, error) {
 		status, err := resources.HealthyDeployment(ctx, c, key, -1)
 		if err != nil {
 			return nil, err

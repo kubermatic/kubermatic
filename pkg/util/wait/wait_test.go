@@ -27,7 +27,7 @@ import (
 func TestPollSuccess(t *testing.T) {
 	executions := 0
 
-	err := Poll(context.Background(), 1*time.Millisecond, 100*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 100*time.Millisecond, func(ctx context.Context) (error, error) {
 		executions++
 		return nil, nil
 	})
@@ -42,7 +42,7 @@ func TestPollSuccess(t *testing.T) {
 }
 
 func TestPollTimeout(t *testing.T) {
-	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func(ctx context.Context) (error, error) {
 		return errors.New("transient"), nil
 	})
 
@@ -63,7 +63,7 @@ func TestPollTerminalError(t *testing.T) {
 	executions := 0
 	terminal := errors.New("terminal")
 
-	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func(ctx context.Context) (error, error) {
 		executions++
 		return nil, terminal
 	})

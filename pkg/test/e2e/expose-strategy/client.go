@@ -83,7 +83,7 @@ func (cj *clientJig) VerifyApiserverVersion(ctx context.Context, kasHostPort str
 		cmd = append(cmd, "--insecure-skip-tls-verify=true")
 	}
 
-	return wait.PollImmediateLog(ctx, cj.Log, 1*time.Millisecond, 15*time.Second, func() (transient error, terminal error) {
+	return wait.PollImmediateLog(ctx, cj.Log, 1*time.Millisecond, 15*time.Second, func(ctx context.Context) (transient error, terminal error) {
 		stdout, stderr, err := cj.Exec(ctx, clientContainerName, cmd...)
 		if err != nil {
 			return fmt.Errorf("failed to execute kubectl (stdout=%q, stderr=%q): %w", stdout, stderr, err), nil

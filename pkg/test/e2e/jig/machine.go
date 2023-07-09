@@ -228,7 +228,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 
 	utilruntime.Must(clusterv1alpha1.AddToScheme(clusterClient.Scheme()))
 
-	err = wait.PollImmediate(ctx, 1*time.Second, 2*time.Minute, func() (error, error) {
+	err = wait.PollImmediate(ctx, 1*time.Second, 2*time.Minute, func(ctx context.Context) (error, error) {
 		return clusterClient.Create(ctx, &md), nil
 	})
 	if err != nil {
@@ -255,7 +255,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 }
 
 func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
-	return wait.PollLog(ctx, j.log, 30*time.Second, 30*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, j.log, 30*time.Second, 30*time.Minute, func(ctx context.Context) (error, error) {
 		nodeList := corev1.NodeList{}
 		err := clusterClient.List(ctx, &nodeList)
 		if err != nil {
@@ -281,7 +281,7 @@ func (j *MachineJig) WaitForReadyNodes(ctx context.Context, clusterClient ctrlru
 }
 
 func (j *MachineJig) WaitForReadyPods(ctx context.Context, clusterClient ctrlruntimeclient.Client) error {
-	return wait.PollLog(ctx, j.log, 10*time.Second, 15*time.Minute, func() (error, error) {
+	return wait.PollLog(ctx, j.log, 10*time.Second, 15*time.Minute, func(ctx context.Context) (error, error) {
 		pods := corev1.PodList{}
 		if err := clusterClient.List(ctx, &pods); err != nil {
 			return fmt.Errorf("failed to list pods: %w", err), nil
@@ -393,7 +393,7 @@ func (j *MachineJig) Delete(ctx context.Context, synchronous bool) error {
 		log.Info("Waiting for MachineDeployment to be gone...")
 
 		key := ctrlruntimeclient.ObjectKeyFromObject(&md)
-		err = wait.PollLog(ctx, log, 5*time.Second, 10*time.Minute, func() (transient error, terminal error) {
+		err = wait.PollLog(ctx, log, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 			err := clusterClient.Get(ctx, key, &md)
 			if err == nil {
 				return errors.New("MachineDeployment still exists"), nil

@@ -369,7 +369,7 @@ func (r *TestRunner) executeTests(
 	healthCheck := func() error {
 		log.Info("Waiting for cluster to be successfully reconciled...")
 
-		return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func() (transient error, terminal error) {
+		return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 				return err, nil
 			}
@@ -439,7 +439,7 @@ func (r *TestRunner) executeTests(
 	//         dial tcp <ciclusternodeip>:<port>:
 	//           connect: connection refused
 	// To prevent this from stopping a conformance test, we simply retry a couple of times.
-	if err := wait.PollImmediate(ctx, 1*time.Second, 15*time.Second, func() (transient error, terminal error) {
+	if err := wait.PollImmediate(ctx, 1*time.Second, 15*time.Second, func(ctx context.Context) (transient error, terminal error) {
 		userClusterClient, err = r.opts.ClusterClientProvider.GetClient(ctx, cluster)
 		return err, nil
 	}); err != nil {
@@ -714,7 +714,7 @@ func (r *TestRunner) updateClusterToNextMinor(
 
 	log.Info("Updating MachineDeployments...")
 	for _, md := range mdList.Items {
-		err = wait.PollLog(ctx, log, 1*time.Second, 30*time.Second, func() (transient error, terminal error) {
+		err = wait.PollLog(ctx, log, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
 			oldMD := md.DeepCopy()
 			md.Spec.Template.Spec.Versions.Kubelet = nextVersion.String()
 
@@ -726,7 +726,7 @@ func (r *TestRunner) updateClusterToNextMinor(
 	}
 
 	// Wait for all nodes to reach the new version.
-	err = wait.PollLog(ctx, log, 30*time.Second, 2*r.opts.NodeReadyTimeout, func() (transient error, terminal error) {
+	err = wait.PollLog(ctx, log, 30*time.Second, 2*r.opts.NodeReadyTimeout, func(ctx context.Context) (transient error, terminal error) {
 		nodeList := &corev1.NodeList{}
 		if err := userClusterClient.List(ctx, nodeList); err != nil {
 			return fmt.Errorf("failed to list nodes: %w", err), nil

@@ -285,7 +285,7 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 
 	var token []byte
 
-	err = wait.PollImmediate(ctx, 100*time.Millisecond, 30*time.Second, func() (transient error, terminal error) {
+	err = wait.PollImmediate(ctx, 100*time.Millisecond, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
 		secret := corev1.Secret{}
 		if err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret); err != nil {
 			return nil, fmt.Errorf("failed to get ServiceAccount token Secret: %w", err)

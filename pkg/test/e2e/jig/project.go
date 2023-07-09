@@ -103,7 +103,7 @@ func (j *ProjectJig) Create(ctx context.Context, waitForActive bool) (*kubermati
 	if waitForActive {
 		log.Info("Waiting for project to become active...")
 
-		err := wait.PollLog(ctx, j.log, 2*time.Second, 30*time.Second, func() (transient error, terminal error) {
+		err := wait.PollLog(ctx, j.log, 2*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
 			p := &kubermaticv1.Project{}
 			if err := j.client.Get(ctx, types.NamespacedName{Name: projectName}, p); err != nil {
 				return err, nil
@@ -144,7 +144,7 @@ func (j *ProjectJig) Delete(ctx context.Context, synchronous bool) error {
 	if synchronous {
 		log.Info("Waiting for project to be gone...")
 
-		err := wait.PollLog(ctx, log, 5*time.Second, 30*time.Minute, func() (transient error, terminal error) {
+		err := wait.PollLog(ctx, log, 5*time.Second, 30*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 			project := &kubermaticv1.Project{}
 			err := j.client.Get(ctx, types.NamespacedName{Name: j.projectName}, project)
 			if err == nil {

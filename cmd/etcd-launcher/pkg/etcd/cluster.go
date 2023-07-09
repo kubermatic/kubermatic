@@ -442,7 +442,7 @@ func (e *Cluster) getClientWithEndpoints(ctx context.Context, log *zap.SugaredLo
 
 	var etcdClient *client.Client
 
-	if err := wait.PollImmediateLog(ctx, log.With("endpoints", strings.Join(eps, ",")), 5*time.Second, 60*time.Second, func() (error, error) {
+	if err := wait.PollImmediateLog(ctx, log.With("endpoints", strings.Join(eps, ",")), 5*time.Second, 60*time.Second, func(ctx context.Context) (error, error) {
 		cli, err := client.New(client.Config{
 			Endpoints:   eps,
 			DialTimeout: 2 * time.Second,
@@ -585,7 +585,7 @@ func (e *Cluster) removeDeadMembers(ctx context.Context, log *zap.SugaredLogger,
 			continue
 		}
 
-		if err = wait.Poll(ctx, 1*time.Second, 15*time.Second, func() (error, error) {
+		if err = wait.Poll(ctx, 1*time.Second, 15*time.Second, func(ctx context.Context) (error, error) {
 			// attempt to update member in case a client URL has recently been added
 			if m, err := e.GetMemberByName(ctx, log, member.Name); err != nil {
 				return err, nil
