@@ -30,7 +30,7 @@ func run(log *zap.SugaredLogger) error {
 		return errors.Join(InvalidConfigError{}, err)
 	}
 
-	invoc, err := SearchFuncInvocationsForPackages(config.GoModDir, config.Pkgs, config.Filter)
+	invoc, err := SearchFuncInvocationsForPackages(log, config.GoModDir, config.Pkgs, config.Filter)
 	if err != nil {
 		return err
 	}
