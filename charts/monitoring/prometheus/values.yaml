@@ -144,13 +144,13 @@ prometheus:
   ##
   extraArgs: {}
 
-  # Turn thanos.enabled flag to true, if you want to enable Thanos sidecar on and 
-  # corresponding alerts and monitoring of Thanos via prometheus
-  thanos:
-    enabled: false
-    image:
-      repository: quay.io/thanos/thanos
-      tag: v0.31.0
+  ## Add any sidecar containers e.g. thanos using this block
+  # Key/Value where Key is the sidecar `- name: <Key>`
+  # Example:
+  #   sidecarContainers:
+  #     - thanos:
+  #         image: quay.io/thanos/thanos:v0.31.0
+  sidecarContainers: {}
 
   containers:
     prometheus:
@@ -177,14 +177,6 @@ prometheus:
         limits:
           cpu: 5m
           memory: 32Mi
-    thanosSidecar:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 32Mi
-        limits:
-          cpu: 300m
-          memory: 1Gi
 
   nodeSelector: {}
   affinity:
