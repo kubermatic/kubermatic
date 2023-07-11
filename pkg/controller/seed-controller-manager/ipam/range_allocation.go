@@ -55,10 +55,6 @@ func getIPsFromAddressRanges(addressRanges []string) ([]string, error) {
 }
 
 func checkRangeAllocation(ips []string, poolCIDR string, allocationRange int) error {
-	if allocationRange != len(ips) {
-		return errIncompatiblePool
-	}
-
 	_, poolSubnet, err := net.ParseCIDR(poolCIDR)
 	if err != nil {
 		return err

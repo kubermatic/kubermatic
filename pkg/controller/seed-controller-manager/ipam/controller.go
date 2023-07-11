@@ -187,8 +187,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 					return nil, err
 				}
 			}
-			// Skip because no allocation from this IPAM pool is needed for the cluster
-			continue
 		} else if !apierrors.IsNotFound(err) {
 			return nil, err
 		}
@@ -307,11 +305,14 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 		newClustersAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, r.Client, newClustersAllocation, func() error {
+	obj := newClustersAllocation.DeepCopyObject().(*kubermaticv1.IPAMAllocation)
+	_, err := controllerruntime.CreateOrUpdate(ctx, r.Client, obj, func() error {
+		obj.Spec = newClustersAllocation.Spec
 		return nil
 	})
+
 	if err != nil {
-		r.log.Errorf("failed to create IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
+		r.log.Errorf("failed to update IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 		return err
 	}
 
