@@ -16,7 +16,7 @@ global:
   scrape_interval: 30s
   scrape_timeout: 10s
   evaluation_interval: 30s
-  {{- if or .Values.prometheus.externalLabels .Values.prometheus.thanos.enabled }}
+  {{- if .Values.prometheus.externalLabels }}
   external_labels:
     {{- range $k, $v := .Values.prometheus.externalLabels }}
     {{ $k }}: {{ $v | quote }}
