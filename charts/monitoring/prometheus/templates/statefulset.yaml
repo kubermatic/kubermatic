@@ -100,15 +100,9 @@ spec:
         resources:
 {{ toYaml .Values.prometheus.containers.prometheus.resources | indent 10 }}
         volumeMounts:
-        {{- if .Values.prometheus.thanos.enabled }}
-        - name: config-shared
-          mountPath: /etc/prometheus-shared/
-          readOnly: false
-        {{- else }}
         - name: config
           mountPath: /etc/prometheus/config/
           readOnly: false
-        {{- end }}
         - name: rules
           mountPath: /etc/prometheus/rules/
           readOnly: false
