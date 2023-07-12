@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"go.uber.org/zap"
+
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 )
 
