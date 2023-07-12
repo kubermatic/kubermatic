@@ -343,6 +343,10 @@ type NodeportProxyConfig struct {
 	// Updater configures the component responsible for updating the LoadBalancer
 	// service.
 	Updater NodeportProxyComponent `json:"updater,omitempty"`
+	// IPFamilyPolicy configures the IP family policy for the LoadBalancer service.
+	IPFamilyPolicy *corev1.IPFamilyPolicy `json:"ipFamilyPolicy,omitempty"`
+	// IPFamilies configures the IP families to use for the LoadBalancer service.
+	IPFamilies []corev1.IPFamily `json:"ipFamilies,omitempty"`
 }
 
 type EnvoyLoadBalancerService struct {
