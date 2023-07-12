@@ -1561,6 +1561,15 @@ spec:
                               type: object
                           type: object
                       type: object
+                    ipFamilies:
+                      description: IPFamilies configures the IP families to use for the LoadBalancer service.
+                      items:
+                        description: IPFamily represents the IP Family (IPv4 or IPv6). This type is used to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
+                        type: string
+                      type: array
+                    ipFamilyPolicy:
+                      description: IPFamilyPolicy configures the IP family policy for the LoadBalancer service.
+                      type: string
                     updater:
                       description: Updater configures the component responsible for updating the LoadBalancer service.
                       properties:

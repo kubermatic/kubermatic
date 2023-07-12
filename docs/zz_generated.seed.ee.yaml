@@ -574,6 +574,10 @@ spec:
         requests:
           cpu: 50m
           memory: 32Mi
+    # IPFamilies configures the IP families to use for the LoadBalancer service.
+    ipFamilies: null
+    # IPFamilyPolicy configures the IP family policy for the LoadBalancer service.
+    ipFamilyPolicy: null
     # Updater configures the component responsible for updating the LoadBalancer
     # service.
     updater:
