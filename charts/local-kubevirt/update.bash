@@ -20,7 +20,7 @@ dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 rm -rf $dir/{templates,crds}
 mkdir -p $dir/{templates,crds}
 
-latest_release=$(curl -s https://api.github.com/repos/kubevirt/kubevirt/releases | grep tag_name | grep -v -- '-rc' | sort -r | head -1 | awk -F': ' '{print $2}' | sed 's/,//' | xargs)
+latest_release=$(basename $(curl -s -w %{redirect_url} https://github.com/kubevirt/kubevirt/releases/latest))
 latest_cdi_release=$(basename $(curl -s -w %{redirect_url} https://github.com/kubevirt/containerized-data-importer/releases/latest))
 
 function boilerplate() {
