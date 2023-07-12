@@ -36,7 +36,7 @@ type FuncMetadata struct {
 	Definition string
 }
 
-// FuncInvocations is a list of unique func calls and associated metadata
+// FuncInvocations is a list of unique func calls and associated metadata.
 type FuncInvocations map[FuncCallID]FuncMetadata
 
 // SearchFuncInvocationsForPackages returns all unique functions that the passed packages use that match the filter.

@@ -36,7 +36,6 @@ func NewAWSPolicyCreator(mapper *AWSPermissionMapper) *AWSPolicyCreator {
 }
 
 func (apc *AWSPolicyCreator) GeneratePolicy(fi FuncInvocations) ([]byte, error) {
-
 	fapc := NewFlatAWSPolicyCreator()
 
 	for fid := range fi {
@@ -92,7 +91,7 @@ type printableAWSPolicyDocument struct {
 	Statements []*printableAWSPolicyStatement `json:"Statement"`
 }
 
-// Sorting a printableAWSPolicyDocument sorts its statements by the effect name
+// Sorting a printableAWSPolicyDocument sorts its statements by the effect name.
 func (p *printableAWSPolicyDocument) Less(i, j int) bool {
 	return p.Statements[i].Effect < p.Statements[j].Effect
 }
@@ -164,7 +163,7 @@ func (a *AWSPermissionMapper) LookUpPermissionsForFunc(fid FuncCallID) (map[stri
 	return a.Modules[fid.ModulePath].Funcs[fid.Funcname].Permissions, nil
 }
 
-// An AWSPolicyFuncMapping describes a mapping of an AWS SDK func to its permissions
+// An AWSPolicyFuncMapping describes a mapping of an AWS SDK func to its permissions.
 type AWSPermissionMapper struct {
 	Modules map[string]moduleDefinition `yaml:"modules"`
 }

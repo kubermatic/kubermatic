@@ -53,7 +53,7 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// if we only want to print the funcs, exit early
-	if config.PrintFuncs == true {
+	if config.PrintFuncs {
 		PrintFuncInvocations(os.Stdout, invoc)
 		return nil
 	}
