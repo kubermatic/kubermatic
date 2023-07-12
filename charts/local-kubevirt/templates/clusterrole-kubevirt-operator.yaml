@@ -46,6 +46,18 @@ rules:
       - delete
       - patch
   - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - update
+      - create
+      - patch
+  - apiGroups:
       - ""
     resources:
       - configmaps
@@ -376,6 +388,18 @@ rules:
       - create
       - patch
   - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - update
+      - create
+      - patch
+  - apiGroups:
       - ""
     resources:
       - events
@@ -487,7 +511,6 @@ rules:
       - virtualmachineinstances/freeze
       - virtualmachineinstances/unfreeze
       - virtualmachineinstances/softreboot
-      - virtualmachineinstances/addinterface
     verbs:
       - update
   - apiGroups:
@@ -583,6 +606,13 @@ rules:
       - namespaces
     verbs:
       - get
+  - apiGroups:
+      - ""
+    resources:
+      - resourcequotas
+    verbs:
+      - list
+      - watch
   - apiGroups:
       - route.openshift.io
     resources:
@@ -726,7 +756,6 @@ rules:
       - virtualmachineinstances/freeze
       - virtualmachineinstances/unfreeze
       - virtualmachineinstances/softreboot
-      - virtualmachineinstances/addinterface
     verbs:
       - update
   - apiGroups:
@@ -872,7 +901,6 @@ rules:
       - virtualmachineinstances/freeze
       - virtualmachineinstances/unfreeze
       - virtualmachineinstances/softreboot
-      - virtualmachineinstances/addinterface
     verbs:
       - update
   - apiGroups:
