@@ -45,8 +45,10 @@ var pkgs = []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws", "github.com/k
 
 var filter = regexp.MustCompile("github.com/aws/aws-sdk-go-v2/*")
 
+var logger = createLogger()
+
 func TestSearchFuncInvocationsForPackages(t *testing.T) {
-	res, err := SearchFuncInvocationsForPackages(nil, "", pkgs, filter)
+	res, err := SearchFuncInvocationsForPackages(logger, "", pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +63,7 @@ func TestSearchFuncInvocationsForPackages(t *testing.T) {
 }
 
 func TestAWSPermissionFuncMapping(t *testing.T) {
-	res, err := SearchFuncInvocationsForPackages(nil, "", pkgs, filter)
+	res, err := SearchFuncInvocationsForPackages(logger, "", pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +83,7 @@ func TestGeneratingAWSPolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	invoc, err := SearchFuncInvocationsForPackages(nil, "", pkgs, filter)
+	invoc, err := SearchFuncInvocationsForPackages(logger, "", pkgs, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
