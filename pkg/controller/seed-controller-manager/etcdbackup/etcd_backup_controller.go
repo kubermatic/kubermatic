@@ -869,11 +869,6 @@ func getJobConditionIfTrue(job *batchv1.Job, condType batchv1.JobConditionType) 
 }
 
 func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration, backupConfig *kubermaticv1.EtcdBackupConfig) (*resources.TemplateData, error) {
-	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
-	if !found {
-		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
-	}
-
 	destination := seed.GetEtcdBackupDestination(backupConfig.Spec.Destination)
 	if destination == nil {
 		return nil, fmt.Errorf("cannot find backup destination %q", backupConfig.Spec.Destination)
@@ -896,7 +891,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithContext(ctx).
 		WithClient(r).
 		WithCluster(cluster).
-		WithDatacenter(&datacenter).
 		WithSeed(seed.DeepCopy()).
 		WithKubermaticConfiguration(config.DeepCopy()).
 		WithVersions(r.versions).
