@@ -18,6 +18,7 @@ package etcd
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -412,27 +413,36 @@ func (e *Cluster) GetEtcdClient(ctx context.Context, log *zap.SugaredLogger) (*c
 	return e.getClientWithEndpoints(ctx, log, endpoints)
 }
 
+// GetEtcdEndpointClients returns a slice of client configs with each config pointing to exactly one of the automatically discovered etcd endpoints.
+func (e *Cluster) GetEtcdEndpointConfigs(ctx context.Context) ([]client.Config, error) {
+	configs := []client.Config{}
+	endpoints := clientEndpoints(e.clusterSize, e.namespace)
+
+	tlsConfig, err := getTLSConfig(e)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set up TLS client config: %w", err)
+	}
+
+	for _, endpoint := range endpoints {
+		configs = append(configs, getConfig([]string{endpoint}, tlsConfig))
+	}
+
+	return configs, nil
+}
+
 func (e *Cluster) getLocalClient(ctx context.Context, log *zap.SugaredLogger) (*client.Client, error) {
 	return e.getClientWithEndpoints(ctx, log, []string{e.endpoint()})
 }
 
 func (e *Cluster) getClientWithEndpoints(ctx context.Context, log *zap.SugaredLogger, eps []string) (*client.Client, error) {
-	var err error
-	tlsInfo := transport.TLSInfo{
-		CertFile:       e.ClientCertFile,
-		KeyFile:        e.ClientKeyFile,
-		TrustedCAFile:  e.CaCertFile,
-		ClientCertAuth: true,
-	}
-
-	tlsConfig, err := tlsInfo.ClientConfig()
+	tlsConfig, err := getTLSConfig(e)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate client TLS config: %w", err)
+		return nil, fmt.Errorf("failed to set up TLS client config: %w", err)
 	}
 
 	var etcdClient *client.Client
 
-	if err = wait.PollImmediateLog(ctx, log.With("endpoints", strings.Join(eps, ",")), 5*time.Second, 60*time.Second, func() (error, error) {
+	if err := wait.PollImmediateLog(ctx, log.With("endpoints", strings.Join(eps, ",")), 5*time.Second, 60*time.Second, func() (error, error) {
 		cli, err := client.New(client.Config{
 			Endpoints:   eps,
 			DialTimeout: 2 * time.Second,
@@ -450,6 +460,25 @@ func (e *Cluster) getClientWithEndpoints(ctx context.Context, log *zap.SugaredLo
 	}
 
 	return etcdClient, nil
+}
+
+func getConfig(endpoints []string, tlsConfig *tls.Config) client.Config {
+	return client.Config{
+		Endpoints:   endpoints,
+		DialTimeout: 2 * time.Second,
+		TLS:         tlsConfig,
+	}
+}
+
+func getTLSConfig(e *Cluster) (*tls.Config, error) {
+	tlsInfo := transport.TLSInfo{
+		CertFile:       e.ClientCertFile,
+		KeyFile:        e.ClientKeyFile,
+		TrustedCAFile:  e.CaCertFile,
+		ClientCertAuth: true,
+	}
+
+	return tlsInfo.ClientConfig()
 }
 
 func (e *Cluster) listMembers(ctx context.Context, log *zap.SugaredLogger) ([]*etcdserverpb.Member, error) {

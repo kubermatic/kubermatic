@@ -27,9 +27,9 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	etcdbackup "k8c.io/kubermatic/v2/pkg/resources/etcd/backup"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
 
 	corev1 "k8s.io/api/core/v1"

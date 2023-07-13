@@ -614,7 +614,7 @@ func (c *resourcesController) ensureRBACRoleForEtcdLauncher(ctx context.Context,
 }
 
 func (c *resourcesController) ensureRBACRoleBindingForEtcdLauncher(ctx context.Context, cluster *kubermaticv1.Cluster, kindName string) error {
-	generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount(
+	generatedRoleBinding := generateRBACRoleBindingForEtcdLauncherServiceAccount(
 		cluster,
 		EtcdLauncherServiceAccountName,
 		kindName,
@@ -698,10 +698,11 @@ func shouldSkipRBACRoleForClusterNamespaceNamedResource(projectName string, clus
 
 // ensureClusterRBACRoleBindingForEtcdLauncher ensures the ClusterRoleBinding required to allow the etcd launcher to get Clusters on the Seed.
 func (c *resourcesController) ensureClusterRBACRoleBindingForEtcdLauncher(ctx context.Context, resourceName, resourceKind, namespace, projectName string, cluster *kubermaticv1.Cluster) error {
-	generatedRoleBinding := generateClusterRBACRoleBindingForResourceWithServiceAccount(
+	generatedRoleBinding := generateEtcdRBACRoleBindingForResourceWithServiceAccount(
 		resourceName,
 		resourceKind,
 		GenerateActualGroupNameFor(projectName, ViewerGroupNamePrefix),
+		cluster.Name,
 		EtcdLauncherServiceAccountName,
 		namespace,
 		metav1.OwnerReference{

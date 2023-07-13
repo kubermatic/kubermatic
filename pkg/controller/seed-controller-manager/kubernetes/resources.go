@@ -543,6 +543,14 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		return fmt.Errorf("failed to ensure ServiceAccounts: %w", err)
 	}
 
+	namedKubeSystemServiceAccountReconcilerFactorys := []reconciling.NamedServiceAccountReconcilerFactory{
+		etcd.KubeSystemServiceAccountReconciler(c),
+	}
+
+	if err := reconciling.ReconcileServiceAccounts(ctx, namedKubeSystemServiceAccountReconcilerFactorys, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure ServiceAccounts in %s namespace: %w", metav1.NamespaceSystem, err)
+	}
+
 	return nil
 }
 

@@ -186,11 +186,14 @@ func createEtcdBackupController(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
-		ctrlCtx.runOptions.backupContainerImage,
+
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle,
 		ctrlCtx.seedGetter,
 		ctrlCtx.configGetter,
+
+		ctrlCtx.runOptions.etcdLauncherImage,
+		ctrlCtx.runOptions.overwriteRegistry,
 	)
 }
 
