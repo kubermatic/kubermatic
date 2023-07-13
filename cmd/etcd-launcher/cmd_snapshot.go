@@ -84,11 +84,15 @@ func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotOptions) cobraFuncE {
 			return fmt.Errorf("failed to set expected cluster size: %w", err)
 		}
 
-		configs, err := e.GetEtcdEndpointConfigs(ctx, log)
+		configs, err := e.GetEtcdEndpointConfigs(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get etcd cluster clients: %w", err)
 		}
 
+		// snapshots can only be taken from a single endpoint, but it's possible
+		// that one of the endpoints is down right now (e.g. because an update
+		// or autoscaling-caused rescheduling event is happening). So we loop
+		// over all endpoints and try to take a snapshot.
 		for _, config := range configs {
 			if len(config.Endpoints) != 1 {
 				log.Warnw("unexpected number of endpoints, skipping this configuration", "endpoints", strings.Join(config.Endpoints, ","))
@@ -98,14 +102,20 @@ func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotOptions) cobraFuncE {
 			snapv3 := snapshot.NewV3(log.Desugar())
 			err := snapv3.Save(ctx, config, opt.file)
 
+			// if the snapshot was successful, we have what we want and do not
+			// need to loop over the remaining endpoints. We can exit the program
+			// successfully then.
 			if err == nil {
 				log.Infow("saved snapshot from endpoint", "endpoint", strings.Join(config.Endpoints, ","), "file", opt.file)
 				return nil
 			}
 
+			// log an error if we were not able to take a snapshot, before the loop
+			// moves on to the next one.
 			log.Errorw("failed to save snapshot from endpoint, trying next endpoint", "endpoint", strings.Join(config.Endpoints, ","), zap.Error(err))
 		}
 
+		// we failed to take any snapshot, so we need to exit the program with an error.
 		return fmt.Errorf("exhausted all endpoints, no snapshot was successful")
 	})
 }

@@ -414,7 +414,7 @@ func (e *Cluster) GetEtcdClient(ctx context.Context, log *zap.SugaredLogger) (*c
 }
 
 // GetEtcdEndpointClients returns a slice of client configs with each config pointing to exactly one of the automatically discovered etcd endpoints.
-func (e *Cluster) GetEtcdEndpointConfigs(ctx context.Context, log *zap.SugaredLogger) ([]client.Config, error) {
+func (e *Cluster) GetEtcdEndpointConfigs(ctx context.Context) ([]client.Config, error) {
 	configs := []client.Config{}
 	endpoints := clientEndpoints(e.clusterSize, e.namespace)
 
