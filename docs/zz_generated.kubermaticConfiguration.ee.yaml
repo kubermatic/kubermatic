@@ -161,47 +161,11 @@ spec:
     noProxy: ""
   # SeedController configures the seed-controller-manager.
   seedController:
-    # BackupCleanupContainer is the container used for removing expired backups from the storage location.
-    # This container is only relevant when the old, deprecated backup controllers are enabled.
-    backupCleanupContainer: |
-      name: cleanup-container
-      image: quay.io/kubermatic/s3-storer:v0.1.6
-      command:
-      - /bin/sh
-      - -c
-      - |
-        set -euo pipefail
-
-        endpoint=minio.minio.svc.cluster.local:9000
-        bucket=kubermatic-etcd-backups
-
-        # by default, we keep the most recent backup for every user cluster
-        s3-storeuploader delete-old-revisions \
-          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-          --max-revisions 1 \
-          --endpoint "$endpoint" \
-          --bucket "$bucket" \
-          --prefix $CLUSTER
-
-        # alternatively, delete all backups for this cluster
-        #s3-storeuploader delete-all \
-        # --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-        # --endpoint "$endpoint" \
-        # --bucket "$bucket" \
-        # --prefix $CLUSTER
-      env:
-      - name: ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: kubermatic-s3-credentials
-            key: ACCESS_KEY_ID
-      - name: SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: kubermatic-s3-credentials
-            key: SECRET_ACCESS_KEY
+    # Deprecated: BackupCleanupContainer is the container used for removing expired backups from the storage location.
+    # This field is a no-op and is no longer used. The old backup controller it was used for has been
+    # removed. Do not set this field.
+    backupCleanupContainer: ""
     # BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
-    # This container is only relevant when the new backup/restore controllers are enabled.
     backupDeleteContainer: |
       name: delete-container
       image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
@@ -236,41 +200,24 @@ spec:
     # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
     backupStoreContainer: |
       name: store-container
-      image: quay.io/kubermatic/s3-storer:v0.1.6
+      image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
       command:
       - /bin/sh
       - -c
       - |
-        set -euo pipefail
+        set -e
 
-        endpoint=minio.minio.svc.cluster.local:9000
-        bucket=kubermatic-etcd-backups
+        SSL_FLAGS="--ca-certs=/etc/ca-bundle/ca-bundle.pem"
+        if [ "${INSECURE:-false}" == "true" ]; then
+          SSL_FLAGS="--no-ssl"
+        fi
 
-        s3-storeuploader store \
-          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-          --file /backup/snapshot.db \
-          --endpoint "$endpoint" \
-          --bucket "$bucket" \
-          --create-bucket \
-          --prefix $CLUSTER
-
-        s3-storeuploader delete-old-revisions \
-          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-          --max-revisions 20 \
-          --endpoint "$endpoint" \
-          --bucket "$bucket" \
-          --prefix $CLUSTER
-      env:
-      - name: ACCESS_KEY_ID
-        valueFrom:
-          secretKeyRef:
-            name: kubermatic-s3-credentials
-            key: ACCESS_KEY_ID
-      - name: SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: kubermatic-s3-credentials
-            key: SECRET_ACCESS_KEY
+        s3cmd $SSL_FLAGS \
+          --access_key=$ACCESS_KEY_ID \
+          --secret_key=$SECRET_ACCESS_KEY \
+          --host=$ENDPOINT \
+          --host-bucket='%(bucket).'$ENDPOINT \
+          put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
       volumeMounts:
       - name: etcd-backup
         mountPath: /backup
