@@ -27,6 +27,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+// DefaultBackupInterval defines the default interval used to create backups.
+const DefaultBackupInterval = "20m"
+
 // DefaultSeed fills in missing values in the Seed's spec by copying them from the global
 // defaults in the KubermaticConfiguration (in which some fields might already be deprecated,
 // as we move configuration down into the Seeds). This function assumes that the config has
