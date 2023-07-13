@@ -257,10 +257,10 @@ spec:
                   description: SeedController configures the seed-controller-manager.
                   properties:
                     backupCleanupContainer:
-                      description: BackupCleanupContainer is the container used for removing expired backups from the storage location. This container is only relevant when the old, deprecated backup controllers are enabled.
+                      description: 'Deprecated: BackupCleanupContainer is the container used for removing expired backups from the storage location. This field is a no-op and is no longer used. The old backup controller it was used for has been removed. Do not set this field.'
                       type: string
                     backupDeleteContainer:
-                      description: BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location. This container is only relevant when the new backup/restore controllers are enabled.
+                      description: BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
                       type: string
                     backupStoreContainer:
                       description: BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
