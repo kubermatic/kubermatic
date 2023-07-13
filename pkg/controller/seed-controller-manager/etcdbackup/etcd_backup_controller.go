@@ -243,7 +243,6 @@ func (r *Reconciler) reconcile(
 	seed *kubermaticv1.Seed,
 	config *kubermaticv1.KubermaticConfiguration,
 ) (*reconcile.Result, error) {
-
 	data, err := r.getClusterTemplateData(ctx, cluster, seed, config, backupConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get template data: %w", err)
