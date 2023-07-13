@@ -435,7 +435,6 @@ func (e *Cluster) getLocalClient(ctx context.Context, log *zap.SugaredLogger) (*
 }
 
 func (e *Cluster) getClientWithEndpoints(ctx context.Context, log *zap.SugaredLogger, eps []string) (*client.Client, error) {
-
 	tlsConfig, err := getTLSConfig(e)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set up TLS client config: %w", err)
