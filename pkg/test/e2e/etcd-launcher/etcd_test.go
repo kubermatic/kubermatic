@@ -77,7 +77,10 @@ func TestBackup(t *testing.T) {
 
 	// create test environment
 	testJig := jig.NewBYOCluster(client, logger, credentials)
-	testJig.ClusterJig.WithTestName("etcd-backup")
+	testJig.ClusterJig.WithTestName("etcd-backup").WithFeatures(map[string]bool{
+		// make sure etcd-launcher is initially not enabled.
+		kubermaticv1.ClusterFeatureEtcdLauncher: false,
+	})
 
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForNothing)
 	defer testJig.Cleanup(ctx, t, false)
