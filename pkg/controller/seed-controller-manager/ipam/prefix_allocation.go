@@ -21,34 +21,40 @@ import (
 	"fmt"
 	"net"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func checkPrefixAllocation(subnetCIDR, poolCIDR string, allocationPrefix int) error {
-	subnetIP, subnet, err := net.ParseCIDR(subnetCIDR)
+func checkPrefixAllocation(currentAllocatedCIDR, poolCIDR string, excludePrefixes []kubermaticv1.SubnetCIDR, allocationPrefix int) error {
+	currentAllocatedSubnetIP, currentAllocatedSubnet, err := net.ParseCIDR(currentAllocatedCIDR)
 	if err != nil {
 		return err
 	}
 
-	subnetPrefix, _ := subnet.Mask.Size()
-	if allocationPrefix != subnetPrefix {
-		return errIncompatiblePool
-	}
-
+	currentAllocatedSubnetPrefix, _ := currentAllocatedSubnet.Mask.Size()
 	_, poolSubnet, err := net.ParseCIDR(poolCIDR)
 	if err != nil {
 		return err
 	}
 
 	poolPrefix, poolBits := poolSubnet.Mask.Size()
-	if subnetPrefix < poolPrefix {
+	for _, v := range excludePrefixes {
+		excludePrefixIP, _, err := net.ParseCIDR(string(v))
+		if err != nil {
+			return err
+		}
+		if currentAllocatedSubnet.Contains(excludePrefixIP) {
+			return errIncompatiblePool
+		}
+	}
+	if currentAllocatedSubnetPrefix < poolPrefix {
 		return errIncompatiblePool
 	}
-	if subnetPrefix > poolBits {
+	if currentAllocatedSubnetPrefix > poolBits {
 		return errIncompatiblePool
 	}
 
-	if !poolSubnet.Contains(subnetIP) {
+	if !poolSubnet.Contains(currentAllocatedSubnetIP) {
 		return errIncompatiblePool
 	}
 

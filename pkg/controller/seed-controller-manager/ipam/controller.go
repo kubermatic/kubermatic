@@ -196,12 +196,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			continue
 		}
 
-		dcIPAMPoolUsageMap, err := r.compileCurrentAllocationsForPoolInDatacenter(ctx, ipamPool.Name, clusterDC, dcIPAMPoolCfg)
+		dcIPAMPoolUsageMap, ipsToExclude, err := r.compileCurrentAllocationsForPoolInDatacenter(ctx, ipamPool.Name, clusterDC, dcIPAMPoolCfg)
 		if err != nil {
 			return nil, err
 		}
 
-		err = r.generateNewClusterAllocationForPool(ctx, cluster, &ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap)
+		err = r.generateNewClusterAllocationForPool(ctx, cluster, &ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap, ipamAllocation, ipsToExclude)
 		if err != nil {
 			return nil, err
 		}
@@ -210,15 +210,15 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Context, ipamPoolName, dc string, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings) (sets.Set[string], error) {
+func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Context, ipamPoolName, dc string, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings) (sets.Set[string], []string, error) {
 	dcIPAMPoolUsageMap := sets.New[string]()
-
+	var allocatedIPs []string
 	// Check for exclusions in the configuration to mark them as "not free"
 	switch dcIPAMPoolCfg.Type {
 	case kubermaticv1.IPAMPoolAllocationTypeRange:
 		ipsToExclude, err := getIPsFromAddressRanges(dcIPAMPoolCfg.ExcludeRanges)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		for _, ipToExclude := range ipsToExclude {
 			dcIPAMPoolUsageMap.Insert(ipToExclude)
@@ -233,7 +233,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
 	err := r.Client.List(ctx, ipamAllocationList)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list IPAM allocations: %w", err)
+		return nil, nil, fmt.Errorf("failed to list IPAM allocations: %w", err)
 	}
 
 	// Iterate current IPAM allocations to build a map of used IPs (for range allocation type)
@@ -248,30 +248,32 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
 			currentAllocatedIPs, err := getIPsFromAddressRanges(ipamAllocation.Spec.Addresses)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			// check if the current allocation is compatible with the IPAMPool being applied
 			err = checkRangeAllocation(currentAllocatedIPs, string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			for _, ip := range currentAllocatedIPs {
 				dcIPAMPoolUsageMap.Insert(ip)
 			}
+			allocatedIPs = currentAllocatedIPs
+
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			// check if the current allocation is compatible with the IPAMPool being applied
-			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix)
+			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), []kubermaticv1.SubnetCIDR(dcIPAMPoolCfg.ExcludePrefixes), dcIPAMPoolCfg.AllocationPrefix)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			dcIPAMPoolUsageMap.Insert(string(ipamAllocation.Spec.CIDR))
 		}
 	}
 
-	return dcIPAMPoolUsageMap, nil
+	return dcIPAMPoolUsageMap, allocatedIPs, nil
 }
 
-func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.Set[string]) error {
+func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.Set[string], oldClusterAllocation *kubermaticv1.IPAMAllocation, ipsAllocated []string) error {
 	newClustersAllocation := &kubermaticv1.IPAMAllocation{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Status.NamespaceName,
@@ -292,11 +294,12 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 
 	switch dcIPAMPoolCfg.Type {
 	case kubermaticv1.IPAMPoolAllocationTypeRange:
-		addresses, err := findFirstFreeRangesOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationRange, dcIPAMPoolUsageMap)
+		newIPRangeToAllocate := dcIPAMPoolCfg.AllocationRange - len(ipsAllocated)
+		addresses, err := findFirstFreeRangesOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), newIPRangeToAllocate, dcIPAMPoolUsageMap)
 		if err != nil {
 			return err
 		}
-		newClustersAllocation.Spec.Addresses = addresses
+		newClustersAllocation.Spec.Addresses = append(oldClusterAllocation.Spec.Addresses, addresses...)
 	case kubermaticv1.IPAMPoolAllocationTypePrefix:
 		subnetCIDR, err := findFirstFreeSubnetOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
 		if err != nil {
