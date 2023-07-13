@@ -55,7 +55,6 @@ type controllerRunOptions struct {
 	overwriteRegistry        string
 	nodeAccessNetwork        string
 	addonsPath               string
-	backupContainerImage     string
 	backupInterval           string
 	etcdDiskSize             resource.Quantity
 	dockerPullConfigJSONFile string
