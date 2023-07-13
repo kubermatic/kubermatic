@@ -274,6 +274,11 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							Kind:      "ServiceAccount",
 							Name:      "etcd-launcher",
 						},
+						{
+							Namespace: "kube-system",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher-abcd",
+						},
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
@@ -300,6 +305,11 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 							Namespace: "cluster-abcd",
 							Kind:      "ServiceAccount",
 							Name:      "etcd-launcher",
+						},
+						{
+							Namespace: "kube-system",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher-abcd",
 						},
 					},
 					RoleRef: rbacv1.RoleRef{
