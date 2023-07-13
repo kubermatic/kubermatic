@@ -220,12 +220,6 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				for i := 0; i < 3; i++ {
 					endpoints = append(endpoints, fmt.Sprintf(memberListPattern, i, i, resources.EtcdServiceName, data.Cluster().Status.NamespaceName))
 				}
-				/*
-					                	etcdStartCommandTpl = `export MASTER_ENDPOINT="https://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
-
-					export INITIAL_STATE="new"
-					export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-				*/
 
 				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "MASTER_ENDPOINT", Value: fmt.Sprintf("https://etcd-0.%s.%s.svc.cluster.local:2379", resources.EtcdServiceName, data.Cluster().Status.NamespaceName)})
 				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "INITIAL_STATE", Value: "new"})
