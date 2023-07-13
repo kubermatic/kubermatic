@@ -17,7 +17,6 @@ limitations under the License.
 package etcdbackup
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/url"
@@ -34,18 +33,17 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	//"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	etcdbackup "k8c.io/kubermatic/v2/pkg/resources/etcd/backup"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
-	"k8c.io/kubermatic/v2/pkg/util/yaml"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	clocktesting "k8s.io/utils/clock/testing"
@@ -55,15 +53,6 @@ import (
 )
 
 type jobFunc func(data *resources.TemplateData) []batchv1.Job
-
-func encodeContainerAsYAML(t *testing.T, c *corev1.Container) string {
-	var buf bytes.Buffer
-	if err := yaml.Encode(c, &buf); err != nil {
-		t.Fatalf("failed to encode container as YAML: %v", err)
-	}
-
-	return buf.String()
-}
 
 func genTestCluster() *kubermaticv1.Cluster {
 	version := *semver.NewSemverOrDie("1.16.3")
@@ -1660,7 +1649,6 @@ func constRandStringGenerator(str string) func() string {
 	}
 }
 
-/*
 func TestMultipleBackupDestination(t *testing.T) {
 	testCases := []struct {
 		name               string
@@ -1697,7 +1685,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{},
-			expectedErr:        fmt.Sprintf("credentials not set for backup destination %q", "no-credentials"),
+			expectedErr:        fmt.Sprintf("failed to get template data: credentials not set for backup destination %q", "no-credentials"),
 		},
 		{
 			name: "backup should fail destination is missing",
@@ -1707,7 +1695,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{},
-			expectedErr:        fmt.Sprintf("cannot find backup destination %q", "missing"),
+			expectedErr:        fmt.Sprintf("failed to get template data: cannot find backup destination %q", "missing"),
 		},
 	}
 
@@ -1731,6 +1719,8 @@ func TestMultipleBackupDestination(t *testing.T) {
 				},
 				randStringGenerator: constRandStringGenerator("bob"),
 				configGetter:        getConfigGetter(t),
+
+				etcdLauncherImage: defaulting.DefaultEtcdLauncherImage,
 			}
 
 			ctx := context.Background()
@@ -1765,7 +1755,6 @@ func TestMultipleBackupDestination(t *testing.T) {
 		})
 	}
 }
-*/
 
 func addSeedDestinations(seed *kubermaticv1.Seed) {
 	seed.Spec.EtcdBackupRestore = &kubermaticv1.EtcdBackupRestore{
