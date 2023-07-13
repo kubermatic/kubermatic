@@ -1,0 +1,230 @@
+# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# mapper
+modules:
+  github.com/aws/aws-sdk-go-v2/config:
+    funcs:
+      LoadDefaultConfig: null
+      WithCredentialsProvider: null
+      WithRegion: null
+      WithRetryMaxAttempts: null
+
+  github.com/aws/aws-sdk-go-v2/credentials:
+    funcs:
+      NewStaticCredentialsProvider: null
+
+  github.com/aws/aws-sdk-go-v2/credentials/stscreds:
+    funcs:
+      NewAssumeRoleProvider: null
+
+  github.com/aws/aws-sdk-go-v2/service/ec2:
+    funcs:
+      AuthorizeSecurityGroupIngress:
+        permissions:
+          "*":
+            actions:
+              - "ec2:AuthorizeSecurityGroupIngress"
+      CancelSpotInstanceRequests:
+        permissions:
+          "*":
+            actions:
+              - "ec2:CancelSpotInstanceRequests"
+      CreateSecurityGroup:
+        permissions:
+          "*":
+            actions:
+              - "ec2:CreateSecurityGroup"
+      CreateTags:
+        permissions:
+          "*":
+            actions:
+              - "ec2:CreateTags"
+      DeleteSecurityGroup:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DeleteSecurityGroup"
+      DeleteTags:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DeleteTags"
+      DescribeAvailabilityZones:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeAvailabilityZones"
+      DescribeImages:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeImages"
+      DescribeInstances:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeInstances"
+      DescribeInstanceTypes:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeInstanceTypes"
+      DescribeInstanceTypeOfferings:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeInstanceTypeOfferings"
+      DescribeRegions:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeRegions"
+      DescribeRouteTables:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeRouteTables"
+      DescribeSecurityGroups:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeSecurityGroups"
+      DescribeSubnets:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeSubnets"
+      DescribeVpcs:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeVpcs"
+      DescribeVpcAttribute:
+        permissions:
+          "*":
+            actions:
+              - "ec2:DescribeVpcAttribute"
+      RunInstances:
+        permissions:
+          "*":
+            actions:
+              - "ec2:RunInstances"
+      TerminateInstances:
+        permissions:
+          "*":
+            actions:
+              - "ec2:TerminateInstances"
+      NewFromConfig: null
+
+  github.com/aws/aws-sdk-go-v2/service/eks:
+    funcs:
+      NewFromConfig: null
+
+  github.com/aws/aws-sdk-go-v2/service/iam:
+    funcs:
+      AddRoleToInstanceProfile:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/*":
+            actions:
+              - "iam:AddRoleToInstanceProfile"
+      CreateInstanceProfile:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/*":
+            actions:
+              - "iam:CreateInstanceProfile"
+      CreateRole:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:CreateRole"
+      DeleteInstanceProfile:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/*":
+            actions:
+              - "iam:DeleteInstanceProfile"
+      DeleteRole:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:DeleteRole"
+      DeleteRolePolicy:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:DeleteRolePolicy"
+      DetachRolePolicy:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:DetachRolePolicy"
+      GetInstanceProfile:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/*":
+            actions:
+              - "iam:GetInstanceProfile"
+      GetRole:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:GetRole"
+      ListAttachedRolePolicies:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:ListAttachedRolePolicies"
+      ListRolePolicies:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:ListRolePolicies"
+      NewFromConfig: null
+      PutRolePolicy:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:PutRolePolicy"
+      RemoveRoleFromInstanceProfile:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/*":
+            actions:
+              - "iam:RemoveRoleFromInstanceProfile"
+      TagInstanceProfile:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/*":
+            actions:
+              - "iam:TagInstanceProfile"
+      TagRole:
+        permissions:
+          "arn:aws:iam::YOUR_ACCOUNT_ID:role/*":
+            actions:
+              - "iam:TagRole"
+
+  github.com/aws/aws-sdk-go-v2/service/sts:
+    funcs:
+      NewFromConfig: null
+
+  github.com/aws/aws-sdk-go-v2/aws:
+    funcs:
+      String: null
+      Int32: null
+      Int64: null
+      Bool: null
+      Float32: null
+      Float64: null
+      ToBool: null
+      ToInt64: null
+      ToString: null
+      ToFloat64: null
+      StringSlice: null
