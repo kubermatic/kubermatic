@@ -250,7 +250,7 @@ func CheckPodsRunningReady(ctx context.Context, c ctrlruntimeclient.Client, log 
 	return checkPodsCondition(ctx, c, log, ns, podNames, timeout, condition, "running and ready")
 }
 
-type podCondition func(pod *corev1.Pod) (error, error)
+type podCondition func(pod *corev1.Pod) (transient error, terminal error)
 
 // WaitForPodCondition waits a pods to be matched to the given condition.
 func WaitForPodCondition(ctx context.Context, c ctrlruntimeclient.Client, log *zap.SugaredLogger, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
