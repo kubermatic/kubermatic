@@ -93,7 +93,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	// update of the status with conditions or HelmInfo triggers an update event. To avoid reconciling in loop, we filter
 	// update event on generation. We also allow update events if annotations have changed so that the user can force a
 	// reconciliation without changing the spec.
-	if err = c.Watch(&source.Kind{Type: &appskubermaticv1.ApplicationInstallation{}}, &handler.EnqueueRequestForObject{}, predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})); err != nil {
+	if err = c.Watch(source.Kind(userMgr.GetCache(), &appskubermaticv1.ApplicationInstallation{}), &handler.EnqueueRequestForObject{}, predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})); err != nil {
 		return fmt.Errorf("failed to create watch for ApplicationInstallation: %w", err)
 	}
 
@@ -104,7 +104,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		return fmt.Errorf("failed to get informer for applicationDefinition: %w", err)
 	}
 
-	if err = c.Watch(&source.Informer{Informer: appDefInformer}, handler.EnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(ctx, r.userClient))); err != nil {
+	if err = c.Watch(&source.Informer{Informer: appDefInformer}, handler.EnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(r.userClient))); err != nil {
 		return fmt.Errorf("failed to watch applicationDefinition: %w", err)
 	}
 
@@ -340,8 +340,8 @@ func (r *reconciler) traceWarning(appInstallation *appskubermaticv1.ApplicationI
 
 // enqueueAppInstallationForAppDef fan-out updates from applicationDefinition to the ApplicationInstallation that reference
 // this applicationDefinition.
-func enqueueAppInstallationForAppDef(ctx context.Context, userClient ctrlruntimeclient.Client) func(object ctrlruntimeclient.Object) []reconcile.Request {
-	return func(applicationDefinition ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(context.Context, ctrlruntimeclient.Object) []reconcile.Request {
+	return func(ctx context.Context, applicationDefinition ctrlruntimeclient.Object) []reconcile.Request {
 		appList := &appskubermaticv1.ApplicationInstallationList{}
 		if err := userClient.List(ctx, appList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list applicationInstallation: %w", err))

@@ -23,10 +23,10 @@ import (
 	"time"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -36,20 +36,11 @@ const (
 	invalidResource            = "invalid"
 )
 
-var (
-	testScheme = runtime.NewScheme()
-)
-
-func init() {
-	_ = appskubermaticv1.AddToScheme(testScheme)
-}
-
 // TestValidateApplicationInstallationSpec tests the validation for ApplicationInstallation creation.
 func TestValidateApplicationInstallationSpec(t *testing.T) {
 	ad := getApplicationDefinition(defaultAppName)
-	fakeClient := fakectrlruntimeclient.
+	fakeClient := fake.
 		NewClientBuilder().
-		WithScheme(testScheme).
 		WithObjects(ad).
 		Build()
 
@@ -214,9 +205,8 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 func TestValidateApplicationInstallationUpdate(t *testing.T) {
 	ad := getApplicationDefinition(defaultAppName)
 	updatedAD := getApplicationDefinition("updated-app")
-	fakeClient := fakectrlruntimeclient.
+	fakeClient := fake.
 		NewClientBuilder().
-		WithScheme(testScheme).
 		WithObjects(ad, updatedAD).
 		Build()
 

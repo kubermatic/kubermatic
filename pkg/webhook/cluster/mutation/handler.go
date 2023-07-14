@@ -23,12 +23,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,7 +39,7 @@ import (
 
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
-	log     logr.Logger
+	log     *zap.SugaredLogger
 	decoder *admission.Decoder
 
 	client       ctrlruntimeclient.Client
@@ -48,8 +49,10 @@ type AdmissionHandler struct {
 }
 
 // NewAdmissionHandler returns a new cluster AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *AdmissionHandler {
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, client ctrlruntimeclient.Client, configGetter provider.KubermaticConfigurationGetter, seedGetter provider.SeedGetter, caBundle *x509.CertPool) *AdmissionHandler {
 	return &AdmissionHandler{
+		log:          log,
+		decoder:      admission.NewDecoder(scheme),
 		client:       client,
 		configGetter: configGetter,
 		seedGetter:   seedGetter,
@@ -59,16 +62,6 @@ func NewAdmissionHandler(client ctrlruntimeclient.Client, configGetter provider.
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-cluster", &webhook.Admission{Handler: h})
-}
-
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("cluster-mutation-handler")
-	return nil
-}
-
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {

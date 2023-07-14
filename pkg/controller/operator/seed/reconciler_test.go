@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -47,7 +48,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -68,9 +68,10 @@ var (
 	}
 )
 
+var testScheme = fake.NewScheme()
+
 func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(apiextensionsv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(apiextensionsv1.AddToScheme(testScheme))
 }
 
 func getSeeds(now metav1.Time) map[string]*kubermaticv1.Seed {
@@ -92,6 +93,7 @@ func getSeeds(now metav1.Time) map[string]*kubermaticv1.Seed {
 				Name:              "goner",
 				Namespace:         "kubermatic",
 				DeletionTimestamp: &now,
+				Finalizers:        []string{"dummy"},
 			},
 		},
 		"other": {
@@ -246,8 +248,7 @@ func TestBasicReconciling(t *testing.T) {
 
 				seed := &kubermaticv1.Seed{}
 				must(t, seedClient.Get(ctx, seedName, seed))
-				seed.DeletionTimestamp = &now
-				must(t, seedClient.Update(ctx, seed))
+				must(t, seedClient.Delete(ctx, seed))
 
 				// let the controller clean up
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
@@ -444,18 +445,18 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 			seedObjects[seedName] = append(seedObjects[seedName], masterSeed.DeepCopy())
 		}
 
-		seedClients[seedName] = ctrlruntimefakeclient.
+		seedClients[seedName] = fake.
 			NewClientBuilder().
-			WithScheme(scheme.Scheme).
+			WithScheme(testScheme).
 			WithObjects(seedObjects[seedName]...).
 			Build()
 
 		seedRecorders[seedName] = record.NewFakeRecorder(999)
 	}
 
-	masterClient := ctrlruntimefakeclient.
+	masterClient := fake.
 		NewClientBuilder().
-		WithScheme(scheme.Scheme).
+		WithScheme(testScheme).
 		WithObjects(masterObjects...).
 		Build()
 

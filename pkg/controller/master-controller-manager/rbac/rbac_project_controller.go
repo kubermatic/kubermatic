@@ -78,7 +78,7 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 	}
 
 	// Watch for changes to Projects
-	return cc.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, workerPredicate)
+	return cc.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}, workerPredicate)
 }
 
 func (c *projectController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {

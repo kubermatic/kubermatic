@@ -40,6 +40,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -54,9 +55,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/pointer"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
 )
 
@@ -417,9 +416,8 @@ func TestLoadFiles(t *testing.T) {
 						return
 					}
 
-					dynamicClient := ctrlruntimefakeclient.
+					dynamicClient := fake.
 						NewClientBuilder().
-						WithScheme(scheme.Scheme).
 						WithObjects(
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{

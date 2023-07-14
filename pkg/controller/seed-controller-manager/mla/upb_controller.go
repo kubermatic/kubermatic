@@ -73,7 +73,7 @@ func newUserProjectBindingReconciler(
 		return slices.Contains(upb.Finalizers, mlaFinalizer)
 	})
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}, finalizerPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserProjectBinding{}), &handler.EnqueueRequestForObject{}, finalizerPredicate); err != nil {
 		return fmt.Errorf("failed to watch UserProjectBindings: %w", err)
 	}
 

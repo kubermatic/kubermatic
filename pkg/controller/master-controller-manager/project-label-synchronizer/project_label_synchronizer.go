@@ -53,7 +53,7 @@ type reconciler struct {
 // requestFromCluster returns a reconcile.Request for the project the given
 // cluster belongs to, if any.
 func requestFromCluster(log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(mo ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(_ context.Context, mo ctrlruntimeclient.Object) []reconcile.Request {
 		cluster, ok := mo.(*kubermaticv1.Cluster)
 		if !ok {
 			err := fmt.Errorf("Object was not a cluster but a %T", mo)
@@ -74,7 +74,6 @@ func requestFromCluster(log *zap.SugaredLogger) handler.EventHandler {
 }
 
 func Add(
-	ctx context.Context,
 	masterManager manager.Manager,
 	seedManagers map[string]manager.Manager,
 	log *zap.SugaredLogger,
@@ -106,16 +105,13 @@ func Add(
 	for seedName, seedManager := range seedManagers {
 		r.seedClients[seedName] = seedManager.GetClient()
 
-		seedClusterWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := seedClusterWatch.InjectCache(seedManager.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache for seed %q into watch: %w", seedName, err)
-		}
+		seedClusterWatch := source.Kind(seedManager.GetCache(), &kubermaticv1.Cluster{})
 		if err := c.Watch(seedClusterWatch, requestFromCluster(log), workerlabel.Predicates(workerName)); err != nil {
 			return fmt.Errorf("failed to watch clusters in seed %q: %w", seedName, err)
 		}
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch projects: %w", err)
 	}
 

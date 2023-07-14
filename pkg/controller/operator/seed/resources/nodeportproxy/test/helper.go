@@ -100,7 +100,7 @@ func Deploy(
 
 	deployments := []string{nodeportproxy.EnvoyDeploymentName, nodeportproxy.UpdaterDeploymentName}
 
-	return wait.PollLog(ctx, log, 10*time.Second, timeout, func() (transient error, terminal error) {
+	return wait.PollLog(ctx, log, 10*time.Second, timeout, func(ctx context.Context) (transient error, terminal error) {
 		for _, name := range deployments {
 			health, err := resources.HealthyDeployment(ctx, client, types.NamespacedName{
 				Name:      name,
@@ -143,7 +143,7 @@ func Cleanup(
 		},
 	}
 
-	return wait.PollLog(ctx, log, 10*time.Second, timeout, func() (transient error, terminal error) {
+	return wait.PollLog(ctx, log, 10*time.Second, timeout, func(ctx context.Context) (transient error, terminal error) {
 		for _, obj := range objects {
 			if err := client.Delete(ctx, obj); err != nil && !apierrors.IsNotFound(err) {
 				return fmt.Errorf("failed to delete %s: %w", obj.GetName(), err), nil

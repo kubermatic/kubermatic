@@ -17,6 +17,7 @@ limitations under the License.
 package rbacusercluster
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -44,7 +45,7 @@ const (
 	ResourceViewerName = "system:kubermatic:viewers"
 )
 
-var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
+var mapFn = handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 	return []reconcile.Request{
 		{NamespacedName: types.NamespacedName{
 			Name:      ResourceOwnerName,
@@ -78,11 +79,11 @@ func Add(mgr manager.Manager, logger *zap.SugaredLogger, registerReconciledCheck
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, mapFn); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}), mapFn); err != nil {
 		return err
 	}
 	// Watch for changes to ClusterRoleBindings
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, mapFn); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRoleBinding{}), mapFn); err != nil {
 		return err
 	}
 

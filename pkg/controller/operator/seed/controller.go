@@ -55,7 +55,6 @@ const (
 )
 
 func Add(
-	ctx context.Context,
 	log *zap.SugaredLogger,
 	namespace string,
 	masterManager manager.Manager,
@@ -98,7 +97,7 @@ func Add(
 	}
 
 	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
-	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to handle request", zap.Error(err))
@@ -120,12 +119,12 @@ func Add(
 	})
 
 	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: config}, configEventHandler, namespacePredicate, workerNamePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), config), configEventHandler, namespacePredicate, workerNamePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", config, err)
 	}
 
 	// watch for changes to the global CA bundle ConfigMap and replicate it into each Seed
-	configMapEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	configMapEventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		// find the owning KubermaticConfiguration
 		config, err := configGetter(ctx)
 		if err != nil {
@@ -169,13 +168,13 @@ func Add(
 	})
 
 	configMap := &corev1.ConfigMap{}
-	if err := c.Watch(&source.Kind{Type: configMap}, configMapEventHandler, namespacePredicate, versionChangedPredicate); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), configMap), configMapEventHandler, namespacePredicate, versionChangedPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", configMap, err)
 	}
 
 	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
 	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate, workerNamePredicate, versionChangedPredicate); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), seed), &handler.EnqueueRequestForObject{}, namespacePredicate, workerNamePredicate, versionChangedPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
@@ -196,7 +195,7 @@ func Add(
 
 func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string, workerName string) error {
 	cache := seedManager.GetCache()
-	eventHandler := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{{
 			NamespacedName: types.NamespacedName{
 				Name:      seedName,
@@ -206,13 +205,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	})
 
 	watch := func(t ctrlruntimeclient.Object, preds ...predicate.Predicate) error {
-		seedTypeWatch := &source.Kind{Type: t}
-
-		if err := seedTypeWatch.InjectCache(cache); err != nil {
-			return fmt.Errorf("failed to inject cache into watch for %T: %w", t, err)
-		}
-
-		if err := controller.Watch(seedTypeWatch, eventHandler, preds...); err != nil {
+		if err := controller.Watch(source.Kind(cache, t), eventHandler, preds...); err != nil {
 			return fmt.Errorf("failed to watch %T: %w", t, err)
 		}
 

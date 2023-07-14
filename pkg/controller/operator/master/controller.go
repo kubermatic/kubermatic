@@ -53,7 +53,6 @@ const (
 )
 
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	namespace string,
@@ -79,7 +78,7 @@ func Add(
 	workerNamePredicate := workerlabel.Predicates(workerName)
 
 	// put the config's identifier on the queue
-	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -91,12 +90,12 @@ func Add(
 	})
 
 	cfg := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(&source.Kind{Type: cfg}, kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), cfg), kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", cfg, err)
 	}
 
 	// for each child put the parent configuration onto the queue
-	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		config, err := kubernetes.GetRawKubermaticConfiguration(ctx, mgr.GetClient(), namespace)
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to get KubermaticConfiguration: %w", err))
@@ -138,7 +137,7 @@ func Add(
 	}
 
 	for _, t := range namespacedTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
@@ -149,7 +148,7 @@ func Add(
 	}
 
 	for _, t := range globalOwnedTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
@@ -159,7 +158,7 @@ func Add(
 	}
 
 	for _, t := range globalTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, childEventHandler); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
@@ -167,7 +166,7 @@ func Add(
 	// namespaces are not managed by the operator and so can use neither namespacePredicate
 	// nor ManagedByPredicate, but still need to get their labels reconciled
 	ns := &corev1.Namespace{}
-	if err := c.Watch(&source.Kind{Type: ns}, childEventHandler, predicateutil.ByName(namespace)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), ns), childEventHandler, predicateutil.ByName(namespace)); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", ns, err)
 	}
 

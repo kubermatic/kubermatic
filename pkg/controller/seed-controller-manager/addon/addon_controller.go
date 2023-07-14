@@ -130,14 +130,14 @@ func Add(
 		return err
 	}
 
-	enqueueClusterAddons := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueClusterAddons := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		cluster := a.(*kubermaticv1.Cluster)
 		if cluster.Status.NamespaceName == "" {
 			return nil
 		}
 
 		addonList := &kubermaticv1.AddonList{}
-		if err := client.List(context.Background(), addonList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+		if err := client.List(ctx, addonList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 			log.Errorw("Failed to get addons for cluster", zap.Error(err), "cluster", cluster.Name)
 			return nil
 		}
@@ -166,11 +166,11 @@ func Add(
 			return false
 		},
 	}
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueClusterAddons, clusterPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), enqueueClusterAddons, clusterPredicate); err != nil {
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Addon{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

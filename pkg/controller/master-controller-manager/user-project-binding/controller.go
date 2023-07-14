@@ -67,7 +67,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 	}
 
 	// Watch for changes to UserProjectBinding
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserProjectBinding{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return err
 	}
 
@@ -81,7 +81,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 	}
 
 	// Watch for changes in User resources to sync their UserProjectBinding resources
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, enqueueUserProjectBindingsForUser(r.Client, r.log)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.User{}), enqueueUserProjectBindingsForUser(r.Client, r.log)); err != nil {
 		return fmt.Errorf("failed to create watch for users: %w", err)
 	}
 
@@ -227,11 +227,11 @@ func (r *reconcileSyncProjectBinding) getProjectForBinding(ctx context.Context, 
 }
 
 func enqueueUserProjectBindingsForUser(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		user := a.(*kubermaticv1.User)
 
 		userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
-		if err := client.List(context.Background(), userProjectBindingList, ctrlruntimeclient.MatchingFields{
+		if err := client.List(ctx, userProjectBindingList, ctrlruntimeclient.MatchingFields{
 			userProjectBindingEmailKey: user.Spec.Email,
 		}); err != nil {
 			log.Error(err)

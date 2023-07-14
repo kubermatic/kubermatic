@@ -51,7 +51,6 @@ const (
 
 // Add creates a new Seed-Sync controller and sets up Watches.
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
@@ -75,12 +74,12 @@ func Add(
 	nsPredicate := predicate.ByNamespace(namespace)
 
 	// watch all seeds in the given namespace
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Seed{}}, &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Seed{}), &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 
 	// watch all KubermaticConfigurations in the given namespace
-	configHandler := func(o ctrlruntimeclient.Object) []reconcile.Request {
+	configHandler := func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to retrieve seeds", zap.Error(err))
@@ -100,7 +99,7 @@ func Add(
 		return requests
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.KubermaticConfiguration{}}, handler.EnqueueRequestsFromMapFunc(configHandler), nsPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.KubermaticConfiguration{}), handler.EnqueueRequestsFromMapFunc(configHandler), nsPredicate); err != nil {
 		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 

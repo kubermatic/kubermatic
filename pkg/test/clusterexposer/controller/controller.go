@@ -72,7 +72,7 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &corev1.Service{}},
+		source.Kind(inner.GetCache(), &corev1.Service{}),
 		&handler.EnqueueRequestForObject{},
 		predicate.Factory(
 			func(o ctrlruntimeclient.Object) bool {
@@ -86,11 +86,8 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		return fmt.Errorf("failed to create watch for services in the inner cluster: %w", err)
 	}
 
-	outerServiceWatch := &source.Kind{Type: &corev1.Service{}}
-	if err := outerServiceWatch.InjectCache(outer.GetCache()); err != nil {
-		return fmt.Errorf("failed to inject cache into outer service watch: %w", err)
-	}
-	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	outerServiceWatch := source.Kind(outer.GetCache(), &corev1.Service{})
+	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
 		if !exists {
 			return nil

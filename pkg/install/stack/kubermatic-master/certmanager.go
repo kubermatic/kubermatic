@@ -447,7 +447,7 @@ func waitForCertManagerWebhook(ctx context.Context, logger *logrus.Entry, kubeCl
 	}
 
 	var lastCreateErr error
-	err := wait.PollImmediate(1*time.Second, 1*time.Minute, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true, func(ctx context.Context) (bool, error) {
 		lastCreateErr = kubeClient.Create(ctx, dummyCert)
 		return lastCreateErr == nil, nil
 	})

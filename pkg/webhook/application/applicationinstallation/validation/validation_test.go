@@ -21,15 +21,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -40,16 +40,12 @@ const (
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme = fake.NewScheme()
 )
-
-func init() {
-	_ = appskubermaticv1.AddToScheme(testScheme)
-}
 
 func TestValidateApplicationInstallation(t *testing.T) {
 	ad := getApplicationDefinition(defaultAppName)
-	fakeClient := fakectrlruntimeclient.
+	fakeClient := fake.
 		NewClientBuilder().
 		WithScheme(testScheme).
 		WithObjects(ad).
@@ -138,14 +134,9 @@ func TestValidateApplicationInstallation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := admission.NewDecoder(testScheme)
-			if err != nil {
-				t.Fatalf("error occurred while creating decoder: %v", err)
-			}
-
 			handler := AdmissionHandler{
-				log:     logr.Discard(),
-				decoder: d,
+				log:     zap.NewNop().Sugar(),
+				decoder: admission.NewDecoder(testScheme),
 				client:  fakeClient,
 			}
 

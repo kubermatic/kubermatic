@@ -23,13 +23,13 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -44,7 +44,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 	}{
 		{
 			name: "scenario 1: when Namespace.create=true and no labels or annotations are defined then namespace should be created without labels or annotations",
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
 				Build(),
 			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
@@ -56,7 +56,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 		},
 		{
 			name: "scenario 2: when Namespace.create=true, labels field is defined and annotations field nil then namespace should be created with labels",
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
 				Build(),
 			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
@@ -68,7 +68,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 		},
 		{
 			name: "scenario 3: when Namespace.create=true, labels field is nil and annotations field is defined then namespace should be created with annotations",
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
 				Build(),
 			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
@@ -80,7 +80,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 		},
 		{
 			name: "scenario 4: when Namespace.create=true, labels and annotations are defined then namespace should be created with labels and annotations",
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
 				Build(),
 			namespaceSpec: appskubermaticv1.AppNamespaceSpec{
@@ -118,7 +118,7 @@ func TestApplicationManager_applyNamespaceWithCreateNs(t *testing.T) {
 
 func TestApplicationManager_applyNamespaceDoNotCreateNsWhenCreateNamespaceFlagIsFalse(t *testing.T) {
 	ctx := context.Background()
-	userClient := fakectrlruntimeclient.
+	userClient := fake.
 		NewClientBuilder().
 		Build()
 
@@ -148,10 +148,9 @@ func TestApplicationManager_applyNamespaceDoNotCreateNsWhenCreateNamespaceFlagIs
 func TestApplicationManager_applyNamespaceDoNotSetLabelsAndAnnotationWhenCreateNamespaceFlagIsFalse(t *testing.T) {
 	ctx := context.Background()
 	nsName := "foo"
-	userClient := fakectrlruntimeclient.
+	userClient := fake.
 		NewClientBuilder().
-		WithObjects(
-			genNamespace(nsName), genNamespace(defaultNamespace)).
+		WithObjects(genNamespace(nsName), genNamespace(defaultNamespace)).
 		Build()
 
 	namespaceSpec := appskubermaticv1.AppNamespaceSpec{

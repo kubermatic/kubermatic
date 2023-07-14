@@ -22,12 +22,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/go-test/deep"
+	"go.uber.org/zap"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,18 +36,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme = fake.NewScheme()
 )
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 func TestHandle(t *testing.T) {
 	cluster := &kubermaticv1.Cluster{
@@ -168,6 +164,7 @@ func TestHandle(t *testing.T) {
 					cluster := c.DeepCopy()
 					now := metav1.Now()
 					cluster.DeletionTimestamp = &now
+					cluster.Finalizers = []string{"dummy"}
 					return cluster
 				}(cluster)),
 			},
@@ -257,18 +254,13 @@ func TestHandle(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		d, err := admission.NewDecoder(testScheme)
-		if err != nil {
-			t.Fatalf("error occurred while creating decoder: %v", err)
-		}
-
 		t.Run(tt.name, func(t *testing.T) {
-			seedClient := fake.NewClientBuilder().WithObjects(tt.clusters...).Build()
+			seedClient := fake.NewClientBuilder().WithScheme(testScheme).WithObjects(tt.clusters...).Build()
 			seed := &kubermaticv1.Seed{}
 
 			handler := AdmissionHandler{
-				log:        logr.Discard(),
-				decoder:    d,
+				log:        zap.NewNop().Sugar(),
+				decoder:    admission.NewDecoder(testScheme),
 				seedGetter: test.NewSeedGetter(seed),
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return seedClient, nil

@@ -114,7 +114,7 @@ func Add(
 		},
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.EtcdRestore{}}, &handler.EnqueueRequestForObject{}, incompleteRestorePredicates)
+	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.EtcdRestore{}), &handler.EnqueueRequestForObject{}, incompleteRestorePredicates)
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

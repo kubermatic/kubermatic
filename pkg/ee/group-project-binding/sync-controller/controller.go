@@ -84,17 +84,11 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.GroupProjectBinding{}},
-		&handler.EnqueueRequestForObject{},
-	); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), &kubermaticv1.GroupProjectBinding{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for groupprojectbindings: %w", err)
 	}
 
-	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Seed{}},
-		enqueueGroupProjectBindingsForSeed(r.masterClient, r.log),
-	); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), &kubermaticv1.Seed{}), enqueueGroupProjectBindingsForSeed(r.masterClient, r.log)); err != nil {
 		return fmt.Errorf("failed to create watch for seeds: %w", err)
 	}
 
@@ -196,12 +190,12 @@ func (r *reconciler) syncAllSeeds(log *zap.SugaredLogger, groupProjectBinding *k
 }
 
 func enqueueGroupProjectBindingsForSeed(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		groupProjectBindingList := &kubermaticv1.GroupProjectBindingList{}
 
-		if err := client.List(context.Background(), groupProjectBindingList); err != nil {
+		if err := client.List(ctx, groupProjectBindingList); err != nil {
 			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list userprojectbindings: %w", err))
 		}

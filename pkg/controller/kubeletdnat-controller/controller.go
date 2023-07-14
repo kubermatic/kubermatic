@@ -93,11 +93,17 @@ func Add(
 		return err
 	}
 
-	return c.Watch(&source.Kind{Type: &corev1.Node{}}, &handler.Funcs{
-		CreateFunc:  func(e event.CreateEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
-		DeleteFunc:  func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
-		GenericFunc: func(e event.GenericEvent, queue workqueue.RateLimitingInterface) { queue.Add(reconcile.Request{}) },
-		UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), &handler.Funcs{
+		CreateFunc: func(_ context.Context, e event.CreateEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{})
+		},
+		DeleteFunc: func(_ context.Context, e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{})
+		},
+		GenericFunc: func(_ context.Context, e event.GenericEvent, queue workqueue.RateLimitingInterface) {
+			queue.Add(reconcile.Request{})
+		},
+		UpdateFunc: func(_ context.Context, e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
 			newNode, ok := e.ObjectNew.(*corev1.Node)
 			if !ok {
 				log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)

@@ -87,7 +87,7 @@ func Add(
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
 

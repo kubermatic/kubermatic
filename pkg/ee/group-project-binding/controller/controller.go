@@ -52,7 +52,6 @@ const (
 
 // Add creates a new group-project-binding controller and sets up Watches.
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
@@ -72,13 +71,13 @@ func Add(
 	}
 
 	// watch all GroupProjectBindings
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.GroupProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.GroupProjectBinding{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create GroupProjectBinding watcher: %w", err)
 	}
 
 	// watch ClusterRoles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
 	if err := c.Watch(
-		&source.Kind{Type: &rbacv1.ClusterRole{}},
+		source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}),
 		enqueueGroupProjectBindingsForRole(mgr.GetClient()),
 		predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel),
 	); err != nil {
@@ -87,7 +86,7 @@ func Add(
 
 	// watch Roles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
 	if err := c.Watch(
-		&source.Kind{Type: &rbacv1.Role{}},
+		source.Kind(mgr.GetCache(), &rbacv1.Role{}),
 		enqueueGroupProjectBindingsForRole(mgr.GetClient()),
 		predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel),
 	); err != nil {
@@ -102,7 +101,7 @@ func Add(
 // match the GroupProjectBinding.Spec.Role. Only GroupProjectBindings with a matching KKP role need to be reconciled
 // when a new ClusterRole/Role object for that KKP role is created by rbac-controller.
 func enqueueGroupProjectBindingsForRole(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var (
 			requests []reconcile.Request
 		)
@@ -110,7 +109,7 @@ func enqueueGroupProjectBindingsForRole(client ctrlruntimeclient.Client) handler
 		bindingList := &kubermaticv1.GroupProjectBindingList{}
 		listOpts := &ctrlruntimeclient.ListOptions{}
 
-		if err := client.List(context.Background(), bindingList, listOpts); err != nil {
+		if err := client.List(ctx, bindingList, listOpts); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list GroupProjectBindings: %w", err))
 			return []reconcile.Request{}
 		}

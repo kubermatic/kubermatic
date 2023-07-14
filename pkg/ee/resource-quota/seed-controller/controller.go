@@ -81,7 +81,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Cluster{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
 		enqueueResourceQuota(reconciler.seedClient, reconciler.log, workerName),
 		workerlabel.Predicates(workerName),
 		withClusterEventFilter(),
@@ -90,7 +90,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.ResourceQuota{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.ResourceQuota{}),
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seed resource quotas: %w", err)
@@ -214,7 +214,7 @@ func withClusterEventFilter() predicate.Predicate {
 }
 
 func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogger, workerName string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		clusterLabels := a.GetLabels()
@@ -238,7 +238,7 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 
 		resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
 
-		if err := client.List(context.Background(), resourceQuotaList,
+		if err := client.List(ctx, resourceQuotaList,
 			&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*subjectKindReq, *subjectNameReq)},
 		); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list resourceQuotas: %w", err))

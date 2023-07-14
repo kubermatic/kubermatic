@@ -34,11 +34,11 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -90,7 +90,7 @@ func main() {
 	}
 	runOpts := controllerRunOptions{featureGates: features.FeatureGate{}}
 	klog.InitFlags(nil)
-	pprofOpts := &pprof.Opts{}
+	pprofOpts := &flagopts.PProf{}
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -160,6 +160,7 @@ func main() {
 		LeaderElectionNamespace: runOpts.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
 		MetricsBindAddress:      "0",
+		PprofBindAddress:        pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("failed to create Controller Manager instance", zap.Error(err))
@@ -173,10 +174,6 @@ func main() {
 	}
 	if err != nil {
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
-	}
-
-	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("failed to add pprof endpoint", zap.Error(err))
 	}
 
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {

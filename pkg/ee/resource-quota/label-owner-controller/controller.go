@@ -58,7 +58,8 @@ type reconciler struct {
 	recorder     record.EventRecorder
 }
 
-func Add(masterMgr manager.Manager,
+func Add(
+	masterMgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
 ) error {
@@ -75,12 +76,12 @@ func Add(masterMgr manager.Manager,
 	}
 
 	// Watch for changes to ResourceQuota
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ResourceQuota{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(masterMgr.GetCache(), &kubermaticv1.ResourceQuota{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch resource quotas: %w", err)
 	}
 
 	// Watch for projects
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}},
+	if err := c.Watch(source.Kind(masterMgr.GetCache(), &kubermaticv1.Project{}),
 		enqueueResourceQuotaForProject(r.masterClient), withProjectEventFilter()); err != nil {
 		return fmt.Errorf("failed to watch projects: %w", err)
 	}
@@ -167,13 +168,13 @@ func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Cli
 }
 
 func enqueueResourceQuotaForProject(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		name := a.GetName()
 
 		resourceQuotaList := &kubermaticv1.ResourceQuotaList{}
-		if err := client.List(context.Background(), resourceQuotaList); err != nil {
+		if err := client.List(ctx, resourceQuotaList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list resourceQuotas: %w", err))
 		}
 

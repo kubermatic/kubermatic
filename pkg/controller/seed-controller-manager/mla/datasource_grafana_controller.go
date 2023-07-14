@@ -95,10 +95,10 @@ func newDatasourceGrafanaReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %w", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.MLAAdminSetting{}},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.MLAAdminSetting{}),
 		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()), predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
 		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
 	}

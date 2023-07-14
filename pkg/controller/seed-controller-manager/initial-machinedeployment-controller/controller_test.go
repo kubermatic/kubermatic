@@ -33,22 +33,23 @@ import (
 	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var (
 	kubernetesVersion = defaulting.DefaultKubernetesVersioning.Default
+	testScheme        = fake.NewScheme()
 )
 
 const (
@@ -57,9 +58,7 @@ const (
 )
 
 func init() {
-	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		panic(fmt.Sprintf("failed to add clusterv1alpha1 to scheme: %v", err))
-	}
+	utilruntime.Must(clusterv1alpha1.AddToScheme(testScheme))
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
@@ -245,16 +244,16 @@ func TestReconcile(t *testing.T) {
 				webhook.Status.UpdatedReplicas = *webhook.Spec.Replicas
 			}
 
-			seedClient := fakectrlruntimeclient.
+			seedClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(test.cluster, project, webhook).
 				Build()
 
 			userClusterObjects := []ctrlruntimeclient.Object{}
-			userClusterClient := fakectrlruntimeclient.
+			userClusterClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(userClusterObjects...).
 				Build()
 

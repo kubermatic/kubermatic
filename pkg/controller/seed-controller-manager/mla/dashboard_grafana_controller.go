@@ -86,14 +86,14 @@ func newDashboardGrafanaReconciler(
 		return err
 	}
 
-	enqueueGrafanaConfigMap := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueGrafanaConfigMap := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		if !strings.HasPrefix(a.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			return []reconcile.Request{}
 		}
 		return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: a.GetNamespace()}}}
 	})
 
-	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueGrafanaConfigMap, predicateutil.ByNamespace(dashboardGrafanaController.mlaNamespace)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.ConfigMap{}), enqueueGrafanaConfigMap, predicateutil.ByNamespace(dashboardGrafanaController.mlaNamespace)); err != nil {
 		return fmt.Errorf("failed to watch ConfigMap: %w", err)
 	}
 

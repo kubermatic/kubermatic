@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -31,6 +31,7 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -38,15 +39,17 @@ import (
 
 // AdmissionHandler for mutating Kubermatic MLAAdminSetting CRD.
 type AdmissionHandler struct {
-	log              logr.Logger
+	log              *zap.SugaredLogger
 	decoder          *admission.Decoder
 	seedGetter       provider.SeedGetter
 	seedClientGetter provider.SeedClientGetter
 }
 
 // NewAdmissionHandler returns a new MLAAdminSetting AdmissionHandler.
-func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *AdmissionHandler {
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, seedGetter provider.SeedGetter, seedClientGetter provider.SeedClientGetter) *AdmissionHandler {
 	return &AdmissionHandler{
+		log:              log,
+		decoder:          admission.NewDecoder(scheme),
 		seedGetter:       seedGetter,
 		seedClientGetter: seedClientGetter,
 	}
@@ -54,16 +57,6 @@ func NewAdmissionHandler(seedGetter provider.SeedGetter, seedClientGetter provid
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/mutate-kubermatic-k8c-io-v1-mlaadminsetting", &webhook.Admission{Handler: h})
-}
-
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("mlaadminsetting-mutation-handler")
-	return nil
-}
-
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {

@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -99,7 +100,7 @@ func IsRunningFunc(log *zap.SugaredLogger, opt *isRunningOptions) cobraFuncE {
 		}
 
 		// try to write to etcd and log transient errors.
-		err = wait.PollImmediateLog(ctx, log, opt.interval, opt.timeout, func() (error, error) {
+		err = wait.PollImmediateLog(ctx, log, opt.interval, opt.timeout, func(ctx context.Context) (error, error) {
 			_, err := client.Put(ctx, opt.testKey, opt.testValue)
 			return err, nil
 		})

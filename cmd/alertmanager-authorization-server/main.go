@@ -23,6 +23,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/genproto/googleapis/rpc/status"
@@ -40,9 +41,9 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
-	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
@@ -59,7 +60,7 @@ type authorizationServer struct {
 	authHeaderName  string
 	orgIDHeaderName string
 
-	client ctrlruntimeclient.Client
+	client ctrlruntimeclient.Reader
 	log    *zap.SugaredLogger
 }
 
@@ -238,6 +239,8 @@ func (a *authorizationServer) addFlags() {
 }
 
 func main() {
+	ctx := signals.SetupSignalHandler()
+
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
 	s := authorizationServer{}
@@ -246,42 +249,30 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+
 	cfg, err := ctrlruntime.GetConfig()
 	if err != nil {
 		log.Fatalw("failed to get kubeconfig", zap.Error(err))
 	}
-	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
+
+	cluster, err := ctrlruntimecluster.New(cfg)
 	if err != nil {
-		log.Panicw("failed to get client", zap.Error(err))
+		log.Fatalw("failed to create cluster object", zap.Error(err))
 	}
-	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
-	if err != nil {
-		log.Fatalw("failed to create rest mapper", zap.Error(err))
-	}
-	cache, err := ctrlcache.New(cfg, ctrlcache.Options{
-		Scheme: scheme,
-		Mapper: mapper,
-	})
-	if err != nil {
-		log.Fatalw("failed to create cache", zap.Error(err))
-	}
-	ctx := signals.SetupSignalHandler()
+
 	go func() {
-		if err := cache.Start(ctx); err != nil {
+		if err := cluster.GetCache().Start(ctx); err != nil {
 			log.Fatalw("failed to start cache", zap.Error(err))
 		}
 	}()
-	if !cache.WaitForCacheSync(ctx) {
-		log.Fatalw("cache is outdated")
+	if !cluster.GetCache().WaitForCacheSync(ctx) {
+		log.Fatal("failed to wait for cache sync")
 	}
-	cachedClient, err := ctrlruntimeclient.NewDelegatingClient(ctrlruntimeclient.NewDelegatingClientInput{
-		CacheReader: cache,
-		Client:      client,
-	})
-	if err != nil {
-		log.Fatalw("failed to create cached client", zap.Error(err))
-	}
-	s.client = cachedClient
+
+	s.client = cluster.GetClient()
 	s.log = log
 
 	lis, err := net.Listen("tcp", s.listenAddress)

@@ -24,15 +24,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -64,9 +63,8 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedConstraint: genConstraint(constraintName, clusterNamespace, kind, true, false),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraint(constraintName, seedNamespace, kind, false, false), genCluster(true)).
 				Build(),
 		},
@@ -77,9 +75,8 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genConstraint(constraintName, seedNamespace, kind, false, false), genCluster(false)).
 				Build(),
 		},
@@ -90,9 +87,8 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					genConstraint(constraintName, seedNamespace, kind, false, true),
 					genConstraint(constraintName, clusterNamespace, kind, true, false),

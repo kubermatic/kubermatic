@@ -60,7 +60,8 @@ type Reconciler struct {
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	authorizedKeysPaths []string) error {
+	authorizedKeysPaths []string,
+) error {
 	reconciler := &Reconciler{
 		Client:             mgr.GetClient(),
 		log:                log,
@@ -75,7 +76,7 @@ func Add(
 
 	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
 	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for secrets: %w", err)
 	}
 
@@ -83,7 +84,7 @@ func Add(
 		return fmt.Errorf("failed to watch authorized_keys files: %w", err)
 	}
 
-	userSSHKeySecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	userSSHKeySecret := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -246,15 +247,15 @@ func updateOwnAndPermissions(path string) error {
 	return nil
 }
 
-// NewCacheFunc returns a user-ssh-keys-agent specific cache.NewCacheFunc that limits the cache
+// CacheOptions returns a user-ssh-keys-agent specific cache.Options struct that limits the cache
 // to the Secret object that is needed by the controller. This is done so we can limit the RBAC
 // assignment for this controller to the bare minimum (the resource name).
-func NewCacheFunc() cache.NewCacheFunc {
-	return cache.BuilderWithOptions(cache.Options{
-		SelectorsByObject: cache.SelectorsByObject{
+func CacheOptions() cache.Options {
+	return cache.Options{
+		ByObject: map[ctrlruntimeclient.Object]cache.ByObject{
 			&corev1.Secret{}: {
 				Field: fields.SelectorFromSet(fields.Set{"metadata.name": resources.UserSSHKeys}),
 			},
 		},
-	})
+	}
 }

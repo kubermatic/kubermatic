@@ -37,7 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type Options struct {
@@ -211,13 +210,12 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manag
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.log})).
-		Watches(&source.Kind{Type: &corev1.Endpoints{}},
-			handler.EnqueueRequestsFromMapFunc(r.newEndpointHandler(ctx))).
+		Watches(&corev1.Endpoints{}, handler.EnqueueRequestsFromMapFunc(r.newEndpointHandler())).
 		Complete(r)
 }
 
-func (r *Reconciler) newEndpointHandler(ctx context.Context) handler.MapFunc {
-	return func(obj ctrlruntimeclient.Object) []ctrlruntime.Request {
+func (r *Reconciler) newEndpointHandler() handler.MapFunc {
+	return func(ctx context.Context, obj ctrlruntimeclient.Object) []ctrlruntime.Request {
 		svcName := types.NamespacedName{
 			Name:      obj.GetName(),
 			Namespace: obj.GetNamespace(),

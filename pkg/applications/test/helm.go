@@ -193,7 +193,9 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string)
 
 	ociRegistryUrl := fmt.Sprintf("oci://localhost:%d/helm-charts", port)
 
-	r, err := registry.NewRegistry(context.Background(), config)
+	ctx := context.Background()
+
+	r, err := registry.NewRegistry(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,8 +209,8 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string)
 
 	// Ensure registry is listening
 	var lastError error
-	if !utils.WaitFor(500*time.Millisecond, 5*time.Second, func() bool {
-		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+	if !utils.WaitFor(ctx, 500*time.Millisecond, 5*time.Second, func() bool {
+		ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second))
 		defer cancel()
 		request, err := http.NewRequestWithContext(ctx, http.MethodHead, strings.Replace(ociRegistryUrl, "oci://", "http://", 1), nil)
 		if err != nil {

@@ -101,7 +101,7 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 
 	// Wait for the update to appear in the lister as we use the data from the lister later on to verify if the LoadBalancers
 	// are gone
-	if err := wait.Poll(10*time.Millisecond, 5*time.Second, func() (bool, error) {
+	if err := wait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 5*time.Second, false, func(ctx context.Context) (bool, error) {
 		latestCluster := &kubermaticv1.Cluster{}
 		if err := d.seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, latestCluster); err != nil {
 			return false, err

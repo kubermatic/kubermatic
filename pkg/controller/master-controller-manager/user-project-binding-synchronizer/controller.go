@@ -84,7 +84,7 @@ func Add(
 	})
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.UserProjectBinding{}},
+		source.Kind(masterManager.GetCache(), &kubermaticv1.UserProjectBinding{}),
 		&handler.EnqueueRequestForObject{},
 		serviceAccountPredicate,
 	); err != nil {
@@ -92,7 +92,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Seed{}},
+		source.Kind(masterManager.GetCache(), &kubermaticv1.Seed{}),
 		enqueueUserProjectBindingsForSeed(r.masterClient, r.log),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seeds: %w", err)
@@ -158,11 +158,11 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 }
 
 func enqueueUserProjectBindingsForSeed(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
-		if err := client.List(context.Background(), userProjectBindingList); err != nil {
+		if err := client.List(ctx, userProjectBindingList); err != nil {
 			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list userprojectbindings: %w", err))
 		}

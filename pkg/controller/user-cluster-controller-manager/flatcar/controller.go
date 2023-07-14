@@ -69,7 +69,7 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
 	})
 
-	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
+	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), controllerutil.EnqueueConst(""), predicate)
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {

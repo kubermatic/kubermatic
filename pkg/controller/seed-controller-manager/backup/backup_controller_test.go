@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
@@ -38,7 +39,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	certutil "k8s.io/client-go/util/cert"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -124,7 +124,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 	reconciler := &Reconciler{
 		log:                  kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 		backupContainerImage: DefaultBackupContainerImage,
-		Client:               ctrlruntimefakeclient.NewClientBuilder().WithObjects(caSecret, cluster).Build(),
+		Client:               fake.NewClientBuilder().WithObjects(caSecret, cluster).Build(),
 		scheme:               scheme.Scheme,
 		caBundle:             certificates.NewFakeCABundle(),
 		configGetter:         configGetter,

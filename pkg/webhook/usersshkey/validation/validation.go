@@ -44,10 +44,10 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	key, ok := obj.(*kubermaticv1.UserSSHKey)
 	if !ok {
-		return errors.New("object is not a UserSSHKey")
+		return nil, errors.New("object is not a UserSSHKey")
 	}
 
 	errs := validation.ValidateUserSSHKeyCreate(key)
@@ -56,18 +56,18 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		errs = append(errs, err)
 	}
 
-	return errs.ToAggregate()
+	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	oldKey, ok := oldObj.(*kubermaticv1.UserSSHKey)
 	if !ok {
-		return errors.New("old object is not a UserSSHKey")
+		return nil, errors.New("old object is not a UserSSHKey")
 	}
 
 	newKey, ok := newObj.(*kubermaticv1.UserSSHKey)
 	if !ok {
-		return errors.New("new object is not a UserSSHKey")
+		return nil, errors.New("new object is not a UserSSHKey")
 	}
 
 	errs := validation.ValidateUserSSHKeyUpdate(oldKey, newKey)
@@ -76,11 +76,11 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		errs = append(errs, err)
 	}
 
-	return errs.ToAggregate()
+	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 func (v *validator) validateProjectRelationship(ctx context.Context, key *kubermaticv1.UserSSHKey, oldKey *kubermaticv1.UserSSHKey) *field.Error {

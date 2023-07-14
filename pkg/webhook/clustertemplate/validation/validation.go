@@ -61,16 +61,16 @@ func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGette
 	}
 }
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj)
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, obj)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return v.validate(ctx, newObj)
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, newObj)
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 func (v *validator) validate(ctx context.Context, obj runtime.Object) error {

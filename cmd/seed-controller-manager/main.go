@@ -36,11 +36,11 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
@@ -50,9 +50,6 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
-	ctrlruntimecache "sigs.k8s.io/controller-runtime/pkg/cache"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimecluster "sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -64,7 +61,7 @@ const (
 
 func main() {
 	klog.InitFlags(nil)
-	pprofOpts := &pprof.Opts{}
+	pprofOpts := &flagopts.PProf{}
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -116,25 +113,16 @@ func main() {
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
-		NewClient: func(c ctrlruntimecache.Cache, config *rest.Config, options ctrlruntimeclient.Options, uncachedObjects ...ctrlruntimeclient.Object) (ctrlruntimeclient.Client, error) {
-			// get rid of warnings related to
-			// policy/v1beta1 PodDisruptionBudget is deprecated in v1.21+, unavailable in v1.25+; use policy/v1 PodDisruptionBudget
-			options.Opts.SuppressWarnings = true
-
-			return ctrlruntimecluster.DefaultNewClient(c, config, options, uncachedObjects...)
-		},
 		// inject a custom broadcaster because during cluster deletion we emit more than
 		// usual events and the default configuration would consider this spam.
 		EventBroadcaster: record.NewBroadcasterWithCorrelatorOptions(record.CorrelatorOptions{
 			BurstSize: 20,
 			QPS:       5,
 		}),
+		PprofBindAddress: pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
-	}
-	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
 	}
 	// Add all custom type schemes to our scheme. Otherwise we won't get a informer
 	if err := autoscalingv1.AddToScheme(mgr.GetScheme()); err != nil {

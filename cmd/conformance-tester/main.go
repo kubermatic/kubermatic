@@ -28,6 +28,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 
@@ -48,6 +49,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
@@ -66,6 +68,9 @@ func main() {
 	// setup logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// parse our CLI flags
 	if err := opts.ParseFlags(log); err != nil {

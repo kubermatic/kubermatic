@@ -26,21 +26,16 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
-	testScheme = runtime.NewScheme()
+	testScheme = fake.NewScheme()
 )
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 func TestValidator(t *testing.T) {
 	testCases := []struct {
@@ -1011,7 +1006,7 @@ func TestValidator(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			seedClient := ctrlruntimefakeclient.
+			seedClient := fake.
 				NewClientBuilder().
 				WithScheme(testScheme).
 				WithObjects(tc.objects...).
@@ -1030,11 +1025,11 @@ func TestValidator(t *testing.T) {
 
 			switch tc.op {
 			case admissionv1.Create:
-				err = validator.ValidateCreate(ctx, tc.ipamPool)
+				_, err = validator.ValidateCreate(ctx, tc.ipamPool)
 			case admissionv1.Update:
-				err = validator.ValidateUpdate(ctx, tc.oldIPAMPool, tc.ipamPool)
+				_, err = validator.ValidateUpdate(ctx, tc.oldIPAMPool, tc.ipamPool)
 			case admissionv1.Delete:
-				err = validator.ValidateDelete(ctx, tc.ipamPool)
+				_, err = validator.ValidateDelete(ctx, tc.ipamPool)
 			}
 
 			assert.Equal(t, tc.expectedError, err)

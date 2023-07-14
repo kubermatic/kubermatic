@@ -31,7 +31,7 @@ spec:
       # This is an alpha field and requires enabling the
       # DynamicResourceAllocation feature gate.
 
-      # This field is immutable.
+      # This field is immutable. It can only be set for containers.
       claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -40,7 +40,7 @@ spec:
         memory: 1Gi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-      # otherwise to an implementation-defined value.
+      # otherwise to an implementation-defined value. Requests cannot exceed Limits.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
         cpu: 100m
@@ -128,7 +128,7 @@ spec:
       # This is an alpha field and requires enabling the
       # DynamicResourceAllocation feature gate.
 
-      # This field is immutable.
+      # This field is immutable. It can only be set for containers.
       claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -137,7 +137,7 @@ spec:
         memory: 400Mi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-      # otherwise to an implementation-defined value.
+      # otherwise to an implementation-defined value. Requests cannot exceed Limits.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
         cpu: 50m
@@ -294,7 +294,7 @@ spec:
       # This is an alpha field and requires enabling the
       # DynamicResourceAllocation feature gate.
 
-      # This field is immutable.
+      # This field is immutable. It can only be set for containers.
       claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -303,7 +303,7 @@ spec:
         memory: 1Gi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-      # otherwise to an implementation-defined value.
+      # otherwise to an implementation-defined value. Requests cannot exceed Limits.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
         cpu: 200m
@@ -332,7 +332,7 @@ spec:
       # This is an alpha field and requires enabling the
       # DynamicResourceAllocation feature gate.
 
-      # This field is immutable.
+      # This field is immutable. It can only be set for containers.
       claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -341,7 +341,7 @@ spec:
         memory: 128Mi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-      # otherwise to an implementation-defined value.
+      # otherwise to an implementation-defined value. Requests cannot exceed Limits.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
         cpu: 100m
@@ -650,7 +650,7 @@ spec:
         # This is an alpha field and requires enabling the
         # DynamicResourceAllocation feature gate.
 
-        # This field is immutable.
+        # This field is immutable. It can only be set for containers.
         claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -659,7 +659,7 @@ spec:
           memory: 128Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-        # otherwise to an implementation-defined value.
+        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests:
           cpu: 50m
@@ -675,7 +675,7 @@ spec:
         # This is an alpha field and requires enabling the
         # DynamicResourceAllocation feature gate.
 
-        # This field is immutable.
+        # This field is immutable. It can only be set for containers.
         claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -684,7 +684,7 @@ spec:
           memory: 3Gi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-        # otherwise to an implementation-defined value.
+        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests:
           cpu: 50m
@@ -700,7 +700,7 @@ spec:
         # This is an alpha field and requires enabling the
         # DynamicResourceAllocation feature gate.
 
-        # This field is immutable.
+        # This field is immutable. It can only be set for containers.
         claims: null
         # Limits describes the maximum amount of compute resources allowed.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -709,7 +709,7 @@ spec:
           memory: 128Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-        # otherwise to an implementation-defined value.
+        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests:
           cpu: 50m
@@ -733,7 +733,7 @@ spec:
       # This is an alpha field and requires enabling the
       # DynamicResourceAllocation feature gate.
 
-      # This field is immutable.
+      # This field is immutable. It can only be set for containers.
       claims: null
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
@@ -742,7 +742,7 @@ spec:
         memory: 256Mi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-      # otherwise to an implementation-defined value.
+      # otherwise to an implementation-defined value. Requests cannot exceed Limits.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
         cpu: 50m

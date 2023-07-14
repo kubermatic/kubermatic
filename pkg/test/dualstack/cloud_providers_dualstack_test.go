@@ -484,7 +484,7 @@ func waitForPods(t *testing.T, ctx context.Context, log *zap.SugaredLogger, clie
 	}
 	l := labels.NewSelector().Add(*r)
 
-	return wait.PollImmediateLog(ctx, log, 10*time.Second, 15*time.Minute, func() (error, error) {
+	return wait.PollImmediateLog(ctx, log, 10*time.Second, 15*time.Minute, func(ctx context.Context) (error, error) {
 		pods := corev1.PodList{}
 		err := client.List(ctx, &pods, &ctrlruntimeclient.ListOptions{
 			Namespace:     namespace,

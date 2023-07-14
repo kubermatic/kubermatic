@@ -54,16 +54,16 @@ func NewValidator(
 	}, nil
 }
 
-func (v *fixedNameValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj, false)
+func (v *fixedNameValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, obj, false)
 }
 
-func (v *fixedNameValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
-	return v.validate(ctx, newObj, false)
+func (v *fixedNameValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, newObj, false)
 }
 
-func (v *fixedNameValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return v.validate(ctx, obj, true)
+func (v *fixedNameValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, v.validate(ctx, obj, true)
 }
 
 func (v *fixedNameValidator) validate(ctx context.Context, obj runtime.Object, isDelete bool) error {

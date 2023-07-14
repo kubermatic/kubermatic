@@ -149,11 +149,8 @@ func Add(
 		return err
 	}
 
-	mapFn := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
-		log.Debugw("Controller got triggered",
-			"type", fmt.Sprintf("%T", o),
-			"name", o.GetName(),
-			"namespace", o.GetNamespace())
+	mapFn := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
+		log.Debugw("Controller got triggered", "type", fmt.Sprintf("%T", o), "name", o.GetName(), "namespace", o.GetNamespace())
 
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
@@ -199,7 +196,7 @@ func Add(
 		},
 	}
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, mapFn, predicateIgnoreLeaderLeaseRenew); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), mapFn, predicateIgnoreLeaderLeaseRenew); err != nil {
 			return fmt.Errorf("failed to create watch for %T: %w", t, err)
 		}
 	}
@@ -209,21 +206,13 @@ func Add(
 		&corev1.ConfigMap{},
 	}
 	for _, t := range seedTypesToWatch {
-		seedWatch := &source.Kind{Type: t}
-		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %w", t, err)
-		}
-		if err := c.Watch(seedWatch, mapFn); err != nil {
+		if err := c.Watch(source.Kind(seedMgr.GetCache(), t), mapFn); err != nil {
 			return fmt.Errorf("failed to watch %T in seed: %w", t, err)
 		}
 	}
 
 	// Watch cluster if user cluster MLA is enabled so that controller can get resource requirements for user cluster MLA components.
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
-		seedWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache in seed cluster watch for cluster: %w", err)
-		}
 		clusterPredicate := predicate.Funcs{
 			// For Update event, only trigger reconciliation when Resource Requirements change.
 			UpdateFunc: func(event event.UpdateEvent) bool {
@@ -234,17 +223,13 @@ func Add(
 				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
 			},
 		}
-		if err := c.Watch(seedWatch, mapFn, clusterPredicate); err != nil {
+		if err := c.Watch(source.Kind(seedMgr.GetCache(), &kubermaticv1.Cluster{}), mapFn, clusterPredicate); err != nil {
 			return fmt.Errorf("failed to watch cluster in seed: %w", err)
 		}
 	}
 
 	// Watch cluster if user cluster OPA is enabled so that controller can get resource requirements for user cluster OPA components.
 	if r.opaIntegration {
-		seedWatch := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache in seed cluster watch for cluster: %w", err)
-		}
 		clusterPredicate := predicate.Funcs{
 			// For Update event, only trigger reconciliation when Resource Requirements change.
 			UpdateFunc: func(event event.UpdateEvent) bool {
@@ -255,7 +240,7 @@ func Add(
 				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
 			},
 		}
-		if err := c.Watch(seedWatch, mapFn, clusterPredicate); err != nil {
+		if err := c.Watch(source.Kind(seedMgr.GetCache(), &kubermaticv1.Cluster{}), mapFn, clusterPredicate); err != nil {
 			return fmt.Errorf("failed to watch cluster in seed: %w", err)
 		}
 	}

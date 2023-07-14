@@ -56,7 +56,7 @@ type reconciler struct {
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
+func Add(log *zap.SugaredLogger, mgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
@@ -73,7 +73,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 	}
 
 	// enqueues the roles from kube-system namespace and special label component=userClusterRole.
-	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
 		if err := r.client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{userclustercontrollermanager.UserClusterComponentKey: userclustercontrollermanager.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %w", err))
@@ -89,10 +89,10 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, clust
 	})
 
 	// Watch for changes to Roles and Namespaces
-	if err = c.Watch(&source.Kind{Type: &rbacv1.Role{}}, eventHandler); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.Role{}), eventHandler); err != nil {
 		return fmt.Errorf("failed to establish watch for Roles: %w", err)
 	}
-	if err = c.Watch(&source.Kind{Type: &corev1.Namespace{}}, eventHandler); err != nil {
+	if err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Namespace{}), eventHandler); err != nil {
 		return fmt.Errorf("failed to establish watch for Namespaces: %w", err)
 	}
 

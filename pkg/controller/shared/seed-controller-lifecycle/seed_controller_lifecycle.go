@@ -99,9 +99,9 @@ func Add(
 	// would cause it to close the same channels multiple times and panic
 	resync := 2 * time.Second
 	cache, err := cache.New(mgr.GetConfig(), cache.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-		Resync: &resync,
+		Scheme:     mgr.GetScheme(),
+		Mapper:     mgr.GetRESTMapper(),
+		SyncPeriod: &resync,
 	})
 	if err != nil {
 		return err
@@ -134,7 +134,7 @@ func Add(
 
 	for _, t := range []ctrlruntimeclient.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
 		if err := c.Watch(
-			&source.Kind{Type: t},
+			source.Kind(cache, t),
 			controllerutil.EnqueueConst(queueKey),
 			predicateutil.ByNamespace(namespace),
 		); err != nil {
@@ -215,7 +215,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		NewCache: func(_ *rest.Config, _ cache.Options) (cache.Cache, error) {
 			return r.masterCache, nil
 		},
-		NewClient: func(_ cache.Cache, _ *rest.Config, _ ctrlruntimeclient.Options, _ ...ctrlruntimeclient.Object) (ctrlruntimeclient.Client, error) {
+		NewClient: func(_ *rest.Config, _ ctrlruntimeclient.Options) (ctrlruntimeclient.Client, error) {
 			return r.masterClient, nil
 		},
 	})

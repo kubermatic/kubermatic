@@ -24,22 +24,16 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 const clusterTemplateName = "cluster-template-test"
 
@@ -55,11 +49,11 @@ func TestReconcile(t *testing.T) {
 			name:                    "scenario 1: sync cluster template from master cluster to seed cluster",
 			requestName:             clusterTemplateName,
 			expectedClusterTemplate: generateClusterTemplate(clusterTemplateName, false),
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithObjects(generateClusterTemplate(clusterTemplateName, false), generator.GenTestSeed()).
 				Build(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				Build(),
 		},
@@ -67,11 +61,11 @@ func TestReconcile(t *testing.T) {
 			name:                    "scenario 2: cleanup cluster template on the seed cluster when master cluster template is being terminated",
 			requestName:             clusterTemplateName,
 			expectedClusterTemplate: nil,
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
 				WithObjects(generateClusterTemplate(clusterTemplateName, true), generator.GenTestSeed()).
 				Build(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
 				WithObjects(generateClusterTemplate(clusterTemplateName, false), generator.GenTestSeed()).
 				Build(),

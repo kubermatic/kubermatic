@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	ctrlruntimewebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func main() {
@@ -82,13 +83,27 @@ func main() {
 
 	ctx := ctrlruntime.SetupSignalHandler()
 
+	// apply the CLI flags for configuring the webhook server
+	seedWebhookOptions := ctrlruntimewebhook.Options{}
+	if err := options.seedWebhook.Apply(&seedWebhookOptions); err != nil {
+		log.Fatalw("Failed to configure seed webhook server", zap.Error(err))
+	}
+
 	seedMgr, err := manager.New(seedCfg, manager.Options{
 		BaseContext: func() context.Context {
 			return ctx
 		},
+		WebhookServer:    ctrlruntimewebhook.NewServer(seedWebhookOptions),
+		PprofBindAddress: options.pprof.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the seed cluster manager", zap.Error(err))
+	}
+
+	// apply the CLI flags for configuring the webhook server
+	userWebhookOptions := ctrlruntimewebhook.Options{}
+	if err := options.userWebhook.Apply(&userWebhookOptions); err != nil {
+		log.Fatalw("Failed to configure user webhook server", zap.Error(err))
 	}
 
 	userMgr, err := manager.New(userCfg, manager.Options{
@@ -96,17 +111,10 @@ func main() {
 			return ctx
 		},
 		MetricsBindAddress: "0",
+		WebhookServer:      ctrlruntimewebhook.NewServer(userWebhookOptions),
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the user cluster manager", zap.Error(err))
-	}
-
-	// Apply the CLI flags for configuring the webhook servers.
-	if err := options.seedWebhook.Configure(seedMgr.GetWebhookServer()); err != nil {
-		log.Fatalw("Failed to configure webhook server", zap.Error(err))
-	}
-	if err := options.userWebhook.Configure(userMgr.GetWebhookServer()); err != nil {
-		log.Fatalw("Failed to configure webhook server", zap.Error(err))
 	}
 
 	// add APIs we use
@@ -114,20 +122,13 @@ func main() {
 	addAPIs(userMgr.GetScheme(), log)
 
 	// /////////////////////////////////////////
-	// add pprof runnable, which will start a websever if configured
-
-	if err := seedMgr.Add(&options.pprof); err != nil {
-		log.Fatalw("Failed to add the pprof handler (seed manager)", zap.Error(err))
-	}
-
-	// /////////////////////////////////////////
 	// setup webhooks
 
 	// Setup the mutation admission handler for ApplicationInstallation CRDs in seed manager.
-	applicationinstallationmutation.NewAdmissionHandler().SetupWebhookWithManager(seedMgr)
+	applicationinstallationmutation.NewAdmissionHandler(log, seedMgr.GetScheme()).SetupWebhookWithManager(seedMgr)
 
 	// Setup the validation admission handler for ApplicationInstallation CRDs in seed manager.
-	applicationinstallationvalidation.NewAdmissionHandler(seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
+	applicationinstallationvalidation.NewAdmissionHandler(log, seedMgr.GetScheme(), seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
 
 	// Setup Machine Webhook in user manager.
 	machineValidator, err := machinevalidation.NewValidator(seedMgr.GetClient(), userMgr.GetClient(), log, options.caBundle, options.projectID)

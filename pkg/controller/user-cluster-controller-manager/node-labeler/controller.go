@@ -74,11 +74,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 		},
 	}
 
-	if err := c.Watch(
-		&source.Kind{Type: &corev1.Node{}},
-		&handler.EnqueueRequestForObject{},
-		labelsChangedPredicate,
-	); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), &handler.EnqueueRequestForObject{}, labelsChangedPredicate); err != nil {
 		return fmt.Errorf("failed to establish watch for nodes: %w", err)
 	}
 

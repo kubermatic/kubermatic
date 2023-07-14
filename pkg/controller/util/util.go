@@ -37,8 +37,8 @@ import (
 // EnqueueClusterForNamespacedObject enqueues the cluster that owns a namespaced object, if any
 // It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		cluster, err := kubernetes.ClusterFromNamespace(context.Background(), client, a.GetNamespace())
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+		cluster, err := kubernetes.ClusterFromNamespace(ctx, client, a.GetNamespace())
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
@@ -56,13 +56,13 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.
 // if any. The seedName is put into the namespace field
 // It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		listOpts := &ctrlruntimeclient.ListOptions{
 			LabelSelector: clusterSelector,
 		}
 
-		if err := client.List(context.Background(), clusterList, listOpts); err != nil {
+		if err := client.List(ctx, clusterList, listOpts); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
 		}
@@ -83,7 +83,7 @@ func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Clie
 // as namespace. If it gets an object with a non-empty name, it will log an error and not enqueue
 // anything.
 func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		if a.GetNamespace() != "" {
 			utilruntime.HandleError(fmt.Errorf("EnqueueClusterScopedObjectWithSeedName was used with namespace scoped object %s/%s of type %T", a.GetNamespace(), a.GetName(), a))
 		}
@@ -98,7 +98,7 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandle
 // EnqueueProjectForCluster returns an event handler that creates a reconcile
 // request for the project of a cluster, based on the ProjectIDLabelKey label.
 func EnqueueProjectForCluster() handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		cluster, ok := a.(*kubermaticv1.Cluster)
 		if !ok {
 			return nil
@@ -126,7 +126,7 @@ const (
 // of the object into the name of the reconcile request.
 func EnqueueObjectWithOperation() handler.EventHandler {
 	return handler.Funcs{
-		CreateFunc: func(e event.CreateEvent, queue workqueue.RateLimitingInterface) {
+		CreateFunc: func(_ context.Context, e event.CreateEvent, queue workqueue.RateLimitingInterface) {
 			queue.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: CreateOperation,
@@ -135,7 +135,7 @@ func EnqueueObjectWithOperation() handler.EventHandler {
 			})
 		},
 
-		UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+		UpdateFunc: func(_ context.Context, e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
 			queue.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: UpdateOperation,
@@ -144,7 +144,7 @@ func EnqueueObjectWithOperation() handler.EventHandler {
 			})
 		},
 
-		DeleteFunc: func(e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+		DeleteFunc: func(_ context.Context, e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
 			queue.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: DeleteOperation,
@@ -163,7 +163,7 @@ func EnqueueConst(queueKey string) handler.EventHandler {
 		queueKey = "const"
 	}
 
-	return handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				Name:      queueKey,

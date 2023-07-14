@@ -64,7 +64,8 @@ type reconciler struct {
 	recorder     record.EventRecorder
 }
 
-func Add(mgr manager.Manager,
+func Add(
+	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
 ) error {
@@ -79,17 +80,13 @@ func Add(mgr manager.Manager,
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.KubermaticSetting{}}, &handler.EnqueueRequestForObject{},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.KubermaticSetting{}), &handler.EnqueueRequestForObject{},
 		utilpredicate.ByName(kubermaticv1.GlobalSettingsName), withSettingsEventFilter()); err != nil {
 		return fmt.Errorf("failed to create watch for kubermatic global settings: %w", err)
 	}
 
 	// Watch for creation of Project; we need to make sure that we create default project quotas, if required.
-	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Project{}},
-		enqueueProjectQuotas(reconciler.masterClient),
-		projectEventFilter(),
-	); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), enqueueProjectQuotas(reconciler.masterClient), projectEventFilter()); err != nil {
 		return fmt.Errorf("failed to create watch for projects: %w", err)
 	}
 
@@ -271,11 +268,11 @@ func projectQuotaReconcilerFactory(resourceQuota *kubermaticv1.ResourceQuota) re
 }
 
 func enqueueProjectQuotas(client ctrlruntimeclient.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		globalSettings := &kubermaticv1.KubermaticSetting{}
-		if err := client.Get(context.Background(), types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
+		if err := client.Get(ctx, types.NamespacedName{Name: kubermaticv1.GlobalSettingsName}, globalSettings); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to get global settings %q: %w", kubermaticv1.GlobalSettingsName, err))
 			return requests
 		}

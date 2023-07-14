@@ -22,14 +22,12 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	k8swait "k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestPollSuccess(t *testing.T) {
 	executions := 0
 
-	err := Poll(context.Background(), 1*time.Millisecond, 100*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 100*time.Millisecond, func(ctx context.Context) (error, error) {
 		executions++
 		return nil, nil
 	})
@@ -44,7 +42,7 @@ func TestPollSuccess(t *testing.T) {
 }
 
 func TestPollTimeout(t *testing.T) {
-	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func(ctx context.Context) (error, error) {
 		return errors.New("transient"), nil
 	})
 
@@ -52,8 +50,8 @@ func TestPollTimeout(t *testing.T) {
 		t.Fatal("Poll should have returned an error, but got nil")
 	}
 
-	if !errors.Is(err, k8swait.ErrWaitTimeout) {
-		t.Fatalf("err should be a wrapped ErrWaitTimeout, but is %+v", err)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("err should be a wrapped DeadlineExceeded, but is %+v", err)
 	}
 
 	if !strings.Contains(err.Error(), "transient") {
@@ -65,7 +63,7 @@ func TestPollTerminalError(t *testing.T) {
 	executions := 0
 	terminal := errors.New("terminal")
 
-	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func() (error, error) {
+	err := Poll(context.Background(), 1*time.Millisecond, 10*time.Millisecond, func(ctx context.Context) (error, error) {
 		executions++
 		return nil, terminal
 	})

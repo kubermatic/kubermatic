@@ -105,17 +105,17 @@ func newRuleGroupReconciler(
 		return ruleGroup.Spec.Cluster.Name != ""
 	})
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.RuleGroup{}}, &handler.EnqueueRequestForObject{}, ruleGroupPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.RuleGroup{}), &handler.EnqueueRequestForObject{}, ruleGroupPredicate); err != nil {
 		return fmt.Errorf("failed to watch RuleGroup: %w", err)
 	}
 
-	enqueueRuleGroupsForCluster := handler.EnqueueRequestsFromMapFunc(func(object ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueRuleGroupsForCluster := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlruntimeclient.Object) []reconcile.Request {
 		cluster := object.(*kubermaticv1.Cluster)
 		if cluster.Status.NamespaceName == "" {
 			return nil
 		}
 		ruleGroupList := &kubermaticv1.RuleGroupList{}
-		if err := client.List(context.Background(), ruleGroupList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+		if err := client.List(ctx, ruleGroupList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 			log.Errorw("failed to list ruleGroups for cluster", zap.Error(err), "cluster", cluster.Name)
 			utilruntime.HandleError(fmt.Errorf("failed to list ruleGroups: %w", err))
 		}
@@ -143,7 +143,7 @@ func newRuleGroupReconciler(
 			return (oldMonitoringEnabled != newMonitoringEnabled) || (oldLoggingEnabled != newLoggingEnabled)
 		},
 	}
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueRuleGroupsForCluster, clusterPredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), enqueueRuleGroupsForCluster, clusterPredicate); err != nil {
 		return fmt.Errorf("failed to watch Cluster: %w", err)
 	}
 

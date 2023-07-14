@@ -30,6 +30,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,10 +38,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -50,9 +50,8 @@ const (
 )
 
 func TestReconcile(t *testing.T) {
-	if err := generator.RegisterScheme(test.GatekeeperSchemeBuilder); err != nil {
-		t.Fatal(err)
-	}
+	testScheme := fake.NewScheme()
+	utilruntime.Must(test.GatekeeperSchemeBuilder.AddToScheme(testScheme))
 
 	testCases := []struct {
 		name                 string
@@ -69,9 +68,9 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedConstraint: generator.GenDefaultAPIConstraint(constraintName, kind),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(
 					func() ctrlruntimeclient.Object {
 						c := generator.GenConstraint(constraintName, "namespace", kind)
@@ -81,9 +80,9 @@ func TestReconcile(t *testing.T) {
 						return c
 					}()).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				Build(),
 		},
 		{
@@ -93,9 +92,9 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(func() *kubermaticv1.Constraint {
 					c := generator.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
@@ -104,9 +103,9 @@ func TestReconcile(t *testing.T) {
 					return c
 				}()).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(&test.RequiredLabel{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: constraintName,
@@ -121,9 +120,9 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(func() *kubermaticv1.Constraint {
 					c := generator.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
@@ -132,9 +131,9 @@ func TestReconcile(t *testing.T) {
 					return c
 				}()).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				Build(),
 		},
 		{
@@ -144,14 +143,14 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedConstraint: generator.GenDefaultAPIConstraint(constraintName, kind),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(generator.GenConstraint(constraintName, "namespace", kind)).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				Build(),
 		},
 		{
@@ -161,18 +160,18 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(func() *kubermaticv1.Constraint {
 					c := generator.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
 				}()).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				Build(),
 		},
 		{
@@ -182,18 +181,18 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(func() *kubermaticv1.Constraint {
 					c := generator.GenConstraint(constraintName, "namespace", kind)
 					c.Spec.Disabled = true
 					return c
 				}()).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(&test.RequiredLabel{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: constraintName,
@@ -212,9 +211,9 @@ func TestReconcile(t *testing.T) {
 				constraint.Spec.EnforcementAction = "deny"
 				return constraint
 			}(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(
 					func() *kubermaticv1.Constraint {
 						constraint := generator.GenConstraint(constraintName, "namespace", kind)
@@ -223,9 +222,9 @@ func TestReconcile(t *testing.T) {
 					}(),
 				).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				Build(),
 		},
 		{
@@ -238,9 +237,9 @@ func TestReconcile(t *testing.T) {
 				constraint := generator.GenDefaultAPIConstraint(constraintName, kind)
 				return constraint
 			}(),
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(
 					func() *kubermaticv1.Constraint {
 						constraint := generator.GenConstraint(constraintName, "namespace", kind)
@@ -248,9 +247,9 @@ func TestReconcile(t *testing.T) {
 					}(),
 				).
 				Build(),
-			userClient: fakectrlruntimeclient.
+			userClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(&test.RequiredLabel{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: constraintName,

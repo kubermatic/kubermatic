@@ -32,17 +32,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -60,9 +59,10 @@ const (
 	existingCNIValue      = "existingValue"          // CNI value to be used by the tests if the CNI ApplicationInstallation already exists
 )
 
+var testScheme = fake.NewScheme()
+
 func init() {
-	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(clusterv1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(clusterv1alpha1.AddToScheme(testScheme))
 }
 
 func healthy() kubermaticv1.ExtendedClusterHealth {
@@ -273,9 +273,9 @@ func TestReconcile(t *testing.T) {
 				appDef.Spec.DefaultValues = &runtime.RawExtension{Raw: rawValues}
 			}
 
-			seedClient := fakectrlruntimeclient.
+			seedClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(test.cluster, project, appDef).
 				Build()
 
@@ -294,9 +294,9 @@ func TestReconcile(t *testing.T) {
 				appInst.Spec.Values = runtime.RawExtension{Raw: rawValues}
 				userClusterObjects = append(userClusterObjects, appInst)
 			}
-			userClusterClient := fakectrlruntimeclient.
+			userClusterClient := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(testScheme).
 				WithObjects(userClusterObjects...).
 				Build()
 

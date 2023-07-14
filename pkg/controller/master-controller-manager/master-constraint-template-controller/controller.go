@@ -57,7 +57,7 @@ type reconciler struct {
 	seedClients  kuberneteshelper.SeedClientMap
 }
 
-func Add(ctx context.Context,
+func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
@@ -82,14 +82,14 @@ func Add(ctx context.Context,
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.ConstraintTemplate{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.ConstraintTemplate{}),
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
 		return fmt.Errorf("failed to create watch for constraintTemplates: %w", err)
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Seed{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Seed{}),
 		enqueueAllConstraintTemplates(reconciler.masterClient, reconciler.log),
 		predicate.ByNamespace(namespace),
 	); err != nil {
@@ -178,11 +178,11 @@ func constraintTemplateReconcilerFactory(kubeCT *kubermaticv1.ConstraintTemplate
 }
 
 func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		ctList := &kubermaticv1.ConstraintTemplateList{}
-		if err := client.List(context.Background(), ctList); err != nil {
+		if err := client.List(ctx, ctList); err != nil {
 			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list constraint templates: %w", err))
 		}

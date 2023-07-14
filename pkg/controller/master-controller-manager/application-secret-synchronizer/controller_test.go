@@ -21,26 +21,17 @@ import (
 	"reflect"
 	"testing"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/kubectl/pkg/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(appskubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 const secretName = "secret-1"
 const seedNamespace = "kubermatic"
@@ -58,20 +49,20 @@ func TestReconcile(t *testing.T) {
 	}{
 		{
 			name:         "scenario 1: secret in master, but not in seed",
-			masterClient: fakectrlruntimeclient.NewClientBuilder().WithObjects(masterSecret).Build(),
-			seedClient:   fakectrlruntimeclient.NewClientBuilder().Build(),
+			masterClient: fake.NewClientBuilder().WithObjects(masterSecret).Build(),
+			seedClient:   fake.NewClientBuilder().Build(),
 			expSecret:    seedSecret,
 		},
 		{
 			name:         "scenario 2: secret not in master, but still in seed",
-			masterClient: fakectrlruntimeclient.NewClientBuilder().Build(),
-			seedClient:   fakectrlruntimeclient.NewClientBuilder().WithObjects(seedSecret).Build(),
+			masterClient: fake.NewClientBuilder().Build(),
+			seedClient:   fake.NewClientBuilder().WithObjects(seedSecret).Build(),
 			expSecret:    nil,
 		},
 		{
 			name:         "scenario 3: secret not in master and it was never in seed",
-			masterClient: fakectrlruntimeclient.NewClientBuilder().Build(),
-			seedClient:   fakectrlruntimeclient.NewClientBuilder().Build(),
+			masterClient: fake.NewClientBuilder().Build(),
+			seedClient:   fake.NewClientBuilder().Build(),
 			expSecret:    nil,
 		},
 	}

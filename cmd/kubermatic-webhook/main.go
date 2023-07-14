@@ -57,6 +57,7 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	ctrlruntimewebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func main() {
@@ -96,19 +97,22 @@ func main() {
 	// /////////////////////////////////////////
 	// create manager
 
+	// apply the CLI flags for configuring the webhook server
+	webhookOptions := ctrlruntimewebhook.Options{}
+	if err := options.webhook.Apply(&webhookOptions); err != nil {
+		log.Fatalw("Failed to configure webhook server", zap.Error(err))
+	}
+
 	mgr, err := manager.New(cfg, manager.Options{
 		BaseContext: func() context.Context {
 			return rootCtx
 		},
-		Namespace: options.namespace,
+		Namespace:        options.namespace,
+		WebhookServer:    ctrlruntimewebhook.NewServer(webhookOptions),
+		PprofBindAddress: options.pprof.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
-	}
-
-	// apply the CLI flags for configuring the  webhook server to the manager
-	if err := options.webhook.Configure(mgr.GetWebhookServer()); err != nil {
-		log.Fatalw("Failed to configure webhook server", zap.Error(err))
 	}
 
 	// add APIs we use
@@ -122,13 +126,6 @@ func main() {
 	configGetter, seedGetter, seedsGetter, seedClientGetter := createGetters(rootCtx, log, mgr, &options)
 
 	caPool := options.caBundle.CertPool()
-
-	// /////////////////////////////////////////
-	// add pprof runnable, which will start a websever if configured
-
-	if err := mgr.Add(&options.pprof); err != nil {
-		log.Fatalw("Failed to add the pprof handler", zap.Error(err))
-	}
 
 	// /////////////////////////////////////////
 	// setup Seed webhook
@@ -160,12 +157,12 @@ func main() {
 	}
 
 	// mutation cannot, because we require separate defaulting for CREATE and UPDATE operations
-	clustermutation.NewAdmissionHandler(mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
+	clustermutation.NewAdmissionHandler(log, mgr.GetScheme(), mgr.GetClient(), configGetter, seedGetter, caPool).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup ExternalCluster webhooks
 
-	externalclustermutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+	externalclustermutation.NewAdmissionHandler(log, mgr.GetScheme()).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup ClusterTemplate webhooks
@@ -178,12 +175,12 @@ func main() {
 	// /////////////////////////////////////////
 	// setup Addon webhook
 
-	addonmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
+	addonmutation.NewAdmissionHandler(log, mgr.GetScheme(), seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup MLAAdminSetting webhooks
 
-	mlaadminsettingmutation.NewAdmissionHandler(seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
+	mlaadminsettingmutation.NewAdmissionHandler(log, mgr.GetScheme(), seedGetter, seedClientGetter).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup User webhooks
@@ -204,7 +201,7 @@ func main() {
 	// /////////////////////////////////////////
 	// setup UserSSHKey webhooks
 
-	usersshkeymutation.NewAdmissionHandler(mgr.GetClient()).SetupWebhookWithManager(mgr)
+	usersshkeymutation.NewAdmissionHandler(log, mgr.GetScheme(), mgr.GetClient()).SetupWebhookWithManager(mgr)
 
 	userSSHKeyValidator := usersshkeyvalidation.NewValidator(mgr.GetClient())
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.UserSSHKey{}).WithValidator(userSSHKeyValidator).Complete(); err != nil {
@@ -215,10 +212,10 @@ func main() {
 	// setup ApplicationDefinition webhook
 
 	// Setup the mutation admission handler for ApplicationDefinition CRDs
-	applicationdefinitionmutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+	applicationdefinitionmutation.NewAdmissionHandler(log, mgr.GetScheme()).SetupWebhookWithManager(mgr)
 
 	// Setup the validation admission handler for ApplicationDefinition CRDs
-	applicationdefinitionvalidation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
+	applicationdefinitionvalidation.NewAdmissionHandler(log, mgr.GetScheme()).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// setup IPAMPool webhook

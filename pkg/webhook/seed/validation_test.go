@@ -26,12 +26,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestValidate(t *testing.T) {
@@ -489,7 +488,8 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
-	if err := apiextensionsv1.AddToScheme(scheme.Scheme); err != nil {
+	scheme := fake.NewScheme()
+	if err := apiextensionsv1.AddToScheme(scheme); err != nil {
 		t.Fatalf("Failed to register scheme: %v", err)
 	}
 
@@ -512,9 +512,9 @@ func TestValidate(t *testing.T) {
 			for _, s := range tc.existingSeeds {
 				obj = append(obj, s)
 			}
-			client := fakectrlruntimeclient.
+			client := fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
+				WithScheme(scheme).
 				WithObjects(obj...).
 				Build()
 
@@ -528,9 +528,9 @@ func TestValidate(t *testing.T) {
 			}
 
 			if tc.isDelete {
-				err = sv.ValidateDelete(context.Background(), tc.seedToValidate)
+				_, err = sv.ValidateDelete(context.Background(), tc.seedToValidate)
 			} else {
-				err = sv.ValidateCreate(context.Background(), tc.seedToValidate)
+				_, err = sv.ValidateCreate(context.Background(), tc.seedToValidate)
 			}
 
 			if (err != nil) != tc.errExpected {

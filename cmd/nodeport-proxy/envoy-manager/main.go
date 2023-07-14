@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
@@ -27,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -53,6 +55,9 @@ func main() {
 	// init logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	cli.Hello(log, "Envoy-Manager", logOpts.Debug, nil)
 

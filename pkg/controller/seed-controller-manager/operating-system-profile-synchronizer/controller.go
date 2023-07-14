@@ -112,7 +112,7 @@ func Add(
 	customOSP.SetKind(customOperatingSystemProfileKind)
 
 	if err := c.Watch(
-		&source.Kind{Type: customOSP},
+		source.Kind(mgr.GetCache(), customOSP),
 		&handler.EnqueueRequestForObject{},
 		kubermaticpred.ByNamespace(namespace),
 	); err != nil {
@@ -121,7 +121,7 @@ func Add(
 
 	// Watch changes for OSPs and then enqueue all the clusters where OSM is enabled.
 	if err := c.Watch(
-		&source.Kind{Type: &kubermaticv1.Cluster{}},
+		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
 		enqueueOperatingSystemProfiles(reconciler.seedClient, reconciler.log, namespace),
 		workerlabel.Predicates(workerName),
 		withEventFilter(),
@@ -274,14 +274,14 @@ func withEventFilter() predicate.Predicate {
 }
 
 func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.SugaredLogger, namespace string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		ospList := &unstructured.UnstructuredList{}
 		ospList.SetAPIVersion(operatingSystemManagerAPIVersion)
 		ospList.SetKind(fmt.Sprintf("%sList", customOperatingSystemProfileKind))
 
-		if err := client.List(context.Background(), ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
+		if err := client.List(ctx, ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list customOperatingSystemProfiles: %w", err))
 		}
 

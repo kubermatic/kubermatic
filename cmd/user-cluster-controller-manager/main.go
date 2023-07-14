@@ -47,7 +47,6 @@ import (
 	machinecontrollerresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	roleclonercontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/role-cloner-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -113,7 +112,7 @@ type controllerRunOptions struct {
 func main() {
 	runOp := controllerRunOptions{}
 	klog.InitFlags(nil)
-	pprofOpts := &pprof.Opts{}
+	pprofOpts := &flagopts.PProf{}
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -241,12 +240,10 @@ func main() {
 		LeaderElectionID:        "user-cluster-controller-leader-lock",
 		MetricsBindAddress:      runOp.metricsListenAddr,
 		HealthProbeBindAddress:  runOp.healthListenAddr,
+		PprofBindAddress:        pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
-	}
-	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to add pprof handler", zap.Error(err))
 	}
 
 	var seedConfig *rest.Config
@@ -383,13 +380,13 @@ func main() {
 	}
 	log.Info("Registered clusterrolelabeler controller")
 
-	if err := roleclonercontroller.Add(rootCtx, log, mgr, isPausedChecker); err != nil {
+	if err := roleclonercontroller.Add(log, mgr, isPausedChecker); err != nil {
 		log.Fatalw("Failed to register role-cloner controller", zap.Error(err))
 	}
 	log.Info("Registered role-cloner controller")
 
 	if runOp.ownerEmail != "" {
-		if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
+		if err := ownerbindingcreator.Add(log, mgr, runOp.ownerEmail, isPausedChecker); err != nil {
 			log.Fatalw("Failed to register owner-binding-creator controller", zap.Error(err))
 		}
 		log.Info("Registered owner-binding-creator controller")
@@ -398,7 +395,7 @@ func main() {
 	}
 
 	if runOp.ccmMigration {
-		if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName, isPausedChecker); err != nil {
+		if err := ccmcsimigrator.Add(log, seedMgr, mgr, versions, runOp.clusterName, isPausedChecker); err != nil {
 			log.Fatalw("failed to register ccm-csi-migrator controller", zap.Error(err))
 		}
 		log.Info("registered ccm-csi-migrator controller")

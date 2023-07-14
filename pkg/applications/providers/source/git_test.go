@@ -42,11 +42,11 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestDownloadGitSource(t *testing.T) {
@@ -191,7 +191,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 10: clone HTTP with auth from branch",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpWithAuthRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.MasterBranch.Name},
@@ -203,7 +203,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 11: clone HTTP with auth from Tag",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpWithAuthRemote,
 				Ref:         appskubermaticv1.GitReference{Tag: repoInfo.Tag.Name},
@@ -215,7 +215,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 12: clone HTTP with auth from commit in branch",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      httpWithAuthRemote,
 				Ref:         appskubermaticv1.GitReference{Commit: repoInfo.CommitInMaster.Name, Branch: repoInfo.MasterBranch.Name},
@@ -229,7 +229,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 13: clone SSH from branch",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.FeatureBranch.Name},
@@ -241,7 +241,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 14: clone SSH from branch with path /",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.FeatureBranch.Name},
@@ -253,7 +253,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 15: clone SSH from branch with path subdir",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.FeatureBranch.Name},
@@ -265,7 +265,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 16: clone SSH from tag",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Tag: repoInfo.Tag.Name},
@@ -277,7 +277,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 17: clone SSH from tag with path /",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Tag: repoInfo.Tag.Name},
@@ -289,7 +289,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 18: clone SSH from tag with path subdir",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Tag: repoInfo.Tag.Name},
@@ -301,7 +301,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 19: clone SSH from commit in branch",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.MasterBranch.Name, Commit: repoInfo.CommitInMaster.Name},
@@ -315,7 +315,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 20: clone SSH from commit in branch with path /",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.MasterBranch.Name, Commit: repoInfo.CommitInMaster.Name},
@@ -329,7 +329,7 @@ func TestDownloadGitSource(t *testing.T) {
 		},
 		{
 			name:   "scenario 21: clone SSH from commit in branch with path subdir",
-			client: fakectrlruntimeclient.NewClientBuilder().WithObjects(credentialsSecret).Build(),
+			client: fake.NewClientBuilder().WithObjects(credentialsSecret).Build(),
 			source: &appskubermaticv1.GitSource{
 				Remote:      sshRemote,
 				Ref:         appskubermaticv1.GitReference{Branch: repoInfo.MasterBranch.Name, Commit: repoInfo.CommitInMaster.Name},

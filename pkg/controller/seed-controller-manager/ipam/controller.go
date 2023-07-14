@@ -85,15 +85,15 @@ func Add(
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for clusters: %w", err)
 	}
 
-	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		ipamPool := a.(*kubermaticv1.IPAMPool)
 
 		clusterList := &kubermaticv1.ClusterList{}
-		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
+		if err := mgr.GetClient().List(ctx, clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			log.Errorw("Failed to list clusters", zap.Error(err))
 			return []reconcile.Request{}
@@ -110,7 +110,7 @@ func Add(
 		}
 		return requests
 	})
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.IPAMPool{}}, enqueueClustersForIPAMPool); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.IPAMPool{}), enqueueClustersForIPAMPool); err != nil {
 		return fmt.Errorf("failed to create watch for IPAM Pools: %w", err)
 	}
 

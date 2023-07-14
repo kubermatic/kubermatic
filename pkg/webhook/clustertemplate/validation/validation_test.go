@@ -27,23 +27,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/utils/pointer"
-	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
-	testScheme     = runtime.NewScheme()
+	testScheme     = fake.NewScheme()
 	datacenterName = "foo"
 )
-
-func init() {
-	_ = kubermaticv1.AddToScheme(testScheme)
-}
 
 // TestHandle tests the admission handler, but with the cloud provider validation
 // disabled (i.e. we do not check if the hetzner token is valid, which would
@@ -653,7 +648,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	seedClient := ctrlruntimefakeclient.
+	seedClient := fake.
 		NewClientBuilder().
 		WithScheme(testScheme).
 		WithObjects(&seed, &project1, &project2).
@@ -677,11 +672,11 @@ func TestHandle(t *testing.T) {
 
 			switch tt.op {
 			case admissionv1.Create:
-				err = templateValidator.ValidateCreate(ctx, &tt.template)
+				_, err = templateValidator.ValidateCreate(ctx, &tt.template)
 			case admissionv1.Update:
-				err = templateValidator.ValidateUpdate(ctx, nil, &tt.template)
+				_, err = templateValidator.ValidateUpdate(ctx, nil, &tt.template)
 			case admissionv1.Delete:
-				err = templateValidator.ValidateDelete(ctx, &tt.template)
+				_, err = templateValidator.ValidateDelete(ctx, &tt.template)
 			}
 
 			allowed := err == nil

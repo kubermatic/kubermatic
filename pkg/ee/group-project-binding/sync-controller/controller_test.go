@@ -33,22 +33,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 const groupProjectBindingName = "group-project-binding-test"
 
@@ -87,14 +81,12 @@ func TestReconcile(t *testing.T) {
 
 			seed := generator.GenTestSeed()
 
-			masterClient := fakectrlruntimeclient.NewClientBuilder().
-				WithScheme(scheme.Scheme).
+			masterClient := fake.NewClientBuilder().
 				WithObjects(seed).
 				WithObjects(tc.existingMasterResources...).
 				Build()
 
-			seedClient := fakectrlruntimeclient.NewClientBuilder().
-				WithScheme(scheme.Scheme).
+			seedClient := fake.NewClientBuilder().
 				WithObjects(seed).
 				WithObjects(tc.existingSeedResources...).
 				Build()

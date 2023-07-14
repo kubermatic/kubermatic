@@ -66,12 +66,12 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger, workerCount int) error {
 	}
 
 	// watch all Projects
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return err
 	}
 
 	// watch all Clusters, but enqueue the owning project
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, util.EnqueueProjectForCluster()); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), util.EnqueueProjectForCluster()); err != nil {
 		return err
 	}
 

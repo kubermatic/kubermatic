@@ -201,8 +201,8 @@ func Add(
 	// a Secret or Pod is deleted (instead we want to wait 10 seconds between deletion checks).
 	// Instead of splitting this controller into 2 reconcilers, we simply do not return any requests if
 	// the cluster is in deletion.
-	inNamespaceHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		cluster, err := kubernetes.ClusterFromNamespace(context.Background(), reconciler, a.GetNamespace())
+	inNamespaceHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+		cluster, err := kubernetes.ClusterFromNamespace(ctx, reconciler, a.GetNamespace())
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
 			return []reconcile.Request{}
@@ -218,12 +218,12 @@ func Add(
 	})
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, inNamespaceHandler); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), inNamespaceHandler); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

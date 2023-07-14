@@ -501,7 +501,7 @@ func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kube
 	logger.Debugf("Waiting for %q to be ready…", svcName)
 
 	var ingresses []corev1.LoadBalancerIngress
-	err := wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 5*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
 		svc := corev1.Service{}
 		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
 			return false, err

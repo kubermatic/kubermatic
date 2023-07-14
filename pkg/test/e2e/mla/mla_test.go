@@ -110,7 +110,7 @@ func TestMLAIntegration(t *testing.T) {
 	p := &kubermaticv1.Project{}
 	orgID := ""
 	timeout := 5 * time.Minute
-	if !utils.WaitFor(1*time.Second, timeout, func() (ok bool) {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() (ok bool) {
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.Name}, p); err != nil {
 			t.Fatalf("failed to get project: %v", err)
 		}
@@ -174,7 +174,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	logger.Info("Waiting for Grafana org to be gone...")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		_, err = grafanaClient.GetOrgById(ctx, org.ID)
 		return err != nil
 	}) {
@@ -182,7 +182,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	logger.Info("Waiting for Grafana user to be gone...")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		_, err = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		return errors.As(err, &grafanasdk.ErrNotFound{})
 	}) {
@@ -190,7 +190,7 @@ func TestMLAIntegration(t *testing.T) {
 	}
 
 	logger.Info("Waiting for project to get rid of grafana org annotation")
-	if !utils.WaitFor(1*time.Second, timeout, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, timeout, func() bool {
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: project.Name}, p); err != nil {
 			t.Fatalf("failed to get project: %v", err)
 		}
@@ -205,7 +205,7 @@ func TestMLAIntegration(t *testing.T) {
 func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, cluster *kubermaticv1.Cluster) (err error) {
 	log.Info("Waiting for datasource to be added to Grafana...")
 
-	if !utils.WaitFor(1*time.Second, 5*time.Minute, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, 5*time.Minute, func() bool {
 		_, err := grafanaClient.GetDatasourceByUID(ctx, fmt.Sprintf("%s-%s", mla.PrometheusType, cluster.Name))
 		return err == nil
 	}) {
@@ -221,7 +221,7 @@ func verifyGrafanaUser(ctx context.Context, log *zap.SugaredLogger, grafanaClien
 	log.Info("Checking that an admin user was added to Grafana...")
 
 	user := grafanasdk.User{}
-	err := wait.Poll(ctx, 1*time.Second, 2*time.Minute, func() (transient error, terminal error) {
+	err := wait.Poll(ctx, 1*time.Second, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		user, transient = grafanaClient.LookupUser(ctx, "roxy-admin@kubermatic.com")
 		if transient != nil {
 			return errors.New("user does not yet exist in Grafana"), nil
@@ -275,7 +275,7 @@ rules:
 	logRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3003", mla.LogRuleGroupConfigEndpoint, "/default")
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 
-	err = wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
+	err = wait.Poll(ctx, 1*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", logRuleGroupURL, "test-rule"), nil)
 		if err != nil {
 			return fmt.Errorf("unable to create request: %v", err), nil
@@ -325,7 +325,7 @@ func verifyMetricsRuleGroup(ctx context.Context, log *zap.SugaredLogger, client 
 	metricRuleGroupURL := fmt.Sprintf("%s%s%s", "http://localhost:3002", mla.MetricsRuleGroupConfigEndpoint, "/default")
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 
-	err = wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
+	err = wait.Poll(ctx, 1*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", metricRuleGroupURL, "test-metric-rule"), nil)
 		if err != nil {
 			return fmt.Errorf("unable to create request: %v", err), nil
@@ -369,7 +369,7 @@ func verifyAlertmanager(ctx context.Context, log *zap.SugaredLogger, client ctrl
 		return fmt.Errorf("unable to update alertmanager config: %w", err)
 	}
 
-	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
+	if !utils.WaitFor(ctx, 1*time.Second, 1*time.Minute, func() bool {
 		if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, cluster); err != nil {
 			return false
 		}
@@ -386,7 +386,7 @@ func verifyAlertmanager(ctx context.Context, log *zap.SugaredLogger, client ctrl
 
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 
-	err := wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
+	err := wait.Poll(ctx, 1*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		req, err := http.NewRequest(http.MethodGet, alertmanagerURL, nil)
 		if err != nil {
 			return fmt.Errorf("unable to create request to get alertmanager config: %w", err), nil
@@ -473,7 +473,7 @@ func verifyRateLimits(ctx context.Context, log *zap.SugaredLogger, client ctrlru
 		return fmt.Errorf("unable to set monitoring rate limits: %w", err)
 	}
 
-	err := wait.Poll(ctx, 1*time.Second, 5*time.Minute, func() (error, error) {
+	err := wait.Poll(ctx, 1*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		mlaAdminSetting := &kubermaticv1.MLAAdminSetting{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.MLAAdminSettingsName}, mlaAdminSetting); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 			return fmt.Errorf("can't get cluster mlaadminsetting: %w", err), nil

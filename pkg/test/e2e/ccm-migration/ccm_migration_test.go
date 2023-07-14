@@ -170,7 +170,7 @@ func testBody(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedCli
 	}
 
 	log.Info("Asserting the annotations existence in the cluster...")
-	err := wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, utils.UserClusterPollInterval, utils.CustomTestTimeout, false, func(ctx context.Context) (bool, error) {
 		annotatedCluster := &kubermaticv1.Cluster{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, annotatedCluster); err != nil {
 			return false, fmt.Errorf("failed to get cluster: %w", err)
@@ -186,7 +186,7 @@ func testBody(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedCli
 	}
 
 	log.Info("Checking the -node-external-cloud-provider flag in the machine-controller webhook Pod...")
-	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, utils.UserClusterPollInterval, utils.CustomTestTimeout, false, func(ctx context.Context) (bool, error) {
 		machineControllerWebhookPods := &corev1.PodList{}
 		if err := seedClient.List(ctx, machineControllerWebhookPods, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
 			resources.AppLabelKey: resources.MachineControllerWebhookDeploymentName,
@@ -220,7 +220,7 @@ func testBody(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedCli
 	}
 
 	log.Info("Waiting for the complete cluster migration...")
-	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, utils.UserClusterPollInterval, utils.CustomTestTimeout, false, func(ctx context.Context) (bool, error) {
 		migratingCluster := &kubermaticv1.Cluster{}
 		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, migratingCluster); err != nil {
 			return false, err
@@ -237,7 +237,7 @@ func testBody(t *testing.T, ctx context.Context, log *zap.SugaredLogger, seedCli
 	}
 
 	log.Info("Checking that all the needed components are up and running...")
-	err = wait.Poll(utils.UserClusterPollInterval, utils.CustomTestTimeout, func() (bool, error) {
+	err = wait.PollUntilContextTimeout(ctx, utils.UserClusterPollInterval, utils.CustomTestTimeout, false, func(ctx context.Context) (bool, error) {
 		return scenario.CheckComponents(ctx, cluster, userClient)
 	})
 	if err != nil {

@@ -209,7 +209,7 @@ func secretNotSyncWhenClusterBeingDeletedTest(t *testing.T) {
 
 	// Wait for cluster to be in deleting state.
 	var err error
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		if err = client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster); err != nil {
 			return false
 		}
@@ -278,7 +278,7 @@ func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T) {
 func expectSecretSync(t *testing.T, clusterNamespace string, expectedSecert *corev1.Secret) {
 	syncedSecret := &corev1.Secret{}
 	var err error
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		if err = client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: expectedSecert.Name}, syncedSecret); err != nil {
 			return false
 		}
@@ -303,7 +303,7 @@ func expectSecretSync(t *testing.T, clusterNamespace string, expectedSecert *cor
 func expectSecretNevertExist(t *testing.T, clusterNamespace string, name string) {
 	syncedSecret := &corev1.Secret{}
 	// Consistently check secret does not exist.
-	if utils.WaitFor(interval, timeout, func() bool {
+	if utils.WaitFor(ctx, interval, timeout, func() bool {
 		return client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: name}, syncedSecret) == nil
 	}) {
 		t.Fatalf("secret should not have been created %v", syncedSecret)
@@ -313,7 +313,7 @@ func expectSecretNevertExist(t *testing.T, clusterNamespace string, name string)
 func expectSecretIsDeleted(t *testing.T, clusterNamespace string, name string) {
 	t.Helper()
 	syncedSecret := &corev1.Secret{}
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		err := client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: name}, syncedSecret)
 		return err != nil && apierrors.IsNotFound(err)
 	}) {
@@ -325,7 +325,7 @@ func expectSecretHasFinalizer(t *testing.T, secret *corev1.Secret) {
 	t.Helper()
 	currentSecret := &corev1.Secret{}
 	var err error
-	if !utils.WaitFor(interval, timeout, func() bool {
+	if !utils.WaitFor(ctx, interval, timeout, func() bool {
 		if err = client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(secret), currentSecret); err != nil {
 			return false
 		}

@@ -25,11 +25,11 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -320,7 +320,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			lbService := &tc.frontproxyService
 			lbService.Name = resources.FrontLoadBalancerServiceName
 			lbService.Namespace = fakeClusterNamespaceName
-			client := fakectrlruntimeclient.NewClientBuilder().WithObjects(apiserverService, lbService).Build()
+			client := fake.NewClientBuilder().WithObjects(apiserverService, lbService).Build()
 
 			seed := &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{

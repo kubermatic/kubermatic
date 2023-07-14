@@ -52,10 +52,10 @@ func NewValidator(client ctrlruntimeclient.Client,
 
 var _ admission.CustomValidator = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	user, ok := obj.(*kubermaticv1.User)
 	if !ok {
-		return errors.New("object is not a User")
+		return nil, errors.New("object is not a User")
 	}
 
 	errs := validation.ValidateUserCreate(user)
@@ -64,18 +64,18 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) erro
 		errs = append(errs, err)
 	}
 
-	return errs.ToAggregate()
+	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	oldUser, ok := oldObj.(*kubermaticv1.User)
 	if !ok {
-		return errors.New("old object is not a User")
+		return nil, errors.New("old object is not a User")
 	}
 
 	newUser, ok := newObj.(*kubermaticv1.User)
 	if !ok {
-		return errors.New("new object is not a User")
+		return nil, errors.New("new object is not a User")
 	}
 
 	errs := validation.ValidateUserUpdate(oldUser, newUser)
@@ -84,16 +84,16 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		errs = append(errs, err)
 	}
 
-	return errs.ToAggregate()
+	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	user, ok := obj.(*kubermaticv1.User)
 	if !ok {
-		return errors.New("object is not a User")
+		return nil, errors.New("object is not a User")
 	}
 
-	return validation.ValidateUserDelete(ctx, user, v.client, v.seedsGetter, v.seedClientGetter)
+	return nil, validation.ValidateUserDelete(ctx, user, v.client, v.seedsGetter, v.seedClientGetter)
 }
 
 func (v *validator) validateProjectRelationship(ctx context.Context, user *kubermaticv1.User, oldUser *kubermaticv1.User) *field.Error {

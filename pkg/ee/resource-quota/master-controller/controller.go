@@ -76,16 +76,12 @@ func Add(mgr manager.Manager,
 	for seedName, seedManager := range seedManagers {
 		reconciler.seedClients[seedName] = seedManager.GetClient()
 
-		resourceQuotaSource := &source.Kind{Type: &kubermaticv1.ResourceQuota{}}
-		if err := resourceQuotaSource.InjectCache(mgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache into resourceQuotaSource for seed %q: %w", seedName, err)
-		}
-		if err := c.Watch(resourceQuotaSource, &handler.EnqueueRequestForObject{}); err != nil {
+		if err := c.Watch(source.Kind(seedManager.GetCache(), &kubermaticv1.ResourceQuota{}), &handler.EnqueueRequestForObject{}); err != nil {
 			return fmt.Errorf("failed to establish watch for resource quotas in seed %q: %w", seedName, err)
 		}
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ResourceQuota{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ResourceQuota{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for resource quota: %w", err)
 	}
 

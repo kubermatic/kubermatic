@@ -143,17 +143,17 @@ func Add(
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	cronJobMapFn := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	cronJobMapFn := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		if ownerRef := metav1.GetControllerOf(a); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
 			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: ownerRef.Name}}}
 		}
 		return nil
 	})
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %w", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &batchv1.CronJob{}}, cronJobMapFn, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &batchv1.CronJob{}), cronJobMapFn, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
 		return fmt.Errorf("failed to watch CronJobs: %w", err)
 	}
 

@@ -32,6 +32,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
@@ -43,6 +44,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
@@ -77,6 +79,9 @@ func main() {
 	flag.Parse()
 
 	log := kubermaticlog.Logger.Named("http-prober")
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(log.Desugar().WithOptions(zap.AddCallerSkip(1))))
 
 	crdCheckers, err := crdCheckersFactory(crdsToWaitFor)
 	if err != nil {

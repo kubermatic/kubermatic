@@ -122,17 +122,14 @@ func Add(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ExternalCluster{}),
 		&handler.EnqueueRequestForObject{},
 		withEventFilter()); err != nil {
 		return fmt.Errorf("failed to create externalcluster watcher: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &batchv1.Job{}},
-		&handler.EnqueueRequestForOwner{
-			IsController: true,
-			OwnerType:    &kubermaticv1.ExternalCluster{},
-		},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &batchv1.Job{}),
+		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &kubermaticv1.ExternalCluster{}, handler.OnlyControllerOwner()),
 		updateEventsOnly(),
 	); err != nil {
 		return fmt.Errorf("failed to create kubeone job watcher: %w", err)
@@ -495,8 +492,8 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 
 	// Wait until the object exists in the cache
 	namespacedName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r, objectLogger(job), namespacedName, job)
-	err = reconcilerwait.PollImmediate(10*time.Millisecond, 10*time.Second, createdObjectIsInCache)
+	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(r, objectLogger(job), namespacedName, job)
+	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, createdObjectIsInCache)
 	if err != nil {
 		return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
 	}
@@ -724,8 +721,8 @@ func (r *reconciler) initiateClusterUpgrade(ctx context.Context,
 
 	// Wait until the object exists in the cache
 	namespacedName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r, objectLogger(job), namespacedName, job)
-	err = reconcilerwait.PollImmediate(10*time.Millisecond, 10*time.Second, createdObjectIsInCache)
+	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(r, objectLogger(job), namespacedName, job)
+	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, createdObjectIsInCache)
 	if err != nil {
 		return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
 	}
@@ -878,8 +875,8 @@ func (r *reconciler) initiateClusterMigration(ctx context.Context,
 
 	// Wait until the object exists in the cache
 	namespacedName := types.NamespacedName{Name: job.Name, Namespace: job.Namespace}
-	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, r, objectLogger(job), namespacedName, job)
-	err = reconcilerwait.PollImmediate(10*time.Millisecond, 10*time.Second, createdObjectIsInCache)
+	createdObjectIsInCache := reconciling.WaitUntilObjectExistsInCacheConditionFunc(r, objectLogger(job), namespacedName, job)
+	err = reconcilerwait.PollUntilContextTimeout(ctx, 10*time.Millisecond, 10*time.Second, true, createdObjectIsInCache)
 	if err != nil {
 		return fmt.Errorf("failed waiting for the cache to contain our newly created object: %w", err)
 	}

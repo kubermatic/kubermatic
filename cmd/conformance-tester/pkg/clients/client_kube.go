@@ -72,7 +72,7 @@ func (c *kubeClient) CreateProject(ctx context.Context, log *zap.SugaredLogger, 
 		return "", fmt.Errorf("failed to create project: %w", err)
 	}
 
-	if err := wait.PollImmediate(ctx, 2*time.Second, 1*time.Minute, func() (error, error) {
+	if err := wait.PollImmediate(ctx, 2*time.Second, 1*time.Minute, func(ctx context.Context) (error, error) {
 		p := &kubermaticv1.Project{}
 		if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(project), p); err != nil {
 			return nil, fmt.Errorf("failed to get project: %w", err)
@@ -108,7 +108,7 @@ func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, 
 		return ctrlruntimeclient.IgnoreNotFound(c.opts.SeedClusterClient.Delete(ctx, project))
 	}
 
-	return wait.PollImmediate(ctx, 1*time.Second, timeout, func() (error, error) {
+	return wait.PollImmediate(ctx, 1*time.Second, timeout, func(ctx context.Context) (error, error) {
 		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(project), project)
 
 		// gone already!
@@ -197,9 +197,9 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
 
-	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(ctx, c.opts.SeedClusterClient, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
-	if err := wait.Poll(ctx, 100*time.Millisecond, 5*time.Second, func() (error, error) {
-		success, err := waiter()
+	waiter := reconciling.WaitUntilObjectExistsInCacheConditionFunc(c.opts.SeedClusterClient, zap.NewNop().Sugar(), ctrlruntimeclient.ObjectKeyFromObject(cluster), cluster)
+	if err := wait.Poll(ctx, 100*time.Millisecond, 5*time.Second, func(ctx context.Context) (error, error) {
+		success, err := waiter(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -229,7 +229,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	// assign them to the new cluster
 	for _, key := range projectKeys {
-		if err := wait.PollImmediate(ctx, 100*time.Millisecond, 10*time.Second, func() (transient error, terminal error) {
+		if err := wait.PollImmediate(ctx, 100*time.Millisecond, 10*time.Second, func(ctx context.Context) (transient error, terminal error) {
 			k := &kubermaticv1.UserSSHKey{}
 			if err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(&key), k); err != nil {
 				return err, nil
@@ -301,7 +301,7 @@ func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.Suga
 
 	c.log(log).Info("Preparing MachineDeployments...")
 	var mds []clusterv1alpha1.MachineDeployment
-	if err := wait.PollImmediate(ctx, 3*time.Second, time.Minute, func() (transient error, terminal error) {
+	if err := wait.PollImmediate(ctx, 3*time.Second, time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		mds, transient = scenario.MachineDeployments(ctx, nodeCount, c.opts.Secrets, cluster, publicKeys.List())
 		return transient, nil
 	}); err != nil {
@@ -310,7 +310,7 @@ func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.Suga
 
 	c.log(log).Info("Creating MachineDeployments...")
 	for _, md := range mds {
-		if err := wait.PollImmediateLog(ctx, log, 5*time.Second, time.Minute, func() (error, error) {
+		if err := wait.PollImmediateLog(ctx, log, 5*time.Second, time.Minute, func(ctx context.Context) (error, error) {
 			return userClusterClient.Create(ctx, &md), nil
 		}); err != nil {
 			return fmt.Errorf("failed to apply MachineDeployments: %w", err)
@@ -329,7 +329,7 @@ func (c *kubeClient) DeleteCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return ctrlruntimeclient.IgnoreNotFound(c.opts.SeedClusterClient.Delete(ctx, cluster))
 	}
 
-	return wait.PollImmediate(ctx, 1*time.Second, timeout, func() (error, error) {
+	return wait.PollImmediate(ctx, 1*time.Second, timeout, func(ctx context.Context) (error, error) {
 		cl := &kubermaticv1.Cluster{}
 		err := c.opts.SeedClusterClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), cl)
 

@@ -64,7 +64,7 @@ func main() {
 			return ctx
 		},
 		Namespace: metav1.NamespaceSystem,
-		NewCache:  usersshkeys.NewCacheFunc(),
+		Cache:     usersshkeys.CacheOptions(),
 	})
 	if err != nil {
 		log.Fatalw("Failed creating user ssh key controller", zap.Error(err))

@@ -84,8 +84,7 @@ func Add(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterName s
 	}
 
 	// Watch for changes to Machines
-	if err = c.Watch(
-		&source.Kind{Type: &clusterv1alpha1.Machine{}}, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
+	if err = c.Watch(source.Kind(userMgr.GetCache(), &clusterv1alpha1.Machine{}), &handler.EnqueueRequestForObject{}, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
 		return fmt.Errorf("failed to establish watch for Machines: %w", err)
 	}
 

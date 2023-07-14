@@ -97,16 +97,15 @@ func newAlertmanagerReconciler(
 	if err != nil {
 		return err
 	}
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Cluster: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Alertmanager{}}, util.EnqueueClusterForNamespacedObject(client)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Alertmanager{}), util.EnqueueClusterForNamespacedObject(client)); err != nil {
 		return fmt.Errorf("failed to watch Alertmanager: %w", err)
 	}
 
-	enqueueClusterForSecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		ctx := context.Background()
+	enqueueClusterForSecret := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		alertmanager := &kubermaticv1.Alertmanager{}
 		if err := client.Get(ctx, types.NamespacedName{
 			Name:      resources.AlertmanagerName,
@@ -131,7 +130,7 @@ func newAlertmanagerReconciler(
 
 		return []reconcile.Request{}
 	})
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, enqueueClusterForSecret); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), enqueueClusterForSecret); err != nil {
 		return fmt.Errorf("failed to watch Secret: %w", err)
 	}
 	return err

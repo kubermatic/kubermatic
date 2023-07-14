@@ -22,15 +22,14 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -55,9 +54,8 @@ func TestReconcile(t *testing.T) {
 				Name: generator.TestFakeCredential,
 			},
 			expectedClusters: nil,
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					getPreset(nil),
 					genCluster("ct2-0", "bob@acme.com", generator.TestFakeCredential),
@@ -72,9 +70,8 @@ func TestReconcile(t *testing.T) {
 				Name: generator.TestFakeCredential,
 			},
 			expectedClusters: []string{"ct2-0", "ct2-2"},
-			seedClient: fakectrlruntimeclient.
+			seedClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					getPreset(&now),
 					genCluster("ct2-0", "bob@acme.com", generator.TestFakeCredential),
@@ -149,5 +146,9 @@ func genCluster(name, userEmail, preset string) *kubermaticv1.Cluster {
 func getPreset(deletionTimestamp *metav1.Time) *kubermaticv1.Preset {
 	preset := generator.GenDefaultPreset()
 	preset.DeletionTimestamp = deletionTimestamp
+	if deletionTimestamp != nil {
+		preset.Finalizers = []string{"dummy"}
+	}
+
 	return preset
 }

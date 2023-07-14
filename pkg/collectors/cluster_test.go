@@ -24,21 +24,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/kubectl/pkg/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
-
-func init() {
-	utilruntime.Must(kubermaticv1.AddToScheme(scheme.Scheme))
-}
 
 func TestClusterLabelsMetric(t *testing.T) {
 	kubermaticFakeClient := fake.
 		NewClientBuilder().
-		WithScheme(scheme.Scheme).
 		WithObjects(&kubermaticv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cluster1",

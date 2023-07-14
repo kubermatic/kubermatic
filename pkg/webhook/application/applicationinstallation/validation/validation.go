@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-logr/logr"
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
 	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,31 +37,22 @@ import (
 
 // AdmissionHandler for validating ApplicationInstallation CRD.
 type AdmissionHandler struct {
-	log     logr.Logger
+	log     *zap.SugaredLogger
 	decoder *admission.Decoder
-
-	client ctrlruntimeclient.Client
+	client  ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new validation AdmissionHandler.
-func NewAdmissionHandler(client ctrlruntimeclient.Client) *AdmissionHandler {
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, client ctrlruntimeclient.Client) *AdmissionHandler {
 	return &AdmissionHandler{
-		client: client,
+		log:     log,
+		decoder: admission.NewDecoder(scheme),
+		client:  client,
 	}
 }
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/validate-application-installation", &webhook.Admission{Handler: h})
-}
-
-func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("application-installation-validation-handler")
-	return nil
-}
-
-func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
-	h.decoder = d
-	return nil
 }
 
 func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {

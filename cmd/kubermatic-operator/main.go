@@ -29,9 +29,9 @@ import (
 	seedinit "k8c.io/kubermatic/v2/pkg/controller/operator/seed-init"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/pprof"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -55,7 +55,7 @@ func main() {
 
 	klog.InitFlags(nil)
 
-	pprofOpts := &pprof.Opts{}
+	pprofOpts := &flagopts.PProf{}
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -94,13 +94,10 @@ func main() {
 		MetricsBindAddress: opt.internalAddr,
 		LeaderElection:     opt.enableLeaderElection,
 		LeaderElectionID:   "operator.kubermatic.k8c.io",
+		PprofBindAddress:   pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create Controller Manager instance", zap.Error(err))
-	}
-
-	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
 	}
 
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
@@ -128,7 +125,7 @@ func main() {
 
 	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-	if err := masterctrl.Add(ctx, mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
+	if err := masterctrl.Add(mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
@@ -138,7 +135,6 @@ func main() {
 
 	seedOperatorControllerFactory := func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return seedctrl.ControllerName, seedctrl.Add(
-			ctx,
 			log,
 			opt.namespace,
 			mgr,

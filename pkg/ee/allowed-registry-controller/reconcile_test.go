@@ -35,16 +35,15 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -64,9 +63,8 @@ func TestReconcile(t *testing.T) {
 			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", false)},
 			expectedCT:         genConstraintTemplate(),
 			expectedConstraint: genWRConstraint(sets.New("quay.io")),
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genAllowedRegistry("quay", "quay.io", false)).
 				Build(),
 		},
@@ -75,9 +73,8 @@ func TestReconcile(t *testing.T) {
 			allowedRegistry:    []*kubermaticv1.AllowedRegistry{genAllowedRegistry("quay", "quay.io", true)},
 			expectedCT:         genConstraintTemplate(),
 			expectedConstraint: genWRConstraint(sets.New[string]()),
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(genAllowedRegistry("quay", "quay.io", true),
 					genConstraintTemplate(), genWRConstraint(sets.New("quay.io"))).
 				Build(),
@@ -90,9 +87,8 @@ func TestReconcile(t *testing.T) {
 			},
 			expectedCT:         genConstraintTemplate(),
 			expectedConstraint: genWRConstraint(sets.New("quay.io", "https://myregistry.com")),
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					genAllowedRegistry("quay", "quay.io", false),
 					genAllowedRegistry("myreg", "https://myregistry.com", false)).
@@ -107,9 +103,8 @@ func TestReconcile(t *testing.T) {
 			allowedRegistryUpdate: genAllowedRegistry("quay", "quay.io-edited", false),
 			expectedCT:            genConstraintTemplate(),
 			expectedConstraint:    genWRConstraint(sets.New("quay.io-edited", "https://myregistry.com")),
-			masterClient: fakectrlruntimeclient.
+			masterClient: fake.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(
 					genAllowedRegistry("quay", "quay.io", false),
 					genAllowedRegistry("myreg", "https://myregistry.com", false)).

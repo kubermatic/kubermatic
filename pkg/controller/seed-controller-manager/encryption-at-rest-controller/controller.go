@@ -107,7 +107,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &corev1.Secret{}},
+		source.Kind(mgr.GetCache(), &corev1.Secret{}),
 		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()),
 		predicateutil.ByName(resources.EncryptionConfigurationSecretName),
 	); err != nil {
@@ -115,7 +115,7 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &appsv1.Deployment{}},
+		source.Kind(mgr.GetCache(), &appsv1.Deployment{}),
 		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()),
 		predicateutil.ByName(resources.ApiserverDeploymentName),
 	); err != nil {
@@ -123,14 +123,14 @@ func Add(
 	}
 
 	if err := c.Watch(
-		&source.Kind{Type: &batchv1.Job{}},
+		source.Kind(mgr.GetCache(), &batchv1.Job{}),
 		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()),
 		predicateutil.ByLabel(resources.AppLabelKey, encryptionresources.AppLabelValue),
 	); err != nil {
 		return fmt.Errorf("failed to create watcher for batchv1.Job: %w", err)
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
+	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}, predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		cluster := o.(*kubermaticv1.Cluster)
 		return cluster.IsEncryptionEnabled() || cluster.IsEncryptionActive()
 	}))

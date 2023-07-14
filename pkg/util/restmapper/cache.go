@@ -46,11 +46,16 @@ func (c *Cache) Client(cfg *rest.Config) (ctrlruntimeclient.Client, error) {
 
 	rawMapper, exists := c.cache.Load(key)
 	if !exists {
-		var err error
-		mapper, err = apiutil.NewDynamicRESTMapper(cfg)
+		httpClient, err := rest.HTTPClientFor(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create HTTP client: %w", err)
+		}
+
+		mapper, err = apiutil.NewDynamicRESTMapper(cfg, httpClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create restMapper: %w", err)
 		}
+
 		c.cache.Store(key, mapper)
 	} else {
 		var ok bool

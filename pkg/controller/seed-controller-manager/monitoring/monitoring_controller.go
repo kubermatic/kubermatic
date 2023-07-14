@@ -141,12 +141,12 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}
 
-	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{})
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

@@ -101,7 +101,6 @@ const (
 // pods to allow access to monitoring applications inside the seed
 // clusters, like Prometheus and Grafana.
 func Add(
-	ctx context.Context,
 	mgr manager.Manager,
 	numWorkers int,
 	log *zap.SugaredLogger,
@@ -134,12 +133,12 @@ func Add(
 	ownedPredicate := predicateutil.ByLabel(ManagedByLabel, ControllerName)
 
 	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), seed), &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
 	}
 
 	// watch related resources
-	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("failed to get seeds", zap.Error(err))
@@ -164,7 +163,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
+		if err := c.Watch(source.Kind(mgr.GetCache(), t), eventHandler, namespacePredicate, ownedPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
 		}
 	}

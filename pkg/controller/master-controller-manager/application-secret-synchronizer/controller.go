@@ -75,7 +75,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(SecretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
+	if err := c.Watch(source.Kind(masterManager.GetCache(), &corev1.Secret{}), &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(SecretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
