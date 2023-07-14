@@ -244,10 +244,10 @@ func GetVSphereCloudConfig(
 	datastore := dc.Spec.VSphere.DefaultDatastore
 	// if a datastore is provided at cluster level override the default
 	// datastore provided at datacenter level.
-	// Note that in case a DatastoreCluster is provided at cluster level we
-	// still use DefaultDatastore specified at datacenter level.
 	if cluster.Spec.Cloud.VSphere.Datastore != "" {
 		datastore = cluster.Spec.Cloud.VSphere.Datastore
+	} else if cluster.Spec.Cloud.VSphere.DatastoreCluster != "" {
+		datastore = cluster.Spec.Cloud.VSphere.DatastoreCluster
 	}
 
 	// Originally, we have been setting cluster-id to the vSphere Compute Cluster name
