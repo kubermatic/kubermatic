@@ -38,7 +38,7 @@ import (
 
 const (
 	name    = "etcd"
-	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
+	dataDir = "/var/run/etcd/pod_$(POD_NAME)/"
 
 	memberListPattern = "etcd-%d=http://etcd-%d.%s.%s.svc.cluster.local:2380"
 )
@@ -222,7 +222,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				}
 
 				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "MASTER_ENDPOINT", Value: fmt.Sprintf("https://etcd-0.%s.%s.svc.cluster.local:2379", resources.EtcdServiceName, data.Cluster().Status.NamespaceName)})
-				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "ETCD_INITIAL_CLUSTER", Value: strings.Join(endpoints, ",")})
+				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "INITIAL_CLUSTER", Value: strings.Join(endpoints, ",")})
 			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
@@ -458,15 +458,6 @@ func getClusterSize(settings kubermaticv1.EtcdStatefulSetSettings) int32 {
 	return *settings.ClusterSize
 }
 
-type commandTplData struct {
-	ServiceName           string
-	Namespace             string
-	Token                 string
-	DataDir               string
-	Migrate               bool
-	EnableCorruptionCheck bool
-}
-
 func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) []string {
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
@@ -490,23 +481,25 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 	command := []string{
 		"/usr/local/bin/etcd",
 		"--name",
-		"${POD_NAME}",
+		"$(POD_NAME)",
 		"--data-dir",
 		dataDir,
+		"--initial-cluster",
+		"$(INITIAL_CLUSTER)",
 		"--initial-cluster-token",
 		cluster.Name,
 		"--initial-cluster-state",
 		"new",
 		"--advertise-client-urls",
-		fmt.Sprintf("https://${POD_NAME}.%s.%s.svc.cluster.local:2379,https://${POD_IP}:2379", resources.EtcdServiceName, cluster.Status.NamespaceName),
+		fmt.Sprintf("https://$(POD_NAME).%s.%s.svc.cluster.local:2379,https://$(POD_IP):2379", resources.EtcdServiceName, cluster.Status.NamespaceName),
 		"--listen-client-urls",
-		"https://${POD_IP}:2379,https://127.0.0.1:2379",
+		"https://$(POD_IP):2379,https://127.0.0.1:2379",
 		"--listen-peer-urls",
-		"http://${POD_IP}:2380",
+		"http://$(POD_IP):2380",
 		"--listen-metrics-urls",
-		"http://${POD_IP}:2378,http://127.0.0.1:2378",
+		"http://$(POD_IP):2378,http://127.0.0.1:2378",
 		"--initial-advertise-peer-urls",
-		fmt.Sprintf("http://${POD_NAME}.%s.%s.svc.cluster.local:2380", resources.EtcdServiceName, cluster.Status.NamespaceName),
+		fmt.Sprintf("http://$(POD_NAME).%s.%s.svc.cluster.local:2380", resources.EtcdServiceName, cluster.Status.NamespaceName),
 		"--trusted-ca-file",
 		"/etc/etcd/pki/ca/ca.crt",
 		"--client-cert-auth",
@@ -519,7 +512,7 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 	}
 
 	if enableCorruptionCheck {
-		command = append(command, "--experimental-initial-corrupt-check", "true")
+		command = append(command, "--experimental-initial-corrupt-check")
 		command = append(command, "--experimental-corrupt-check-time", "240m")
 	}
 

@@ -63,7 +63,7 @@ func TestGetEtcdCommand(t *testing.T) {
 			},
 			enableCorruptionCheck: true,
 			launcherEnabled:       false,
-			expectedArgs:          18,
+			expectedArgs:          33,
 		},
 	}
 
