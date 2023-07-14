@@ -210,13 +210,13 @@ func TestReconcileCluster(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Name:            "test-pool-2",
 							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
-							ResourceVersion: "2",
+							ResourceVersion: "1",
 							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-2"}},
 						},
 						Spec: kubermaticv1.IPAMAllocationSpec{
 							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
 							DC:   "test-dc-1",
-							CIDR: "192.168.1.16/28",
+							CIDR: "192.168.1.0/28",
 						},
 					},
 					{

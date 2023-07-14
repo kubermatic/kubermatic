@@ -235,7 +235,15 @@ func (v *validator) checkExclusionsNotAllocated(ctx context.Context, exclusions 
 			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			for _, exclusion := range exclusions {
-				if string(ipamAllocation.Spec.CIDR) == exclusion {
+				excludePrefixIP, _, err := net.ParseCIDR(exclusion)
+				if err != nil {
+					return err
+				}
+				_, allocatedSubnet, err := net.ParseCIDR(string(ipamAllocation.Spec.CIDR))
+				if err != nil {
+					return err
+				}
+				if string(ipamAllocation.Spec.CIDR) == exclusion || allocatedSubnet.Contains(excludePrefixIP) {
 					return errExclusionConflict
 				}
 			}

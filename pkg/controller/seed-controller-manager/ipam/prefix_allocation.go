@@ -61,24 +61,36 @@ func checkPrefixAllocation(currentAllocatedCIDR, poolCIDR string, excludePrefixe
 	return nil
 }
 
-func findFirstFreeSubnetOfPool(poolName, poolCIDR string, subnetPrefix int, dcIPAMPoolUsageMap sets.Set[string]) (string, error) {
+func findFirstFreeSubnetOfPool(poolName, poolCIDR, currentAllocatedCIDR string, subnetPrefix int, dcIPAMPoolUsageMap sets.Set[string]) (string, error) {
 	poolIP, poolSubnet, err := net.ParseCIDR(poolCIDR)
 	if err != nil {
-		return "", err
+		return currentAllocatedCIDR, err
 	}
 
 	poolPrefix, bits := poolSubnet.Mask.Size()
 	if subnetPrefix < poolPrefix {
-		return "", errors.New("invalid prefix for subnet")
+		return currentAllocatedCIDR, errors.New("invalid prefix for subnet")
 	}
 	if subnetPrefix > bits {
-		return "", errors.New("invalid prefix for subnet")
+		return currentAllocatedCIDR, errors.New("invalid prefix for subnet")
 	}
 
 	_, possibleSubnet, err := net.ParseCIDR(fmt.Sprintf("%s/%d", poolIP.Mask(poolSubnet.Mask), subnetPrefix))
 	if err != nil {
-		return "", err
+		return currentAllocatedCIDR, err
 	}
+
+	if currentAllocatedCIDR != "" {
+		_, currentAllocatedSubnet, err := net.ParseCIDR(currentAllocatedCIDR)
+		if err != nil {
+			return currentAllocatedCIDR, err
+		}
+		currentAllocatedPrefix, _ := currentAllocatedSubnet.Mask.Size()
+		if subnetPrefix == currentAllocatedPrefix {
+			return currentAllocatedCIDR, nil
+		}
+	}
+
 	for ; poolSubnet.Contains(possibleSubnet.IP); possibleSubnet, _ = nextSubnet(possibleSubnet, subnetPrefix) {
 		if !dcIPAMPoolUsageMap.Has(possibleSubnet.String()) {
 			dcIPAMPoolUsageMap.Insert(possibleSubnet.String())
@@ -86,5 +98,5 @@ func findFirstFreeSubnetOfPool(poolName, poolCIDR string, subnetPrefix int, dcIP
 		}
 	}
 
-	return "", fmt.Errorf("there is no free subnet available for IPAM Pool \"%s\"", poolName)
+	return currentAllocatedCIDR, fmt.Errorf("there is no free subnet available for IPAM Pool \"%s\"", poolName)
 }
