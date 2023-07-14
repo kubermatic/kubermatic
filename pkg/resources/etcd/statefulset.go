@@ -222,8 +222,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				}
 
 				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "MASTER_ENDPOINT", Value: fmt.Sprintf("https://etcd-0.%s.%s.svc.cluster.local:2379", resources.EtcdServiceName, data.Cluster().Status.NamespaceName)})
-				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "INITIAL_STATE", Value: "new"})
-				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "INITIAL_CLUSTER", Value: strings.Join(endpoints, ",")})
+				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "ETCD_INITIAL_CLUSTER", Value: strings.Join(endpoints, ",")})
 			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
@@ -478,9 +477,11 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 			"--api-version", "$(ETCDCTL_API)",
 			"--token", "$(TOKEN)",
 		}
+
 		if enableCorruptionCheck {
 			command = append(command, "--enable-corruption-check")
 		}
+
 		return command
 	}
 
@@ -488,26 +489,38 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 
 	command := []string{
 		"/usr/local/bin/etcd",
-		"--name=${POD_NAME}",
-		fmt.Sprintf("--data-dir=%s", dataDir),
-		"--initial-cluster=${INITIAL_CLUSTER}",
-		fmt.Sprintf("--initial-cluster-token=%s", cluster.Name),
-		"--initial-cluster-state=${INITIAL_STATE}",
-		fmt.Sprintf("--advertise-client-urls=https://${POD_NAME}.%s.%s.svc.cluster.local:2379,https://${POD_IP}:2379", resources.EtcdServiceName, cluster.Status.NamespaceName),
-		"--listen-client-urls=https://${POD_IP}:2379,https://127.0.0.1:2379",
-		"--listen-peer-urls=http://${POD_IP}:2380",
-		"--listen-metrics-urls=http://${POD_IP}:2378,http://127.0.0.1:2378",
-		fmt.Sprintf("--initial-advertise-peer-urls=http://${POD_NAME}.%s.%s.svc.cluster.local:2380", resources.EtcdServiceName, cluster.Status.NamespaceName),
-		"--trusted-ca-file=/etc/etcd/pki/ca/ca.crt",
+		"--name",
+		"${POD_NAME}",
+		"--data-dir",
+		dataDir,
+		"--initial-cluster-token",
+		cluster.Name,
+		"--initial-cluster-state",
+		"new",
+		"--advertise-client-urls",
+		fmt.Sprintf("https://${POD_NAME}.%s.%s.svc.cluster.local:2379,https://${POD_IP}:2379", resources.EtcdServiceName, cluster.Status.NamespaceName),
+		"--listen-client-urls",
+		"https://${POD_IP}:2379,https://127.0.0.1:2379",
+		"--listen-peer-urls",
+		"http://${POD_IP}:2380",
+		"--listen-metrics-urls",
+		"http://${POD_IP}:2378,http://127.0.0.1:2378",
+		"--initial-advertise-peer-urls",
+		fmt.Sprintf("http://${POD_NAME}.%s.%s.svc.cluster.local:2380", resources.EtcdServiceName, cluster.Status.NamespaceName),
+		"--trusted-ca-file",
+		"/etc/etcd/pki/ca/ca.crt",
 		"--client-cert-auth",
-		"--cert-file=/etc/etcd/pki/tls/etcd-tls.crt",
-		"--key-file /etc/etcd/pki/tls/etcd-tls.key",
-		"--auto-compaction-retention=8",
+		"--cert-file",
+		"/etc/etcd/pki/tls/etcd-tls.crt",
+		"--key-file",
+		"/etc/etcd/pki/tls/etcd-tls.key",
+		"--auto-compaction-retention",
+		"8",
 	}
 
 	if enableCorruptionCheck {
-		command = append(command, "--experimental-initial-corrupt-check=true")
-		command = append(command, "--experimental-corrupt-check-time=240m")
+		command = append(command, "--experimental-initial-corrupt-check", "true")
+		command = append(command, "--experimental-corrupt-check-time", "240m")
 	}
 
 	return command
