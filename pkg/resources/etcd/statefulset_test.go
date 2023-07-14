@@ -63,24 +63,18 @@ func TestGetEtcdCommand(t *testing.T) {
 			},
 			enableCorruptionCheck: true,
 			launcherEnabled:       false,
-			expectedArgs:          3,
+			expectedArgs:          33,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			args, err := getEtcdCommand(test.cluster, test.enableCorruptionCheck, test.launcherEnabled)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			args := getEtcdCommand(test.cluster, test.enableCorruptionCheck, test.launcherEnabled)
 
 			if len(args) != test.expectedArgs {
 				t.Fatalf("got less/more arguments than expected. got %d expected %d: %s", len(args), test.expectedArgs, strings.Join(args, " "))
 			}
 			cmd := strings.Join(args, " ")
-			if !test.launcherEnabled {
-				cmd = args[2]
-			}
 
 			testhelper.CompareOutput(t, fmt.Sprintf("etcd-command-%s", test.name), cmd, *update, ".sh")
 		})

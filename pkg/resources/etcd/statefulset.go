@@ -17,13 +17,11 @@ limitations under the License.
 package etcd
 
 import (
-	"bytes"
 	"fmt"
 	"strconv"
-	"text/template"
+	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/Masterminds/sprig/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -40,7 +38,9 @@ import (
 
 const (
 	name    = "etcd"
-	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
+	dataDir = "/var/run/etcd/pod_$(POD_NAME)/"
+
+	memberListPattern = "etcd-%d=http://etcd-%d.%s.%s.svc.cluster.local:2380"
 )
 
 var (
@@ -214,19 +214,24 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				if enableTLSOnly {
 					etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "PEER_TLS_MODE", Value: "strict"})
 				}
+			} else {
+				endpoints := []string{}
+
+				for i := 0; i < 3; i++ {
+					endpoints = append(endpoints, fmt.Sprintf(memberListPattern, i, i, resources.EtcdServiceName, data.Cluster().Status.NamespaceName))
+				}
+
+				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "MASTER_ENDPOINT", Value: fmt.Sprintf("https://etcd-0.%s.%s.svc.cluster.local:2379", resources.EtcdServiceName, data.Cluster().Status.NamespaceName)})
+				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "INITIAL_CLUSTER", Value: strings.Join(endpoints, ",")})
 			}
 
-			etcdStartCmd, err := getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled)
-			if err != nil {
-				return nil, err
-			}
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name: resources.EtcdStatefulSetName,
 
 					Image:           registry.Must(data.RewriteImage(resources.RegistryGCR + "/etcd-development/etcd:" + imageTag)),
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         etcdStartCmd,
+					Command:         getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled),
 					Env:             etcdEnv,
 					Ports:           etcdPorts,
 					ReadinessProbe: &corev1.Probe{
@@ -414,7 +419,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// 	return "v3.4.3"
 	// }
 
-	return "v3.5.6"
+	return "v3.5.9"
 }
 
 func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet) int32 {
@@ -453,16 +458,7 @@ func getClusterSize(settings kubermaticv1.EtcdStatefulSetSettings) int32 {
 	return *settings.ClusterSize
 }
 
-type commandTplData struct {
-	ServiceName           string
-	Namespace             string
-	Token                 string
-	DataDir               string
-	Migrate               bool
-	EnableCorruptionCheck bool
-}
-
-func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
+func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) []string {
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
 			"run",
@@ -472,65 +468,53 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 			"--api-version", "$(ETCDCTL_API)",
 			"--token", "$(TOKEN)",
 		}
+
 		if enableCorruptionCheck {
 			command = append(command, "--enable-corruption-check")
 		}
-		return command, nil
+
+		return command
 	}
 
-	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %w", err)
+	// construct command for "plain" etcd usage.
+
+	command := []string{
+		"/usr/local/bin/etcd",
+		"--name",
+		"$(POD_NAME)",
+		"--data-dir",
+		dataDir,
+		"--initial-cluster",
+		"$(INITIAL_CLUSTER)",
+		"--initial-cluster-token",
+		cluster.Name,
+		"--initial-cluster-state",
+		"new",
+		"--advertise-client-urls",
+		fmt.Sprintf("https://$(POD_NAME).%s.%s.svc.cluster.local:2379,https://$(POD_IP):2379", resources.EtcdServiceName, cluster.Status.NamespaceName),
+		"--listen-client-urls",
+		"https://$(POD_IP):2379,https://127.0.0.1:2379",
+		"--listen-peer-urls",
+		"http://$(POD_IP):2380",
+		"--listen-metrics-urls",
+		"http://$(POD_IP):2378,http://127.0.0.1:2378",
+		"--initial-advertise-peer-urls",
+		fmt.Sprintf("http://$(POD_NAME).%s.%s.svc.cluster.local:2380", resources.EtcdServiceName, cluster.Status.NamespaceName),
+		"--trusted-ca-file",
+		"/etc/etcd/pki/ca/ca.crt",
+		"--client-cert-auth",
+		"--cert-file",
+		"/etc/etcd/pki/tls/etcd-tls.crt",
+		"--key-file",
+		"/etc/etcd/pki/tls/etcd-tls.key",
+		"--auto-compaction-retention",
+		"8",
 	}
 
-	tplData := commandTplData{
-		ServiceName:           resources.EtcdServiceName,
-		Token:                 cluster.Name,
-		Namespace:             cluster.Status.NamespaceName,
-		DataDir:               dataDir,
-		EnableCorruptionCheck: enableCorruptionCheck,
+	if enableCorruptionCheck {
+		command = append(command, "--experimental-initial-corrupt-check")
+		command = append(command, "--experimental-corrupt-check-time", "240m")
 	}
 
-	buf := bytes.Buffer{}
-	if err := tpl.Execute(&buf, tplData); err != nil {
-		return nil, err
-	}
-
-	return []string{
-		"/bin/sh",
-		"-ec",
-		buf.String(),
-	}, nil
+	return command
 }
-
-const (
-	etcdStartCommandTpl = `export MASTER_ENDPOINT="https://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
-
-export INITIAL_STATE="new"
-export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-
-echo "initial-state: ${INITIAL_STATE}"
-echo "initial-cluster: ${INITIAL_CLUSTER}"
-
-exec /usr/local/bin/etcd \
-    --name=${POD_NAME} \
-    --data-dir="{{ .DataDir }}" \
-    --initial-cluster=${INITIAL_CLUSTER} \
-    --initial-cluster-token="{{ .Token }}" \
-    --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls "https://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379,https://${POD_IP}:2379" \
-    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
-    --listen-peer-urls "http://${POD_IP}:2380" \
-    --listen-metrics-urls "http://${POD_IP}:2378,http://127.0.0.1:2378" \
-    --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
-    --client-cert-auth \
-    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
-    --key-file /etc/etcd/pki/tls/etcd-tls.key \
-{{- if .EnableCorruptionCheck }}
-    --experimental-initial-corrupt-check=true \
-    --experimental-corrupt-check-time=240m \
-{{- end }}
-    --auto-compaction-retention=8
-`
-)

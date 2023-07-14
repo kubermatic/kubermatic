@@ -62,10 +62,10 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.20.0
 	github.com/vmware/govmomi v0.30.5
 	go.anx.io/go-anxcloud v0.5.3
-	go.etcd.io/etcd/api/v3 v3.5.6
-	go.etcd.io/etcd/client/pkg/v3 v3.5.6
-	go.etcd.io/etcd/client/v3 v3.5.6
-	go.etcd.io/etcd/etcdutl/v3 v3.5.6
+	go.etcd.io/etcd/api/v3 v3.5.9
+	go.etcd.io/etcd/client/pkg/v3 v3.5.9
+	go.etcd.io/etcd/client/v3 v3.5.9
+	go.etcd.io/etcd/etcdutl/v3 v3.5.9
 	go.uber.org/zap v1.24.0
 	golang.org/x/crypto v0.10.0
 	golang.org/x/oauth2 v0.9.0
@@ -311,11 +311,11 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43 // indirect
 	github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f // indirect
-	go.etcd.io/bbolt v1.3.6 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.6 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.6 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.6 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.6 // indirect
+	go.etcd.io/bbolt v1.3.7 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.9 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.9 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.9 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.9 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib v0.20.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.37.0 // indirect
