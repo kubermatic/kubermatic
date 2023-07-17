@@ -29,12 +29,12 @@ export VAULT_VALUES_FIELD=hamburg-values.yaml
 # per-stack customizations
 case ${DEPLOY_STACK} in
 kubermatic)
-  ./hack/ci/push-images.sh
+  ./hack/ci/release-images.sh
   ;;
 
 usercluster-mla)
   export VAULT_VALUES_FIELD=hamburg-mla-values.yaml
-  NO_DOCKER_IMAGES=true ./hack/ci/push-images.sh
+  NO_IMAGES=true ./hack/ci/release-images.sh
   ;;
 
 esac

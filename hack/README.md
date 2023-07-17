@@ -37,9 +37,9 @@ run manually whenever the s3-exporter is updated.
 Releases a new quay.io/kubermatic/alertmanager-authorization-server Docker image; must be
 run manually whenever the alertmanager-authorization-server is updated.
 
-## release-docker-images.sh
+## release-images.sh
 
-Builds and pushes all KKP Docker images:
+Builds and pushes all KKP container images:
 
 * quay.io/kubermatic/kubermatic[-ee]
 * quay.io/kubermatic/addons
@@ -50,7 +50,7 @@ Builds and pushes all KKP Docker images:
 * quay.io/kubermatic/network-interface-manager
 
 The images are tagged with all arguments given to the script, i.e
-`./release-docker-images.sh foo bar` will tag `kubermatic:foo` and
+`./release-images.sh foo bar` will tag `kubermatic:foo` and
 `kubermatic:bar`.
 
 Before running this script, all binaries in `cmd/` must have been
