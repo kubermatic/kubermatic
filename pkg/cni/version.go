@@ -53,6 +53,7 @@ var (
 			"v1.12",
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
 			// See pkg/cni/cilium docs for details on introducing a new version.
+			"1.13.3", // also affected by CVE-2023-34242, but kept here because 1.13.4 breaks IPSec support
 			"1.13.4",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
@@ -64,7 +65,6 @@ var (
 		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.8", "v3.19", "v3.20", "v3.21", "v3.22"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"1.13.0", // CVE-2023-34242
-			"1.13.3", // CVE-2023-34242
 		),
 	}
 )
