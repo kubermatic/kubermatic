@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"github.com/cilium/cilium/api/v1/observer"
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -54,6 +55,7 @@ import (
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -82,7 +84,8 @@ func TestInExistingCluster(t *testing.T) {
 		return
 	}
 
-	logger := log.NewFromOptions(logOptions).Sugar()
+	rawLog := log.NewFromOptions(logOptions)
+	logger := rawLog.Sugar()
 
 	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
 	if err != nil {
@@ -94,11 +97,15 @@ func TestInExistingCluster(t *testing.T) {
 		t.Fatalf("failed to build ctrlruntime client: %v", err)
 	}
 
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+
 	testUserCluster(context.Background(), t, logger, client)
 }
 
 func TestCiliumClusters(t *testing.T) {
-	logger := log.NewFromOptions(logOptions).Sugar()
+	rawLog := log.NewFromOptions(logOptions)
+	logger := rawLog.Sugar()
 
 	if err := credentials.Parse(); err != nil {
 		t.Fatalf("Failed to get credentials: %v", err)
@@ -113,6 +120,9 @@ func TestCiliumClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to build ctrlruntime client: %v", err)
 	}
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	tests := []struct {
 		name      string
