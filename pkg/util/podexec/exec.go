@@ -27,11 +27,22 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
 // ExecuteCommand executes the given command in the chosen container of a pod.
 func ExecuteCommand(ctx context.Context, restConfig *rest.Config, pod types.NamespacedName, container string, command ...string) (string, string, error) {
-	restClient, err := rest.RESTClientFor(restConfig)
+	gvk, err := apiutil.GVKForObject(&corev1.Pod{}, scheme.Scheme)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get pod GVK: %w", err)
+	}
+
+	httpClient, err := rest.HTTPClientFor(restConfig)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create HTTP client: %w", err)
+	}
+
+	restClient, err := apiutil.RESTClientForGVK(gvk, false, restConfig, scheme.Codecs, httpClient)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create REST client: %w", err)
 	}
