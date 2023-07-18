@@ -26,51 +26,63 @@ source hack/lib.sh
 GIT_HEAD_HASH="$(git rev-parse HEAD)"
 GIT_HEAD_TAG="$(git tag -l "$PULL_BASE_REF")"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
-if [ "$GIT_BRANCH" == "main" ]; then
-  # we only want to create the "latest" tag if we're building the main branch
-  TAGS="$TAGS latest"
-elif [[ "$GIT_BRANCH" =~ release/v[0-9]+.* ]]; then
-  # the dashboard e2e jobs in a release branch rely on a "latest" tag being
-  # available for KKP, so we turn "release/v2.21" into "v2.21-latest"
-  RELEASE_LATEST="${GIT_BRANCH#release/}"
-  RELEASE_LATEST="${RELEASE_LATEST//\//-}-latest"
+# if no explicit (usually temporary) tags are given, default to tagging based on Git tags and hashes
+if [ -z "${TAGS:-}" ]; then
+  TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
-  TAGS="$TAGS $RELEASE_LATEST"
+  if [ "$GIT_BRANCH" == "main" ]; then
+    # we only want to create the "latest" tag if we're building the main branch
+    TAGS="$TAGS latest"
+  elif [[ "$GIT_BRANCH" =~ release/v[0-9]+.* ]]; then
+    # the dashboard e2e jobs in a release branch rely on a "latest" tag being
+    # available for KKP, so we turn "release/v2.21" into "v2.21-latest"
+    RELEASE_LATEST="${GIT_BRANCH#release/}"
+    RELEASE_LATEST="${RELEASE_LATEST//\//-}-latest"
+
+    TAGS="$TAGS $RELEASE_LATEST"
+  fi
 fi
 
 if [ -z "${NO_DOCKER_IMAGES:-}" ]; then
-  echodate "Logging into Quay"
   start_docker_daemon_ci
-  retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-  echodate "Successfully logged into Quay"
+
+  if [ -z "${NO_PUSH:-}" ]; then
+    echodate "Logging into Quay..."
+    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+    echodate "Successfully logged into Quay."
+  else
+    echodate "Skipping Quay login because \$NO_PUSH is set."
+  fi
 fi
 
 # prepare special variables that will be injected into the Kubermatic Operator;
 # use the latest tagged version of the dashboard when we ourselves are a tagged
 # release
 export KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
-export UIDOCKERTAG="$KUBERMATICDOCKERTAG"
 
-if [ -z "$GIT_HEAD_TAG" ]; then
-  # in presubmits, we check against the PULL_BASE_REF (which is incidentally also
-  # only defined in presubmits); in postsubmits we check against the current branch
-  UIBRANCH="${PULL_BASE_REF:-$GIT_BRANCH}"
+if [ -z "${UIDOCKERTAG:-}" ]; then
+  export UIDOCKERTAG="$KUBERMATICDOCKERTAG"
 
-  # the dashboard only publishes Docker images for tagged releases and all
-  # main branch revisions; this means for Kubermatic tests in release branches
-  # we need to use the latest tagged dashboard of the same branch
-  if [ "$UIBRANCH" == "main" ]; then
-    UIDOCKERTAG="$(get_latest_dashboard_hash "${UIBRANCH}")"
+  if [ -z "$GIT_HEAD_TAG" ]; then
+    # in presubmits, we check against the PULL_BASE_REF (which is incidentally also
+    # only defined in presubmits); in postsubmits we check against the current branch
+    UIBRANCH="${PULL_BASE_REF:-$GIT_BRANCH}"
+
+    # the dashboard only publishes container images for tagged releases and all
+    # main branch revisions; this means for Kubermatic tests in release branches
+    # we need to use the latest tagged dashboard of the same branch
+    if [ "$UIBRANCH" == "main" ]; then
+      UIDOCKERTAG="$(get_latest_dashboard_hash "${UIBRANCH}")"
+    else
+      UIDOCKERTAG="$(get_latest_dashboard_tag "${UIBRANCH}")"
+    fi
   else
-    UIDOCKERTAG="$(get_latest_dashboard_tag "${UIBRANCH}")"
-  fi
-else
-  if [ -z "$(check_dashboard_tag "$GIT_HEAD_TAG")" ]; then
-    echo "Kubermatic was tagged as $GIT_HEAD_TAG, but this tag does not exist for the dashboard."
-    echo "Please release a new version for the dashboard and re-run this job."
-    exit 1
+    if [ -z "$(check_dashboard_tag "$GIT_HEAD_TAG")" ]; then
+      echo "Kubermatic was tagged as $GIT_HEAD_TAG, but this tag does not exist for the dashboard."
+      echo "Please release a new version for the dashboard and re-run this job."
+      exit 1
+    fi
   fi
 fi
 
