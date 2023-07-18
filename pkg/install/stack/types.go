@@ -29,6 +29,7 @@ import (
 
 	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -36,6 +37,7 @@ type DeployOptions struct {
 	HelmClient                 helm.Client
 	HelmValues                 *yamled.Document
 	KubeClient                 ctrlruntimeclient.Client
+	RestConfig                 *rest.Config
 	StorageClassProvider       string
 	KubermaticConfiguration    *kubermaticv1.KubermaticConfiguration
 	RawKubermaticConfiguration *unstructured.Unstructured

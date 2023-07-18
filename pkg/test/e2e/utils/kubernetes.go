@@ -17,13 +17,9 @@ limitations under the License.
 package utils
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
@@ -31,16 +27,16 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/podexec"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/types"
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/util/podutils"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,11 +49,10 @@ const (
 )
 
 type TestPodConfig struct {
-	Log           *zap.SugaredLogger
-	Namespace     string
-	Client        ctrlruntimeclient.Client
-	PodRestClient rest.Interface
-	Config        *rest.Config
+	Log       *zap.SugaredLogger
+	Namespace string
+	Client    ctrlruntimeclient.Client
+	Config    *rest.Config
 	// CreatePodFunc returns the manifest of the pod to be used for running the
 	// test. As we need to exec the pod should not terminate (e.g. run an
 	// infinite sleep).
@@ -105,90 +100,53 @@ func (t *TestPodConfig) Exec(ctx context.Context, container string, command ...s
 	if t.testPod == nil {
 		return "", "", errors.New("exec should be called only after successful DeployTestPod execution")
 	}
-	const tty = false
 
-	req := t.PodRestClient.Post().
-		Resource("pods").
-		Name(t.testPod.Name).
-		Namespace(t.Namespace).
-		SubResource("exec").
-		Param("container", container)
-	req.VersionedParams(&corev1.PodExecOptions{
-		Container: container,
-		Command:   command,
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       tty,
-	}, scheme.ParameterCodec)
-
-	var stdout, stderr bytes.Buffer
-	err := execute(ctx, http.MethodPost, req.URL(), t.Config, nil, &stdout, &stderr, tty)
-
-	return stdout.String(), stderr.String(), err
-}
-
-func execute(ctx context.Context, method string, url *url.URL, config *rest.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
-	exec, err := remotecommand.NewSPDYExecutor(config, method, url)
-	if err != nil {
-		return err
-	}
-	return exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdin:  stdin,
-		Stdout: stdout,
-		Stderr: stderr,
-		Tty:    tty,
-	})
+	return podexec.ExecuteCommand(ctx, t.Config, types.NamespacedName{
+		Namespace: t.Namespace,
+		Name:      t.testPod.Name,
+	}, container, command...)
 }
 
 // GetClientsOrDie returns the clients used for testing or panics if something
 // goes wrong during the clients creation.
-func GetClientsOrDie() (ctrlruntimeclient.Client, rest.Interface, *rest.Config) {
-	cli, restCli, config, err := GetClients()
+func GetClientsOrDie() (ctrlruntimeclient.Client, *rest.Config) {
+	cli, config, err := GetClients()
 	if err != nil {
 		panic(err)
 	}
-	return cli, restCli, config
+	return cli, config
 }
 
 // GetClients returns the clients used for testing or an error if something
 // goes wrong during the clients creation.
-func GetClients() (ctrlruntimeclient.Client, rest.Interface, *rest.Config, error) {
+func GetClients() (ctrlruntimeclient.Client, *rest.Config, error) {
 	sc := runtime.NewScheme()
 	if err := scheme.AddToScheme(sc); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	if err := kubermaticv1.AddToScheme(sc); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	if err := constrainttemplatev1.AddToScheme(sc); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	config, err := ctrlruntime.GetConfig()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get kube config: %w", err)
+		return nil, nil, fmt.Errorf("failed to get kube config: %w", err)
 	}
 	mapper, err := apiutil.NewDynamicRESTMapper(config)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create dynamic REST mapper: %w", err)
-	}
-	gvk, err := apiutil.GVKForObject(&corev1.Pod{}, sc)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get pod GVK: %w", err)
-	}
-	podRestClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(sc))
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create pod rest client: %w", err)
+		return nil, nil, fmt.Errorf("failed to create dynamic REST mapper: %w", err)
 	}
 	c, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{
 		Mapper: mapper,
 		Scheme: sc,
 	})
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to create client: %w", err)
+		return nil, nil, fmt.Errorf("failed to create client: %w", err)
 	}
-	return c, podRestClient, config, nil
+	return c, config, nil
 }
 
 // WaitForPodsCreated waits for the given replicas number of pods matching the
