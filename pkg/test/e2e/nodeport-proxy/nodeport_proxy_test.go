@@ -202,7 +202,11 @@ func TestNodeportProxy(t *testing.T) {
 				portsToBeExposed := extractNodePorts(svc)
 
 				err = wait.PollLog(ctx, logger, 2*time.Second, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-					lbSvc := npp.GetLoadBalancer(ctx)
+					lbSvc, err := npp.GetLoadBalancer(ctx)
+					if err != nil {
+						return err, nil
+					}
+
 					if remaining := portsToBeExposed.Difference(extractPorts(lbSvc)); remaining.Len() > 0 {
 						return fmt.Errorf("ports %v are not yet exposed", sets.List(remaining)), nil
 					}
@@ -220,7 +224,10 @@ func TestNodeportProxy(t *testing.T) {
 			logger.Info("Waiting until we have reached every endpoint at least once…")
 			err = wait.PollImmediateLog(ctx, logger, 2*time.Second, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 				// get the current state of the nodeport-proxy's LoadBalancer service
-				lbSvc := npp.GetLoadBalancer(ctx)
+				lbSvc, err := npp.GetLoadBalancer(ctx)
+				if err != nil {
+					return err, nil
+				}
 
 				// let the test decide how we try to reach the service
 				dialConfig := testcase.dialConfigCreator(svc, lbSvc)
@@ -268,7 +275,11 @@ func TestNodeportProxy(t *testing.T) {
 		portsNotToBeExposed := extractNodePorts(svc)
 
 		err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
-			lbSvc := npp.GetLoadBalancer(ctx)
+			lbSvc, err := npp.GetLoadBalancer(ctx)
+			if err != nil {
+				return err, nil
+			}
+
 			if exposed := portsNotToBeExposed.Intersection(extractPorts(lbSvc)); exposed.Len() > 0 {
 				// if a port appears, it's not a transient error that might go away, having
 				// the port exposed once is already a terminal issue
