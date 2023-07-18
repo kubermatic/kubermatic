@@ -330,7 +330,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		logger.Info("🚦 Validating existing installation…")
 
-		if errs := kubermaticStack.ValidateState(appContext, deployOptions); errs != nil {
+		if errs := kubermaticStack.ValidateState(appContext, deployOptions); len(errs) > 0 {
 			logger.Error("⛔ Cannot proceed with the installation:")
 
 			for _, e := range errs {
