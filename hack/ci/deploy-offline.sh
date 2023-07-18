@@ -27,7 +27,7 @@ cd "$(dirname "$0")/../.."
 source hack/lib.sh
 
 # Build and push images
-./hack/ci/push-images.sh
+./hack/ci/release-images.sh
 
 echodate "Getting secrets from Vault"
 export VAULT_TOKEN=$(vault write \

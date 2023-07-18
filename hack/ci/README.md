@@ -67,10 +67,10 @@ tweaked by setting a number of environment variables, most importantly:
 Whenever this is changed, run the optional `pre-kubermatic-simulate-github-release`
 job to (mostly) ensure that the changes will work.
 
-## push-images.sh
+## release-images.sh
 
 This script compiles the KKP binaries and then builds and pushes all
-Docker images by using `hack/release-docker-images.sh`. It is only
+container images by using `hack/release-images.sh`. It is only
 useful as part of another script to setup KKP for testing.
 
 ## run-api-e2e.sh

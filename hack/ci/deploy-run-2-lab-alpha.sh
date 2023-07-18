@@ -23,7 +23,7 @@ export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./hack/ci/push-images.sh
+  ./hack/ci/release-images.sh
 fi
 
 echodate "Getting secrets from Vault"

@@ -134,7 +134,7 @@ echodate "Building and pushing Docker images"
 # prepare Helm charts
 set_helm_charts_version "v9.9.9-${GIT_HEAD_HASH}"
 
-retry 5 ./../release-docker-images.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
+retry 5 ./../release-images.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
 echodate "Successfully finished building and pushing quay images"
 
 # Ensure we have pushed the kubermatic chart

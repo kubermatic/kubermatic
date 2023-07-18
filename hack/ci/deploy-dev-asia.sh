@@ -31,12 +31,12 @@ kubermatic)
   # This job does not need to build any Docker images, as we only install a few
   # CRDs and charts to this seed cluster. We still need to compile the installer
   # though.
-  NO_DOCKER_IMAGES=true ./hack/ci/push-images.sh
+  NO_IMAGES=true ./hack/ci/release-images.sh
   ;;
 
 usercluster-mla)
   export VAULT_VALUES_FIELD=asia-south1-c-mla-values.yaml
-  NO_DOCKER_IMAGES=true ./hack/ci/push-images.sh
+  NO_IMAGES=true ./hack/ci/release-images.sh
   ;;
 
 esac
