@@ -193,7 +193,7 @@ func main() {
 }
 
 func setupKubeClients(ctx context.Context, opts *types.Options) error {
-	_, _, config, err := utils.GetClients()
+	_, config, err := utils.GetClients()
 	if err != nil {
 		return fmt.Errorf("failed to get client config: %w", err)
 	}

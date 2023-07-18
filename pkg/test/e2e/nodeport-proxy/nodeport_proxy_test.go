@@ -129,7 +129,7 @@ func TestNodeportProxy(t *testing.T) {
 	ctx := signals.SetupSignalHandler()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
-	k8scli, podRestCli, config, err := e2eutils.GetClients()
+	k8scli, config, err := e2eutils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
@@ -160,7 +160,6 @@ func TestNodeportProxy(t *testing.T) {
 			Client:        k8scli,
 			Namespace:     npp.Namespace,
 			Config:        config,
-			PodRestClient: podRestCli,
 			CreatePodFunc: newAgnhostPod,
 		},
 	}

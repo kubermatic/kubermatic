@@ -101,7 +101,7 @@ func TestCCMMigration(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	seedClient, _, _ := e2eutils.GetClientsOrDie()
+	seedClient, _ := e2eutils.GetClientsOrDie()
 	log := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
 
 	// prepare cluster

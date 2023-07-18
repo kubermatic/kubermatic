@@ -70,7 +70,7 @@ func TestBackup(t *testing.T) {
 		t.Fatalf("Failed to get credentials: %v", err)
 	}
 
-	client, _, _, err := utils.GetClients()
+	client, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestScaling(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
-	client, _, _, err := utils.GetClients()
+	client, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
@@ -195,7 +195,7 @@ func TestRecovery(t *testing.T) {
 	ctx := context.Background()
 	logger := log.NewFromOptions(logOptions).Sugar()
 
-	client, _, _, err := utils.GetClients()
+	client, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
