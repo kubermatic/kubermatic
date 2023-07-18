@@ -323,6 +323,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		deployOptions.KubermaticConfiguration = kubermaticConfig
 		deployOptions.HelmValues = helmValues
 		deployOptions.KubeClient = kubeClient
+		deployOptions.RestConfig = ctrlConfig
 		deployOptions.Logger = subLogger
 		deployOptions.SeedsGetter = seedsGetter
 		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
