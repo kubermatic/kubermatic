@@ -267,6 +267,39 @@ func TestValidator(t *testing.T) {
 			expectedError: nil,
 		},
 		{
+			name: "not allowed CIDR update",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/29",
+							AllocationRange: 8,
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:            "range",
+							PoolCIDR:        "192.168.1.0/28",
+							AllocationRange: 8,
+						},
+					},
+				},
+			},
+			expectedError: errors.New("it's not allowed to update the pool CIDR for a datacenter"),
+		},
+		{
 			name: "not allowed type update",
 			op:   admissionv1.Update,
 			ipamPool: &kubermaticv1.IPAMPool{

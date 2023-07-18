@@ -259,7 +259,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			// check if the current allocation is compatible with the IPAMPool being applied
-			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), []kubermaticv1.SubnetCIDR(dcIPAMPoolCfg.ExcludePrefixes), dcIPAMPoolCfg.AllocationPrefix)
+			err := checkPrefixAllocation(string(ipamAllocation.Spec.CIDR), string(dcIPAMPoolCfg.PoolCIDR), dcIPAMPoolCfg.ExcludePrefixes, dcIPAMPoolCfg.AllocationPrefix)
 			if err != nil {
 				return nil, err
 			}
@@ -301,7 +301,8 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 		if err != nil {
 			return err
 		}
-		newClustersAllocation.Spec.Addresses = append(oldClusterAllocation.Spec.Addresses, addresses...)
+		newClustersAllocation.Spec.Addresses = oldClusterAllocation.Spec.Addresses
+		newClustersAllocation.Spec.Addresses = append(newClustersAllocation.Spec.Addresses, addresses...)
 	case kubermaticv1.IPAMPoolAllocationTypePrefix:
 		subnetCIDR, err := findFirstFreeSubnetOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), string(oldClusterAllocation.Spec.CIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
 		if err != nil {
