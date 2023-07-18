@@ -192,3 +192,27 @@ presubmits:
             limits:
               memory: 4Gi
               cpu: 3
+
+  - name: pre-kubermatic-trivy-scan
+    run_if_changed: "(Dockerfile|go.mod|.prow/)"
+    optional: true
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
+      preset-docker-mirror: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.20-node-18-kind-0.18-8
+          command:
+            - ./hack/ci/trivy-scan.sh
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 7Gi
+              cpu: 2
