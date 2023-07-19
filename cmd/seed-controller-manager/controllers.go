@@ -290,7 +290,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 
 func createInitialApplicationInstallationController(ctrlCtx *controllerContext) error {
 	return initialapplicationinstallationcontroller.Add(
-		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
@@ -303,7 +302,6 @@ func createInitialApplicationInstallationController(ctrlCtx *controllerContext) 
 
 func createCNIApplicationInstallationController(ctrlCtx *controllerContext) error {
 	return cniapplicationinstallationcontroller.Add(
-		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,

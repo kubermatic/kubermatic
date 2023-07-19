@@ -75,7 +75,7 @@ type Reconciler struct {
 	overwriteRegistry             string
 }
 
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, systemAppEnforceInterval int, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions, overwriteRegistry string) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, systemAppEnforceInterval int, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions, overwriteRegistry string) error {
 	reconciler := &Reconciler{
 		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
