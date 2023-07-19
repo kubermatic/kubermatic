@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	// ApplicationInstallationResourceName represents "Resource" defined in Kubernetes.
+	// ApplicationDefinitionResourceName represents "Resource" defined in Kubernetes.
 	ApplicationDefinitionResourceName = "applicationdefinitions"
 
 	// ApplicationDefinitionKindName represents "Kind" defined in Kubernetes.
@@ -43,7 +43,7 @@ type HelmCredentials struct {
 
 	// RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
 	// file that follows the same format rules as ~/.docker/config.json
-	// The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
 	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
 }

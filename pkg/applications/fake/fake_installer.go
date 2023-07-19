@@ -44,7 +44,7 @@ func (a *ApplicationInstallerRecorder) GetAppCache() string {
 	return ""
 }
 
-func (a *ApplicationInstallerRecorder) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
+func (a *ApplicationInstallerRecorder) DownloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
 	a.DownloadEvents.Store(applicationInstallation.Name, *applicationInstallation.DeepCopy())
 	return "", nil
 }
@@ -67,7 +67,7 @@ func (a ApplicationInstallerLogger) GetAppCache() string {
 	return ""
 }
 
-func (a ApplicationInstallerLogger) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
+func (a ApplicationInstallerLogger) DownloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
 	log.Debugf("Download application's source %s. applicationVersion=%v", applicationInstallation.Name, applicationInstallation.Status.ApplicationVersion)
 	return "", nil
 }
@@ -97,7 +97,7 @@ func (c CustomApplicationInstaller) GetAppCache() string {
 	return ""
 }
 
-func (c CustomApplicationInstaller) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
+func (c CustomApplicationInstaller) DownloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
 	if c.DonwloadSourceFunc != nil {
 		return c.DonwloadSourceFunc(ctx, log, seedClient, applicationInstallation, downloadDest)
 	}

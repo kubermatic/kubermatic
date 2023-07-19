@@ -35,6 +35,6 @@ const (
 	ApplicationTypeLabel = "apps.kubermatic.k8c.io/type"
 
 	// ApplicationTypeCNIValue can be used as a value for the ApplicationTypeLabel to indicate that the
-	// application definition / application installation type if CNI (Container Network Interface).
+	// application definition / application installation type is CNI (Container Network Interface).
 	ApplicationTypeCNIValue = "cni"
 )

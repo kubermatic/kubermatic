@@ -254,7 +254,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 
 	// Download application sources.
 	oldAppInstallation := appInstallation.DeepCopy()
-	appSourcePath, downloadErr := r.appInstaller.DonwloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
+	appSourcePath, downloadErr := r.appInstaller.DownloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
 	if downloadErr != nil {
 		appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownloadSourceFailed", downloadErr.Error())
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
@@ -298,7 +298,7 @@ func hasLimitedRetries(appDefinition *appskubermaticv1.ApplicationDefinition, ap
 }
 
 // resetFailuresIfSpecHasChanged set Status.Failures to 0 if the spec has changed. Returns an error if status can not be updated.
-func (r reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+func (r *reconciler) resetFailuresIfSpecHasChanged(ctx context.Context, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	oldAppInstallation := appInstallation.DeepCopy()
 	if appInstallation.Status.Conditions[appskubermaticv1.Ready].ObservedGeneration != appInstallation.Generation {
 		appInstallation.Status.Failures = 0

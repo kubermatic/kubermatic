@@ -108,7 +108,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 			if !cni.IsManagedByAppInfra(newCluster.Spec.CNIPlugin.Type, newCluster.Spec.CNIPlugin.Version) {
 				return false
 			}
-			// Process the event only if CNIPlugin oy ClusterNetwork config changed, or if cluster Address changed
+			// Process the event only if CNIPlugin or ClusterNetwork config changed, or if cluster Address changed
 			if !reflect.DeepEqual(oldCluster.Spec.CNIPlugin, newCluster.Spec.CNIPlugin) {
 				return true
 			}
@@ -214,7 +214,7 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	}
 
 	// Ensure ApplicationInstallation of the CNI
-	if err := r.ensreCNIApplicationInstallation(ctx, cluster, initialValues); err != nil {
+	if err := r.ensureCNIApplicationInstallation(ctx, cluster, initialValues); err != nil {
 		return &reconcile.Result{}, err
 	}
 
@@ -235,7 +235,7 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	return result, nil
 }
 
-// ensureLegacyCNIAddonIsRemoved unsintalls CNI addons.
+// ensureLegacyCNIAddonIsRemoved uninstalls CNI addons.
 // It triggers the addon uninstall and checks if the addon has been uninstalled.
 // If the addon has not been uninstalled, it will requeue after 5 seconds.
 func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) (time.Duration, error) {
@@ -303,7 +303,7 @@ func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kube
 	return nil
 }
 
-func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]any) error {
+func (r *Reconciler) ensureCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]any) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
