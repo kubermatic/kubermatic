@@ -70,6 +70,14 @@ func ServiceReconciler(seed *kubermaticv1.Seed) reconciling.NamedServiceReconcil
 				}
 			}
 
+			if seed.Spec.NodeportProxy.IPFamilies != nil {
+				s.Spec.IPFamilies = seed.Spec.NodeportProxy.IPFamilies
+			}
+
+			if seed.Spec.NodeportProxy.IPFamilyPolicy != nil {
+				s.Spec.IPFamilyPolicy = seed.Spec.NodeportProxy.IPFamilyPolicy
+			}
+
 			// Services need at least one port to be valid, so create it initially.
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = []corev1.ServicePort{
