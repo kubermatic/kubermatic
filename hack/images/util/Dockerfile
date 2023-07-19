@@ -15,6 +15,9 @@
 FROM docker.io/alpine:3.17
 LABEL maintainer="support@kubermatic.com"
 
+# update to 3.0.9-r2 to fix CVE-2023-2975
+RUN apk upgrade -U libcrypto3 libssl3
+
 ENV MC_VERSION=RELEASE.2022-12-24T15-21-38Z \
     KUBECTL_VERSION=v1.25.6 \
     HELM_VERSION=v3.10.3 \

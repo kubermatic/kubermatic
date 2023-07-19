@@ -17,6 +17,9 @@ LABEL maintainer="support@kubermatic.com"
 
 ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 
+# update to 3.0.9-r2 to fix CVE-2023-2975
+RUN apk upgrade -U libcrypto3 libssl3
+
 # To support a wider range of Kubernetes userclusters, we ship multiple
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.

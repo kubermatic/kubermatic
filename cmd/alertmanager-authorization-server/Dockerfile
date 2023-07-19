@@ -15,4 +15,7 @@
 FROM docker.io/alpine:3.17
 LABEL maintainer="support@kubermatic.com"
 
+# update to 3.0.9-r2 to fix CVE-2023-2975
+RUN apk upgrade -U libcrypto3 libssl3
+
 COPY ./_build/alertmanager-authorization-server /
