@@ -69,12 +69,12 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 			continue
 		}
 
-		if dcOldConfig.Type != dcNewConfig.Type {
-			return nil, errors.New("it's not allowed to update the allocation type for a datacenter")
-		}
-
 		if dcOldConfig.PoolCIDR != dcNewConfig.PoolCIDR {
 			return nil, errors.New("it's not allowed to update the pool CIDR for a datacenter")
+		}
+
+		if dcOldConfig.Type != dcNewConfig.Type {
+			return nil, errors.New("it's not allowed to update the allocation type for a datacenter")
 		}
 
 		var addedExclusions []string
