@@ -86,12 +86,12 @@ func (d *NodeportProxy) Cleanup(ctx context.Context) error {
 	return npptest.Cleanup(ctx, d.Client, d.Log, d.getConfig(), 1*time.Minute)
 }
 
-func (d *NodeportProxy) GetLoadBalancer(ctx context.Context) *corev1.Service {
+func (d *NodeportProxy) GetLoadBalancer(ctx context.Context) (*corev1.Service, error) {
 	svc := &corev1.Service{}
 	if err := d.Client.Get(ctx, types.NamespacedName{Name: nodeportproxy.ServiceName, Namespace: d.Namespace}, svc); err != nil {
-		return nil
+		return nil, err
 	}
-	return svc
+	return svc, nil
 }
 
 func (d *NodeportProxy) getConfig() *kubermaticv1.KubermaticConfiguration {
