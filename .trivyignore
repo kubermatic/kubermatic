@@ -1,2 +1,6 @@
 # Describe in detail why we ignore the specific CVE.
 
+# "ignition: configs are accessible from unprivileged containers in VMs running on VMware"
+# affects CoreOS Ignition, but not in the way we use it;
+# fixing this would require to jump from v0.35.0 to v2.14.x.
+CVE-2022-1706

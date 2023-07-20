@@ -23,7 +23,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.17.7
 	github.com/aws/smithy-go v1.13.5
 	github.com/cert-manager/cert-manager v1.10.1
-	github.com/cilium/cilium v1.12.5 // need 1.12.x because 1.11.x is incompatible with k8s 1.24
+	github.com/cilium/cilium v1.12.9 // need 1.12.x because 1.11.x is incompatible with k8s 1.24
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20221130144415-da4474e2a3d1
 	github.com/digitalocean/godo v1.93.0
@@ -174,7 +174,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/clarketm/json v1.13.4 // indirect
-	github.com/cloudflare/circl v1.1.0 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/cncf/xds/go v0.0.0-20220314180256-7f1daf1720fc // indirect
 	github.com/containerd/containerd v1.6.18 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.12.1 // indirect
@@ -187,8 +187,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/docker/cli v20.10.21+incompatible // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.21+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible // indirect
+	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
