@@ -17,4 +17,7 @@ LABEL maintainer="support@kubermatic.com"
 
 RUN apk add --no-cache ca-certificates
 
+# update to 3.0.9-r2 to fix CVE-2023-2975
+RUN apk upgrade -U libcrypto3 libssl3
+
 COPY ./s3-exporter /usr/local/bin/
