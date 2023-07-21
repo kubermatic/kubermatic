@@ -83,8 +83,10 @@ buildah manifest create "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}"
 for ARCH in ${ARCHITECTURES}; do
   echodate "Building user-ssh-keys-agent image for $ARCH..."
 
+  fullImage="${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}"
+
   buildah bud \
-    --tag "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}" \
+    --tag "$fullImage" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
     --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --build-arg "GOCACHE=/gocache" \
@@ -94,15 +96,21 @@ for ARCH in ${ARCHITECTURES}; do
     --file cmd/user-ssh-keys-agent/Dockerfile.multiarch \
     --volume "$gocaches/$ARCH:/gocache" \
     .
-  buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent-${ARCH}:${PRIMARY_TAG}"
+  buildah manifest add "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "$fullImage"
+
+  # Make the images built with Buildah available in the local docker daemon,
+  # so that the trivy scan can pick them up from there.
+  buildah push "$fullImage" "docker-daemon:$fullImage"
 done
 
 buildah manifest create "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}"
 for ARCH in ${ARCHITECTURES}; do
   echodate "Building kubeletdnat-controller image for $ARCH..."
 
+  fullImage="${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}"
+
   buildah bud \
-    --tag "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}" \
+    --tag "$fullImage" \
     --build-arg "GOPROXY=${GOPROXY:-}" \
     --build-arg "KUBERMATIC_EDITION=${KUBERMATIC_EDITION}" \
     --build-arg "GOCACHE=/gocache" \
@@ -112,7 +120,8 @@ for ARCH in ${ARCHITECTURES}; do
     --file cmd/kubeletdnat-controller/Dockerfile.multiarch \
     --volume "$gocaches/$ARCH:/gocache" \
     .
-  buildah manifest add "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller-${ARCH}:${PRIMARY_TAG}"
+  buildah manifest add "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "$fullImage"
+  buildah push "$fullImage" "docker-daemon:$fullImage"
 done
 
 rm -rf -- "$gocaches"
@@ -131,11 +140,17 @@ for TAG in "$@"; do
   buildah tag "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
   buildah tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
 
-  echodate "Pushing images"
-  docker push "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
-  docker push "${DOCKER_REPO}/nodeport-proxy:${TAG}"
-  docker push "${DOCKER_REPO}/addons:${TAG}"
-  docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"
-  buildah manifest push --all "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" "docker://${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
-  buildah manifest push --all "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" "docker://${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
+  if [ -z "${NO_PUSH:-}" ]; then
+    echodate "Pushing images"
+    docker push "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
+    docker push "${DOCKER_REPO}/nodeport-proxy:${TAG}"
+    docker push "${DOCKER_REPO}/addons:${TAG}"
+    docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"
+    buildah manifest push --all "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" "docker://${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
+    buildah manifest push --all "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" "docker://${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
+  fi
 done
+
+if [ -n "${NO_PUSH:-}" ]; then
+  echodate "Not pushing images because \$NO_PUSH is set."
+fi
