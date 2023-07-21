@@ -1,2 +1,34 @@
 # Describe in detail why we ignore the specific CVE.
 
+# "ignition: configs are accessible from unprivileged containers in VMs running on VMware"
+# affects CoreOS Ignition, but not in the way we use it;
+# fixing this would require to jump from v0.35.0 to v2.14.x.
+CVE-2022-1706
+
+# "DoS from malicious API request" in github.com/docker/distribution,
+# part of the most recent kubectl 1.25 binary, but irrelevant to how
+# KKP uses kubectl.
+CVE-2023-2253
+
+# ######################################################################
+# all of these are part of the latest Helm 3.10 release; the included
+# Helm binary is only used in rare circumstances during installation
+# and so the impact is limited.
+
+# github.com/containerd/containerd
+CVE-2022-23471
+CVE-2023-25153 # OCI image importer memory exhaustion
+CVE-2023-25173 # Supplementary groups are not set up properly
+
+# github.com/docker/docker
+CVE-2023-28840 # Encrypted overlay network may be unauthenticated
+CVE-2023-28841 # Encrypted overlay network traffic may be unencrypted
+CVE-2023-28842 # Encrypted overlay network with a single endpoint is unauthenticated
+
+# golang.org/x/net
+CVE-2022-27664 # handle server errors after sending GOAWAY
+CVE-2022-41721 # request smuggling
+CVE-2022-41723 # avoid quadratic complexity in HPACK decoding
+
+# golang.org/x/text
+CVE-2022-32149 # ParseAcceptLanguage takes a long time to parse complex tags
