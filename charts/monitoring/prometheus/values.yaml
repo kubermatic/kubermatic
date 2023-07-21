@@ -144,6 +144,14 @@ prometheus:
   ##
   extraArgs: {}
 
+  ## Add any sidecar containers e.g. thanos using this block
+  # Key/Value where Key is the sidecar `- name: <Key>`
+  # Example:
+  #   sidecarContainers:
+  #     - thanos:
+  #         image: quay.io/thanos/thanos:v0.31.0
+  sidecarContainers: {}
+
   containers:
     prometheus:
       resources:
