@@ -128,7 +128,7 @@ func ValidateMinioCompatibility(ctx context.Context, opt stack.DeployOptions) er
 
 	// Bad news: This Minio is using the old, legacy fs driver and needs to be migrated manually.
 	if data.Format == "fs" {
-		return errors.New("the Minio storage is using the `fs` filesystem driver, which is incompatible with more recent Minio releases and requires a migration; please refer to <insert docs link here> for more information")
+		return errors.New("the Minio storage is using the `fs` filesystem driver, which is incompatible with more recent Minio releases and requires a migration; please refer to https://docs.kubermatic.com/kubermatic/v2.23/installation/upgrading/upgrade-from-2.22-to-2.23/#minio-upgrade for more information")
 	}
 
 	// Good news, the storage is probably using "xl" and so it's future-ready.
