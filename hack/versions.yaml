@@ -1,0 +1,287 @@
+# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Please refer to the codegen/version-reporter/README.md for more information.
+
+products:
+  - name: "CCM: Anexia"
+    source: https://github.com/anexia-it/k8s-anexia-ccm
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/cloudcontroller
+          constant: anexiaCCMVersion
+
+  - name: "CCM: AWS"
+    source: https://github.com/kubernetes/cloud-provider-aws
+    occurrences:
+      - goFunction:
+          function: callAWSCCMVersion
+
+  - name: "CCM: Azure"
+    source: https://github.com/kubernetes/cloud-provider-azure
+    occurrences:
+      - goFunction:
+          function: callAzureCCMVersion
+
+  - name: "CCM: DigitalOcean"
+    source: https://github.com/digitalocean/digitalocean-cloud-controller-manager
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/cloudcontroller
+          constant: DigitalOceanCCMVersion
+
+  - name: "CCM: Hetzner"
+    source: https://github.com/hetznercloud/hcloud-cloud-controller-manager
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/cloudcontroller
+          constant: hetznerCCMVersion
+
+  - name: "CCM: KubeVirt"
+    source: https://github.com/kubermatic/cloud-provider-kubevirt
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/cloudcontroller
+          constant: KubeVirtCCMTag
+
+  - name: "CCM: OpenStack"
+    source: https://github.com/kubernetes/cloud-provider-openstack
+    occurrences:
+      - goFunction:
+          function: callOpenStackCCMVersion
+
+  - name: "CCM: vSphere"
+    source: https://github.com/kubernetes/cloud-provider-vsphere
+    occurrences:
+      - goFunction:
+          function: callVSphereCCMVersion
+
+  - name: KubeVirt CSI
+    source: https://github.com/kubermatic/kubevirt-csi-driver-operator
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt
+          constant: csiVersion
+
+  - name: CoreDNS
+    source: https://github.com/kubernetes/kubernetes
+    occurrences:
+      - goFunction:
+          function: callCoreDNSVersion
+
+  - name: Konnectivity
+    source: https://github.com/kubernetes-sigs/apiserver-network-proxy
+    occurrences:
+      - goFunction:
+          function: callKonnectivityVersion
+
+  - name: OpenVPN
+    source: https://github.com/kubermatic/openvpn
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/openvpn
+          constant: version
+
+  - name: Kubernetes Dashboard
+    source: https://github.com/kubernetes/dashboard
+    occurrences:
+      - goFunction:
+          function: callKubernetesDashboardVersion
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard
+          constant: scraperTag
+
+  - name: machine-controller (MC)
+    source: https://github.com/kubermatic/machine-controller
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/machinecontroller
+          constant: Tag
+
+  - name: Operating System Manager (OSM)
+    source: https://github.com/kubermatic/operating-system-manager
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager
+          constant: Tag
+
+  - name: Metrics Server
+    source: https://github.com/kubernetes-sigs/metrics-server
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/metrics-server
+          constant: tag
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server
+          constant: imageTag
+
+  - name: KubeOne
+    source: https://github.com/kubermatic/kubeone
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources
+          constant: KubeOneImageTag
+
+  - name: Metering
+    source: https://github.com/kubermatic/kubermatic
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/ee/metering
+          constant: meteringVersion
+
+  - name: Gatekeeper (OPA)
+    source: https://github.com/open-policy-agent/gatekeeper
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper
+          constant: tag
+
+  - name: Vertical Pod Autoscaler (VPA)
+    source: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
+    occurrences:
+      - goFunction:
+          function: getVPAVersion
+
+  - name: Envoy
+    source: https://github.com/envoyproxy/envoy/
+    occurrences:
+      - goFunction:
+          function: getEnvoyAgentVersion
+      - helmChart:
+          directory: charts/mla/alertmanager-proxy
+          valuePath: alertmanagerProxy.proxy.image.tag
+
+  - name: node-local-dns
+    source: https://github.com/kubernetes/kubernetes/blob/master/cluster/addons/dns/nodelocaldns/nodelocaldns.yaml
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns
+          constant: version
+
+  - name: Velero
+    source: https://github.com/vmware-tanzu/velero
+    occurrences:
+      - helmChart: { directory: charts/backup/velero }
+
+  - name: cert-manager
+    source: https://github.com/cert-manager/cert-manager
+    occurrences:
+      - helmChart: { directory: charts/cert-manager }
+
+  - name: IAP (oauth2-proxy)
+    source: https://github.com/oauth2-proxy/oauth2-proxy
+    occurrences:
+      - helmChart: { directory: charts/iap }
+
+  - name: Local KubeVirt
+    source: https://github.com/kubevirt/kubevirt
+    occurrences:
+      - helmChart: { directory: charts/local-kubevirt }
+
+  - name: Loki
+    source: https://github.com/grafana/loki
+    occurrences:
+      - helmChart: { directory: charts/logging/loki }
+      - helmChart: { directory: charts/mla/loki-distributed }
+
+  - name: Promtail
+    source: https://github.com/grafana/promtail
+    occurrences:
+      - helmChart: { directory: charts/logging/promtail }
+
+  - name: MinIO
+    source: https://github.com/minio/minio
+    occurrences:
+      - helmChart: { directory: charts/minio }
+      - helmChart: { directory: charts/mla/minio }
+
+  - name: Consul
+    source: https://github.com/hashicorp/consul
+    occurrences:
+      - helmChart: { directory: charts/mla/consul }
+
+  - name: Cortex
+    source: https://github.com/cortexproject/cortex-helm-chart
+    occurrences:
+      - helmChart: { directory: charts/mla/cortex }
+
+  - name: Alertmanager
+    source: https://github.com/prometheus/alertmanager
+    occurrences:
+      - helmChart: { directory: charts/monitoring/alertmanager }
+
+  - name: Blackbox Exporter
+    source: https://github.com/prometheus/blackbox_exporter
+    occurrences:
+      - helmChart: { directory: charts/monitoring/blackbox-exporter }
+
+  - name: Grafana
+    source: https://github.com/grafana/grafana
+    occurrences:
+      - helmChart:
+          directory: charts/monitoring/grafana
+      - helmChart:
+          directory: charts/mla/grafana
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/logging-agent
+          constant: imageTag
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/mla/monitoring-agent
+          constant: tag
+
+  - name: Helm Exporter
+    source: https://github.com/sstarcher/helm-exporter
+    occurrences:
+      - helmChart: { directory: charts/monitoring/helm-exporter }
+
+  - name: Karma
+    source: https://github.com/prymitive/karma
+    occurrences:
+      - helmChart: { directory: charts/monitoring/karma }
+
+  - name: kube-state-metrics
+    source: https://github.com/kubernetes/kube-state-metrics
+    occurrences:
+      - helmChart:
+          directory: charts/monitoring/kube-state-metrics
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/kubestatemetrics
+          constant: version
+
+  - name: Node Exporter
+    source: https://github.com/prometheus/node_exporter
+    occurrences:
+      - helmChart: { directory: charts/monitoring/node-exporter }
+
+  - name: Prometheus
+    source: https://github.com/prometheus/prometheus
+    occurrences:
+      - helmChart:
+          directory: charts/monitoring/prometheus
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/prometheus
+          constant: tag
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/ee/metering/prometheus
+          constant: version
+
+  - name: "Ingress NGINX Controller"
+    source: https://github.com/kubernetes/ingress-nginx
+    occurrences:
+      - helmChart: { directory: charts/nginx-ingress-controller }
+
+  - name: "Dex"
+    source: https://github.com/dexidp/dex
+    occurrences:
+      - helmChart: { directory: charts/oauth }

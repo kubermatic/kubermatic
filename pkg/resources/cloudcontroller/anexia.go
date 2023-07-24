@@ -30,7 +30,10 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-const AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
+const (
+	AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
+	anexiaCCMVersion        = "1.5.4"
+)
 
 func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (name string, create reconciling.DeploymentReconciler) {
@@ -56,7 +59,7 @@ func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedD
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
-					Image: registry.Must(data.RewriteImage(resources.RegistryAnexia + "/anexia/anx-cloud-controller-manager:1.5.4")),
+					Image: registry.Must(data.RewriteImage(resources.RegistryAnexia + "/anexia/anx-cloud-controller-manager:" + anexiaCCMVersion)),
 					Command: []string{
 						"/app/ccm",
 						"--cloud-provider=anexia",

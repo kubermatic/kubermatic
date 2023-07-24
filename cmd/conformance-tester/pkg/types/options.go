@@ -22,10 +22,8 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"sort"
 	"time"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -36,6 +34,7 @@ import (
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
@@ -111,7 +110,7 @@ func NewDefaultOptions() *Options {
 		Client:                       "kube",
 		ScenarioOptions:              sets.New[string](),
 		Providers:                    sets.New[string](),
-		Releases:                     sets.New(getLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
+		Releases:                     sets.New(version.GetLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
 		ContainerRuntimes:            sets.New(resources.ContainerRuntimeContainerd),
 		EnableDistributions:          sets.New[string](),
 		ExcludeDistributions:         sets.New[string](),
@@ -297,25 +296,4 @@ func combineSets(include, exclude, all sets.Set[string], flagname string) (sets.
 	}
 
 	return chosen, nil
-}
-
-func getLatestMinorVersions(versions []kubermativsemver.Semver) []string {
-	minorMap := map[uint64]*semverlib.Version{}
-
-	for _, version := range versions {
-		sversion := version.Semver()
-		minor := sversion.Minor()
-
-		if existing := minorMap[minor]; existing == nil || existing.LessThan(sversion) {
-			minorMap[minor] = sversion
-		}
-	}
-
-	list := []string{}
-	for _, v := range minorMap {
-		list = append(list, "v"+v.String())
-	}
-	sort.Strings(list)
-
-	return list
 }

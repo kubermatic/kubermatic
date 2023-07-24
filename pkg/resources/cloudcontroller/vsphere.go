@@ -74,7 +74,7 @@ func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 				return nil, err
 			}
 
-			version := getVSphereCCMVersion(data.Cluster().Status.Versions.ControlPlane)
+			version := VSphereCCMVersion(data.Cluster().Status.Versions.ControlPlane)
 			container := getVSphereCCMContainer(version, data)
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
@@ -122,7 +122,7 @@ func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1
 	return c
 }
 
-func getVSphereCCMVersion(version semver.Semver) string {
+func VSphereCCMVersion(version semver.Semver) string {
 	// https://github.com/kubernetes/cloud-provider-vsphere/releases
 	switch version.MajorMinor() {
 	case v123:

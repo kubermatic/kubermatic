@@ -147,7 +147,7 @@ func getContainers(clusterVersion *semverlib.Version, imageRewriter registry.Ima
 	return []corev1.Container{
 		{
 			Name:            resources.CoreDNSDeploymentName,
-			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s", resources.RegistryK8S, dns.GetCoreDNSImage(clusterVersion)))),
+			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s", resources.RegistryK8S, dns.CoreDNSImage(clusterVersion)))),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			Args: []string{"-conf", "/etc/coredns/Corefile"},

@@ -49,21 +49,25 @@ var (
 )
 
 // source: https://github.com/kubernetes/kubernetes/blob/vX.YY.0/cmd/kubeadm/app/constants/constants.go
-func GetCoreDNSImage(kubernetesVersion *semverlib.Version) string {
-	switch fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor()) {
+func CoreDNSVersion(clusterVersion *semverlib.Version) string {
+	switch fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()) {
 	case "1.23":
 		fallthrough
 	case "1.24":
-		return "coredns/coredns:v1.8.6"
+		return "v1.8.6"
 	case "1.25":
 		fallthrough
 	case "1.26":
-		return "coredns/coredns:v1.9.3"
+		return "v1.9.3"
 	case "1.27":
 		fallthrough
 	default:
-		return "coredns/coredns:v1.10.1"
+		return "v1.10.1"
 	}
+}
+
+func CoreDNSImage(clusterVersion *semverlib.Version) string {
+	return fmt.Sprintf("coredns/coredns:%s", CoreDNSVersion(clusterVersion))
 }
 
 // ServiceReconciler returns the function to reconcile the DNS service.
@@ -126,7 +130,7 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 				{
 					Name: resources.DNSResolverDeploymentName,
 					// like etcd, this component follows the apiserver version and not the controller-manager version
-					Image: registry.Must(data.RewriteImage(resources.RegistryK8S + "/" + GetCoreDNSImage(data.Cluster().Status.Versions.Apiserver.Semver()))),
+					Image: registry.Must(data.RewriteImage(resources.RegistryK8S + "/" + CoreDNSImage(data.Cluster().Status.Versions.Apiserver.Semver()))),
 					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{

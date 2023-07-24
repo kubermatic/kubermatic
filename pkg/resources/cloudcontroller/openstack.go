@@ -76,7 +76,7 @@ func openStackDeploymentReconciler(data *resources.TemplateData) reconciling.Nam
 				return nil, err
 			}
 
-			ccmImage, err := getOpenStackCCMImage(data.Cluster().Status.Versions.ControlPlane)
+			ccmImage, err := OpenStackCCMImage(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}
@@ -124,19 +124,50 @@ func getOSFlags(data *resources.TemplateData) []string {
 	return flags
 }
 
-func getOpenStackCCMImage(version semver.Semver) (string, error) {
+func OpenStackCCMRepository(version semver.Semver) (string, error) {
 	switch version.MajorMinor() {
 	case v123:
-		return resources.RegistryDocker + "/k8scloudprovider/openstack-cloud-controller-manager:v1.23.4", nil
+		return resources.RegistryDocker + "/k8scloudprovider/openstack-cloud-controller-manager", nil
 	case v124:
-		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.24.6", nil
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager", nil
 	case v125:
-		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.25.5", nil
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager", nil
 	case v126:
-		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.26.2", nil
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager", nil
 	case v127:
-		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager:v1.27.1", nil
+		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager", nil
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)
 	}
+}
+
+func OpenStackCCMTag(version semver.Semver) (string, error) {
+	switch version.MajorMinor() {
+	case v123:
+		return "v1.23.4", nil
+	case v124:
+		return "v1.24.6", nil
+	case v125:
+		return "v1.25.5", nil
+	case v126:
+		return "v1.26.2", nil
+	case v127:
+		return "v1.27.1", nil
+	default:
+		return "", fmt.Errorf("%v is not yet supported", version)
+	}
+}
+
+func OpenStackCCMImage(version semver.Semver) (string, error) {
+	repo, err := OpenStackCCMRepository(version)
+	if err != nil {
+		return "", err
+	}
+
+	tag, err := OpenStackCCMTag(version)
+	if err != nil {
+		return "", err
+	}
+
+	return repo + ":" + tag, nil
 }

@@ -126,7 +126,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 	securityContext.ReadOnlyRootFilesystem = pointer.Bool(true)
 	securityContext.AllowPrivilegeEscalation = pointer.Bool(false)
 
-	tag, err := getDashboardVersion(data.Cluster().Status.Versions.ControlPlane)
+	tag, err := DashboardVersion(data.Cluster().Status.Versions.ControlPlane)
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func getVolumes() []corev1.Volume {
 	}
 }
 
-func getDashboardVersion(clusterVersion semver.Semver) (string, error) {
+func DashboardVersion(clusterVersion semver.Semver) (string, error) {
 	// check the GitHub releases for find compat info on the dashboard:
 	// https://github.com/kubernetes/dashboard/releases
 
