@@ -5,6 +5,19 @@
 - [v2.22.2](#v2222)
 - [v2.22.3](#v2223)
 - [v2.22.4](#v2224)
+- [v2.22.5](#v2225)
+
+## [v2.22.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.5)
+
+### Bugfixes
+
+- Fix default url configuration of blackbox exporter ([#12412](https://github.com/kubermatic/kubermatic/pull/12412))
+- Metrics server write timeout increased ([#12314](https://github.com/kubermatic/kubermatic/pull/12314))
+- Alertmanager now allows blackbox exporter to perform healthcheck API call without AuthFailure ([#12217](https://github.com/kubermatic/kubermatic/pull/12217))
+
+### Misc
+
+- Use buildx instead of Buildah to create multi-architecture KKP container images ([#12399](https://github.com/kubermatic/kubermatic/pull/12399))
 
 ## [v2.22.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.4)
 
