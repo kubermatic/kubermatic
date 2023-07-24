@@ -298,6 +298,24 @@ func (r *Reconciler) reconcile(
 	return totalReconcile, nil
 }
 
+func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupStoreContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupStoreContainer)
+}
+
+func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
+	// a customized container is configured
+	if cfg.Spec.SeedController.BackupDeleteContainer != "" {
+		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
+	}
+
+	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupDeleteContainer)
+}
+
 func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
 	var result *reconcile.Result
 	for _, r := range reconciles {
@@ -899,22 +917,4 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithEtcdBackupDeleteContainer(deleteContainer).
 		WithEtcdBackupDestination(destination).
 		Build(), nil
-}
-
-func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
-	// a customized container is configured
-	if cfg.Spec.SeedController.BackupDeleteContainer != "" {
-		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
-	}
-
-	return kuberneteshelper.ContainerFromString(defaulting.DefaultNewBackupDeleteContainer)
-}
-
-func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
-	// a customized container is configured
-	if cfg.Spec.SeedController.BackupStoreContainer != "" {
-		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
-	}
-
-	return kuberneteshelper.ContainerFromString(defaulting.DefaultNewBackupStoreContainer)
 }

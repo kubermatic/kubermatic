@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	applicationsecretclustercontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/application-secret-cluster-controller"
 	autoupdatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/auto-update-controller"
-	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	clustercredentialscontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-credentials-controller"
 	clusterphasecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-phase-controller"
@@ -63,7 +62,6 @@ var AllControllers = map[string]controllerCreator{
 	addon.ControllerName:                                    createAddonController,
 	addoninstaller.ControllerName:                           createAddonInstallerController,
 	etcdbackupcontroller.ControllerName:                     createEtcdBackupController,
-	backupcontroller.ControllerName:                         createBackupController,
 	etcdrestorecontroller.ControllerName:                    createEtcdRestoreController,
 	monitoring.ControllerName:                               createMonitoringController,
 	cloudcontroller.ControllerName:                          createCloudController,
@@ -194,25 +192,6 @@ func createEtcdBackupController(ctrlCtx *controllerContext) error {
 
 		ctrlCtx.runOptions.etcdLauncherImage,
 		ctrlCtx.runOptions.overwriteRegistry,
-	)
-}
-
-func createBackupController(ctrlCtx *controllerContext) error {
-	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
-	}
-	return backupcontroller.Add(
-		ctrlCtx.log,
-		ctrlCtx.mgr,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		backupInterval,
-		ctrlCtx.runOptions.backupContainerImage,
-		ctrlCtx.versions,
-		ctrlCtx.runOptions.caBundle,
-		ctrlCtx.seedGetter,
-		ctrlCtx.configGetter,
 	)
 }
 

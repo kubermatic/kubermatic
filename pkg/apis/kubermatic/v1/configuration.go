@@ -177,10 +177,10 @@ type KubermaticSeedControllerConfiguration struct {
 	// BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
 	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
 	// BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
-	// This container is only relevant when the new backup/restore controllers are enabled.
 	BackupDeleteContainer string `json:"backupDeleteContainer,omitempty"`
-	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
-	// This container is only relevant when the old, deprecated backup controllers are enabled.
+	// Deprecated: BackupCleanupContainer is the container used for removing expired backups from the storage location.
+	// This field is a no-op and is no longer used. The old backup controller it was used for has been
+	// removed. Do not set this field.
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
 	// MaximumParallelReconciles limits the number of cluster reconciliations
 	// that are active at any given time.

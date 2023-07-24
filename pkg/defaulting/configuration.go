@@ -764,48 +764,6 @@ func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersionin
 
 const DefaultBackupStoreContainer = `
 name: store-container
-image: quay.io/kubermatic/s3-storer:v0.1.6
-command:
-- /bin/sh
-- -c
-- |
-  set -euo pipefail
-
-  endpoint=minio.minio.svc.cluster.local:9000
-  bucket=kubermatic-etcd-backups
-
-  s3-storeuploader store \
-    --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-    --file /backup/snapshot.db \
-    --endpoint "$endpoint" \
-    --bucket "$bucket" \
-    --create-bucket \
-    --prefix $CLUSTER
-
-  s3-storeuploader delete-old-revisions \
-    --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-    --max-revisions 20 \
-    --endpoint "$endpoint" \
-    --bucket "$bucket" \
-    --prefix $CLUSTER
-env:
-- name: ACCESS_KEY_ID
-  valueFrom:
-    secretKeyRef:
-      name: kubermatic-s3-credentials
-      key: ACCESS_KEY_ID
-- name: SECRET_ACCESS_KEY
-  valueFrom:
-    secretKeyRef:
-      name: kubermatic-s3-credentials
-      key: SECRET_ACCESS_KEY
-volumeMounts:
-- name: etcd-backup
-  mountPath: /backup
-`
-
-const DefaultNewBackupStoreContainer = `
-name: store-container
 image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
 command:
 - /bin/sh
@@ -829,7 +787,7 @@ volumeMounts:
   mountPath: /backup
 `
 
-const DefaultNewBackupDeleteContainer = `
+const DefaultBackupDeleteContainer = `
 name: delete-container
 image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
 command:
@@ -860,45 +818,6 @@ command:
     exit $?
     ;;
   esac
-`
-
-const DefaultBackupCleanupContainer = `
-name: cleanup-container
-image: quay.io/kubermatic/s3-storer:v0.1.6
-command:
-- /bin/sh
-- -c
-- |
-  set -euo pipefail
-
-  endpoint=minio.minio.svc.cluster.local:9000
-  bucket=kubermatic-etcd-backups
-
-  # by default, we keep the most recent backup for every user cluster
-  s3-storeuploader delete-old-revisions \
-    --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-    --max-revisions 1 \
-    --endpoint "$endpoint" \
-    --bucket "$bucket" \
-    --prefix $CLUSTER
-
-  # alternatively, delete all backups for this cluster
-  #s3-storeuploader delete-all \
-  # --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
-  # --endpoint "$endpoint" \
-  # --bucket "$bucket" \
-  # --prefix $CLUSTER
-env:
-- name: ACCESS_KEY_ID
-  valueFrom:
-    secretKeyRef:
-      name: kubermatic-s3-credentials
-      key: ACCESS_KEY_ID
-- name: SECRET_ACCESS_KEY
-  valueFrom:
-    secretKeyRef:
-      name: kubermatic-s3-credentials
-      key: SECRET_ACCESS_KEY
 `
 
 const DefaultKubernetesAddons = `

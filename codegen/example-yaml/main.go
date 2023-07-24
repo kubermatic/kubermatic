@@ -279,9 +279,8 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 			FeatureGates: map[string]bool{},
 			API:          kubermaticv1.KubermaticAPIConfiguration{},
 			SeedController: kubermaticv1.KubermaticSeedControllerConfiguration{
-				BackupStoreContainer:   defaulting.DefaultBackupStoreContainer,
-				BackupCleanupContainer: defaulting.DefaultBackupCleanupContainer,
-				BackupDeleteContainer:  defaulting.DefaultNewBackupDeleteContainer,
+				BackupStoreContainer:  defaulting.DefaultBackupStoreContainer,
+				BackupDeleteContainer: defaulting.DefaultBackupDeleteContainer,
 			},
 		},
 	}

@@ -416,7 +416,6 @@ const (
 	ClusterConditionClusterControllerReconcilingSuccess                 ClusterConditionType = "ClusterControllerReconciledSuccessfully"
 	ClusterConditionAddonControllerReconcilingSuccess                   ClusterConditionType = "AddonControllerReconciledSuccessfully"
 	ClusterConditionAddonInstallerControllerReconcilingSuccess          ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
-	ClusterConditionBackupControllerReconcilingSuccess                  ClusterConditionType = "BackupControllerReconciledSuccessfully"
 	ClusterConditionCloudControllerReconcilingSuccess                   ClusterConditionType = "CloudControllerReconciledSuccessfully"
 	ClusterConditionUpdateControllerReconcilingSuccess                  ClusterConditionType = "UpdateControllerReconciledSuccessfully"
 	ClusterConditionMonitoringControllerReconcilingSuccess              ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
@@ -451,7 +450,6 @@ var AllClusterConditionTypes = []ClusterConditionType{
 	ClusterConditionSeedResourcesUpToDate,
 	ClusterConditionClusterControllerReconcilingSuccess,
 	ClusterConditionAddonControllerReconcilingSuccess,
-	ClusterConditionBackupControllerReconcilingSuccess,
 	ClusterConditionCloudControllerReconcilingSuccess,
 	ClusterConditionUpdateControllerReconcilingSuccess,
 	ClusterConditionMonitoringControllerReconcilingSuccess,
