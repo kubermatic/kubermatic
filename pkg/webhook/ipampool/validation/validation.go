@@ -83,6 +83,9 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
 			addedExclusions = getSliceAdditions(dcOldConfig.ExcludeRanges, dcNewConfig.ExcludeRanges)
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
+			if dcOldConfig.AllocationPrefix != dcNewConfig.AllocationPrefix {
+				return nil, errors.New("it's not allowed to update the allocation prefix for a datacenter")
+			}
 			addedExclusions = getSliceAdditions(
 				subnetCIDRSliceToStringSlice(dcOldConfig.ExcludePrefixes),
 				subnetCIDRSliceToStringSlice(dcNewConfig.ExcludePrefixes),

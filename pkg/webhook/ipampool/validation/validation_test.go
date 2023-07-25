@@ -333,6 +333,39 @@ func TestValidator(t *testing.T) {
 			expectedError: errors.New("it's not allowed to update the allocation type for a datacenter"),
 		},
 		{
+			name: "not allowed to update the allocation prefix",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/27",
+							AllocationPrefix: 29,
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/27",
+							AllocationPrefix: 28,
+						},
+					},
+				},
+			},
+			expectedError: errors.New("it's not allowed to update the allocation prefix for a datacenter"),
+		},
+		{
 			name: "allowed to remove a datacenter pool if no allocations",
 			op:   admissionv1.Update,
 			ipamPool: &kubermaticv1.IPAMPool{
