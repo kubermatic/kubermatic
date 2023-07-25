@@ -38,9 +38,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.40.0
 	github.com/imdario/mergo v0.3.15
 	github.com/kubermatic/grafanasdk v0.9.12
-	// Pinned to https://github.com/kubermatic/machine-controller/commit/7eab515b642dd3902b845d4861d1f41b4b37753e
-	// TODO: Replace this with v1.57.1 before release
-	github.com/kubermatic/machine-controller v1.57.1-0.20230707082432-7eab515b642d
+	github.com/kubermatic/machine-controller v1.57.1
 	github.com/minio/minio-go/v7 v7.0.49
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/onsi/ginkgo v1.16.5
