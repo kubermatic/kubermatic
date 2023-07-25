@@ -364,7 +364,7 @@ func TestNewClusters(t *testing.T) {
 
 	parseProviderCredentials(t)
 
-	seedClient, _, _, err := utils.GetClients()
+	seedClient, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("Failed to get client for seed cluster: %v", err)
 	}

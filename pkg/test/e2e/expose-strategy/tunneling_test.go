@@ -57,7 +57,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		t.Fatalf("Failed to get credentials: %v", err)
 	}
 
-	seedClient, restConfig, seedConfig, err := e2eutils.GetClients()
+	seedClient, seedConfig, err := e2eutils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
@@ -96,7 +96,6 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		Log:           logger,
 		Namespace:     cluster.Status.NamespaceName,
 		Client:        seedClient,
-		PodRestClient: restConfig,
 		Config:        seedConfig,
 		CreatePodFunc: newClientPod,
 	}}

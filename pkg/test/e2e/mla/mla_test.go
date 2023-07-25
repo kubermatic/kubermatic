@@ -86,7 +86,7 @@ func TestMLAIntegration(t *testing.T) {
 		t.Fatalf("Failed to get credentials: %v", err)
 	}
 
-	seedClient, _, _, err := utils.GetClients()
+	seedClient, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}

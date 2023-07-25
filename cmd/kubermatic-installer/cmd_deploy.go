@@ -323,13 +323,14 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		deployOptions.KubermaticConfiguration = kubermaticConfig
 		deployOptions.HelmValues = helmValues
 		deployOptions.KubeClient = kubeClient
+		deployOptions.RestConfig = ctrlConfig
 		deployOptions.Logger = subLogger
 		deployOptions.SeedsGetter = seedsGetter
 		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
 		logger.Info("🚦 Validating existing installation…")
 
-		if errs := kubermaticStack.ValidateState(appContext, deployOptions); errs != nil {
+		if errs := kubermaticStack.ValidateState(appContext, deployOptions); len(errs) > 0 {
 			logger.Error("⛔ Cannot proceed with the installation:")
 
 			for _, e := range errs {
