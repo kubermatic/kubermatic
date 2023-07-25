@@ -10,15 +10,21 @@
 - Fix default url configuration of blackbox exporter ([#12412](https://github.com/kubermatic/kubermatic/pull/12412))
 - Hetzner CSI: recreate CSIDriver to allow upgrade from 1.6.0 to 2.2.0 ([#12432](https://github.com/kubermatic/kubermatic/pull/12432))
 - Replace `irate` with `rate` for node cpu usage graphs ([#12427](https://github.com/kubermatic/kubermatic/pull/12427))
+- The Kubermatic Installer will now validate the existing Minio filesystem before attempting a `kubermatic-seed` stack installation ([#12493](https://github.com/kubermatic/kubermatic/pull/12493))
 
 ### Updates
 
 - Update Cilium CNI to 1.13.4, marking 113.0 as deprecated but kept 1.13.3 because 1.13.4 breaks IPSec support ([#12478](https://github.com/kubermatic/kubermatic/pull/12478))
+- Update machine-controller to [v1.57.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.57.1) ([#12492](https://github.com/kubermatic/kubermatic/pull/12492))
 
 ### Misc
 
 - Support for configuring multiple networks for vSphere ([#12458](https://github.com/kubermatic/kubermatic/pull/12458))
 - Support for configuring IPFamilies and IPFamilyPolicy for nodeport-proxy ([#12472](https://github.com/kubermatic/kubermatic/pull/12472))
+
+### New Feature
+
+- Made Prometheus helm chart extensible so that external metric storage solutions like Thanos can be easily integrated for seed long-term monitoring ([#12425](https://github.com/kubermatic/kubermatic/pull/12425))
 
 ## [v2.23.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.0)
 
