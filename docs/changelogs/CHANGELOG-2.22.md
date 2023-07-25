@@ -15,6 +15,10 @@
 - Metrics server write timeout increased ([#12314](https://github.com/kubermatic/kubermatic/pull/12314))
 - Alertmanager now allows blackbox exporter to perform healthcheck API call without AuthFailure ([#12217](https://github.com/kubermatic/kubermatic/pull/12217))
 
+### New Feature
+
+- Made Prometheus helm chart extensible so that external metric storage solutions like Thanos can be easily integrated for seed long-term monitoring ([#12425](https://github.com/kubermatic/kubermatic/pull/12425))
+
 ### Misc
 
 - Use buildx instead of Buildah to create multi-architecture KKP container images ([#12399](https://github.com/kubermatic/kubermatic/pull/12399))
