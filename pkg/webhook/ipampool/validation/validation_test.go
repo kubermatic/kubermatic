@@ -1016,7 +1016,7 @@ func TestValidator(t *testing.T) {
 					},
 				},
 			},
-			expectedError: fmt.Errorf("failed to add exclusion: there is an conflicted allocation in IPAM pool \"%s\" and datacenter \"%s\"", "test-pool", "dc"),
+			expectedError: fmt.Errorf("it's not allowed to update the allocation prefix for a datacenter"),
 		},
 	}
 
