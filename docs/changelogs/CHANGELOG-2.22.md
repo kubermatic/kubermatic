@@ -19,6 +19,10 @@
 
 - Made Prometheus helm chart extensible so that external metric storage solutions like Thanos can be easily integrated for seed long-term monitoring ([#12425](https://github.com/kubermatic/kubermatic/pull/12425))
 
+### Updates
+
+- Update machine-controller to [v1.56.4](https://github.com/kubermatic/machine-controller/releases/tag/v1.56.4) ([#12392](https://github.com/kubermatic/kubermatic/pull/12497))
+
 ### Misc
 
 - Use buildx instead of Buildah to create multi-architecture KKP container images ([#12399](https://github.com/kubermatic/kubermatic/pull/12399))
@@ -228,7 +232,7 @@ KubeVirt cloud provider support is leaving the "technical preview" phase and is 
 - Add new field  `ReconciliationInterval` in `ApplicationInstallation` to force reconciliation, even if the `ApplicationInstallation` CR has not changed ([#11467](https://github.com/kubermatic/kubermatic/pull/11467))
 - Extend `ApplicationDefinition` and `ApplicationInstallation` CRD with `DeployOptions.HelmDeployOptions` to control how applications are deployed with `Helm`([#11608](https://github.com/kubermatic/kubermatic/pull/11608))
     - ApplicationInstallation: set condition ready to `unknown` with reason `InstallationInProgress` before starting the installation
-    - ApplicationInstallation: don't try to install / upgrade the application if the max number of retries is exceeded 
+    - ApplicationInstallation: don't try to install / upgrade the application if the max number of retries is exceeded
 - Use string Version type for `ApplicationInstallation` CRD ([#11359](https://github.com/kubermatic/kubermatic/pull/11359))
 - Make uninstall for Applications idempotent ([#11622](https://github.com/kubermatic/kubermatic/pull/11622))
 - Add validating and defaulting webhook for Application deployOptions ([#11633](https://github.com/kubermatic/kubermatic/pull/11633))
@@ -480,7 +484,7 @@ Konnectivity is now GA.
 - Update metering to version 1.0.1 ([#11282](https://github.com/kubermatic/kubermatic/pull/11282))
     - Add average-used-cpu-millicores to Cluster and Namespace reports
     - Add average-available-cpu-millicores add average-cluster-machines field to Cluster reports
-    - Fix a bug that causes wrong values if metric is not continuously present for the aggregation window 
+    - Fix a bug that causes wrong values if metric is not continuously present for the aggregation window
 
 ### Miscellaneous
 
@@ -516,7 +520,7 @@ Konnectivity is now GA.
 - Add API endpoints for KubeVirt that allow using project-scoped Presets as credentials ([#5509](https://github.com/kubermatic/dashboard/pull/5509))
 - Add API endpoints for Nutanix that allow using project-scoped Presets as credentials ([#5154](https://github.com/kubermatic/dashboard/pull/5154))
 - Add API endpoints for OpenStack that allow using project-scoped Presets as credentials ([#5489](https://github.com/kubermatic/dashboard/pull/5489))
-    - ACTION REQUIRED: Headers for API operations `listOpenstackServerGroups` and `listOpenstackSubnetPools` have been renamed from `Tenant`, `TenantID`, `Project`, `ProjectID` to `OpenstackTenant`, `OpenstackTenantID`, `OpenstackProject` and `OpenstackProjectID`, respectively 
+    - ACTION REQUIRED: Headers for API operations `listOpenstackServerGroups` and `listOpenstackSubnetPools` have been renamed from `Tenant`, `TenantID`, `Project`, `ProjectID` to `OpenstackTenant`, `OpenstackTenantID`, `OpenstackProject` and `OpenstackProjectID`, respectively
 - Add API endpoints for VMware Cloud Director that allow using project-scoped Presets as credentials ([#5512](https://github.com/kubermatic/dashboard/pull/5512))
 - Add API endpoints for vSphere that allow using project-scoped Presets as credentials ([#5508](https://github.com/kubermatic/dashboard/pull/5508))
 - Add API endpoints for GKE that allow using project-scoped Presets as credentials ([#11156](https://github.com/kubermatic/kubermatic/pull/11156))
