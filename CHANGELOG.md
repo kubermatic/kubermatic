@@ -11,6 +11,14 @@
 - [v2.21.8](#v2218)
 - [v2.21.9](#v2219)
 - [v2.21.10](#v22110)
+- [v2.21.11](#v22111)
+
+## [v2.21.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.11)
+
+### Bugfixes
+
+- Fix default url configuration of blackbox exporter ([#12412](https://github.com/kubermatic/kubermatic/pull/12412))
+- Metrics server write timeout increased ([#12314](https://github.com/kubermatic/kubermatic/pull/12314))
 
 ## [v2.21.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.10)
 
