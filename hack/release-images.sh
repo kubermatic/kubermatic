@@ -110,9 +110,6 @@ create_manifest() {
   done
 }
 
-# do not needless copy large binaries around
-make clean
-
 # build multi-arch images
 echodate "Building user-ssh-keys-agent images..."
 buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG"
