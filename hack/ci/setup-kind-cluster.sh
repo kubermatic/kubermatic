@@ -105,9 +105,8 @@ EOF
 
   # unwrap the socket inside the kind cluster and make it available on a TCP port,
   # because containerd/Docker doesn't support sockets for mirrors.
-  docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c 'socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
+  docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c 'apt update --quiet; apt install --quiet socat; socat TCP4-LISTEN:5001,fork,reuseaddr UNIX:/mirror/mirror.sock &'
 else
-
   if [ -n "${WITH_WORKERS}" ]; then
     WORKERS='  - role: worker
   - role: worker'
