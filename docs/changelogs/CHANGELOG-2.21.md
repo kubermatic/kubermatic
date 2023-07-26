@@ -20,6 +20,10 @@
 - Fix default url configuration of blackbox exporter ([#12412](https://github.com/kubermatic/kubermatic/pull/12412))
 - Metrics server write timeout increased ([#12314](https://github.com/kubermatic/kubermatic/pull/12314))
 
+### Updates
+
+- Update machine-controller to [v1.54.8](https://github.com/kubermatic/machine-controller/releases/tag/v1.54.8) ([#12391](https://github.com/kubermatic/kubermatic/pull/12498))
+
 ## [v2.21.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.10)
 
 ### Bugfixes
@@ -226,7 +230,7 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - Update metering to version 1.0.1 ([#11293](https://github.com/kubermatic/kubermatic/pull/11293))
     * Add average-used-cpu-millicores to Cluster and Namespace reports
     * Add average-available-cpu-millicores add average-cluster-machines field to Cluster reports
-    * Fix a bug that causes wrong values if metric is not continuously present for the aggregation window 
+    * Fix a bug that causes wrong values if metric is not continuously present for the aggregation window
 
 ### Upcoming Changes
 
