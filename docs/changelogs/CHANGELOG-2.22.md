@@ -21,6 +21,7 @@
 
 ### Updates
 
+- Update to Go 1.19.11 ([#12503](https://github.com/kubermatic/kubermatic/pull/12503))
 - Update machine-controller to [v1.56.4](https://github.com/kubermatic/machine-controller/releases/tag/v1.56.4) ([#12392](https://github.com/kubermatic/kubermatic/pull/12497))
 
 ### Misc
