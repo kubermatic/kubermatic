@@ -175,7 +175,7 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 						// https://github.com/prometheus-operator/prometheus-operator/blob/v0.49.0/cmd/prometheus-config-reloader/main.go#L72-L108
 						"--listen-address=:8080",
 						"--watch-interval=10s",
-						fmt.Sprintf("--config-file=%s/%s.yaml", configVolumeMountPath, configFileName),
+						fmt.Sprintf("--config-file=%s/%s", configVolumeMountPath, configFileName),
 						fmt.Sprintf("--reload-url=http://localhost:%d/-/reload", containerPort),
 					},
 					Env: []corev1.EnvVar{
