@@ -43,6 +43,7 @@ const (
 
 	configVolumeName       = "config-volume"
 	configPath             = "/etc/config"
+	configFileName         = "agent.yaml"
 	storageVolumeName      = "storage-volume"
 	storagePath            = "/data"
 	certificatesVolumeName = "certificates"
@@ -98,7 +99,7 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
-						fmt.Sprintf("--config.file=%s/agent.yaml", configPath),
+						fmt.Sprintf("--config.file=%s/%s", configPath, configFileName),
 						"-server.http.address=0.0.0.0:9090",
 						fmt.Sprintf("-metrics.wal-directory=%s/agent", storagePath),
 					},
@@ -161,7 +162,7 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 						// https://github.com/prometheus-operator/prometheus-operator/blob/v0.49.0/cmd/prometheus-config-reloader/main.go#L72-L108
 						"--listen-address=:8080",
 						"--watch-interval=10s",
-						fmt.Sprintf("--config-file=%s/prometheus.yaml", configPath),
+						fmt.Sprintf("--config-file=%s/%s", configPath, configFileName),
 						fmt.Sprintf("--reload-url=http://localhost:%d/-/reload", containerPort),
 					},
 					Env: []corev1.EnvVar{
