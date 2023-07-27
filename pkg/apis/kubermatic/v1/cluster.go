@@ -247,6 +247,10 @@ type ClusterSpec struct {
 
 	// Enables more verbose logging in KKP's user-cluster-controller-manager.
 	DebugLog bool `json:"debugLog,omitempty"`
+
+	// Optional: DisableCSIDriver disables the installation of CSI driver on the cluster
+	// If this is true at the data center then it can't be over-written in the cluster configuration
+	DisableCSIDriver bool `json:"disableCsiDriver,omitempty"`
 }
 
 func (c ClusterSpec) IsOperatingSystemManagerEnabled() bool {

@@ -450,6 +450,10 @@ type DatacenterSpec struct {
 
 	// Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
 	MachineFlavorFilter *MachineFlavorFilter `json:"machineFlavorFilter,omitempty"`
+
+	// Optional: DisableCSIDriver disables the installation of CSI driver on every clusters within the DC
+	// If true it can't be over-written in the cluster configuration
+	DisableCSIDriver bool `json:"disableCsiDriver,omitempty"`
 }
 
 var (

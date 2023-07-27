@@ -101,6 +101,11 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		}
 	}
 
+	// Enforce DisableCSIDriver
+	if datacenter.Spec.DisableCSIDriver {
+		spec.DisableCSIDriver = true
+	}
+
 	// Enforce PodSecurityPolicy
 	if datacenter.Spec.EnforcePodSecurityPolicy {
 		spec.UsePodSecurityPolicyAdmissionPlugin = true

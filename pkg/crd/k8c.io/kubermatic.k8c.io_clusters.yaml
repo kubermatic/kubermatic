@@ -1644,6 +1644,9 @@ spec:
                 debugLog:
                   description: Enables more verbose logging in KKP's user-cluster-controller-manager.
                   type: boolean
+                disableCsiDriver:
+                  description: 'Optional: DisableCSIDriver disables the installation of CSI driver on the cluster If this is true at the data center then it can''t be over-written in the cluster configuration'
+                  type: boolean
                 enableOperatingSystemManager:
                   description: 'Optional: Enables operating-system-manager (OSM), which is responsible for creating and managing worker node configuration. This field is enabled(true) by default.'
                   type: boolean
