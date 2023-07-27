@@ -572,7 +572,7 @@ func uninstallTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.C
 		Namespace:  &ns.Name,
 	}
 
-	helmClient, err := NewClient(ctx, restClientGetter, settings, ns.Name, kubermaticlog.Logger)
+	helmClient, err := NewClient(ctx, restClientGetter, settings, ns.Name, kubermaticlog.Logger, "")
 	if err != nil {
 		t.Fatalf("failed to create helm client: %s", err)
 	}
@@ -623,7 +623,7 @@ func buildHelClient(t *testing.T, ctx context.Context, ns *corev1.Namespace, cha
 		Namespace:  &ns.Name,
 	}
 
-	helmClient, err := NewClient(ctx, restClientGetter, settings, ns.Name, kubermaticlog.Logger)
+	helmClient, err := NewClient(ctx, restClientGetter, settings, ns.Name, kubermaticlog.Logger, "")
 	if err != nil {
 		t.Fatalf("failed to create helm client: %s", err)
 	}
@@ -820,7 +820,7 @@ func TestDownloadChart(t *testing.T) {
 				tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
 				defer tf.Cleanup()
 
-				helmClient, err := NewClient(context.Background(), tf, settings, defaultNs, log)
+				helmClient, err := NewClient(context.Background(), tf, settings, defaultNs, log, "")
 				if err != nil {
 					t.Fatalf("can not init helm Client: %s", err)
 				}
@@ -1056,7 +1056,7 @@ func TestBuildDependencies(t *testing.T) {
 					}
 				}
 
-				helmClient, err := NewClient(context.Background(), tf, settings, defaultNs, log)
+				helmClient, err := NewClient(context.Background(), tf, settings, defaultNs, log, "")
 				if err != nil {
 					t.Fatalf("can not init helm client: %s", err)
 				}
