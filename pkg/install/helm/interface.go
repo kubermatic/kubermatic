@@ -32,6 +32,6 @@ type Client interface {
 	GetRelease(namespace string, name string) (*Release, error)
 	ListReleases(namespace string) ([]Release, error)
 	UninstallRelease(namespace string, name string) error
-	RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string) ([]byte, error)
+	RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) ([]byte, error)
 	GetValues(namespace string, releaseName string) (*yamled.Document, error)
 }
