@@ -19,11 +19,13 @@ package helmclient
 import (
 	"context"
 	"crypto"
+	"crypto/tls"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,6 +42,8 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"helm.sh/helm/v3/pkg/storage/driver"
+
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -88,16 +92,35 @@ type AuthSettings struct {
 }
 
 // newRegistryClient returns a new registry client with authentication is RegistryConfigFile is defined.
-func (a *AuthSettings) newRegistryClient() (*registry.Client, error) {
-	if a.RegistryConfigFile == "" {
-		return registry.NewClient()
+func (a *AuthSettings) newRegistryClient(caBundleFile string) (*registry.Client, error) {
+	opt := []registry.ClientOption{}
+
+	if a.RegistryConfigFile != "" {
+		opt = append(opt, registry.ClientOptCredentialsFile(a.RegistryConfigFile))
 	}
-	return registry.NewClient(registry.ClientOptCredentialsFile(a.RegistryConfigFile))
+
+	if caBundleFile != "" {
+		caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
+		if err != nil {
+			return nil, fmt.Errorf("invalid CA bundle: %w", err)
+		}
+
+		httpClient := &http.Client{}
+		httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: caBundle.CertPool(),
+			},
+		}
+
+		opt = append(opt, registry.ClientOptHTTPClient(httpClient))
+	}
+
+	return registry.NewClient(opt...)
 }
 
 // registryClientAndGetterOptions return registry.Client and authentication options for Getter.
-func (a *AuthSettings) registryClientAndGetterOptions() (*registry.Client, []getter.Option, error) {
-	regClient, err := a.newRegistryClient()
+func (a *AuthSettings) registryClientAndGetterOptions(caBundleFile string) (*registry.Client, []getter.Option, error) {
+	regClient, err := a.newRegistryClient(caBundleFile)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -106,6 +129,10 @@ func (a *AuthSettings) registryClientAndGetterOptions() (*registry.Client, []get
 	if a.Username != "" && a.Password != "" {
 		options = append(options, getter.WithBasicAuth(a.Username, a.Password))
 	}
+	if caBundleFile != "" {
+		options = append(options, getter.WithTLSClientConfig("", "", caBundleFile))
+	}
+
 	return regClient, options, nil
 }
 
@@ -151,6 +178,12 @@ func NewDeployOpts(wait bool, timeout time.Duration, atomic bool, enableDNS bool
 type HelmClient struct {
 	ctx context.Context
 
+	// caBundleFile is an optional path to a file containing the set of root CA certificates
+	// to use when validating the server-side certificates. Each certificate must be
+	// PEM-encoded.
+	// If not set, the system/container's default root CAs are used (Go's default).
+	caBundleFile string
+
 	restClientGetter genericclioptions.RESTClientGetter
 
 	settings HelmSettings
@@ -168,7 +201,7 @@ type HelmClient struct {
 	logger *zap.SugaredLogger
 }
 
-func NewClient(ctx context.Context, restClientGetter genericclioptions.RESTClientGetter, settings HelmSettings, targetNamespace string, logger *zap.SugaredLogger) (*HelmClient, error) {
+func NewClient(ctx context.Context, restClientGetter genericclioptions.RESTClientGetter, settings HelmSettings, targetNamespace string, logger *zap.SugaredLogger, caBundleFile string) (*HelmClient, error) {
 	// Even if namespace is set in the actionConfig.init() function, upgrade action take the namespace from RESTClientGetter.
 	// If the namespaces are different, the release will be installed in the namespace set in the RESTClientGetter but the
 	// release information will be stored in the targetNamespace which leads to a release which cannot be uninstalled with Helm.
@@ -187,6 +220,7 @@ func NewClient(ctx context.Context, restClientGetter genericclioptions.RESTClien
 
 	return &HelmClient{
 		ctx:              ctx,
+		caBundleFile:     caBundleFile,
 		restClientGetter: restClientGetter,
 		settings:         settings,
 		getterProviders:  settings.GetterProviders(),
@@ -210,7 +244,7 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 		}
 	}
 
-	regClient, options, err := auth.registryClientAndGetterOptions()
+	regClient, options, err := auth.registryClientAndGetterOptions(h.caBundleFile)
 	if err != nil {
 		return "", err
 	}
@@ -349,7 +383,7 @@ func (h HelmClient) buildDependencies(chartLoc string, auth AuthSettings) (*char
 	// note: if we got the chart from a remote helm repository, we don't have to build dependencies because the package
 	// (i.e. the tgz) should already contain it.
 	if fi.IsDir() {
-		regClient, err := auth.newRegistryClient()
+		regClient, err := auth.newRegistryClient(h.caBundleFile)
 		if err != nil {
 			return nil, fmt.Errorf("can not initialize registry client: %w", err)
 		}
@@ -417,6 +451,7 @@ func (h HelmClient) ensureRepository(url string, auth AuthSettings) (string, err
 		URL:      url,
 		Username: auth.Username,
 		Password: auth.Password,
+		CAFile:   h.caBundleFile,
 	}
 
 	// Ensure we have the last version of the index file.
