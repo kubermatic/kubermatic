@@ -217,20 +217,26 @@ func (m *ModifiersBuilder) getFrontProxyLBServiceData(frontProxyLoadBalancerServ
 	var publicIPv4, privateIPv4, privateIPv6, publicIPv6 []string
 
 	for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
-		if ingress.IP != "" && !net.ParseIP(ingress.IP).IsPrivate() && !utilnet.IsIPv6String(ingress.IP) {
-			publicIPv4 = append(publicIPv4, ingress.IP)
-		}
-		if ingress.IP != "" && net.ParseIP(ingress.IP).IsPrivate() && !utilnet.IsIPv6String(ingress.IP) {
-			privateIPv4 = append(privateIPv4, ingress.IP)
-		}
-		if ingress.IP != "" && utilnet.IsIPv6String(ingress.IP) && !net.ParseIP(ingress.IP).IsPrivate() {
-			publicIPv6 = append(publicIPv6, ingress.IP)
-		}
-		if ingress.IP != "" && utilnet.IsIPv6String(ingress.IP) && net.ParseIP(ingress.IP).IsPrivate() {
-			privateIPv6 = append(privateIPv6, ingress.IP)
-		}
 		if ingress.Hostname != "" {
 			serviceHostname = ingress.Hostname
+		}
+
+		if len(ingress.IP) == 0 {
+			continue
+		}
+
+		if utilnet.IsIPv4String(ingress.IP) {
+			if !net.ParseIP(ingress.IP).IsPrivate() {
+				publicIPv4 = append(publicIPv4, ingress.IP)
+			} else {
+				privateIPv4 = append(privateIPv4, ingress.IP)
+			}
+		} else if utilnet.IsIPv6String(ingress.IP) {
+			if !net.ParseIP(ingress.IP).IsPrivate() {
+				publicIPv6 = append(publicIPv6, ingress.IP)
+			} else {
+				privateIPv6 = append(privateIPv6, ingress.IP)
+			}
 		}
 	}
 
