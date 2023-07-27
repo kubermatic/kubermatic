@@ -202,13 +202,14 @@ func (c *cli) UninstallRelease(namespace string, name string) error {
 	return err
 }
 
-func (c *cli) RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string) ([]byte, error) {
+func (c *cli) RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) ([]byte, error) {
 	command := []string{"template"}
 
 	if valuesFile != "" {
 		command = append(command, "--values", valuesFile)
 	}
 
+	command = append(command, flags...)
 	command = append(command, valuesToFlags(values)...)
 	command = append(command, releaseName, chartDirectory)
 

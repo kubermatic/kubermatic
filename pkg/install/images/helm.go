@@ -35,7 +35,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartsPath string, valuesFile string, registryPrefix string) ([]string, error) {
+func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartsPath string, valuesFile string, registryPrefix string, kubeVersion string) ([]string, error) {
 	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
 	}
@@ -47,7 +47,7 @@ func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config 
 
 	images := []string{}
 	for _, chartPath := range chartPaths {
-		chartImages, err := GetImagesForHelmChart(log, config, helmClient, chartPath, valuesFile, registryPrefix)
+		chartImages, err := GetImagesForHelmChart(log, config, helmClient, chartPath, valuesFile, registryPrefix, kubeVersion)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get images for Helm chart: %w", err)
 		}
@@ -57,7 +57,7 @@ func GetImagesForHelmCharts(ctx context.Context, log logrus.FieldLogger, config 
 	return images, nil
 }
 
-func GetImagesForHelmChart(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartPath string, valuesFile string, registryPrefix string) ([]string, error) {
+func GetImagesForHelmChart(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, chartPath string, valuesFile string, registryPrefix string, kubeVersion string) ([]string, error) {
 	images := []string{}
 	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
 
@@ -90,7 +90,13 @@ func GetImagesForHelmChart(log logrus.FieldLogger, config *kubermaticv1.Kubermat
 
 	chartLog.Debug("Rendering chart…")
 
-	rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil)
+	// we need to set this flag for RenderChart to ensure compatibility with charts that specify a kubeVersion field (e.g. mla/consul)
+	versionFlag := []string{}
+	if kubeVersion != "" {
+		versionFlag = []string{"--kube-version", kubeVersion}
+	}
+
+	rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil, versionFlag)
 	if err != nil {
 		return nil, fmt.Errorf("failed to render Helm chart %q: %w", chartName, err)
 	}
