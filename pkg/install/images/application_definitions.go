@@ -97,7 +97,7 @@ func getImagesFromApplicationDefinition(logger logrus.FieldLogger, helmClient he
 			return nil, fmt.Errorf("failed to pull app chart: %w", err)
 		}
 		// get images
-		chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, valuesFile, registryPrefix)
+		chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, valuesFile, registryPrefix, "") // since we don't have the version constraints in AppDefs yet, we can leave kubeVersion parameter empty
 		if err != nil {
 			return nil, fmt.Errorf("failed to get images for chart: %w", err)
 		}
