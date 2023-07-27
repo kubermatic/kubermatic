@@ -29,17 +29,20 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
 	fakeClusterName          = "fake-cluster"
+	fakeClusterNameIPv6      = "fake-cluster-ipv6"
 	fakeDCName               = "europe-west3-c"
 	fakeExternalURL          = "dev.kubermatic.io"
 	fakeClusterNamespaceName = "cluster-ns"
 	externalIP               = "34.89.181.151"
 	loadbBalancerHostName    = "xyz.eu-central-1.cloudprovider.test"
 	testDomain               = "dns-test.kubermatic.io"
+	ipv6Address              = "2a01:4f8:1c0c:4b1d::1"
 )
 
 func testLookupFunction(host string) ([]net.IP, error) {
@@ -49,7 +52,9 @@ func testLookupFunction(host string) ([]net.IP, error) {
 	case "fake-cluster.europe-west3-c.dev.kubermatic.io":
 		fallthrough
 	case "fake-cluster.alias-europe-west3-c.dev.kubermatic.io":
-		return []net.IP{net.IPv4(34, 89, 181, 151)}, nil
+		return []net.IP{net.IPv4(34, 89, 181, 151), net.ParseIP("2a01:4f8:1c0c:4b1d::1")}, nil
+	case "fake-cluster-ipv6.europe-west3-c.dev.kubermatic.io":
+		return []net.IP{net.ParseIP("2a01:4f8:1c0c:4b1d::1")}, nil
 	case loadbBalancerHostName:
 		return []net.IP{net.IPv4(34, 89, 181, 151)}, nil
 	default:
@@ -57,12 +62,12 @@ func testLookupFunction(host string) ([]net.IP, error) {
 	}
 }
 
-func TestGetExternalIPv4(t *testing.T) {
+func TestGetExternalIP(t *testing.T) {
 	ip, err := NewModifiersBuilder(kubermaticlog.Logger).
 		lookupFunc(testLookupFunction).
-		getExternalIPv4(testDomain)
+		getExternalIP(testDomain)
 	if err != nil {
-		t.Fatalf("failed to get the external IPv4 address for %s: %v", testDomain, err)
+		t.Fatalf("failed to get the external IP address for %s: %v", testDomain, err)
 	}
 
 	if ip != "192.168.1.1" {
@@ -73,6 +78,7 @@ func TestGetExternalIPv4(t *testing.T) {
 func TestSyncClusterAddress(t *testing.T) {
 	testCases := []struct {
 		name                 string
+		clusterName          *string
 		apiserverService     corev1.Service
 		frontproxyService    corev1.Service
 		exposeStrategy       kubermaticv1.ExposeStrategy
@@ -102,6 +108,26 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedIP:           "1.2.3.4",
 			expectedPort:         int32(443),
 			expectedURL:          "https://1.2.3.4:443",
+		},
+		{
+			name: "Verify properties for service type LoadBalancer with IPv6",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{NodePort: int32(443)}},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{IP: ipv6Address}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: ipv6Address,
+			expectedIP:           ipv6Address,
+			expectedPort:         int32(443),
+			expectedURL:          fmt.Sprintf("https://[%s]:443", ipv6Address),
 		},
 		{
 			name: "Verify properties for service type LoadBalancer dont change when seedDNSOverwrite is set",
@@ -288,6 +314,26 @@ func TestSyncClusterAddress(t *testing.T) {
 			expectedURL:          fmt.Sprintf("https://%s.%s.%s:6443", fakeClusterName, fakeDCName, fakeExternalURL),
 		},
 		{
+			name:        "Verify properties for Tunneling expose strategy with IPv6",
+			clusterName: pointer.String(fakeClusterNameIPv6),
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Type: corev1.ServiceTypeNodePort,
+					Ports: []corev1.ServicePort{
+						{
+							Port:       int32(6443),
+							TargetPort: intstr.FromInt(6443),
+							NodePort:   32000,
+						}},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyTunneling,
+			expectedExternalName: fmt.Sprintf("%s.%s.%s", fakeClusterNameIPv6, fakeDCName, fakeExternalURL),
+			expectedIP:           ipv6Address,
+			expectedPort:         int32(6443),
+			expectedURL:          fmt.Sprintf("https://%s.%s.%s:6443", fakeClusterNameIPv6, fakeDCName, fakeExternalURL),
+		},
+		{
 			name: "Verify error when service has less than one ports",
 			apiserverService: corev1.Service{
 				Spec: corev1.ServiceSpec{
@@ -299,9 +345,14 @@ func TestSyncClusterAddress(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			clusterName := fakeClusterName
+			if tc.clusterName != nil {
+				clusterName = *tc.clusterName
+			}
+
 			cluster := &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: fakeClusterName,
+					Name: clusterName,
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{

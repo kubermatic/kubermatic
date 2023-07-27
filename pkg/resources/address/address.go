@@ -146,7 +146,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		} else if frontProxyLBServiceHostname != "" {
 			var err error
 			// Always lookup IP address, in case it changes
-			ip, err = m.getExternalIPv4(frontProxyLBServiceHostname)
+			ip, err = m.getExternalIP(frontProxyLBServiceHostname)
 			if err != nil {
 				return nil, err
 			}
@@ -156,7 +156,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	case kubermaticv1.ExposeStrategyTunneling:
 		var err error
 		// Always lookup IP address, in case it changes (IP's on AWS LB's change)
-		ip, err = m.getExternalIPv4(externalName)
+		ip, err = m.getExternalIP(externalName)
 		if err != nil {
 			return nil, err
 		}
@@ -207,35 +207,52 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 
 func (m *ModifiersBuilder) getFrontProxyLBServiceData(frontProxyLoadBalancerService *corev1.Service) (string, string) {
 	//  frontProxyLBServiceIP is set according to below priority
-	// 1. First public IP from the status list
-	// 2. First private IP from the status list
-	// 3. Default IP as per configured spec if status is not populated
+	// 1. First public IPv4 from the status list
+	// 2. First private IPv4 from the status list
+	// 3. First public IPv6 from the status list
+	// 4. First private IPv6 from the status list
+	// 5. Default IP as per configured spec if status is not populated
 	serviceIP := ""
 	serviceHostname := ""
-	if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) > 0 {
-		var tmpIP string
-		for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" && !net.ParseIP(ingress.IP).IsPrivate() && !utilnet.IsIPv6String(ingress.IP) && tmpIP == "" {
-				tmpIP = ingress.IP
-			}
-			if ingress.Hostname != "" {
-				serviceHostname = ingress.Hostname
-			}
+	var publicIPv4, privateIPv4, privateIPv6, publicIPv6 []string
+
+	for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
+		if ingress.Hostname != "" {
+			serviceHostname = ingress.Hostname
 		}
 
-		if tmpIP != "" {
-			serviceIP = tmpIP
-		} else {
-			// select first non-ipv6 private IP
-			for _, ingress := range frontProxyLoadBalancerService.Status.LoadBalancer.Ingress {
-				if !utilnet.IsIPv6String(ingress.IP) {
-					serviceIP = ingress.IP
-					break
-				}
+		if len(ingress.IP) == 0 {
+			continue
+		}
+
+		if utilnet.IsIPv4String(ingress.IP) {
+			if !net.ParseIP(ingress.IP).IsPrivate() {
+				publicIPv4 = append(publicIPv4, ingress.IP)
+			} else {
+				privateIPv4 = append(privateIPv4, ingress.IP)
+			}
+		} else if utilnet.IsIPv6String(ingress.IP) {
+			if !net.ParseIP(ingress.IP).IsPrivate() {
+				publicIPv6 = append(publicIPv6, ingress.IP)
+			} else {
+				privateIPv6 = append(privateIPv6, ingress.IP)
 			}
 		}
-		m.log.Debugw("Multiple ingress values in LB status, the following values will be used", "ip", serviceIP, "hostname", serviceHostname)
 	}
+
+	switch {
+	case len(publicIPv4) > 0:
+		serviceIP = publicIPv4[0]
+	case len(privateIPv4) > 0:
+		serviceIP = privateIPv4[0]
+	case len(publicIPv6) > 0:
+		serviceIP = publicIPv6[0]
+	case len(privateIPv6) > 0:
+		serviceIP = privateIPv6[0]
+	}
+
+	m.log.Debugw("From the ingress values in LB status, the following values will be used", "ip", serviceIP, "hostname", serviceHostname)
+
 	// default in case the implementation doesn't populate the status
 	if len(frontProxyLoadBalancerService.Status.LoadBalancer.Ingress) == 0 {
 		serviceIP = frontProxyLoadBalancerService.Spec.LoadBalancerIP
@@ -244,7 +261,7 @@ func (m *ModifiersBuilder) getFrontProxyLBServiceData(frontProxyLoadBalancerServ
 	return serviceIP, serviceHostname
 }
 
-func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
+func (m *ModifiersBuilder) getExternalIP(hostname string) (string, error) {
 	resolvedIPs, err := m.lookupFunction(hostname)
 	if err != nil {
 		return "", fmt.Errorf("failed to lookup ip for %s: %w", hostname, err)
@@ -255,14 +272,23 @@ func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
 			ipList.Insert(ip.String())
 		}
 	}
+
+	// If no IPv4 address was found, look for IPv6 addresses.
+	if len(ipList) == 0 {
+		for _, ip := range resolvedIPs {
+			if ip.To16() != nil && len(ip.To16()) == net.IPv6len {
+				ipList.Insert(ip.String())
+			}
+		}
+	}
+
 	ips := sets.List(ipList)
 	if len(ips) == 0 {
 		return "", fmt.Errorf("no ip addresses found for %s: %w", hostname, err)
 	}
-
-	// Just one ipv4
+	// Return the first IP address.
 	if len(ips) > 1 {
-		m.log.Debugw("Lookup returned multiple ipv4 addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
+		m.log.Debugw("Lookup returned multiple IP addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
 	}
 	return ips[0], nil
 }
