@@ -31,6 +31,10 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const (
+	version = "1.22.20"
+)
+
 func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetReconciler) {
 		return resources.NodeLocalDNSDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
@@ -87,7 +91,7 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "node-cache",
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:1.22.20", resources.RegistryK8S))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:%s", resources.RegistryK8S, version))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
 						"-localip",

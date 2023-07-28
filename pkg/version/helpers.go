@@ -18,10 +18,12 @@ package version
 
 import (
 	"fmt"
+	"sort"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 )
 
 func IsSupported(version *semverlib.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {
@@ -67,4 +69,25 @@ func CheckUnconstrained(baseVersion *semverlib.Version, version string) (bool, e
 	}
 
 	return !c.Check(baseVersion), nil
+}
+
+func GetLatestMinorVersions(versions []kubermativsemver.Semver) []string {
+	minorMap := map[uint64]*semverlib.Version{}
+
+	for _, version := range versions {
+		sversion := version.Semver()
+		minor := sversion.Minor()
+
+		if existing := minorMap[minor]; existing == nil || existing.LessThan(sversion) {
+			minorMap[minor] = sversion
+		}
+	}
+
+	list := []string{}
+	for _, v := range minorMap {
+		list = append(list, "v"+v.String())
+	}
+	sort.Strings(list)
+
+	return list
 }

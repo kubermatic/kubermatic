@@ -64,6 +64,7 @@ try "Verify boilerplate" ./hack/verify-boilerplate.sh
 try "Verify Grafana dashboards" ./hack/verify-grafana-dashboards.sh
 try "Verify Prometheus rules" ./hack/verify-prometheus-rules.sh
 try "Verify User Cluster Prometheus rules" ./hack/ci/verify-user-cluster-prometheus-configs.sh
+try "Display Versioning Information" ./hack/versions-gen.sh
 
 # -l        list files whose formatting differs from shfmt's
 # -d        error with a diff when the formatting differs

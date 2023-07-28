@@ -65,6 +65,7 @@ const (
 	name         = "openvpn-server"
 	statusPath   = "/run/openvpn/openvpn-status"
 	exporterPort = 9176
+	version      = "v2.5.2-r0"
 )
 
 type openVPNDeploymentReconcilerData interface {
@@ -149,7 +150,7 @@ func DeploymentReconciler(data openVPNDeploymentReconcilerData) reconciling.Name
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:    "iptables-init",
-					Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/openvpn:v2.5.2-r0")),
+					Image:   registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/openvpn:" + version)),
 					Command: []string{"/bin/bash"},
 					Args: []string{
 						"-c", `# do not give a 10.20.0.0/24 route to clients (nodes) but

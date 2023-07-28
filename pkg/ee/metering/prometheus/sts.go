@@ -41,8 +41,12 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const (
+	version = "v2.37.0"
+)
+
 func getPrometheusImage(overwriter registry.ImageRewriter) string {
-	return registry.Must(overwriter(resources.RegistryQuay + "/prometheus/prometheus:v2.37.0"))
+	return registry.Must(overwriter(resources.RegistryQuay + "/prometheus/prometheus:" + version))
 }
 
 // prometheusStatefulSet creates a StatefulSet for prometheus.

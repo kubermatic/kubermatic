@@ -43,6 +43,7 @@ require (
 	github.com/kubermatic/machine-controller v1.57.1-0.20230704163314-5f4e903ddafe
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
+	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.8
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230606213221-6ccacf85c2c5 // v0.9.0+

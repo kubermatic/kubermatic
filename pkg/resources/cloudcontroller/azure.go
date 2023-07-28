@@ -76,7 +76,7 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 				return nil, err
 			}
 
-			version, err := getAzureVersion(data.Cluster().Status.Versions.ControlPlane)
+			version, err := AzureCCMVersion(data.Cluster().Status.Versions.ControlPlane)
 			if err != nil {
 				return nil, err
 			}
@@ -122,7 +122,7 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 	}
 }
 
-func getAzureVersion(version semver.Semver) (string, error) {
+func AzureCCMVersion(version semver.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
 	case v123:

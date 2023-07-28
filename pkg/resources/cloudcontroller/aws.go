@@ -75,7 +75,7 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 				return nil, err
 			}
 
-			ccmVersion := getAWSCCMVersion(data.Cluster().Spec.Version)
+			ccmVersion := AWSCCMVersion(data.Cluster().Spec.Version)
 
 			flags := []string{
 				"/bin/aws-cloud-controller-manager",
@@ -139,7 +139,7 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 	}
 }
 
-func getAWSCCMVersion(version semver.Semver) string {
+func AWSCCMVersion(version semver.Semver) string {
 	// https://github.com/kubernetes/cloud-provider-aws/releases
 
 	switch version.MajorMinor() {
