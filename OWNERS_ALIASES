@@ -21,7 +21,6 @@ aliases:
     - xrstf
   sig-networking:
     - cnvergence
-    - mfranczy
     - moadqassem
     - pkprzekwas
     - weirdmachine
@@ -32,6 +31,5 @@ aliases:
     - waseem826
   sig-virtualization:
     - cnvergence
-    - mfranczy
     - weirdmachine
     - wozniakjan
