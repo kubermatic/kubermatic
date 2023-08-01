@@ -25,31 +25,31 @@ groups:
           max(kube_pod_info{job="kube-state-metrics"}) by (node, namespace, pod)
       - record: namespace_name:container_cpu_usage_seconds_total:sum_rate
         expr: |
-          sum by (namespace, label_name) (
+          sum by (namespace, label_app) (
               sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace, pod)
-            * on (namespace, pod) group_left (label_name)
-              kube_pod_labels{job="kube-state-metrics"}
+            * on (namespace, pod) group_left (label_app)
+              sum(kube_pod_labels{job="kube-state-metrics", pod="prometheus-0", namespace="monitoring"}) by (namespace, pod, label_app)
           )
       - record: namespace_name:container_memory_usage_bytes:sum
         expr: |
-          sum by (namespace, label_name) (
+          sum by (namespace, label_app) (
               sum(container_memory_usage_bytes{job="cadvisor",image!="", container!=""}) by (pod, namespace)
-            * on (namespace, pod) group_left (label_name)
-              kube_pod_labels{job="kube-state-metrics"}
+            * on (namespace, pod) group_left (label_app)
+              sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
           )
       - record: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum
         expr: |
-          sum by (namespace, label_name) (
+          sum by (namespace, label_app) (
               sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="memory"}) by (namespace, pod)
-            * on (namespace, pod) group_left (label_name)
-              kube_pod_labels{job="kube-state-metrics"}
+            * on (namespace, pod) group_left (label_app)
+              sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
           )
       - record: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum
         expr: |
-          sum by (namespace, label_name) (
+          sum by (namespace, label_app) (
               sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="cpu"} and on(pod) kube_pod_status_scheduled{condition="true"}) by (namespace, pod)
-            * on (namespace, pod) group_left (label_name)
-              kube_pod_labels{job="kube-state-metrics"}
+            * on (namespace, pod) group_left (label_app)
+              sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
           )
       ############################################################
       # alerts
