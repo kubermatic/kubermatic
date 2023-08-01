@@ -34,7 +34,42 @@ func ValidateApplicationDefinitionSpec(ad appskubermaticv1.ApplicationDefinition
 	allErrs = append(allErrs, ValidateApplicationDefinitionWithOpenAPI(ad, parentFieldPath)...)
 	allErrs = append(allErrs, ValidateApplicationVersions(ad.Spec.Versions, parentFieldPath.Child("spec"))...)
 	allErrs = append(allErrs, ValidateDeployOpts(ad.Spec.DefaultDeployOptions, parentFieldPath.Child("spec.defaultDeployOptions"))...)
+	allErrs = append(allErrs, ValidateDefaultOpts(ad, parentFieldPath.Child("spec"))...)
 	return allErrs
+}
+
+func ValidateDefaultOpts(ad appskubermaticv1.ApplicationDefinition, f *field.Path) (allErrs []*field.Error) {
+
+	// defaulting or enforcing not enabled, no validation required
+	if !ad.Spec.DefaultDeploy && !ad.Spec.Enforce {
+		return
+	}
+
+	// check if default version is provided and exists
+	if ad.Spec.DefaultVersion != "" {
+		var defaultVersionExists bool
+		for _, v := range ad.Spec.Versions {
+			if v.Version == ad.Spec.DefaultVersion {
+				defaultVersionExists = true
+				break
+			}
+		}
+		if !defaultVersionExists {
+			allErrs = append(allErrs, field.Forbidden(f.Child("defaultVersion"), "does not match any versions defined"))
+		}
+	} else {
+		allErrs = append(allErrs, field.Forbidden(f.Child("defaultVersion"), "not provided, but needed for default installation"))
+	}
+
+	if ad.Spec.DefaultName == "" {
+		allErrs = append(allErrs, field.Forbidden(f.Child("defaultName"), "not provided, but needed for default installation"))
+	}
+
+	if ad.Spec.DefaultNamespace == "" {
+		allErrs = append(allErrs, field.Forbidden(f.Child("defaultNamespace"), "not provided, but needed for default installation"))
+	}
+
+	return
 }
 
 func ValidateApplicationDefinitionUpdate(newAd appskubermaticv1.ApplicationDefinition, oldAd appskubermaticv1.ApplicationDefinition) field.ErrorList {

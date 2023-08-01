@@ -199,6 +199,21 @@ type ApplicationDefinitionSpec struct {
 	// These settings can be overridden in applicationInstallation.
 	DefaultDeployOptions *DeployOptions `json:"defaultDeployOptions,omitempty"`
 
+	// DefaultName is the default application name
+	DefaultName string `json:"defaultName"`
+
+	// DefaultNamespace to deploy the application in
+	DefaultNamespace string `json:"defaultNamespace"`
+
+	// DefaultVersion to deploy the application with
+	DefaultVersion string `json:"defaultVersion"`
+
+	// DefaultDeploy deploys the application by default on every cluster
+	DefaultDeploy bool `json:"defaultDeploy"`
+
+	// Enforce enforces the application by default on every cluster
+	Enforce bool `json:"enforce"`
+
 	// Available version for this application
 	Versions []ApplicationVersion `json:"versions"`
 }

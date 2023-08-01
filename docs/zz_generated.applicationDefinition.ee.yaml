@@ -3,8 +3,18 @@ kind: ApplicationDefinitions
 metadata:
   name: <<appdef-name>>
 spec:
+  # DefaultDeploy deploys the application by default on every cluster
+  defaultDeploy: false
+  # DefaultName is the default application name
+  defaultName: ""
+  # DefaultNamespace to deploy the application in
+  defaultNamespace: ""
+  # DefaultVersion to deploy the application with
+  defaultVersion: ""
   # Description of the application. what is its purpose
   description: ""
+  # Enforce enforces the application by default on every cluster
+  enforce: false
   # Method used to install the application
   method: helm
   # Available version for this application
@@ -105,7 +115,7 @@ spec:
                 optional: false
               # RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
               # file that follows the same format rules as ~/.docker/config.json
-              # The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
               # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
               registryConfigFile:
                 # The key of the secret to select from. Must be a valid secret key.

@@ -97,8 +97,8 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		return fmt.Errorf("failed to create watch for ApplicationInstallation: %w", err)
 	}
 
-	// We also watch ApplicationDefinition because it contains information about how to install the application. Moreover
-	// if KKP admin deletes ApplicationDefinition, the related application must also be deleted.
+	// We also watch ApplicationDefinition because it contains information about how to install the application.
+	// Moreover, if KKP admin deletes ApplicationDefinition, the related application must also be deleted.
 	appDefInformer, err := seedMgr.GetCache().GetInformer(ctx, &appskubermaticv1.ApplicationDefinition{})
 	if err != nil {
 		return fmt.Errorf("failed to get informer for applicationDefinition: %w", err)
