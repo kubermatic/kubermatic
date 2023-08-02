@@ -231,6 +231,11 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(specPath.Child("features").Key(kubermaticv1.ClusterFeatureEtcdLauncher), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureEtcdLauncher)))
 	}
 
+	// Validate datacenter setting for disabling CSI driver installation if true, is not being over-written.
+	if dc.Spec.DisableCSIDriver && !newCluster.Spec.DisableCSIDriver {
+		allErrs = append(allErrs, field.Forbidden(specPath.Child("DisableCSIDriver"), "CSI driver installation is disabled on the datacenter, can't be enabled on cluster"))
+	}
+
 	if oldCluster.Spec.ExposeStrategy != "" {
 		if _, ok := newCluster.Labels[UnsafeExposeStrategyMigrationLabel]; !ok { // allow expose strategy migration if labeled explicitly
 			allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
