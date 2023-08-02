@@ -274,7 +274,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
 			chartsLogger.Info("🚀 Rendering Helm charts…")
 
-			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile, options.RegistryPrefix)
+			// Because charts can specify a desired kubeVersion and the helm render default is hardcoded to 1.20, we need to set a custom kubeVersion.
+			// Otherwise some charts would fail to render (e.g. consul).
+			// Since we are just rendering from the client-side, it makes sense to use the latest kubeVersion we support.
+			latestClusterVersion := clusterVersions[len(clusterVersions)-1]
+			images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile, options.RegistryPrefix, latestClusterVersion.Version.Original())
 			if err != nil {
 				return fmt.Errorf("failed to get images: %w", err)
 			}

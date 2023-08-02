@@ -94,7 +94,7 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 	}
 
 	var images []string
-	chartImages, err := GetImagesForHelmCharts(context.Background(), log, config, helmClient, "../../../charts/monitoring", "", "")
+	chartImages, err := GetImagesForHelmCharts(context.Background(), log, config, helmClient, "../../../charts/monitoring", "", "", "")
 	if err != nil {
 		t.Errorf("error calling GetImagesForHelmCharts: %v", err)
 	}
