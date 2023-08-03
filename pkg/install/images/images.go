@@ -19,6 +19,7 @@ package images
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"time"
 
@@ -35,6 +36,7 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	k8sdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
@@ -170,6 +172,7 @@ func getImagesFromCreators(log logrus.FieldLogger, templateData *resources.Templ
 		templateData.ImageRegistry,
 	))
 	daemonsetCreators = append(daemonsetCreators, nodelocaldns.DaemonSetCreator(templateData.ImageRegistry))
+	daemonsetCreators = append(daemonsetCreators, envoyagent.DaemonSetCreator(net.IPv4(0, 0, 0, 0), kubermaticVersions, "", templateData.ImageRegistry))
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()
