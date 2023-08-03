@@ -23,6 +23,7 @@
 #   - added seccomp profile to calico-controllers
 #   - Add custom network policy
 #   - Flannel image bumped to v0.15.1
+#   - Add preserveUnknownFields: false to all CRDs
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.20" }}
@@ -106,6 +107,7 @@ kind: CustomResourceDefinition
 metadata:
   name: bgpconfigurations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: BGPConfiguration
@@ -249,6 +251,7 @@ kind: CustomResourceDefinition
 metadata:
   name: bgppeers.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: BGPPeer
@@ -362,6 +365,7 @@ kind: CustomResourceDefinition
 metadata:
   name: blockaffinities.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: BlockAffinity
@@ -423,6 +427,7 @@ kind: CustomResourceDefinition
 metadata:
   name: clusterinformations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: ClusterInformation
@@ -487,6 +492,7 @@ kind: CustomResourceDefinition
 metadata:
   name: felixconfigurations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: FelixConfiguration
@@ -1051,6 +1057,7 @@ kind: CustomResourceDefinition
 metadata:
   name: globalnetworkpolicies.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: GlobalNetworkPolicy
@@ -1906,6 +1913,7 @@ kind: CustomResourceDefinition
 metadata:
   name: globalnetworksets.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: GlobalNetworkSet
@@ -1959,6 +1967,7 @@ kind: CustomResourceDefinition
 metadata:
   name: hostendpoints.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: HostEndpoint
@@ -2067,6 +2076,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamblocks.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPAMBlock
@@ -2148,6 +2158,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamconfigs.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPAMConfig
@@ -2204,6 +2215,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamhandles.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPAMHandle
@@ -2260,6 +2272,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ippools.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPPool
@@ -2359,6 +2372,7 @@ kind: CustomResourceDefinition
 metadata:
   name: kubecontrollersconfigurations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: KubeControllersConfiguration
@@ -2602,6 +2616,7 @@ kind: CustomResourceDefinition
 metadata:
   name: networkpolicies.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: NetworkPolicy
@@ -3438,6 +3453,7 @@ kind: CustomResourceDefinition
 metadata:
   name: networksets.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: NetworkSet
