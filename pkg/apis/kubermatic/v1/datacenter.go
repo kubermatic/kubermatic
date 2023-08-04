@@ -902,7 +902,12 @@ type MeteringReportConfiguration struct {
 	// +kubebuilder:validation:Minimum:=1
 
 	// Interval defines the number of days consulted in the metering report.
+	// Ignored when `Monthly` is set to true
 	Interval uint32 `json:"interval,omitempty"`
+
+	// +optional
+	// Monthly creates a report for the previous month.
+	Monthly bool `json:"monthly,omitempty"`
 
 	// +optional
 	// +kubebuilder:validation:Minimum:=1

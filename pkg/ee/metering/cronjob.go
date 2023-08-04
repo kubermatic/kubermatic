@@ -46,9 +46,16 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 			var args []string
 			args = append(args, fmt.Sprintf("--ca-bundle=%s", "/opt/ca-bundle/ca-bundle.pem"))
 			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, seed.Namespace))
-			args = append(args, fmt.Sprintf("--last-number-of-days=%d", mrc.Interval))
 			args = append(args, fmt.Sprintf("--output-dir=%s", reportName))
 			args = append(args, fmt.Sprintf("--output-prefix=%s", seed.Name))
+
+			if mrc.Monthly {
+				args = append(args, "--last-month")
+			} else {
+				args = append(args, fmt.Sprintf("--last-number-of-days=%d", mrc.Interval))
+			}
+
+			// needs to be last
 			args = append(args, mrc.Types...)
 
 			if job.Labels == nil {
