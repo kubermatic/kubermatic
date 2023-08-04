@@ -42,7 +42,7 @@ import (
 )
 
 func getPrometheusImage(overwriter registry.ImageRewriter) string {
-	return registry.Must(overwriter(resources.RegistryQuay + "/prometheus/prometheus:v2.37.0"))
+	return registry.Must(overwriter(resources.RegistryQuay + "/prometheus/prometheus:v2.37.9"))
 }
 
 // prometheusStatefulSet creates a StatefulSet for prometheus.
