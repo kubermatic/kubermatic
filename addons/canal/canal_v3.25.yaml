@@ -332,13 +332,13 @@ kind: CustomResourceDefinition
 metadata:
   name: bgppeers.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: BGPPeer
     listKind: BGPPeerList
     plural: bgppeers
     singular: bgppeer
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -463,13 +463,13 @@ kind: CustomResourceDefinition
 metadata:
   name: blockaffinities.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: BlockAffinity
     listKind: BlockAffinityList
     plural: blockaffinities
     singular: blockaffinity
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -528,13 +528,13 @@ metadata:
   creationTimestamp: null
   name: caliconodestatuses.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: CalicoNodeStatus
     listKind: CalicoNodeStatusList
     plural: caliconodestatuses
     singular: caliconodestatus
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -789,13 +789,13 @@ kind: CustomResourceDefinition
 metadata:
   name: clusterinformations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: ClusterInformation
     listKind: ClusterInformationList
     plural: clusterinformations
     singular: clusterinformation
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -854,13 +854,13 @@ kind: CustomResourceDefinition
 metadata:
   name: felixconfigurations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: FelixConfiguration
     listKind: FelixConfigurationList
     plural: felixconfigurations
     singular: felixconfiguration
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -1615,13 +1615,13 @@ kind: CustomResourceDefinition
 metadata:
   name: globalnetworkpolicies.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: GlobalNetworkPolicy
     listKind: GlobalNetworkPolicyList
     plural: globalnetworkpolicies
     singular: globalnetworkpolicy
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -2471,13 +2471,13 @@ kind: CustomResourceDefinition
 metadata:
   name: globalnetworksets.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: GlobalNetworkSet
     listKind: GlobalNetworkSetList
     plural: globalnetworksets
     singular: globalnetworkset
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -2525,13 +2525,13 @@ kind: CustomResourceDefinition
 metadata:
   name: hostendpoints.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: HostEndpoint
     listKind: HostEndpointList
     plural: hostendpoints
     singular: hostendpoint
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -2634,13 +2634,13 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamblocks.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPAMBlock
     listKind: IPAMBlockList
     plural: ipamblocks
     singular: ipamblock
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -2754,13 +2754,13 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamconfigs.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPAMConfig
     listKind: IPAMConfigList
     plural: ipamconfigs
     singular: ipamconfig
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -2819,7 +2819,6 @@ spec:
     listKind: IPAMHandleList
     plural: ipamhandles
     singular: ipamhandle
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -2870,13 +2869,13 @@ kind: CustomResourceDefinition
 metadata:
   name: ippools.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPPool
     listKind: IPPoolList
     plural: ippools
     singular: ippool
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -2983,13 +2982,13 @@ metadata:
   creationTimestamp: null
   name: ipreservations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: IPReservation
     listKind: IPReservationList
     plural: ipreservations
     singular: ipreservation
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -3035,13 +3034,13 @@ kind: CustomResourceDefinition
 metadata:
   name: kubecontrollersconfigurations.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: KubeControllersConfiguration
     listKind: KubeControllersConfigurationList
     plural: kubecontrollersconfigurations
     singular: kubecontrollersconfiguration
-  preserveUnknownFields: false
   scope: Cluster
   versions:
   - name: v1
@@ -3289,13 +3288,13 @@ kind: CustomResourceDefinition
 metadata:
   name: networkpolicies.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: NetworkPolicy
     listKind: NetworkPolicyList
     plural: networkpolicies
     singular: networkpolicy
-  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1
@@ -4126,13 +4125,13 @@ kind: CustomResourceDefinition
 metadata:
   name: networksets.crd.projectcalico.org
 spec:
+  preserveUnknownFields: false
   group: crd.projectcalico.org
   names:
     kind: NetworkSet
     listKind: NetworkSetList
     plural: networksets
     singular: networkset
-  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - name: v1
@@ -4285,7 +4284,7 @@ rules:
     resources:
       - endpointslices
     verbs:
-      - watch 
+      - watch
       - list
   - apiGroups: [""]
     resources:
