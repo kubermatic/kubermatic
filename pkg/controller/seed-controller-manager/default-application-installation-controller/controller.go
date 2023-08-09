@@ -107,6 +107,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	// Todo: reconcile default applications, only once during cluster creation
+
+	// reconcile enforced applications
 	var enforcedApplicationList *appskubermaticv1.ApplicationDefinitionList
 	err := r.Client.List(ctx, enforcedApplicationList, &ctrlruntimeclient.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector("spec.enforce", "true"),
