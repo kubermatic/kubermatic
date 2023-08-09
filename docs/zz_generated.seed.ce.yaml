@@ -81,6 +81,9 @@ spec:
           # Datacenter location, e.g. "ams3". A list of existing datacenters can be found
           # at https://www.digitalocean.com/docs/platform/availability-matrix/
           region: ""
+        # Optional: DisableCSIDriver disables the installation of CSI driver on every clusters within the DC
+        # If true it can't be over-written in the cluster configuration
+        disableCsiDriver: false
         # Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
         # ignoring cluster-specific settings.
         enforceAuditLogging: false
