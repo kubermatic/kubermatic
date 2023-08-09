@@ -53,7 +53,7 @@ import (
 
 const (
 	meteringName    = "metering"
-	meteringVersion = "v1.0.3"
+	meteringVersion = "v1.1.0"
 )
 
 func getMeteringImage(overwriter registry.ImageRewriter) string {
