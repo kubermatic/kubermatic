@@ -1405,10 +1405,13 @@ spec:
                         properties:
                           interval:
                             default: 7
-                            description: Interval defines the number of days consulted in the metering report.
+                            description: Interval defines the number of days consulted in the metering report. Ignored when `Monthly` is set to true
                             format: int32
                             minimum: 1
                             type: integer
+                          monthly:
+                            description: Monthly creates a report for the previous month.
+                            type: boolean
                           retention:
                             description: Retention defines a number of days after which reports are queued for removal. If not set, reports are kept forever. Please note that this functionality works only for object storage that supports an object lifecycle management mechanism.
                             format: int32
