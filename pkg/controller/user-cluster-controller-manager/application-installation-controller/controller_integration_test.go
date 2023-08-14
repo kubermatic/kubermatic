@@ -24,6 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
+
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -40,6 +43,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -335,7 +339,12 @@ func createApplicationInstallation(t *testing.T, ctx context.Context, client ctr
 
 func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.ApplicationInstallerRecorder) (context.Context, ctrlruntimeclient.Client) {
 	ctx, cancel := context.WithCancel(context.Background())
-	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+
+	rawLog := kubermaticlog.New(true, kubermaticlog.FormatJSON)
+	kubermaticlog.Logger = rawLog.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// Bootstrapping test environment.
 	testEnv := &envtest.Environment{

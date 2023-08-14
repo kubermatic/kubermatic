@@ -28,6 +28,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -45,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -63,6 +66,9 @@ func TestHelmProvider(t *testing.T) {
 	var ctx context.Context
 	var client ctrlruntimeclient.Client
 	ctx, client, kubeconfigPath = test.StartTestEnvWithCleanup(t, "../../../crd/k8c.io")
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(kubermaticlog.Logger.Desugar().WithOptions(zap.AddCallerSkip(1))))
 
 	// package and upload examplechart2 to test registry
 	chartDir := t.TempDir()
