@@ -171,7 +171,7 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 		securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress_ipv6", 401, portRangeLow, portRangeHigh, nodePortsIPv6CIDRs))
 	}
 
-	securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
+	securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, icmpAllowAllRule(), tcpDenyAllRule(), udpDenyAllRule())
 
 	return securityGroup
 }
@@ -255,7 +255,7 @@ func tcpDenyAllRule() *armnetwork.SecurityRule {
 			DestinationPortRange:     pointer.String("*"),
 			DestinationAddressPrefix: pointer.String("*"),
 			Access:                   &deny,
-			Priority:                 pointer.Int32(800),
+			Priority:                 pointer.Int32(900),
 		},
 	}
 }
@@ -275,32 +275,27 @@ func udpDenyAllRule() *armnetwork.SecurityRule {
 			DestinationPortRange:     pointer.String("*"),
 			DestinationAddressPrefix: pointer.String("*"),
 			Access:                   &deny,
-			Priority:                 pointer.Int32(801),
+			Priority:                 pointer.Int32(901),
 		},
 	}
 }
 
-// Alright, so here's the deal. We need to allow ICMP, but on Azure it is not possible
-// to specify ICMP as a protocol in a rule - only TCP or UDP.
-// Therefore we're hacking around it by first blocking all incoming TCP and UDP
-// and if these don't match, we have an "allow all" rule. Dirty, but the only way.
-// See also: https://tinyurl.com/azure-allow-icmp
 func icmpAllowAllRule() *armnetwork.SecurityRule {
 	inbound := armnetwork.SecurityRuleDirectionInbound
-	all := armnetwork.SecurityRuleProtocolAsterisk
+	icmp := armnetwork.SecurityRuleProtocolIcmp
 	allow := armnetwork.SecurityRuleAccessAllow
 
 	return &armnetwork.SecurityRule{
 		Name: pointer.String(allowAllICMPSecGroupRuleName),
 		Properties: &armnetwork.SecurityRulePropertiesFormat{
 			Direction:                &inbound,
-			Protocol:                 &all,
+			Protocol:                 &icmp,
 			SourceAddressPrefix:      pointer.String("*"),
 			SourcePortRange:          pointer.String("*"),
 			DestinationAddressPrefix: pointer.String("*"),
 			DestinationPortRange:     pointer.String("*"),
 			Access:                   &allow,
-			Priority:                 pointer.Int32(900),
+			Priority:                 pointer.Int32(800),
 		},
 	}
 }
