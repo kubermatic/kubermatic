@@ -33,7 +33,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.25",
-		kubermaticv1.CNIPluginTypeCilium: "1.13.4",
+		kubermaticv1.CNIPluginTypeCilium: "1.14.1",
 	}
 )
 
@@ -55,6 +55,7 @@ var (
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.13.3", // also affected by CVE-2023-34242, but kept here because 1.13.4 breaks IPSec support
 			"1.13.4",
+			"1.14.1",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
