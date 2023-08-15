@@ -109,7 +109,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 				continue
 			}
 
-			if err = rc.Watch(source.Kind(mgr.GetCache(), clonedObject.(ctrlruntimeclient.Object)), &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
+			if err = rc.Watch(source.Kind(seedManager.GetCache(), clonedObject.(ctrlruntimeclient.Object)), &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 				return nil, err
 			}
 		}
