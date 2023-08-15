@@ -215,7 +215,7 @@ func (r *ratelimitCortexController) CleanUp(ctx context.Context) error {
 	}
 	for _, mlaAdminSetting := range mlaAdminSettingList.Items {
 		if err := r.handleDeletion(ctx, r.log, &mlaAdminSetting); err != nil {
-			return fmt.Errorf("handling deletion: %w", err)
+			return fmt.Errorf("failed to handle Cortex ratelimit cleanup for MLAAdminSettings %s/%s: %w", mlaAdminSetting.Namespace, mlaAdminSetting.Name, err)
 		}
 	}
 	return nil

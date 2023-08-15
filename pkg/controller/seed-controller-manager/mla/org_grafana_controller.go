@@ -165,7 +165,7 @@ func (r *orgGrafanaController) CleanUp(ctx context.Context) error {
 	}
 	for _, project := range projectList.Items {
 		if err := r.handleDeletion(ctx, &project, grafanaClient); err != nil {
-			return err
+			return fmt.Errorf("failed to handle Grafana org cleanup for Project %s: %w", project.Name, err)
 		}
 	}
 	return nil

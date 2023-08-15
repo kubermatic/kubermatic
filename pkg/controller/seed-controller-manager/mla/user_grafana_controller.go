@@ -239,7 +239,7 @@ func (r *userGrafanaController) CleanUp(ctx context.Context) error {
 	}
 	for _, user := range userList.Items {
 		if err := r.handleDeletion(ctx, &user, grafanaClient); err != nil {
-			return err
+			return fmt.Errorf("failed to handle Grafana user cleanup for User %s: %w", user.Name, err)
 		}
 	}
 	return nil

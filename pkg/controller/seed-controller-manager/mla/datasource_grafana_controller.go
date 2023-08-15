@@ -408,7 +408,7 @@ func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
 	}
 	for _, cluster := range clusterList.Items {
 		if err := r.handleDeletion(ctx, &cluster, nil); err != nil {
-			return err
+			return fmt.Errorf("failed to handle Grafana datasource cleanup for cluster %s: %w", cluster.Name, err)
 		}
 	}
 	return nil
