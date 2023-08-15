@@ -59,17 +59,19 @@ func seedMonitoringRoleBindingName(seed *kubermaticv1.Seed) string {
 	return fmt.Sprintf("seed-proxy-%s", seed.Namespace)
 }
 
-func defaultLabels(name string, instance string) map[string]string {
-	labels := map[string]string{
-		NameLabel:      name,
-		ManagedByLabel: ControllerName,
+func ensureDefaultLabels(existing map[string]string, name string, instance string) map[string]string {
+	if existing == nil {
+		existing = map[string]string{}
 	}
+
+	existing[NameLabel] = name
+	existing[ManagedByLabel] = ControllerName
 
 	if instance != "" {
-		labels[InstanceLabel] = instance
+		existing[InstanceLabel] = instance
 	}
 
-	return labels
+	return existing
 }
 
 func ownerReferences(secret *corev1.Secret) []metav1.OwnerReference {
@@ -81,7 +83,7 @@ func ownerReferences(secret *corev1.Secret) []metav1.OwnerReference {
 func seedServiceAccountReconciler(seed *kubermaticv1.Seed) reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountReconciler) {
 		return SeedServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = defaultLabels(SeedServiceAccountName, "")
+			sa.Labels = ensureDefaultLabels(sa.Labels, SeedServiceAccountName, "")
 
 			return sa, nil
 		}
@@ -90,19 +92,19 @@ func seedServiceAccountReconciler(seed *kubermaticv1.Seed) reconciling.NamedServ
 
 func seedSecretReconciler(seed *kubermaticv1.Seed) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return SeedSecretName, func(sa *corev1.Secret) (*corev1.Secret, error) {
-			sa.Labels = defaultLabels(SeedSecretName, seed.Name)
+		return SeedSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Labels = ensureDefaultLabels(s.Labels, SeedSecretName, seed.Name)
 
 			// ensure Kubernetes has enough info to fill in the SA token
-			sa.Type = corev1.SecretTypeServiceAccountToken
+			s.Type = corev1.SecretTypeServiceAccountToken
 
-			if sa.Annotations == nil {
-				sa.Annotations = map[string]string{}
+			if s.Annotations == nil {
+				s.Annotations = map[string]string{}
 			}
 
-			sa.Annotations[corev1.ServiceAccountNameKey] = SeedServiceAccountName
+			s.Annotations[corev1.ServiceAccountNameKey] = SeedServiceAccountName
 
-			return sa, nil
+			return s, nil
 		}
 	}
 }
@@ -112,7 +114,7 @@ func seedMonitoringRoleReconciler(seed *kubermaticv1.Seed) reconciling.NamedRole
 
 	return func() (string, reconciling.RoleReconciler) {
 		return name, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = defaultLabels(name, "")
+			r.Labels = ensureDefaultLabels(r.Labels, name, "")
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -136,7 +138,7 @@ func seedMonitoringRoleBindingReconciler(seed *kubermaticv1.Seed) reconciling.Na
 
 	return func() (string, reconciling.RoleBindingReconciler) {
 		return name, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = defaultLabels(name, "")
+			rb.Labels = ensureDefaultLabels(rb.Labels, name, "")
 
 			rb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -163,7 +165,7 @@ func masterSecretReconciler(seed *kubermaticv1.Seed, kubeconfig *rest.Config, cr
 
 	return func() (string, reconciling.SecretReconciler) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Labels = defaultLabels("seed-proxy", seed.Name)
+			s.Labels = ensureDefaultLabels(s.Labels, "seed-proxy", seed.Name)
 
 			if s.Data == nil {
 				s.Data = make(map[string][]byte)
@@ -234,8 +236,7 @@ func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, 
 			}
 
 			d.OwnerReferences = ownerReferences(secret)
-			d.Labels = labels()
-			d.Labels[ManagedByLabel] = ControllerName
+			d.Labels = ensureDefaultLabels(d.Labels, MasterDeploymentName, seed.Name)
 
 			d.Spec.Replicas = pointer.Int32(1)
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -322,11 +323,8 @@ func masterServiceReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 	return func() (string, reconciling.ServiceReconciler) {
 		return name, func(s *corev1.Service) (*corev1.Service, error) {
 			s.OwnerReferences = ownerReferences(secret)
-			s.Labels = map[string]string{
-				NameLabel:      MasterServiceName,
-				InstanceLabel:  seed.Name,
-				ManagedByLabel: ControllerName,
-			}
+
+			s.Labels = ensureDefaultLabels(s.Labels, MasterServiceName, seed.Name)
 
 			s.Spec.Ports = []corev1.ServicePort{
 				{
@@ -352,16 +350,9 @@ func masterServiceReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret) rec
 func (r *Reconciler) masterGrafanaConfigmapReconciler(seeds map[string]*kubermaticv1.Seed) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapReconciler) {
 		return MasterGrafanaConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			labels := func() map[string]string {
-				return map[string]string{
-					NameLabel: MasterGrafanaConfigMapName,
-				}
-			}
-
 			c.Data = make(map[string]string)
 
-			c.Labels = labels()
-			c.Labels[ManagedByLabel] = ControllerName
+			c.Labels = ensureDefaultLabels(c.Labels, MasterGrafanaConfigMapName, "")
 
 			for seedName, seed := range seeds {
 				filename := fmt.Sprintf("prometheus-%s.yaml", seedName)
