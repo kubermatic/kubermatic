@@ -270,7 +270,7 @@ func (r *ruleGroupController) CleanUp(ctx context.Context) error {
 			return fmt.Errorf("failed to get request URL: %w", err)
 		}
 		if err := r.handleDeletion(ctx, &ruleGroup, requestURL); err != nil {
-			return fmt.Errorf("failed to handle deletion: %w", err)
+			return fmt.Errorf("failed to handle rule group cleanup for RuleGroup %s/%s: %w", ruleGroup.Namespace, ruleGroup.Name, err)
 		}
 		if err := r.Delete(ctx, &ruleGroup); err != nil {
 			return err

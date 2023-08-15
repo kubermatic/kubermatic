@@ -225,7 +225,7 @@ func (r *alertmanagerController) CleanUp(ctx context.Context) error {
 	}
 	for _, cluster := range clusterList.Items {
 		if err := r.handleDeletion(ctx, &cluster); err != nil {
-			return err
+			return fmt.Errorf("failed to handle alertmanager cleanup for cluster %s: %w", cluster.Name, err)
 		}
 	}
 	return nil

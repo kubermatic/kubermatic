@@ -173,7 +173,7 @@ func (r *dashboardGrafanaController) CleanUp(ctx context.Context) error {
 			continue
 		}
 		if err := r.handleDeletion(ctx, r.log, &configMap, grafanaClient); err != nil {
-			return fmt.Errorf("handling deletion: %w", err)
+			return fmt.Errorf("failed to handle Grafana dashboard cleanup for ConfigMap %s/%s: %w", configMap.Namespace, configMap.Name, err)
 		}
 	}
 	return nil

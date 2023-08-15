@@ -157,7 +157,7 @@ func (r *ruleGroupSyncController) CleanUp(ctx context.Context) error {
 	}
 	for _, ruleGroup := range ruleGroupList.Items {
 		if err := r.handleDeletion(ctx, r.log, &ruleGroup); err != nil {
-			return err
+			return fmt.Errorf("failed to handle rule group sync cleanup for RuleGroup %s/%s: %w", ruleGroup.Namespace, ruleGroup.Name, err)
 		}
 	}
 	return nil
