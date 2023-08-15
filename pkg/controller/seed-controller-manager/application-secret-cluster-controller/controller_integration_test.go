@@ -24,6 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -40,6 +43,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -343,7 +347,11 @@ func expectSecretHasFinalizer(t *testing.T, secret *corev1.Secret) {
 func startTestEnvWithClusters(t *testing.T) {
 	ctx, cancel = context.WithCancel(context.Background())
 
-	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
+	rawLog := kubermaticlog.New(true, kubermaticlog.FormatJSON)
+	kubermaticlog.Logger = rawLog.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// Bootstrapping test environment.
 	testEnv = &envtest.Environment{
