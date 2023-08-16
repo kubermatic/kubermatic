@@ -19,8 +19,6 @@ package scheduler
 import (
 	"fmt"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -70,14 +68,6 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 				// this can't be passed as two strings as the other parameters
 				"--profiling=false",
-			}
-
-			if version.LessThan(semverlib.MustParse("1.24.0")) {
-				flags = append(flags,
-					// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
-					// This is not needed and not supported anymore in Kubernetes 1.24 and higher
-					"--port", "0",
-				)
 			}
 
 			// Apply leader election settings

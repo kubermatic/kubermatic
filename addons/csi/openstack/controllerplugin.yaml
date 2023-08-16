@@ -16,9 +16,6 @@
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ $csiImage := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.23" }}
-{{ $csiImage = "docker.io/k8scloudprovider/cinder-csi-plugin:v1.23.4"}}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.24" }}
 {{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.24.6"}}
 {{ end }}

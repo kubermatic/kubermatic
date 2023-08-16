@@ -29,7 +29,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -81,21 +80,6 @@ func CompleteMachineDeployment(md *clusterv1alpha1.MachineDeployment, cluster *k
 	// it's compatible
 	if md.Spec.Template.Spec.Versions.Kubelet == "" {
 		md.Spec.Template.Spec.Versions.Kubelet = cluster.Spec.Version.String()
-	}
-
-	// Deprecated: This is not supported for 1.24 and higher and is blocked by
-	// Validate for 1.24+. Can be removed once 1.23 support is dropped.
-	if md.Spec.Template.Spec.ConfigSource != nil && md.Spec.Template.Spec.ConfigSource.ConfigMap != nil {
-		kubeletVersion, err := semverlib.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse kubelet version %q: %w", md.Spec.Template.Spec.Versions.Kubelet, err)
-		}
-
-		md.Spec.Template.Spec.ConfigSource.ConfigMap = &corev1.ConfigMapNodeConfigSource{
-			Namespace:        metav1.NamespaceSystem,
-			Name:             fmt.Sprintf("kubelet-config-%d.%d", kubeletVersion.Major(), kubeletVersion.Minor()),
-			KubeletConfigKey: "kubelet",
-		}
 	}
 
 	if len(cluster.Spec.MachineNetworks) > 0 {

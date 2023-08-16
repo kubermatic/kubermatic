@@ -226,14 +226,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.24
-			newSemver("v1.24.3"),
-			newSemver("v1.24.6"),
-			newSemver("v1.24.8"),
-			newSemver("v1.24.9"),
-			newSemver("v1.24.10"),
-			newSemver("v1.24.13"),
-			newSemver("v1.24.15"),
 			// Kubernetes 1.25
 			newSemver("v1.25.2"),
 			newSemver("v1.25.4"),
@@ -250,21 +242,6 @@ var (
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.24 =======
-			{
-				// Allow to change to any patch version
-				From: "1.24.*",
-				To:   "1.24.*",
-			},
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2022-3172 (fixed >= 1.24.5)
-				// - CVE-2021-25749 (fixed >= 1.24.5)
-				// - CVE-2022-3162 (fixed >= 1.24.8)
-				// - CVE-2022-3294 (fixed >= 1.24.8)
-				From:      ">= 1.24.0, < 1.24.8",
-				To:        "1.24.8",
-				Automatic: pointer.Bool(true),
-			},
 			{
 				// Allow to next minor release
 				From: "1.24.*",
