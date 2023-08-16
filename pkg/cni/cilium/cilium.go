@@ -19,7 +19,6 @@ package cilium
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -183,12 +182,12 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	}
 
 	ipamOperator := map[string]any{
-		"clusterPoolIPv4PodCIDR":  cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(),
-		"clusterPoolIPv4MaskSize": fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4),
+		"clusterPoolIPv4PodCIDRList": cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDRs(),
+		"clusterPoolIPv4MaskSize":    fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4),
 	}
 	if cluster.IsDualStack() {
 		values["ipv6"] = map[string]any{"enabled": true}
-		ipamOperator["clusterPoolIPv6PodCIDR"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR()
+		ipamOperator["clusterPoolIPv6PodCIDRList"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDRs()
 		ipamOperator["clusterPoolIPv6MaskSize"] = fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6)
 	}
 	values["ipam"] = map[string]any{"operator": ipamOperator}
@@ -281,7 +280,8 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string) field.ErrorList {
 	allErrs := field.ErrorList{}
 	for _, v := range immutableValues {
-		if !reflect.DeepEqual(newValues[v], oldValues[v]) {
+
+		if fmt.Sprint(oldValues[v]) != fmt.Sprint(newValues[v]) {
 			allErrs = append(allErrs, field.Invalid(fieldPath.Child(v), newValues[v], "value is immutable"))
 		}
 	}
