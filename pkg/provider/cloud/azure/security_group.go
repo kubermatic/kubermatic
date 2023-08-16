@@ -119,32 +119,6 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 						Priority:                 pointer.Int32(100),
 					},
 				},
-				{
-					Name: pointer.String("inter_node_comm"),
-					Properties: &armnetwork.SecurityRulePropertiesFormat{
-						Direction:                &inbound,
-						Protocol:                 &all,
-						SourceAddressPrefix:      pointer.String("VirtualNetwork"),
-						SourcePortRange:          pointer.String("*"),
-						DestinationAddressPrefix: pointer.String("VirtualNetwork"),
-						DestinationPortRange:     pointer.String("*"),
-						Access:                   &allow,
-						Priority:                 pointer.Int32(200),
-					},
-				},
-				{
-					Name: pointer.String("azure_load_balancer"),
-					Properties: &armnetwork.SecurityRulePropertiesFormat{
-						Direction:                &inbound,
-						Protocol:                 &all,
-						SourceAddressPrefix:      pointer.String("AzureLoadBalancer"),
-						SourcePortRange:          pointer.String("*"),
-						DestinationAddressPrefix: pointer.String("*"),
-						DestinationPortRange:     pointer.String("*"),
-						Access:                   &allow,
-						Priority:                 pointer.Int32(300),
-					},
-				},
 				// outbound
 				{
 					Name: pointer.String("outbound_allow_all"),
@@ -171,7 +145,7 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 		securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, nodePortsAllowedIPRangesRule("node_ports_ingress_ipv6", 401, portRangeLow, portRangeHigh, nodePortsIPv6CIDRs))
 	}
 
-	securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, icmpAllowAllRule(), tcpDenyAllRule(), udpDenyAllRule())
+	securityGroup.Properties.SecurityRules = append(securityGroup.Properties.SecurityRules, icmpAllowAllRule())
 
 	return securityGroup
 }
@@ -238,46 +212,6 @@ func nodePortsAllowedIPRangesRule(name string, priority int32, portRangeLow int,
 	}
 
 	return rule
-}
-
-func tcpDenyAllRule() *armnetwork.SecurityRule {
-	inbound := armnetwork.SecurityRuleDirectionInbound
-	tcp := armnetwork.SecurityRuleProtocolTCP
-	deny := armnetwork.SecurityRuleAccessDeny
-
-	return &armnetwork.SecurityRule{
-		Name: pointer.String(denyAllTCPSecGroupRuleName),
-		Properties: &armnetwork.SecurityRulePropertiesFormat{
-			Direction:                &inbound,
-			Protocol:                 &tcp,
-			SourceAddressPrefix:      pointer.String("*"),
-			SourcePortRange:          pointer.String("*"),
-			DestinationPortRange:     pointer.String("*"),
-			DestinationAddressPrefix: pointer.String("*"),
-			Access:                   &deny,
-			Priority:                 pointer.Int32(900),
-		},
-	}
-}
-
-func udpDenyAllRule() *armnetwork.SecurityRule {
-	inbound := armnetwork.SecurityRuleDirectionInbound
-	udp := armnetwork.SecurityRuleProtocolUDP
-	deny := armnetwork.SecurityRuleAccessDeny
-
-	return &armnetwork.SecurityRule{
-		Name: pointer.String(denyAllUDPSecGroupRuleName),
-		Properties: &armnetwork.SecurityRulePropertiesFormat{
-			Direction:                &inbound,
-			Protocol:                 &udp,
-			SourceAddressPrefix:      pointer.String("*"),
-			SourcePortRange:          pointer.String("*"),
-			DestinationPortRange:     pointer.String("*"),
-			DestinationAddressPrefix: pointer.String("*"),
-			Access:                   &deny,
-			Priority:                 pointer.Int32(901),
-		},
-	}
 }
 
 func icmpAllowAllRule() *armnetwork.SecurityRule {
