@@ -280,7 +280,6 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string) field.ErrorList {
 	allErrs := field.ErrorList{}
 	for _, v := range immutableValues {
-
 		if fmt.Sprint(oldValues[v]) != fmt.Sprint(newValues[v]) {
 			allErrs = append(allErrs, field.Invalid(fieldPath.Child(v), newValues[v], "value is immutable"))
 		}
