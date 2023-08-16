@@ -40,6 +40,7 @@ type HelmSource struct {
 	Source     *appskubermaticv1.HelmSource
 	// Namespace where credential secrets are stored.
 	SecretNamespace string
+	CABundleFile    string
 
 	// SeedClient to seed cluster.
 	SeedClient ctrlruntimeclient.Client
@@ -70,7 +71,9 @@ func (h HelmSource) DownloadSource(destination string) (string, error) {
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
 		ns,
-		h.Log)
+		h.Log,
+		h.CABundleFile,
+	)
 
 	if err != nil {
 		return "", err
