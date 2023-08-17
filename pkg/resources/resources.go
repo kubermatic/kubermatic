@@ -986,6 +986,7 @@ const (
 	NetworkPolicyMetricsServerAllow                 = "metrics-server-allow"
 	NetworkPolicyClusterExternalAddrAllow           = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow                    = "oidc-issuer-allow"
+	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
 )
 

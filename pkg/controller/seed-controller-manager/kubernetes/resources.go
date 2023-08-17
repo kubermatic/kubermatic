@@ -56,6 +56,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -657,6 +658,13 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.OIDCIssuerAllowReconciler(ipList))
 		}
 
+		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
+		if err != nil {
+			return fmt.Errorf("failed to fetch Kubernetes API service IP list: %w", err)
+		}
+
+		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.SeedApiServerAllowReconciler(apiIPs))
+
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
@@ -924,6 +932,41 @@ func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	return nil
+}
+
+// fetchKubernetesServiceIPList looks up all IPs for the 'kubernetes' Service in the 'default' namespace
+// so that we get a complete list of IPs under which the seed cluster's Kubernetes API is available.
+func (r *Reconciler) fetchKubernetesServiceIPList(ctx context.Context, resolverCtx context.Context) ([]net.IP, error) {
+	ips := []net.IP{}
+
+	// fetch endpoint slices for the "kubernetes" Service.
+	endpointSlices := &discoveryv1.EndpointSliceList{}
+	if err := r.Client.List(ctx, endpointSlices,
+		ctrlruntimeclient.InNamespace(corev1.NamespaceDefault),
+		ctrlruntimeclient.MatchingLabels{"kubernetes.io/service-name": "kubernetes"},
+	); err != nil {
+		return nil, fmt.Errorf("failed to list EndpointSlices: %w", err)
+	}
+
+	// loop over all EndpointSlices and extract IPs depending on what kind
+	// of endpoints are configured for the 'kubernetes' Service.
+	for _, slice := range endpointSlices.Items {
+		for _, endpoint := range slice.Endpoints {
+			for _, address := range endpoint.Addresses {
+				if slice.AddressType == discoveryv1.AddressTypeFQDN {
+					ipList, err := hostnameToIPList(resolverCtx, address)
+					if err != nil {
+						return nil, fmt.Errorf("failed to resolve FQDM %q: %w", address, err)
+					}
+					ips = append(ips, ipList...)
+				} else {
+					ips = append(ips, net.ParseIP(address))
+				}
+			}
+		}
+	}
+
+	return ips, nil
 }
 
 // hostnameToIPList returns a list of IP addresses used to reach the provided hostname.
