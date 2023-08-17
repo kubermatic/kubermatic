@@ -19,6 +19,7 @@ package cilium
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -158,12 +159,6 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 				t.Fatalf("values unmarshalling failed: %s", err)
 			}
 
-			// This is a check if the overall comparison method used for our validation is working as expected as well
-			// that copying the map works.
-			if fmt.Sprint(oldValues) != fmt.Sprint(newValues) {
-				t.Fatalf("fmt Map comparison failed where values should be equal.")
-			}
-
 			// modify newValues
 			testCase.testValuesModifier(newValues)
 
@@ -174,6 +169,65 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 					testCase.expectedError = "nil"
 				}
 				t.Fatalf("expected error to be %s but got %v", testCase.expectedError, errList)
+			}
+		})
+	}
+}
+
+// Test_validateImmutableValues ensures that map comparison works as expected
+func Test_validateImmutableValues(t *testing.T) {
+
+	oldValues := GetAppInstallOverrideValues(testCluster, "")
+
+	// copy oldValues to newValues to modify
+	equalValues := make(map[string]any)
+	rawValues, _ := json.Marshal(oldValues)
+	err := json.Unmarshal(rawValues, &equalValues)
+	if err != nil {
+		t.Fatalf("values unmarshalling failed: %s", err)
+	}
+
+	alteredCluster := testCluster.DeepCopy()
+	alteredCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"192.123.123.0/24"}
+	alteredValues := GetAppInstallOverrideValues(alteredCluster, "")
+
+	tests := []struct {
+		name            string
+		want            field.ErrorList
+		immutableValues []string
+		fieldPath       *field.Path
+		oldValues       map[string]any
+		newValues       map[string]any
+	}{
+		{
+			name:            "values equal",
+			immutableValues: []string{"values"},
+			want:            field.ErrorList{},
+			fieldPath:       field.NewPath("spec"),
+			oldValues:       oldValues,
+			newValues:       equalValues,
+		},
+		{
+			name:            "equal values",
+			immutableValues: []string{"cni", "ipam", "ipv6"},
+			want:            field.ErrorList{},
+			fieldPath:       field.NewPath("spec").Child("values"),
+			oldValues:       oldValues,
+			newValues:       equalValues,
+		},
+		{
+			name:            "ipam should be immutable",
+			immutableValues: []string{"cni", "ipam", "ipv6"},
+			want:            field.ErrorList{field.Invalid(field.NewPath("spec").Child("values").Child("ipam"), alteredValues["ipam"], "value is immutable")},
+			fieldPath:       field.NewPath("spec").Child("values"),
+			oldValues:       oldValues,
+			newValues:       alteredValues,
+		},
+	}
+	for _, tt := range tests {
+		t.Run("Test map comparison", func(t *testing.T) {
+			if got := validateImmutableValues(tt.newValues, tt.oldValues, tt.fieldPath, tt.immutableValues); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("%s: validateImmutableValues() = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}
