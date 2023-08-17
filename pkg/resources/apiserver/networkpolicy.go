@@ -359,6 +359,30 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP) reconciling.NamedNetworkPolic
 	}
 }
 
+func SeedApiServerAllowReconciler(endpoints []net.IP) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
+		return resources.NetworkPolicySeedApiserverAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: name,
+					},
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: ipListToPeers(endpoints),
+					},
+				},
+			}
+
+			return np, nil
+		}
+	}
+}
+
 func ipListToPeers(ips []net.IP) []networkingv1.NetworkPolicyPeer {
 	result := []networkingv1.NetworkPolicyPeer{}
 
