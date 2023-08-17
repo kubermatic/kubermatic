@@ -176,7 +176,6 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 
 // Test_validateImmutableValues ensures that map comparison works as expected
 func Test_validateImmutableValues(t *testing.T) {
-
 	oldValues := GetAppInstallOverrideValues(testCluster, "")
 
 	// copy oldValues to newValues to modify
