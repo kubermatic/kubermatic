@@ -19,6 +19,7 @@ package cilium
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -37,7 +38,7 @@ var testCluster = &kubermaticv1.Cluster{
 		},
 		ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 			Pods: kubermaticv1.NetworkRanges{
-				CIDRBlocks: []string{"192.168.0.0/24"},
+				CIDRBlocks: []string{"192.168.0.0/24", "192.168.178.0/24"},
 			},
 			NodeCIDRMaskSizeIPv4: pointer.Int32(16),
 			ProxyMode:            resources.EBPFProxyMode,
@@ -67,13 +68,13 @@ func TestGetCiliumAppInstallOverrideValues(t *testing.T) {
 			name:              "default values",
 			cluster:           testCluster,
 			overwriteRegistry: "",
-			expectedValues:    `{"cni":{"exclusive":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":"16","clusterPoolIPv4PodCIDR":"192.168.0.0/24"}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"strict","nodePort":{"range":"30000,31777"},"operator":{"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}}`,
+			expectedValues:    `{"cni":{"exclusive":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":"16","clusterPoolIPv4PodCIDRList":["192.168.0.0/24","192.168.178.0/24"]}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"strict","nodePort":{"range":"30000,31777"},"operator":{"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}}`,
 		},
 		{
 			name:              "default values with overwrite registry",
 			cluster:           testCluster,
 			overwriteRegistry: "myregistry.io",
-			expectedValues:    `{"certgen":{"image":{"repository":"myregistry.io/cilium/certgen","useDigest":false}},"cni":{"exclusive":false},"hubble":{"relay":{"image":{"repository":"myregistry.io/cilium/hubble-relay","useDigest":false}},"ui":{"backend":{"image":{"repository":"myregistry.io/cilium/hubble-ui-backend","useDigest":false}},"frontend":{"image":{"repository":"myregistry.io/cilium/hubble-ui","useDigest":false}}}},"image":{"repository":"myregistry.io/cilium/cilium","useDigest":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":"16","clusterPoolIPv4PodCIDR":"192.168.0.0/24"}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"strict","nodePort":{"range":"30000,31777"},"operator":{"image":{"repository":"myregistry.io/cilium/operator","useDigest":false},"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}}`,
+			expectedValues:    `{"certgen":{"image":{"repository":"myregistry.io/cilium/certgen","useDigest":false}},"cni":{"exclusive":false},"hubble":{"relay":{"image":{"repository":"myregistry.io/cilium/hubble-relay","useDigest":false}},"ui":{"backend":{"image":{"repository":"myregistry.io/cilium/hubble-ui-backend","useDigest":false}},"frontend":{"image":{"repository":"myregistry.io/cilium/hubble-ui","useDigest":false}}}},"image":{"repository":"myregistry.io/cilium/cilium","useDigest":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":"16","clusterPoolIPv4PodCIDRList":["192.168.0.0/24","192.168.178.0/24"]}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"strict","nodePort":{"range":"30000,31777"},"operator":{"image":{"repository":"myregistry.io/cilium/operator","useDigest":false},"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}}`,
 		},
 	}
 	for _, testCase := range testCases {
@@ -168,6 +169,64 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 					testCase.expectedError = "nil"
 				}
 				t.Fatalf("expected error to be %s but got %v", testCase.expectedError, errList)
+			}
+		})
+	}
+}
+
+// Test_validateImmutableValues ensures that map comparison works as expected.
+func Test_validateImmutableValues(t *testing.T) {
+	oldValues := GetAppInstallOverrideValues(testCluster, "")
+
+	// copy oldValues to newValues to modify
+	equalValues := make(map[string]any)
+	rawValues, _ := json.Marshal(oldValues)
+	err := json.Unmarshal(rawValues, &equalValues)
+	if err != nil {
+		t.Fatalf("values unmarshalling failed: %s", err)
+	}
+
+	alteredCluster := testCluster.DeepCopy()
+	alteredCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"192.123.123.0/24"}
+	alteredValues := GetAppInstallOverrideValues(alteredCluster, "")
+
+	tests := []struct {
+		name            string
+		want            field.ErrorList
+		immutableValues []string
+		fieldPath       *field.Path
+		oldValues       map[string]any
+		newValues       map[string]any
+	}{
+		{
+			name:            "equal spec",
+			immutableValues: []string{"values"},
+			want:            field.ErrorList{},
+			fieldPath:       field.NewPath("spec"),
+			oldValues:       oldValues,
+			newValues:       equalValues,
+		},
+		{
+			name:            "equal values",
+			immutableValues: []string{"cni", "ipam", "ipv6"},
+			want:            field.ErrorList{},
+			fieldPath:       field.NewPath("spec").Child("values"),
+			oldValues:       oldValues,
+			newValues:       equalValues,
+		},
+		{
+			name:            "ipam modified",
+			immutableValues: []string{"cni", "ipam", "ipv6"},
+			want:            field.ErrorList{field.Invalid(field.NewPath("spec").Child("values").Child("ipam"), alteredValues["ipam"], "value is immutable")},
+			fieldPath:       field.NewPath("spec").Child("values"),
+			oldValues:       oldValues,
+			newValues:       alteredValues,
+		},
+	}
+	for _, tt := range tests {
+		t.Run("Test map comparison", func(t *testing.T) {
+			if got := validateImmutableValues(tt.newValues, tt.oldValues, tt.fieldPath, tt.immutableValues); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("%s: validateImmutableValues() = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}

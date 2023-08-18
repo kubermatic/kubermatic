@@ -484,7 +484,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cilium-agent
-        image: "{{ Image "quay.io/cilium/cilium:v1.11.16@sha256:d2f2632c997a027ee4e540432edb4d8594e78e33315427e7ec3c06b473ec1e4e" }}"
+        image: "{{ Image "quay.io/cilium/cilium:v1.11.20@sha256:60df3cb7155886e0b62060c7a4a31e457933c6e35af79febad5fd6e43bab2a99" }}"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-agent
@@ -601,7 +601,7 @@ spec:
       # Required to mount cgroup2 filesystem on the underlying Kubernetes node.
       # We use nsenter command with host's cgroup and mount namespaces enabled.
       - name: mount-cgroup
-        image: "{{ Image "quay.io/cilium/cilium:v1.11.16@sha256:d2f2632c997a027ee4e540432edb4d8594e78e33315427e7ec3c06b473ec1e4e" }}"
+        image: "{{ Image "quay.io/cilium/cilium:v1.11.20@sha256:60df3cb7155886e0b62060c7a4a31e457933c6e35af79febad5fd6e43bab2a99" }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: CGROUP_ROOT
@@ -629,7 +629,7 @@ spec:
         securityContext:
           privileged: true
       - name: apply-sysctl-overwrites
-        image: "{{ Image "quay.io/cilium/cilium:v1.11.16@sha256:d2f2632c997a027ee4e540432edb4d8594e78e33315427e7ec3c06b473ec1e4e" }}"
+        image: "{{ Image "quay.io/cilium/cilium:v1.11.20@sha256:60df3cb7155886e0b62060c7a4a31e457933c6e35af79febad5fd6e43bab2a99" }}"
         imagePullPolicy: IfNotPresent
         env:
         - name: BIN_PATH
@@ -655,7 +655,7 @@ spec:
         securityContext:
           privileged: true
       - name: clean-cilium-state
-        image: "{{ Image "quay.io/cilium/cilium:v1.11.16@sha256:d2f2632c997a027ee4e540432edb4d8594e78e33315427e7ec3c06b473ec1e4e" }}"
+        image: "{{ Image "quay.io/cilium/cilium:v1.11.20@sha256:60df3cb7155886e0b62060c7a4a31e457933c6e35af79febad5fd6e43bab2a99" }}"
         imagePullPolicy: IfNotPresent
         command:
         - /init-container.sh
@@ -696,7 +696,7 @@ spec:
             memory: 100Mi # wait-for-kube-proxy
       # Install the CNI binaries in an InitContainer so we don't have a writable host mount in the agent
       - name: install-cni-binaries
-        image: "{{ Image "quay.io/cilium/cilium:v1.11.16@sha256:d2f2632c997a027ee4e540432edb4d8594e78e33315427e7ec3c06b473ec1e4e" }}"
+        image: "{{ Image "quay.io/cilium/cilium:v1.11.20@sha256:60df3cb7155886e0b62060c7a4a31e457933c6e35af79febad5fd6e43bab2a99" }}"
         imagePullPolicy: IfNotPresent
         command:
           - "/install-plugin.sh"
@@ -831,7 +831,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cilium-operator
-        image: "{{ Image "quay.io/cilium/operator-generic:v1.11.16@sha256:ea3fbe5ab65efc41228d716a64804b6fca9e2299835c3d39ae1cb248c1594c55" }}"
+        image: "{{ Image "quay.io/cilium/operator-generic:v1.11.20@sha256:1439954acf620f048ef663524ae70b4a25693c58527a2f2cee51124496e29f90" }}"
         imagePullPolicy: IfNotPresent
         command:
         - cilium-operator-generic
