@@ -174,7 +174,7 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 	}
 }
 
-// Test_validateImmutableValues ensures that map comparison works as expected
+// Test_validateImmutableValues ensures that map comparison works as expected.
 func Test_validateImmutableValues(t *testing.T) {
 	oldValues := GetAppInstallOverrideValues(testCluster, "")
 
@@ -199,7 +199,7 @@ func Test_validateImmutableValues(t *testing.T) {
 		newValues       map[string]any
 	}{
 		{
-			name:            "values equal",
+			name:            "equal spec",
 			immutableValues: []string{"values"},
 			want:            field.ErrorList{},
 			fieldPath:       field.NewPath("spec"),
@@ -215,7 +215,7 @@ func Test_validateImmutableValues(t *testing.T) {
 			newValues:       equalValues,
 		},
 		{
-			name:            "ipam should be immutable",
+			name:            "ipam modified",
 			immutableValues: []string{"cni", "ipam", "ipv6"},
 			want:            field.ErrorList{field.Invalid(field.NewPath("spec").Child("values").Child("ipam"), alteredValues["ipam"], "value is immutable")},
 			fieldPath:       field.NewPath("spec").Child("values"),
