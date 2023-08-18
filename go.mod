@@ -40,7 +40,7 @@ require (
 	github.com/imdario/mergo v0.3.15
 	github.com/jackpal/gateway v1.0.10
 	github.com/kubermatic/grafanasdk v0.9.12
-	github.com/kubermatic/machine-controller v1.57.1-0.20230704163314-5f4e903ddafe
+	github.com/kubermatic/machine-controller v1.57.3
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/olekukonko/tablewriter v0.0.5
@@ -81,7 +81,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.12.1
 	k8c.io/kubeone v1.6.2
-	k8c.io/operating-system-manager v1.3.1
+	k8c.io/operating-system-manager v1.3.2
 	k8c.io/reconciler v0.4.0
 	k8s.io/api v0.27.3
 	k8s.io/apiextensions-apiserver v0.27.2
