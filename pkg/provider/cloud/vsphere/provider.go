@@ -69,7 +69,6 @@ func (v *VSphere) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	logger := v.log.With("cluster", cluster.Name)
-
 	username, password, err := getCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)
 	if err != nil {
 		return nil, err
@@ -106,7 +105,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		}
 		defer session.Logout(ctx)
 
-		cluster, err = reconcileFolder(ctx, session, clusterFolder, cluster, update)
+		cluster, err = reconcileFolder(ctx, session, restSession, clusterFolder, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster folder: %w", err)
 		}
