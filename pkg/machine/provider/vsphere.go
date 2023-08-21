@@ -156,9 +156,13 @@ func CompleteVSphereProviderSpec(config *vsphere.RawConfig, cluster *kubermaticv
 			config.ResourcePool.Value = cluster.Spec.Cloud.VSphere.ResourcePool
 		}
 
-		for i, tag := range config.Tags {
-			if tag.CategoryID == "" {
-				config.Tags[i].CategoryID = cluster.Spec.Cloud.VSphere.Tags.CategoryID
+		if cluster.Spec.Cloud.VSphere.Tags != nil {
+			for _, tag := range cluster.Spec.Cloud.VSphere.Tags.Tags {
+				vsphereTag := vsphere.Tag{
+					Name:       tag,
+					CategoryID: cluster.Spec.Cloud.VSphere.Tags.CategoryID,
+				}
+				config.Tags = append(config.Tags, vsphereTag)
 			}
 		}
 	}

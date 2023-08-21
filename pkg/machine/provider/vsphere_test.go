@@ -111,3 +111,36 @@ func TestCompleteVSphereProviderConfigBasics(t *testing.T) {
 
 	runProviderTestcases(t, goodCluster, testcases)
 }
+
+func TestCompleteVSphereProviderConfigTags(t *testing.T) {
+	goodClusterWithTags := genCluster(kubermaticv1.CloudSpec{
+		ProviderName: string(kubermaticv1.VSphereCloudProvider),
+		VSphere: &kubermaticv1.VSphereCloudSpec{
+			Tags: &kubermaticv1.VSphereTag{
+				Tags:       []string{"vsphere_tag1"},
+				CategoryID: "vsphere_tag_category_id",
+			},
+		},
+	})
+
+	defaultMachine := NewVSphereConfig().WithAllowInsecure(false)
+	goodMachine := cloneBuilder(defaultMachine).WithFolder("/testcluster")
+	goodMachine.Tags = []vsphere.Tag{
+		{
+			Name:       "vsphere_tag1",
+			CategoryID: "vsphere_tag_category_id",
+		},
+	}
+
+	testcases := []testcase[vsphere.RawConfig]{
+		&vsphereTestcase{
+			baseTestcase: baseTestcase[vsphere.RawConfig, kubermaticv1.DatacenterSpecVSphere]{
+				name:       "should pass the Tags to initial MD",
+				datacenter: &kubermaticv1.DatacenterSpecVSphere{},
+				expected:   cloneBuilder(goodMachine),
+			},
+		},
+	}
+
+	runProviderTestcases(t, goodClusterWithTags, testcases)
+}
