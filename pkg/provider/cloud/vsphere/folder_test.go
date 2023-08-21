@@ -50,22 +50,22 @@ func TestProvider_GetVMFolders(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			session, err := newSession(context.Background(), test.dc, vSphereUsername, vSpherePassword, nil)
+			ctx := context.Background()
+			session, err := newSession(ctx, test.dc, vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			restSession, err := newRESTSession(context.Background(), test.dc, vSphereUsername, vSpherePassword, nil)
+			restSession, err := newRESTSession(ctx, test.dc, vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal("failed to create REST client session: %w", err)
 			}
-			defer restSession.Logout(context.TODO())
+			defer restSession.Logout(ctx)
 
-			if err := createVMFolder(context.Background(), session, test.expectedFolder); err != nil {
+			if err := ensureVMFolder(ctx, session, restSession, test.expectedFolder, nil); err != nil {
 				t.Fatal(err)
 			}
-
-			folders, err := GetVMFolders(context.Background(), test.dc, vSphereUsername, vSpherePassword, nil)
+			folders, err := GetVMFolders(ctx, test.dc, vSphereUsername, vSpherePassword, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -75,8 +75,7 @@ func TestProvider_GetVMFolders(t *testing.T) {
 			for _, folder := range folders {
 				if folder.Path == test.expectedFolder {
 					folderFound = true
-
-					if err := deleteVMFolder(context.Background(), session, test.expectedFolder); err != nil {
+					if err := deleteVMFolder(ctx, session, test.expectedFolder); err != nil {
 						t.Fatal(err)
 					}
 				}

@@ -54,14 +54,14 @@ func syncCreatedClusterTags(ctx context.Context, restSession *RESTSession, clust
 	tagManager := vapitags.NewManager(restSession.Client)
 	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.Tags.CategoryID)
 	if err != nil {
-		return fmt.Errorf("failed to get tag %w", err)
+		return fmt.Errorf("failed to get tag category %s: %w", cluster.Spec.Cloud.VSphere.Tags.CategoryID, err)
 	}
 
 	for _, vsphereTag := range cluster.Spec.Cloud.VSphere.Tags.Tags {
 		if filterTag(categoryTags, vsphereTag) == "" {
 			_, err := createTag(ctx, restSession, cluster.Spec.Cloud.VSphere.Tags.CategoryID, vsphereTag)
 			if err != nil {
-				return fmt.Errorf("failed to create tag %s category: %w", vsphereTag, err)
+				return fmt.Errorf("failed to create tag %s against category %s: %w", vsphereTag, cluster.Spec.Cloud.VSphere.Tags.CategoryID, err)
 			}
 		}
 	}
@@ -82,6 +82,17 @@ func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, clust
 			if cluster.DeletionTimestamp == nil {
 				continue
 			}
+		}
+
+		// Fetch all objects attached to the tag.
+		attachedObjs, err := tagManager.ListAttachedObjects(ctx, vsphereTag.ID)
+		if err != nil {
+			return fmt.Errorf("failed to list attached objects for the given tag %s: %w", vsphereTag.Name, err)
+		}
+
+		// if there are still objects attached to the tag, we can't delete it.
+		if len(attachedObjs) > 0 {
+			continue
 		}
 
 		if err := tagManager.DeleteTag(ctx, &vsphereTag); err != nil {
