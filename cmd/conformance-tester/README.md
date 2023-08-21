@@ -83,7 +83,7 @@ _build/conformance-tester \
 This script can be used like so:
 
 ```bash
-DISTRIBUTIONS=ubuntu,centos RELEASES=1.24 runtests.sh
+DISTRIBUTIONS=ubuntu,centos RELEASES=1.27 runtests.sh
 ```
 
 ### Common customizations

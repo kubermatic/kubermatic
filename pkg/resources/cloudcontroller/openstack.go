@@ -126,8 +126,6 @@ func getOSFlags(data *resources.TemplateData) []string {
 
 func OpenStackCCMRepository(version semver.Semver) (string, error) {
 	switch version.MajorMinor() {
-	case v123:
-		return resources.RegistryDocker + "/k8scloudprovider/openstack-cloud-controller-manager", nil
 	case v124:
 		return resources.RegistryK8S + "/provider-os/openstack-cloud-controller-manager", nil
 	case v125:
@@ -143,8 +141,6 @@ func OpenStackCCMRepository(version semver.Semver) (string, error) {
 
 func OpenStackCCMTag(version semver.Semver) (string, error) {
 	switch version.MajorMinor() {
-	case v123:
-		return "v1.23.4", nil
 	case v124:
 		return "v1.24.6", nil
 	case v125:

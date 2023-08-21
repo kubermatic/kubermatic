@@ -133,8 +133,6 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	// https://github.com/kubernetes-sigs/apiserver-network-proxy#releases
 	switch clusterVersion.MajorMinor() {
-	case "1.23":
-		fallthrough
 	case "1.24":
 		fallthrough
 	case "1.25":

@@ -54,50 +54,6 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-ccm-migration-vsphere-e2e
-    run_if_changed: "(pkg/provider/cloud/vsphere/|pkg/resources/cloudcontroller/|pkg/test/e2e/ccm-migration/|.prow/ccm-migrations.yaml)"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-vsphere: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-vault: "true"
-      preset-repo-ssh: "true"
-      preset-e2e-ssh: "true"
-      preset-kind-volume-mounts: "true"
-      preset-kubeconfig-ci: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.21-node-18-kind-0.20-1
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: PROVIDER
-              value: vsphere
-            # KKP 2.22+ does not support Kubernetes >= 1.25 with in-tree, so we only
-            # need to support the CCM migration for 1.24. This test can be removed once
-            # 1.24 support is dropped.
-            - name: VERSION_TO_TEST
-              value: '1.24'
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
-          command:
-            - ./hack/run-ccm-migration-e2e-test-in-kind.sh
-          # docker-in-docker needs privileged mode
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 3.5
-            limits:
-              memory: 6Gi
-
   - name: pre-kubermatic-ccm-migration-azure-e2e
     run_if_changed: "(addons/azure-cloud-node-manager/|pkg/provider/cloud/azure/|pkg/resources/cloudcontroller/|pkg/test/e2e/ccm-migration/|.prow/ccm-migrations.yaml)"
     decorate: true

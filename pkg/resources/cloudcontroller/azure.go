@@ -125,8 +125,6 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 func AzureCCMVersion(version semver.Semver) (string, error) {
 	// reminder: do not forget to update addons/azure-cloud-node-manager as well!
 	switch version.MajorMinor() {
-	case v123:
-		return "1.23.30", nil
 	case v124:
 		return "1.24.18", nil
 	case v125:
