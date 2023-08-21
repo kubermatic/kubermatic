@@ -1696,59 +1696,6 @@ func TestHandle(t *testing.T) {
 			wantAllowed: false,
 		},
 		{
-			name: "Allow old Kubernetes version update with PodSecurityPolicy admission plugin",
-			op:   admissionv1.Create,
-			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32000",
-					},
-				},
-				AdmissionPlugins: []string{"PodSecurityPolicy"},
-				Version:          semver.NewSemverOrDie("1.24.9"),
-			}.Build(),
-			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project2.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: pointer.Bool(true),
-				},
-				CNIPlugin: &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: "v3.19",
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32000",
-					},
-				},
-				AdmissionPlugins: []string{"PodSecurityPolicy"},
-				Version:          semver.NewSemverOrDie("1.24.8"),
-			}.BuildPtr(),
-			wantAllowed: true,
-		},
-		{
 			name: "Reject unsupported Kubernetes version update with PodSecurityPolicy admission plugin",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
