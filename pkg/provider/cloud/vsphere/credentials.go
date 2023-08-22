@@ -92,6 +92,7 @@ func getUsernameAndPassword(cloud kubermaticv1.CloudSpec, secretKeySelector prov
 	return username, password, nil
 }
 
+// getCredentialsForCluster gets credentials.
 func getCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc, dc *kubermaticv1.DatacenterSpecVSphere) (string, string, error) {
 	var username, password string
 	var err error
