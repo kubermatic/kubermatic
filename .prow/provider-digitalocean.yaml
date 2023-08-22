@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-do-centos-1.27
+  - name: pre-kubermatic-e2e-do-centos-1.28
     decorate: true
     always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -35,7 +35,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.27"
+              value: "1.28"
             - name: DISTRIBUTIONS
               value: centos
             - name: PROVIDER
