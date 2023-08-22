@@ -86,14 +86,17 @@ func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 	if spec.Cloud.AWS == nil {
 		return errors.New("no AWS cloud spec found")
 	}
-	switch spec.ClusterNetwork.IPFamily {
-	case kubermaticv1.IPFamilyIPv4:
-		spec.Cloud.AWS.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
-		}
-	case kubermaticv1.IPFamilyDualStack:
-		spec.Cloud.AWS.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+
+	if spec.Cloud.AWS.NodePortsAllowedIPRanges == nil {
+		switch spec.ClusterNetwork.IPFamily {
+		case kubermaticv1.IPFamilyIPv4:
+			spec.Cloud.AWS.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
+			}
+		case kubermaticv1.IPFamilyDualStack:
+			spec.Cloud.AWS.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+			}
 		}
 	}
 	return nil

@@ -291,14 +291,16 @@ func (a *Azure) DefaultCloudSpec(ctx context.Context, clusterSpec *kubermaticv1.
 		clusterSpec.Cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureBasicLBSKU
 	}
 
-	switch clusterSpec.ClusterNetwork.IPFamily {
-	case kubermaticv1.IPFamilyIPv4:
-		clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
-		}
-	case kubermaticv1.IPFamilyDualStack:
-		clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+	if clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges == nil {
+		switch clusterSpec.ClusterNetwork.IPFamily {
+		case kubermaticv1.IPFamilyIPv4:
+			clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
+			}
+		case kubermaticv1.IPFamilyDualStack:
+			clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+			}
 		}
 	}
 
