@@ -56,11 +56,12 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.4.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.2.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
             - "--leader-election=true"
+            - "--default-fstype=ext4"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -69,11 +70,13 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.1.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.4.1" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
             - "--default-fstype=ext4"
+            - "--feature-gates=Topology=true"
+            - "--extra-create-metadata"
             - "--leader-election=true"
           env:
             - name: ADDRESS
@@ -83,10 +86,11 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v5.0.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
+            - "--extra-create-metadata"
             - "--leader-election=true"
           env:
             - name: ADDRESS
@@ -96,7 +100,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: csi-resizer
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.4.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.7.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -110,7 +114,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.7.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
           env:
@@ -123,15 +127,11 @@ spec:
           image: '{{ Image $csiImage }}'
           args:
             - /bin/cinder-csi-plugin
-            - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--cloud-config=$(CLOUD_CONFIG)"
             - "--cluster=$(CLUSTER_NAME)"
+            - "--v=1"
           env:
-            - name: NODE_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG

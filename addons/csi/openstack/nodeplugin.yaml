@@ -53,14 +53,10 @@ spec:
       hostNetwork: true
       containers:
         - name: node-driver-registrar
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.6.3" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/cinder.csi.openstack.org /registration/cinder.csi.openstack.org-reg.sock"]
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -77,7 +73,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: liveness-probe
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.7.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}'
           args:
             - --csi-address=/csi/csi.sock
           volumeMounts:
@@ -92,14 +88,10 @@ spec:
           image: '{{ Image $csiImage }}'
           args:
             - /bin/cinder-csi-plugin
-            - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--cloud-config=$(CLOUD_CONFIG)"
+            - "--v=1"
           env:
-            - name: NODE_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
