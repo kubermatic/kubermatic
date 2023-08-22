@@ -13,7 +13,7 @@
 - Fix an issue in the kubermatic-installer mirror-images command, which led to failure on the mla-consul chart ([#12518](https://github.com/kubermatic/kubermatic/pull/12518))
 - Fix an issue where IPv6 IPs were being ignored when determining the address of a user cluster ([#12511](https://github.com/kubermatic/kubermatic/pull/12511))
 - Fix reconcile loop for `seed-proxy-token` Secret on Kubernetes 1.27 ([#12566](https://github.com/kubermatic/kubermatic/pull/12566))
-- Mark all canal CRDs with preserveUnknownFields: false ([#12549](https://github.com/kubermatic/kubermatic/pull/12549))
+- Mark all canal CRDs with `preserveUnknownFields: false` ([#12549](https://github.com/kubermatic/kubermatic/pull/12549))
 - MLA: fixes configuration live reload for monitoring-agent and logging-agent ([#12507](https://github.com/kubermatic/kubermatic/pull/12507))
 - MLA: fixes for the kubernetes overview dashboard in grafana ([#12520](https://github.com/kubermatic/kubermatic/pull/12520))
 - The kube_service_labels metric was not scraped with all expected labels, due to a change in labels on the kube-state-metrics service. The related scraping config was adapted accordingly ([#12551](https://github.com/kubermatic/kubermatic/pull/12551))
