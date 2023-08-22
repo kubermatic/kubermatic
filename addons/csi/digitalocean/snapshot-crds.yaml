@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.2.0/crds.yaml
+# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.7.0/crds.yaml
 
 {{ if eq .Cluster.CloudProviderName "digitalocean" }}
 

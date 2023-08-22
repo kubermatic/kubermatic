@@ -13,27 +13,31 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.2.0/driver.yaml
+# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.7.0/driver.yaml
 # Modifications:
 # - image source includes registry templating
 # - add a securityContext
 # - add a dedicated secret for csi driver
+# - StorageClasses and VolumeSnapshotClasses have been moved to the default-storage-class addon
 
 {{ if eq .Cluster.CloudProviderName "digitalocean" }}
 
 {{ $version := "UNSUPPORTED" }}
 
 {{ if eq .Cluster.MajorMinorVersion "1.24" }}
-{{ $version = "v4.3.0"}}
+{{ $version = "v4.3.0" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $version = "v4.4.1"}}
+{{ $version = "v4.4.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v4.5.1"}}
+{{ $version = "v4.5.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v4.5.1"}} {/* 1.27 is technically 4.6+ */}
+{{ $version = "v4.6.2" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.28" }}
+{{ $version = "v4.7.0" }}
 {{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
@@ -80,7 +84,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-provisioner
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.2.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.5.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--default-fstype=ext4"
@@ -93,7 +97,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-attacher
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v3.5.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.3.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -107,7 +111,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.0.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -119,7 +123,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-resizer
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.5.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.8.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=30s"
@@ -347,15 +351,11 @@ spec:
               mountPath: /etc/udev/rules.d/
       containers:
         - name: csi-node-driver-registrar
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0" }}'
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/dobs.csi.digitalocean.com /registration/dobs.csi.digitalocean.com-reg.sock"]
           env:
             - name: ADDRESS
               value: /csi/csi.sock

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.2.0/snapshot-controller.yaml
+# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.7.0/snapshot-controller.yaml
 # Modifications:
 # - image source includes registry templating
 # - add a securityContext
@@ -43,7 +43,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-controller
-          image: '{{ Image "registry.k8s.io/sig-storage/snapshot-controller:v6.0.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/snapshot-controller:v6.2.1" }}'
           args:
             - "--v=5"
           imagePullPolicy: IfNotPresent
