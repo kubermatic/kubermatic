@@ -140,8 +140,10 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	case "1.26":
 		return "v0.0.37"
 	case "1.27":
+		return "v0.1.2"
+	case "1.28":
 		fallthrough
 	default:
-		return "v0.1.2"
+		return "v0.1.4"
 	}
 }

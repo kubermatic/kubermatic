@@ -32,7 +32,7 @@ import (
 
 const (
 	DigitalOceanCCMDeploymentName = "digitalocean-cloud-controller-manager"
-	DigitalOceanCCMVersion        = "v0.1.42"
+	DigitalOceanCCMVersion        = "v0.1.44"
 )
 
 var (
