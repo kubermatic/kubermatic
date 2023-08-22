@@ -2,6 +2,33 @@
 
 - [v2.23.0](#v2230)
 - [v2.23.1](#v2231)
+- [v2.22.2](#v2231)
+
+## [v2.23.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.2)
+
+### Bugfixes
+
+- Add missing images from envoy-agent DaemonSet in Tunneling expose strategy when running `kubermatic-installer mirror-images` ([#12537](https://github.com/kubermatic/kubermatic/pull/12537))
+- Fix an issue in the kubermatic-installer mirror-images command, which led to failure on the mla-consul chart ([#12513](https://github.com/kubermatic/kubermatic/pull/12513))
+- Fix an issue in the kubermatic-installer mirror-images command, which led to failure on the mla-consul chart ([#12518](https://github.com/kubermatic/kubermatic/pull/12518))
+- Fix an issue where IPv6 IPs were being ignored when determining the address of a user cluster ([#12511](https://github.com/kubermatic/kubermatic/pull/12511))
+- Fix reconcile loop for `seed-proxy-token` Secret on Kubernetes 1.27 ([#12566](https://github.com/kubermatic/kubermatic/pull/12566))
+- Mark all canal CRDs with `preserveUnknownFields: false` ([#12549](https://github.com/kubermatic/kubermatic/pull/12549))
+- MLA: fixes configuration live reload for monitoring-agent and logging-agent ([#12507](https://github.com/kubermatic/kubermatic/pull/12507))
+- MLA: fixes for the kubernetes overview dashboard in grafana ([#12520](https://github.com/kubermatic/kubermatic/pull/12520))
+- The kube_service_labels metric was not scraped with all expected labels, due to a change in labels on the kube-state-metrics service. The related scraping config was adapted accordingly ([#12551](https://github.com/kubermatic/kubermatic/pull/12551))
+- VSphere: Fix a bug where datastore cluster value was not being propagated to the CSI driver ([#12474](https://github.com/kubermatic/kubermatic/pull/12474))
+
+### Updates
+
+- Update machine-controller to v1.57.3 and OSM to v1.3.2 ([#12577](https://github.com/kubermatic/kubermatic/pull/12577))
+- Update metering to v1.0.4 with increased namespace report generation performance and prometheus to v2.37.9 ([#12546](https://github.com/kubermatic/kubermatic/pull/12546))
+- Update operating-system-manager (OSM) to [v1.3.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.3.1) ([#12564](https://github.com/kubermatic/kubermatic/pull/12564))
+- Update telemetry-agent to v0.4.1 ([#12572](https://github.com/kubermatic/kubermatic/pull/12572))
+
+### New Feature
+
+- Support for configuring the dex theme via values file ([#12560](https://github.com/kubermatic/kubermatic/pull/12560))
 
 ## [v2.23.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.1)
 
