@@ -12,6 +12,14 @@
 - [v2.21.9](#v2219)
 - [v2.21.10](#v22110)
 - [v2.21.11](#v22111)
+- [v2.21.12](#v22112)
+
+## [v2.21.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.12)
+
+### Bugfixes
+
+- Add missing images from envoy-agent DaemonSet in Tunneling expose strategy when running `kubermatic-installer mirror-images` ([#12541](https://github.com/kubermatic/kubermatic/pull/12541))
+- Mark all canal CRDs with `preserveUnknownFields: false` ([#12547](https://github.com/kubermatic/kubermatic/pull/12547))
 
 ## [v2.21.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.11)
 
