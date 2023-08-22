@@ -31,11 +31,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"github.com/google/uuid"
 	"github.com/jackpal/gateway"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
+	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -49,6 +51,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -172,6 +175,7 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 		logger.Fatalf("failed to initialize runtime config: %v", err)
 	}
 
+	ctrlruntimelog.SetLogger(zapr.NewLogger(zap.NewNop()))
 	mgr, err := manager.New(ctrlConfig, manager.Options{
 		MetricsBindAddress:     "0",
 		HealthProbeBindAddress: "0",
