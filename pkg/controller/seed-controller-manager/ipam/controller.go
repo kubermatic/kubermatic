@@ -275,50 +275,45 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: cluster.Status.NamespaceName,
 			Name:      ipamPool.Name,
-			Labels:    map[string]string{},
-		},
-		Spec: kubermaticv1.IPAMAllocationSpec{
-			Type: dcIPAMPoolCfg.Type,
-			DC:   cluster.Spec.Cloud.DatacenterName,
 		},
 	}
-	kuberneteshelper.EnsureUniqueOwnerReference(newClustersAllocation, metav1.OwnerReference{
-		APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		Kind:       kubermaticv1.IPAMPoolKindName,
-		UID:        ipamPool.GetUID(),
-		Name:       ipamPool.Name,
-	})
 
-	switch dcIPAMPoolCfg.Type {
-	case kubermaticv1.IPAMPoolAllocationTypeRange:
-		ipsAllocated, err := getIPsFromAddressRanges(oldClusterAllocation.Spec.Addresses)
-		if err != nil {
-			return err
-		}
-		newIPRangeToAllocate := dcIPAMPoolCfg.AllocationRange - len(ipsAllocated)
+	_, err := controllerruntime.CreateOrUpdate(ctx, r.Client, newClustersAllocation, func() error {
+		kuberneteshelper.EnsureUniqueOwnerReference(newClustersAllocation, metav1.OwnerReference{
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.IPAMPoolKindName,
+			UID:        ipamPool.GetUID(),
+			Name:       ipamPool.Name,
+		})
+		newClustersAllocation.Spec.Type = dcIPAMPoolCfg.Type
+		newClustersAllocation.Spec.DC = cluster.Spec.Cloud.DatacenterName
 
-		addresses, err := findFirstFreeRangesOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), newIPRangeToAllocate, dcIPAMPoolUsageMap)
-		if err != nil {
-			return err
-		}
-		newClustersAllocation.Spec.Addresses = oldClusterAllocation.Spec.Addresses
-		newClustersAllocation.Spec.Addresses = append(newClustersAllocation.Spec.Addresses, addresses...)
-	case kubermaticv1.IPAMPoolAllocationTypePrefix:
-		subnetCIDR, err := findFirstFreeSubnetOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), string(oldClusterAllocation.Spec.CIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
-		if err != nil {
-			return err
-		}
-		newClustersAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
-	}
+		switch dcIPAMPoolCfg.Type {
+		case kubermaticv1.IPAMPoolAllocationTypeRange:
+			ipsAllocated, err := getIPsFromAddressRanges(oldClusterAllocation.Spec.Addresses)
+			if err != nil {
+				return err
+			}
 
-	obj := newClustersAllocation.DeepCopyObject().(*kubermaticv1.IPAMAllocation)
-	_, err := controllerruntime.CreateOrUpdate(ctx, r.Client, obj, func() error {
-		obj.Spec = newClustersAllocation.Spec
+			newIPRangeToAllocate := dcIPAMPoolCfg.AllocationRange - len(ipsAllocated)
+
+			addresses, err := findFirstFreeRangesOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), newIPRangeToAllocate, dcIPAMPoolUsageMap)
+			if err != nil {
+				return err
+			}
+			newClustersAllocation.Spec.Addresses = oldClusterAllocation.Spec.Addresses
+			newClustersAllocation.Spec.Addresses = append(newClustersAllocation.Spec.Addresses, addresses...)
+		case kubermaticv1.IPAMPoolAllocationTypePrefix:
+			subnetCIDR, err := findFirstFreeSubnetOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), string(oldClusterAllocation.Spec.CIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
+			if err != nil {
+				return err
+			}
+			newClustersAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
+		}
 		return nil
 	})
 
 	if err != nil {
-		r.log.Errorf("failed to update IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 		return err
 	}
 
