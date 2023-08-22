@@ -99,14 +99,17 @@ func (os *Provider) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 	if spec.Cloud.Openstack == nil {
 		return errors.New("no Openstack cloud spec found")
 	}
-	switch spec.ClusterNetwork.IPFamily {
-	case kubermaticv1.IPFamilyIPv4:
-		spec.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
-		}
-	case kubermaticv1.IPFamilyDualStack:
-		spec.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+
+	if spec.Cloud.Openstack.NodePortsAllowedIPRanges == nil {
+		switch spec.ClusterNetwork.IPFamily {
+		case kubermaticv1.IPFamilyIPv4:
+			spec.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
+			}
+		case kubermaticv1.IPFamilyDualStack:
+			spec.Cloud.Openstack.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+			}
 		}
 	}
 	return nil

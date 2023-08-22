@@ -118,14 +118,17 @@ func (g *gcp) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSp
 	if spec.Cloud.GCP == nil {
 		return errors.New("no GCP cloud spec found")
 	}
-	switch spec.ClusterNetwork.IPFamily {
-	case kubermaticv1.IPFamilyIPv4:
-		spec.Cloud.GCP.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
-		}
-	case kubermaticv1.IPFamilyDualStack:
-		spec.Cloud.GCP.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
-			CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+
+	if spec.Cloud.GCP.NodePortsAllowedIPRanges == nil {
+		switch spec.ClusterNetwork.IPFamily {
+		case kubermaticv1.IPFamilyIPv4:
+			spec.Cloud.GCP.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR},
+			}
+		case kubermaticv1.IPFamilyDualStack:
+			spec.Cloud.GCP.NodePortsAllowedIPRanges = &kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{resources.IPv4MatchAnyCIDR, resources.IPv6MatchAnyCIDR},
+			}
 		}
 	}
 	return nil
