@@ -15,7 +15,7 @@
 - Add missing images from envoy-agent DaemonSet in Tunneling expose strategy when running `kubermatic-installer mirror-images` ([#12537](https://github.com/kubermatic/kubermatic/pull/12537))
 - Fix an issue in the kubermatic-installer mirror-images command, which led to failure on the mla-consul chart ([#12519](https://github.com/kubermatic/kubermatic/pull/12519))
 - Fix reconcile loop for `seed-proxy-token` Secret on Kubernetes 1.27 ([#12567](https://github.com/kubermatic/kubermatic/pull/12567))
-- Mark all canal CRDs with preserveUnknownFields: false ([#12548](https://github.com/kubermatic/kubermatic/pull/12548))
+- Mark all canal CRDs with `preserveUnknownFields: false` ([#12548](https://github.com/kubermatic/kubermatic/pull/12548))
 - MLA: fixes configuration live reload for monitoring-agent and logging-agent ([#12507](https://github.com/kubermatic/kubermatic/pull/12507))
 - MLA: fixes for the kubernetes overview dashboard in grafana ([#12520](https://github.com/kubermatic/kubermatic/pull/12520))
 
