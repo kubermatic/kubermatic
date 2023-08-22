@@ -12,18 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.26.1/deploy/v1.26.1/csi-azurefile-driver.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/raw/v1.28.0/deploy/v1.28.0/csi-azurefile-driver.yaml
+
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.27.0" }}
+
+{{ $version := "UNSUPPORTED" }}
+{{ $snapshot := "UNSUPPORTED" }}
+{{ if eq .Cluster.MajorMinorVersion "1.27" }}
+{{ $version = "v1.27.1" }}
+{{ $snapshot = "v5.0.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.28" }}
+{{ $version = "v1.28.2" }}
+{{ $snapshot = "v6.2.1" }}
+{{ end }}
+
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
   name: file.csi.azure.com
   annotations:
-    csiDriver: v{{ $version }}
-    snapshot: v5.0.1
+    csiDriver: {{ $version | quote }}
+    snapshot: {{ $snapshot | quote }}
 spec:
   attachRequired: false
   podInfoOnMount: true
