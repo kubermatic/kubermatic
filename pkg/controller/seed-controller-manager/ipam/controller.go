@@ -278,7 +278,7 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 		},
 	}
 
-	_, err := controllerruntime.CreateOrUpdate(ctx, r.Client, newClustersAllocation, func() error {
+	if _, err := controllerruntime.CreateOrUpdate(ctx, r.Client, newClustersAllocation, func() error {
 		kuberneteshelper.EnsureUniqueOwnerReference(newClustersAllocation, metav1.OwnerReference{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       kubermaticv1.IPAMPoolKindName,
@@ -311,10 +311,8 @@ func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cl
 			newClustersAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
 		}
 		return nil
-	})
-
-	if err != nil {
-		return err
+	}); err != nil {
+		return fmt.Errorf("failed to reconcile IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 	}
 
 	return nil
