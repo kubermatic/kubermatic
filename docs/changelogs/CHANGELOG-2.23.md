@@ -2,7 +2,7 @@
 
 - [v2.23.0](#v2230)
 - [v2.23.1](#v2231)
-- [v2.22.2](#v2231)
+- [v2.23.2](#v2232)
 
 ## [v2.23.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.2)
 
