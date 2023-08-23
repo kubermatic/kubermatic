@@ -28,7 +28,7 @@ groups:
           sum by (namespace, label_app) (
               sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace, pod)
             * on (namespace, pod) group_left (label_app)
-              sum(kube_pod_labels{job="kube-state-metrics", pod="prometheus-0", namespace="monitoring"}) by (namespace, pod, label_app)
+              sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
           )
 
       - record: namespace_name:container_memory_usage_bytes:sum
