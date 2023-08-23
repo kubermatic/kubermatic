@@ -1139,7 +1139,11 @@ func TestReconcileCluster(t *testing.T) {
 			}
 
 			_, err := reconciler.reconcile(ctx, tc.cluster)
-			assert.Equal(t, tc.expectedError, err)
+			if tc.expectedError != nil {
+				assert.EqualError(t, err, tc.expectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 
 			ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
 			err = reconciler.List(ctx, ipamAllocationList, ctrlruntimeclient.InNamespace(tc.cluster.Status.NamespaceName))
