@@ -29,7 +29,7 @@ import (
 )
 
 // ValidatingSnapshotWebhookConfigurationReconciler returns the ValidatingWebhookConfiguration for the CSI external snapshotter.
-// Sourced from: https://github.com/kubernetes-csi/external-snapshotter/blob/release-4.2/deploy/kubernetes/webhook-example/admission-configuration-template
+// Sourced from: https://github.com/kubernetes-csi/external-snapshotter/blob/v6.2.2/deploy/kubernetes/webhook-example/admission-configuration-template
 func ValidatingSnapshotWebhookConfigurationReconciler(caCert *x509.Certificate, namespace, name string) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
 	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
 		return name, func(validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
@@ -41,7 +41,7 @@ func ValidatingSnapshotWebhookConfigurationReconciler(caCert *x509.Certificate, 
 			validatingWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    name,
-					AdmissionReviewVersions: []string{"v1", "v1beta1"},
+					AdmissionReviewVersions: []string{"v1"},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffect,
