@@ -133,9 +133,9 @@ func OpenStackCCMTag(version semver.Semver) (string, error) {
 	case v126:
 		return "v1.26.2", nil
 	case v127:
-		return "v1.27.2", nil
+		return "v1.27.1", nil
 	case v128:
-		fallthrough
+		return "v1.27.1", nil // no official release for 1.28 as of 2023-08-23
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)
 	}
