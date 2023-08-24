@@ -149,7 +149,7 @@ func AWSCCMVersion(version semver.Semver) string {
 		return "v1.25.3"
 	case v126:
 		return "v1.26.1"
-	//	By default return latest version
+	// By default return latest version
 	default:
 		return "v1.27.1"
 	}
