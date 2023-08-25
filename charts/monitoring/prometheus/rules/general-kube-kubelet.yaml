@@ -57,7 +57,7 @@ groups:
             kubelet_volume_stats_available_bytes{job="kubelet"}
               /
             kubelet_volume_stats_capacity_bytes{job="kubelet"}
-          ) < 0.07
+          ) < 0.10
           and
           kubelet_volume_stats_used_bytes{job="kubelet"} > 0
           unless on(namespace, persistentvolumeclaim)
@@ -65,29 +65,6 @@ groups:
           unless on(namespace, persistentvolumeclaim)
           kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
         for: 1m
-        labels:
-          severity: warning
-          resource: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
-          service: kubelet
-      - alert: KubePersistentVolumeFillingUp
-        annotations:
-          message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to fill up within four days. Currently {{ $value | humanizePercentage }} is available.
-          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
-        expr: |
-          (
-            kubelet_volume_stats_available_bytes{job="kubelet"}
-              /
-            kubelet_volume_stats_capacity_bytes{job="kubelet"}
-          ) < 0.15
-          and
-          kubelet_volume_stats_used_bytes{job="kubelet"} > 0
-          and
-          predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[6h], 4 * 24 * 3600) < 0
-          unless on(namespace, persistentvolumeclaim)
-          kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
-          unless on(namespace, persistentvolumeclaim)
-          kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
-        for: 1h
         labels:
           severity: warning
           resource: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
