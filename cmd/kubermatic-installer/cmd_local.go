@@ -288,7 +288,7 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 				if stringURI, ok := redirectURI.(string); ok {
 					u, err := url.Parse(stringURI)
 					if err != nil {
-						return fmt.Errorf("failed to parse %q as URL: %v", stringURI, err)
+						return fmt.Errorf("failed to parse %q as URL: %w", stringURI, err)
 					}
 
 					u.Scheme = "http"
