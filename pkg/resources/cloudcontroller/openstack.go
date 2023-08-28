@@ -125,17 +125,18 @@ func getOSFlags(data *resources.TemplateData) []string {
 }
 
 func OpenStackCCMTag(version semver.Semver) (string, error) {
+	// https://github.com/kubernetes/cloud-provider-openstack/releases
 	switch version.MajorMinor() {
 	case v124:
 		return "v1.24.6", nil
 	case v125:
-		return "v1.25.5", nil
+		return "v1.25.6", nil
 	case v126:
-		return "v1.26.2", nil
+		return "v1.26.3", nil
 	case v127:
 		return "v1.27.1", nil
 	case v128:
-		return "v1.27.1", nil // no official release for 1.28 as of 2023-08-23
+		return "v1.28.0", nil
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)
 	}

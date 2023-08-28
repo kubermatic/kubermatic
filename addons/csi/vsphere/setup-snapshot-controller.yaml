@@ -13,7 +13,8 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://github.com/kubernetes-csi/external-snapshotter/blob/v6.2.2/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+# https://github.com/kubernetes-csi/external-snapshotter/blob/v6.2.2/deploy/kubernetes/snapshot-controller/setup-snapshot-controller.yaml
+#
 # Modifications:
 #   - change image domain to registry.k8s.io
 #   - template function to replace base registry

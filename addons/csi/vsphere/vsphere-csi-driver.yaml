@@ -13,7 +13,8 @@
 # limitations under the License.
 
 # Sourced from:
-#  https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v3.0.2/manifests/vanilla/vsphere-csi-driver.yaml
+# https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v3.0.2/manifests/vanilla/vsphere-csi-driver.yaml
+#
 # Modifications:
 #   - change namespace
 #   - remove windows support daemon sets
@@ -23,7 +24,6 @@
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
 #   - set "improved-csi-idempotency": "false"
-
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}

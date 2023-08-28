@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.28.0/deploy/v1.28.0/csi-azuredisk-driver.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.28.3/deploy/v1.28.3/csi-azuredisk-driver.yaml
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -26,7 +26,7 @@
 {{ $snapshot = "v5.0.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.5" }}
+{{ $version = "v1.26.6" }}
 {{ $snapshot = "v5.0.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
@@ -34,7 +34,7 @@
 {{ $snapshot = "v5.0.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.2" }}
+{{ $version = "v1.28.3" }}
 {{ $snapshot = "v6.2.1" }}
 {{ end }}
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://raw.githubusercontent.com/digitalocean/csi-digitalocean/master/deploy/kubernetes/releases/csi-digitalocean-v4.7.0/driver.yaml
+# - https://github.com/digitalocean/csi-digitalocean/blob/master/deploy/kubernetes/releases/csi-digitalocean-v4.7.1/driver.yaml
 # Modifications:
 # - image source includes registry templating
 # - add a securityContext
@@ -37,7 +37,7 @@
 {{ $version = "v4.6.2" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v4.7.0" }}
+{{ $version = "v4.7.1" }}
 {{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
@@ -111,7 +111,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.2" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.4.0/manifests/csi-node.yaml
+# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.4.0/manifests/csi-node.yaml
 #
 # Changes:
 # - image source includes registry templating
