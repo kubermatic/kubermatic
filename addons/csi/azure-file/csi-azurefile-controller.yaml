@@ -12,16 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.26.1/deploy/v1.26.1/csi-azurefile-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.28.3/deploy/v1.28.3/csi-azurefile-controller.yaml
 #
 # Changes:
 # - image source includes registry templating
 # - set replicas=1 (pod has a leader election)
 # - removal of tolerations
-# - add security context
+
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.27.0" }}
+
+{{ $version := "UNSUPPORTED" }}
+
+{{ if eq .Cluster.MajorMinorVersion "1.25" }}
+{{ $version = "v1.25.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.26" }}
+{{ $version = "v1.26.6" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.27" }}
+{{ $version = "v1.27.3" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.28" }}
+{{ $version = "v1.28.3" }}
+{{ end }}
 
 ---
 apiVersion: apps/v1
@@ -49,7 +63,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-provisioner
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-provisioner:v3.3.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-provisioner:v3.5.0" }}
           args:
             - "-v=2"
             - "--csi-address=$(ADDRESS)"
@@ -72,7 +86,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-attacher
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-attacher:v4.0.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-attacher:v4.3.0" }}
           args:
             - "-v=2"
             - "-csi-address=$(ADDRESS)"
@@ -94,7 +108,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-snapshotter
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-snapshotter:v5.0.1" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-snapshotter:v6.2.1" }}
           args:
             - "-v=2"
             - "-csi-address=$(ADDRESS)"
@@ -113,7 +127,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-resizer
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-resizer:v1.6.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-resizer:v1.8.0" }}
           args:
             - "-csi-address=$(ADDRESS)"
             - "-v=2"
@@ -135,7 +149,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: liveness-probe
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/livenessprobe:v2.8.0" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/livenessprobe:v2.10.0" }}
           args:
             - --csi-address=/csi/csi.sock
             - --probe-timeout=3s
@@ -151,7 +165,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: azurefile
-          image: {{ Image (print "mcr.microsoft.com/oss/kubernetes-csi/azurefile-csi:v" $version) }}
+          image: {{ Image (print "mcr.microsoft.com/oss/kubernetes-csi/azurefile-csi:" $version) }}
           imagePullPolicy: IfNotPresent
           args:
             - "--v=5"

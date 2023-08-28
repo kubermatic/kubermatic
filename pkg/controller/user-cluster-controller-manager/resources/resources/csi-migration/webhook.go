@@ -64,7 +64,6 @@ func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 								},
 								APIVersions: []string{
 									"v1",
-									"v1beta1",
 								},
 								Resources: []string{
 									"storageclasses",

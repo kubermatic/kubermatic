@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-openstack-ubuntu-1.27
+  - name: pre-kubermatic-e2e-openstack-ubuntu-1.28
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     run_if_changed: "(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
@@ -30,12 +30,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.21-node-18-kind-0.20-1
+        - image: quay.io/kubermatic/build:go-1.21-node-18-kind-0.20-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.27"
+              value: "1.28"
             - name: PROVIDER
               value: "openstack"
             - name: DISTRIBUTIONS
@@ -59,7 +59,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-openstack-centos-1.27
+  - name: pre-kubermatic-e2e-openstack-centos-1.28
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     run_if_changed: "(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
@@ -76,12 +76,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.21-node-18-kind-0.20-1
+        - image: quay.io/kubermatic/build:go-1.21-node-18-kind-0.20-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.27"
+              value: "1.28"
             - name: PROVIDER
               value: "openstack"
             - name: DEFAULT_TIMEOUT_MINUTES

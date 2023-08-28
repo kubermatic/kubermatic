@@ -13,7 +13,8 @@
 # limitations under the License.
 
 # Sourced from:
-#  https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/release-2.7/manifests/vanilla/vsphere-csi-driver.yaml
+# https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v3.0.2/manifests/vanilla/vsphere-csi-driver.yaml
+#
 # Modifications:
 #   - change namespace
 #   - remove windows support daemon sets
@@ -23,9 +24,6 @@
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
 #   - set "improved-csi-idempotency": "false"
-#   - set "block-volume-snapshot": "true"
-#   - add csi-snapshotter container
-
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -37,9 +35,6 @@ metadata:
 spec:
   attachRequired: true
   podInfoOnMount: true
-  volumeLifecycleModes:
-    - Persistent
-    - Ephemeral
 ---
 kind: ServiceAccount
 apiVersion: v1
@@ -195,13 +190,16 @@ data:
   "improved-csi-idempotency": "false"
   "improved-volume-topology": "false"
   "block-volume-snapshot": "true"
-  "csi-windows-support": "false"
+  "csi-windows-support": "true"
   "use-csinode-id": "true"
-  "list-volumes": "false"
+  "list-volumes": "true"
   "pv-to-backingdiskobjectid-mapping": "false"
-  "cnsmgr-suspend-create-volume": "false"
-  "topology-preferential-datastores": "false"
-  "max-pvscsi-targets-per-vm": "false"
+  "cnsmgr-suspend-create-volume": "true"
+  "topology-preferential-datastores": "true"
+  "max-pvscsi-targets-per-vm": "true"
+  "multi-vcenter-csi-topology": "true"
+  "csi-internal-generated-cluster-id": "true"
+  "listview-tasks": "false"
 kind: ConfigMap
 metadata:
   name: internal-feature-states.csi.vsphere.vmware.com
@@ -248,6 +246,7 @@ spec:
         app: vsphere-csi-controller
         role: vsphere-csi
     spec:
+      priorityClassName: system-cluster-critical
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -285,6 +284,9 @@ spec:
             - "--timeout=300s"
             - "--csi-address=$(ADDRESS)"
             - "--leader-election"
+            - "--leader-election-lease-duration=120s"
+            - "--leader-election-renew-deadline=60s"
+            - "--leader-election-retry-period=30s"
             - "--kube-api-qps=100"
             - "--kube-api-burst=100"
           env:
@@ -303,6 +305,9 @@ spec:
             - "--kube-api-qps=100"
             - "--kube-api-burst=100"
             - "--leader-election"
+            - "--leader-election-lease-duration=120s"
+            - "--leader-election-renew-deadline=60s"
+            - "--leader-election-retry-period=30s"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -310,7 +315,7 @@ spec:
             - mountPath: /csi
               name: socket-dir
         - name: vsphere-csi-controller
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v3.0.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v3.0.2" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
@@ -371,9 +376,12 @@ spec:
             - name: socket-dir
               mountPath: /csi
         - name: vsphere-syncer
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/syncer:v3.0.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/syncer:v3.0.2" }}
           args:
             - "--leader-election"
+            - "--leader-election-lease-duration=120s"
+            - "--leader-election-renew-deadline=60s"
+            - "--leader-election-retry-period=30s"
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"
           imagePullPolicy: "Always"
@@ -416,6 +424,9 @@ spec:
             - "--kube-api-qps=100"
             - "--kube-api-burst=100"
             - "--leader-election"
+            - "--leader-election-lease-duration=120s"
+            - "--leader-election-renew-deadline=60s"
+            - "--leader-election-retry-period=30s"
             - "--default-fstype=ext4"
             # needed only for topology aware setup
             #- "--feature-gates=Topology=true"
@@ -435,6 +446,9 @@ spec:
             - "--timeout=300s"
             - "--csi-address=$(ADDRESS)"
             - "--leader-election"
+            - "--leader-election-lease-duration=120s"
+            - "--leader-election-renew-deadline=60s"
+            - "--leader-election-retry-period=30s"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -470,6 +484,7 @@ spec:
         app: vsphere-csi-node
         role: vsphere-csi
     spec:
+      priorityClassName: system-node-critical
       nodeSelector:
         kubernetes.io/os: linux
       serviceAccountName: vsphere-csi-node
@@ -503,7 +518,7 @@ spec:
               - --mode=kubelet-registration-probe
             initialDelaySeconds: 3
         - name: vsphere-csi-node
-          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v3.0.1" }}
+          image: {{ Image "gcr.io/cloud-provider-vsphere/csi/release/driver:v3.0.2" }}
           args:
             - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
             - "--fss-namespace=$(CSI_NAMESPACE)"

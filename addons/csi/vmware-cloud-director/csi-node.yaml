@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.2.0/manifests/csi-node.yaml
+# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.4.0/manifests/csi-node.yaml
 #
 # Changes:
 # - image source includes registry templating
@@ -50,6 +50,7 @@ roleRef:
   kind: ClusterRole
   name: csi-nodeplugin-role
   apiGroup: rbac.authorization.k8s.io
+
 ---
 kind: DaemonSet
 apiVersion: apps/v1
@@ -82,12 +83,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command:
-                  [
-                    "/bin/sh",
-                    "-c",
-                    "rm -rf /registration/named-disk.csi.cloud-director.vmware.com /registration/named-disk.csi.cloud-director.vmware.com-reg.sock",
-                  ]
+                command: ["/bin/sh", "-c", "rm -rf /registration/named-disk.csi.cloud-director.vmware.com /registration/named-disk.csi.cloud-director.vmware.com-reg.sock"]
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -108,7 +104,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.3.2" }}
+          image: {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.4.0" }}
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-director-named-disk-csi-driver
@@ -136,7 +132,7 @@ spec:
               mountPath: /dev
               mountPropagation: "HostToContainer"
             - name: pv-dir
-              mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi/pv
+              mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi
               mountPropagation: "Bidirectional"
             - name: vcloud-csi-config-volume
               mountPath: /etc/kubernetes/vcloud
@@ -165,7 +161,7 @@ spec:
             type: Directory
         - name: pv-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/kubernetes.io/csi/pv
+            path: /var/lib/kubelet/plugins/kubernetes.io/csi
             type: DirectoryOrCreate
         - name: vcloud-csi-config-volume
           configMap:

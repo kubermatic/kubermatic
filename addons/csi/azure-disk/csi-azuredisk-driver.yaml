@@ -12,20 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.27.0/deploy/v1.27.0/csi-azuredisk-driver.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.28.3/deploy/v1.28.3/csi-azuredisk-driver.yaml
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
-{{ $version := "1.27.1" }}
+
+{{ $version := "UNSUPPORTED" }}
+{{ $snapshot := "UNSUPPORTED" }}
+
+{{ if eq .Cluster.MajorMinorVersion "1.25" }}
+{{ $version = "v1.25.0" }}
+{{ $snapshot = "v5.0.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.26" }}
+{{ $version = "v1.26.6" }}
+{{ $snapshot = "v5.0.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.27" }}
+{{ $version = "v1.27.1" }}
+{{ $snapshot = "v5.0.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.28" }}
+{{ $version = "v1.28.3" }}
+{{ $snapshot = "v6.2.1" }}
+{{ end }}
+
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
   name: disk.csi.azure.com
   annotations:
-    csiDriver: v{{ $version }}
-    snapshot: v5.0.1
+    csiDriver: {{ $version | quote }}
+    snapshot: {{ $snapshot | quote }}
 spec:
   attachRequired: true
   podInfoOnMount: false
