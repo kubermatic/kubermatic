@@ -23,10 +23,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// See https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.14.0/vertical-pod-autoscaler/deploy/vpa-rbac.yaml
+// for the original source of these rules.
+
 const (
 	MetricsReaderRoleName       = "system:vpa-metrics-reader"
 	TargetReaderRoleName        = "system:vpa-target-reader"
 	ActorRoleName               = "system:vpa-actor"
+	StatusActorRoleName         = "system:vpa-status-actor"
 	CheckpointActorRoleName     = "system:vpa-checkpoint-actor"
 	EvictionerRoleName          = "system:vpa-evictioner"
 	AdmissionControllerRoleName = "system:vpa-admission-controller"
@@ -80,12 +84,20 @@ func ClusterRoleReconcilers() []reconciling.NamedClusterRoleReconcilerFactory {
 			{
 				APIGroups: []string{"poc.autoscaling.k8s.io"},
 				Resources: []string{"verticalpodautoscalers"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 			{
 				APIGroups: []string{"autoscaling.k8s.io"},
 				Resources: []string{"verticalpodautoscalers"},
-				Verbs:     []string{"get", "list", "watch", "patch"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+		}),
+
+		clusterRoleReconciler(StatusActorRoleName, []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"autoscaling.k8s.io"},
+				Resources: []string{"verticalpodautoscalers/status"},
+				Verbs:     []string{"get", "patch"},
 			},
 		}),
 
@@ -244,6 +256,14 @@ func ClusterRoleBindingReconcilers() []reconciling.NamedClusterRoleBindingReconc
 			Name:     StatusReaderRoleName,
 		}, []rbacv1.Subject{
 			updater,
+		}),
+
+		clusterRoleBindingReconciler(StatusActorRoleName, rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     StatusActorRoleName,
+		}, []rbacv1.Subject{
+			recommender,
 		}),
 	}
 }
