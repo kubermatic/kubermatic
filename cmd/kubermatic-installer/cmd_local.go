@@ -367,6 +367,10 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 			exampleDir = filepath.Join(filepath.Dir(path), "examples")
 		}
 
+		if _, err := os.Stat(exampleDir); err != nil {
+			logger.Fatal("Failed to find examples directory, please ensure it and the charts directory from the KKP download archive remain together with the kubermatic-installer.")
+		}
+
 		kubeClient, cancel := localKind(logger, exampleDir)
 		defer cancel()
 
