@@ -26,6 +26,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -46,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Options holds the e2e test options.
@@ -102,16 +104,20 @@ func TestCCMMigration(t *testing.T) {
 
 	ctx := context.Background()
 	seedClient, _ := e2eutils.GetClientsOrDie()
-	log := log.NewFromOptions(options.logOptions).Sugar().With("provider", options.provider)
+	rawLog := log.NewFromOptions(options.logOptions)
+	logger := rawLog.Sugar().With("provider", options.provider)
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// prepare cluster
-	scenario, cluster, userClient, err := setupClusterByProvider(t, ctx, log, seedClient, options)
+	scenario, cluster, userClient, err := setupClusterByProvider(t, ctx, logger, seedClient, options)
 	if err != nil {
 		t.Fatalf("Failed to setup preconditions: %v", err)
 	}
 
 	// run tests
-	if err := testBody(t, ctx, log, seedClient, scenario, cluster, userClient); err != nil {
+	if err := testBody(t, ctx, logger, seedClient, scenario, cluster, userClient); err != nil {
 		t.Error(err)
 	}
 
