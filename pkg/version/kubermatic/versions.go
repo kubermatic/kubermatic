@@ -50,7 +50,6 @@ type Versions struct {
 	KubermaticCommit  string
 	Kubermatic        string
 	UI                string
-	VPA               string
 	Envoy             string
 	KubermaticEdition edition.Type
 }
@@ -60,7 +59,6 @@ func NewDefaultVersions() Versions {
 		KubermaticCommit:  gitVersion,
 		Kubermatic:        kubermaticDockerTag,
 		UI:                uiDockerTag,
-		VPA:               "0.11.0",
 		Envoy:             "v1.17.1",
 		KubermaticEdition: edition.KubermaticEdition,
 	}
@@ -71,7 +69,6 @@ func NewFakeVersions() Versions {
 		KubermaticCommit:  "v0.0.0-420-test",
 		Kubermatic:        "v0.0.0-test",
 		UI:                "v1.1.1-test",
-		VPA:               "0.5.0",
 		Envoy:             "v1.17.1",
 		KubermaticEdition: edition.KubermaticEdition,
 	}

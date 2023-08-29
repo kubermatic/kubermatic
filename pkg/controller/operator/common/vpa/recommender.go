@@ -50,6 +50,9 @@ func appPodLabels(appName string) map[string]string {
 	}
 }
 
+// Sourced from
+// https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.14.0/vertical-pod-autoscaler/deploy/recommender-deployment.yaml
+
 func RecommenderDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return RecommenderName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -76,7 +79,7 @@ func RecommenderDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "recommender",
-					Image:   cfg.Spec.VerticalPodAutoscaler.Recommender.DockerRepository + ":" + versions.VPA,
+					Image:   cfg.Spec.VerticalPodAutoscaler.Recommender.DockerRepository + ":" + Version,
 					Command: []string{"/recommender"},
 					Args: []string{
 						fmt.Sprintf("--address=:%d", recommenderPort),
