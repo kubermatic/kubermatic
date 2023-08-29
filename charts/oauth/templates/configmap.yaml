@@ -34,9 +34,7 @@ data:
     frontend:
       dir: /srv/dex/web
       logoURL: theme/logo.svg
-{{- if .Values.dex.frontend }}{{- if .Values.dex.frontend.issuer }}
-      issuer: {{ .Values.dex.frontend.issuer }}
-{{- end }}{{- end }}
+      issuer: {{ ((.Values.dex).frontend).issuer | default "dex" }}
     telemetry:
       http: 0.0.0.0:5558
 {{ if .Values.dex.expiry }}
