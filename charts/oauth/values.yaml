@@ -47,6 +47,9 @@ dex:
   expiry:
     signingKeys: "6h"
     idTokens: "24h"
+  # frontend:
+  #   issuer: dex
+
   #  connectors:
   #  - type: github
   #    id: github
