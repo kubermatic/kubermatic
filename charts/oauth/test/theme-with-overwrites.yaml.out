@@ -119,6 +119,7 @@ data:
     frontend:
       dir: /srv/dex/web
       logoURL: theme/logo.svg
+      issuer: dex
     telemetry:
       http: 0.0.0.0:5558
 
@@ -244,7 +245,7 @@ spec:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '5558'
         kubermatic.io/chart: oauth
-        checksum/config: 8bade3cd7c5628f6bcab4ee4a08b9596c6aa5a52b7412041b5fe5af6edadf7b0
+        checksum/config: b0bbf504419c5de9208e3de68ce6f1a527113729cd6a820b19f8ec9acbb01683
         checksum/secrets: 94174345cecf03681cc88e92181cc021203807d4f0bb2ef247038ba28c3f1303
     spec:
       serviceAccountName: dex
