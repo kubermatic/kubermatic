@@ -47,6 +47,9 @@ const (
 	WebhookServiceName = "vpa-webhook"
 
 	admissionControllerPort = 8944
+
+	// https://github.com/kubernetes/autoscaler/releases
+	Version = "0.14.0"
 )
 
 func AdmissionControllerServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
@@ -56,6 +59,9 @@ func AdmissionControllerServiceAccountReconciler() reconciling.NamedServiceAccou
 		}
 	}
 }
+
+// Sourced from
+// https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.14.0/vertical-pod-autoscaler/deploy/admission-controller-deployment.yaml
 
 func AdmissionControllerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -94,7 +100,7 @@ func AdmissionControllerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfigu
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "admission-controller",
-					Image:   cfg.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository + ":" + versions.VPA,
+					Image:   cfg.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository + ":" + Version,
 					Command: []string{"/admission-controller"},
 					Args: []string{
 						fmt.Sprintf("--address=:%d", admissionControllerPort),
