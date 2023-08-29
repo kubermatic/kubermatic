@@ -150,8 +150,9 @@ products:
   - name: Vertical Pod Autoscaler (VPA)
     source: https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
     occurrences:
-      - goFunction:
-          function: getVPAVersion
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa
+          constant: Version
 
   - name: Envoy
     source: https://github.com/envoyproxy/envoy/

@@ -47,9 +47,6 @@ var versionProviderFuncs = map[string]versionProviderFunc{
 		return konnectivity.NetworkProxyVersion(clusterVersion), nil
 	},
 	"callKubernetesDashboardVersion": kubernetesdashboard.DashboardVersion,
-	"getVPAVersion": func(clusterVersion semver.Semver) (string, error) {
-		return kubermatic.NewDefaultVersions().VPA, nil
-	},
 	"getEnvoyAgentVersion": func(clusterVersion semver.Semver) (string, error) {
 		return kubermatic.NewDefaultVersions().Envoy, nil
 	},
