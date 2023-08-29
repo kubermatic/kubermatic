@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -209,8 +210,8 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 
 	// We let a master controller manager run the controllers for us.
 	mgr, err := manager.New(r.masterKubeCfg, manager.Options{
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
 		// Avoid duplicating caches or client for master cluster, as it's static.
 		NewCache: func(_ *rest.Config, _ cache.Options) (cache.Cache, error) {
 			return r.masterCache, nil
@@ -281,7 +282,9 @@ func (r *Reconciler) createSeedManagers(masterMgr manager.Manager, seeds map[str
 
 		log := r.log.With("seed", seed.Name)
 
-		seedMgr, err := manager.New(&kubeconfig, manager.Options{MetricsBindAddress: "0"})
+		seedMgr, err := manager.New(&kubeconfig, manager.Options{
+			Metrics: metricsserver.Options{BindAddress: "0"},
+		})
 		if err != nil {
 			log.Errorw("Failed to construct manager for seed", zap.Error(err))
 			continue

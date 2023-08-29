@@ -46,6 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -245,7 +246,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		}
 
 		mgr, err := manager.New(ctrlConfig, manager.Options{
-			MetricsBindAddress:     "0",
+			Metrics:                metricsserver.Options{BindAddress: "0"},
 			HealthProbeBindAddress: "0",
 		})
 		if err != nil {

@@ -25,27 +25,26 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/kube-openapi/pkg/validation/validate"
 )
 
 // NewValidatorForCRD creates a new validator based on the supplied CRD.
-func NewValidatorForCRD(crd *apiextensionsv1.CustomResourceDefinition, version string) (*validate.SchemaValidator, error) {
+func NewValidatorForCRD(crd *apiextensionsv1.CustomResourceDefinition, version string) (validation.SchemaValidator, error) {
 	crdr := &apiextensions.CustomResourceDefinition{}
 	if err := apiextensionsv1.Convert_v1_CustomResourceDefinition_To_apiextensions_CustomResourceDefinition(crd, crdr, nil); err != nil {
 		return nil, err
 	}
 
 	var err error
-	var sv *validate.SchemaValidator
+	var sv validation.SchemaValidator
 	for _, ver := range crdr.Spec.Versions {
 		if ver.Name == version {
 			// If there is only one version in the CRD, the crdv1 to crd converter will move the validation
 			// into the global .Spec.Validation. Therefore, we need to manually check if per-version or
 			// global validation is enabled
 			if ver.Schema != nil {
-				sv, _, err = validation.NewSchemaValidator(ver.Schema)
+				sv, _, err = validation.NewSchemaValidator(ver.Schema.OpenAPIV3Schema)
 			} else {
-				sv, _, err = validation.NewSchemaValidator(crdr.Spec.Validation)
+				sv, _, err = validation.NewSchemaValidator(crdr.Spec.Validation.OpenAPIV3Schema)
 			}
 			if err != nil {
 				return nil, err
@@ -60,7 +59,7 @@ func NewValidatorForCRD(crd *apiextensionsv1.CustomResourceDefinition, version s
 	return sv, nil
 }
 
-func NewValidatorForObject(obj runtime.Object) (*validate.SchemaValidator, error) {
+func NewValidatorForObject(obj runtime.Object) (validation.SchemaValidator, error) {
 	c, err := crd.CRDForObject(obj)
 	if err != nil {
 		return nil, err

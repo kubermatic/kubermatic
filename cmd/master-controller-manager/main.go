@@ -49,6 +49,7 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -159,7 +160,7 @@ func main() {
 		LeaderElection:          runOpts.enableLeaderElection,
 		LeaderElectionNamespace: runOpts.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
-		MetricsBindAddress:      "0",
+		Metrics:                 metricsserver.Options{BindAddress: "0"},
 		PprofBindAddress:        pprofOpts.ListenAddress,
 	})
 	if err != nil {

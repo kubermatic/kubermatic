@@ -40,6 +40,7 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 type controllerRunOptions struct {
@@ -91,10 +92,10 @@ func main() {
 		BaseContext: func() context.Context {
 			return ctx
 		},
-		MetricsBindAddress: opt.internalAddr,
-		LeaderElection:     opt.enableLeaderElection,
-		LeaderElectionID:   "operator.kubermatic.k8c.io",
-		PprofBindAddress:   pprofOpts.ListenAddress,
+		Metrics:          metricsserver.Options{BindAddress: opt.internalAddr},
+		LeaderElection:   opt.enableLeaderElection,
+		LeaderElectionID: "operator.kubermatic.k8c.io",
+		PprofBindAddress: pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create Controller Manager instance", zap.Error(err))

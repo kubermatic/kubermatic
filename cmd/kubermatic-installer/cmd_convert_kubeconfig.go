@@ -39,6 +39,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
@@ -242,7 +243,7 @@ func clusterRoleReconcilerFactoryFactory(namespace string) reconciling.NamedClus
 
 func reconcileCluster(ctx context.Context, config *rest.Config, namespace string, log logrus.FieldLogger) (string, error) {
 	mgr, err := manager.New(config, manager.Options{
-		MetricsBindAddress:     "0",
+		Metrics:                metricsserver.Options{BindAddress: "0"},
 		HealthProbeBindAddress: "0",
 	})
 	if err != nil {

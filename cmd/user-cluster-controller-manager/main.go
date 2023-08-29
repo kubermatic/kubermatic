@@ -61,10 +61,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 type controllerRunOptions struct {
@@ -238,7 +240,7 @@ func main() {
 		LeaderElection:          true,
 		LeaderElectionNamespace: metav1.NamespaceSystem,
 		LeaderElectionID:        "user-cluster-controller-leader-lock",
-		MetricsBindAddress:      runOp.metricsListenAddr,
+		Metrics:                 metricsserver.Options{BindAddress: runOp.metricsListenAddr},
 		HealthProbeBindAddress:  runOp.healthListenAddr,
 		PprofBindAddress:        pprofOpts.ListenAddress,
 	})
@@ -258,9 +260,13 @@ func main() {
 		log.Fatalw("Failed to get seed kubeconfig", zap.Error(err))
 	}
 	seedMgr, err := manager.New(seedConfig, manager.Options{
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
-		Namespace:          runOp.namespace,
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				runOp.namespace: {},
+			},
+		},
 	})
 	if err != nil {
 		log.Fatalw("Failed to construct seed mgr", zap.Error(err))
@@ -435,10 +441,14 @@ func main() {
 			log.Fatalw("Failed to get KubeVirt infra kubeconfig", zap.Error(err))
 		}
 		kubevirtInfraMgr, err := manager.New(kubevirtInfraConfig, manager.Options{
-			LeaderElection:     false,
-			MetricsBindAddress: "0",
+			LeaderElection: false,
+			Metrics:        metricsserver.Options{BindAddress: "0"},
 			// VM and VMIs are created in a namespace having the same name as the cluster namespace name.
-			Namespace: runOp.namespace,
+			Cache: cache.Options{
+				DefaultNamespaces: map[string]cache.Config{
+					runOp.namespace: {},
+				},
+			},
 		})
 		if err != nil {
 			log.Fatalw("Failed to construct kubevirt infra mgr", zap.Error(err))

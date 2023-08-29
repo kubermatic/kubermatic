@@ -53,6 +53,7 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
@@ -109,7 +110,7 @@ func main() {
 		BaseContext: func() context.Context {
 			return rootCtx
 		},
-		MetricsBindAddress:      "0",
+		Metrics:                 metricsserver.Options{BindAddress: "0"},
 		LeaderElection:          options.enableLeaderElection,
 		LeaderElectionNamespace: options.leaderElectionNamespace,
 		LeaderElectionID:        electionName,

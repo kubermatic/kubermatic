@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -63,8 +62,7 @@ func main() {
 		BaseContext: func() context.Context {
 			return ctx
 		},
-		Namespace: metav1.NamespaceSystem,
-		Cache:     usersshkeys.CacheOptions(),
+		Cache: usersshkeys.CacheOptions(),
 	})
 	if err != nil {
 		log.Fatalw("Failed creating user ssh key controller", zap.Error(err))
