@@ -469,7 +469,7 @@ func TestReconcileCluster(t *testing.T) {
 					APIVersion: "kubermatic.k8c.io/v1",
 				},
 			},
-			expectedError: errors.New("failed to reconcile IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: there is no enough free IPs available for IPAM pool \"test-pool-1\""),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: failed to ensure IPAMAllocation cluster-test-cluster-1/test-pool-1: failed to generate object: there is no enough free IPs available for IPAM pool \"test-pool-1\""),
 		},
 		{
 			name:    "range: single pool, not enough IPs from pool (2)",
@@ -523,7 +523,7 @@ func TestReconcileCluster(t *testing.T) {
 				},
 				Items: []kubermaticv1.IPAMAllocation{},
 			},
-			expectedError: errors.New("failed to reconcile IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-3: there is no enough free IPs available for IPAM pool \"test-pool-1\""),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-3: failed to ensure IPAMAllocation cluster-test-cluster-3/test-pool-1: failed to generate object: there is no enough free IPs available for IPAM pool \"test-pool-1\""),
 		},
 		{
 			name:    "prefix: single pool",
@@ -671,7 +671,7 @@ func TestReconcileCluster(t *testing.T) {
 					APIVersion: "kubermatic.k8c.io/v1",
 				},
 			},
-			expectedError: errors.New("failed to reconcile IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: invalid prefix for subnet"),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: failed to ensure IPAMAllocation cluster-test-cluster-1/test-pool-1: failed to generate object: invalid prefix for subnet"),
 		},
 		{
 			name:    "prefix: single pool, invalid prefix for subnet 2",
@@ -698,7 +698,7 @@ func TestReconcileCluster(t *testing.T) {
 					APIVersion: "kubermatic.k8c.io/v1",
 				},
 			},
-			expectedError: errors.New("failed to reconcile IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: invalid prefix for subnet"),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: failed to ensure IPAMAllocation cluster-test-cluster-1/test-pool-1: failed to generate object: invalid prefix for subnet"),
 		},
 		{
 			name:    "prefix: single pool, no free subnet",
@@ -752,7 +752,7 @@ func TestReconcileCluster(t *testing.T) {
 				},
 				Items: []kubermaticv1.IPAMAllocation{},
 			},
-			expectedError: errors.New("failed to reconcile IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-3: there is no free subnet available for IPAM Pool \"test-pool-1\""),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-3: failed to ensure IPAMAllocation cluster-test-cluster-3/test-pool-1: failed to generate object: there is no free subnet available for IPAM Pool \"test-pool-1\""),
 		},
 		{
 			name:    "multiple pools, clusters and DCs",

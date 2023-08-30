@@ -26,8 +26,8 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +35,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
-	controllerruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -201,7 +200,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			return nil, err
 		}
 
-		err = r.generateNewClusterAllocationForPool(ctx, cluster, &ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap, ipamAllocation)
+		err = r.ensureIPAMAllocation(ctx, cluster, &ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap, ipamAllocation)
 		if err != nil {
 			return nil, err
 		}
@@ -270,50 +269,53 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 	return dcIPAMPoolUsageMap, nil
 }
 
-func (r *Reconciler) generateNewClusterAllocationForPool(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.Set[string], oldClusterAllocation *kubermaticv1.IPAMAllocation) error {
-	newClustersAllocation := &kubermaticv1.IPAMAllocation{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: cluster.Status.NamespaceName,
-			Name:      ipamPool.Name,
-		},
+func (r *Reconciler) ensureIPAMAllocation(ctx context.Context, cluster *kubermaticv1.Cluster, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.Set[string], ipamAllocation *kubermaticv1.IPAMAllocation) error {
+	creators := []reconciling.NamedIPAMAllocationReconcilerFactory{
+		IPAMAllocationReconciler(ipamAllocation, cluster, ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap),
 	}
 
-	if _, err := controllerruntime.CreateOrUpdate(ctx, r.Client, newClustersAllocation, func() error {
-		kuberneteshelper.EnsureUniqueOwnerReference(newClustersAllocation, metav1.OwnerReference{
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-			Kind:       kubermaticv1.IPAMPoolKindName,
-			UID:        ipamPool.GetUID(),
-			Name:       ipamPool.Name,
-		})
-		newClustersAllocation.Spec.Type = dcIPAMPoolCfg.Type
-		newClustersAllocation.Spec.DC = cluster.Spec.Cloud.DatacenterName
-
-		switch dcIPAMPoolCfg.Type {
-		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			ipsAllocated, err := getIPsFromAddressRanges(oldClusterAllocation.Spec.Addresses)
-			if err != nil {
-				return err
-			}
-
-			newIPRangeToAllocate := dcIPAMPoolCfg.AllocationRange - len(ipsAllocated)
-
-			addresses, err := findFirstFreeRangesOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), newIPRangeToAllocate, dcIPAMPoolUsageMap)
-			if err != nil {
-				return err
-			}
-			newClustersAllocation.Spec.Addresses = oldClusterAllocation.Spec.Addresses
-			newClustersAllocation.Spec.Addresses = append(newClustersAllocation.Spec.Addresses, addresses...)
-		case kubermaticv1.IPAMPoolAllocationTypePrefix:
-			subnetCIDR, err := findFirstFreeSubnetOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), string(oldClusterAllocation.Spec.CIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
-			if err != nil {
-				return err
-			}
-			newClustersAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("failed to reconcile IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
+	if err := reconciling.ReconcileIPAMAllocations(ctx, creators, cluster.Status.NamespaceName, r.Client); err != nil {
+		return fmt.Errorf("failed to ensure IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 	}
-
 	return nil
+}
+
+// IPAMAllocationReconciler returns the function to reconcile the IPAMAllocation.
+func IPAMAllocationReconciler(ipamAllocation *kubermaticv1.IPAMAllocation, cluster *kubermaticv1.Cluster, ipamPool *kubermaticv1.IPAMPool, dcIPAMPoolCfg kubermaticv1.IPAMPoolDatacenterSettings, dcIPAMPoolUsageMap sets.Set[string]) reconciling.NamedIPAMAllocationReconcilerFactory {
+	return func() (string, reconciling.IPAMAllocationReconciler) {
+		return ipamPool.Name, func(ipamAllocation *kubermaticv1.IPAMAllocation) (*kubermaticv1.IPAMAllocation, error) {
+			kuberneteshelper.EnsureUniqueOwnerReference(ipamAllocation, metav1.OwnerReference{
+				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+				Kind:       kubermaticv1.IPAMPoolKindName,
+				UID:        ipamPool.GetUID(),
+				Name:       ipamPool.Name,
+			})
+			ipamAllocation.Spec.Type = dcIPAMPoolCfg.Type
+			ipamAllocation.Spec.DC = cluster.Spec.Cloud.DatacenterName
+
+			switch dcIPAMPoolCfg.Type {
+			case kubermaticv1.IPAMPoolAllocationTypeRange:
+				ipsAllocated, err := getIPsFromAddressRanges(ipamAllocation.Spec.Addresses)
+				if err != nil {
+					return nil, err
+				}
+
+				newIPRangeToAllocate := dcIPAMPoolCfg.AllocationRange - len(ipsAllocated)
+
+				addresses, err := findFirstFreeRangesOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), newIPRangeToAllocate, dcIPAMPoolUsageMap)
+				if err != nil {
+					return nil, err
+				}
+				ipamAllocation.Spec.Addresses = append(ipamAllocation.Spec.Addresses, addresses...)
+			case kubermaticv1.IPAMPoolAllocationTypePrefix:
+				subnetCIDR, err := findFirstFreeSubnetOfPool(ipamPool.Name, string(dcIPAMPoolCfg.PoolCIDR), string(ipamAllocation.Spec.CIDR), dcIPAMPoolCfg.AllocationPrefix, dcIPAMPoolUsageMap)
+				if err != nil {
+					return nil, err
+				}
+				ipamAllocation.Spec.CIDR = kubermaticv1.SubnetCIDR(subnetCIDR)
+			}
+
+			return ipamAllocation, nil
+		}
+	}
 }
