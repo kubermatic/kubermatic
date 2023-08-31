@@ -29,8 +29,11 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -238,23 +241,42 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	return nil
 }
 
-func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
-	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
-	}
-
-	if !dryRun {
-		for index, image := range imageList {
-			if err := CopyImage(ctx, log, image, userAgent); err != nil {
-				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
-			}
+func ProcessImages(ctx context.Context, log logrus.FieldLogger, archive bool, archivePath string, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
+	if archive {
+		refToImage := make(map[name.Reference]v1.Image)
+		for _, image := range images {
+			ref, _ := name.ParseReference(image)
+			refToImage[ref], _ = crane.Pull(image, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx))
 		}
 
-		return len(imageList), len(imageList), nil
-	}
+		archiveFileWriter, err := os.Create(archivePath)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to create image archive: %w", err)
+		}
+		defer archiveFileWriter.Close()
 
-	return 0, len(imageList), nil
+		if err = tarball.MultiRefWrite(refToImage, archiveFileWriter); err != nil {
+			return 0, 0, fmt.Errorf("failed to write image archive: %w", err)
+		}
+
+		return len(images), len(images), nil
+	} else {
+		imageList, err := GetImageSourceDestList(ctx, log, images, registry)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
+		}
+
+		if dryRun {
+			return 0, len(imageList), nil
+		} else {
+			for index, image := range imageList {
+				if err := CopyImage(ctx, log, image, userAgent); err != nil {
+					return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+				}
+			}
+			return len(imageList), len(imageList), nil
+		}
+	}
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {

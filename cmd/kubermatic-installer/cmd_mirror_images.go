@@ -44,6 +44,8 @@ type MirrorImagesOptions struct {
 	VersionFilter             string
 	RegistryPrefix            string
 	IgnoreRepositoryOverrides bool
+	Archive                   bool
+	ArchivePath               string
 	DryRun                    bool
 
 	AddonsPath  string
@@ -94,6 +96,8 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
 	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
+	cmd.PersistentFlags().BoolVar(&opt.Archive, "archive", false, "Export an archive in the form of a gzipped tar-ball, instead of pushing to a registry")
+	cmd.PersistentFlags().StringVar(&opt.ArchivePath, "archive-path", "", "Path to export the archive to (defaults to current working directory)")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
 	cmd.PersistentFlags().BoolVar(&opt.IgnoreRepositoryOverrides, "ignore-repository-overrides", true, "Ignore any configured registry overrides in the referenced KubermaticConfiguration to re-use a configuration that already specifies overrides (note that custom tags will still be observed and that this does not affect Helm charts configured via values.yaml; defaults to true)")
 
@@ -115,7 +119,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			logger.Warn("--docker-binary is deprecated and no longer has any effect; it will be removed with KKP 2.23")
 		}
 
-		if options.Registry == "" {
+		if !options.Archive && options.Registry == "" {
 			return errors.New("no target registry was passed")
 		}
 
@@ -294,7 +298,15 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
 
-		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
+		if options.Archive && options.ArchivePath == "" {
+			currentPath, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("failed to get current directory: %w", err)
+			}
+			options.ArchivePath = fmt.Sprintf("%s/images.tar.gz", currentPath)
+		}
+
+		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.Archive, options.ArchivePath, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
 		if err != nil {
 			return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", copiedCount, fullCount, err)
 		}
