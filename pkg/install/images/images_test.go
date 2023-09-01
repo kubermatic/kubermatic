@@ -70,7 +70,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		}
 	}
 
-	if _, _, err := ProcessImages(context.Background(), log, true, sets.List(imageSet), "test-registry:5000", "kubermatic-installer/test"); err != nil {
+	if _, _, err := CopyImages(context.Background(), log, true, sets.List(imageSet), "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }
@@ -106,7 +106,7 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 	}
 	images = append(images, appImages...)
 
-	if _, _, err := ProcessImages(context.Background(), log, true, images, "test-registry:5000", "kubermatic-installer/test"); err != nil {
+	if _, _, err := CopyImages(context.Background(), log, true, images, "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }

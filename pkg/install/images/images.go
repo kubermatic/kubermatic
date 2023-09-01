@@ -33,7 +33,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -134,22 +133,6 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (ImageSo
 	}, nil
 }
 
-func CopyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
-	log = log.WithFields(logrus.Fields{
-		"source-image": image.Source,
-		"target-image": image.Destination,
-	})
-
-	options := []crane.Option{
-		crane.WithContext(ctx),
-		crane.WithUserAgent(userAgent),
-	}
-
-	log.Info("Copying image…")
-
-	return crane.Copy(image.Source, image.Destination, options...)
-}
-
 func ExtractAddons(ctx context.Context, log logrus.FieldLogger, addonImageName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "kkp-mirror-images-*")
 	if err != nil {
@@ -241,42 +224,55 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	return nil
 }
 
-func ProcessImages(ctx context.Context, log logrus.FieldLogger, archive bool, archivePath string, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
-	if archive {
-		refToImage := make(map[name.Reference]v1.Image)
-		for _, image := range images {
-			ref, _ := name.ParseReference(image)
-			refToImage[ref], _ = crane.Pull(image, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx))
-		}
-
-		archiveFileWriter, err := os.Create(archivePath)
-		if err != nil {
-			return 0, 0, fmt.Errorf("failed to create image archive: %w", err)
-		}
-		defer archiveFileWriter.Close()
-
-		if err = tarball.MultiRefWrite(refToImage, archiveFileWriter); err != nil {
-			return 0, 0, fmt.Errorf("failed to write image archive: %w", err)
-		}
-
-		return len(images), len(images), nil
-	} else {
-		imageList, err := GetImageSourceDestList(ctx, log, images, registry)
-		if err != nil {
-			return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
-		}
-
-		if dryRun {
-			return 0, len(imageList), nil
-		} else {
-			for index, image := range imageList {
-				if err := CopyImage(ctx, log, image, userAgent); err != nil {
-					return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
-				}
-			}
-			return len(imageList), len(imageList), nil
-		}
+func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, images []string) error {
+	srcToImage := make(map[string]v1.Image)
+	for _, src := range images {
+		srcToImage[src], _ = crane.Pull(src, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx))
 	}
+
+	if dryRun {
+		return nil
+	}
+
+	if err := crane.MultiSave(srcToImage, archivePath); err != nil {
+		return fmt.Errorf("failed to save images to archive: %w", err)
+	}
+
+	return nil
+}
+
+func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
+	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
+	}
+
+	if dryRun {
+		return 0, len(imageList), nil
+	} else {
+		for index, image := range imageList {
+			if err := copyImage(ctx, log, image, userAgent); err != nil {
+				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+			}
+		}
+		return len(imageList), len(imageList), nil
+	}
+}
+
+func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
+	log = log.WithFields(logrus.Fields{
+		"source-image": image.Source,
+		"target-image": image.Destination,
+	})
+
+	options := []crane.Option{
+		crane.WithContext(ctx),
+		crane.WithUserAgent(userAgent),
+	}
+
+	log.Info("Copying image…")
+
+	return crane.Copy(image.Source, image.Destination, options...)
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {

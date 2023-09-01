@@ -306,7 +306,17 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			options.ArchivePath = fmt.Sprintf("%s/images.tar.gz", currentPath)
 		}
 
-		copiedCount, fullCount, err := images.ProcessImages(ctx, logger, options.Archive, options.ArchivePath, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
+		if options.Archive {
+			logger.WithField("archive-path", options.ArchivePath).Info("🚀 Exporting images…")
+			if err = images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet)); err != nil {
+				return fmt.Errorf("failed to export images: %w", err)
+			}
+			logger.Info(fmt.Sprintf("✅ Finished exporting %v images.", len(imageSet)))
+			return nil
+		}
+
+		logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
+		copiedCount, fullCount, err := images.CopyImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
 		if err != nil {
 			return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", copiedCount, fullCount, err)
 		}
