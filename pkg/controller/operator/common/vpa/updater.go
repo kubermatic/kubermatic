@@ -43,6 +43,9 @@ func UpdaterServiceAccountReconciler() reconciling.NamedServiceAccountReconciler
 	}
 }
 
+// Sourced from
+// https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.14.0/vertical-pod-autoscaler/deploy/updater-deployment.yaml
+
 func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return UpdaterName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -69,7 +72,7 @@ func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "updater",
-					Image:   cfg.Spec.VerticalPodAutoscaler.Updater.DockerRepository + ":" + versions.VPA,
+					Image:   cfg.Spec.VerticalPodAutoscaler.Updater.DockerRepository + ":" + Version,
 					Command: []string{"/updater"},
 					Args: []string{
 						fmt.Sprintf("--address=:%d", updaterPort),
