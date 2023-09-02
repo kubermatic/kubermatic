@@ -63,10 +63,11 @@ import (
 const (
 	ControllerName = "kkp-addon-controller"
 
-	addonLabelKey           = "kubermatic-addon"
-	cleanupFinalizerName    = "cleanup-manifests"
-	addonEnsureLabelKey     = "addons.kubermatic.io/ensure"
-	migratedHetznerCSIAddon = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
+	addonLabelKey             = "kubermatic-addon"
+	cleanupFinalizerName      = "cleanup-manifests"
+	addonEnsureLabelKey       = "addons.kubermatic.io/ensure"
+	migratedHetznerCSIAddon   = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
+	csiAddonStorageClassLabel = "kubermatic-addon=csi"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -533,6 +534,62 @@ func (r *Reconciler) migrateHetznerCSIDriver(ctx context.Context, log *zap.Sugar
 	return nil
 }
 
+func (r *Reconciler) unInstallCSIDriver(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+	userClusterClient, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+	// Increased the timeout, some of the operations were getting timed out.
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	csiDriverList := &storagev1.CSIDriverList{}
+	csiDriverListOption := &ctrlruntimeclient.ListOptions{
+		Raw: &metav1.ListOptions{
+			LabelSelector: csiAddonStorageClassLabel,
+		},
+	}
+	// Get CSI drivers created by the csi addon
+	if err := userClusterClient.List(ctx, csiDriverList, csiDriverListOption); apierrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to list csi drivers with %v label : %w", csiAddonStorageClassLabel, err)
+	}
+	// map to hold csi drivers to storage classes list
+	csiToSC := make(map[string][]string)
+	errMsg := []string{}
+	for i := 0; i < len(csiDriverList.Items); i++ {
+		if !strings.Contains(csiDriverList.Items[i].Name, "csi") {
+			continue
+		}
+		// get all the storage classes that are using the csi driver created by csi addon as provisioner
+		storageCLassList, err := r.storageClassesForProvisioner(ctx, cluster, csiDriverList.Items[i].Name)
+		if err != nil {
+			return fmt.Errorf("failed to get the list of storage classes using %v provisioner : %w", csiDriverList.Items[i].Name, err)
+		}
+		for j := 0; j < len(storageCLassList); j++ {
+			pvcList, err := r.pvcsForStorageClass(ctx, cluster, storageCLassList[j])
+			if err != nil {
+				return fmt.Errorf("failed to get the list of PVCs referring the %v storage class : %w", storageCLassList[j], err)
+			}
+			if len(pvcList) > 0 {
+				csiToSC[csiDriverList.Items[i].Name] = append(csiToSC[csiDriverList.Items[i].Name], storageCLassList[j])
+			}
+		}
+		if len(csiToSC[csiDriverList.Items[i].Name]) != 0 {
+			errMsg = append(errMsg, fmt.Sprintf("csidriver %s is being used by storage classes %s", csiDriverList.Items[i].Name, csiToSC[csiDriverList.Items[i].Name]))
+		}
+	}
+	if len(csiToSC) == 0 {
+		err := r.Delete(ctx, addon)
+		if err != nil {
+			return fmt.Errorf("failed delete addon %v : %w", addon.Spec.Name, err)
+		}
+	} else {
+		return fmt.Errorf("csi addon cannot be removed, %v", errMsg)
+	}
+	return nil
+}
+
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
 	if err != nil {
@@ -573,6 +630,15 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		cluster.Annotations[migratedHetznerCSIAddon] = "yes"
 		if err := r.Update(ctx, cluster); err != nil {
 			log.Errorf("failed to set %q cluster annotation: %w", migratedHetznerCSIAddon, err)
+		}
+	}
+	// Uninstall CSI driver if it has been disabled for the cluster & it not being used.
+	if addon.Name == "csi" && cluster.Spec.DisableCSIDriver {
+		err = r.unInstallCSIDriver(ctx, log, addon, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to delete addon %s of cluster %s: %w", addon.Name, cluster.Name, err)
+		} else {
+			return nil
 		}
 	}
 
@@ -688,4 +754,44 @@ func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
 
 func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {
 	return addon.Labels[addonEnsureLabelKey] == "true"
+}
+
+func (r *Reconciler) storageClassesForProvisioner(ctx context.Context, cluster *kubermaticv1.Cluster, provisionerName string) ([]string, error) {
+	storageCLassesForProvisioner := []string{}
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return storageCLassesForProvisioner, fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+	storageCLassList := &storagev1.StorageClassList{}
+	if err := cl.List(ctx, storageCLassList); apierrors.IsNotFound(err) {
+		return storageCLassesForProvisioner, nil
+	} else if err != nil {
+		return storageCLassesForProvisioner, fmt.Errorf("failed to get storage classes using provisioner %v : %w", provisionerName, err)
+	}
+	for i := 0; i < len(storageCLassList.Items); i++ {
+		if storageCLassList.Items[i].Provisioner == provisionerName {
+			storageCLassesForProvisioner = append(storageCLassesForProvisioner, storageCLassList.Items[i].Name)
+		}
+	}
+	return storageCLassesForProvisioner, nil
+}
+
+func (r *Reconciler) pvcsForStorageClass(ctx context.Context, cluster *kubermaticv1.Cluster, storageClassName string) ([]string, error) {
+	pvcsForStorageClass := []string{}
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return pvcsForStorageClass, fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	if err := cl.List(ctx, pvcList); apierrors.IsNotFound(err) {
+		return pvcsForStorageClass, nil
+	} else if err != nil {
+		return pvcsForStorageClass, fmt.Errorf("failed to get the list of PVCs referring the %v storage class : %w", storageClassName, err)
+	}
+	for i := 0; i < len(pvcList.Items); i++ {
+		if *pvcList.Items[i].Spec.StorageClassName == storageClassName {
+			pvcsForStorageClass = append(pvcsForStorageClass, pvcList.Items[i].Name)
+		}
+	}
+	return pvcsForStorageClass, nil
 }
