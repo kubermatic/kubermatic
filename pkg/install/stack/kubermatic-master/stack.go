@@ -111,6 +111,10 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 		return fmt.Errorf("failed to deploy Telemetry: %w", err)
 	}
 
+	if err := deployDefaultApplicationCatalog(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy default ApplicationCatalog: %w", err)
+	}
+
 	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
 
 	return nil

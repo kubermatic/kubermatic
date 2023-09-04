@@ -81,6 +81,8 @@ type DeployOptions struct {
 	MLAForceMLASecrets       bool
 	MLAIncludeIap            bool
 
+	DeployDefaultAppCatalog bool
+
 	SkipCharts []string
 }
 
@@ -142,6 +144,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
 	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 
+	cmd.PersistentFlags().BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "Deploy the default Application Catalog (EE only)")
+
 	cmd.PersistentFlags().StringSliceVar(&opt.SkipCharts, "skip-charts", nil, "skip helm chart deployment (some of cert-manager, nginx-ingress-controller, dex)")
 
 	return cmd
@@ -184,6 +188,11 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 				opt.HelmBinary,
 				helmVersion,
 			)
+		}
+
+		// default App Catalog feature is only available for EE, so error out early if being used with CE
+		if edition.KubermaticEdition.IsCE() && opt.DeployDefaultAppCatalog {
+			return errors.New("feature default ApplicationCatalog is only available in KKP EE edition")
 		}
 
 		var kubermaticStack stack.Stack
@@ -236,6 +245,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			MLAIncludeIap:                      opt.MLAIncludeIap,
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
+			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 		}
 
 		// prepapre Kubernetes and Helm clients
