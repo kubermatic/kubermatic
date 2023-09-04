@@ -95,23 +95,6 @@ func Deployment(cluster *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kub
 
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet
 
-	// Deprecated: This is not supported for 1.24 and higher and is blocked by
-	// Validate for 1.24+. Can be removed once 1.23 support is dropped.
-	if nd.Spec.DynamicConfig != nil && *nd.Spec.DynamicConfig {
-		kubeletVersion, err := semverlib.NewVersion(nd.Spec.Template.Versions.Kubelet)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse kubelet version: %w", err)
-		}
-
-		md.Spec.Template.Spec.ConfigSource = &corev1.NodeConfigSource{
-			ConfigMap: &corev1.ConfigMapNodeConfigSource{
-				Namespace:        metav1.NamespaceSystem,
-				Name:             fmt.Sprintf("kubelet-config-%d.%d", kubeletVersion.Major(), kubeletVersion.Minor()),
-				KubeletConfigKey: "kubelet",
-			},
-		}
-	}
-
 	if len(cluster.Spec.MachineNetworks) > 0 {
 		// TODO(mrIncompetent): Rename this finalizer to not contain the word "kubermatic" (For whitelabeling purpose)
 		md.Spec.Template.Annotations = map[string]string{
