@@ -31,6 +31,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
@@ -48,6 +49,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -65,6 +67,10 @@ alertmanager_config: |
       - to: 'test@example.org'
 
 `
+	// dashboardUid is the uid for the "Nodes Overview" Grafana dashboard.
+	// It is used as a sort of "canary" to check if Grafana dashboards have been
+	// created in the Grafana org created for a KKP Project.
+	dashboardUid = "13yQpUxiz"
 )
 
 var (
@@ -80,7 +86,11 @@ func init() {
 
 func TestMLAIntegration(t *testing.T) {
 	ctx := context.Background()
-	logger := log.NewFromOptions(logOptions).Sugar()
+	rawLogger := log.NewFromOptions(logOptions)
+	logger := rawLogger.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
 
 	if err := credentials.Parse(); err != nil {
 		t.Fatalf("Failed to get credentials: %v", err)
@@ -141,6 +151,10 @@ func TestMLAIntegration(t *testing.T) {
 
 	if err := verifyGrafanaDatasource(ctx, logger, grafanaClient, cluster); err != nil {
 		t.Errorf("failed to verify grafana datasource: %v", err)
+	}
+
+	if err := verifyGrafanaCanaryDashboard(ctx, logger, grafanaClient); err != nil {
+		t.Errorf("failed to verify grafana canary dashboard: %v", err)
 	}
 
 	if err := verifyGrafanaUser(ctx, logger, grafanaClient, &org); err != nil {
@@ -213,6 +227,20 @@ func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafan
 	}
 
 	log.Info("Grafana datasource successfully verified.")
+
+	return nil
+}
+
+func verifyGrafanaCanaryDashboard(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client) (err error) {
+	log.Info("Waiting for canary dashboard (Nodes Overview) to be present in Grafana...")
+	if !utils.WaitFor(1*time.Second, 5*time.Minute, func() bool {
+		_, _, err := grafanaClient.GetDashboardByUID(ctx, dashboardUid)
+		return err == nil
+	}) {
+		return fmt.Errorf("timed out waiting for grafana dashboard with uid '%s'", dashboardUid)
+	}
+
+	log.Info("Grafana canary dashboard found.")
 
 	return nil
 }

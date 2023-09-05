@@ -146,10 +146,10 @@ func addGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 }
 
 func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, configMap *corev1.ConfigMap) error {
-	for _, data := range configMap.Data {
+	for key, data := range configMap.Data {
 		var board grafanasdk.Board
 		if err := json.Unmarshal([]byte(data), &board); err != nil {
-			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
+			return fmt.Errorf("unable to unmarshal dashboard from ConfigMap %s/%s (%s): %w", configMap.Namespace, configMap.Name, key, err)
 		}
 		if status, err := grafanaClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
 			log.Errorw("unable to set dashboard",
