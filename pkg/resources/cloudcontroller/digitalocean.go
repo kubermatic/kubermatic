@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,7 +33,6 @@ import (
 
 const (
 	DigitalOceanCCMDeploymentName = "digitalocean-cloud-controller-manager"
-	DigitalOceanCCMVersion        = "v0.1.44"
 )
 
 var (
@@ -74,12 +74,14 @@ func digitalOceanDeploymentReconciler(data *resources.TemplateData) reconciling.
 				return nil, err
 			}
 
+			version := DigitaloceanCCMVersion(data.Cluster().Spec.Version)
+
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,
-					Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/digitalocean/digitalocean-cloud-controller-manager:" + DigitalOceanCCMVersion)),
+					Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/digitalocean/digitalocean-cloud-controller-manager:" + version)),
 					Command: []string{"/bin/digitalocean-cloud-controller-manager"},
 					Args:    getDigitalOceanFlags(),
 					Env: []corev1.EnvVar{
@@ -120,5 +122,36 @@ func getDigitalOceanFlags() []string {
 	return []string{
 		"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		"--leader-elect=false",
+	}
+}
+
+func DigitaloceanCCMVersion(version semver.Semver) string {
+	// https://github.com/digitalocean/digitalocean-cloud-controller-manager/releases
+	//
+	// Note that DO CCM is documented to be
+	//
+	//     > Because of the fast Kubernetes release cycles, CCM will only support the
+	//     > version that is also supported on DigitalOcean Kubernetes product.
+	//     > Any other releases will be not officially supported by us.
+	//
+	// So to be sure, confer with
+	// https://docs.digitalocean.com/products/kubernetes/details/supported-releases/
+	// and see which Kubernetes release are currently meant to be supported.
+	// Whenever a Kubernetes release goes out of DO support, pin the dependency down
+	// by replacing the `fallthrough` with a return statement.
+
+	switch version.MajorMinor() {
+	case v124: // 30 August 2022 – 27 August 2023
+		return "v0.1.43"
+	case v125: // 6 December 2022 – 26 November 2023
+		fallthrough
+	case v126: // 22 March 2023 – 27 March 2024
+		fallthrough
+	case v127: // 30 May 2023 – 27 July 2024
+		fallthrough
+	case v128: // not officially supported yet
+		fallthrough
+	default:
+		return "v0.1.45"
 	}
 }

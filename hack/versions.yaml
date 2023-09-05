@@ -37,9 +37,8 @@ products:
   - name: "CCM: DigitalOcean"
     source: https://github.com/digitalocean/digitalocean-cloud-controller-manager
     occurrences:
-      - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/resources/cloudcontroller
-          constant: DigitalOceanCCMVersion
+      - goFunction:
+          function: callDigitaloceanCCMVersion
 
   - name: "CCM: Hetzner"
     source: https://github.com/hetznercloud/hcloud-cloud-controller-manager
