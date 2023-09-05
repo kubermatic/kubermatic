@@ -233,7 +233,7 @@ func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafan
 
 func verifyGrafanaCanaryDashboard(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client) (err error) {
 	log.Info("Waiting for canary dashboard (Nodes Overview) to be present in Grafana...")
-	if !utils.WaitFor(ctx, 1*time.Second, 5*time.Minute, func() bool {
+	if !utils.WaitFor(1*time.Second, 5*time.Minute, func() bool {
 		_, _, err := grafanaClient.GetDashboardByUID(ctx, dashboardUid)
 		return err == nil
 	}) {
