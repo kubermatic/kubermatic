@@ -29,9 +29,11 @@ import (
 
 	defaultappdefs "github.com/kubermatic-labs/appdefs-test"
 	"github.com/sirupsen/logrus"
+
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/log"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
