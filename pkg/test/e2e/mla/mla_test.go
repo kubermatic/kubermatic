@@ -65,6 +65,8 @@ alertmanager_config: |
       - to: 'test@example.org'
 
 `
+	// dashboardUid is the uid for the "Nodes Overview" Grafana dashboard.
+	dashboardUid = "13yQpUxiz"
 )
 
 var (
@@ -143,6 +145,10 @@ func TestMLAIntegration(t *testing.T) {
 		t.Errorf("failed to verify grafana datasource: %v", err)
 	}
 
+	if err := verifyGrafanaCanaryDashboard(ctx, logger, grafanaClient); err != nil {
+		t.Errorf("failed to verify grafana canary dashboard: %v", err)
+	}
+
 	if err := verifyGrafanaUser(ctx, logger, grafanaClient, &org); err != nil {
 		t.Errorf("failed to verify grafana user: %v", err)
 	}
@@ -213,6 +219,20 @@ func verifyGrafanaDatasource(ctx context.Context, log *zap.SugaredLogger, grafan
 	}
 
 	log.Info("Grafana datasource successfully verified.")
+
+	return nil
+}
+
+func verifyGrafanaCanaryDashboard(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client) (err error) {
+	log.Info("Waiting for canary dashboard (Nodes Overview) to be present in Grafana...")
+	if !utils.WaitFor(ctx, 1*time.Second, 5*time.Minute, func() bool {
+		_, _, err := grafanaClient.GetDashboardByUID(ctx, dashboardUid)
+		return err == nil
+	}) {
+		return fmt.Errorf("timed out waiting for grafana dashboard with uid '%s'", dashboardUid)
+	}
+
+	log.Info("Grafana canary dashboard found.")
 
 	return nil
 }
