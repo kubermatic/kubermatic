@@ -31,6 +31,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
@@ -48,6 +49,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -66,6 +68,8 @@ alertmanager_config: |
 
 `
 	// dashboardUid is the uid for the "Nodes Overview" Grafana dashboard.
+	// It is used as a sort of "canary" to check if Grafana dashboards have been
+	// created in the Grafana org created for a KKP Project.
 	dashboardUid = "13yQpUxiz"
 )
 
@@ -82,7 +86,11 @@ func init() {
 
 func TestMLAIntegration(t *testing.T) {
 	ctx := context.Background()
-	logger := log.NewFromOptions(logOptions).Sugar()
+	rawLogger := log.NewFromOptions(logOptions)
+	logger := rawLogger.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
 
 	if err := credentials.Parse(); err != nil {
 		t.Fatalf("Failed to get credentials: %v", err)
