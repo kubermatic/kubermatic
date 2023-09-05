@@ -135,10 +135,9 @@ data:
           }
         ]
       },
-      "editable": true,
+      "editable": false,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "id": 7,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -1138,7 +1137,7 @@ data:
           }
         ]
       },
-      "editable": true,
+      "editable": false,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
       "links": [],
@@ -2374,7 +2373,7 @@ data:
       "annotations": {
         "list": []
       },
-      "editable": true,
+      "editable": false,
       "gnetId": null,
       "graphTooltip": 1,
       "hideControls": false,
@@ -2908,10 +2907,9 @@ data:
           }
         ]
       },
-      "editable": true,
+      "editable": false,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 1,
-      "id": 7,
       "links": [],
       "liveNow": false,
       "panels": [
@@ -3730,7 +3728,7 @@ data:
         ]
       },
       "description": "Monitors Kubernetes cluster using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics.",
-      "editable": true,
+      "editable": false,
       "gnetId": 12740,
       "graphTooltip": 0,
       "iteration": 1629468054887,
