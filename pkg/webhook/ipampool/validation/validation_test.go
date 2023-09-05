@@ -333,39 +333,6 @@ func TestValidator(t *testing.T) {
 			expectedError: errors.New("it's not allowed to update the allocation type for a datacenter"),
 		},
 		{
-			name: "not allowed to update the allocation range",
-			op:   admissionv1.Update,
-			ipamPool: &kubermaticv1.IPAMPool{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-ipam-pool",
-				},
-				Spec: kubermaticv1.IPAMPoolSpec{
-					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-						"dc": {
-							Type:            "range",
-							PoolCIDR:        "192.168.1.0/28",
-							AllocationRange: 10,
-						},
-					},
-				},
-			},
-			oldIPAMPool: &kubermaticv1.IPAMPool{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-ipam-pool",
-				},
-				Spec: kubermaticv1.IPAMPoolSpec{
-					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
-						"dc": {
-							Type:            "range",
-							PoolCIDR:        "192.168.1.0/28",
-							AllocationRange: 8,
-						},
-					},
-				},
-			},
-			expectedError: errors.New("it's not allowed to update the allocation range for a datacenter"),
-		},
-		{
 			name: "not allowed to update the allocation prefix",
 			op:   admissionv1.Update,
 			ipamPool: &kubermaticv1.IPAMPool{
@@ -1001,6 +968,55 @@ func TestValidator(t *testing.T) {
 				},
 			},
 			expectedError: fmt.Errorf("failed to add exclusion: there is an conflicted allocation in IPAM pool \"%s\" and datacenter \"%s\"", "test-pool", "dc"),
+		},
+		{
+			name: "added prefix exclusions: conflict with allocation CIDR",
+			op:   admissionv1.Update,
+			ipamPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-ipam-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             "prefix",
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 29,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.1.4/29"},
+						},
+					},
+				},
+			},
+			oldIPAMPool: &kubermaticv1.IPAMPool{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-pool",
+				},
+				Spec: kubermaticv1.IPAMPoolSpec{
+					Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+						"dc": {
+							Type:             kubermaticv1.IPAMPoolAllocationTypePrefix,
+							PoolCIDR:         "192.168.1.0/28",
+							AllocationPrefix: 30,
+							ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.1.4/30"},
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-1"),
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
+						DC:   "dc",
+						CIDR: "192.168.1.0/29",
+					},
+				},
+			},
+			expectedError: fmt.Errorf("it's not allowed to update the allocation prefix for a datacenter"),
 		},
 	}
 

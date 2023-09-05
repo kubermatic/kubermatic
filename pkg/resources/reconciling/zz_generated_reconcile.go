@@ -442,6 +442,43 @@ func ReconcileGroupProjectBindings(ctx context.Context, namedFactories []NamedGr
 	return nil
 }
 
+// IPAMAllocationReconciler defines an interface to create/update IPAMAllocations.
+type IPAMAllocationReconciler = func(existing *kubermaticv1.IPAMAllocation) (*kubermaticv1.IPAMAllocation, error)
+
+// NamedIPAMAllocationReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedIPAMAllocationReconcilerFactory = func() (name string, reconciler IPAMAllocationReconciler)
+
+// IPAMAllocationObjectWrapper adds a wrapper so the IPAMAllocationReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func IPAMAllocationObjectWrapper(reconciler IPAMAllocationReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*kubermaticv1.IPAMAllocation))
+		}
+		return reconciler(&kubermaticv1.IPAMAllocation{})
+	}
+}
+
+// ReconcileIPAMAllocations will create and update the IPAMAllocations coming from the passed IPAMAllocationReconciler slice.
+func ReconcileIPAMAllocations(ctx context.Context, namedFactories []NamedIPAMAllocationReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := IPAMAllocationObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.IPAMAllocation{}, false); err != nil {
+			return fmt.Errorf("failed to ensure IPAMAllocation %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // KubermaticConfigurationReconciler defines an interface to create/update KubermaticConfigurations.
 type KubermaticConfigurationReconciler = func(existing *kubermaticv1.KubermaticConfiguration) (*kubermaticv1.KubermaticConfiguration, error)
 

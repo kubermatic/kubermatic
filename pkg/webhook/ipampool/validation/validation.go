@@ -81,9 +81,6 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 
 		switch dcOldConfig.Type {
 		case kubermaticv1.IPAMPoolAllocationTypeRange:
-			if dcOldConfig.AllocationRange != dcNewConfig.AllocationRange {
-				return nil, errors.New("it's not allowed to update the allocation range for a datacenter")
-			}
 			addedExclusions = getSliceAdditions(dcOldConfig.ExcludeRanges, dcNewConfig.ExcludeRanges)
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			if dcOldConfig.AllocationPrefix != dcNewConfig.AllocationPrefix {
@@ -245,7 +242,15 @@ func (v *validator) checkExclusionsNotAllocated(ctx context.Context, exclusions 
 			}
 		case kubermaticv1.IPAMPoolAllocationTypePrefix:
 			for _, exclusion := range exclusions {
-				if string(ipamAllocation.Spec.CIDR) == exclusion {
+				excludePrefixIP, _, err := net.ParseCIDR(exclusion)
+				if err != nil {
+					return err
+				}
+				_, allocatedSubnet, err := net.ParseCIDR(string(ipamAllocation.Spec.CIDR))
+				if err != nil {
+					return err
+				}
+				if string(ipamAllocation.Spec.CIDR) == exclusion || allocatedSubnet.Contains(excludePrefixIP) {
 					return errExclusionConflict
 				}
 			}

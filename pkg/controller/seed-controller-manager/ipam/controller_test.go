@@ -469,7 +469,7 @@ func TestReconcileCluster(t *testing.T) {
 					APIVersion: "kubermatic.k8c.io/v1",
 				},
 			},
-			expectedError: errors.New("there is no enough free IPs available for IPAM pool \"test-pool-1\""),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: failed to ensure IPAMAllocation cluster-test-cluster-1/test-pool-1: failed to generate object: there is no enough free IPs available for IPAM pool \"test-pool-1\""),
 		},
 		{
 			name:    "range: single pool, not enough IPs from pool (2)",
@@ -523,7 +523,7 @@ func TestReconcileCluster(t *testing.T) {
 				},
 				Items: []kubermaticv1.IPAMAllocation{},
 			},
-			expectedError: errors.New("there is no enough free IPs available for IPAM pool \"test-pool-1\""),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-3: failed to ensure IPAMAllocation cluster-test-cluster-3/test-pool-1: failed to generate object: there is no enough free IPs available for IPAM pool \"test-pool-1\""),
 		},
 		{
 			name:    "prefix: single pool",
@@ -671,7 +671,7 @@ func TestReconcileCluster(t *testing.T) {
 					APIVersion: "kubermatic.k8c.io/v1",
 				},
 			},
-			expectedError: errors.New("invalid prefix for subnet"),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: failed to ensure IPAMAllocation cluster-test-cluster-1/test-pool-1: failed to generate object: invalid prefix for subnet"),
 		},
 		{
 			name:    "prefix: single pool, invalid prefix for subnet 2",
@@ -698,7 +698,7 @@ func TestReconcileCluster(t *testing.T) {
 					APIVersion: "kubermatic.k8c.io/v1",
 				},
 			},
-			expectedError: errors.New("invalid prefix for subnet"),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-1: failed to ensure IPAMAllocation cluster-test-cluster-1/test-pool-1: failed to generate object: invalid prefix for subnet"),
 		},
 		{
 			name:    "prefix: single pool, no free subnet",
@@ -752,7 +752,7 @@ func TestReconcileCluster(t *testing.T) {
 				},
 				Items: []kubermaticv1.IPAMAllocation{},
 			},
-			expectedError: errors.New("there is no free subnet available for IPAM Pool \"test-pool-1\""),
+			expectedError: errors.New("failed to ensure IPAM Pool Allocation for IPAM Pool test-pool-1 in cluster test-cluster-3: failed to ensure IPAMAllocation cluster-test-cluster-3/test-pool-1: failed to generate object: there is no free subnet available for IPAM Pool \"test-pool-1\""),
 		},
 		{
 			name:    "multiple pools, clusters and DCs",
@@ -1008,6 +1008,124 @@ func TestReconcileCluster(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:    "range: increase allocation range",
+			cluster: generateTestCluster("test-cluster-2", "test-dc-1"),
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMPool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-pool-1",
+					},
+					Spec: kubermaticv1.IPAMPoolSpec{
+						Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+							"test-dc-1": {
+								Type:            "range",
+								PoolCIDR:        "192.168.1.0/27",
+								AllocationRange: 10,
+								ExcludeRanges:   []string{"192.168.1.9"},
+							},
+						},
+					},
+				},
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool-1",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+						DC:        "test-dc-1",
+						Addresses: []string{"192.168.1.0-192.168.1.7"},
+					},
+				},
+			},
+			expectedClusterAllocations: &kubermaticv1.IPAMAllocationList{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "IPAMAllocationList",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
+				Items: []kubermaticv1.IPAMAllocation{
+					{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "IPAMAllocation",
+							APIVersion: "kubermatic.k8c.io/v1",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:            "test-pool-1",
+							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
+							ResourceVersion: "2",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+						},
+						Spec: kubermaticv1.IPAMAllocationSpec{
+							Type:      kubermaticv1.IPAMPoolAllocationTypeRange,
+							DC:        "test-dc-1",
+							Addresses: []string{"192.168.1.0-192.168.1.7", "192.168.1.8-192.168.1.8", "192.168.1.10-192.168.1.10"},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:    "prefix: lower allocation prefix",
+			cluster: generateTestCluster("test-cluster-2", "test-dc-1"),
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.IPAMPool{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-pool-1",
+					},
+					Spec: kubermaticv1.IPAMPoolSpec{
+						Datacenters: map[string]kubermaticv1.IPAMPoolDatacenterSettings{
+							"test-dc-1": {
+								Type:             "prefix",
+								PoolCIDR:         "192.168.1.0/26",
+								AllocationPrefix: 29,
+								ExcludePrefixes:  []kubermaticv1.SubnetCIDR{"192.168.1.8/29", "192.168.1.16/29"},
+							},
+						},
+					},
+				},
+				&kubermaticv1.IPAMAllocation{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "test-pool-1",
+						Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+					},
+					Spec: kubermaticv1.IPAMAllocationSpec{
+						Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
+						DC:   "test-dc-1",
+						CIDR: "192.168.1.0/30",
+					},
+				},
+			},
+			expectedClusterAllocations: &kubermaticv1.IPAMAllocationList{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "IPAMAllocationList",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
+				Items: []kubermaticv1.IPAMAllocation{
+					{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "IPAMAllocation",
+							APIVersion: "kubermatic.k8c.io/v1",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:            "test-pool-1",
+							Namespace:       fmt.Sprintf("cluster-%s", "test-cluster-2"),
+							ResourceVersion: "2",
+							OwnerReferences: []metav1.OwnerReference{{APIVersion: "kubermatic.k8c.io/v1", Kind: "IPAMPool", Name: "test-pool-1"}},
+						},
+						Spec: kubermaticv1.IPAMAllocationSpec{
+							Type: kubermaticv1.IPAMPoolAllocationTypePrefix,
+							DC:   "test-dc-1",
+							CIDR: "192.168.1.0/29",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1021,7 +1139,11 @@ func TestReconcileCluster(t *testing.T) {
 			}
 
 			_, err := reconciler.reconcile(ctx, tc.cluster)
-			assert.Equal(t, tc.expectedError, err)
+			if tc.expectedError != nil {
+				assert.EqualError(t, err, tc.expectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
 
 			ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
 			err = reconciler.List(ctx, ipamAllocationList, ctrlruntimeclient.InNamespace(tc.cluster.Status.NamespaceName))

@@ -36,6 +36,7 @@ resourceTypes:
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ConstraintTemplate }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: EtcdBackupConfig }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: GroupProjectBinding }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: IPAMAllocation }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: KubermaticConfiguration }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Preset }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Project }

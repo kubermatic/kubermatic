@@ -55,10 +55,6 @@ func getIPsFromAddressRanges(addressRanges []string) ([]string, error) {
 }
 
 func checkRangeAllocation(ips []string, poolCIDR string, allocationRange int) error {
-	if allocationRange != len(ips) {
-		return errIncompatiblePool
-	}
-
 	_, poolSubnet, err := net.ParseCIDR(poolCIDR)
 	if err != nil {
 		return err
@@ -102,18 +98,21 @@ func findFirstFreeRangesOfPool(poolName, poolCIDR string, allocationRange int, d
 		return nil, fmt.Errorf("there is no enough free IPs available for IPAM pool \"%s\"", poolName)
 	}
 
-	rangeFreeIPsIterator := 0
-	firstAddressRangeIP := rangeFreeIPs[rangeFreeIPsIterator]
-	for j := 0; j < allocationRange; j++ {
-		ipToAllocate := rangeFreeIPs[rangeFreeIPsIterator]
-		dcIPAMPoolUsageMap.Insert(ipToAllocate)
-		rangeFreeIPsIterator++
-		// if no next ip to allocate or next ip is not the next one, close a new address range
-		if j+1 == allocationRange || !isTheNextIP(rangeFreeIPs[rangeFreeIPsIterator], ipToAllocate) {
-			addressRange := fmt.Sprintf("%s-%s", firstAddressRangeIP, ipToAllocate)
-			addressRanges = append(addressRanges, addressRange)
-			if j+1 < allocationRange {
-				firstAddressRangeIP = rangeFreeIPs[rangeFreeIPsIterator]
+	if len(rangeFreeIPs) > 0 {
+		rangeFreeIPsIterator := 0
+		firstAddressRangeIP := rangeFreeIPs[rangeFreeIPsIterator]
+		for j := 0; j < allocationRange; j++ {
+			ipToAllocate := rangeFreeIPs[rangeFreeIPsIterator]
+
+			dcIPAMPoolUsageMap.Insert(ipToAllocate)
+			rangeFreeIPsIterator++
+			// if no next ip to allocate or next ip is not the next one, close a new address range
+			if j+1 == allocationRange || !isTheNextIP(rangeFreeIPs[rangeFreeIPsIterator], ipToAllocate) {
+				addressRange := fmt.Sprintf("%s-%s", firstAddressRangeIP, ipToAllocate)
+				addressRanges = append(addressRanges, addressRange)
+				if j+1 < allocationRange {
+					firstAddressRangeIP = rangeFreeIPs[rangeFreeIPsIterator]
+				}
 			}
 		}
 	}
