@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-mla-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow/)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow/|charts/mla/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:

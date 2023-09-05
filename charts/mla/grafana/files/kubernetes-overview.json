@@ -14,7 +14,7 @@
     ]
   },
   "description": "Monitors Kubernetes cluster using Prometheus. Shows overall cluster CPU / Memory / Filesystem usage as well as individual pod, containers, systemd services statistics.",
-  "editable": true,
+  "editable": false,
   "gnetId": 12740,
   "graphTooltip": 0,
   "iteration": 1629468054887,

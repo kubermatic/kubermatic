@@ -253,7 +253,7 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 			return err
 		}
 		if err == nil {
-			status, err := grafanaClient.DeleteGlobalUser(ctx, grafanaUser.ID)
+			status, err := grafanaClient.DeleteUser(ctx, grafanaUser.ID)
 			if err != nil {
 				return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
 					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
