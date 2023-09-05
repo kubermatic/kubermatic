@@ -96,7 +96,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f
 	k8s.io/kubectl v0.27.2
 	k8s.io/metrics v0.27.2
-	k8s.io/test-infra v0.0.0-20230224035733-afa88634622b
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 	kubevirt.io/api v0.59.2
 	kubevirt.io/containerized-data-importer-api v1.56.0
@@ -128,7 +127,7 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
-require github.com/kubermatic-labs/appdefs-test v0.0.0-20230830112445-e08d90289ea6
+require github.com/kubermatic-labs/appdefs-test v0.0.0-20230905093109-c4e4e4666ebe
 
 require (
 	cloud.google.com/go/compute v1.19.3 // indirect
