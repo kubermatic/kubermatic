@@ -239,6 +239,14 @@ func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath stri
 			continue
 		} else {
 			log.Info("Image fetched.")
+
+			// double check by loading the image fully (sometimes they timeout during saving)
+			if _, err := img.RawManifest(); err != nil {
+				log.WithError(err).Error("Failed to fetch manifest. Skipping...")
+				continue
+			}
+
+			// all good with the image, let it be archived
 			srcToImage[src] = img
 		}
 	}
@@ -250,7 +258,10 @@ func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath stri
 	if len(srcToImage) == 0 {
 		return 0, len(images), nil
 	}
-
+	log = log.WithFields(logrus.Fields{
+		"archived-count": len(srcToImage),
+	})
+	log.Info("Saving images to archive…")
 	if err := crane.MultiSave(srcToImage, archivePath); err != nil {
 		return 0, 0, fmt.Errorf("failed to save images to archive: %w", err)
 	}
