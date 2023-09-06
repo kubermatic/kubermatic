@@ -224,18 +224,37 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	return nil
 }
 
-func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, images []string) error {
+func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, images []string) (int, int, error) {
 	srcToImage := make(map[string]v1.Image)
 	for _, src := range images {
-		srcToImage[src], _ = crane.Pull(src, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx))
+		log = log.WithFields(logrus.Fields{
+			"image": src,
+		})
+		log.Info("Fetching image…")
+		img, err := crane.Pull(src, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx))
+		if err != nil {
+			log.WithError(err).Error("Failed to fetch remote image. Skipping...")
+			continue
+		} else {
+			log.Info("Image fetched.")
+			srcToImage[src] = img
+		}
 	}
 
 	if dryRun {
-		return nil
+		return len(images), len(images), nil
+	}
+
+	if len(srcToImage) == 0 {
+		return 0, len(images), nil
 	}
 
 	if err := crane.MultiSave(srcToImage, archivePath); err != nil {
-		return fmt.Errorf("failed to save images to archive: %w", err)
+		return 0, 0, fmt.Errorf("failed to save images to archive: %w", err)
+	}
+
+	return len(srcToImage), len(images), nil
+}
 	}
 
 	return nil
