@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -87,11 +88,19 @@ func main() {
 		log.Fatalw("Failed to get config", zap.Error(err))
 	}
 
-	var namespace string
+	cacheOpts := cache.Options{
+		DefaultNamespaces: map[string]cache.Config{},
+	}
+
+	namespace := ""
 	if namespaced {
 		namespace = lbNamespace
+		cacheOpts.DefaultNamespaces[lbNamespace] = cache.Config{}
 	}
-	mgr, err := manager.New(config, manager.Options{Namespace: namespace})
+
+	mgr, err := manager.New(config, manager.Options{
+		Cache: cacheOpts,
+	})
 	if err != nil {
 		log.Fatalw("Failed to construct mgr", zap.Error(err))
 	}

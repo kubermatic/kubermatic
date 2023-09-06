@@ -54,6 +54,7 @@ import (
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 const (
@@ -179,7 +180,7 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 
 	ctrlruntimelog.SetLogger(zapr.NewLogger(zap.NewNop()))
 	mgr, err := manager.New(ctrlConfig, manager.Options{
-		MetricsBindAddress:     "0",
+		Metrics:                metricsserver.Options{BindAddress: "0"},
 		HealthProbeBindAddress: "0",
 	})
 	if err != nil {

@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	ctrlruntimewebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
@@ -110,8 +111,8 @@ func main() {
 		BaseContext: func() context.Context {
 			return ctx
 		},
-		MetricsBindAddress: "0",
-		WebhookServer:      ctrlruntimewebhook.NewServer(userWebhookOptions),
+		Metrics:       metricsserver.Options{BindAddress: "0"},
+		WebhookServer: ctrlruntimewebhook.NewServer(userWebhookOptions),
 	})
 	if err != nil {
 		log.Fatalw("Failed to create the user cluster manager", zap.Error(err))

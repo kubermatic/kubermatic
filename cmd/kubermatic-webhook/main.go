@@ -54,6 +54,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -107,7 +108,11 @@ func main() {
 		BaseContext: func() context.Context {
 			return rootCtx
 		},
-		Namespace:        options.namespace,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				options.namespace: {},
+			},
+		},
 		WebhookServer:    ctrlruntimewebhook.NewServer(webhookOptions),
 		PprofBindAddress: options.pprof.ListenAddress,
 	})

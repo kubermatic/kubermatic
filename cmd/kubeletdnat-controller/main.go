@@ -39,6 +39,7 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 func main() {
@@ -102,8 +103,10 @@ func main() {
 		BaseContext: func() context.Context {
 			return ctx
 		},
-		MetricsBindAddress: ":8090",
-		PprofBindAddress:   pprofOpts.ListenAddress,
+		Metrics: metricsserver.Options{
+			BindAddress: ":8090",
+		},
+		PprofBindAddress: pprofOpts.ListenAddress,
 	})
 	if err != nil {
 		log.Fatalw("Failed to create manager", zap.Error(err))

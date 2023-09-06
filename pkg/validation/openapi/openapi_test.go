@@ -295,13 +295,13 @@ func TestValidatorForObject(t *testing.T) {
 			res, err := NewValidatorForObject(tc.in)
 
 			if res != nil {
-				if tc.expValidator && res.Schema == nil {
+				if tc.expValidator && res == nil {
 					t.Errorf("Root Schema is empty, when it should not be")
 				}
 			}
 
 			if !tc.expErr && err != nil {
-				t.Errorf("Exp error to be nil, but got %q", err)
+				t.Errorf("Expected error to be nil, but got %q", err)
 			}
 		})
 	}

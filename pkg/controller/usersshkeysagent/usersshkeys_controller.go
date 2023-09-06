@@ -252,6 +252,9 @@ func updateOwnAndPermissions(path string) error {
 // assignment for this controller to the bare minimum (the resource name).
 func CacheOptions() cache.Options {
 	return cache.Options{
+		DefaultNamespaces: map[string]cache.Config{
+			metav1.NamespaceSystem: {},
+		},
 		ByObject: map[ctrlruntimeclient.Object]cache.ByObject{
 			&corev1.Secret{}: {
 				Field: fields.SelectorFromSet(fields.Set{"metadata.name": resources.UserSSHKeys}),

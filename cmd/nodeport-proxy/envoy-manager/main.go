@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -66,7 +67,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mgr, err := manager.New(config, manager.Options{Namespace: ctrlOpts.Namespace})
+	cacheOpts := cache.Options{
+		DefaultNamespaces: map[string]cache.Config{},
+	}
+
+	if ctrlOpts.Namespace != "" {
+		cacheOpts.DefaultNamespaces[ctrlOpts.Namespace] = cache.Config{}
+	}
+
+	mgr, err := manager.New(config, manager.Options{
+		Cache: cacheOpts,
+	})
 	if err != nil {
 		log.Fatalw("failed to build controller-runtime manager", zap.Error(err))
 	}

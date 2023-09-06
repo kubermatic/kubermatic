@@ -31,6 +31,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
@@ -117,8 +119,12 @@ func run(cmd *cobra.Command, _ []string) error {
 
 	log.Info("Setting up outer manager")
 	outerManager, err := manager.New(outerCfg, manager.Options{
-		MetricsBindAddress: "0",
-		Port:               0,
+		Metrics: metricsserver.Options{BindAddress: "0"},
+		WebhookServer: &webhook.DefaultServer{
+			Options: webhook.Options{
+				Port: 0,
+			},
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to set up outer manager: %w", err)
@@ -127,8 +133,12 @@ func run(cmd *cobra.Command, _ []string) error {
 	// Create a new Cmd to provide shared dependencies and start components
 	log.Info("Setting up inner manager")
 	mgr, err := manager.New(innerCfg, manager.Options{
-		MetricsBindAddress: "127.0.0.1:2047",
-		Port:               0,
+		Metrics: metricsserver.Options{BindAddress: "127.0.0.1:2047"},
+		WebhookServer: &webhook.DefaultServer{
+			Options: webhook.Options{
+				Port: 0,
+			},
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("unable to set up inner manager: %w", err)
