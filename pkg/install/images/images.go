@@ -33,6 +33,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -255,8 +257,52 @@ func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath stri
 
 	return len(srcToImage), len(images), nil
 }
+
+func pathOpener(path string) tarball.Opener {
+	return func() (io.ReadCloser, error) {
+		return os.Open(path)
+	}
+}
+
+func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, registry string, userAgent string) error {
+	indexManifest, err := tarball.LoadManifest(pathOpener(archivePath))
+	if err != nil {
+		return fmt.Errorf("failed to load manifest: %w", err)
 	}
 
+	var refToImage = make(map[name.Reference]remote.Taggable)
+	for _, descriptor := range indexManifest {
+		for _, tagStr := range descriptor.RepoTags {
+			repoTag, err := name.NewTag(tagStr)
+			if err != nil {
+				return fmt.Errorf("failed to parse tag %s: %w", tagStr, err)
+			}
+
+			img, err := tarball.Image(pathOpener(archivePath), &repoTag)
+			if err != nil {
+				return fmt.Errorf("failed to load image %s from tarball: %w", tagStr, err)
+			}
+
+			imageSourceDest, err := RewriteImage(log, tagStr, registry)
+			if err != nil {
+				return fmt.Errorf("failed to rewrite %q: %w", tagStr, err)
+			}
+
+			ref, err := name.ParseReference(imageSourceDest.Destination, name.Insecure)
+			if err != nil {
+				return fmt.Errorf("failed to parse reference %s: %w", imageSourceDest.Destination, err)
+			}
+
+			refToImage[ref] = img
+		}
+	}
+	if dryRun {
+		return nil
+	}
+	err = remote.MultiWrite(refToImage, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithContext(ctx), remote.WithUserAgent(userAgent))
+	if err != nil {
+		return fmt.Errorf("failed to write images: %w", err)
+	}
 	return nil
 }
 

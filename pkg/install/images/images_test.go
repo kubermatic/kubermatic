@@ -194,3 +194,29 @@ func TestArchiveImages(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadImages(t *testing.T) {
+	// fake registry to push images to
+	s := httptest.NewServer(registry.New())
+	defer s.Close()
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// push a archive to the fake registry
+	if err := LoadImages(context.Background(), logrus.New(), "./testdata/valid-archive.tar.gz", false, u.Host, "kubermatic-installer/test"); err != nil {
+		t.Errorf("Error calling LoadImages: %v", err)
+	}
+
+	// validate that we can load the image from the fake registry
+	imageSource := fmt.Sprintf("%s/test/fake", u.Host)
+	ref, err := name.ParseReference(imageSource)
+	if err != nil {
+		t.Errorf("failed to parse reference %s: %v", imageSource, err)
+	}
+	_, err = remote.Image(ref)
+	if err != nil {
+		t.Errorf("Error calling remote.Image: %v", err)
+	}
+}
