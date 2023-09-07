@@ -281,7 +281,7 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 		return fmt.Errorf("failed to load manifest: %w", err)
 	}
 
-	var refToImage = make(map[name.Reference]remote.Taggable)
+	var repositoryToRefToImage = make(map[string]map[name.Reference]remote.Taggable)
 	for _, descriptor := range indexManifest {
 		for _, tagStr := range descriptor.RepoTags {
 			repoTag, err := name.NewTag(tagStr)
@@ -304,15 +304,22 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 				return fmt.Errorf("failed to parse reference %s: %w", imageSourceDest.Destination, err)
 			}
 
-			refToImage[ref] = img
+			if repositoryToRefToImage[ref.Context().RepositoryStr()] == nil {
+				repositoryToRefToImage[ref.Context().RepositoryStr()] = make(map[name.Reference]remote.Taggable)
+			}
+			repositoryToRefToImage[ref.Context().RepositoryStr()][ref] = img
 		}
 	}
 	if dryRun {
 		return nil
 	}
-	err = remote.MultiWrite(refToImage, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithContext(ctx), remote.WithUserAgent(userAgent))
-	if err != nil {
-		return fmt.Errorf("failed to write images: %w", err)
+
+	// remote.MultiWrite only supports one repository at a time, so we need to iterate over all repositories
+	for _, refToImage := range repositoryToRefToImage {
+		err = remote.MultiWrite(refToImage, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithContext(ctx), remote.WithUserAgent(userAgent))
+		if err != nil {
+			return fmt.Errorf("failed to write images: %w", err)
+		}
 	}
 	return nil
 }

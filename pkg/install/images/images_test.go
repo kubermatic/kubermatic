@@ -210,7 +210,7 @@ func TestLoadImages(t *testing.T) {
 	}
 
 	// validate that we can load the image from the fake registry
-	imageSource := fmt.Sprintf("%s/test/fake", u.Host)
+	imageSource := fmt.Sprintf("%s/test/fake:v1", u.Host)
 	ref, err := name.ParseReference(imageSource)
 	if err != nil {
 		t.Errorf("failed to parse reference %s: %v", imageSource, err)
