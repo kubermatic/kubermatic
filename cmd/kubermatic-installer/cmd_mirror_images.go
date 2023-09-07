@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -28,6 +29,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
@@ -42,6 +44,7 @@ type MirrorImagesOptions struct {
 
 	Registry                  string
 	Config                    string
+	Versions                  kubermaticversion.Versions
 	VersionFilter             string
 	RegistryPrefix            string
 	IgnoreRepositoryOverrides bool
@@ -90,11 +93,13 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 				opt.Registry = args[0]
 			}
 
-			if strings.Contains(opt.Registry, "local://") {
+			if strings.HasPrefix(opt.Registry, "local://") {
 				opt.Archive = true
-				opt.ArchivePath = opt.Registry[len("local://"):]
+				opt.ArchivePath = strings.TrimPrefix(opt.Registry, "local://")
 				opt.Registry = ""
 			}
+
+			opt.Versions = versions
 		},
 
 		RunE:         MirrorImagesFunc(logger, versions, &opt),
@@ -120,6 +125,74 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	return cmd
 }
 
+func getKubermaticConfiguration(logger *logrus.Logger, options *MirrorImagesOptions) (*v1.KubermaticConfiguration, error) {
+	if !options.Archive && options.Registry == "" {
+		return nil, errors.New("no target registry was passed")
+	}
+
+	if options.AddonsImage != "" && options.AddonsPath != "" {
+		return nil, errors.New("--addons-image and --addons-path must not be set at the same time")
+	}
+
+	config, _, err := loadKubermaticConfiguration(options.Config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
+	}
+
+	if config == nil {
+		return nil, errors.New("please specify your KubermaticConfiguration via --config")
+	}
+
+	// if we pass the option to ignore repository overrides in the KubermaticConfiguration,
+	// we make sure we omit any repository configured in the loaded config so they get
+	// properly defaulted.
+	if options.IgnoreRepositoryOverrides {
+		config.Spec.API.DockerRepository = ""
+		config.Spec.UI.DockerRepository = ""
+		config.Spec.MasterController.DockerRepository = ""
+		config.Spec.SeedController.DockerRepository = ""
+		config.Spec.Webhook.DockerRepository = ""
+		config.Spec.UserCluster.KubermaticDockerRepository = ""
+		config.Spec.UserCluster.DNATControllerDockerRepository = ""
+		config.Spec.UserCluster.EtcdLauncherDockerRepository = ""
+		config.Spec.UserCluster.Addons.DockerRepository = ""
+		config.Spec.VerticalPodAutoscaler.Recommender.DockerRepository = ""
+		config.Spec.VerticalPodAutoscaler.Updater.DockerRepository = ""
+		config.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository = ""
+	}
+
+	kubermaticConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		return nil, fmt.Errorf("failed to default KubermaticConfiguration: %w", err)
+	}
+
+	return kubermaticConfig, nil
+}
+
+func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorImagesOptions, kubermaticConfig *v1.KubermaticConfiguration) (string, error) {
+	// if no local addons path is given, use the configured addons
+	// Docker image and extract the addons from there
+	addonsImage := options.AddonsImage
+	if addonsImage == "" {
+		suffix := kubermaticConfig.Spec.UserCluster.Addons.DockerTagSuffix
+
+		tag := options.Versions.Kubermatic
+		if suffix != "" {
+			tag = fmt.Sprintf("%s-%s", options.Versions.Kubermatic, suffix)
+		}
+
+		addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + tag
+	}
+
+	tempDir, err := images.ExtractAddons(ctx, logger, addonsImage)
+	if err != nil {
+		return "", fmt.Errorf("failed to create local addons path: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	return tempDir, nil
+}
+
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		if options.DockerBinary != "" {
@@ -130,32 +203,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
 
 		if options.LoadFrom == "" {
-			if !options.Archive && options.Registry == "" {
-				return errors.New("no target registry was passed")
-			}
+			kubermaticConfig, err := getKubermaticConfiguration(logger, options)
 
-			if options.AddonsImage != "" && options.AddonsPath != "" {
-				return errors.New("--addons-image and --addons-path must not be set at the same time")
-			}
-
-			// error out early if there is no useful Helm binary
-			helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
+			clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
 			if err != nil {
-				return fmt.Errorf("failed to create Helm client: %w", err)
-			}
-
-			helmVersion, err := helmClient.Version()
-			if err != nil {
-				return fmt.Errorf("failed to check Helm version: %w", err)
-			}
-
-			if helmVersion.LessThan(MinHelmVersion) {
-				return fmt.Errorf(
-					"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
-					MinHelmVersion,
-					options.HelmBinary,
-					helmVersion,
-				)
+				return fmt.Errorf("failed to load versions: %w", err)
 			}
 
 			caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
@@ -163,66 +215,10 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				return fmt.Errorf("failed to load CA bundle: %w", err)
 			}
 
-			config, _, err := loadKubermaticConfiguration(options.Config)
-			if err != nil {
-				return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
-			}
-
-			if config == nil {
-				return errors.New("please specify your KubermaticConfiguration via --config")
-			}
-
-			// if we pass the option to ignore repository overrides in the KubermaticConfiguration,
-			// we make sure we omit any repository configured in the loaded config so they get
-			// properly defaulted.
-			if options.IgnoreRepositoryOverrides {
-				config.Spec.API.DockerRepository = ""
-				config.Spec.UI.DockerRepository = ""
-				config.Spec.MasterController.DockerRepository = ""
-				config.Spec.SeedController.DockerRepository = ""
-				config.Spec.Webhook.DockerRepository = ""
-				config.Spec.UserCluster.KubermaticDockerRepository = ""
-				config.Spec.UserCluster.DNATControllerDockerRepository = ""
-				config.Spec.UserCluster.EtcdLauncherDockerRepository = ""
-				config.Spec.UserCluster.Addons.DockerRepository = ""
-				config.Spec.VerticalPodAutoscaler.Recommender.DockerRepository = ""
-				config.Spec.VerticalPodAutoscaler.Updater.DockerRepository = ""
-				config.Spec.VerticalPodAutoscaler.AdmissionController.DockerRepository = ""
-			}
-
-			kubermaticConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
-			if err != nil {
-				return fmt.Errorf("failed to default KubermaticConfiguration: %w", err)
-			}
-
-			clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
-			if err != nil {
-				return fmt.Errorf("failed to load versions: %w", err)
-			}
-
-			// if no local addons path is given, use the configured addons
-			// Docker image and extract the addons from there
 			if options.AddonsPath == "" {
-				addonsImage := options.AddonsImage
-				if addonsImage == "" {
-					suffix := kubermaticConfig.Spec.UserCluster.Addons.DockerTagSuffix
-
-					tag := versions.Kubermatic
-					if suffix != "" {
-						tag = fmt.Sprintf("%s-%s", versions.Kubermatic, suffix)
-					}
-
-					addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + tag
-				}
-
-				if addonsImage != "" {
-					tempDir, err := images.ExtractAddons(ctx, logger, addonsImage)
-					if err != nil {
-						return fmt.Errorf("failed to create local addons path: %w", err)
-					}
-					defer os.RemoveAll(tempDir)
-
-					options.AddonsPath = tempDir
+				options.AddonsPath, err = getAddonsPath(ctx, logger, options, kubermaticConfig)
+				if err != nil {
+					return fmt.Errorf("failed to get addons path: %w", err)
 				}
 			}
 
@@ -283,6 +279,26 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				}
 			}
 
+			// error out early if there is no useful Helm binary
+			helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
+			if err != nil {
+				return fmt.Errorf("failed to create Helm client: %w", err)
+			}
+
+			helmVersion, err := helmClient.Version()
+			if err != nil {
+				return fmt.Errorf("failed to check Helm version: %w", err)
+			}
+
+			if helmVersion.LessThan(MinHelmVersion) {
+				return fmt.Errorf(
+					"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+					MinHelmVersion,
+					options.HelmBinary,
+					helmVersion,
+				)
+			}
+
 			if options.ChartsDirectory != "" {
 				chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
 				chartsLogger.Info("🚀 Rendering Helm charts…")
@@ -310,31 +326,35 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				if err != nil {
 					return fmt.Errorf("failed to get current directory: %w", err)
 				}
-				options.ArchivePath = fmt.Sprintf("%s/images.tar.gz", currentPath)
+				options.ArchivePath = fmt.Sprintf("%s/kubermatic-v%s-images.tar.gz", currentPath, options.Versions.Kubermatic)
 			}
 
+			var verb string
+			var count, fullCount int
 			if options.Archive {
-				logger.WithField("archive-path", options.ArchivePath).Info("🚀 Exporting images…")
-				archivedCount, fullCount, err := images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet))
+				logger.WithField("archive-path", options.ArchivePath).Info("🚀 Archiving images…")
+				count, fullCount, err = images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet))
 				if err != nil {
 					return fmt.Errorf("failed to export images: %w", err)
 				}
-				logger.Info(fmt.Sprintf("✅ Finished exporting %d/%d images.", archivedCount, fullCount))
-				return nil
+				verb = "archiving"
+				if options.DryRun {
+					verb = "archiving (dry-run)"
+				}
+			} else {
+				logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
+				count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
+				if err != nil {
+					return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", count, fullCount, err)
+				}
+
+				verb = "mirroring"
+				if options.DryRun {
+					verb = "mirroring (dry-run)"
+				}
 			}
 
-			logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
-			copiedCount, fullCount, err := images.CopyImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
-			if err != nil {
-				return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", copiedCount, fullCount, err)
-			}
-
-			verb := "mirroring"
-			if options.DryRun {
-				verb = "listing"
-			}
-
-			logger.WithFields(logrus.Fields{"copied-image-count": copiedCount, "all-image-count": fullCount}).Info(fmt.Sprintf("✅ Finished %s images.", verb))
+			logger.WithFields(logrus.Fields{"copied-image-count": count, "all-image-count": fullCount}).Info(fmt.Sprintf("✅ Finished %s images.", verb))
 
 			return nil
 		} else {
