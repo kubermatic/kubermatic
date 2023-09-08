@@ -204,6 +204,9 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 		if options.LoadFrom == "" {
 			kubermaticConfig, err := getKubermaticConfiguration(logger, options)
+			if err != nil {
+				return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+			}
 
 			clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
 			if err != nil {
