@@ -29,7 +29,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
@@ -125,7 +125,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	return cmd
 }
 
-func getKubermaticConfiguration(logger *logrus.Logger, options *MirrorImagesOptions) (*v1.KubermaticConfiguration, error) {
+func getKubermaticConfiguration(logger *logrus.Logger, options *MirrorImagesOptions) (*kubermaticv1.KubermaticConfiguration, error) {
 	if !options.Archive && options.Registry == "" {
 		return nil, errors.New("no target registry was passed")
 	}
@@ -169,7 +169,7 @@ func getKubermaticConfiguration(logger *logrus.Logger, options *MirrorImagesOpti
 	return kubermaticConfig, nil
 }
 
-func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorImagesOptions, kubermaticConfig *v1.KubermaticConfiguration) (string, error) {
+func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorImagesOptions, kubermaticConfig *kubermaticv1.KubermaticConfiguration) (string, error) {
 	// if no local addons path is given, use the configured addons
 	// Docker image and extract the addons from there
 	addonsImage := options.AddonsImage
