@@ -144,7 +144,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
 	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 
-	cmd.PersistentFlags().BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "Deploy the default Application Catalog (EE only)")
+	wrapDeployFlags(cmd.PersistentFlags(), &opt)
 
 	cmd.PersistentFlags().StringSliceVar(&opt.SkipCharts, "skip-charts", nil, "skip helm chart deployment (some of cert-manager, nginx-ingress-controller, dex)")
 

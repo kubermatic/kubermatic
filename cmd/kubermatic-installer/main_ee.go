@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
@@ -48,4 +49,9 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (p
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
 	return eeinstaller.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+// flags to be only used in EE edition
+func wrapDeployFlags(flagset *pflag.FlagSet, opt *DeployOptions) {
+	flagset.BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "Deploy the default Application Catalog (EE only)")
 }

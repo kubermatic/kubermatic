@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -49,4 +50,8 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (p
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
 	return kubernetes.SeedKubeconfigGetterFactory(ctx, client)
+}
+
+// flags to be only used in CE edition
+func wrapDeployFlags(flagset *pflag.FlagSet, opt *DeployOptions) {
 }
