@@ -29,8 +29,12 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
@@ -131,22 +135,6 @@ func RewriteImage(log logrus.FieldLogger, sourceImage, registry string) (ImageSo
 	}, nil
 }
 
-func CopyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
-	log = log.WithFields(logrus.Fields{
-		"source-image": image.Source,
-		"target-image": image.Destination,
-	})
-
-	options := []crane.Option{
-		crane.WithContext(ctx),
-		crane.WithUserAgent(userAgent),
-	}
-
-	log.Info("Copying image…")
-
-	return crane.Copy(image.Source, image.Destination, options...)
-}
-
 func ExtractAddons(ctx context.Context, log logrus.FieldLogger, addonImageName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "kkp-mirror-images-*")
 	if err != nil {
@@ -238,23 +226,136 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 	return nil
 }
 
-func ProcessImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
+func ArchiveImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, images []string) (int, int, error) {
+	srcToImage := make(map[string]v1.Image)
+	for _, src := range images {
+		log = log.WithFields(logrus.Fields{
+			"image": src,
+		})
+		log.Info("Fetching image…")
+		img, err := crane.Pull(src, crane.WithAuthFromKeychain(authn.DefaultKeychain), crane.WithContext(ctx))
+		if err != nil {
+			log.WithError(err).Error("Failed to fetch remote image. Skipping...")
+			continue
+		} else {
+			log.Info("Image fetched.")
+
+			// double check by loading the image fully (sometimes they timeout during saving)
+			if _, err := img.RawManifest(); err != nil {
+				log.WithError(err).Error("Failed to fetch manifest. Skipping...")
+				continue
+			}
+
+			// all good with the image, let it be archived
+			srcToImage[src] = img
+		}
+	}
+
+	if dryRun {
+		return len(images), len(images), nil
+	}
+
+	if len(srcToImage) == 0 {
+		return 0, len(images), nil
+	}
+	log = log.WithFields(logrus.Fields{
+		"archived-count": len(srcToImage),
+	})
+	log.Info("Saving images to archive…")
+	if err := crane.MultiSave(srcToImage, archivePath); err != nil {
+		return 0, 0, fmt.Errorf("failed to save images to archive: %w", err)
+	}
+
+	return len(srcToImage), len(images), nil
+}
+
+func pathOpener(path string) tarball.Opener {
+	return func() (io.ReadCloser, error) {
+		return os.Open(path)
+	}
+}
+
+func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string, dryRun bool, registry string, userAgent string) error {
+	indexManifest, err := tarball.LoadManifest(pathOpener(archivePath))
+	if err != nil {
+		return fmt.Errorf("failed to load manifest: %w", err)
+	}
+
+	var repositoryToRefToImage = make(map[string]map[name.Reference]remote.Taggable)
+	for _, descriptor := range indexManifest {
+		for _, tagStr := range descriptor.RepoTags {
+			repoTag, err := name.NewTag(tagStr)
+			if err != nil {
+				return fmt.Errorf("failed to parse tag %s: %w", tagStr, err)
+			}
+
+			img, err := tarball.Image(pathOpener(archivePath), &repoTag)
+			if err != nil {
+				return fmt.Errorf("failed to load image %s from tarball: %w", tagStr, err)
+			}
+
+			imageSourceDest, err := RewriteImage(log, tagStr, registry)
+			if err != nil {
+				return fmt.Errorf("failed to rewrite %q: %w", tagStr, err)
+			}
+
+			ref, err := name.ParseReference(imageSourceDest.Destination, name.Insecure)
+			if err != nil {
+				return fmt.Errorf("failed to parse reference %s: %w", imageSourceDest.Destination, err)
+			}
+
+			if repositoryToRefToImage[ref.Context().RepositoryStr()] == nil {
+				repositoryToRefToImage[ref.Context().RepositoryStr()] = make(map[name.Reference]remote.Taggable)
+			}
+			repositoryToRefToImage[ref.Context().RepositoryStr()][ref] = img
+		}
+	}
+	if dryRun {
+		return nil
+	}
+
+	// remote.MultiWrite only supports one repository at a time, so we need to iterate over all repositories
+	for _, refToImage := range repositoryToRefToImage {
+		err = remote.MultiWrite(refToImage, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithContext(ctx), remote.WithUserAgent(userAgent))
+		if err != nil {
+			return fmt.Errorf("failed to write images: %w", err)
+		}
+	}
+	return nil
+}
+
+func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
 	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
 	}
 
-	if !dryRun {
+	if dryRun {
+		return 0, len(imageList), nil
+	} else {
 		for index, image := range imageList {
-			if err := CopyImage(ctx, log, image, userAgent); err != nil {
+			if err := copyImage(ctx, log, image, userAgent); err != nil {
 				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
 			}
 		}
-
 		return len(imageList), len(imageList), nil
 	}
+}
 
-	return 0, len(imageList), nil
+func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
+	log = log.WithFields(logrus.Fields{
+		"source-image": image.Source,
+		"target-image": image.Destination,
+	})
+
+	options := []crane.Option{
+		crane.WithContext(ctx),
+		crane.WithUserAgent(userAgent),
+	}
+
+	log.Info("Copying image…")
+
+	return crane.Copy(image.Source, image.Destination, options...)
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
