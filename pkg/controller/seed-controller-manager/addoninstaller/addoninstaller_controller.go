@@ -322,8 +322,8 @@ func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Clust
 	if addon.Name == openVPNAddonName && cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled {
 		return true // skip openvpn if Konnectivity is enabled
 	}
-	if addon.Name == CSIAddonName && cluster.Spec.DisableCSIDriver && addon.CreationTimestamp != (metav1.Time{}) && addon.DeletionTimestamp == nil {
-		return true // skip csi driver installation if DisableCSIDriver is true & it is not deployed or being deleted already
+	if addon.Name == CSIAddonName && cluster.Spec.DisableCSIDriver {
+		return true // skip csi driver installation if DisableCSIDriver is true
 	}
 	return false
 }
