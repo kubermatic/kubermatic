@@ -756,7 +756,7 @@ func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersionin
 
 const DefaultBackupStoreContainer = `
 name: store-container
-image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
+image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
 command:
 - /bin/sh
 - -c
@@ -781,7 +781,7 @@ volumeMounts:
 
 const DefaultBackupDeleteContainer = `
 name: delete-container
-image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
+image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
 command:
 - /bin/sh
 - -c
