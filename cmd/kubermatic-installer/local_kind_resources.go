@@ -176,21 +176,8 @@ var kindLocalSeed = kubermaticv1.Seed{
 						Images: kubermaticv1.KubeVirtImageSources{
 							HTTP: &kubermaticv1.KubeVirtHTTPSource{
 								OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
-									providerconfig.OperatingSystemCentOS: map[string]string{
-										"7": "docker://quay.io/kubermatic-virt-disks/centos:7",
-									},
-									providerconfig.OperatingSystemFlatcar: map[string]string{
-										"3374.2.2": "docker://quay.io/kubermatic-virt-disks/flatcar:3374.2.2",
-									},
-									providerconfig.OperatingSystemRHEL: map[string]string{
-										"8": "docker://quay.io/kubermatic-virt-disks/rhel:8",
-									},
-									providerconfig.OperatingSystemRockyLinux: map[string]string{
-										"8": "docker://quay.io/kubermatic-virt-disks/rockylinux:8",
-									},
 									providerconfig.OperatingSystemUbuntu: map[string]string{
-										"20.04": "docker://quay.io/kubermatic-virt-disks/ubuntu:20.04",
-										"22.04": "docker://quay.io/kubermatic-virt-disks/ubuntu:22.04",
+										"22.04": "https://dev.kubermatic.io/kubevirt-images/images/ubuntu-22.04.img",
 									},
 								},
 							},
