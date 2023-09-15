@@ -424,6 +424,12 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		if oidcSettings.RequiredClaim != "" {
 			flags = append(flags, "--oidc-required-claim", oidcSettings.RequiredClaim)
 		}
+		if oidcSettings.GroupsPrefix != "" {
+			flags = append(flags, "--oidc-groups-prefix", oidcSettings.GroupsPrefix)
+		}
+		if oidcSettings.UsernamePrefix != "" {
+			flags = append(flags, "--oidc-username-prefix", oidcSettings.UsernamePrefix)
+		}
 	} else if enableOIDCAuthentication {
 		flags = append(flags,
 			"--oidc-ca-file", fmt.Sprintf("/etc/kubernetes/pki/ca-bundle/%s", resources.CABundleConfigMapKey),
