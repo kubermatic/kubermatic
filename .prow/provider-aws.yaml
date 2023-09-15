@@ -97,7 +97,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-aws-ubuntu-1.26-ce
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.27-ce
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -121,7 +121,7 @@ presubmits:
             - name: EXCLUDE_TESTS
               value: "all"
             - name: RELEASES_TO_TEST
-              value: "1.26"
+              value: "1.27"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: SERVICE_ACCOUNT_KEY
