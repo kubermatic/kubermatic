@@ -444,6 +444,10 @@ const (
 	// enabled.
 	ClusterConditionCSIKubeletMigrationCompleted ClusterConditionType = "CSIKubeletMigrationCompleted"
 
+	// This condition is used to determine if the CSI addon created by KKP is in use or not.
+	// This helps in ascertaining if the csi addon can be removed from the cluster or not.
+	ClusterConditionCSIAddonInUse ClusterConditionType = "CSIAddonInUse"
+
 	ReasonClusterUpdateSuccessful             = "ClusterUpdateSuccessful"
 	ReasonClusterUpdateInProgress             = "ClusterUpdateInProgress"
 	ReasonClusterCSIKubeletMigrationCompleted = "CSIKubeletMigrationSuccess"

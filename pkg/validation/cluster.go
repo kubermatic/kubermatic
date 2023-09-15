@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
@@ -234,6 +235,16 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 	// Validate datacenter setting for disabling CSI driver installation if true, is not being over-written.
 	if dc.Spec.DisableCSIDriver && !newCluster.Spec.DisableCSIDriver {
 		allErrs = append(allErrs, field.Forbidden(specPath.Child("DisableCSIDriver"), "CSI driver installation is disabled on the datacenter, can't be enabled on cluster"))
+	}
+
+	// Validate CSI addon is not being disabled while CSI driver(s) created by it is still in use.
+	if !oldCluster.Spec.DisableCSIDriver && newCluster.Spec.DisableCSIDriver {
+		csiAddonCondition, ok := oldCluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse]
+		if ok {
+			if csiAddonCondition.Status != corev1.ConditionFalse {
+				allErrs = append(allErrs, field.Forbidden(specPath.Child("DisableCSIDriver"), "CSI addon is in use or unknown state "+oldCluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse].Reason))
+			}
+		}
 	}
 
 	if oldCluster.Spec.ExposeStrategy != "" {

@@ -63,10 +63,12 @@ import (
 const (
 	ControllerName = "kkp-addon-controller"
 
-	addonLabelKey           = "kubermatic-addon"
-	cleanupFinalizerName    = "cleanup-manifests"
-	addonEnsureLabelKey     = "addons.kubermatic.io/ensure"
-	migratedHetznerCSIAddon = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
+	addonLabelKey             = "kubermatic-addon"
+	cleanupFinalizerName      = "cleanup-manifests"
+	addonEnsureLabelKey       = "addons.kubermatic.io/ensure"
+	migratedHetznerCSIAddon   = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
+	csiAddonStorageClassLabel = "kubermatic-addon=csi"
+	CSIAddonName              = "csi"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -584,6 +586,12 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 
+	if addon.Name == CSIAddonName {
+		err := r.csiAddonInUseStatus(ctx, log, cluster)
+		if err != nil {
+			return fmt.Errorf("failed to update csi addon status %w", err)
+		}
+	}
 	return nil
 }
 
@@ -627,7 +635,15 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
-	return nil
+	if addon.Name == CSIAddonName {
+		oldCluster := cluster.DeepCopy()
+		_, ok := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse]
+		if ok {
+			delete(cluster.Status.Conditions, kubermaticv1.ClusterConditionCSIAddonInUse)
+		}
+		err = r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	}
+	return err
 }
 
 func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
@@ -688,4 +704,108 @@ func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
 
 func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {
 	return addon.Labels[addonEnsureLabelKey] == "true"
+}
+
+func (r *Reconciler) csiAddonInUseStatus(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	status, reason := r.checkCSIAddonInUse(ctx, log, cluster)
+	csiAddonInUse := kubermaticv1.ClusterCondition{
+		Status:            status,
+		KubermaticVersion: r.versions.Kubermatic,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            reason,
+	}
+	oldCluster := cluster.DeepCopy()
+	cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse] = csiAddonInUse
+	err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return err
+}
+
+func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (corev1.ConditionStatus, string) {
+	userClusterClient, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return corev1.ConditionUnknown, fmt.Sprintf("failed to get client for usercluster: %v", err)
+	}
+	csiDriverList := &storagev1.CSIDriverList{}
+	csiDriverListOption := &ctrlruntimeclient.ListOptions{
+		Raw: &metav1.ListOptions{
+			LabelSelector: csiAddonStorageClassLabel,
+		},
+	}
+
+	// Get CSI drivers created by the csi addon
+	if err := userClusterClient.List(ctx, csiDriverList, csiDriverListOption); apierrors.IsNotFound(err) {
+		return corev1.ConditionUnknown, ""
+	} else if err != nil {
+		return corev1.ConditionUnknown, fmt.Sprintf("failed to list csi drivers with %v label : %v", csiAddonStorageClassLabel, err)
+	}
+	// map to hold csi drivers to storage classes list
+	csiToSC := make(map[string][]string)
+	errMsg := []string{}
+	for i := 0; i < len(csiDriverList.Items); i++ {
+		if !strings.Contains(csiDriverList.Items[i].Name, "csi") {
+			continue
+		}
+		// get all the storage classes that are using the csi driver created by csi addon as provisioner
+		storageCLassList, err := r.storageClassesForProvisioner(ctx, cluster, csiDriverList.Items[i].Name)
+		if err != nil {
+			return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of storage classes using %v provisioner : %v", csiDriverList.Items[i].Name, err)
+		}
+		for j := 0; j < len(storageCLassList); j++ {
+			pvcList, err := r.pvcsForStorageClass(ctx, cluster, storageCLassList[j])
+			if err != nil {
+				return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of PVCs referring the %v storage class : %v", storageCLassList[j], err)
+			}
+			if len(pvcList) > 0 {
+				csiToSC[csiDriverList.Items[i].Name] = append(csiToSC[csiDriverList.Items[i].Name], storageCLassList[j])
+			}
+		}
+		if len(csiToSC[csiDriverList.Items[i].Name]) != 0 {
+			errMsg = append(errMsg, fmt.Sprintf("csidriver %s is being used by storage classes %s", csiDriverList.Items[i].Name, csiToSC[csiDriverList.Items[i].Name]))
+		}
+	}
+	if len(csiToSC) == 0 {
+		return corev1.ConditionFalse, ""
+	}
+
+	return corev1.ConditionTrue, fmt.Sprintf("%v", errMsg)
+}
+
+func (r *Reconciler) storageClassesForProvisioner(ctx context.Context, cluster *kubermaticv1.Cluster, provisionerName string) ([]string, error) {
+	storageCLassesForProvisioner := []string{}
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return storageCLassesForProvisioner, fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+	storageCLassList := &storagev1.StorageClassList{}
+	if err := cl.List(ctx, storageCLassList); apierrors.IsNotFound(err) {
+		return storageCLassesForProvisioner, nil
+	} else if err != nil {
+		return storageCLassesForProvisioner, fmt.Errorf("failed to get storage classes using provisioner %v : %w", provisionerName, err)
+	}
+	for i := 0; i < len(storageCLassList.Items); i++ {
+		if storageCLassList.Items[i].Provisioner == provisionerName {
+			storageCLassesForProvisioner = append(storageCLassesForProvisioner, storageCLassList.Items[i].Name)
+		}
+	}
+	return storageCLassesForProvisioner, nil
+}
+
+func (r *Reconciler) pvcsForStorageClass(ctx context.Context, cluster *kubermaticv1.Cluster, storageClassName string) ([]string, error) {
+	pvcsForStorageClass := []string{}
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return pvcsForStorageClass, fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	if err := cl.List(ctx, pvcList); apierrors.IsNotFound(err) {
+		return pvcsForStorageClass, nil
+	} else if err != nil {
+		return pvcsForStorageClass, fmt.Errorf("failed to get the list of PVCs referring the %v storage class : %w", storageClassName, err)
+	}
+	for i := 0; i < len(pvcList.Items); i++ {
+		if *pvcList.Items[i].Spec.StorageClassName == storageClassName {
+			pvcsForStorageClass = append(pvcsForStorageClass, pvcList.Items[i].Name)
+		}
+	}
+	return pvcsForStorageClass, nil
 }
