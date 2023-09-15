@@ -1,0 +1,16 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: nginx
+spec:
+  description: Ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer.
+  method: helm
+  versions:
+  - template:
+      source:
+        helm:
+          chartName: ingress-nginx
+          chartVersion: 4.7.1
+          url: https://kubernetes.github.io/ingress-nginx
+    version: 1.8.1
+  defaultValues: {}

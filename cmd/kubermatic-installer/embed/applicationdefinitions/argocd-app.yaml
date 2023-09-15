@@ -1,0 +1,20 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: argocd
+spec:
+  description: Argo CD - Declarative, GitOps Continuous Delivery Tool for Kubernetes.
+  method: helm
+  versions:
+  - template:
+      source:
+        helm:
+          chartName: argo-cd
+          chartVersion: 5.5.12
+          url: https://argoproj.github.io/argo-helm
+    version: v2.4.14
+  defaultValues:
+    server:
+      service:
+        # To Expose ArgoCD externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
+        type: "LoadBalancer"

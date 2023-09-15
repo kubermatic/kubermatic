@@ -1,0 +1,17 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: flux2
+spec:
+  description: Flux is a tool for keeping Kubernetes clusters in sync with sources of configuration (like Git repositories), and automating updates to configuration when there is new code to deploy.
+  method: helm
+  versions:
+  - template:
+      source:
+        helm:
+          chartName: flux2
+          chartVersion: 2.9.2
+          url: https://fluxcd-community.github.io/helm-charts
+    version: 2.0.1
+  defaultValues: {}
+

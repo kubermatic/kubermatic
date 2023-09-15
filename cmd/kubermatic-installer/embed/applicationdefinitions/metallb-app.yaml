@@ -1,0 +1,16 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: metallb
+spec:
+  description: MetalLB is a load-balancer implementation for bare metal Kubernetes clusters, using standard routing protocols.
+  method: helm
+  versions:
+  - template:
+      source:
+        helm:
+          chartName: metallb
+          chartVersion: 0.13.10
+          url: https://metallb.github.io/metallb
+    version: v0.13.10
+  defaultValues: {}

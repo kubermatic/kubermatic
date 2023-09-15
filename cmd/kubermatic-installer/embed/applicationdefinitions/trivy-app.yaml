@@ -1,0 +1,16 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: trivy
+spec:
+  description: Trivy is a simple and comprehensive vulnerability/misconfiguration/secret scanner for containers and other artifacts.
+  method: helm
+  versions:
+  - template:
+      source:
+        helm:
+          chartName: trivy
+          chartVersion: 0.7.0
+          url: https://aquasecurity.github.io/helm-charts/
+    version: 0.37.2
+  defaultValues: {}

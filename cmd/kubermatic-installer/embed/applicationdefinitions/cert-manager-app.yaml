@@ -1,0 +1,17 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: cert-manager
+spec:
+  description: cert-manager is a Kubernetes addon to automate the management and issuance of TLS certificates from various issuing sources.
+  method: helm
+  versions:
+  - template:
+      source:
+        helm:
+          chartName: cert-manager
+          chartVersion: v1.12.3
+          url: https://charts.jetstack.io
+    version: v1.12.3
+  defaultValues:
+    installCRDs: true

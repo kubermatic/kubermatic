@@ -1,0 +1,16 @@
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: kube-vip
+spec:
+  description: kube-vip provides Kubernetes clusters with a virtual IP and load balancer for both the control plane (for building a highly-available cluster) and Kubernetes Services of type LoadBalancer without relying on any external hardware or software.
+  method: helm
+  versions:
+  - template:
+      source:
+        helm:
+          chartName: kube-vip
+          chartVersion: 0.4.4
+          url: https://kube-vip.github.io/helm-charts
+    version: v0.4.1
+  defaultValues: {}
