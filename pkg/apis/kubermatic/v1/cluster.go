@@ -625,13 +625,15 @@ const (
 )
 
 type OIDCSettings struct {
-	IssuerURL     string `json:"issuerURL,omitempty"`
-	ClientID      string `json:"clientID,omitempty"`
-	ClientSecret  string `json:"clientSecret,omitempty"`
-	UsernameClaim string `json:"usernameClaim,omitempty"`
-	GroupsClaim   string `json:"groupsClaim,omitempty"`
-	RequiredClaim string `json:"requiredClaim,omitempty"`
-	ExtraScopes   string `json:"extraScopes,omitempty"`
+	IssuerURL      string `json:"issuerURL,omitempty"`
+	ClientID       string `json:"clientID,omitempty"`
+	ClientSecret   string `json:"clientSecret,omitempty"`
+	UsernameClaim  string `json:"usernameClaim,omitempty"`
+	GroupsClaim    string `json:"groupsClaim,omitempty"`
+	RequiredClaim  string `json:"requiredClaim,omitempty"`
+	ExtraScopes    string `json:"extraScopes,omitempty"`
+	UsernamePrefix string `json:"usernamePrefix,omitempty"`
+	GroupsPrefix   string `json:"groupsPrefix,omitempty"`
 }
 
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.

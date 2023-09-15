@@ -1920,11 +1920,15 @@ spec:
                       type: string
                     groupsClaim:
                       type: string
+                    groupsPrefix:
+                      type: string
                     issuerURL:
                       type: string
                     requiredClaim:
                       type: string
                     usernameClaim:
+                      type: string
+                    usernamePrefix:
                       type: string
                   type: object
                 opaIntegration:
