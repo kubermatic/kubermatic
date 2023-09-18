@@ -7,6 +7,24 @@
 - [v2.22.4](#v2224)
 - [v2.22.5](#v2225)
 - [v2.22.6](#v2226)
+- [v2.22.7](#v2227)
+
+## [v2.22.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.7)
+
+### Supported Kubernetes Versions
+
+- Add support for Kubernetes 1.25.14 and 1.26.9 ([#12641](https://github.com/kubermatic/kubermatic/pull/12641))
+- Set default Kubernetes version to 1.25.14 ([#12641](https://github.com/kubermatic/kubermatic/pull/12641))
+
+### Bugfixes
+
+- Fix always defaulting allowed node port IP ranges for user clusters to 0.0.0.0/0 and ::/0, even when a more specific IP range was given ([#12589](https://github.com/kubermatic/kubermatic/pull/12589))
+- Migration logic for `kubermatic.io/initial-machinedeployment-request` annotation no longer checks for dynamic kubelet configuration, a feature unavailable in Kubernetes 1.24+. This caused cluster templates that enabled it previously to fail migration ([#12624](https://github.com/kubermatic/kubermatic/pull/12624))
+
+### Updates
+
+- Update to Go 1.19.12 ([#12643](https://github.com/kubermatic/kubermatic/pull/12643))
+- Update Vertical Pod Autoscaler to 0.14 (compatible with Kubernetes 1.25+) ([#12612](https://github.com/kubermatic/kubermatic/pull/12612))
 
 ## [v2.22.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.6)
 
