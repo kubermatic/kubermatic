@@ -168,9 +168,14 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 	}
 	defer session.Logout(ctx)
 
-	if ds := v.dc.DefaultDatastore; ds != "" {
-		if _, err := session.Finder.Datastore(ctx, ds); err != nil {
-			return fmt.Errorf("failed to get default datastore provided by datacenter spec %q: %w", ds, err)
+	effectiveDatastore := v.dc.DefaultDatastore
+	if ds := spec.VSphere.Datastore; ds != "" {
+		effectiveDatastore = ds
+	}
+
+	if effectiveDatastore != "" {
+		if _, err := session.Finder.Datastore(ctx, effectiveDatastore); err != nil {
+			return fmt.Errorf("failed to get effective datastore %q: %w", effectiveDatastore, err)
 		}
 	}
 
@@ -183,12 +188,6 @@ func (v *VSphere) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 	if dc := spec.VSphere.DatastoreCluster; dc != "" {
 		if _, err := session.Finder.DatastoreCluster(ctx, spec.VSphere.DatastoreCluster); err != nil {
 			return fmt.Errorf("failed to get datastore cluster provided by cluster spec %q: %w", dc, err)
-		}
-	}
-
-	if ds := spec.VSphere.Datastore; ds != "" {
-		if _, err = session.Finder.Datastore(ctx, ds); err != nil {
-			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %w", ds, err)
 		}
 	}
 
