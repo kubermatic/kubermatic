@@ -3,6 +3,28 @@
 - [v2.23.0](#v2230)
 - [v2.23.1](#v2231)
 - [v2.23.2](#v2232)
+- [v2.23.3](#v2233)
+
+## [v2.23.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.3)
+
+### Supported Kubernetes Versions
+
+- Add support for Kubernetes 1.25.14, 1.26.9 and 1.27.6 ([#12639](https://github.com/kubermatic/kubermatic/pull/12639))
+- Set default Kubernetes version to 1.26.9 ([#12639](https://github.com/kubermatic/kubermatic/pull/12639))
+
+### Bugfixes
+
+- Add missing cluster-autoscaler release for user clusters using Kubernetes 1.27 ([#12597](https://github.com/kubermatic/kubermatic/pull/12597))
+- Fix always defaulting allowed node port IP ranges for user clusters to 0.0.0.0/0 and ::/0, even when a more specific IP range was given ([#12589](https://github.com/kubermatic/kubermatic/pull/12589))
+- Mark MLA Grafana dashboards as non-editable as they are managed by KKP ([#12627](https://github.com/kubermatic/kubermatic/pull/12627))
+- MLA Grafana Kubernetes dashboards won't repeatedly ask to be saved ([#12614](https://github.com/kubermatic/kubermatic/pull/12614))
+
+### Updates
+
+- Update `d3fk/s3cmd` to version (latest "arch-stable") with `fb4c4dcf` hash ([#12644](https://github.com/kubermatic/kubermatic/pull/12644))
+- Update to Go 1.20.8 ([#12642](https://github.com/kubermatic/kubermatic/pull/12642))
+- Add Cilium 1.13.6 as supported CNI version and deprecate older versions 1.13.3 and 1.13.4 for security reasons (GHSA-pvgm-7jpg-pw5g, GHSA-69vr-g55c-v2v4, GHSA-mc6h-6j9x-v3gq, GHSA-7mhv-gr67-hq55) ([#12635](https://github.com/kubermatic/kubermatic/pull/12635))
+- Update Vertical Pod Autoscaler to 0.14 (compatible with Kubernetes 1.25+) ([#12611](https://github.com/kubermatic/kubermatic/pull/12611))
 
 ## [v2.23.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.2)
 
