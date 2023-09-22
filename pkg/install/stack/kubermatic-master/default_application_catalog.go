@@ -29,8 +29,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	defaultappdefs "k8c.io/kubermatic/v2/cmd/kubermatic-installer/embed"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	defaultappdefs "k8c.io/kubermatic/v2/pkg/applications/defaultcatalog"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/log"
 

@@ -20,7 +20,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package embed
+package defaultcatalog
 
 import (
 	"embed"
