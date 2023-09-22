@@ -39,7 +39,6 @@ require (
 	github.com/hetznercloud/hcloud-go v1.47.0
 	github.com/imdario/mergo v0.3.15
 	github.com/jackpal/gateway v1.0.10
-	github.com/kubermatic-labs/appdefs-test v0.0.0-20230905093109-c4e4e4666ebe
 	github.com/kubermatic/grafanasdk v0.9.13
 	github.com/kubermatic/machine-controller v1.57.1-0.20230704163314-5f4e903ddafe
 	github.com/minio/minio-go/v7 v7.0.59
