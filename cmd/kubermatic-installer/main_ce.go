@@ -52,6 +52,6 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 	return kubernetes.SeedKubeconfigGetterFactory(ctx, client)
 }
 
-// flags to be only used in CE edition
+// flags to be only used in CE edition.
 func wrapDeployFlags(flagset *pflag.FlagSet, opt *DeployOptions) {
 }

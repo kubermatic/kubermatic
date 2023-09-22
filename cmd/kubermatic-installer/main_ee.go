@@ -51,7 +51,7 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 	return eeinstaller.SeedKubeconfigGetterFactory(ctx, client)
 }
 
-// flags to be only used in EE edition
+// flags to be only used in EE edition.
 func wrapDeployFlags(flagset *pflag.FlagSet, opt *DeployOptions) {
 	flagset.BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "Deploy the default Application Catalog (EE only)")
 }
