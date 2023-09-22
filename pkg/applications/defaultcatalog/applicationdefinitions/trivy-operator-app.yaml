@@ -15,5 +15,5 @@ spec:
     version: 0.15.1
   defaultValues:
     trivy:
-      # To specfy that Trivy should ignore all unfixed vulnerabilities, set `ignoredUnfixed` flag to `true`
+      # To specify that Trivy should ignore all unfixed vulnerabilities, set `ignoredUnfixed` flag to `true`
       ignoreUnfixed: true
