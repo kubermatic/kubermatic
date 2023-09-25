@@ -4,6 +4,14 @@
 - [v2.23.1](#v2231)
 - [v2.23.2](#v2232)
 - [v2.23.3](#v2233)
+- [v2.23.4](#v2234)
+
+## [v2.23.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.4)
+
+### Bugfixes
+
+- Fix vSphere cluster validation: If a Cluster uses a custom datastore, the Seed's default datastore should not be validated ([#12655](https://github.com/kubermatic/kubermatic/pull/12655))
+- Remove Cilium 1.14.1 from list of supported CNI versions visible in the dashboard as it is not supported in KKP 2.23 ([#12659](https://github.com/kubermatic/kubermatic/pull/12659))
 
 ## [v2.23.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.3)
 
