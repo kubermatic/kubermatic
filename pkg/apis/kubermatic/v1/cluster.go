@@ -157,7 +157,7 @@ type ClusterSpec struct {
 	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
 
 	// Optional: ClusterNetworkingConfig specifies the different networking parameters for a cluster.
-	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
+	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
 
 	// Optional: MachineNetworkingConfig specifies the networking parameters used for IPAM.
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
