@@ -22,8 +22,10 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
+
 	appcat "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
