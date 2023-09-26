@@ -30,7 +30,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	defaultappdefs "k8c.io/kubermatic/v2/pkg/applications/defaultcatalog"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/log"
 
@@ -47,7 +46,7 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 		return nil
 	}
 
-	appDefFiles, err := defaultappdefs.GetAppDefFiles()
+	appDefFiles, err := GetAppDefFiles()
 	if err != nil {
 		return fmt.Errorf("Failed to fetch ApplicationDefinitions: %w", err)
 	}
