@@ -20,7 +20,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package kubermaticmaster
+package applicationcatalog
 
 import (
 	"context"
@@ -38,7 +38,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func deployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	logger.Infof("📦 Deploying default ApplicationCatalog")
 	sublogger := log.Prefix(logger, "   ")
 

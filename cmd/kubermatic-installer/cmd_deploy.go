@@ -190,11 +190,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			)
 		}
 
-		// default App Catalog feature is only available for EE, so error out early if being used with CE
-		if edition.KubermaticEdition.IsCE() && opt.DeployDefaultAppCatalog {
-			return errors.New("feature default ApplicationCatalog is only available in KKP EE edition")
-		}
-
 		var kubermaticStack stack.Stack
 		switch stackName {
 		case "usercluster-mla":
