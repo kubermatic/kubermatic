@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/konnectivity"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubelb"
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubesystem"
@@ -145,6 +146,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	data.clusterVersion = clusterVersion
 	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
+	data.kubeLBCCMEnabled = cluster.Spec.IsKubeLBEnabled()
 
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
@@ -293,6 +295,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if !data.kubeLBCCMEnabled {
+		if err := r.ensureKubeLBCCMResourcesAreRemoved(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -401,6 +409,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		creators = append(creators, operatingsystemmanager.KubeSystemRoleReconciler())
 	}
 
+	if data.kubeLBCCMEnabled {
+		creators = append(creators, kubelb.KubeSystemRoleReconciler())
+	}
+
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", metav1.NamespaceSystem, err)
 	}
@@ -485,6 +497,10 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 
 	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingReconciler())
+	}
+
+	if data.kubeLBCCMEnabled {
+		creators = append(creators, kubelb.KubeSystemRoleBindingReconciler())
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -583,6 +599,10 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleReconciler())
 	}
 
+	if data.kubeLBCCMEnabled {
+		creators = append(creators, kubelb.ClusterRoleReconciler())
+	}
+
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
@@ -631,6 +651,10 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 	if data.operatingSystemManagerEnabled {
 		creators = append(creators, operatingsystemmanager.ClusterRoleBindingReconciler())
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingReconciler())
+	}
+
+	if data.kubeLBCCMEnabled {
+		creators = append(creators, kubelb.ClusterRoleBindingReconciler())
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -1166,6 +1190,7 @@ type reconcileData struct {
 	reconcileK8sSvcEndpoints      bool
 	kubernetesDashboardEnabled    bool
 	operatingSystemManagerEnabled bool
+	kubeLBCCMEnabled              bool
 	coreDNSReplicas               *int32
 }
 
@@ -1405,6 +1430,16 @@ func (r *reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Co
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Kubernetes Dashboard resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureKubeLBCCMResourcesAreRemoved(ctx context.Context) error {
+	for _, resource := range kubelb.ResourcesForDeletion() {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure KubeLB resources are removed/not present: %w", err)
 		}
 	}
 	return nil
