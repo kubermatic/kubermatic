@@ -142,6 +142,13 @@ const (
 	ViewerKubeconfigSecretName = "viewer-kubeconfig"
 	// SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler.
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
+	// KubeLBKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubelb CCM.
+	KubeLBCCMKubeconfigSecretName = "kubelb-ccm-kubeconfig"
+	// KubeLBManagerKubeconfigSecretName is the name for the secret containing the kubeconfig for the kubelb management cluster used by the kubelb CCM.
+	KubeLBManagerKubeconfigSecretName = "kubelb-manager-kubeconfig"
+	// KubeLBCCMCertUsername is the name of the user coming from kubeconfig cert.
+	KubeLBCCMCertUsername = "kubermatic:kubelb-ccm"
+
 	// KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller.
 	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
 	// KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics.
@@ -308,10 +315,14 @@ const (
 	ClusterInfoReaderRoleName = "cluster-info"
 	// MachineControllerRoleName is the name for the MachineController roles.
 	MachineControllerRoleName = "machine-controller"
+	// KubeLBCCMRoleName is the name for the KubeLB roles.
+	KubeLBCCMRoleName = "kubelb-ccm"
 	// OperatingSystemManagerRoleName is the name for the OperatingSystemManager roles.
 	OperatingSystemManagerRoleName = "operating-system-manager"
 	// MachineControllerRoleBindingName is the name for the MachineController rolebinding.
 	MachineControllerRoleBindingName = "machine-controller"
+	// KubeLBCCMRoleBindingName is the name for the KubeLB rolebinding.
+	KubeLBCCMRoleBindingName = "kubelb-ccm"
 	// OperatingSystemManagerRoleBindingName is the name for the OperatingSystemManager rolebinding.
 	OperatingSystemManagerRoleBindingName = "operating-system-manager"
 	// ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users.
@@ -322,12 +333,16 @@ const (
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
 	// OperatingSystemManagerClusterRoleName is the name for the OperatingSystemManager cluster role.
 	OperatingSystemManagerClusterRoleName = "system:kubermatic-operating-system-manager"
+	// KubeLBCCMClusterRoleName is the name for the KubeLB cluster role.
+	KubeLBCCMClusterRoleName = "system:kubelb-ccm"
 	// KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role.
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
 	// MetricsServerClusterRoleName is the name for the metrics server cluster role.
 	MetricsServerClusterRoleName = "system:metrics-server"
 	// PrometheusClusterRoleName is the name for the Prometheus cluster role.
 	PrometheusClusterRoleName = "external-prometheus"
+	// KubeLBCCMClusterRoleBindingName is the name for the KubeLB ClusterRoleBinding.
+	KubeLBCCMClusterRoleBindingName = "system:kubelb-ccm"
 	// MachineControllerClusterRoleBindingName is the name for the MachineController ClusterRoleBinding.
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
 	// OperatingSystemManagerClusterRoleBindingName is the name for the OperatingSystemManager ClusterRoleBinding.
