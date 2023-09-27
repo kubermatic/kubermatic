@@ -36,7 +36,6 @@ boilerplate \
   -exclude pkg/crd/k8s.io \
   -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
   -exclude pkg/provider/cloud/eks/authenticator \
-  -exclude pkg/install/stack/kubermatic-master/default_application_catalog.go \
   -exclude .github
 
 echodate "Checking Kubermatic EE licenses..."
