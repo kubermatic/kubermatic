@@ -57,6 +57,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/resources/kubelb"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -415,6 +416,7 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	deploymentReconcilers = append(deploymentReconcilers, operatingsystemmanager.DeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
+	deploymentReconcilers = append(deploymentReconcilers, kubelb.DeploymentReconciler(templateData))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
