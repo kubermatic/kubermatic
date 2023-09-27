@@ -1797,6 +1797,13 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                kubeLb:
+                  description: KubeLB holds the configuration for the kubeLB component.
+                  properties:
+                    enabled:
+                      description: Controls whether kubeLB is deployed or not.
+                      type: boolean
+                  type: object
                 kubernetesDashboard:
                   description: KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
                   properties:

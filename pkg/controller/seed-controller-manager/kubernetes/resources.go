@@ -42,7 +42,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
-	"k8c.io/kubermatic/v2/pkg/resources/kubelb"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
@@ -192,13 +191,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// Ensure that OSM is completely removed, when disabled
 	if !cluster.Spec.IsOperatingSystemManagerEnabled() {
 		if err := r.ensureOSMResourcesAreRemoved(ctx, data); err != nil {
-			return nil, err
-		}
-	}
-
-	// Ensure that kuebLB is completely removed, when disabled
-	if !cluster.Spec.IsKubeLBEnabled() {
-		if err := r.ensureKubeLBResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
 	}
@@ -418,10 +410,6 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 		deployments = append(deployments, operatingsystemmanager.WebhookDeploymentReconciler(data))
 	}
 
-	if data.Cluster().Spec.IsKubeLBEnabled() {
-		deployments = append(deployments, kubelb.DeploymentReconciler(data))
-	}
-
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		deployments = append(deployments,
 			nodeportproxy.DeploymentEnvoyReconciler(data, versions),
@@ -552,10 +540,6 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, operatingsystemmanager.ServiceAccountReconciler)
-	}
-
-	if c.Spec.IsKubeLBEnabled() {
-		namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, kubelb.ServiceAccountReconciler)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -866,16 +850,6 @@ func (r *Reconciler) ensureOSMResourcesAreRemoved(ctx context.Context, data *res
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *Reconciler) ensureKubeLBResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
-	for _, resource := range kubelb.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		err := r.Client.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure kubeLB resources are removed/not present: %w", err)
 		}
 	}
 	return nil

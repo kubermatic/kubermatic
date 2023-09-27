@@ -3,13 +3,13 @@
                          Version 1.0 ("KERO-1.0”)
                      Copyright © 2023 Kubermatic GmbH
 
-   1.	You may only view, read and display for studying purposes the source
+   1. You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
       explicitly provided under this license, the binary code.
-   2.	Any use of the software which exceeds the foregoing right, including,
+   2. Any use of the software which exceeds the foregoing right, including,
       without limitation, its execution, compilation, copying, modification
       and distribution, is expressly prohibited.
-   3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+   3. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
       IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
@@ -20,8 +20,28 @@
    END OF TERMS AND CONDITIONS
 */
 
-/*
-Package kubelbcontroller contains a controller that is responsible for ensuring that all the resources required for
-kubeLB CCM to interact with kubeLB manager are avaialable for the user cluster.
-*/
-package kubelbcontroller
+package resources
+
+import (
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
+	return []ctrlruntimeclient.Object{
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      Name,
+				Namespace: namespace,
+			},
+		},
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      serviceAccountName,
+				Namespace: namespace,
+			},
+		},
+	}
+}

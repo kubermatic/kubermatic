@@ -299,6 +299,8 @@ type SeedSpec struct {
 	EtcdBackupRestore *EtcdBackupRestore `json:"etcdBackupRestore,omitempty"`
 	// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
 	OIDCProviderConfiguration *OIDCProviderConfiguration `json:"oidcProviderConfiguration,omitempty"`
+	// KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
+	KubeLB *KubeLBSettings `json:"kubeLb,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -454,6 +456,9 @@ type DatacenterSpec struct {
 	// Optional: DisableCSIDriver disables the installation of CSI driver on every clusters within the DC
 	// If true it can't be over-written in the cluster configuration
 	DisableCSIDriver bool `json:"disableCsiDriver,omitempty"`
+
+	// Optional: KubeLB holds the configuration for the kubeLB at the data center level.
+	KubeLB *KubeLBDatacenterSettings `json:"kubeLb,omitempty"`
 }
 
 var (
@@ -958,6 +963,18 @@ type OIDCProviderConfiguration struct {
 	// Optional: SkipTLSVerify skip TLS verification for the token issuer.
 	// If not set, configuration is inherited from the default OIDC provider.
 	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
+}
+
+type KubeLBSettings struct {
+	// Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
+	Kubeconfig corev1.ObjectReference `json:"kubeconfig"`
+}
+
+type KubeLBDatacenterSettings struct {
+	// Used to configure and override the default kubeLB settings.
+	KubeLBSettings `json:",inline"`
+	// Enabled is a flag to enable/disable kubeLB for the datacenter.
+	Enabled bool `json:"enabled"`
 }
 
 // IsEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

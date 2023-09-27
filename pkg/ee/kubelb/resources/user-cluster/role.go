@@ -1,34 +1,46 @@
 /*
-Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+                  Kubermatic Enterprise Read-Only License
+                         Version 1.0 ("KERO-1.0”)
+                     Copyright © 2023 Kubermatic GmbH
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+   1. You may only view, read and display for studying purposes the source
+      code of the software licensed under this license, and, to the extent
+      explicitly provided under this license, the binary code.
+   2. Any use of the software which exceeds the foregoing right, including,
+      without limitation, its execution, compilation, copying, modification
+      and distribution, is expressly prohibited.
+   3. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+   END OF TERMS AND CONDITIONS
 */
 
-package kubelb
+package resources
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/kubelb"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
+const (
+	roleName               = "kubelb-ccm"
+	roleBindingName        = "kubelb-ccm"
+	clusterRoleName        = "system:kubelb-ccm"
+	clusterRoleBindingName = "system:kubelb-ccm"
+)
+
 // KubeSystemRoleReconciler returns the func to create/update the Role for leader election.
 func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
-		return resources.KubeLBCCMRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = resources.BaseAppLabels(kubelb.Name, nil)
+		return roleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Labels = resources.BaseAppLabels(resources.KubeLBAppName, nil)
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{""},
@@ -61,7 +73,7 @@ func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 
 func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleReconciler) {
-		return resources.KubeLBCCMClusterRoleName,
+		return clusterRoleName,
 			func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 				r.Rules = []rbacv1.PolicyRule{
 					{

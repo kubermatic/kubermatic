@@ -1,22 +1,29 @@
 /*
-Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+                  Kubermatic Enterprise Read-Only License
+                         Version 1.0 ("KERO-1.0”)
+                     Copyright © 2023 Kubermatic GmbH
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+   1. You may only view, read and display for studying purposes the source
+      code of the software licensed under this license, and, to the extent
+      explicitly provided under this license, the binary code.
+   2. Any use of the software which exceeds the foregoing right, including,
+      without limitation, its execution, compilation, copying, modification
+      and distribution, is expressly prohibited.
+   3. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+   END OF TERMS AND CONDITIONS
 */
 
-package kubelb
+package resources
 
 import (
+	"context"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -57,7 +64,14 @@ type kubeLBData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
-	DC() *kubermaticv1.Datacenter
+}
+
+func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, overwriteRegistry string) *resources.TemplateData {
+	return resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithCluster(cluster).
+		WithOverwriteRegistry(overwriteRegistry).
+		Build()
 }
 
 // DeploymentReconciler returns the function to create and update the kubeLB  deployment.
