@@ -218,7 +218,7 @@ func staticCrdChecker(group, version, resource, namespace string, cfg *restclien
 	return func() error {
 		client, err := dynamic.NewForConfig(cfg)
 		if err != nil {
-			return fmt.Errorf("failed to create kube client: %v", err)
+			return fmt.Errorf("failed to create kube client: %w", err)
 		}
 
 		gvr := schema.GroupVersionResource{
@@ -230,7 +230,7 @@ func staticCrdChecker(group, version, resource, namespace string, cfg *restclien
 		listOpts := metav1.ListOptions{Limit: 1}
 
 		if _, err := client.Resource(gvr).Namespace(namespace).List(context.Background(), listOpts); err != nil {
-			return fmt.Errorf("failed to list %s/%s.%s %s: %v", namespace, group, version, resource, err)
+			return fmt.Errorf("failed to list %s/%s.%s %s: %w", namespace, group, version, resource, err)
 		}
 
 		return nil
