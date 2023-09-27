@@ -214,7 +214,7 @@ type ClusterSpec struct {
 	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// KubeLB holds the configuration for the kubeLB component.
-	KubeLB *KubeLB `json:"kubeLB,omitempty"`
+	KubeLB *KubeLB `json:"kubeLb,omitempty"`
 
 	// KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
 	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
