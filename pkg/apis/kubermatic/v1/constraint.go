@@ -121,6 +121,6 @@ type ConstraintList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Items refers to the list of Constraints that specifies a kubermatic wrapper for the gatekeeper constraints.
+	// Items is a list of Gatekeeper Constraints
 	Items []Constraint `json:"items"`
 }

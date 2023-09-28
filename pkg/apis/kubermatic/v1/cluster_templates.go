@@ -60,7 +60,7 @@ type ClusterTemplate struct {
 	InheritedClusterLabels map[string]string `json:"inheritedClusterLabels,omitempty"`
 	Credential             string            `json:"credential"`
 
-	// UserSSHKeys is the array for holding Cluster SSH key.
+	// UserSSHKeys is the list of SSH public keys that should be assigned to all nodes in the cluster.
 	UserSSHKeys []ClusterTemplateSSHKey `json:"userSSHKeys,omitempty"`
 
 	// Spec describes the desired state of a user cluster.
