@@ -107,7 +107,7 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 	// Only reconcile folders that are KKP managed at the clusterFolder location.
 	if cluster.Spec.Cloud.VSphere.Folder == "" || cluster.Spec.Cloud.VSphere.Folder == clusterFolder {
-		logger.Infow("reconciling vsphere folder", "folder", cluster.Spec.Cloud.VSphere.Folder)
+		logger.Infow("reconciling vsphere folder", "folder", clusterFolder)
 		session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create vCenter session: %w", err)
