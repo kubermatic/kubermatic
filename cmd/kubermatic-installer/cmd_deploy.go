@@ -82,6 +82,8 @@ type DeployOptions struct {
 	MLAForceMLASecrets       bool
 	MLAIncludeIap            bool
 
+	DeployDefaultAppCatalog bool
+
 	SkipCharts []string
 }
 
@@ -142,6 +144,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
 	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
 	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
+
+	wrapDeployFlags(cmd.PersistentFlags(), &opt)
 
 	cmd.PersistentFlags().StringSliceVar(&opt.SkipCharts, "skip-charts", nil, "skip helm chart deployment (some of cert-manager, nginx-ingress-controller, dex)")
 
@@ -237,6 +241,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			MLAIncludeIap:                      opt.MLAIncludeIap,
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
+			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 		}
 
 		// prepapre Kubernetes and Helm clients

@@ -101,7 +101,6 @@ require (
 	kubevirt.io/containerized-data-importer-api v1.56.0
 	sigs.k8s.io/controller-runtime v0.16.1
 	sigs.k8s.io/controller-tools v0.11.3
-	sigs.k8s.io/yaml v1.3.0
 )
 
 replace (
@@ -123,6 +122,8 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // make `go list` work
 // see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
+
+require sigs.k8s.io/yaml v1.3.0
 
 require (
 	cloud.google.com/go/compute v1.19.3 // indirect
