@@ -30,6 +30,7 @@ type vSphereScenario struct {
 	baseScenario
 
 	customFolder     bool
+	basePath         bool
 	datastoreCluster bool
 }
 
@@ -49,6 +50,10 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 
 	if s.customFolder {
 		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.VSphere.RootPath)
+	}
+
+	if s.basePath {
+		spec.Cloud.VSphere.BasePath = "basepath_subfolder"
 	}
 
 	if s.datastoreCluster {

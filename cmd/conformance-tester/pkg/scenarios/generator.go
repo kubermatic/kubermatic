@@ -202,7 +202,12 @@ func providerScenario(
 	case kubermaticv1.VSphereCloudProvider:
 		scenario := &vSphereScenario{baseScenario: base}
 		scenario.customFolder = opts.ScenarioOptions.Has("custom-folder")
+		scenario.basePath = opts.ScenarioOptions.Has("basepath")
 		scenario.datastoreCluster = opts.ScenarioOptions.Has("datastore-cluster")
+
+		if scenario.customFolder && scenario.basePath {
+			return nil, fmt.Errorf("cannot run mutually exclusive %q scenarios 'custom-folder' and 'basepath' together", provider)
+		}
 
 		return scenario, nil
 	default:
