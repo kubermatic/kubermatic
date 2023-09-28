@@ -34,7 +34,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: Spec specifies the gatekeeper constraint template and kubermatic related spec.
+              description: Spec specifies the gatekeeper constraint template and KKP related spec.
               properties:
                 crd:
                   properties:
@@ -63,7 +63,7 @@ spec:
                       type: object
                   type: object
                 selector:
-                  description: Selector configures which clusters this constraint template is applied to by providing a label selector.
+                  description: Selector configures which clusters this constraint template is applied to.
                   properties:
                     labelSelector:
                       description: LabelSelector selects the Clusters to which the Constraint Template applies based on their labels

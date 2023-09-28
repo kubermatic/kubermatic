@@ -44,7 +44,7 @@ type AdmissionPlugin struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Spec describes an admission plugin name and from which k8s version is supported.
+	// Spec describes an admission plugin name and in which k8s version it is supported.
 	Spec AdmissionPluginSpec `json:"spec,omitempty"`
 }
 

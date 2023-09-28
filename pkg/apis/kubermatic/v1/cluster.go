@@ -159,7 +159,7 @@ type ClusterSpec struct {
 	// Optional: ClusterNetwork specifies the different networking parameters for a cluster.
 	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
 
-	// Optional: MachineNetworks refers to array of the networking parameters used for IPAM.
+	// Optional: MachineNetworks is the list of the networking parameters used for IPAM.
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
 	// ExposeStrategy is the strategy used to expose a cluster control plane.
@@ -504,7 +504,8 @@ type ClusterStatus struct {
 	// +optional
 	Address ClusterAddress `json:"address,omitempty"`
 
-	// LastUpdated contains the timestamp at which the cluster was last modified.
+	// Deprecated: LastUpdated contains the timestamp at which the cluster was last modified.
+	// It is kept only for KKP 2.20 release to not break the backwards-compatibility and not being set for KKP higher releases.
 	// +optional
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// ExtendedHealth exposes information about the current health state.

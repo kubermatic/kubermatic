@@ -1800,7 +1800,7 @@ spec:
                       type: boolean
                   type: object
                 machineNetworks:
-                  description: 'Optional: MachineNetworks refers to array of the networking parameters used for IPAM.'
+                  description: 'Optional: MachineNetworks is the list of the networking parameters used for IPAM.'
                   items:
                     description: MachineNetworkingConfig specifies the networking parameters used for IPAM.
                     properties:
@@ -2073,7 +2073,7 @@ spec:
                 - version
               type: object
             userSSHKeys:
-              description: UserSSHKeys is the array for holding Cluster SSH key.
+              description: UserSSHKeys is the list of SSH public keys that should be assigned to all nodes in the cluster.
               items:
                 description: ClusterTemplateSSHKey is the object for holding SSH key.
                 properties:
