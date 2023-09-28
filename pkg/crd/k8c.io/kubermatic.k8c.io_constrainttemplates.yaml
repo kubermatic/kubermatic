@@ -63,7 +63,7 @@ spec:
                       type: object
                   type: object
                 selector:
-                  description: ConstraintTemplateSelector is the object holding the cluster selection filters.
+                  description: Selector is the object holding the cluster selection filters.
                   properties:
                     labelSelector:
                       description: LabelSelector selects the Clusters to which the Constraint Template applies based on their labels
