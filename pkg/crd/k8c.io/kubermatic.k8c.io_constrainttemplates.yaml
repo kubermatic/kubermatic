@@ -34,7 +34,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec.
+              description: Spec specifies the gatekeeper constraint template and kubermatic related spec.
               properties:
                 crd:
                   properties:

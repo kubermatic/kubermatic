@@ -49,7 +49,7 @@ spec:
               description: AlertmanagerStatus stores status information about the AlertManager.
               properties:
                 configStatus:
-                  description: AlertmanagerConfigurationStatus stores status information about the AlertManager configuration.
+                  description: ConfigStatus stores status information about the AlertManager configuration.
                   properties:
                     errorMessage:
                       description: ErrorMessage contains a default error message in case the configuration could not be applied. Will be reset if the error was resolved and condition becomes True

@@ -59,7 +59,11 @@ type ClusterTemplate struct {
 	ClusterLabels          map[string]string       `json:"clusterLabels,omitempty"`
 	InheritedClusterLabels map[string]string       `json:"inheritedClusterLabels,omitempty"`
 	Credential             string                  `json:"credential"`
+
+	// UserSSHKeys is the array for holding Cluster SSH key.
 	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys,omitempty"`
+
+	// Spec describes the desired state of a user cluster.
 	Spec                   ClusterSpec             `json:"spec,omitempty"`
 }
 
@@ -71,6 +75,7 @@ type ClusterTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Refers to the list of the ClusterTemplate ojbects.
 	Items []ClusterTemplate `json:"items"`
 }
 

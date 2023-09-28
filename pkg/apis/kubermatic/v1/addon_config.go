@@ -33,6 +33,7 @@ type AddonConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes the configuration of an addon.
 	Spec AddonConfigSpec `json:"spec,omitempty"`
 }
 
