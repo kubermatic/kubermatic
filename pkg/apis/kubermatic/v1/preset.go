@@ -174,6 +174,10 @@ type VSphere struct {
 	Datastore        string   `json:"datastore,omitempty"`
 	DatastoreCluster string   `json:"datastoreCluster,omitempty"`
 	ResourcePool     string   `json:"resourcePool,omitempty"`
+	// BasePath configures a vCenter folder path that KKP will create an individual "cluster-CLUSTER-ID" folder in.
+	// If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path,
+	// the BasePath part will be appended to the RootPath to construct the full path.
+	BasePath string `json:"basePath,omitempty"`
 }
 
 func (s VSphere) IsValid() bool {
