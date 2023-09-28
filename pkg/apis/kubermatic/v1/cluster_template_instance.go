@@ -42,6 +42,7 @@ type ClusterTemplateInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec specifies the data for cluster instances.
 	Spec ClusterTemplateInstanceSpec `json:"spec,omitempty"`
 }
 

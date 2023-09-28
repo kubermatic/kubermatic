@@ -34,7 +34,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ConstraintSpec specifies the data for the constraint.
+              description: Spec describes the desired state for the constraint.
               properties:
                 constraintType:
                   description: ConstraintType specifies the type of gatekeeper constraint that the constraint applies to

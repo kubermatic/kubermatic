@@ -38,7 +38,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: AllowedRegistrySpec specifies the data for allowed registry spec.
+              description: Spec describes the desired state for an allowed registry.
               properties:
                 registryPrefix:
                   description: RegistryPrefix contains the prefix of the registry which will be allowed. User clusters will be able to deploy only images which are prefixed with one of the allowed image registry prefixes.

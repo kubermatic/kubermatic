@@ -41,6 +41,7 @@ type ConstraintTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec specifies the gatekeeper constraint template and kubermatic related spec.
 	Spec ConstraintTemplateSpec `json:"spec,omitempty"`
 }
 
@@ -48,6 +49,8 @@ type ConstraintTemplate struct {
 type ConstraintTemplateSpec struct {
 	CRD      v1.CRD                     `json:"crd,omitempty"`
 	Targets  []v1.Target                `json:"targets,omitempty"`
+
+	// ConstraintTemplateSelector is the object holding the cluster selection filters.
 	Selector ConstraintTemplateSelector `json:"selector,omitempty"`
 }
 

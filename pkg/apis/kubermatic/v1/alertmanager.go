@@ -60,6 +60,7 @@ type AlertmanagerList struct {
 
 // AlertmanagerStatus stores status information about the AlertManager.
 type AlertmanagerStatus struct {
+	// ConfigStatus stores status information about the AlertManager configuration.
 	ConfigStatus AlertmanagerConfigurationStatus `json:"configStatus,omitempty"`
 }
 

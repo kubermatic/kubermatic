@@ -996,7 +996,7 @@ spec:
                     - providerName
                   type: object
                 clusterNetwork:
-                  description: 'Optional: ClusterNetworkingConfig specifies the different networking parameters for a cluster.'
+                  description: 'Optional: ClusterNetwork specifies the different networking parameters for a cluster.'
                   properties:
                     coreDNSReplicas:
                       description: CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
@@ -1073,7 +1073,7 @@ spec:
                     - services
                   type: object
                 cniPlugin:
-                  description: 'Optional: CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.'
+                  description: 'Optional: CNIPlugin refers to the spec of the CNI plugin used by the Cluster.'
                   properties:
                     type:
                       description: Type is the CNI plugin type to be used.
@@ -1805,7 +1805,7 @@ spec:
                       type: boolean
                   type: object
                 machineNetworks:
-                  description: 'Optional: MachineNetworkingConfig specifies the networking parameters used for IPAM.'
+                  description: 'Optional: MachineNetwork refers to array of the networking parameters used for IPAM.'
                   items:
                     description: MachineNetworkingConfig specifies the networking parameters used for IPAM.
                     properties:
@@ -1912,7 +1912,7 @@ spec:
                       type: object
                   type: object
                 oidc:
-                  description: 'Optional: OIDCSettings contains OIDC configuration parameters for enabling authentication mechanism for the cluster.'
+                  description: 'Optional: OIDC specifies the OIDC configuration parameters for enabling authentication mechanism for the cluster.'
                   properties:
                     clientID:
                       type: string
