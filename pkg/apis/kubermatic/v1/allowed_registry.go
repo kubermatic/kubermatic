@@ -56,6 +56,6 @@ type AllowedRegistryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Refers to the list of the allowed registries.
+	// Items refers to the list of the allowed registries.
 	Items []AllowedRegistry `json:"items"`
 }

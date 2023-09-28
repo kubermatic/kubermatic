@@ -1805,7 +1805,7 @@ spec:
                       type: boolean
                   type: object
                 machineNetworks:
-                  description: 'Optional: MachineNetwork refers to array of the networking parameters used for IPAM.'
+                  description: 'Optional: MachineNetworks refers to array of the networking parameters used for IPAM.'
                   items:
                     description: MachineNetworkingConfig specifies the networking parameters used for IPAM.
                     properties:

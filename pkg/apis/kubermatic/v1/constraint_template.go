@@ -50,7 +50,7 @@ type ConstraintTemplateSpec struct {
 	CRD     v1.CRD      `json:"crd,omitempty"`
 	Targets []v1.Target `json:"targets,omitempty"`
 
-	// Selector is the object holding the cluster selection filters.
+	// Selector configures which clusters this constraint template is applied to by providing a label selector.
 	Selector ConstraintTemplateSelector `json:"selector,omitempty"`
 }
 
@@ -70,5 +70,6 @@ type ConstraintTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items refers to the list of ConstraintTemplate objects.
 	Items []ConstraintTemplate `json:"items"`
 }

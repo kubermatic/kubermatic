@@ -74,5 +74,6 @@ type AddonConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items refers to the list of AddonConfig objects.
 	Items []AddonConfig `json:"items"`
 }
