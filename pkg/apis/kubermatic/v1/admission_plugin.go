@@ -31,7 +31,7 @@ type AdmissionPluginList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// List of Admission Plugins
+	// Items refers to the list of Admission Plugins
 	Items []AdmissionPlugin `json:"items"`
 }
 

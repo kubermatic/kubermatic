@@ -159,7 +159,7 @@ type ClusterSpec struct {
 	// Optional: ClusterNetwork specifies the different networking parameters for a cluster.
 	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
 
-	// Optional: MachineNetwork refers to array of the networking parameters used for IPAM.
+	// Optional: MachineNetworks refers to array of the networking parameters used for IPAM.
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
 	// ExposeStrategy is the strategy used to expose a cluster control plane.

@@ -75,7 +75,7 @@ type ClusterTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Refers to the list of the ClusterTemplate ojbects.
+	// Items refers to the list of the ClusterTemplate objects.
 	Items []ClusterTemplate `json:"items"`
 }
 
