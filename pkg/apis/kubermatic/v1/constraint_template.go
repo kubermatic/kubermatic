@@ -47,10 +47,10 @@ type ConstraintTemplate struct {
 
 // ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec.
 type ConstraintTemplateSpec struct {
-	CRD      v1.CRD                     `json:"crd,omitempty"`
-	Targets  []v1.Target                `json:"targets,omitempty"`
+	CRD     v1.CRD      `json:"crd,omitempty"`
+	Targets []v1.Target `json:"targets,omitempty"`
 
-	// ConstraintTemplateSelector is the object holding the cluster selection filters.
+	// Selector is the object holding the cluster selection filters.
 	Selector ConstraintTemplateSelector `json:"selector,omitempty"`
 }
 
