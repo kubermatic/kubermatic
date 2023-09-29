@@ -219,6 +219,18 @@ if [[ "$PROVIDERS" =~ vsphere ]]; then
   )
 fi
 
+if [[ "$PROVIDERS" =~ kubevirt ]]; then
+  echodate "Fetching Kubevirt credentials…"
+  tmpFile="$(mktemp)"
+  kubectl get preset $PRESET -o json | jq -r '.spec.kubevirt.kubeconfig' | base64 -d > "$tmpFile"
+
+  EXTRA_FLAGS+=(
+    -kubevirt-kubeconfig "$tmpFile"
+    -kubevirt-kkp-datacenter "kv-europe-west3-c"
+  )
+fi
+
+
 ###########################################################
 # assemble extra flags for the chosen distributions
 ###########################################################
