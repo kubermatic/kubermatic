@@ -54,7 +54,9 @@ var (
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.13.6", // restores IPSec support and fixes several security issues (in 1.13.5)
+			"1.13.7",
 			"1.14.1",
+			"1.14.2",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
