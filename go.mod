@@ -83,38 +83,38 @@ require (
 	k8c.io/kubeone v1.6.2
 	k8c.io/operating-system-manager v1.3.1
 	k8c.io/reconciler v0.4.0
-	k8s.io/api v0.28.1
-	k8s.io/apiextensions-apiserver v0.28.1
-	k8s.io/apimachinery v0.28.1
-	k8s.io/apiserver v0.28.1
+	k8s.io/api v0.28.2
+	k8s.io/apiextensions-apiserver v0.28.2
+	k8s.io/apimachinery v0.28.2
+	k8s.io/apiserver v0.28.2
 	k8s.io/autoscaler/vertical-pod-autoscaler v0.14.0
-	k8s.io/cli-runtime v0.28.1
+	k8s.io/cli-runtime v0.28.2
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.28.1
+	k8s.io/code-generator v0.28.2
 	k8s.io/klog/v2 v2.100.1
-	k8s.io/kube-aggregator v0.28.1
-	k8s.io/kubectl v0.28.1
-	k8s.io/metrics v0.28.1
+	k8s.io/kube-aggregator v0.28.2
+	k8s.io/kubectl v0.28.2
+	k8s.io/metrics v0.28.2
 	k8s.io/test-infra v0.0.0-20230224035733-afa88634622b
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 	kubevirt.io/api v0.59.2
 	kubevirt.io/containerized-data-importer-api v1.56.0
-	sigs.k8s.io/controller-runtime v0.16.1
+	sigs.k8s.io/controller-runtime v0.16.2
 	sigs.k8s.io/controller-tools v0.11.3
 	sigs.k8s.io/yaml v1.3.0
 )
 
 replace (
-	k8s.io/api => k8s.io/api v0.28.1
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.1
-	k8s.io/apimachinery => k8s.io/apimachinery v0.28.1
-	k8s.io/client-go => k8s.io/client-go v0.28.1
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.28.1
-	k8s.io/code-generator => k8s.io/code-generator v0.28.1
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.28.1
-	k8s.io/kubectl => k8s.io/kubectl v0.28.1
-	k8s.io/kubelet => k8s.io/kubelet v0.28.1
-	k8s.io/metrics => k8s.io/metrics v0.28.1
+	k8s.io/api => k8s.io/api v0.28.2
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.2
+	k8s.io/apimachinery => k8s.io/apimachinery v0.28.2
+	k8s.io/client-go => k8s.io/client-go v0.28.2
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.28.2
+	k8s.io/code-generator => k8s.io/code-generator v0.28.2
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.28.2
+	k8s.io/kubectl => k8s.io/kubectl v0.28.2
+	k8s.io/kubelet => k8s.io/kubelet v0.28.2
+	k8s.io/metrics => k8s.io/metrics v0.28.2
 )
 
 // follow repository deprecation
@@ -218,7 +218,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/cel-go v0.16.0 // indirect
+	github.com/google/cel-go v0.16.1 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -338,7 +338,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.28.1 // indirect
+	k8s.io/component-base v0.28.2 // indirect
 	k8s.io/gengo v0.0.0-20221011193443-fad74ee6edd9 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
