@@ -884,10 +884,10 @@ github.com/onsi/gomega v1.27.4/go.mod h1:riYq/GJKh8hhoM01HN6Vmuy93AarCXCBGpvFDK3
 github.com/onsi/gomega v1.27.6/go.mod h1:PIQNjfQwkP3aQAH7lf7j87O/5FiNr+ZR8+ipb+qQlhg=
 github.com/onsi/gomega v1.27.10 h1:naR28SdDFlqrG6kScpT8VWpu1xWY5nJRCF3XaYyBjhI=
 github.com/onsi/gomega v1.27.10/go.mod h1:RsS8tutOdbdgzbPtzzATp12yT7kM5I5aElG3evPbQ0M=
-github.com/open-policy-agent/frameworks/constraint v0.0.0-20230606213221-6ccacf85c2c5 h1:ijnbL4tF6wIxIUPV8GPGI3hak8nlHusDkOQbHrpg0w0=
-github.com/open-policy-agent/frameworks/constraint v0.0.0-20230606213221-6ccacf85c2c5/go.mod h1:ENmaVhZWCR7pIhdtP3b7BVGBqoJnu+kEEJI+moDJTJE=
-github.com/open-policy-agent/gatekeeper/v3 v3.13.0-beta.1.0.20230707015109-3adf472e914f h1:b8jFQ7A3HfeSCI6w1P7oEBbgmkMHJu8l9kNDEr1J7Xc=
-github.com/open-policy-agent/gatekeeper/v3 v3.13.0-beta.1.0.20230707015109-3adf472e914f/go.mod h1:x71wXEwjgN6GpD0YWW9duvvfHI+Rrd1SubUCwLOMIgo=
+github.com/open-policy-agent/frameworks/constraint v0.0.0-20230712214810-96753a21c26f h1:dJDnp6A6LBrU/hbve5NzZNV3OzPYXdD0SJUn+xAPj+I=
+github.com/open-policy-agent/frameworks/constraint v0.0.0-20230712214810-96753a21c26f/go.mod h1:54/KzLMvA5ndBVpm7B1OjLeV0cUtTLTz2bZ2OtydLpU=
+github.com/open-policy-agent/gatekeeper/v3 v3.13.0 h1:UUfIo/ZjLa0D6BBQlnSjlZetcAYbp54fZVVCLug4sY0=
+github.com/open-policy-agent/gatekeeper/v3 v3.13.0/go.mod h1:umWn30oYZ4CGW0kOD7aeIfPwbhCQ9DibK2LTUrRW+bk=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.0-rc5 h1:Ygwkfw9bpDvs+c9E34SdgGOj41dX/cbdlwvlWt0pnFI=

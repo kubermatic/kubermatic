@@ -46,8 +46,8 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.27.10
-	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230606213221-6ccacf85c2c5 // v0.9.0+
-	github.com/open-policy-agent/gatekeeper/v3 v3.13.0-beta.1.0.20230707015109-3adf472e914f
+	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230712214810-96753a21c26f // Gatekeeper's desired version
+	github.com/open-policy-agent/gatekeeper/v3 v3.13.0
 	github.com/packethost/packngo v0.30.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
