@@ -33,7 +33,7 @@ require (
 	github.com/go-logr/zapr v1.2.4
 	github.com/go-test/deep v1.1.0
 	github.com/gobuffalo/flect v1.0.2
-	github.com/google/go-containerregistry v0.15.2
+	github.com/google/go-containerregistry v0.13.0
 	github.com/google/uuid v1.3.0
 	github.com/gophercloud/gophercloud v1.5.0
 	github.com/hetznercloud/hcloud-go v1.47.0
@@ -95,11 +95,13 @@ require (
 	k8s.io/kube-aggregator v0.28.1
 	k8s.io/kubectl v0.28.1
 	k8s.io/metrics v0.28.1
+	k8s.io/test-infra v0.0.0-20230224035733-afa88634622b
 	k8s.io/utils v0.0.0-20230505201702-9f6742963106
 	kubevirt.io/api v0.59.2
 	kubevirt.io/containerized-data-importer-api v1.56.0
 	sigs.k8s.io/controller-runtime v0.16.1
 	sigs.k8s.io/controller-tools v0.11.3
+	sigs.k8s.io/yaml v1.3.0
 )
 
 replace (
@@ -122,10 +124,10 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
-require (
-	k8s.io/test-infra v0.0.0-20230927234838-254092c5a2ab
-	sigs.k8s.io/yaml v1.3.0
-)
+// Cilium 1.13.7 uses Docker v24.x+,
+// but all other dependencies so far stayed on v20.x;
+// until we bump Docker as well, pin the dependency
+replace github.com/docker/docker => github.com/docker/docker v20.10.26+incompatible
 
 require (
 	cloud.google.com/go/compute v1.19.3 // indirect
@@ -176,7 +178,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/cli v23.0.5+incompatible // indirect
+	github.com/docker/cli v20.10.21+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v24.0.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
