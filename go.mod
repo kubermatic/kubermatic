@@ -67,10 +67,10 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.9
 	go.etcd.io/etcd/etcdutl/v3 v3.5.9
 	go.uber.org/zap v1.25.0
-	golang.org/x/crypto v0.11.0
+	golang.org/x/crypto v0.12.0
 	golang.org/x/oauth2 v0.9.0
 	golang.org/x/sys v0.11.0
-	golang.org/x/tools v0.10.0
+	golang.org/x/tools v0.12.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/api v0.129.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc
@@ -100,7 +100,7 @@ require (
 	kubevirt.io/api v0.59.2
 	kubevirt.io/containerized-data-importer-api v1.56.0
 	sigs.k8s.io/controller-runtime v0.16.2
-	sigs.k8s.io/controller-tools v0.11.3
+	sigs.k8s.io/controller-tools v0.13.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -195,7 +195,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
-	github.com/fatih/color v1.13.0 // indirect
+	github.com/fatih/color v1.15.0 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/flatcar/container-linux-config-transpiler v0.9.4 // indirect
 	github.com/flatcar/ignition v0.36.2 // indirect
@@ -325,11 +325,11 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/exp v0.0.0-20221106115401-f9659909a136 // indirect
-	golang.org/x/mod v0.11.0 // indirect
-	golang.org/x/net v0.13.0 // indirect
+	golang.org/x/mod v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/term v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230530153820-e85fd2cbaebc // indirect
