@@ -1,3 +1,5 @@
+//go:build ee
+
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
@@ -38,6 +40,7 @@ import (
 	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -59,7 +62,8 @@ import (
 )
 
 const (
-	ControllerName = "kkp-kubelb-controller"
+	ControllerName   = "kkp-kubelb-controller"
+	CleanupFinalizer = "kubermatic.k8c.io/cleanup-kubelb-ccm"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -118,9 +122,24 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	// Resource is marked for deletion.
 	if cluster.DeletionTimestamp != nil {
-		// Cluster is queued for deletion; no action required
-		r.log.Debugw("Cluster is queued for deletion; no action required", "cluster", cluster.Name)
+		if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) {
+			r.log.Debugw("Cleaning up kubelb resources", "cluster", cluster.Name)
+			return r.handleKubeLBCleanup(ctx, cluster)
+		}
+		// Finalizer doesn't exist so clean up is already done.
+		return reconcile.Result{}, nil
+	}
+
+	// Kubelb was disabled after it was enabled. Clean up resources.
+	if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) && !cluster.Spec.IsKubeLBEnabled() {
+		r.log.Debugw("Cleaning up kubelb resources", "cluster", cluster.Name)
+		return r.handleKubeLBCleanup(ctx, cluster)
+	}
+
+	// Kubelb is disabled. Nothing to do.
+	if !cluster.Spec.IsKubeLBEnabled() {
 		return reconcile.Result{}, nil
 	}
 
@@ -162,6 +181,15 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	kubeLBManagementClient, cfg, err := r.getKubeLBManagementClusterClient(ctx, seed, datacenter)
 	if err != nil {
 		return nil, err
+	}
+
+	// At this point we have a client for the kubelb management cluster. We can now process the cluster.
+	// Add finalizer to the cluster. We only add finalizer to the cluster if/when the kubeconfig for the
+	// kubelb management cluster is configured.
+	if !kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, CleanupFinalizer); err != nil {
+			return nil, fmt.Errorf("failed to set %q finalizer: %w", CleanupFinalizer, err)
+		}
 	}
 
 	// Create/update required resources in kubeLB management cluster.
@@ -311,26 +339,6 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	return nil
 }
 
-func (r *reconciler) ensureKubeLBWorkerClusterResourcesAreRemoved(ctx context.Context, namespace string) error {
-	for _, resource := range kubelbseedresources.ResourcesForDeletion(namespace) {
-		err := r.Client.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure kubeLB resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *reconciler) ensureKubeLBManagementClusterResourcesAreRemoved(ctx context.Context, namespace string) error {
-	for _, resource := range kubelbmanagementresources.ResourcesForDeletion(namespace) {
-		err := r.Client.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure kubeLB resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
 func (r *reconciler) generateKubeconfig(ctx context.Context, client ctrlruntimeclient.Client, namespace string, kubeconfig string) (string, error) {
 	managementKubeconfig, err := clientcmd.Load([]byte(kubeconfig))
 	if err != nil {
@@ -389,7 +397,7 @@ func (r *reconciler) getKubeLBManagementClusterClient(ctx context.Context, seed 
 		return nil, nil, fmt.Errorf("no kubeconfig found")
 	}
 
-	kubeconfig, err := clientcmd.Load([]byte(kubeconfigValue))
+	kubeconfig, err := clientcmd.Load(kubeconfigValue)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
 	}
@@ -398,7 +406,7 @@ func (r *reconciler) getKubeLBManagementClusterClient(ctx context.Context, seed 
 		return nil, nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-	return client, []byte(kubeconfigValue), err
+	return client, kubeconfigValue, err
 }
 
 func getKubeLBKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, dc kubermaticv1.Datacenter) (*corev1.Secret, error) {
