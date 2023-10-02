@@ -60,7 +60,7 @@ var (
 
 const (
 	Name = "kubelb-ccm"
-	tag  = "e1a671afd8432da282ab495bb0c50c35727b40a3"
+	tag  = "69adc1f0cba0fae86e092a6ce44173befda6d97e"
 )
 
 type kubeLBData interface {
