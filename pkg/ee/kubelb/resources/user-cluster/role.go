@@ -30,10 +30,10 @@ import (
 )
 
 const (
-	roleName               = "kubelb-ccm"
-	roleBindingName        = "kubelb-ccm"
-	clusterRoleName        = "system:kubelb-ccm"
-	clusterRoleBindingName = "system:kubelb-ccm"
+	roleName               = "kubermatic-kubelb-ccm"
+	roleBindingName        = "kubermatic-kubelb-ccm"
+	clusterRoleName        = "system:kubermatic-kubelb-ccm"
+	clusterRoleBindingName = "system:kubermatic-kubelb-ccm"
 )
 
 // KubeSystemRoleReconciler returns the func to create/update the Role for leader election.

@@ -25,7 +25,7 @@ import (
 
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
-	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/kubelb"
+	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
 	resourcequotaseedcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/seed-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
 

@@ -38,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -57,7 +58,7 @@ var (
 
 const (
 	Name = "kubelb-ccm"
-	tag  = "v0.3.12"
+	tag  = "e1a671afd8432da282ab495bb0c50c35727b40a3"
 )
 
 type kubeLBData interface {
@@ -66,10 +67,11 @@ type kubeLBData interface {
 	RewriteImage(string) (string, error)
 }
 
-func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, overwriteRegistry string) *resources.TemplateData {
+func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string) *resources.TemplateData {
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithCluster(cluster).
+		WithClient(client).
 		WithOverwriteRegistry(overwriteRegistry).
 		Build()
 }
@@ -130,9 +132,10 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + Name))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:  Name,
-					Image: repository + ":" + tag,
-					Args:  getFlags(data.Cluster().Name),
+					Name:    Name,
+					Image:   repository + ":" + tag,
+					Command: []string{"/usr/local/bin/ccm"},
+					Args:    getFlags(data.Cluster().Name),
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -169,7 +172,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 						},
 						{
 							Name:      resources.KubeLBManagerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
+							MountPath: "/etc/kubernetes/kubelb-kubeconfig",
 							ReadOnly:  true,
 						},
 					},
@@ -191,9 +194,10 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 func getFlags(name string) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-		"-kubelb-kubeconfig", "/etc/kubernetes/kubeconfig/kubelb-manager-kubeconfig",
+		"-kubelb-kubeconfig", "/etc/kubernetes/kubelb-kubeconfig/kubeconfig",
 		"-health-probe-bind-address", "0.0.0.0:8085",
-		"-metrics-bind-address", "0.0.0.0:8080",
+		"-metrics-addr", "0.0.0.0:8082",
+		"-leader-election-namespace", metav1.NamespaceSystem,
 		"-cluster-name", fmt.Sprintf("cluster-%s", name),
 	}
 	return flags

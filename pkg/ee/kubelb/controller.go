@@ -25,6 +25,7 @@ package kubelbcontroller
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"text/template"
 
@@ -301,7 +302,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 
 	// Create/update kubeLB deployment.
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r.overwriteRegistry)),
+		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry)),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
@@ -359,7 +360,7 @@ func (r *reconciler) generateKubeconfig(ctx context.Context, client ctrlruntimec
 		Namespace      string
 		ServerURL      string
 	}{
-		CA_Certificate: string(ca),
+		CA_Certificate: base64.StdEncoding.EncodeToString(ca),
 		Token:          string(token),
 		Namespace:      namespace,
 		ServerURL:      serverUrl,
@@ -383,21 +384,21 @@ func (r *reconciler) getKubeLBManagementClusterClient(ctx context.Context, seed 
 		return nil, nil, err
 	}
 
-	d := kubeLBManagerKubeconfig.Data[resources.KubeconfigSecretKey]
-	if len(d) == 0 {
+	kubeconfigValue := kubeLBManagerKubeconfig.Data[resources.KubeconfigSecretKey]
+	if len(kubeconfigValue) == 0 {
 		return nil, nil, fmt.Errorf("no kubeconfig found")
 	}
 
-	cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{ExplicitPath: string(d)},
-		&clientcmd.ConfigOverrides{}).ClientConfig()
+	kubeconfig, err := clientcmd.Load([]byte(kubeconfigValue))
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
+	}
+	cfg, err := clientcmd.NewInteractiveClientConfig(*kubeconfig, "", nil, nil, nil).ClientConfig()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
-
-	// Build dedicated client for worker cluster, some read actions fail on the split client created by manager due to informers not syncing in-time
 	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-	return client, d, err
+	return client, []byte(kubeconfigValue), err
 }
 
 func getKubeLBKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, dc kubermaticv1.Datacenter) (*corev1.Secret, error) {
