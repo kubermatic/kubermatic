@@ -40,6 +40,7 @@ type Constraint struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes the desired state for the constraint.
 	Spec ConstraintSpec `json:"spec,omitempty"`
 }
 
@@ -120,5 +121,6 @@ type ConstraintList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items is a list of Gatekeeper Constraints
 	Items []Constraint `json:"items"`
 }

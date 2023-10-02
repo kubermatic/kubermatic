@@ -34,7 +34,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: AddonConfigSpec specifies configuration of addon.
+              description: Spec describes the configuration of an addon.
               properties:
                 description:
                   description: Description of the configured addon, it will be displayed in the addon overview in the UI

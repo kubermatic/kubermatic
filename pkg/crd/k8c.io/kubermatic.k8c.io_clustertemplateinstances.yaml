@@ -43,7 +43,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ClusterTemplateInstanceSpec specifies the data for cluster instances.
+              description: Spec specifies the data for cluster instances.
               properties:
                 clusterTemplateID:
                   type: string
