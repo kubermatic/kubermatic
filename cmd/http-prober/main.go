@@ -40,7 +40,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -196,12 +199,45 @@ func crdCheckersFactory(mvf multiValFlag) ([]func() error, error) {
 
 func crdCheckerFromFlag(flag string, cfg *rest.Config) (func() error, error) {
 	splitVal := strings.Split(flag, ",")
-	if n := len(splitVal); n != 2 {
-		return nil, fmt.Errorf("comma-separating the flag value did not yield exactly two results, but %d", n)
+	switch len(splitVal) {
+	case 2:
+		kind := splitVal[0]
+		apiVersion := splitVal[1]
+		return dynamicCrdChecker(kind, apiVersion, cfg), nil
+	case 4:
+		group := splitVal[0]
+		version := splitVal[1]
+		resource := splitVal[2]
+		namespace := splitVal[3]
+		return staticCrdChecker(group, version, resource, namespace, cfg), nil
 	}
-	kind := splitVal[0]
-	apiVersion := splitVal[1]
+	return nil, fmt.Errorf("comma-separating the flag value did not yield exactly two or four results, but %d", len(splitVal))
+}
 
+func staticCrdChecker(group, version, resource, namespace string, cfg *restclient.Config) func() error {
+	return func() error {
+		client, err := dynamic.NewForConfig(cfg)
+		if err != nil {
+			return fmt.Errorf("failed to create kube client: %w", err)
+		}
+
+		gvr := schema.GroupVersionResource{
+			Group:    group,
+			Version:  version,
+			Resource: resource,
+		}
+
+		listOpts := metav1.ListOptions{Limit: 1}
+
+		if _, err := client.Resource(gvr).Namespace(namespace).List(context.Background(), listOpts); err != nil {
+			return fmt.Errorf("failed to list %s/%s.%s %s: %w", namespace, group, version, resource, err)
+		}
+
+		return nil
+	}
+}
+
+func dynamicCrdChecker(kind, apiVersion string, cfg *restclient.Config) func() error {
 	list := &unstructured.UnstructuredList{}
 	list.SetKind(kind)
 	list.SetAPIVersion(apiVersion)
@@ -220,7 +256,7 @@ func crdCheckerFromFlag(flag string, cfg *rest.Config) (func() error, error) {
 		}
 
 		return nil
-	}, nil
+	}
 }
 
 func executeCheckers(checkers []func() error) error {
