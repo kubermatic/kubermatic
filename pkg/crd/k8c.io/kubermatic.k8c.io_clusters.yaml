@@ -1803,6 +1803,8 @@ spec:
                     enabled:
                       description: Controls whether kubeLB is deployed or not.
                       type: boolean
+                  required:
+                    - enabled
                   type: object
                 kubernetesDashboard:
                   description: KubernetesDashboard holds the configuration for the kubernetes-dashboard component.

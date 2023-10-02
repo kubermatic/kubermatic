@@ -274,11 +274,11 @@ func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 // KubeLB contains settings for the kubeLB component as part of the cluster control plane. This component is responsible for managing load balancers.
 type KubeLB struct {
 	// Controls whether kubeLB is deployed or not.
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {
-	return c.KubeLB == nil || c.KubeLB.Enabled
+	return c.KubeLB != nil && c.KubeLB.Enabled
 }
 
 // GetVersionConditions returns a kubermaticv1.ConditionType list that should be used when checking
