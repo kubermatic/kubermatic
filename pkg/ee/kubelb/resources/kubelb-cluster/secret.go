@@ -23,32 +23,35 @@
 package resources
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/reconciler/pkg/reconciling"
 
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
-	return []ctrlruntimeclient.Object{
-		&corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceAccountName,
-				Namespace: namespace,
-			},
-		},
-		&rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleName,
-				Namespace: namespace,
-			},
-		},
-		&rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleBindingName,
-				Namespace: namespace,
-			},
-		},
+const (
+	ServiceAccountTokenSecretName = "kubelb-agent"
+)
+
+func SecretReconciler() reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return ServiceAccountTokenSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Annotations = map[string]string{
+				resources.ServiceAccountTokenAnnotation: serviceAccountName,
+			}
+			s.Type = resources.ServiceAccountTokenType
+			return s, nil
+		}
+	}
+}
+
+func TenantKubeconfigSecretReconciler(data string) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return resources.KubeLBManagerKubeconfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			s.Data = map[string][]byte{
+				"kubeconfig": []byte(data),
+			}
+			return s, nil
+		}
 	}
 }

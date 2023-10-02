@@ -32,9 +32,11 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/management-cluster"
+	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
+	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
@@ -43,6 +45,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
@@ -58,26 +61,33 @@ const (
 	ControllerName = "kkp-kubelb-controller"
 )
 
+// UserClusterClientProvider provides functionality to get a user cluster client.
+type UserClusterClientProvider interface {
+	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
+}
+
 type reconciler struct {
 	ctrlruntimeclient.Client
 
-	workerName        string
-	recorder          record.EventRecorder
-	seedGetter        provider.SeedGetter
-	log               *zap.SugaredLogger
-	overwriteRegistry string
-	versions          kubermatic.Versions
+	workerName                    string
+	recorder                      record.EventRecorder
+	seedGetter                    provider.SeedGetter
+	userClusterConnectionProvider UserClusterClientProvider
+	log                           *zap.SugaredLogger
+	overwriteRegistry             string
+	versions                      kubermatic.Versions
 }
 
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, overwriteRegistry string, seedGetter provider.SeedGetter, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegistry string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &reconciler{
-		Client:            mgr.GetClient(),
-		workerName:        workerName,
-		recorder:          mgr.GetEventRecorderFor(ControllerName),
-		seedGetter:        seedGetter,
-		log:               log,
-		versions:          versions,
-		overwriteRegistry: overwriteRegistry,
+		Client:                        mgr.GetClient(),
+		workerName:                    workerName,
+		recorder:                      mgr.GetEventRecorderFor(ControllerName),
+		seedGetter:                    seedGetter,
+		userClusterConnectionProvider: userClusterConnectionProvider,
+		log:                           log,
+		versions:                      versions,
+		overwriteRegistry:             overwriteRegistry,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -159,7 +169,12 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Create/update required resources in user cluster.
-	if err := r.createOrUpdateKubeLBWorkerClusterResources(ctx, cluster); err != nil {
+	if err := r.createOrUpdateKubeLBUserClusterResources(ctx, cluster); err != nil {
+		return nil, err
+	}
+
+	// Create/update required resources in user cluster namespace in seed.
+	if err := r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster); err != nil {
 		return nil, err
 	}
 
@@ -222,14 +237,57 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 		kubelbmanagementresources.TenantKubeconfigSecretReconciler(tenantKubeconfig),
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, client); err != nil {
+	// Create kubeconfig secret in the user cluster namespace.
+	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile kubelb tenant kubeconfig secret: %w", err)
 	}
 
 	return nil
 }
 
-func (r *reconciler) createOrUpdateKubeLBWorkerClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	// Create RBAC for the user cluster.
+	roleReconciler := []reconciling.NamedRoleReconcilerFactory{
+		kubelbuserclusterresources.KubeSystemRoleReconciler(),
+	}
+
+	if err := reconciling.ReconcileRoles(ctx, roleReconciler, metav1.NamespaceSystem, userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile role: %w", err)
+	}
+
+	clusterRoleReconciler := []reconciling.NamedClusterRoleReconcilerFactory{
+		kubelbuserclusterresources.ClusterRoleReconciler(),
+	}
+
+	if err := reconciling.ReconcileClusterRoles(ctx, clusterRoleReconciler, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile cluster role: %w", err)
+	}
+
+	roleBindingReconciler := []reconciling.NamedRoleBindingReconcilerFactory{
+		kubelbuserclusterresources.KubeSystemRoleBindingReconciler(),
+	}
+
+	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingReconciler, metav1.NamespaceSystem, userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile role binding: %w", err)
+	}
+
+	clusterRoleBindingReconciler := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+		kubelbuserclusterresources.ClusterRoleBindingReconciler(),
+	}
+
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile cluster role binding: %w", err)
+	}
+
+	return nil
+}
+
+func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	namespace := cluster.Status.NamespaceName
 
 	// Create RBAC for the user cluster.

@@ -23,10 +23,10 @@
 package resources
 
 import (
-	corev1 "k8s.io/api/core/v1"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 

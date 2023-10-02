@@ -24,15 +24,30 @@ package resources
 
 import (
 	corev1 "k8s.io/api/core/v1"
-
-	"k8c.io/reconciler/pkg/reconciling"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NamespaceReconciler creates the namespace for Gatekeeper.
-func NamespaceReconciler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
-	return func() (string, reconciling.NamespaceReconciler) {
-		return namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
-			return n, nil
-		}
+func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
+	return []ctrlruntimeclient.Object{
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      serviceAccountName,
+				Namespace: namespace,
+			},
+		},
+		&rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      roleName,
+				Namespace: namespace,
+			},
+		},
+		&rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      roleBindingName,
+				Namespace: namespace,
+			},
+		},
 	}
 }

@@ -23,35 +23,16 @@
 package resources
 
 import (
-	corev1 "k8s.io/api/core/v1"
-
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	ServiceAccountTokenSecretName = "kubelb-agent"
-)
-
-func SecretReconciler() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretReconciler) {
-		return ServiceAccountTokenSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Annotations = map[string]string{
-				resources.ServiceAccountTokenAnnotation: serviceAccountName,
-			}
-			s.Type = resources.ServiceAccountTokenType
-			return s, nil
-		}
-	}
-}
-
-func TenantKubeconfigSecretReconciler(data string) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretReconciler) {
-		return resources.KubeLBManagerKubeconfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Data = map[string][]byte{
-				"kubeconfig": []byte(data),
-			}
-			return s, nil
+// NamespaceReconciler creates the namespace for Gatekeeper.
+func NamespaceReconciler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
+			return n, nil
 		}
 	}
 }
