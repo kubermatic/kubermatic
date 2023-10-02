@@ -3,15 +3,15 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2023 Kubermatic GmbH
+                     Copyright © 2021 Kubermatic GmbH
 
-   1. You may only view, read and display for studying purposes the source
+   1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
       explicitly provided under this license, the binary code.
-   2. Any use of the software which exceeds the foregoing right, including,
+   2.	Any use of the software which exceeds the foregoing right, including,
       without limitation, its execution, compilation, copying, modification
       and distribution, is expressly prohibited.
-   3. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+   3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
       EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
       MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
       IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
@@ -32,9 +32,9 @@ import (
 	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *reconciler) handleKubeLBCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) (reconcile.Result, error) {
