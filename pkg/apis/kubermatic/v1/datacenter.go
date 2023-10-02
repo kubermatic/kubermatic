@@ -973,7 +973,7 @@ type KubeLBSettings struct {
 type KubeLBDatacenterSettings struct {
 	// Used to configure and override the default kubeLB settings.
 	KubeLBSettings `json:",inline"`
-	// Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubelb is allowed or not for the datacenter.
+	// Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
 	Enabled bool `json:"enabled"`
 }
 

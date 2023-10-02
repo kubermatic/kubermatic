@@ -125,7 +125,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Resource is marked for deletion.
 	if cluster.DeletionTimestamp != nil {
 		if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) {
-			r.log.Debugw("Cleaning up kubelb resources", "cluster", cluster.Name)
+			r.log.Debugw("Cleaning up kubeLB resources", "cluster", cluster.Name)
 			return r.handleKubeLBCleanup(ctx, cluster)
 		}
 		// Finalizer doesn't exist so clean up is already done.
@@ -134,7 +134,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// Kubelb was disabled after it was enabled. Clean up resources.
 	if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) && !cluster.Spec.IsKubeLBEnabled() {
-		r.log.Debugw("Cleaning up kubelb resources", "cluster", cluster.Name)
+		r.log.Debugw("Cleaning up kubeLB resources", "cluster", cluster.Name)
 		return r.handleKubeLBCleanup(ctx, cluster)
 	}
 
@@ -268,7 +268,7 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 
 	// Create kubeconfig secret in the user cluster namespace.
 	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile kubelb tenant kubeconfig secret: %w", err)
+		return fmt.Errorf("failed to reconcile kubeLB tenant kubeconfig secret: %w", err)
 	}
 
 	return nil
@@ -413,7 +413,7 @@ func getKubeLBKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Cli
 	var name, namespace string
 	if seed.Spec.KubeLB == nil || seed.Spec.KubeLB.Kubeconfig.Name == "" {
 		if dc.Spec.KubeLB == nil || dc.Spec.KubeLB.Kubeconfig.Name == "" {
-			return nil, fmt.Errorf("KubeLB management kubeconfig not found")
+			return nil, fmt.Errorf("kubeLB management kubeconfig not found")
 		}
 		name = dc.Spec.KubeLB.Kubeconfig.Name
 		namespace = dc.Spec.KubeLB.Kubeconfig.Namespace

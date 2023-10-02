@@ -22,12 +22,11 @@
    END OF TERMS AND CONDITIONS
 */
 
-
 /*
-Package kubelbcontroller contains a controller that is responsible for configuring and installing kubelb CCM for user clusters.
+Package kubelbcontroller contains a controller that is responsible for configuring and installing KubeLB CCM for user clusters.
 It is responsible for the following:
 1. KubeLB cluster: register the user cluster as a tenant.
-2. Seed cluster: deploy kubelb CCM to the user cluster namespace.
-3. User cluster: configure RBAC for the kubelb CCM.
+2. Seed cluster: deploy KubeLB CCM to the user cluster namespace.
+3. User cluster: configure RBAC for the KubeLB CCM.
 */
 package kubelbcontroller
