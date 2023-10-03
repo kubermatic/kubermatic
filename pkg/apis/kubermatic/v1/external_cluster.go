@@ -255,10 +255,10 @@ type ExternalClusterEKSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 
 	Name string `json:"name"`
-	// AccessKeyID: AWS Access key ID
+	// AccessKeyID is the AWS Access key ID used to authenticate against AWS.
 	// Can be read from `credentialsReference` instead.
 	AccessKeyID string `json:"accessKeyID,omitempty"`
-	// SecretAccessKey: AWS Secret Access Key
+	// SecretAccessKey is the AWS Secret Access Key used to authenticate against AWS.
 	// Can be read from `credentialsReference` instead.
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 	Region          string `json:"region"`

@@ -112,7 +112,7 @@ spec:
                     eks:
                       properties:
                         accessKeyID:
-                          description: 'AccessKeyID: AWS Access key ID Can be read from `credentialsReference` instead.'
+                          description: AccessKeyID is the AWS Access key ID used to authenticate against AWS. Can be read from `credentialsReference` instead.
                           type: string
                         assumeRoleARN:
                           description: 'AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
@@ -156,7 +156,7 @@ spec:
                           description: 'ControlPlaneRoleARN: The Amazon Resource Name (ARN) of the IAM role that provides permissions for the Kubernetes control plane to make calls to Amazon Web Services API operations on your behalf.'
                           type: string
                         secretAccessKey:
-                          description: 'SecretAccessKey: AWS Secret Access Key Can be read from `credentialsReference` instead.'
+                          description: SecretAccessKey is the AWS Secret Access Key used to authenticate against AWS. Can be read from `credentialsReference` instead.
                           type: string
                         securityGroupIDs:
                           description: 'SecurityGroupIDs: The security groups associated with the cross-account elastic network interfaces that are used to allow communication between your nodes and the Kubernetes control plane.'
