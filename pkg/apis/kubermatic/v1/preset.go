@@ -140,7 +140,7 @@ func (s Hetzner) IsValid() bool {
 type Azure struct {
 	ProviderPreset `json:",inline"`
 
-	//TenantID is the Azure Active Directory Tenant used for the user cluster.
+	// TenantID is the Azure Active Directory Tenant used for the user cluster.
 	TenantID string `json:"tenantID"`
 	// SubscriptionID is the Azure Subscription used for the user cluster.
 	SubscriptionID string `json:"subscriptionID"`
@@ -455,7 +455,7 @@ func (s EKS) IsValid() bool {
 type AKS struct {
 	ProviderPreset `json:",inline"`
 
-	//TenantID is the Azure Active Directory Tenant used for the user cluster.
+	// TenantID is the Azure Active Directory Tenant used for the user cluster.
 	TenantID string `json:"tenantID"`
 	// SubscriptionID is the Azure Subscription used for the user cluster.
 	SubscriptionID string `json:"subscriptionID"`
