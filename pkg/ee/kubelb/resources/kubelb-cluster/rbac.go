@@ -33,9 +33,9 @@ import (
 )
 
 const (
-	serviceAccountName = "kubelb-agent"
-	roleName           = "kubelb-agent"
-	roleBindingName    = "kubelb-agent"
+	serviceAccountName = "kubelb-ccm"
+	roleName           = "kubelb-ccm"
+	roleBindingName    = "kubelb-ccm"
 )
 
 func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {

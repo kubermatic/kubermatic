@@ -51,5 +51,10 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 				Namespace: namespace,
 			},
 		},
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: namespace,
+			},
+		},
 	}
 }

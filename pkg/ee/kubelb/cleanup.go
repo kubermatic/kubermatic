@@ -32,25 +32,24 @@ import (
 	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *reconciler) handleKubeLBCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) (reconcile.Result, error) {
+func (r *reconciler) handleKubeLBCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if err := r.ensureKubeLBSeedClusterResourcesAreRemoved(ctx, cluster.Status.NamespaceName); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	if err := r.ensureKubeLBUserClusterResourcesAreRemoved(ctx, cluster); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	if err := r.ensureKubeLBManagementClusterResourcesAreRemoved(ctx, cluster); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
-
-	return reconcile.Result{}, nil
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, CleanupFinalizer)
 }
 
 func (r *reconciler) ensureKubeLBSeedClusterResourcesAreRemoved(ctx context.Context, namespace string) error {

@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	ServiceAccountTokenSecretName = "kubelb-agent"
+	ServiceAccountTokenSecretName = "kubelb-ccm"
 )
 
 func SecretReconciler() reconciling.NamedSecretReconcilerFactory {
