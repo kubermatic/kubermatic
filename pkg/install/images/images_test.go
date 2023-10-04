@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"testing"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
@@ -28,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -35,7 +37,9 @@ import (
 
 // These tests do not just verify that the Docker images can be extracted
 // properly, but also that all addons can be processed for each cluster
-// combination (i.e. there are no broken Go templates).
+// combination (i.e. there are no broken Go templates). To save save, this
+// test only tests each minor Kubernetes release, not every single configured
+// patch version.
 // When working on this test, remember that it also tests pkg/addon/'s code.
 
 func TestRetagImageForAllVersions(t *testing.T) {
@@ -47,15 +51,14 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	}
 
 	kubermaticVersions := kubermatic.NewFakeVersions()
-	clusterVersions := getVersionsFromKubermaticConfiguration(config)
-	addonPath := "../../../addons"
+	clusterVersions := getLatestMinorVersions(config)
 
 	caBundle, err := certificates.NewCABundleFromFile("../../../charts/kubermatic-operator/static/ca-bundle.pem")
 	if err != nil {
 		t.Fatalf("failed to load CA bundle: %v", err)
 	}
 
-	allAddons, err := addonutil.LoadAddonsFromDirectory(addonPath)
+	allAddons, err := addonutil.LoadAddonsFromDirectory("../../../addons")
 	if err != nil {
 		t.Fatalf("failed to load addons: %v", err)
 	}
@@ -85,4 +88,17 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	if _, _, err := CopyImages(context.Background(), log, true, sets.List(imageSet), "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
+}
+
+func getLatestMinorVersions(config *kubermaticv1.KubermaticConfiguration) []*version.Version {
+	latestMinorVersions := version.GetLatestMinorVersions(config.Spec.Versions.Versions)
+
+	result := make([]*version.Version, len(latestMinorVersions))
+	for i, ver := range latestMinorVersions {
+		result[i] = &version.Version{
+			Version: semverlib.MustParse(ver),
+		}
+	}
+
+	return result
 }
