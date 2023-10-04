@@ -56,11 +56,15 @@ type ClusterTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	ClusterLabels          map[string]string       `json:"clusterLabels,omitempty"`
-	InheritedClusterLabels map[string]string       `json:"inheritedClusterLabels,omitempty"`
-	Credential             string                  `json:"credential"`
-	UserSSHKeys            []ClusterTemplateSSHKey `json:"userSSHKeys,omitempty"`
-	Spec                   ClusterSpec             `json:"spec,omitempty"`
+	ClusterLabels          map[string]string `json:"clusterLabels,omitempty"`
+	InheritedClusterLabels map[string]string `json:"inheritedClusterLabels,omitempty"`
+	Credential             string            `json:"credential"`
+
+	// UserSSHKeys is the list of SSH public keys that should be assigned to all nodes in the cluster.
+	UserSSHKeys []ClusterTemplateSSHKey `json:"userSSHKeys,omitempty"`
+
+	// Spec describes the desired state of a user cluster.
+	Spec ClusterSpec `json:"spec,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
@@ -71,6 +75,7 @@ type ClusterTemplateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items refers to the list of the ClusterTemplate objects.
 	Items []ClusterTemplate `json:"items"`
 }
 

@@ -153,9 +153,13 @@ type ClusterSpec struct {
 	// Optional: ImagePullSecret references a secret with container registry credentials. This is passed to the machine-controller which sets the registry credentials on node level.
 	ImagePullSecret *corev1.SecretReference `json:"imagePullSecret,omitempty"`
 
+	// Optional: CNIPlugin refers to the spec of the CNI plugin used by the Cluster.
 	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
 
-	ClusterNetwork  ClusterNetworkingConfig   `json:"clusterNetwork"`
+	// Optional: ClusterNetwork specifies the different networking parameters for a cluster.
+	ClusterNetwork ClusterNetworkingConfig `json:"clusterNetwork"`
+
+	// Optional: MachineNetworks is the list of the networking parameters used for IPAM.
 	MachineNetworks []MachineNetworkingConfig `json:"machineNetworks,omitempty"`
 
 	// ExposeStrategy is the strategy used to expose a cluster control plane.
@@ -169,6 +173,7 @@ type ClusterSpec struct {
 	// Optional: Component specific overrides that allow customization of control plane components.
 	ComponentsOverride ComponentSettings `json:"componentsOverride,omitempty"`
 
+	// Optional: OIDC specifies the OIDC configuration parameters for enabling authentication mechanism for the cluster.
 	OIDC OIDCSettings `json:"oidc,omitempty"`
 
 	// A map of optional or early-stage features that can be enabled for the user cluster.
@@ -493,6 +498,8 @@ type ClusterStatus struct {
 	// +optional
 	Address ClusterAddress `json:"address,omitempty"`
 
+	// Deprecated: LastUpdated contains the timestamp at which the cluster was last modified.
+	// It is kept only for KKP 2.20 release to not break the backwards-compatibility and not being set for KKP higher releases.
 	// +optional
 	LastUpdated metav1.Time `json:"lastUpdated,omitempty"`
 	// ExtendedHealth exposes information about the current health state.
@@ -622,6 +629,7 @@ const (
 	ClusterEncryptionPhaseEncryptionNeeded ClusterEncryptionPhase = "EncryptionNeeded"
 )
 
+// OIDCSettings contains OIDC configuration parameters for enabling authentication mechanism for the cluster.
 type OIDCSettings struct {
 	IssuerURL     string `json:"issuerURL,omitempty"`
 	ClientID      string `json:"clientID,omitempty"`
