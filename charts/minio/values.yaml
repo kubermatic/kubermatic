@@ -30,6 +30,11 @@ minio:
   # If you are enabling it, make sure to enable prometheus scraping for minio as well.
   certificateSecret: '' # tls secret used by minio.
 
+  # Management Console for Minio Access
+  console:
+    # configure a port enables the console
+    port: 80
+
   # These settings are required. Keys must be alphanumeric.
   credentials:
     accessKey: '' # 32 byte long
@@ -52,6 +57,24 @@ minio:
 
     # hide sensitive information from logging
     anonymous: false
+
+  # Optional: Expose Minio external
+  ingress:
+    # configure a host name enables the ingress deployment
+    server:
+      host: "minio.kkp.example.com"
+    console:
+      host: "minio-console.kkp.example.com"
+    # if set to "non-existent", no Ingress resource will be created
+    class: "nginx"
+
+  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  # If you want to deploy your own certificate without relying on cert-manager
+  # uncomment the next line and remove subsequent certIssuer configuration.
+  # certIssuer: null
+  certIssuer:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
 
   backup:
     enabled: true

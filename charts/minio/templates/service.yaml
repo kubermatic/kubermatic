@@ -19,8 +19,15 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 9000
+    - name: server
+      port: 9000
       targetPort: 9000
       protocol: TCP
+    {{- if .Values.minio.console.port }}
+    - name: console
+      port: {{ .Values.minio.console.port }}
+      targetPort: {{ .Values.minio.console.port }}
+      protocol: TCP
+    {{- end }}
   selector:
     app: minio
